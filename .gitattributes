@@ -1,0 +1,16 @@
+# Normalize source and documentation consistently across platforms.
+* text=auto eol=lf
+*.cs text diff=csharp
+*.sln text
+*.ps1 text
+*.py text
+*.json text
+*.md text
+
+# Explicit binary handling if an approved asset is added in the future.
+*.png binary
+*.jpg binary
+*.wav binary
+*.ogg binary
+*.dll binary
+*.bundle binary

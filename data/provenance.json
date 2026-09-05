@@ -1,0 +1,52 @@
+{
+  "sources": [
+    {
+      "file": "requests/client/seasonal-perks/list/response/resp.client.seasonal-perks.list_1788587529.json",
+      "sha256": "e0fe82f82b0ac4f97e3d3f881edb5466efb4dffbd77a36d940f4304acb3efb01"
+    },
+    {
+      "file": "requests/client/seasonal-perks/list/response/resp.client.seasonal-perks.list_1788587615.json",
+      "sha256": "e0fe82f82b0ac4f97e3d3f881edb5466efb4dffbd77a36d940f4304acb3efb01"
+    },
+    {
+      "file": "requests/client/locale/en/response/resp.client.locale.en_1788587530.json",
+      "sha256": "84646649cb4d6a51f4d746df7998b93f0ee217285335fa2d13a66e453f5f4451"
+    },
+    {
+      "file": "requests/client/game/profile/list/response/resp.client.game.profile.list_1788587615.json",
+      "sha256": "7dc51952c01878c8e4f2bd1f7b5f832853a29aebb3085c3d881505b111f2fe13"
+    }
+  ],
+  "commonCount": 6,
+  "personalCount": 33,
+  "effectIds": [
+    "allergy",
+    "bleeding_chance_multiplicator",
+    "bush_interaction_multiplicators",
+    "craft_time_multiplicator",
+    "energy_drain_multiplicator",
+    "fall_damage_multiplicator",
+    "flea_market_npc_only",
+    "fracture_chance_multiplicator",
+    "fresh_wounds_until_raid_end",
+    "hideout_fir",
+    "hydration_drain_multiplicator",
+    "insurance_disabled",
+    "item_resource_drain_multiplicator",
+    "key_durability_multiplicator",
+    "lucky",
+    "pmc_experience_multiplicator",
+    "pouch_item_filter_restrict",
+    "scheduled_mail",
+    "skill_experience_multiplicator",
+    "skill_level_preset",
+    "skill_max_level_cap",
+    "skill_not_growing",
+    "sprint_speed_multiplicator",
+    "stamina_consumption_body_parts_multiplicator",
+    "stamina_restore_body_parts_multiplicator",
+    "stamina_scale_body_parts",
+    "trader_prices_by_trader_multiplicator",
+    "unlucky"
+  ]
+}

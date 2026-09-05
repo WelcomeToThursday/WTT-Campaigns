@@ -1,0 +1,44 @@
+[
+  {
+    "SeasonalPerks": [
+      "69c41a19cd28c936320a7523",
+      "69c41a86383fc5c9ad03f3d5",
+      "69c41adf883efd5e3b09ccae",
+      "69ce5d9296f3b267fa08f137",
+      "69ce5e104e0a1c7ca20781c9",
+      "69ce5eb3e4b79de94a0d78c8",
+      "69c405a9d7a7b2ca660e0c56",
+      "69c3e8d8af28f094100fe130",
+      "69c3da13eaf97663fb0bb36d",
+      "69c410831f8903ce7a06984f",
+      "69c3cd003ffdba4e68086bd7",
+      "69c3d6a9af28f094100fe128",
+      "69ce62886e199f4bbe0ab19b",
+      "6a578ac032cea863f505beed"
+    ],
+    "SeasonalPerkEffectParameters": {
+      "allergy": {
+        "69c3d6a9af28f094100fe128": {
+          "targetItems": [
+            "57347d9c245977448b40fa85",
+            "57514643245977207f2c2d09",
+            "5734773724597737fd047c14"
+          ]
+        }
+      }
+    }
+  },
+  {
+    "SeasonalPerks": [
+      "69c41a19cd28c936320a7523",
+      "69c41a86383fc5c9ad03f3d5",
+      "69c41adf883efd5e3b09ccae",
+      "69ce5d9296f3b267fa08f137",
+      "69ce5e104e0a1c7ca20781c9",
+      "69ce5eb3e4b79de94a0d78c8"
+    ],
+    "SeasonalPerkEffectParameters": {
+      "allergy": []
+    }
+  }
+]

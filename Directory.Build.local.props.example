@@ -1,0 +1,9 @@
+<Project>
+    <!-- Copy to Directory.Build.local.props and edit paths; keep trailing separators. -->
+    <PropertyGroup>
+        <TarkovDir>C:\Games\SPT\</TarkovDir>
+        <SeasonalAssetsDir>C:\Development\CJ-SDK\Assets\Mods\SeasonalPerks.Assets\</SeasonalAssetsDir>
+        <!-- Optional for installations with a different server layout: -->
+        <!-- <ServerDir>C:\Games\SPT-Server\</ServerDir> -->
+    </PropertyGroup>
+</Project>

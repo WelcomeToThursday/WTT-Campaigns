@@ -1,0 +1,70 @@
+# .NET build output and test/coverage results
+**/[Bb]in/
+**/[Oo]bj/
+[Aa]rtifacts/
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.coveragexml
+*.nupkg
+*.snupkg
+
+# Local runtimes, isolated SPT servers/profiles, releases and reverse-engineering output
+/.tools/
+/Testing/
+/Research/
+/release/
+/Client/Resources/*
+!/Client/Resources/README.md
+
+# Game assemblies, extracted assets and packaged binaries are supplied locally
+*.dll
+*.exe
+*.pdb
+*.bundle
+*.manifest
+*.assets
+*.resS
+*.resource
+*.zip
+*.7z
+*.tar
+*.gz
+
+# Machine-specific build settings and credentials
+/Directory.Build.local.props
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.pem
+*.key
+
+# IDE, editor and operating-system state
+.vs/
+.idea/
+.vscode/
+*.user
+*.suo
+*.sln.docstates
+*.DotSettings.user
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Python environments, caches and temporary files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.log
+*.tmp
+*.bak

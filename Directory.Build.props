@@ -1,0 +1,13 @@
+<Project>
+    <Import Project="$(MSBuildThisFileDirectory)Directory.Build.local.props" Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.local.props')" />
+    <PropertyGroup>
+        <Version>0.1.18</Version>
+        <LangVersion>latest</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <TarkovDir Condition="'$(TarkovDir)' == ''">$(MSBuildThisFileDirectory)..\..\</TarkovDir>
+        <ManagedDir Condition="'$(ManagedDir)' == ''">$(TarkovDir)EscapeFromTarkov_Data\Managed\</ManagedDir>
+        <ServerDir Condition="'$(ServerDir)' == ''">$(TarkovDir)SPT_Runtime\</ServerDir>
+        <SeasonalAssetsDir Condition="'$(SeasonalAssetsDir)' == ''">$(MSBuildThisFileDirectory)..\CJ-SDK\Assets\Mods\SeasonalPerks.Assets\</SeasonalAssetsDir>
+    </PropertyGroup>
+</Project>
