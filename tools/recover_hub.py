@@ -1,4 +1,5 @@
 """Recover the season hub and its local media; never execute live game code."""
+import argparse
 import hashlib
 import json
 import shutil
@@ -14,6 +15,9 @@ DATA = LIVE / 'EscapeFromTarkov_Data'
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--intro', action='store_true', help='Recover the profile-card season introduction separately.')
+    args = parser.parse_args()
     out = ROOT / 'HubArtwork'
     out.mkdir(exist_ok=True)
     generator = Generator('2022.3.43f2')
@@ -52,7 +56,7 @@ def main():
         name = (script.m_Namespace + '.' if script.m_Namespace else '') + script.m_ClassName
         return name, obj.read_typetree(generator.get_nodes_up(script.m_AssemblyName, name))
 
-    for level, root_id in [(48, 8658), (50, 752)]:
+    for level, root_id in ([(48, 8659)] if args.intro else [(48, 8658), (49, 3965), (50, 752)]):
         env = UnityPy.load(str(DATA / f'level{level}'))
         objects = next(f for f in env.files.values() if hasattr(f, 'objects')).objects
 
@@ -80,7 +84,7 @@ def main():
                             target.parent.mkdir(exist_ok=True)
                             shutil.copyfile(source, target)
                             media[source.name] = {'file': source.name, 'source': data['_streamingAssetsPath'], 'sha256': hashlib.sha256(target.read_bytes()).hexdigest()}
-                        if name == 'EFT.UI.SeasonsSeasonInfoTab':
+                        if name in ['EFT.UI.SeasonsSeasonInfoTab', 'EFT.UI.SeasonsIntroScreen']:
                             from UnityPy.classes import PPtr
                             ptr = data['_carouselData']
                             carousel = PPtr(m_FileID=ptr['m_FileID'], m_PathID=ptr['m_PathID'], assetsfile=comp.assets_file).deref()
@@ -88,7 +92,8 @@ def main():
                             for page in cd['_pages']:
                                 ptr = page['_background']
                                 page['artwork'] = sprite(PPtr(m_FileID=ptr['m_FileID'], m_PathID=ptr['m_PathID'], assetsfile=carousel.assets_file))
-                            (ROOT / 'Recovered/hub-carousel.json').write_text(json.dumps(cd, indent=2), encoding='utf-8')
+                            carousel_file = 'intro-carousel.json' if args.intro else 'hub-carousel.json'
+                            (ROOT / 'Recovered' / carousel_file).write_text(json.dumps(cd, indent=2), encoding='utf-8')
                             print('CAROUSEL', carousel.assets_file.name, carousel.path_id, cd)
                         node['components'].append(entry)
                     except Exception as error:
@@ -106,10 +111,12 @@ def main():
     asset_file = next(f for f in env.files.values() if hasattr(f, 'objects'))
     for object_id in [375, 448]:
         sprite(PPtr(m_FileID=0, m_PathID=object_id, assetsfile=asset_file))
-    (out / 'provenance.json').write_text(json.dumps(list(records.values()), indent=2), encoding='utf-8')
-    (ROOT / 'HubMedia/provenance.json').write_text(json.dumps(list(media.values()), indent=2), encoding='utf-8')
-    sources = [DATA / 'level48', DATA / 'level50', LIVE / 'GameAssembly.dll', DEV / '1.0 Metadata/global-metadata.dat', DEV / '1.0 Metadata/GameAssembly.pdb']
-    (ROOT / 'Recovered/hub-provenance.json').write_text(json.dumps([{'source': str(p), 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in sources], indent=2), encoding='utf-8')
+    provenance_file = 'intro-provenance.json' if args.intro else 'provenance.json'
+    (out / provenance_file).write_text(json.dumps(list(records.values()), indent=2), encoding='utf-8')
+    (ROOT / 'HubMedia' / provenance_file).write_text(json.dumps(list(media.values()), indent=2), encoding='utf-8')
+    sources = [DATA / 'level48', DATA / 'level49', DATA / 'level50', LIVE / 'GameAssembly.dll', DEV / '1.0 Metadata/global-metadata.dat', DEV / '1.0 Metadata/GameAssembly.pdb']
+    recovery_file = 'intro-provenance.json' if args.intro else 'hub-provenance.json'
+    (ROOT / 'Recovered' / recovery_file).write_text(json.dumps([{'source': str(p), 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in sources], indent=2), encoding='utf-8')
     print('Recovered', len(records), 'sprites and', len(media), 'videos')
 
 

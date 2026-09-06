@@ -4,6 +4,9 @@ namespace SeasonalPerks.Server.Hub;
 
 public record HubRequest : IRequestData
 {
+    public int ProtocolVersion { get; set; }
+    public string SeasonId { get; set; } = "";
+    public long PackRevision { get; set; }
     public string OperationId { get; set; } = "";
     public long ExpectedRevision { get; set; }
     public string RewardId { get; set; } = "";

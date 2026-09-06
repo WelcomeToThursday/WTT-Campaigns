@@ -84,7 +84,7 @@ def main():
             p = profile(session)
             check(p['Info']['Experience'] == expected['xp'], 'XP survives restart: '+session)
             check(p['Inventory'] == expected['inventory'], 'Inventory survives restart: '+session)
-        snapshot = request('/seasonal-perks/snapshot', session=child)
+        snapshot = request('/wtt-seasonal/snapshot', session=child)
         check({XP, FLEA} <= set(snapshot['State']['SeasonalPerks']), 'Both selections survive restart')
         offers = search(child, TPL)
         check(offers and all(map(trader, offers)), 'Trader-only search survives restart')
@@ -93,7 +93,7 @@ def main():
         return
 
     def select(restricted):
-        snapshot = request('/seasonal-perks/snapshot', session=root)
+        snapshot = request('/wtt-seasonal/snapshot', session=root)
         ids = []
         if restricted:
             ids = [FLEA]
@@ -102,14 +102,14 @@ def main():
                 if p['points'] < 0 and p['id'] not in snapshot['Unavailable']:
                     ids.append(p['id']); budget += p['points']
                     if budget <= 0: break
-        result = request('/seasonal-perks/edit', {'PerkIds': ids, 'ExpectedRevision': snapshot['State']['Revision']}, root)
+        result = request('/wtt-seasonal/edit', {'PerkIds': ids, 'ExpectedRevision': snapshot['State']['Revision']}, root)
         check(not result.get('Error'), 'Save restriction '+str(restricted)+': '+str(result.get('Error')))
         return result
 
     snapshot = select(False)
     check(XP not in snapshot['Unavailable'] and FLEA not in snapshot['Unavailable'], 'Both perks advertised as implemented')
     check(XP in snapshot['State']['SeasonalPerks'], 'Configured Seasoned PMCs applied')
-    request('/seasonal-perks/switch', {'Mode': 'seasonal'}, root)
+    request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
     for session, factor in [(root, 1), (child, 1.25)]:
         before = request('/client/game/profile/list', session=session)
         result = event(session, {'Action': 'Examine', 'item': state['examine']})
@@ -122,7 +122,7 @@ def main():
         check(result['err'] == 0, 'Quest completion accepted '+str(factor)+': '+str(result.get('errmsg')))
         check(profile(session)['Info']['Experience'] - before_xp == int(1700 * factor), 'Correct quest XP '+str(factor))
         stable = profile(session)['Info']['Experience']
-        request('/seasonal-perks/snapshot', session=session)
+        request('/wtt-seasonal/snapshot', session=session)
         check(profile(session)['Info']['Experience'] == stable, 'Snapshot and reload do not multiply existing XP')
 
     baseline = search(root, TPL)

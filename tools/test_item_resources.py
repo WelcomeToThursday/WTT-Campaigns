@@ -66,11 +66,11 @@ def main():
         print('Passed', len(checks), 'resource persistence checks.')
         return
 
-    snapshot = request('/seasonal-perks/snapshot', session=root)
+    snapshot = request('/wtt-seasonal/snapshot', session=root)
     perks = ['69c3d036042c81ad9209eeae', '69c40f9f9b5263783d0fe51d']
-    edited = request('/seasonal-perks/edit', {'PerkIds': perks, 'ExpectedRevision': snapshot['State']['Revision']}, root)
+    edited = request('/wtt-seasonal/edit', {'PerkIds': perks, 'ExpectedRevision': snapshot['State']['Revision']}, root)
     check(not edited.get('Error'), 'Both resource perks selectable together within budget')
-    request('/seasonal-perks/switch', {'Mode': 'seasonal'}, root)
+    request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
     normal_before = profile(root)
     def use(session, name, count, part=None):
         item_id = state['items'][session][name]
@@ -106,14 +106,14 @@ def main():
     check(item is None, 'Exhausted food is removed')
     check(profile(root)['Inventory'] == normal_before['Inventory'], 'Seasonal use leaves normal inventory unchanged')
 
-    request('/seasonal-perks/switch', {'Mode': 'normal'}, child)
+    request('/wtt-seasonal/switch', {'Mode': 'normal'}, child)
     _, item = use(root, 'med', 20, 'Chest')
     check(item['upd']['MedKit']['HpResource'] == 80, 'Normal medical use stays vanilla')
     _, item = use(root, 'water', 20)
     check(item['upd']['FoodDrink']['HpPercent'] == 40, 'Normal food use stays vanilla')
-    snapshot = request('/seasonal-perks/snapshot', session=root)
-    request('/seasonal-perks/edit', {'PerkIds': [], 'ExpectedRevision': snapshot['State']['Revision']}, root)
-    request('/seasonal-perks/switch', {'Mode': 'seasonal'}, root)
+    snapshot = request('/wtt-seasonal/snapshot', session=root)
+    request('/wtt-seasonal/edit', {'PerkIds': [], 'ExpectedRevision': snapshot['State']['Revision']}, root)
+    request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
     _, item = use(child, 'med_exhaust', 10, 'RightLeg')
     check(item is None, 'Removing medical perk restores one-for-one exhaustion')
     _, item = use(child, 'water', 10)

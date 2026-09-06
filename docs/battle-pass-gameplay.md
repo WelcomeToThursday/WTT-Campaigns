@@ -26,7 +26,7 @@ Every payload is preflighted and applied to a cloned profile. Physical items use
 
 ## Persistence and lifecycle
 
-`/seasonal-perks/hub` remains read-only. `/seasonal-perks/hub/claim`, `/exchange` and `/raid-document` resolve operations on the server. Claim/exchange requests carry an operation ID and expected revision. Repeating a committed operation returns its receipt and current state; changing its inputs is rejected.
+`/wtt-seasonal/hub` remains read-only. `/wtt-seasonal/hub/claim`, `/exchange` and `/raid-document` resolve operations on the server. Claim/exchange requests carry an operation ID and expected revision. Repeating a committed operation returns its receipt and current state; changing its inputs is rejected.
 
 State resides in the Seasonal PMC's extension data under `wttSeasonalHub:{season}:{battlePass}`. It includes claims, Classified/Tarcoin balances, allowance windows, conserved raid units, trader unlocks and transaction receipts. Ordinary balances come from inventory. New state starts at zero; the season has no expiry or automatic wipe.
 

@@ -1,0 +1,158 @@
+/* Compact charcoal workspace, based on the supplied SPT Map Loot Editor reference. */
+.season-creator {
+    --panel: #34373d;
+    --surface: #2c2f34;
+    --input: #25282d;
+    --line: #4c5058;
+    --ink: #eeeeed;
+    --muted: #b4b8bf;
+    --accent: #d0bd87;
+    --reward-row: clamp(120px, 14vh, 190px);
+    color-scheme: dark;
+    color: var(--ink);
+    background: #2b2e33;
+    min-height: 100vh;
+    padding: 16px;
+    font: 13px/1.5 "Segoe UI", system-ui, sans-serif;
+}
+.season-creator *, .season-creator *::before, .season-creator *::after { box-sizing: border-box; }
+.season-creator h1 { display: flex; align-items: center; gap: 9px; font-size: 21px; font-weight: 650; margin: 0; }
+.season-creator h2 { font-size: 18px; font-weight: 650; margin: 0; }
+.season-creator h3 { font-size: 14px; font-weight: 650; margin: 22px 0 12px; }
+.season-creator h4 { font-size: 13px; font-weight: 650; margin: 18px 0 10px; }
+.season-creator p { color: var(--muted); margin: 6px 0 14px; }
+.creator-header { padding-left: 56px; min-height: 44px; display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 14px; }
+.creator-header p { font-size: 12px; margin: 3px 0 0; }
+.app-mark { display: inline-grid; place-items: center; width: 26px; height: 26px; color: var(--accent); border: 1px solid #756b50; background: #3e3b32; font-size: 15px; }
+.header-status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 12px; }
+.header-status strong { display: block; color: var(--ink); font-weight: 600; }
+.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #afc28e; }
+.eyebrow, .panel-caption { font-size: 10px; letter-spacing: 1px; font-weight: 650; color: var(--muted); }
+.panel-caption { padding: 10px 10px 14px; }
+.season-creator button, .season-creator .button {
+    border: 1px solid #5b6068; border-radius: 4px; background: #484d55; color: var(--ink);
+    padding: 7px 11px; min-height: 32px; cursor: pointer; font: inherit; font-weight: 550;
+    text-decoration: none; display: inline-block; transition: background-color .12s, border-color .12s;
+}
+.season-creator button:hover, .season-creator .button:hover { background: #575d66; border-color: #8a8e94; }
+.season-creator button:disabled { opacity: .45; cursor: not-allowed; }
+.season-creator button.primary { background: var(--accent); color: #26241e; border-color: var(--accent); }
+.season-creator button.primary:hover { background: #e0cf9e; }
+.season-creator button.danger { color: #ffb5ae; }
+.season-creator button.subtle { background: transparent; border-color: var(--line); }
+.season-creator :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.row, .inline-fields, .toolbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.inline-fields > * { flex: 1 1 120px; min-width: 0; }
+.inline-fields > button { flex: 0 0 auto; }
+.library-actions { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 12px; margin: 12px 0; border: 1px solid var(--line); background: var(--panel); border-radius: 5px; }
+.library-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.library-card { display: flex; flex-direction: column; align-items: flex-start; border: 1px solid var(--line); background: var(--panel); padding: 16px; border-radius: 5px; margin-bottom: 12px; }
+.library-card h3 { font-size: 17px; margin: 6px 0; }
+.library-card .row { margin-top: auto; padding-top: 12px; }
+.library-grid + h2 { margin: 20px 0 12px; }
+.upload { margin: 0 !important; }
+.upload input { max-width: 245px; }
+.editor-toolbar { display: flex; align-items: center; gap: 12px; background: #383c43; padding: 10px 12px; border: 1px solid var(--line); border-radius: 5px; position: sticky; top: 8px; z-index: 5; margin-bottom: 10px; }
+.draft-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 35vw; }
+.save-state { color: var(--muted); font-size: 11px; white-space: nowrap; }
+.save-state.unsaved { color: #ead392; }
+.toolbar-actions { margin-left: auto; }
+.editor-shell { display: grid; grid-template-columns: 172px minmax(0, 1fr) 320px; gap: 10px; align-items: start; }
+.editor-nav { background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 6px; position: sticky; top: 72px; }
+.editor-nav button { display: block; width: 100%; text-align: left; border: 1px solid transparent; background: transparent; margin: 2px 0; font-size: 12px; padding: 9px 10px; color: #c6c9cf; }
+.editor-nav button.selected { background: #454238; color: #f1dfaf; border-color: #6d634b; box-shadow: inset 2px 0 0 var(--accent); }
+.editor-body { padding: 18px; min-width: 0; min-height: 72vh; border: 1px solid var(--line); background: var(--panel); border-radius: 5px; }
+.section-heading { display: flex; justify-content: space-between; gap: 14px; padding-bottom: 14px; margin-bottom: 18px; border-bottom: 1px solid var(--line); }
+.section-heading p { margin: 4px 0 0; font-size: 12px; }
+.section-counter { flex: 0 0 auto; color: #c0b592; font-size: 11px; padding-top: 4px; }
+.editor-preview { min-width: 0; position: sticky; top: 72px; max-height: calc(100vh - 88px); overflow-y: auto; scrollbar-gutter: stable; }
+.inspector-panel { border: 1px solid var(--line); padding: 14px; background: var(--panel); border-radius: 5px; margin-bottom: 10px; }
+.inspector-panel > h3, .panel-heading h3 { margin: 0; }
+.panel-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.inspector-panel p { font-size: 12px; overflow-wrap: anywhere; }
+.inspector-panel .form-grid { grid-template-columns: 1fr; gap: 4px; }
+.inspector-panel .editor-card { padding: 10px; }
+.inspector-panel dl { display: grid; grid-template-columns: 1fr auto; gap: 7px 12px; font-size: 12px; margin: 14px 0 0; }
+.inspector-panel dt { color: var(--muted); }
+.inspector-panel dd { margin: 0; font-variant-numeric: tabular-nums; }
+.inspector-panel .muted { font-size: 11px; color: #d3c69f; }
+.small-tag { font-size: 9px; letter-spacing: .6px; border: 1px solid #696454; color: #e0d0a2; padding: 2px 5px; border-radius: 3px; }
+.selection-name { padding-bottom: 10px; border-bottom: 1px solid var(--line); color: #e7d8ad !important; }
+.empty-selection { text-align: center; padding: 16px 3px; }
+.empty-selection > span { display: block; color: #ada78f; font-size: 30px; margin-bottom: 8px; }
+.empty-selection strong { font-size: 12px; }
+.season-creator label { display: block; color: #d1d4da; font-size: 12px; margin-bottom: 10px; }
+.season-creator input:not([type=checkbox]), .season-creator select, .season-creator textarea {
+    display: block; width: 100%; background: var(--input); color: var(--ink); border: 1px solid #565b63;
+    border-radius: 3px; padding: 7px 9px; font: inherit; min-width: 0; margin-top: 5px; min-height: 33px;
+}
+.season-creator textarea { min-height: 88px; resize: vertical; }
+.season-creator input[type=checkbox] { accent-color: var(--accent); margin: 0 6px 0 0; width: 15px; height: 15px; flex-shrink: 0; }
+.season-creator label.check { display: flex; align-items: center; gap: 4px; min-height: 28px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.editor-card { padding: 14px; border: 1px solid var(--line); border-radius: 4px; margin: 12px 0; background: #303339; }
+.editor-card summary { cursor: pointer; color: var(--ink); font-weight: 600; padding: 2px; overflow-wrap: anywhere; }
+.editor-card[open] > summary { padding-bottom: 12px; margin-bottom: 12px; border-bottom: 1px solid var(--line); }
+.effect { border-left: 2px solid #958667; padding: 10px; margin: 12px 0; background: #292c31; }
+.content-picker, .asset-picker { min-width: 0; margin-bottom: 12px; }
+.content-picker label, .asset-picker label { margin-bottom: 4px; }
+.asset-row { display: flex; gap: 8px; align-items: center; }
+.asset-row img { width: 48px; height: 48px; flex: 0 0 48px; object-fit: contain; background: #22252a; border: 1px solid var(--line); border-radius: 3px; }
+.asset-picker input[type=file] { font-size: 11px; padding: 5px; }
+.season-badge { display: block; width: 100%; max-height: 130px; object-fit: contain; margin-top: 12px; }
+.notice { border: 1px solid #786b4d; background: #403c32; padding: 10px 12px; border-radius: 4px; margin: 10px 0; font-size: 12px; }
+.notice button, .notice a { margin: 4px 0 4px 8px; }
+.notice.error, .error { color: #ffc1b9; }
+.notice.error { background: #453332; border-color: #865651; }
+.canvas-toolbar { display: flex; gap: 14px; align-items: center; background: #2d3035; border: 1px solid var(--line); border-radius: 3px; padding: 9px 12px; color: var(--muted); font-size: 12px; }
+.canvas-toolbar > span:first-child { color: var(--ink); margin-right: auto; }
+.reward-grid { display: grid; gap: 8px; position: relative; margin: 10px 0 14px; padding: 12px; border: 1px solid var(--line); background: #272a2f; border-radius: 4px; }
+.grid-cell { border: 1px dashed #52575e; background: #2e3238; border-radius: 3px; min-width: 0; }
+.season-creator .reward-tile { z-index: 1; padding: 10px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; background: #3b4048; cursor: grab; }
+.reward-tile img { min-height: 0; max-height: 68%; width: 100%; object-fit: contain; pointer-events: none; }
+.reward-tile span { font-size: 12px; margin-top: 7px; pointer-events: none; overflow-wrap: anywhere; }
+.reward-tile small { font-size: 10px; color: #c5c9ce; pointer-events: none; }
+.season-creator .reward-tile.chosen { border: 2px solid var(--accent); background: #49463c; }
+.season-creator .reward-tile:active { cursor: grabbing; }
+.season-creator .reward-tile.tile-disabled { opacity: .55; border-style: dashed; }
+.array-entry { padding: 10px; border: 1px solid var(--line); margin: 8px 0; border-radius: 3px; }
+.structured-field details { margin: 8px 0; }
+.locale-entry { margin-top: 14px; overflow-wrap: anywhere; }
+.issue { display: block !important; width: 100%; text-align: left; margin: 8px 0; overflow-wrap: anywhere; }
+.issue.dependency { color: #eed7a5; }
+.preview-reward { display: flex; justify-content: space-between; gap: 18px; border-bottom: 1px solid var(--line); padding: 10px 0; font-size: 12px; }
+.preview-reward span { color: var(--muted); }
+.creator-help-root { display: inline-flex !important; vertical-align: middle; margin-left: 3px; }
+.help-trigger { display: inline-grid; place-items: center; width: 18px; height: 18px; border: 1px solid #83806f; border-radius: 50%; color: #e0cf9e; background: #3b3b36; font: 600 11px/1 "Segoe UI", sans-serif; cursor: help; user-select: none; }
+.help-trigger:hover, .help-trigger:focus-visible { color: #fff0c9; border-color: var(--accent); background: #514a3b; }
+/* MudBlazor places tooltips in its host overlay, outside the creator element. */
+.creator-tooltip { max-width: min(320px, calc(100vw - 32px)); padding: 10px 12px !important; white-space: normal; font: 12px/1.6 "Segoe UI", sans-serif !important; background: #191c20 !important; color: #f0e8d6 !important; border: 1px solid #8e7c52; box-shadow: 0 4px 16px #0006; }
+@media (min-width: 1700px) { .editor-shell { grid-template-columns: 184px minmax(0, 1fr) 360px; } }
+@media (max-width: 1100px) {
+    .editor-shell { grid-template-columns: 148px minmax(0, 1fr); }
+    .editor-preview { grid-column: 2; position: static; max-height: none; overflow: visible; display: grid; gap: 10px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .inspector-panel:first-child { grid-column: 1 / -1; }
+    .editor-nav { grid-row: 1 / 3; }
+    .editor-body { min-height: 55vh; }
+}
+@media (max-width: 680px) {
+    .season-creator { padding: 10px; --reward-row: 120px; }
+    .creator-header { align-items: flex-start; }
+    .header-status { max-width: 42%; }
+    .editor-toolbar { flex-wrap: wrap; position: static; }
+    .toolbar-actions { width: 100%; margin: 0; }
+    .draft-title { max-width: 48vw; }
+    .editor-shell { display: flex; flex-direction: column; }
+    .editor-nav { position: static; display: flex; overflow-x: auto; width: 100%; padding: 4px; }
+    .editor-nav .panel-caption { display: none; }
+    .editor-nav button { flex: 0 0 auto; width: auto; white-space: nowrap; }
+    .editor-body, .editor-preview { width: 100%; }
+    .editor-body { padding: 12px; }
+    .editor-preview, .form-grid { grid-template-columns: 1fr; }
+    .library-actions { flex-direction: column; align-items: flex-start; }
+    .reward-grid { gap: 4px; padding: 6px; }
+    .season-creator .reward-tile { padding: 4px; }
+    .reward-tile span { font-size: 10px; }
+    .preview-reward { flex-direction: column; gap: 4px; }
+}
+@media (prefers-reduced-motion: reduce) { .season-creator * { transition: none !important; } }

@@ -19,7 +19,7 @@ function Copy-SeasonalServerOutput {
         }
     }
     # Never copy the entire bin directory: it can contain DLLs from earlier project names.
-    foreach ($name in @('WTT-Seasonal.Server.dll', 'WTT-Seasonal.Shared.dll', 'Newtonsoft.Json.dll', 'WTT-Seasonal.Server.deps.json', 'data', 'icons', 'hub-images')) {
+    foreach ($name in @('WTT-Seasonal.Server.dll', 'WTT-Seasonal.Shared.dll', 'Newtonsoft.Json.dll', 'WTT-Seasonal.Server.deps.json', 'data', 'icons', 'hub-images', 'wwwroot')) {
         Copy-Item -LiteralPath (Join-Path $Source $name) -Destination $Destination -Recurse -Force
     }
     $itemManifest = Get-Content -LiteralPath (Join-Path $Source 'bundles.json') -Raw | ConvertFrom-Json

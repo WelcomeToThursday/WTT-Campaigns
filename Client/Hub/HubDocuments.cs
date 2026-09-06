@@ -8,17 +8,6 @@ namespace SeasonalPerks.Client.Hub;
 
 internal static class HubDocuments
 {
-    private static readonly HashSet<string> Templates = new(StringComparer.Ordinal)
-    {
-        "6a31807f17005505b70d5827",
-        "6a317b9692cfdcddcb02a58e",
-        "6a3181f178450ec91c0ea1aa",
-        "6a31824878450ec91c0ea1ae",
-        "6a31828557705071410ca00e",
-        "6a3182b72fd891345e047eef",
-        "6a3182dc6cd8de21cf0a3a7d",
-        "6a31830dde69ceafd805afa0",
-    };
     private static readonly ConditionalWeakTable<object, object> Reported = new();
     private static string? _profile;
     private static List<string> _pending = new();
@@ -64,7 +53,7 @@ internal static class HubDocuments
         while (_pending.Count > 0)
         {
             var result = JsonConvert.DeserializeObject<HubResult>(
-                RequestHandler.PostJson("/seasonal-perks/hub/raid-document", _pending[0])
+                RequestHandler.PostJson("/wtt-seasonal/hub/raid-document", _pending[0])
             );
             if (result == null || !string.IsNullOrEmpty(result.Error))
             {
@@ -81,7 +70,7 @@ internal static class HubDocuments
 
     internal static bool IsDocument(Item item)
     {
-        return Templates.Contains(item.TemplateId);
+        return Plugin.Current?.DocumentTemplates.Contains(item.TemplateId) == true;
     }
 
     internal static void Pickup(Item item)
@@ -136,7 +125,11 @@ internal static class HubDocuments
         try
         {
             LoadJournal();
-            _pending.Add(JsonConvert.SerializeObject(request));
+            var body = Newtonsoft.Json.Linq.JObject.FromObject(request);
+            body["ProtocolVersion"] = 2;
+            body["SeasonId"] = Plugin.Current?.SeasonId;
+            body["PackRevision"] = Plugin.Current?.PackRevision;
+            _pending.Add(body.ToString(Formatting.None));
             SaveJournal();
         }
         catch (Exception e)

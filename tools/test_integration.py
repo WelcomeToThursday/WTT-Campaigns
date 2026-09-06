@@ -57,24 +57,24 @@ def main():
     def cosmetic(parent):return sorted(k for k,v in customization.items() if v.get('_parent')==parent and v['_props'].get('AvailableAsDefault') and 'Usec' in v['_props'].get('Side',[]))[0]
     request('/client/game/profile/create',{'side':'Usec','nickname':'NormalTest','headId':cosmetic('5cc085e214c02e000c6bea67'),'voiceId':cosmetic('5fc100cf95572123ae738483')},root)
     normal=request('/client/game/profile/list',session=root)
-    snapshot=request('/seasonal-perks/snapshot',session=root)
+    snapshot=request('/wtt-seasonal/snapshot',session=root)
     check_visual(snapshot, normal[0], 'normal')
     check(snapshot['ActiveMode']=='normal','Normal character initially active')
     catalogue=snapshot['Catalogue'];all_perks=catalogue['common']+catalogue['personal']
     check(len(all_perks)==39,'39 catalogue entries served')
-    check(all(p['imageUrl'].startswith('/seasonal-perks/icons/') for p in all_perks),'Every artwork URL is local')
+    check(all(p['imageUrl'].startswith('/wtt-seasonal/icons/') for p in all_perks),'Every artwork URL is local')
     for perk in all_perks:
         png=request(perk['imageUrl'],raw=True)
         check(png[:8]==b'\x89PNG\r\n\x1a\n' and struct.unpack('>II',png[16:24])==(272,272),'Icon '+perk['id'])
     names={snapshot['Locale'][p['id']+' name']:p['id'] for p in catalogue['personal']}
     selected=[names[n] for n in ['Polydipsia','Chronic Fatigue Syndrome','Exhaustion','Hercules']]
     request_data={'PerkIds':selected,'Nickname':'SeasonTest','Side':'Usec','ExpectedRevision':0}
-    created=request('/seasonal-perks/create',request_data,root)
+    created=request('/wtt-seasonal/create',request_data,root)
     check(not created.get('Error'),'Create isolated seasonal character: '+str(created.get('Error')))
     check(created['State']['Revision']==1,'Initial selection persisted')
     check(set(selected)<=set(created['State']['SeasonalPerks']),'All selected perks persisted')
     check(created['ActiveMode']=='normal','Creation leaves normal character selected')
-    switched=request('/seasonal-perks/switch',{'Mode':'seasonal'},root)
+    switched=request('/wtt-seasonal/switch',{'Mode':'seasonal'},root)
     check(not switched.get('Error'),'Switch to seasonal character')
     child=switched['EffectiveProfileId']
     check(child!=root,'Independent session identities')
@@ -93,19 +93,19 @@ def main():
     seasonal_items={i['_id'] for i in seasonal[0]['Inventory']['items'] if i.get('parentId')}
     check(not normal_items.intersection(seasonal_items),'Independent inventory item IDs')
     check(seasonal[1]['_id']!=normal[1]['_id'],'Independent Scav IDs')
-    bad=request('/seasonal-perks/edit',{'PerkIds':[names['Hercules']],'ExpectedRevision':1},root)
+    bad=request('/wtt-seasonal/edit',{'PerkIds':[names['Hercules']],'ExpectedRevision':1},root)
     check(bool(bad.get('Error')),'Reject insufficient budget')
-    bad=request('/seasonal-perks/edit',{'PerkIds':[names['Lucky']],'ExpectedRevision':1},root)
+    bad=request('/wtt-seasonal/edit',{'PerkIds':[names['Lucky']],'ExpectedRevision':1},root)
     check(bool(bad.get('Error')),'Reject unsupported perk')
-    bad=request('/seasonal-perks/edit',{'PerkIds':[names['Hemophilia'],names['Thrombophilia']],'ExpectedRevision':1},root)
+    bad=request('/wtt-seasonal/edit',{'PerkIds':[names['Hemophilia'],names['Thrombophilia']],'ExpectedRevision':1},root)
     check(bool(bad.get('Error')),'Reject mutually exclusive perks on the server')
-    bad=request('/seasonal-perks/edit',{'PerkIds':selected,'ExpectedRevision':0},root)
+    bad=request('/wtt-seasonal/edit',{'PerkIds':selected,'ExpectedRevision':0},root)
     check(bool(bad.get('Error')),'Reject stale edit')
-    edited=request('/seasonal-perks/edit',{'PerkIds':selected,'ExpectedRevision':1},root)
+    edited=request('/wtt-seasonal/edit',{'PerkIds':selected,'ExpectedRevision':1},root)
     check(not edited.get('Error') and edited['State']['Revision']==2,'Save valid edit')
     check(edited['State']['AppliedGrants']==created['State']['AppliedGrants'],'Edits do not duplicate grant receipts')
     for mode in ['normal','seasonal','normal']:
-        result=request('/seasonal-perks/switch',{'Mode':mode},root)
+        result=request('/wtt-seasonal/switch',{'Mode':mode},root)
         check(result['ActiveMode']==mode,'Repeated switch to '+mode)
     after=request('/client/game/profile/list',session=root)
     differences=[]

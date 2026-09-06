@@ -1,4 +1,4 @@
-param([int]$Port = 6975)
+param([int]$Port = 6975, [switch]$RequireWebLogin)
 
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'build_helpers.ps1')
@@ -23,7 +23,8 @@ $httpPath = Join-Path $staging 'SPT_Data\configs\http.json'
 $http = Get-Content -LiteralPath $httpPath -Raw | ConvertFrom-Json
 $http.port = $Port
 $http.backendPort = $Port
-$http.webAuthenticationConfig.enabled = $false
+$http.webAuthenticationConfig.enabled = [bool]$RequireWebLogin
+$http.webAuthenticationConfig.requireCredentialsOnLocalhost = [bool]$RequireWebLogin
 $http | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $httpPath
 
 dotnet build (Join-Path $projectRoot 'Server') -c Debug --nologo -v:q | Out-Host

@@ -77,7 +77,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
 
     public void ShowTab(HubTab tab)
     {
-        if (Tab == tab)
+        if (HasTutorial || Tab == tab)
         {
             return;
         }
@@ -88,6 +88,10 @@ public sealed partial class SeasonsHubScreen : IDisposable
 
     public void ChangePage(int delta)
     {
+        if (HasTutorial)
+        {
+            return;
+        }
         if (Tab == HubTab.BattlePass)
         {
             var target = Math.Max(0, Math.Min(_state.Pages.Length - 1, PageIndex + delta));
@@ -118,6 +122,10 @@ public sealed partial class SeasonsHubScreen : IDisposable
 
     public void SelectReward(int index)
     {
+        if (HasTutorial)
+        {
+            return;
+        }
         if (Tab == HubTab.BattlePass && _state.Pages.Length > 0 && index >= 0 && index < _state.Pages[PageIndex].Rewards.Length)
         {
             _selections[PageIndex] = index;
@@ -147,6 +155,8 @@ public sealed partial class SeasonsHubScreen : IDisposable
 
     private void ClearPage()
     {
+        _ready = false;
+        DismissTutorial();
         DismissDialog();
         HideTooltip();
         PageClosing?.Invoke();
@@ -182,9 +192,21 @@ public sealed partial class SeasonsHubScreen : IDisposable
         }
         else
         {
-            var logo = Art(root, "SeasonLogo", "sharedassets44-643", 650, 110, 620, 207);
-            logo.preserveAspect = true;
-            Video(root, "Season_1_logo_video_1380x460.webm", 650, 110, 620, 207, false, logo);
+            if (_state.LegacyBranding)
+            {
+                var logo = Art(root, "SeasonLogo", "sharedassets44-643", 650, 110, 620, 207);
+                logo.preserveAspect = true;
+                Video(root, "Season_1_logo_video_1380x460.webm", 650, 110, 620, 207, false, logo);
+            }
+            else if (_state.BannerImage.Length > 0)
+            {
+                Remote(root, "SeasonLogo", _state.BannerImage, 650, 110, 620, 207).preserveAspect = true;
+            }
+            else
+            {
+                Caption(root, "SeasonTitle", _state.SeasonName, 38, 650, 110, 620, 207);
+            }
+
             Video(root, "Smoke_1144x264.webm", 445, 135, 1030, 238, true);
             TabButton(root, "SEASONAL REWARDS", 108, 316, 290, Tab == HubTab.SeasonalRewards, () => ShowTab(HubTab.SeasonalRewards));
             TabButton(root, "ABOUT THE SEASON", 414, 316, 290, Tab == HubTab.AboutSeason, () => ShowTab(HubTab.AboutSeason));
@@ -197,6 +219,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
                 RenderAbout(root);
             }
         }
+        _ready = true;
     }
 
     private static RectTransform Box(Transform parent, string name, float x, float y, float width, float height)
@@ -295,6 +318,10 @@ public sealed partial class SeasonsHubScreen : IDisposable
 
     private void ShowTooltip(string value, float x, float y)
     {
+        if (HasTutorial)
+        {
+            return;
+        }
         HideTooltip();
         var height = Mathf.Clamp(60 + value.Length / 45 * 21, 80, 300);
         var rect = Box(_stage, "HubTooltip", Mathf.Clamp(x, 20, 1450), Mathf.Clamp(y, 20, 1060 - height), 450, height);
@@ -329,6 +356,8 @@ public sealed partial class SeasonsHubScreen : IDisposable
 
     public void Close()
     {
+        _ready = false;
+        DismissTutorial();
         DismissDialog();
         HideTooltip();
         PageClosing?.Invoke();

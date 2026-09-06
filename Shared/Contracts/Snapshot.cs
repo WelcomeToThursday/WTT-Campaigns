@@ -6,6 +6,13 @@ namespace SeasonalPerks.Shared.Contracts;
 
 public class Snapshot
 {
+    public int ProtocolVersion { get; set; }
+    public string SeasonId { get; set; } = "";
+    public string SeasonName { get; set; } = "Season One";
+    public long PackRevision { get; set; }
+    public string BannerImage { get; set; } = "";
+    public bool LegacyBranding { get; set; } = true;
+    public List<string> DocumentTemplates { get; set; } = new();
     public string EffectiveProfileId { get; set; } = "";
     public Catalogue Catalogue { get; set; } = new();
     public Dictionary<string, string> Locale { get; set; } = new();

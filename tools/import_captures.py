@@ -23,6 +23,7 @@ def main():
     parser.add_argument("--download-icons", action="store_true")
     args = parser.parse_args()
     requests = args.logs / "requests"
+    # These are upstream EFT capture filenames, not the mod's local route prefix.
     captures = sorted(requests.rglob("resp.client.seasonal-perks.list*.json"))
     if not captures:
         raise SystemExit("No seasonal perk catalogue response found")
@@ -38,7 +39,6 @@ def main():
     keys = {p["id"] + suffix for p in perks for suffix in (" name", " description")}
     keys.update(k for k in full_locale if k.startswith(("Perks/", "CharacterSelection/", "CharacterSelectionScreen/", "CharacterSlotView/", "ECharacterSelectionSeasonStat/")))
     assert keys <= full_locale.keys(), "Missing perk localization"
-    save(ROOT / "data/catalogue.json", catalogue)
     save(ROOT / "data/locales/en.json", {k: full_locale[k] for k in sorted(keys)})
     fixtures = []
     profile_sources = sorted(requests.rglob("resp.client.game.profile.list*.json"))
@@ -51,6 +51,7 @@ def main():
     save(ROOT / "data/provenance.json", {"sources": sources, "commonCount": len(catalogue["common"]), "personalCount": len(catalogue["personal"]), "effectIds": sorted({e["effectId"] for p in perks for e in p["effects"]})})
     manifest = []
     for perk in perks:
+        # Keep the real upstream URL for downloads/provenance; publish a local URL below.
         image = perk["imageUrl"]
         assert image.startswith("/files/seasonal-perks/") and ".." not in image
         url = "https://s3-prod.escapefromtarkov.com/pvp-season" + image
@@ -67,6 +68,8 @@ def main():
             assert raw[:8] == b"\x89PNG\r\n\x1a\n"
             assert struct.unpack('>II', raw[16:24]) == (272, 272), f'Unexpected existing icon size: {path}'
             manifest.append({"perkId": perk["id"], "asset": "Icons/" + path.name, "sourceUrl": url, "sha256": hashlib.sha256(raw).hexdigest(), "size": len(raw)})
+        perk["imageUrl"] = "/wtt-seasonal/icons/" + perk["id"] + ".png"
+    save(ROOT / "data/catalogue.json", catalogue)
     save(ASSETS / "provenance.json", {"icons": manifest})
     print(f"Imported {len(perks)} perks, {len(keys)} locale entries, {len(manifest)} icons, {len(fixtures)} sanitized profile fixtures.")
 

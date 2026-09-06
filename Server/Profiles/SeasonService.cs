@@ -2,12 +2,14 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
 using SeasonalPerks.Server.Effects;
+using SeasonalPerks.Server.Seasons;
 using SeasonalPerks.Shared.Configuration;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Effects.Consumables;
 using SeasonalPerks.Shared.Perks;
 using SeasonalPerks.Shared.Profiles;
+using SeasonalPerks.Shared.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
@@ -21,41 +23,50 @@ using SPTarkov.Server.Core.Services.Profile;
 namespace SeasonalPerks.Server.Profiles;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class SeasonService(SaveServer saves, ProfileDataService profileData, CreateProfileService creator, TemplateTable templates)
+public sealed class SeasonService(
+    SaveServer saves,
+    ProfileDataService profileData,
+    CreateProfileService creator,
+    TemplateTable templates,
+    SeasonRepository repository,
+    SeasonStartingService starting
+)
 {
     private const string StateKey = "cjSeasonalPerksState";
     private const string LinkKey = "cjSeasonalPerksAccount";
     private readonly ConcurrentDictionary<string, AccountLink> _links = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates = new();
-    public Catalogue Catalogue { get; } =
-        JsonConvert.DeserializeObject<Catalogue>(File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data/catalogue.json")))!;
-    public Dictionary<string, string> Locale { get; } =
-        JsonConvert.DeserializeObject<Dictionary<string, string>>(
-            File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data/locales/en.json"))
-        )!;
+    public Catalogue Catalogue { get; private set; } = new();
+    public Dictionary<string, string> Locale { get; private set; } = new();
     public Rules Rules { get; private set; } = new();
     public Dictionary<string, string> Unavailable { get; } = new();
 
     public void Initialize()
     {
+        var definition = repository.Current.Definition;
+        foreach (var profile in saves.GetProfiles().Values)
+        {
+            var pmc = profile.CharacterData?.PmcData;
+            if (pmc != null)
+            {
+                var state = State(pmc);
+                if (state.Revision > 0 && (state.SeasonId ?? SeasonRepository.LegacyId) == definition.Id)
+                {
+                    repository.MarkUsed(definition);
+                }
+            }
+        }
+        Catalogue = definition.Perks;
+        Locale = definition.Locales["en"];
+        Rules = definition.Rules;
         foreach (var p in Catalogue.All)
         {
-            var reason = EffectSupport.UnavailableReason(p);
+            var reason =
+                EffectSupport.UnavailableReason(p) ?? p.Effects.Select(EffectParametersValidator.Error).FirstOrDefault(e => e != null);
             if (reason != null)
             {
                 Unavailable[p.Id] = reason;
             }
-        }
-        var path = Path.Combine(Metadata.DirectoryPath, "config.json");
-        if (File.Exists(path))
-        {
-            Rules =
-                JsonConvert.DeserializeObject<Rules>(File.ReadAllText(path)) ?? throw new InvalidDataException("Invalid seasonal rules");
-        }
-        else
-        {
-            Rules.EnabledCommonIds = Catalogue.Common.Where(p => !Unavailable.ContainsKey(p.Id)).Select(p => p.Id).ToList();
-            File.WriteAllText(path, JsonConvert.SerializeObject(Rules, Formatting.Indented));
         }
         if (Rules.EnabledCommonIds.Any(id => Unavailable.ContainsKey(id) || !Catalogue.Common.Any(p => p.Id == id)))
         {
@@ -89,10 +100,46 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
 
     private AccountLink Link(string root)
     {
-        return _links.GetOrAdd(
+        var link = _links.GetOrAdd(
             root,
             id => profileData.GetProfileDataAsync<AccountLink>(new MongoId(id), LinkKey).GetAwaiter().GetResult() ?? new AccountLink()
         );
+        var season = repository.Current.Definition.Id;
+        if (link.CurrentSeasonId != season)
+        {
+            var before = SeasonCompiler.Copy(link);
+            var previous = link.CurrentSeasonId ?? SeasonRepository.LegacyId;
+            if (link.SeasonalId != null)
+            {
+                link.Seasons[previous] = new SeasonCharacterLink { ProfileId = link.SeasonalId, Created = link.Created };
+            }
+
+            var target = link.Seasons.GetValueOrDefault(season);
+            var firstMigration = link.CurrentSeasonId == null && season == SeasonRepository.LegacyId;
+            link.SeasonalId = target?.ProfileId;
+            link.Created = target?.Created ?? false;
+            link.CurrentSeasonId = season;
+            if (!firstMigration)
+            {
+                link.Mode = "normal";
+                link.ActiveRaidProfiles.Clear();
+            }
+            try
+            {
+                profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                _links[root] = before;
+                throw;
+            }
+        }
+        if (link.Created)
+        {
+            repository.MarkUsed(repository.Current.Definition);
+        }
+
+        return link;
     }
 
     public string EffectiveId(string root)
@@ -103,7 +150,8 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
 
     public bool IsSeasonal(string id)
     {
-        return State(saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!).Revision > 0;
+        var state = State(saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!);
+        return state.Revision > 0 && (state.SeasonId ?? SeasonRepository.LegacyId) == repository.Current.Definition.Id;
     }
 
     public static PerkState State(PmcData pmc)
@@ -131,6 +179,13 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
         var seasonal = link.Created ? saves.GetProfile(new MongoId(link.SeasonalId!)).CharacterData!.PmcData : null;
         return new ServerSnapshot
         {
+            ProtocolVersion = 2,
+            SeasonId = repository.Current.Definition.Id,
+            SeasonName = repository.Current.Definition.Name,
+            PackRevision = repository.Current.Definition.Revision,
+            BannerImage = repository.Current.Definition.Branding.Banner,
+            LegacyBranding = repository.Current.Definition.Legacy,
+            DocumentTemplates = repository.Current.Definition.Documents.Select(d => d.ItemId).ToList(),
             Catalogue = Catalogue,
             Locale = Locale,
             Unavailable = Unavailable,
@@ -204,7 +259,7 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
     public RuntimeEffects Effects(string effectiveId)
     {
         var pmc = saves.GetProfile(new MongoId(effectiveId)).CharacterData!.PmcData!;
-        return new RuntimeEffects(Catalogue, State(pmc).SeasonalPerks);
+        return new RuntimeEffects(Catalogue, IsSeasonal(effectiveId) ? State(pmc).SeasonalPerks : []);
     }
 
     public async Task<ServerSnapshot> Create(string root, Mutation request)
@@ -240,7 +295,9 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
                     ScavengerId = new MongoId(NewId()),
                     Aid = saves.GetProfiles().Values.Max(p => p.ProfileInfo?.Aid ?? 0) + 1,
                     Username = (account.ProfileInfo!.Username ?? "PMC") + "-seasonal",
-                    Edition = account.ProfileInfo.Edition,
+                    Edition = string.IsNullOrEmpty(repository.Current.Definition.Starting.Preset)
+                        ? account.ProfileInfo.Edition
+                        : repository.Current.Definition.Starting.Preset,
                     IsWiped = false,
                 }
             );
@@ -261,12 +318,15 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
                 }
             );
         }
+        repository.CheckGameplay(repository.Current.Definition);
+        await starting.Apply(id, request.Side);
         // Resume a creation interrupted after its profile/receipts were committed.
         if (State(saves.GetProfile(id).CharacterData!.PmcData!).Revision == 0)
         {
             await ApplySelection(id, request.PerkIds, 0, root);
         }
 
+        repository.MarkUsed(repository.Current.Definition);
         link.Created = true;
         try
         {
@@ -341,6 +401,8 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
         var previousState = State(pmc);
         var previousProgress = pmc.Skills!.Common.Select(skill => (skill, skill.Progress)).ToArray();
         state.RootAccountId ??= root;
+        state.SeasonId ??= repository.Current.Definition.Id;
+        state.GameplayHash ??= SeasonRepository.GameplayHash(repository.Current.Definition);
         state.SeasonalPerks = Rules.EnabledCommonIds.Concat(personal).Distinct().ToList();
         ConsumableEffects.UpdateParameters(Catalogue, state);
         AllergyEffects.UpdateParameters(

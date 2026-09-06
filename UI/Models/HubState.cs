@@ -5,6 +5,12 @@ namespace SeasonalPerks.UI.Models;
 [Serializable]
 public sealed class HubState
 {
+    public string SeasonName = "Season One";
+    public long PackRevision;
+    public string BadgeImage = "";
+    public string BannerImage = "";
+    public bool LegacyBranding = true;
+    public int WindowSeconds = 23 * 60 * 60;
     public string Id = "";
     public string SeasonId = "";
     public HubPage[] Pages = Array.Empty<HubPage>();

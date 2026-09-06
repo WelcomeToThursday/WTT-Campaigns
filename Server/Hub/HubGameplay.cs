@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Profiles;
+using SeasonalPerks.Server.Seasons;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Hub;
 using SPTarkov.DI.Annotations;
@@ -28,14 +29,13 @@ public sealed partial class HubGameplay(
     InventoryHelper inventory,
     JsonUtil json,
     ICloner cloner,
-    HubQuestService quests
+    HubQuestService quests,
+    SeasonRepository repository
 )
 {
     private const string StateKey = "wttSeasonalHub";
-    private readonly JObject _catalogue = JObject.Parse(File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data/hub-gameplay.json")));
-    private readonly HubState _presentation = JsonConvert.DeserializeObject<HubState>(
-        File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data/hub.json"))
-    )!;
+    private JObject _catalogue = new();
+    private HubState _presentation = new();
     private readonly Dictionary<string, TraderAssort> _offers = new();
     private readonly Dictionary<string, string> _offerIds = new();
     private bool _ready;
@@ -71,12 +71,15 @@ public sealed partial class HubGameplay(
 
     public void Initialize()
     {
-        var config = Path.Combine(Metadata.DirectoryPath, "hub-config.json");
-        if (File.Exists(config))
+        _catalogue = repository.Current.Gameplay;
+        _presentation = repository.Current.Hub;
+        var settings = repository.Current.Definition.Collection;
+        Configuration = new HubConfiguration
         {
-            Configuration = JsonConvert.DeserializeObject<HubConfiguration>(File.ReadAllText(config))!;
-        }
-
+            DocumentsPerRaid = settings.DocumentsPerRaid,
+            ClassifiedChancePercent = settings.ClassifiedChancePercent,
+            MapCounts = new(settings.MapCounts, StringComparer.OrdinalIgnoreCase),
+        };
         if (
             Configuration == null
             || Configuration.DocumentsPerRaid < 0
@@ -135,9 +138,11 @@ public sealed partial class HubGameplay(
         view.Revision = state.Revision;
         view.UniversalCount = state.Classified;
         view.Tarcoins = state.Tarcoins;
-        view.RemainingDocuments = HubRules.Remaining(state, Now);
+        view.RemainingDocuments = HubRules.Remaining(state, Now, _presentation.DocumentLimit, _presentation.WindowSeconds);
         view.NextResetTime =
-            state.WindowStart > 0 && Now < state.WindowStart + HubRules.WindowSeconds ? state.WindowStart + HubRules.WindowSeconds : 0;
+            state.WindowStart > 0 && Now < state.WindowStart + _presentation.WindowSeconds
+                ? state.WindowStart + _presentation.WindowSeconds
+                : 0;
         view.ExchangeRate = (int)_catalogue["ExchangeRate"]!;
         view.CrateCost = (int)_catalogue["ItemExchange"]!["requiredDocuments"]!;
         var owned = Balances(pmc);
@@ -231,6 +236,11 @@ public sealed partial class HubGameplay(
 
     private string Eligibility(HubReward reward, PmcData pmc, HubProgress state)
     {
+        if (!string.IsNullOrEmpty(reward.Side) && !string.Equals(reward.Side, pmc.Info?.Side, StringComparison.OrdinalIgnoreCase))
+        {
+            return "This reward is for the other faction.";
+        }
+
         if (state.Claimed.Contains(reward.Id))
         {
             return "This reward has already been claimed.";
@@ -328,13 +338,21 @@ public sealed partial class HubGameplay(
 
     private string ItemUnavailable(string template)
     {
+        if (string.IsNullOrEmpty(template))
+        {
+            return "Crate exchange is disabled for this season.";
+        }
+
         var id = new MongoId(template);
         if (!templates.Items.ContainsKey(id))
         {
             return "Required item is not registered: " + template;
         }
         if (
-            template is "6a3567f687d90a0deb066c1b" or "6a4fa628b4831242f306e8cd"
+            (
+                template is "6a3567f687d90a0deb066c1b" or "6a4fa628b4831242f306e8cd"
+                || repository.Current.Definition.Crates.Any(c => c.ItemId == template)
+            )
             && inventory.GetRandomLootContainerRewardDetails(id) == null
         )
         {
@@ -345,6 +363,7 @@ public sealed partial class HubGameplay(
 
     public async Task<HubResult> Transact(string sessionId, HubRequest request, string action)
     {
+        ValidateSeasonRequest(request);
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
         var original = Active(root);
@@ -433,6 +452,19 @@ public sealed partial class HubGameplay(
             { /* Preserve the original write failure. */
             }
             throw;
+        }
+    }
+
+    internal void ValidateSeasonRequest(HubRequest request)
+    {
+        if (!repository.Current.Definition.Legacy && request.ProtocolVersion != 2)
+        {
+            throw new InvalidOperationException("Update the Seasonal client and server together.");
+        }
+
+        if (request.SeasonId.Length > 0 && request.SeasonId != _presentation.SeasonId)
+        {
+            throw new InvalidOperationException("This operation belongs to another season.");
         }
     }
 
@@ -625,7 +657,7 @@ public sealed partial class HubGameplay(
         }
     }
 
-    private static string? CustomizationKind(string parent)
+    internal static string? CustomizationKind(string parent)
     {
         return parent switch
         {

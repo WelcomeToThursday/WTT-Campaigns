@@ -1,4 +1,5 @@
 using Newtonsoft.Json.Linq;
+using SeasonalPerks.Server.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -10,17 +11,18 @@ using Path = System.IO.Path;
 namespace SeasonalPerks.Server.Hub;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class HubQuestService(TemplateTable templates, JsonUtil json, LocaleService locales)
+public sealed class HubQuestService(TemplateTable templates, JsonUtil json, SeasonRepository repository)
 {
-    private readonly Dictionary<string, JObject> _captured = JArray
-        .Parse(File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data/hub-quests.json")))
-        .Cast<JObject>()
-        .ToDictionary(q => (string)q["_id"]!);
+    private Dictionary<string, JObject> _captured = new();
     private readonly Dictionary<string, string> _unavailable = new();
     public HashSet<string> Imported { get; } = new();
 
     public void Initialize()
     {
+        _captured = repository
+            .Current.Definition.Quests.OfType<JObject>()
+            .Where(q => (bool?)q["_seasonalEnabled"] != false)
+            .ToDictionary(q => (string)q["_id"]!);
         foreach (var id in _captured.Keys)
         {
             Validate(id, new HashSet<string>());
@@ -38,13 +40,6 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Loca
             definition.Remove("localization");
             templates.Quests[id] = json.Deserialize<Quest>(definition.ToString())!;
             Imported.Add(pair.Key);
-            foreach (var language in ((JObject)pair.Value["localization"]!).Properties())
-            {
-                foreach (var text in ((JObject)language.Value).Properties())
-                {
-                    locales.GetLocaleDb(language.Name)[text.Name] = (string)text.Value!;
-                }
-            }
         }
     }
 

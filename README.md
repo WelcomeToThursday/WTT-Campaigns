@@ -2,6 +2,8 @@
 
 Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
 
+Build **0.3.0** adds the [Season Creator](docs/season-creator.md), hosted in SPT’s administrator web interface at `/wtt-seasonal/creator`. Create and duplicate drafts, configure supported content, validate and export packs, and select a season for the next restart. Each season has its own character and progress. Install the client and server together. Browser interaction and installed-game visual acceptance remain release gates.
+
 Build **0.2.0** adds [Battle Pass gameplay](docs/battle-pass-gameplay.md) to the Seasonal hub: document acquisition, local claims, exchanges and persistent progress, using the amended capture. WTT-Seasonal includes the eight document items and two season crate definitions. Missing quest, customization and crate-content dependencies remain explicitly locked; online purchases stay disabled. Install both client and server.
 
 The project imports the captured 39-entry catalogue and English localization, serves all perk icons from the local SPT server, creates an independent seasonal PMC/Scav profile, persists selections and grant receipts, and supplies a client selection screen with recovered perk cards and a confirmation window. Thirty-three catalogue entries currently have implementations; six remain unavailable in selection. Actual in-game switching and gameplay still need validation.
@@ -27,7 +29,7 @@ Projects and built assemblies use the `WTT-Seasonal` prefix (for example, `WTT-S
 
 Client and server code use [folders with matching feature namespaces](docs/client-server-structure.md). Client registration lives in `Client/Patches/PatchRegistration.cs`; server patches are discovered through SPT dependency injection. See [patch organization and extension guide](docs/patches.md).
 
-Asset sources, all 39 PNGs, recovered layout data and the Unity editor builder are in `../CJ-SDK/Assets/Mods/SeasonalPerks.Assets`. The UI bundle contains layout prefabs, all 26 decorative artwork sprites, fonts and materials. **Perk icons remain outside the bundle.** Icons are fetched lazily by perk ID from `/seasonal-perks/icons/{id}.png`. Installed operation does not use the live backend or CDN.
+Asset sources, all 39 PNGs, recovered layout data and the Unity editor builder are in `../CJ-SDK/Assets/Mods/SeasonalPerks.Assets`. The UI bundle contains layout prefabs, all 26 decorative artwork sprites, fonts and materials. **Perk icons remain outside the bundle.** Icons are fetched lazily by perk ID from `/wtt-seasonal/icons/{id}.png`. Installed operation does not use the live backend or CDN.
 
 Formatting and shared Rider/Visual Studio defaults follow SP-Tushonka/server-csharp. See [editor setup](CONTRIBUTING.md#editor-and-ide-defaults). Restore the formatter from `.config/dotnet-tools.json` with `dotnet tool restore`, then run `dotnet csharpier format Client UI Server Shared Tests`. Text files use UTF-8 and LF line endings.
 
@@ -47,7 +49,7 @@ For UI update 0.1.4, use `tools/package_ui.ps1`. It builds the client and the se
 
 ## Configuration and use
 
-On first server startup, the mod writes `config.json` beside its server DLL. Defaults: zero starting points, budget enforcement on, editing allowed outside raids, and the currently supported common rules enabled. `EnabledCommonIds` contains catalogue IDs; unsupported IDs are rejected. Changes to common rules are applied to a seasonal character on its next successful selection save.
+On the first 0.3.0 startup, existing catalogue, item, quest, hub, `config.json` and `hub-config.json` values are imported into `creator/legacy.json`. Later restarts use that saved definition. Use the browser creator for new seasons. Defaults retain zero starting points, budget enforcement, editing outside raids, and supported common rules. Once a season has a character, gameplay changes require duplication into a new season; artwork and text can be revised. Preserve the entire server mod’s `creator` directory when upgrading.
 
 Open **CHARACTERS** from the menu or press **F8** outside a raid. The native **PERKS** tab beside Skills and Mastery shows saved active perks and opens the editor. Pick a faction/nickname for creation, balance beneficial perks with detrimental perks, and save through the confirmation window. Creation leaves the normal PMC active; the character buttons switch profiles. Existing progress is never cloned. Skill presets grant a minimum level once on first selection; removing/reselecting a perk never refills that grant. Skill caps can reduce progress when selected.
 

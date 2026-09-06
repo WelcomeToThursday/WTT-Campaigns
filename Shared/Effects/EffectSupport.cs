@@ -36,6 +36,11 @@ public static class EffectSupport
 
     public static string? UnavailableReason(Perk perk)
     {
+        if (!perk.Enabled)
+        {
+            return "Disabled by the season author.";
+        }
+
         if (perk.Effects.Count == 0)
         {
             return "World-rule behavior has not been verified for this SPT version.";

@@ -86,7 +86,7 @@ public sealed partial class HubGameplay
         }
     }
 
-    private static string Signature(IEnumerable<Item> items, string root)
+    internal static string Signature(IEnumerable<Item> items, string root)
     {
         var all = items.ToDictionary(i => i.Id.ToString());
         var parts = new List<string>();

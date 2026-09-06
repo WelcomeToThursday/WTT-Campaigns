@@ -14,7 +14,7 @@ public sealed class HubRouter(JsonUtil json, HubGameplay hub) : StaticRouter(jso
         return
         [
             new RouteAction<HubRequest>(
-                "/seasonal-perks/hub",
+                "/wtt-seasonal/hub",
                 (_, _, id, _, _) =>
                 {
                     try
@@ -28,15 +28,15 @@ public sealed class HubRouter(JsonUtil json, HubGameplay hub) : StaticRouter(jso
                 }
             ),
             new RouteAction<HubRequest>(
-                "/seasonal-perks/hub/claim",
+                "/wtt-seasonal/hub/claim",
                 async (_, r, id, _, _) => await Respond(() => hub.Transact(id.ToString(), r, "claim"))
             ),
             new RouteAction<HubRequest>(
-                "/seasonal-perks/hub/exchange",
+                "/wtt-seasonal/hub/exchange",
                 async (_, r, id, _, _) => await Respond(() => hub.Transact(id.ToString(), r, "exchange"))
             ),
             new RouteAction<HubRequest>(
-                "/seasonal-perks/hub/raid-document",
+                "/wtt-seasonal/hub/raid-document",
                 async (_, r, id, _, _) => await Respond(() => hub.Pickup(id.ToString(), r))
             ),
         ];

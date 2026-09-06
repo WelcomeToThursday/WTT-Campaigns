@@ -18,7 +18,7 @@ internal class SptRequestIdentity : ModulePatch
         // Each request captures its identity at creation, including requests already in flight.
         if (
             !ReferenceEquals(__instance, RequestHandler.HttpClient)
-            || path.StartsWith("/seasonal-perks/", StringComparison.Ordinal)
+            || path.StartsWith("/wtt-seasonal/", StringComparison.Ordinal)
             || string.IsNullOrEmpty(Plugin.SessionId)
         )
         {

@@ -9,14 +9,14 @@ from test_integration import PROJECT, SERVER, request
 def main():
     expected = json.loads((PROJECT / 'data/hub.json').read_text(encoding='utf-8'))
     account = json.loads((PROJECT / 'Testing/restart-state.json').read_text())
-    request('/seasonal-perks/switch', {'Mode': 'seasonal'}, account['root'])
+    request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, account['root'])
     paths = list((SERVER / 'user/profiles').glob('*.json'))
     before = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
     results = []
     def check(value, description):
         assert value, description
         results.append(description)
-    data = request('/seasonal-perks/hub', session=account['child'])
+    data = request('/wtt-seasonal/hub', session=account['child'])
     check([r['Id'] for p in data['Pages'] for r in p['Rewards']] == [r['Id'] for p in expected['Pages'] for r in p['Rewards']], 'Local hub response preserves the sanitized catalogue ordering')
     check(len(data['Pages']) == 12 and sum(len(p['Rewards']) for p in data['Pages']) == 53, 'All 12 pages and 53 rewards')
     check(len(data['SeasonalRewards']) == 5 and len(data['Slides']) == 5, 'Five seasonal rewards and five carousel slides')
@@ -32,7 +32,7 @@ def main():
                     cells.add((x, y))
         check(True, 'Page ' + str(index + 1) + ': non-overlapping captured tile spans')
     for image in json.loads((PROJECT / 'data/hub-images.json').read_text()):
-        raw = request('/seasonal-perks/hub-images/' + image['Id'] + '.png', raw=True)
+        raw = request('/wtt-seasonal/hub-images/' + image['Id'] + '.png', raw=True)
         check(hashlib.sha256(raw).hexdigest() == image['Sha256'], 'Local image ' + image['Id'])
     check(all(hashlib.sha256(p.read_bytes()).hexdigest() == digest for p, digest in before.items()), 'All isolated profile files unchanged')
     check(set(paths) == set((SERVER / 'user/profiles').glob('*.json')), 'No profiles created')

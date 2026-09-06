@@ -26,7 +26,7 @@ internal class BackendIdentity : ModulePatch
         if (Plugin.SessionId == null)
         {
             var snapshot = JsonConvert.DeserializeObject<ClientSnapshot>(
-                RequestHandler.PostJson("/seasonal-perks/snapshot", "{}"),
+                RequestHandler.PostJson("/wtt-seasonal/snapshot", "{}"),
                 EftJsonConverters.Converters
             )!;
             Plugin.Accept(snapshot);

@@ -52,6 +52,20 @@ public sealed class SeasonBanner : MonoBehaviour, IPointerEnterHandler, IPointer
         Apply(0);
     }
 
+    public Image InitializeCustom(Font font, string name)
+    {
+        var rect = (RectTransform)transform;
+        UiElements.Fill(rect, new Color(.06f, .10f, .09f, 1), true);
+        var image = UiElements.Fill(UiElements.Rect("SeasonArtwork", rect, 440, 112), Color.clear);
+        image.preserveAspect = true;
+        var title = new UiElements(font).Label(rect, "SeasonName", name, 25, 410, 70);
+        title.alignment = TextAnchor.MiddleCenter;
+        _caption = new UiElements(font).Label(rect, "HoverCaption", "BATTLE PASS  ›", 15, 390, 22, 0, -42);
+        _caption.alignment = TextAnchor.MiddleRight;
+        Apply(0);
+        return image;
+    }
+
     public void OnPointerEnter(PointerEventData eventData)
     {
         if (_over)

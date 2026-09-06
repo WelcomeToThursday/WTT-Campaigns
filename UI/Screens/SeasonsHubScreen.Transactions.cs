@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using SeasonalPerks.UI.Controls;
 using SeasonalPerks.UI.Models;
@@ -11,9 +10,6 @@ namespace SeasonalPerks.UI.Screens;
 public sealed partial class SeasonsHubScreen
 {
     private GameObject? _dialog;
-    private readonly Dictionary<string, int> _exchangeSources = new Dictionary<string, int>();
-    private int _exchangeTarget;
-    private bool _exchangeCrate;
     public Action<HubAction>? TransactionRequested;
     public bool HasDialog
     {
@@ -31,6 +27,7 @@ public sealed partial class SeasonsHubScreen
 
     private RectTransform Dialog(string title)
     {
+        DismissTutorial();
         DismissDialog();
         HideTooltip();
         var overlay = Box(_stage, "HubTransactionDialog", 0, 0, 1920, 1080);
@@ -45,7 +42,7 @@ public sealed partial class SeasonsHubScreen
 
     private void ConfirmClaim(HubReward reward)
     {
-        if (!reward.CanClaim || _state.PreviewOnly)
+        if (HasTutorial || !reward.CanClaim || _state.PreviewOnly)
         {
             return;
         }
@@ -75,161 +72,6 @@ public sealed partial class SeasonsHubScreen
                 );
             }
         );
-    }
-
-    private void OpenExchange()
-    {
-        _exchangeSources.Clear();
-        _exchangeTarget = 0;
-        _exchangeCrate = false;
-        RenderExchange();
-    }
-
-    private void RenderExchange()
-    {
-        var panel = Dialog("EXCHANGE DOCUMENTS");
-        Button(
-            panel,
-            "DOCUMENT",
-            32,
-            86,
-            260,
-            42,
-            () =>
-            {
-                _exchangeCrate = false;
-                RenderExchange();
-            }
-        );
-        Button(
-            panel,
-            "GEAR CRATE",
-            310,
-            86,
-            260,
-            42,
-            () =>
-            {
-                _exchangeCrate = true;
-                RenderExchange();
-            }
-        );
-        var required = _exchangeCrate ? _state.CrateCost : _state.ExchangeRate;
-        var selected = _exchangeSources.Values.Sum();
-        Caption(
-            panel,
-            "ExchangeHelp",
-            "Select ordinary documents: " + selected + "/" + required + "\nClassified documents cannot be exchanged.",
-            19,
-            32,
-            140,
-            870,
-            64
-        );
-        for (var i = 0; i < _state.Documents.Length; i++)
-        {
-            var doc = _state.Documents[i];
-            var x = 32 + i * 112;
-            var count = _exchangeSources.TryGetValue(doc.Id, out var value) ? value : 0;
-            var icon = Remote(panel, "ExchangeSource" + i, doc.Image, x, 224, 100, 100);
-            Hint(icon.gameObject, doc.Name, 500 + x, 390);
-            Caption(panel, "ExchangeCount" + i, count + "/" + doc.Count, 18, x, 330, 100, 28);
-            Button(
-                panel,
-                "+",
-                x,
-                367,
-                46,
-                32,
-                () =>
-                {
-                    if (count < doc.Count && selected < required)
-                    {
-                        _exchangeSources[doc.Id] = count + 1;
-                        RenderExchange();
-                    }
-                }
-            );
-            Button(
-                panel,
-                "−",
-                x + 52,
-                367,
-                46,
-                32,
-                () =>
-                {
-                    if (count > 0)
-                    {
-                        _exchangeSources[doc.Id] = count - 1;
-                        RenderExchange();
-                    }
-                }
-            );
-        }
-        var reason = _exchangeCrate ? _state.CrateUnavailableReason : _state.ExchangeUnavailableReason;
-        if (!_exchangeCrate && _state.Documents.Length > 0)
-        {
-            var target = _state.Documents[_exchangeTarget];
-            Button(
-                panel,
-                "‹",
-                32,
-                438,
-                44,
-                42,
-                () =>
-                {
-                    _exchangeTarget = (_exchangeTarget + _state.Documents.Length - 1) % _state.Documents.Length;
-                    RenderExchange();
-                }
-            );
-            Caption(panel, "ExchangeTarget", "Receive: " + target.Name, 20, 90, 438, 700, 42);
-            Button(
-                panel,
-                "›",
-                860,
-                438,
-                44,
-                42,
-                () =>
-                {
-                    _exchangeTarget = (_exchangeTarget + 1) % _state.Documents.Length;
-                    RenderExchange();
-                }
-            );
-        }
-        else
-        {
-            Caption(panel, "ExchangeTarget", reason.Length > 0 ? reason : "Receive: Black Division gear crate", 18, 32, 425, 860, 90);
-        }
-        var confirm = Button(
-            panel,
-            "EXCHANGE",
-            720,
-            544,
-            208,
-            42,
-            () =>
-            {
-                DismissDialog();
-                TransactionRequested?.Invoke(
-                    new HubAction
-                    {
-                        Action = "exchange",
-                        ExpectedRevision = _state.Revision,
-                        Crate = _exchangeCrate,
-                        DocumentId = _state.Documents[_exchangeTarget].Id,
-                        Sources = _exchangeSources.Where(p => p.Value > 0).ToDictionary(p => p.Key, p => p.Value),
-                    }
-                );
-            }
-        );
-        confirm.interactable = selected == required && reason.Length == 0;
-        if (reason.Length > 0)
-        {
-            Hint(confirm.gameObject, reason, 1120, 680);
-        }
     }
 
     public void ShowResult(string message)

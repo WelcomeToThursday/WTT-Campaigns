@@ -86,6 +86,9 @@ public sealed partial class SeasonHubUi
             await Plugin.FlushPendingOperations();
             var body = JObject.FromObject(action);
             body.Remove("Action");
+            body["ProtocolVersion"] = 2;
+            body["SeasonId"] = Plugin.Current?.SeasonId;
+            body["PackRevision"] = Plugin.Current?.PackRevision;
             body["OperationId"] = Guid.NewGuid().ToString("N");
             _pendingBody = body.ToString(Formatting.None);
             _pendingAction = action.Action;
@@ -126,7 +129,7 @@ public sealed partial class SeasonHubUi
             {
                 _screen!.ShowMessage("Applying seasonal transaction...", false);
             }
-            var raw = await RequestHandler.PostJsonAsync("/seasonal-perks/hub/" + _pendingAction, _pendingBody);
+            var raw = await RequestHandler.PostJsonAsync("/wtt-seasonal/hub/" + _pendingAction, _pendingBody);
             var result = JObject.Parse(raw);
             var error = (string?)result["Error"] ?? "";
             if (error.Length > 0)

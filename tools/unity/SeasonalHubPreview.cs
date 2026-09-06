@@ -205,6 +205,77 @@ public static class SeasonalHubPreview
             view.Open();
             view.SetState(data, perks.ToArray());
             Check(view.PageIndex == 0 && view.SelectedRewardIndex == 0, "Fresh opening resets selection");
+            var tutorialCompletions = 0;
+            view.TutorialCompleted = () => tutorialCompletions++;
+            view.ChangePage(1);
+            view.SelectReward(1);
+            var tutorialPage = view.PageIndex;
+            var tutorialSelection = view.SelectedRewardIndex;
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "BattlePassTutorial").onClick.Invoke();
+            Check(view.HasTutorial && view.TutorialStep == 0, "Info button starts the tutorial after page navigation");
+            view.PreviousTutorialStep();
+            Check(view.TutorialStep == 0, "Tutorial first-step boundary");
+            view.ChangePage(1);
+            view.SelectReward(0);
+            view.ShowTab(HubTab.SeasonalRewards);
+            Check(
+                view.PageIndex == tutorialPage && view.SelectedRewardIndex == tutorialSelection && view.Tab == HubTab.BattlePass,
+                "Tutorial blocks underlying paging, selection and tab navigation"
+            );
+            for (var step = 0; step < 8; step++)
+            {
+                Check(view.HasTutorial && view.TutorialStep == step, "Tutorial reaches step " + (step + 1));
+                Capture("hub-tutorial-" + (step + 1));
+                var overlay = view.Root.GetComponentsInChildren<Transform>().Single(t => t.name == "BattlePassTutorialOverlay");
+                foreach (var label in overlay.GetComponentsInChildren<Text>())
+                    Check(
+                        label.preferredHeight <= label.rectTransform.rect.height + 2,
+                        "Tutorial step " + (step + 1) + " text fits: " + label.transform.parent.name
+                    );
+                var pageGroup = view.Root.GetComponentsInChildren<CanvasGroup>().Single(g => g.name == "HubPage");
+                Check(!pageGroup.interactable && !pageGroup.blocksRaycasts, "Tutorial blocks underlying UI at step " + (step + 1));
+                if (step == 3)
+                    Check(
+                        overlay.GetComponentsInChildren<Transform>().Any(t => t.name == "TutorialDocumentInfo"),
+                        "Document information is shown during step four"
+                    );
+                if (step < 7)
+                    view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "NEXT").onClick.Invoke();
+            }
+            view.PreviousTutorialStep();
+            Check(view.TutorialStep == 6, "Final briefing can return to exchange guidance");
+            view.AdvanceTutorial();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "FINISH").onClick.Invoke();
+            Check(!view.HasTutorial && tutorialCompletions == 1, "Finishing closes tutorial and reports completion once");
+            Check(
+                view.PageIndex == tutorialPage && view.SelectedRewardIndex == tutorialSelection,
+                "Tutorial preserves the previously selected reward and page"
+            );
+            Check(
+                view.Root.GetComponentsInChildren<CanvasGroup>().Single(g => g.name == "HubPage").interactable,
+                "Finishing restores underlying controls"
+            );
+            view.AdvanceTutorial();
+            Check(tutorialCompletions == 1, "Advancing a closed tutorial has no effect");
+            view.StartTutorial();
+            Check(view.TutorialStep == 0, "Completed tutorial can be replayed from the beginning");
+            view.DismissTutorial();
+            Check(!view.HasTutorial && tutorialCompletions == 1, "Escape-style dismissal does not mark tutorial completed");
+            view.StartTutorial();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "SKIP TUTORIAL").onClick.Invoke();
+            Check(!view.HasTutorial && tutorialCompletions == 2, "Explicit skip reports the tutorial seen");
+            view.StartTutorial();
+            view.SetState(data, perks.ToArray());
+            Check(!view.HasTutorial, "State refresh cleans up tutorial overlay");
+            view.StartTutorial();
+            view.Close();
+            Check(!view.HasTutorial, "Closing the hub cleans up tutorial overlay");
+            view.StartTutorial();
+            Check(!view.HasTutorial, "Tutorial cannot start on a closed hub");
+            view.Open();
+            view.StartTutorial();
+            Check(!view.HasTutorial, "Tutorial cannot start while loading");
+            view.SetState(data, perks.ToArray());
             data.Pages[0].Rewards[0].Claimed = true;
             data.Documents[0].Count = 2;
             view.SetState(data, perks.ToArray());
@@ -229,6 +300,8 @@ public static class SeasonalHubPreview
             view.TransactionRequested = action => transaction = action;
             view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CLAIM REWARD").onClick.Invoke();
             Check(view.HasDialog, "Claim confirmation opens");
+            view.StartTutorial();
+            Check(!view.HasTutorial && view.HasDialog, "Tutorial cannot replace a transaction confirmation");
             Capture("hub-claim-confirm");
             view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CONFIRM").onClick.Invoke();
             Check(
@@ -236,15 +309,45 @@ public static class SeasonalHubPreview
                 "Classified confirmation callback and revision"
             );
             Check(!view.HasDialog, "Confirmation dismisses before transaction");
+            transaction = null;
+            view.StartTutorial();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CLAIM REWARD").onClick.Invoke();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE DOCUMENTS").onClick.Invoke();
+            Check(view.HasTutorial && !view.HasDialog && transaction == null, "Tutorial cannot trigger claims or exchanges");
+            view.DismissTutorial();
             foreach (var document in data.Documents)
             {
                 document.Count = 10;
             }
+            var referenceCounts = new[] { 1, 0, 0, 0, 4, 2, 1, 0 };
+            for (var i = 0; i < data.Documents.Length; i++)
+                data.Documents[i].Count = referenceCounts[i % referenceCounts.Length];
             view.SetState(data, perks.ToArray());
             view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE DOCUMENTS").onClick.Invoke();
             Check(view.HasDialog, "Exchange dialog opens");
+            Capture("hub-exchange-empty");
+            Check(
+                !view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE").interactable,
+                "Exchange requires sources and an explicit output"
+            );
+            Check(
+                !view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "ExchangeSource1").interactable,
+                "Unowned source documents cannot be selected"
+            );
+            foreach (var document in data.Documents)
+                document.Count = 10;
+            view.SetState(data, perks.ToArray());
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE DOCUMENTS").onClick.Invoke();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "DOCUMENTS").onClick.Invoke();
             for (var i = 0; i < 5; i++)
-                view.Root.GetComponentsInChildren<Button>().First(b => b.name == "+").onClick.Invoke();
+                view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "ExchangeSource0").onClick.Invoke();
+            Check(
+                !view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE").interactable,
+                "Sources alone do not choose an output"
+            );
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "SelectedSource0").onClick.Invoke();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "ExchangeSource1").onClick.Invoke();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "ExchangeTarget2").onClick.Invoke();
             Capture("hub-exchange");
             Check(
                 view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE").interactable,
@@ -252,8 +355,47 @@ public static class SeasonalHubPreview
             );
             view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE").onClick.Invoke();
             Check(
-                transaction.Action == "exchange" && transaction.Sources.Values.Sum() == 5 && !transaction.UseClassified,
-                "Exchange callback contains ordinary sources only"
+                transaction.Action == "exchange"
+                    && transaction.Sources.Values.Sum() == 5
+                    && !transaction.UseClassified
+                    && transaction.Sources[data.Documents[0].Id] == 4
+                    && transaction.Sources[data.Documents[1].Id] == 1
+                    && transaction.DocumentId == data.Documents[2].Id
+                    && transaction.ExpectedRevision == 7,
+                "Exchange callback preserves mixed sources, selected output and revision"
+            );
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE DOCUMENTS").onClick.Invoke();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CONTAINER").onClick.Invoke();
+            for (var i = 0; i < 10; i++)
+                view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "ExchangeSource0").onClick.Invoke();
+            Capture("hub-exchange-container-locked");
+            Check(
+                !view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE").interactable,
+                "Unavailable container remains locked at the exact cost"
+            );
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "ExchangeBack").onClick.Invoke();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "DOCUMENTS").onClick.Invoke();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "ExchangeTarget0").onClick.Invoke();
+            Check(
+                !view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE").interactable,
+                "Returning from container mode clears sources above the document cost"
+            );
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CloseExchange").onClick.Invoke();
+            Check(!view.HasDialog, "Exchange title-bar close dismisses dialog");
+            data.CrateUnavailableReason = "";
+            view.SetState(data, perks.ToArray());
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE DOCUMENTS").onClick.Invoke();
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CONTAINER").onClick.Invoke();
+            for (var i = 0; i < 10; i++)
+                view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "ExchangeSource0").onClick.Invoke();
+            Check(
+                view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE").interactable,
+                "Available container enables at the exact cost"
+            );
+            view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "EXCHANGE").onClick.Invoke();
+            Check(
+                transaction.Crate && transaction.DocumentId == "" && transaction.Sources.Values.Sum() == 10,
+                "Container callback does not require a document target"
             );
             view.ShowResult("Reward added to your stash.");
             Capture("hub-result");

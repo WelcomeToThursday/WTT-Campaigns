@@ -2,6 +2,8 @@ namespace SeasonalPerks.Shared.Profiles;
 
 public sealed class PerkState
 {
+    public string? SeasonId { get; set; }
+    public string? GameplayHash { get; set; }
     public string? RootAccountId { get; set; }
     public int SchemaVersion { get; set; } = 1;
     public long Revision { get; set; }

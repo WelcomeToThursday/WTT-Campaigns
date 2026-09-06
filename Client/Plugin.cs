@@ -12,7 +12,7 @@ using SPT.Common.Http;
 
 namespace SeasonalPerks.Client;
 
-[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.2.0")]
+[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.3.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 public sealed class Plugin : BaseUnityPlugin
 {
@@ -56,6 +56,12 @@ public sealed class Plugin : BaseUnityPlugin
         gameObject.AddComponent<SeasonHubUi>();
     }
 
+    internal static string Localized(string key, string fallback)
+    {
+        var text = key.Localized();
+        return string.IsNullOrEmpty(text) || text == key ? fallback : text;
+    }
+
     internal static void Accept(ClientSnapshot snapshot)
     {
         if (snapshot.Error != null)
@@ -63,6 +69,12 @@ public sealed class Plugin : BaseUnityPlugin
             throw new InvalidOperationException(snapshot.Error);
         }
 
+        if (snapshot.ProtocolVersion != 2)
+        {
+            throw new InvalidOperationException("Update both Seasonal client and server to the same version.");
+        }
+
+        snapshot.SeasonName = Localized(snapshot.SeasonId + " name", snapshot.SeasonName);
         Current = snapshot;
         Effects = new RuntimeEffects(
             snapshot.Catalogue,
@@ -73,10 +85,10 @@ public sealed class Plugin : BaseUnityPlugin
 
     internal static async Task<ClientSnapshot> Request(string operation, Mutation? mutation = null)
     {
-        var json = await RequestHandler.PostJsonAsync(
-            "/seasonal-perks/" + operation,
-            JsonConvert.SerializeObject(mutation ?? new Mutation())
-        );
+        mutation ??= new Mutation();
+        mutation.ProtocolVersion = 2;
+        mutation.SeasonId = Current?.SeasonId ?? "";
+        var json = await RequestHandler.PostJsonAsync("/wtt-seasonal/" + operation, JsonConvert.SerializeObject(mutation));
         var snapshot =
             JsonConvert.DeserializeObject<ClientSnapshot>(json, EftJsonConverters.Converters)
             ?? throw new InvalidDataException("Seasonal server returned an empty response.");

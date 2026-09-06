@@ -79,6 +79,17 @@ public sealed class SeasonUi : MonoBehaviour
             {
                 _screen.RequestCloseFromInput();
             }
+            else if (_screen.SeasonIntroductionOpen)
+            {
+                if (Input.GetKeyDown(KeyCode.Q) || Input.GetKeyDown(KeyCode.LeftArrow))
+                {
+                    _screen.ChangeSeasonIntroductionPage(-1);
+                }
+                else if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.RightArrow))
+                {
+                    _screen.ChangeSeasonIntroductionPage(1);
+                }
+            }
         }
         else if (Input.GetKeyDown(KeyCode.F8) && !Plugin.InRaid && !Plugin.Busy)
         {
@@ -212,8 +223,14 @@ public sealed class SeasonUi : MonoBehaviour
                 .Catalogue.All.Select(perk => new PerkEntry
                 {
                     Id = perk.Id,
-                    Name = snapshot.Locale.TryGetValue(perk.Id + " name", out var name) ? name : perk.Id,
-                    Description = snapshot.Locale.TryGetValue(perk.Id + " description", out var description) ? description : "",
+                    Name = Plugin.Localized(
+                        perk.Id + " name",
+                        snapshot.Locale.TryGetValue(perk.Id + " name", out var name) ? name : perk.Id
+                    ),
+                    Description = Plugin.Localized(
+                        perk.Id + " description",
+                        snapshot.Locale.TryGetValue(perk.Id + " description", out var description) ? description : ""
+                    ),
                     Points = perk.Points ?? 0,
                     Common = snapshot.Catalogue.Common.Contains(perk),
                     Enabled = snapshot.Rules.EnabledCommonIds.Contains(perk.Id),
@@ -230,6 +247,7 @@ public sealed class SeasonUi : MonoBehaviour
         {
             return;
         }
+        _screen?.DismissDialog();
         _screen?.Root.SetActive(false);
         _inputBlockedThrough = Time.frameCount + 1;
     }
@@ -478,7 +496,10 @@ public sealed class SeasonUi : MonoBehaviour
             _bundle ??=
                 AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonalperks_ui.bundle"))
                 ?? throw new InvalidDataException("Missing seasonal UI bundle.");
-            var sprite = _bundle.LoadAsset<Sprite>("assets/mods/seasonalperks.assets/selectionartwork/" + artworkName + ".png");
+            var assetPath = artworkName.StartsWith("hub:", StringComparison.Ordinal)
+                ? "hubartwork/" + artworkName.Substring(4)
+                : "selectionartwork/" + artworkName;
+            var sprite = _bundle.LoadAsset<Sprite>("assets/mods/seasonalperks.assets/" + assetPath + ".png");
             if (!sprite)
             {
                 throw new InvalidDataException("Missing bundled selection artwork: " + artworkName);
@@ -521,7 +542,7 @@ public sealed class SeasonUi : MonoBehaviour
 
     private async Task<Sprite> FetchIcon(string id)
     {
-        var bytes = await RequestHandler.GetDataAsync("/seasonal-perks/icons/" + id + ".png");
+        var bytes = await RequestHandler.GetDataAsync("/wtt-seasonal/icons/" + id + ".png");
         if (_destroyed)
         {
             throw new OperationCanceledException("Seasonal UI closed.");

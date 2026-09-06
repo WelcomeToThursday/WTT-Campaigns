@@ -1,0 +1,11 @@
+# Season profile-card introduction
+
+The information button at the top right of the seasonal profile card opens the five-page season introduction. It is available for both empty and existing seasonal characters, including startup selection. It always opens on the welcome page. Previous/next buttons, Q/E, Left/Right Arrow and the mouse wheel navigate the pages, wrapping at either end. CLOSE, Escape or F8 returns to the same selector without selecting or creating a character.
+
+The live reference is `level48` GameObject 8659, `EFT.UI.SeasonsIntroScreen`, using `SeasonCarouselData` object 2693 from `sharedassets48.assets`. The recovered content measures 1050×677, with 1050×621 artwork, an 840×106 caption, and a 56-pixel navigation bar. The five bundled backgrounds are 389, 480, 324, 500 and 493, in that order. `tools/recover_hub.py --intro` recovers the hierarchy and carousel with separate provenance files in CJ-SDK.
+
+The pages cover KORD BREACH, seasons, seasonal characters, modifiers and the Battle Pass. Captions describe local SPT behavior instead of live's dedicated servers, automatic resets, account reward retention and cross-mode synchronization. This introduction is independent of the Battle Pass tutorial, has no completion preference, and performs no server mutation or network artwork request. Pages crossfade over 0.15 seconds using unscaled time, matching the recovered transition duration.
+
+`SeasonalScreen.Introduction` owns the dialog and restores underlying input and keyboard focus on dismissal. Busy transitions, snapshot rebuilds, client closing and disposal remove the dialog. `SeasonUi` routes keyboard navigation and loads the existing bundled hub artwork. The card information button no longer opens global modifiers.
+
+Validation: `tools/unity/SeasonalIntroductionPreview.cs` renders every page at 1920×1080, 2560×1440 and 1902×992 and checks caption fitting, viewport bounds, navigation wrapping, replay, input isolation and cleanup. Synchronize UI sources with `tools/sync_ui_preview.py`, copy the preview runner into CJ-SDK's SeasonalPerks.Assets/Editor folder, and run `SeasonalIntroductionPreview.Render`. Results remain in ignored `Research/UI/season-introduction-*`. Installed in-game acceptance remains pending.

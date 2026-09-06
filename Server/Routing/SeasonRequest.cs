@@ -5,6 +5,8 @@ namespace SeasonalPerks.Server.Routing;
 
 public record SeasonRequest : IRequestData
 {
+    public int ProtocolVersion { get; set; }
+    public string SeasonId { get; set; } = "";
     public long ExpectedRevision { get; set; }
     public List<string> PerkIds { get; set; } = [];
     public string Mode { get; set; } = "normal";

@@ -4,6 +4,12 @@ namespace SeasonalPerks.Shared.Contracts;
 
 public sealed class HubState
 {
+    public string SeasonName { get; set; } = "Season One";
+    public long PackRevision { get; set; }
+    public string BadgeImage { get; set; } = "";
+    public string BannerImage { get; set; } = "";
+    public bool LegacyBranding { get; set; } = true;
+    public int WindowSeconds { get; set; } = 23 * 60 * 60;
     public string Id { get; set; } = "";
     public string SeasonId { get; set; } = "";
     public HubPage[] Pages { get; set; } = Array.Empty<HubPage>();

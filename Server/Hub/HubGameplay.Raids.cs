@@ -57,7 +57,7 @@ public sealed partial class HubGameplay
         }
         var count = Math.Min(
             Configuration.MapCounts.GetValueOrDefault(request.Location ?? "", Configuration.DocumentsPerRaid),
-            HubRules.Remaining(state, Now)
+            HubRules.Remaining(state, Now, _presentation.DocumentLimit, _presentation.WindowSeconds)
         );
         // A complete dependency set keeps all eight types equally likely.
         if (documents.All(t => templates.Items.ContainsKey(new MongoId(t))))
@@ -222,6 +222,7 @@ public sealed partial class HubGameplay
 
     public async Task<HubResult> Pickup(string sessionId, HubRequest request)
     {
+        ValidateSeasonRequest(request);
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
         var original = Active(root);
@@ -276,7 +277,7 @@ public sealed partial class HubGameplay
         {
             foreach (var unit in raid.Stacks[stackId].Units.Where(raid.Spawned.ContainsKey))
             {
-                accepted &= HubRules.Pickup(state, raid, unit, Now);
+                accepted &= HubRules.Pickup(state, raid, unit, Now, _presentation.DocumentLimit, _presentation.WindowSeconds);
             }
         }
         raid.Operations.Add(request.OperationId, fingerprint);
@@ -331,7 +332,7 @@ public sealed partial class HubGameplay
             var rejected = 0;
             foreach (var unit in units.Where(raid.Spawned.ContainsKey))
             {
-                if (HubRules.Pickup(state, raid, unit, Now))
+                if (HubRules.Pickup(state, raid, unit, Now, _presentation.DocumentLimit, _presentation.WindowSeconds))
                 {
                     extractedUnits.Add(unit);
                 }

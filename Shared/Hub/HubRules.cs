@@ -9,14 +9,19 @@ public static class HubRules
     public const int DocumentLimit = 30;
     public const int WindowSeconds = 23 * 60 * 60;
 
-    public static int Remaining(HubProgress state, long now)
+    public static int Remaining(HubProgress state, long now, int limit = DocumentLimit, int window = WindowSeconds)
     {
-        return state.WindowStart == 0 || now >= state.WindowStart + WindowSeconds
-            ? DocumentLimit
-            : Math.Max(0, DocumentLimit - state.Pickups);
+        return state.WindowStart == 0 || now >= state.WindowStart + window ? limit : Math.Max(0, limit - state.Pickups);
     }
 
-    public static bool Pickup(HubProgress state, HubRaid raid, string itemId, long now)
+    public static bool Pickup(
+        HubProgress state,
+        HubRaid raid,
+        string itemId,
+        long now,
+        int limit = DocumentLimit,
+        int window = WindowSeconds
+    )
     {
         if (raid.Finished || !raid.Spawned.ContainsKey(itemId) || raid.Rejected.Contains(itemId))
         {
@@ -28,12 +33,12 @@ public static class HubRules
             return true;
         }
 
-        if (Remaining(state, now) == 0)
+        if (Remaining(state, now, limit, window) == 0)
         {
             raid.Rejected.Add(itemId);
             return false;
         }
-        if (state.WindowStart == 0 || now >= state.WindowStart + WindowSeconds)
+        if (state.WindowStart == 0 || now >= state.WindowStart + window)
         {
             state.WindowStart = now;
             state.Pickups = 0;

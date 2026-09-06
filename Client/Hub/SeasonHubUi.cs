@@ -80,6 +80,11 @@ public sealed partial class SeasonHubUi : MonoBehaviour
             return;
         }
         _screen!.Fit();
+        if (_screen.HasTutorial)
+        {
+            UpdateTutorialInput();
+            return;
+        }
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (_transacting)
@@ -139,7 +144,18 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         var banner = _banner.AddComponent<SeasonBanner>();
         var sound = _banner.AddComponent<HubBannerSound>();
         sound.Initialize(Bundle.LoadAsset<AudioClip>("assets/mods/seasonalperks.assets/audio/hub-hover-loop.wav"));
-        banner.Initialize(Font, Artwork, PlayVideo);
+        if (Plugin.Current?.LegacyBranding != false)
+        {
+            banner.Initialize(Font, Artwork, PlayVideo);
+        }
+        else
+        {
+            var image = banner.InitializeCustom(Font, Plugin.Current.SeasonName);
+            if (Plugin.Current.BannerImage.Length == 24)
+            {
+                LoadBanner(Plugin.Current.BannerImage, image);
+            }
+        }
         banner.Clicked = () =>
         {
             if (Available)
@@ -171,6 +187,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
             EnsureScreen();
             RestorePending();
             _openedProfile = Plugin.Current!.EffectiveProfileId;
+            _tutorialOffered = false;
             _screen!.Open();
             await LoadState();
             if (_pendingBody != null && _pendingProfile == Plugin.Current?.EffectiveProfileId)
@@ -209,6 +226,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
             PerkIconRequested = SeasonUi.Instance.LoadIcon,
             VideoRequested = PlayVideo,
             TransactionRequested = Transact,
+            TutorialCompleted = CompleteTutorial,
         };
     }
 
@@ -236,7 +254,10 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         _screen!.ShowMessage("Loading season...", false);
         try
         {
-            var raw = await RequestHandler.PostJsonAsync("/seasonal-perks/hub", "{}");
+            var raw = await RequestHandler.PostJsonAsync(
+                "/wtt-seasonal/hub",
+                JsonConvert.SerializeObject(new { ProtocolVersion = 2, SeasonId = Plugin.Current?.SeasonId })
+            );
             if (_destroyed || generation != _generation || !IsOpen || !Available)
             {
                 return;
@@ -252,6 +273,21 @@ public sealed partial class SeasonHubUi : MonoBehaviour
                 throw new InvalidDataException("Season catalogue is unavailable.");
             }
 
+            data.SeasonName = Plugin.Localized(data.SeasonId + " name", data.SeasonName);
+            foreach (var document in data.Documents)
+            {
+                document.Name = Plugin.Localized(document.Id + " name", document.Name);
+            }
+
+            foreach (var reward in data.Pages.SelectMany(p => p.Rewards).Concat(data.SeasonalRewards))
+            {
+                reward.Name = Plugin.Localized(reward.Id + " name", reward.Name);
+                reward.Description = Plugin.Localized(reward.Id + " description", reward.Description);
+            }
+            for (var i = 0; i < data.Slides.Length; i++)
+            {
+                data.Slides[i].Text = Plugin.Localized(data.SeasonId + " slide " + i + " text", data.Slides[i].Text);
+            }
             _allowedImages.Clear();
             foreach (
                 var id in data
@@ -259,6 +295,10 @@ public sealed partial class SeasonHubUi : MonoBehaviour
                     .Concat(data.SeasonalRewards)
                     .SelectMany(r => new[] { r.Image, r.BigImage })
                     .Concat(data.Documents.SelectMany(d => new[] { d.Image, d.UnavailableImage }))
+                    .Concat(data.Slides.Select(slide => slide.Image))
+                    .Append(data.BadgeImage)
+                    .Append(data.BannerImage)
+                    .Where(id => id.Length == 24 && id.All(Uri.IsHexDigit))
                     .Append(data.UniversalImage)
                     .Append(data.UniversalUnavailableImage)
             )
@@ -271,6 +311,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
                 _allowedImages.Add(id);
             }
             _screen.SetState(data, SeasonUi.Presentation(Plugin.Current!).Perks);
+            OfferTutorial();
         }
         catch (Exception exception)
         {
@@ -318,6 +359,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 
     private async void LoadImage(string id, Image target)
     {
+        var cacheKey = Plugin.Current?.SeasonId + ":" + Plugin.Current?.PackRevision + ":" + id;
         var generation = _generation;
         if (!_allowedImages.Contains(id) || _loading == null)
         {
@@ -326,9 +368,9 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 
         try
         {
-            if (!_images.TryGetValue(id, out var task))
+            if (!_images.TryGetValue(cacheKey, out var task))
             {
-                _images[id] = task = FetchImage(id, _loading.Token);
+                _images[cacheKey] = task = FetchImage(id, _loading.Token);
             }
 
             var sprite = await task;
@@ -346,7 +388,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
                 return;
             }
 
-            _images.Remove(id);
+            _images.Remove(cacheKey);
             if (target)
             {
                 var text = new UiElements(Font).Label(
@@ -363,12 +405,42 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         }
     }
 
+    private Sprite? _bannerSprite;
+
+    private async void LoadBanner(string id, Image target)
+    {
+        try
+        {
+            var sprite = await FetchImage(id, CancellationToken.None);
+            if (!target)
+            {
+                Destroy(sprite.texture);
+                Destroy(sprite);
+                return;
+            }
+            if (_bannerSprite)
+            {
+                Destroy(_bannerSprite!.texture);
+                Destroy(_bannerSprite);
+            }
+            _bannerSprite = sprite;
+            target.sprite = sprite;
+            target.color = Color.white;
+        }
+        catch (Exception e)
+        {
+            Plugin.Error(e);
+        }
+    }
+
     private async Task<Sprite> FetchImage(string id, CancellationToken cancellation)
     {
         await _imageSlots.WaitAsync(cancellation);
         try
         {
-            var bytes = await RequestHandler.GetDataAsync("/seasonal-perks/hub-images/" + id + ".png");
+            var bytes = await RequestHandler.GetDataAsync(
+                "/wtt-seasonal/hub-images/" + id + ".png?season=" + Plugin.Current?.SeasonId + "&revision=" + Plugin.Current?.PackRevision
+            );
             cancellation.ThrowIfCancellationRequested();
             var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
             if (!ImageConversion.LoadImage(texture, bytes) || texture.width > 4096 || texture.height > 4096)
@@ -407,6 +479,11 @@ public sealed partial class SeasonHubUi : MonoBehaviour
     private void OnDestroy()
     {
         _destroyed = true;
+        if (_bannerSprite)
+        {
+            Destroy(_bannerSprite!.texture);
+            Destroy(_bannerSprite);
+        }
         Close();
         _loading?.Dispose();
         _screen?.Dispose();

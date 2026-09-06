@@ -24,7 +24,7 @@ public sealed class ProfileSelection
         Action<string, RawImage> model,
         Action<string> select,
         Action edit,
-        Action global,
+        Action seasonIntro,
         Action close,
         bool startup,
         Material? glowMaterial,
@@ -45,8 +45,8 @@ public sealed class ProfileSelection
         glow.color = new Color(1, 1, 1, .282353f);
         _ui.Label(root, "Title", "SELECT PROFILE AND MODE", 42, 1275, 50, 0, 478).alignment = TextAnchor.MiddleCenter;
         root.Find("Title").GetComponent<Text>().color = new Color(.851f, .851f, .851f);
-        Card(root, state, "normal", -205, model, select, edit, global, hoverSound);
-        Card(root, state, "seasonal", 205, model, select, edit, global, hoverSound);
+        Card(root, state, "normal", -205, model, select, edit, seasonIntro, hoverSound);
+        Card(root, state, "seasonal", 205, model, select, edit, seasonIntro, hoverSound);
         if (!startup)
         {
             var back = _ui.Button(root, "BACK", 120, 830, -488, close);
@@ -84,7 +84,7 @@ public sealed class ProfileSelection
         Action<string, RawImage> model,
         Action<string> select,
         Action edit,
-        Action global,
+        Action seasonIntro,
         Action<bool>? hoverSound
     )
     {
@@ -207,7 +207,8 @@ public sealed class ProfileSelection
                 value.alignment = TextAnchor.MiddleRight;
                 value.color = new Color(.584f, .620f, .639f);
             }
-            var infoButton = _ui.Button(rect, "", 28, 168, 369, global, 28);
+            var infoButton = _ui.Button(rect, "", 28, 168, 369, seasonIntro, 28);
+            infoButton.name = "SeasonInformation";
             infoButton.targetGraphic.color = Color.clear;
             Art(infoButton.transform, "info-icon", 24, 24, 0, 0);
         }

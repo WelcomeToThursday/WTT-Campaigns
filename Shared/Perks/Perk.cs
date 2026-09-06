@@ -6,6 +6,9 @@ namespace SeasonalPerks.Shared.Perks;
 
 public sealed class Perk : ExtensibleJsonModel
 {
+    [JsonProperty("enabled")]
+    public bool Enabled { get; set; } = true;
+
     [JsonProperty("id")]
     public string Id { get; set; } = "";
 

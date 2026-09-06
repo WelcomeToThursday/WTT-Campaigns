@@ -15,6 +15,10 @@
 
 `SeasonsHubScreen` and its partials own the hub; `Models/Hub*` contain its presentation data. `Profiles/SeasonBanner` owns the menu widget. Client adapters supply EFT integration and media lifecycle. Shared contracts remain separate from UI models.
 
+`SeasonsHubScreen.Tutorial` owns the eight-step Battle Pass overlay and input isolation. `SeasonHubUi.Tutorial` supplies keyboard routing, first-visit presentation and the local completion preference; the tutorial does not mutate server progress.
+
+`SeasonalScreen.Introduction` owns the separate five-page season introduction opened from the seasonal profile card. See [reference and validation](season-introduction.md).
+
 Keep each type in its own named file, and keep all `SeasonalScreen` partial files together. Native character creation, model previews, asset loading, and game sound playback remain in `Client`; the UI requests those services through callbacks and `ICreationIdentity`.
 
 ## Unity previews
@@ -27,4 +31,4 @@ Update the client and the companion SDK's editor preview/check imports when movi
 
 ## Battle Pass transactions
 
-`SeasonsHubScreen.Transactions` presents claim/shortage, exchange and result dialogs through `HubAction` callbacks. `HubRequirement` carries structured eligibility without EFT types. Client adapters save pending operation IDs, flush native inventory operations, reconcile responses and reload the profile. Copy the reviewed `tools/unity/SeasonalHubPreview.cs` into the SDK editor folder after syncing UI sources to exercise the transaction fixtures.
+`SeasonsHubScreen.Transactions` presents claim/shortage and result dialogs; `SeasonsHubScreen.Exchange` presents the recovered exchange layout. Both use `HubAction` callbacks. `HubRequirement` carries structured eligibility without EFT types. Client adapters save pending operation IDs, flush native inventory operations, reconcile responses and reload the profile. Copy the reviewed `tools/unity/SeasonalHubPreview.cs` into the SDK editor folder after syncing UI sources to exercise the transaction fixtures.

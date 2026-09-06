@@ -23,7 +23,7 @@ def main():
         root = next(profile['profileId'] for profile in registered['Profiles'] if profile['username'] == username)
         request('/client/game/profile/create', {'side': 'Usec', 'nickname': 'NormalTest',
                 'headId': choice('Usec', HEAD), 'voiceId': choice('Usec', VOICE)}, root)
-        request('/seasonal-perks/snapshot', session=root)
+        request('/wtt-seasonal/snapshot', session=root)
         normal_before = request('/client/game/profile/list', session=root)
         profile_files = set((SERVER / 'user/profiles').glob('*.json'))
         payload = {'Side': side, 'Nickname': 'SeasonTest', 'PerkIds': [], 'ExpectedRevision': 0,
@@ -31,11 +31,11 @@ def main():
         other = 'Usec' if side == 'Bear' else 'Bear'
         for field, value in [('HeadId', 'not-an-item'), ('HeadId', choice(other, HEAD)),
                              ('VoiceId', choice(other, VOICE)), ('VoiceId', choice(side, HEAD))]:
-            rejected = request('/seasonal-perks/create', {**payload, field: value}, root)
+            rejected = request('/wtt-seasonal/create', {**payload, field: value}, root)
             assert rejected.get('Error'), f'{side}: {field}={value} was unexpectedly accepted'
             assert set((SERVER / 'user/profiles').glob('*.json')) == profile_files
             results.append(side + ': rejected invalid/faction-mismatched ' + field + ' before creating a profile')
-        created = request('/seasonal-perks/create', payload, root)
+        created = request('/wtt-seasonal/create', payload, root)
         assert not created.get('Error'), created.get('Error')
         assert created['ActiveMode'] == 'normal'
         normal_after = request('/client/game/profile/list', session=root)
@@ -50,13 +50,13 @@ def main():
         changed = differences(normal_before, normal_after)
         assert not changed, changed
         results.append(side + ': creating with explicit appearance leaves normal character unchanged')
-        switched = request('/seasonal-perks/switch', {'Mode': 'seasonal'}, root)
+        switched = request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
         seasonal = request('/client/game/profile/list', session=switched['EffectiveProfileId'])[0]
         assert seasonal['Info']['Side'] == side
         assert seasonal['Customization']['Head'] == payload['HeadId']
         assert seasonal['Customization']['Voice'] == payload['VoiceId']
         results.append(side + ': selected head and voice persist in the independent seasonal profile')
-        duplicate = request('/seasonal-perks/create', payload, root)
+        duplicate = request('/wtt-seasonal/create', payload, root)
         assert duplicate.get('Error')
         assert len(set((SERVER / 'user/profiles').glob('*.json')) - profile_files) == 1
         results.append(side + ': duplicate confirmation cannot create a second seasonal profile')

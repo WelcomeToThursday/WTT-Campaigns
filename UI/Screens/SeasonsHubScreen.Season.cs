@@ -64,7 +64,15 @@ public sealed partial class SeasonsHubScreen
         if (_state.Slides.Length > 0)
         {
             var slide = _state.Slides[Math.Min(SlideIndex, _state.Slides.Length - 1)];
-            Art(root, "CarouselArtwork", slide.Image, 108, 390, 982, 581);
+            if (slide.Image.Length != 24)
+            {
+                Art(root, "CarouselArtwork", slide.Image, 108, 390, 982, 581);
+            }
+            else
+            {
+                Remote(root, "CarouselArtwork", slide.Image, 108, 390, 982, 581);
+            }
+
             var text = Caption(root, "CarouselText", slide.Text, 18, 183, 775, 832, 176);
             text.alignment = TextAnchor.LowerCenter;
             text.color = new Color(.53f, .78f, .68f);

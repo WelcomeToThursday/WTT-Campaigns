@@ -1,0 +1,76 @@
+@* Nested effect data stays lossless; choices are constrained by the selected supported template. *@
+@foreach (var property in Value.Properties().ToArray())
+{
+    var field = property;
+    @if (Hidden.Contains(field.Name) || field.Name == "target" && Value["items"] != null) { continue; }
+    <div class="structured-field">
+        @if (field.Value is JObject child)
+        {
+            <details open><summary>@Friendly(field.Name)</summary><StructuredFields Value="child" Changed="Changed" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /></details>
+        }
+        else if (field.Value is JArray list)
+        {
+            <label>@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /></label>
+            @foreach (var token in list.ToArray())
+            {
+                var entry = token;
+                <div class="array-entry">
+                    @if (entry is JObject obj) { <StructuredFields Value="obj" Changed="Changed" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /> }
+                    else if (ChoiceKind(field.Name) is { } kind)
+                    { <ContentPicker Kind="@kind" Label="@Friendly(field.Name)" Value="@entry.ToString()" ValueChanged="@(v => SetArray(entry, v))" Additional="Additional(kind)" /> }
+                    else { <input aria-label="@Friendly(field.Name)" value="@entry.ToString()" @onchange="@(e => SetArray(entry, e.Value?.ToString() ?? string.Empty))" /> }
+                    <button type="button" class="subtle" @onclick="@(() => Remove(entry))">Remove</button>
+                </div>
+            }
+            <button type="button" class="subtle" @onclick="@(() => Add(list, field.Name))">Add @Friendly(field.Name)</button>
+        }
+        else if (field.Value.Type == JTokenType.Boolean)
+        { <label class="check"><input type="checkbox" checked="@((bool)field.Value)" @onchange="@(e => Set(field, (bool)e.Value!))" />@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /></label> }
+        else if (field.Value.Type is JTokenType.Integer or JTokenType.Float)
+        { <label>@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /><input type="number" step="any" value="@field.Value.ToString()" @onchange="@(e => Number(field, e.Value?.ToString()))" /></label> }
+        else if (ChoiceKind(field.Name) is { } kind)
+        { <ContentPicker Kind="@kind" Label="@Friendly(field.Name)" Value="@field.Value.ToString()" ValueChanged="@(v => Set(field, v))" Additional="Additional(kind)" /> }
+        else if (field.Name == "field") { <label>Filter by<select value="@field.Value.ToString()" @onchange="@(e => Set(field, e.Value?.ToString() ?? string.Empty))"><option value="_tpl">Item</option><option value="ParentId">Category</option></select></label> }
+        else { <label>@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /><input value="@field.Value.ToString()" @onchange="@(e => Set(field, e.Value?.ToString() ?? string.Empty))" /></label> }
+    </div>
+}
+@code {
+    [Parameter] public JObject Value { get; set; } = new();
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public IEnumerable<ContentChoice> OwnedItems { get; set; } = [];
+    [Parameter] public IEnumerable<ContentChoice> OwnedQuests { get; set; } = [];
+    private IEnumerable<ContentChoice> Additional(string kind) => kind == "items" ? OwnedItems : kind == "quests" ? OwnedQuests : [];
+    private static readonly HashSet<string> Hidden = new() { "effectId", "id", "_id", "conditionType", "index", "parentId", "dynamicLocale", "visibilityConditions", "status", "compareMethod", "type" };
+    private static string? FieldHelp(string name) => name switch
+    {
+        "multiplicator" or "multiplicatorPrimary" or "multiplicatorSecondary" => "1 keeps the normal value; 0.8 makes it 20 percent lower; 1.2 makes it 20 percent higher. Whether a lower value is beneficial depends on the effect.",
+        "intValue" => "The whole-number value used by this effect, such as a skill level or stamina offset. Validation checks the supported range.",
+        "bodyPartTypes" => "The stamina pool affected by this modifier: arms or legs.",
+        "onlyFoundInRaid" => "Only items marked found in raid count toward this objective.",
+        "minDurability" or "maxDurability" => "Accepted durability percentage for objective items, from 0 to 100.",
+        "availableAfter" => "Delay in seconds after completing the prerequisite quest.",
+        "include" => "Items or categories allowed by this filter.",
+        "exclude" => "Items or categories excluded by this filter.",
+        _ => null
+    };
+    private static string Friendly(string name) => System.Text.RegularExpressions.Regex.Replace(name, "([a-z])([A-Z])", "$1 $2").Replace("multiplicator", "multiplier");
+    private string? ChoiceKind(string field) => field switch
+    {
+        "skillIds" => "skills", "traderIds" or "traderId" => "traders", "_tpl" => "items",
+        "target" when (string?)Value["type"] is "TraderStanding" or "TraderUnlock" => "traders",
+        "target" when (string?)Value["type"] == "Skill" => "skills",
+        "target" when (string?)Value["conditionType"] == "Quest" => "quests",
+        "target" when (string?)Value["conditionType"] == "TraderLoyalty" => "traders",
+        "target" when (string?)Value["conditionType"] is "FindItem" or "HandoverItem" => "items",
+        "value" when (string?)Value["field"] == "_tpl" => "items",
+        "target" when (string?)Value["type"] is "TraderStanding" or "TraderUnlock" => "traders",
+        "target" when (string?)Value["type"] == "Skill" => "skills",
+        "value" when (string?)Value["field"] == "ParentId" => "categories",
+        _ => null
+    };
+    private async Task Set(JProperty property, object value) { property.Value = JToken.FromObject(value); await Changed.InvokeAsync(); }
+    private Task Number(JProperty property, string? value) => double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var number) && double.IsFinite(number) ? Set(property, property.Value.Type == JTokenType.Integer ? (object)(long)number : number) : Task.CompletedTask;
+    private async Task SetArray(JToken token, string value) { token.Replace(token.Type == JTokenType.Integer && long.TryParse(value, out var n) ? new JValue(n) : token.Type == JTokenType.Float && double.TryParse(value, out var d) ? new JValue(d) : new JValue(value)); await Changed.InvokeAsync(); }
+    private async Task Remove(JToken token) { token.Remove(); await Changed.InvokeAsync(); }
+    private async Task Add(JArray array, string name) { array.Add(array.Last?.DeepClone() ?? (name is "include" or "exclude" ? new JObject { ["field"] = "_tpl", ["value"] = "" } : new JValue(""))); await Changed.InvokeAsync(); }
+}

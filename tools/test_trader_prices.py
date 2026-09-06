@@ -68,7 +68,7 @@ def main():
         for session, expected in state['expected'].items():
             pmc = profile(session)
             check(pmc['Inventory'] == expected, 'Trader inventory and payment survive restart: '+('seasonal' if session == child else 'normal'))
-        snapshot = request('/seasonal-perks/snapshot', session=child)
+        snapshot = request('/wtt-seasonal/snapshot', session=child)
         check(VACUUM in snapshot['State']['SeasonalPerks'] and THIRD not in snapshot['State']['SeasonalPerks'], 'Saved trader selection survives restart')
         prices = assort(child, THERAPIST)['barter_scheme']
         check(prices[state['offer']][0][0]['count'] == state['unitPrice'], 'Seasonal price survives restart without compounding')
@@ -77,13 +77,13 @@ def main():
         return
 
     def select(ids):
-        snapshot = request('/seasonal-perks/snapshot', session=root)
-        result = request('/seasonal-perks/edit', {'PerkIds': ids, 'ExpectedRevision': snapshot['State']['Revision']}, root)
+        snapshot = request('/wtt-seasonal/snapshot', session=root)
+        result = request('/wtt-seasonal/edit', {'PerkIds': ids, 'ExpectedRevision': snapshot['State']['Revision']}, root)
         check(not result.get('Error'), 'Save trader selection '+str(ids))
         return result
     snapshot = select([])
     check(VACUUM not in snapshot['Unavailable'] and THIRD not in snapshot['Unavailable'], 'Both trader perks selectable')
-    request('/seasonal-perks/switch', {'Mode': 'seasonal'}, root)
+    request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
     traders = [THERAPIST, PRAPOR, PEACEKEEPER, SKIER, '579dc571d53a0658a154fbec', '5ac3b934156ae10c4430e83c', '5a7c2eca46aef81a7ca2145d', '5c0647fdd443bc2504c2d371']
     baseline = {trader: assort(child, trader) for trader in traders}
     normal_prices = {trader: assort(root, trader)['barter_scheme'] for trader in traders}
@@ -144,8 +144,8 @@ def main():
 
     discount_offer, _, _ = choose(THERAPIST, RUB)
     buy(THERAPIST, discount_offer)
-    snapshot = request('/seasonal-perks/snapshot', session=root)
-    conflict = request('/seasonal-perks/edit', {'PerkIds': [VACUUM, THIRD], 'ExpectedRevision': snapshot['State']['Revision']}, root)
+    snapshot = request('/wtt-seasonal/snapshot', session=root)
+    conflict = request('/wtt-seasonal/edit', {'PerkIds': [VACUUM, THIRD], 'ExpectedRevision': snapshot['State']['Revision']}, root)
     check(bool(conflict.get('Error')), 'Captured mutual exclusion between both trader perks is enforced')
     select([VACUUM])
     offer, requirement, tpl = choose(THERAPIST, RUB)

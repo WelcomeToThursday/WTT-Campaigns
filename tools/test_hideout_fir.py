@@ -63,12 +63,12 @@ def main():
     state = json.loads(STATE.read_text(encoding='utf-8'))
     root, child = state['root'], state['child']
     if phase == 'verify':
-        snapshot = request('/seasonal-perks/snapshot', session=root)
+        snapshot = request('/wtt-seasonal/snapshot', session=root)
         check(FIR not in snapshot['Unavailable'] and BUSH not in snapshot['Unavailable'], 'Both new perks advertised as supported')
-        edited = request('/seasonal-perks/edit', {'PerkIds': [BUSH, '69c3ce913ffdba4e68086bdb'], 'ExpectedRevision': snapshot['State']['Revision']}, root)
+        edited = request('/wtt-seasonal/edit', {'PerkIds': [BUSH, '69c3ce913ffdba4e68086bdb'], 'ExpectedRevision': snapshot['State']['Revision']}, root)
         check(not edited.get('Error'), 'Bushborne selectable with five-point budget')
         check(FIR in edited['State']['SeasonalPerks'], 'Configured common No-FiR perk included on save')
-        request('/seasonal-perks/switch', {'Mode': 'seasonal'}, root)
+        request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
         before = profile(child)[0]
         check(all(not i.get('upd', {}).get('SpawnedInSession', False) for i in before['Inventory']['items'] if i['_id'] in state['items']), 'All submitted upgrade materials are non-FiR')
         normal = profile(root)
@@ -93,7 +93,7 @@ def main():
         pmc = profile(child)[0]
         check(not set(state['items']).intersection(i['_id'] for i in pmc['Inventory']['items']), 'Non-FiR material consumption survives restart')
         check(next(a for a in pmc['Hideout']['Areas'] if a['type'] == 6) == state['expectedArea'], 'Construction state survives restart')
-        snapshot = request('/seasonal-perks/snapshot', session=child)
+        snapshot = request('/wtt-seasonal/snapshot', session=child)
         check({FIR, BUSH} <= set(snapshot['State']['SeasonalPerks']), 'Both new perk selections survive restart')
         report_path = PROJECT/'Research/hideout-fir-results.json'
         report = json.loads(report_path.read_text(encoding='utf-8'))

@@ -9,6 +9,12 @@ using SeasonalPerks.Shared.Effects.Trading;
 using SeasonalPerks.Shared.Perks;
 using SeasonalPerks.Shared.Profiles;
 
+if (args.Length == 2 && args[0] == "--creator-fixture")
+{
+    SeasonalPerks.Tests.CreatorFixture.Prepare(args[1]);
+    return;
+}
+
 if (args.Length == 3 && (args[0] == "--resource-hooks" || args[0] == "--bush-hooks" || args[0] == "--experience-hooks"))
 {
     SeasonalPerks.Tests.ClientHookChecks.Run(args[1], args[2], args[0] == "--bush-hooks", args[0] == "--experience-hooks");
@@ -32,6 +38,7 @@ void Check(bool value, string name)
     count++;
 }
 var rules = new Rules();
+SeasonalPerks.Tests.CreatorChecks.Run(Check);
 SeasonalPerks.Tests.HubGameplayChecks.Run(Check);
 var seasoned = new RuntimeEffects(c, new[] { "69c41adf883efd5e3b09ccae" });
 Check(seasoned.Multiplier("pmc_experience_multiplicator").Equals(1.25f), "Captured PMC experience bonus");

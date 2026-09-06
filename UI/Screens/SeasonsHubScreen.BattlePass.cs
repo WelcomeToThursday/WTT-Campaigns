@@ -12,8 +12,17 @@ public sealed partial class SeasonsHubScreen
 {
     private void RenderBattlePass(Transform root)
     {
-        Art(root, "SeasonBadge", "sharedassets44-499", 115, 58, 48, 48).preserveAspect = true;
-        Caption(root, "SeasonLabel", "SEASON\nONE", 15, 177, 59, 75, 47);
+        TutorialButton(root);
+        if (_state.BadgeImage.Length > 0)
+        {
+            Remote(root, "SeasonBadge", _state.BadgeImage, 115, 58, 48, 48).preserveAspect = true;
+        }
+        else if (_state.LegacyBranding)
+        {
+            Art(root, "SeasonBadge", "sharedassets44-499", 115, 58, 48, 48).preserveAspect = true;
+        }
+
+        Caption(root, "SeasonLabel", _state.SeasonName.ToUpperInvariant(), 15, 177, 59, 75, 47);
         Art(root, "RewardListBackground", "sharedassets48-475", 108, 150, 416, 874);
         Art(root, "RewardBackdrop", "sharedassets48-492", 540, 150, 840, 770);
         Art(root, "RequirementsBackground", "sharedassets48-463", 1396, 150, 416, 770);
@@ -133,7 +142,10 @@ public sealed partial class SeasonsHubScreen
         allowance.alignment = TextAnchor.MiddleRight;
         Hint(
             allowance.gameObject,
-            "30 first pickups per 23-hour window."
+            _state.DocumentLimit
+                + " first pickups per "
+                + TimeSpan.FromSeconds(_state.WindowSeconds).TotalHours.ToString("0.##")
+                + "-hour window."
                 + (
                     _state.NextResetTime > 0
                         ? "\nResets: " + DateTimeOffset.FromUnixTimeSeconds(_state.NextResetTime).ToLocalTime().ToString("g")
@@ -147,7 +159,7 @@ public sealed partial class SeasonsHubScreen
             var doc = _state.Documents[i];
             var x = 554 + i * 82;
             var im = Remote(root, "InventoryDocument" + i, doc.Count == 0 ? doc.UnavailableImage : doc.Image, x, 968, 78, 78);
-            Hint(im.gameObject, doc.Name + "\nOwned: " + doc.Count, x, 870);
+            Hint(im.gameObject, doc.Name + "\n" + DocumentHelp(doc.Count), x, 765);
             Caption(root, "DocumentCount" + i, "x" + doc.Count, 16, x + 35, 1016, 40, 24).alignment = TextAnchor.MiddleRight;
         }
         Art(root, "UniversalBackground", "sharedassets48-487", 1214, 968, 154, 78);

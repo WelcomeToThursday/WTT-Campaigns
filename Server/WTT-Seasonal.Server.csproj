@@ -1,19 +1,21 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.Web">
   <PropertyGroup>
     <RootNamespace>SeasonalPerks.Server</RootNamespace>
     <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="..\Shared\WTT-Seasonal.Shared.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SPTarkov.Server.Core" Version="4.1.0" ExcludeAssets="runtime" />
+    <PackageReference Include="SPTarkov.Server.Web" Version="4.1.0" ExcludeAssets="runtime" />
     <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" PrivateAssets="all" />
     <PackageReference Include="SPTarkov.Reflection" Version="4.1.0" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup>
+    <Content Update="wwwroot\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\data\**\*" Link="data\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>

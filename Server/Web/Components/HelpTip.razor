@@ -1,0 +1,18 @@
+@if (!string.IsNullOrWhiteSpace(Text))
+{
+    <MudTooltip Text="@Text" @bind-Visible="_visible" ShowOnFocus="true" ShowOnHover="true"
+                Placement="Placement.Top" Arrow="true" Delay="200" Class="creator-tooltip" RootClass="creator-help-root">
+        <span class="help-trigger" tabindex="0" role="note" aria-label="@($"Help: {Text}")"
+              @onclick="@(() => _visible = !_visible)" @onclick:preventDefault @onclick:stopPropagation
+              @onkeydown="HandleKey"><span aria-hidden="true">?</span></span>
+    </MudTooltip>
+}
+@code {
+    [Parameter] public string? Text { get; set; }
+    private bool _visible;
+    private void HandleKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape") { _visible = false; }
+        else if (e.Key == "Enter") { _visible = !_visible; }
+    }
+}
