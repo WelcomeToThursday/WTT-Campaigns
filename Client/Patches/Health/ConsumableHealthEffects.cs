@@ -1,7 +1,7 @@
 using System.Runtime.CompilerServices;
 using EFT;
 using EFT.HealthSystem;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects.Consumables;
 using UnityEngine;
 
 namespace SeasonalPerks.Client.Patches.Health;

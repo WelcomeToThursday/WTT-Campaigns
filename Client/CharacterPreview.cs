@@ -1,6 +1,6 @@
 using EFT;
 using EFT.UI;
-using SeasonalPerks.UI;
+using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
 

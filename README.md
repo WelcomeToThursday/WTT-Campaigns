@@ -15,9 +15,9 @@ UI build **0.1.7** includes the seasonal creation sequence and a native reconnec
 Open `SeasonalPerks.sln` in this directory. Each C# project has its own directory:
 
 - `Client`: BepInEx plugin, SPT `ModulePatch` hooks and UI controllers.
-- `UI`: Unity views shared by the client and CJ-SDK preview, including character selection, perk editing and confirmation.
+- `UI`: Unity views shared by the client and CJ-SDK preview, organized into [screens, models, creation, profiles, modifiers, controls and audio](docs/ui-structure.md).
 - `Server`: SPT server mod, SPT `AbstractPatch` hooks and local routes. Uses `SPTarkov.Server.Core` and `SPTarkov.Reflection` NuGets at 4.1.0, matching the existing projects; it is built and integration-tested against the installed 4.1.3 runtime. Host assemblies are excluded from the mod output.
-- `Shared`: captured contracts, selection validation and effect aggregation.
+- `Shared`: contracts, configuration, perks, profile state, gameplay effects and serialization, with [namespaces matching their folders](docs/shared.md).
 - `Tests`: contract tests and read-only assembly compatibility checks.
 - `tools`, `data`, `docs`, `Research`: import/build tools, sanitized data and investigation evidence.
 

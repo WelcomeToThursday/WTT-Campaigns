@@ -1,4 +1,5 @@
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects;
+using SeasonalPerks.Shared.Effects.Items;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Profile;
 using SPTarkov.Server.Core.Models.Common;

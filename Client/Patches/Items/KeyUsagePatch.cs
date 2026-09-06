@@ -4,7 +4,8 @@ using EFT;
 using EFT.Interactive;
 using EFT.InventoryLogic;
 using HarmonyLib;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects;
+using SeasonalPerks.Shared.Effects.Items;
 using SPT.Reflection.Patching;
 
 namespace SeasonalPerks.Client.Patches.Items;

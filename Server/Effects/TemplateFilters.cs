@@ -1,4 +1,4 @@
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Spt.Tables;
 

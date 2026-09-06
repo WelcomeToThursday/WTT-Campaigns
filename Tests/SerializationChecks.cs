@@ -1,6 +1,8 @@
 using System.Text.Json.Nodes;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects;
+using SeasonalPerks.Shared.Perks;
+using SeasonalPerks.Shared.Profiles;
 
 namespace SeasonalPerks.Tests;
 

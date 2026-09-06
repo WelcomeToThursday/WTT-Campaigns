@@ -3,7 +3,7 @@ using System.Runtime.CompilerServices;
 using EFT.HealthSystem;
 using HarmonyLib;
 using SeasonalPerks.Client.Patches.Health;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects.Consumables;
 using SPT.Reflection.Patching;
 
 namespace SeasonalPerks.Client.Patches.Items;

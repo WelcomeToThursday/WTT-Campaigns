@@ -1,5 +1,13 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Configuration;
+using SeasonalPerks.Shared.Contracts;
+using SeasonalPerks.Shared.Effects;
+using SeasonalPerks.Shared.Effects.Items;
+using SeasonalPerks.Shared.Effects.Movement;
+using SeasonalPerks.Shared.Effects.Skills;
+using SeasonalPerks.Shared.Effects.Trading;
+using SeasonalPerks.Shared.Perks;
+using SeasonalPerks.Shared.Profiles;
 
 if (
     args.Length == 3

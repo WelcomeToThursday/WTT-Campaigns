@@ -1,7 +1,7 @@
 using System.Reflection;
 using EFT;
 using HarmonyLib;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects.Movement;
 using SPT.Reflection.Patching;
 
 namespace SeasonalPerks.Client.Patches.Movement;

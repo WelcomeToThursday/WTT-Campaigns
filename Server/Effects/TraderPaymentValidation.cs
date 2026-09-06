@@ -1,5 +1,6 @@
 using HarmonyLib;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects;
+using SeasonalPerks.Shared.Effects.Trading;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Commerce;
 using SPTarkov.Server.Core.Helpers.Traders;

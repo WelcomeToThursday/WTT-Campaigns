@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Contracts;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Utils;

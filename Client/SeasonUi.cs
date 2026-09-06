@@ -1,7 +1,10 @@
 using Comfort.Common;
 using EFT.UI;
-using SeasonalPerks.Shared;
-using SeasonalPerks.UI;
+using SeasonalPerks.Shared.Contracts;
+using SeasonalPerks.Shared.Profiles;
+using SeasonalPerks.UI.Audio;
+using SeasonalPerks.UI.Models;
+using SeasonalPerks.UI.Screens;
 using SPT.Common.Http;
 using UnityEngine;
 using UnityEngine.UI;

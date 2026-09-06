@@ -1,6 +1,7 @@
 using EFT.UI;
 using HarmonyLib;
-using SeasonalPerks.UI;
+using SeasonalPerks.UI.Controls;
+using SeasonalPerks.UI.Screens;
 using TMPro;
 using UnityEngine;
 

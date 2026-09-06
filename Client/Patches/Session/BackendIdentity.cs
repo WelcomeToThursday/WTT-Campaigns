@@ -4,7 +4,7 @@ using BepInEx;
 using EFT;
 using HarmonyLib;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Contracts;
 using SPT.Common.Http;
 using SPT.Reflection.Patching;
 using UnityEngine;

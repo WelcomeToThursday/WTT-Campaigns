@@ -1,4 +1,5 @@
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Effects;
+using SeasonalPerks.Shared.Effects.Trading;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;

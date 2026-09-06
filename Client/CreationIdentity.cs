@@ -1,7 +1,8 @@
 using EFT;
 using EFT.UI;
 using PlayerIcons;
-using SeasonalPerks.UI;
+using SeasonalPerks.UI.Controls;
+using SeasonalPerks.UI.Creation;
 using UnityEngine;
 using UnityEngine.UI;
 

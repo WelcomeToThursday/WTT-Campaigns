@@ -1,7 +1,7 @@
 using System.Reflection;
 using EFT.Hideout;
 using HarmonyLib;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Profiles;
 using SPT.Reflection.Patching;
 
 namespace SeasonalPerks.Client.Patches.Hideout;

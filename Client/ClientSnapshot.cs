@@ -1,5 +1,5 @@
 using EFT;
-using SeasonalPerks.Shared;
+using SeasonalPerks.Shared.Contracts;
 
 namespace SeasonalPerks.Client;
 
