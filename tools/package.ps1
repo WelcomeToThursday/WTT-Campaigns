@@ -5,7 +5,7 @@ $sptRoot = [IO.Path]::GetFullPath((Join-Path $projectRoot '..\..'))
 $bundle = Join-Path $projectRoot 'Client\Resources\seasonalperks_ui.bundle'
 if (!(Test-Path -LiteralPath $bundle)) { throw 'Build the recovered UI in CJ-SDK first.' }
 
-dotnet build (Join-Path $projectRoot 'WTT-Seasonal.sln') -c Release --nologo -v:q | Out-Host
+dotnet build (Join-Path $projectRoot 'WTT-Seasonal.slnx') -c Release --nologo -v:q | Out-Host
 if ($LASTEXITCODE) { throw 'Release build failed.' }
 $clientOutput = Get-SeasonalBuildOutput $projectRoot 'Client'
 $serverOutput = Get-SeasonalBuildOutput $projectRoot 'Server'
