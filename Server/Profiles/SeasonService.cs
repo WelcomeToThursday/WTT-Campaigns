@@ -36,6 +36,7 @@ public sealed class SeasonService(
     private const string LinkKey = "cjSeasonalPerksAccount";
     private readonly ConcurrentDictionary<string, AccountLink> _links = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates = new();
+    private readonly Dictionary<string, Catalogue> _catalogues = new();
     public Catalogue Catalogue { get; private set; } = new();
     public Dictionary<string, string> Locale { get; private set; } = new();
     public Rules Rules { get; private set; } = new();
@@ -43,6 +44,11 @@ public sealed class SeasonService(
 
     public void Initialize()
     {
+        foreach (var runtime in repository.Playable.Values)
+        {
+            var season = runtime.Definition;
+            _catalogues[season.Id] = season.Perks;
+        }
         var definition = repository.Current.Definition;
         foreach (var profile in saves.GetProfiles().Values)
         {
@@ -50,9 +56,9 @@ public sealed class SeasonService(
             if (pmc != null)
             {
                 var state = State(pmc);
-                if (state.Revision > 0 && (state.SeasonId ?? SeasonRepository.LegacyId) == definition.Id)
+                if (state.Revision > 0 && repository.Playable.TryGetValue(state.SeasonId ?? SeasonRepository.LegacyId, out var runtime))
                 {
-                    repository.MarkUsed(definition);
+                    repository.MarkUsed(runtime.Definition);
                 }
             }
         }
@@ -104,39 +110,42 @@ public sealed class SeasonService(
             root,
             id => profileData.GetProfileDataAsync<AccountLink>(new MongoId(id), LinkKey).GetAwaiter().GetResult() ?? new AccountLink()
         );
-        var season = repository.Current.Definition.Id;
-        if (link.CurrentSeasonId != season)
+        var changed = false;
+        void Migrate(string id, string seasonId, bool created)
         {
-            var before = SeasonCompiler.Copy(link);
-            var previous = link.CurrentSeasonId ?? SeasonRepository.LegacyId;
-            if (link.SeasonalId != null)
+            if (link.Characters.Any(c => c.ProfileId == id))
             {
-                link.Seasons[previous] = new SeasonCharacterLink { ProfileId = link.SeasonalId, Created = link.Created };
+                return;
             }
 
-            var target = link.Seasons.GetValueOrDefault(season);
-            var firstMigration = link.CurrentSeasonId == null && season == SeasonRepository.LegacyId;
-            link.SeasonalId = target?.ProfileId;
-            link.Created = target?.Created ?? false;
-            link.CurrentSeasonId = season;
-            if (!firstMigration)
-            {
-                link.Mode = "normal";
-                link.ActiveRaidProfiles.Clear();
-            }
-            try
-            {
-                profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link).GetAwaiter().GetResult();
-            }
-            catch
-            {
-                _links[root] = before;
-                throw;
-            }
+            link.Characters.Add(
+                new SeasonCharacterLink
+                {
+                    ProfileId = id,
+                    SeasonId = seasonId,
+                    Created = created,
+                }
+            );
+            changed = true;
         }
-        if (link.Created)
+        foreach (var old in link.Seasons)
         {
-            repository.MarkUsed(repository.Current.Definition);
+            Migrate(old.Value.ProfileId, old.Key, old.Value.Created);
+        }
+
+        if (link.SeasonalId != null)
+        {
+            Migrate(link.SeasonalId, link.CurrentSeasonId ?? SeasonRepository.LegacyId, link.Created);
+        }
+
+        if (link.Mode == "seasonal" && !repository.Playable.ContainsKey(link.CurrentSeasonId ?? SeasonRepository.LegacyId))
+        {
+            link.Mode = "normal";
+            changed = true;
+        }
+        if (changed)
+        {
+            profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link).GetAwaiter().GetResult();
         }
 
         return link;
@@ -151,7 +160,13 @@ public sealed class SeasonService(
     public bool IsSeasonal(string id)
     {
         var state = State(saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!);
-        return state.Revision > 0 && (state.SeasonId ?? SeasonRepository.LegacyId) == repository.Current.Definition.Id;
+        return state.Revision > 0 && repository.Playable.ContainsKey(state.SeasonId ?? SeasonRepository.LegacyId);
+    }
+
+    public string CharacterSeasonId(string id)
+    {
+        var state = State(saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!);
+        return state.Revision > 0 ? state.SeasonId ?? SeasonRepository.LegacyId : "";
     }
 
     public static PerkState State(PmcData pmc)
@@ -172,49 +187,114 @@ public sealed class SeasonService(
         pmc.ExtensionData[StateKey] = JsonConvert.SerializeObject(state);
     }
 
-    public ServerSnapshot GetSnapshot(string root)
+    public string SeasonIdFor(PmcData pmc)
+    {
+        var state = State(pmc);
+        return state.Revision > 0 ? state.SeasonId ?? SeasonRepository.LegacyId : repository.Current.Definition.Id;
+    }
+
+    public RuntimeEffects Effects(PmcData pmc)
+    {
+        var state = State(pmc);
+        var catalogue = _catalogues.GetValueOrDefault(state.SeasonId ?? SeasonRepository.LegacyId) ?? Catalogue;
+        return new RuntimeEffects(catalogue, state.Revision > 0 ? state.SeasonalPerks : []);
+    }
+
+    public ServerSnapshot GetSnapshot(string root, string seasonId = "", string characterId = "")
     {
         var link = Link(root);
-        var normal = saves.GetProfile(new MongoId(root)).CharacterData!.PmcData!;
-        var seasonal = link.Created ? saves.GetProfile(new MongoId(link.SeasonalId!)).CharacterData!.PmcData : null;
-        return new ServerSnapshot
+        var selected = link.Characters.FirstOrDefault(c => c.ProfileId == (characterId.Length > 0 ? characterId : link.SeasonalId));
+        var requestedSeason = seasonId.Length > 0 ? seasonId : selected?.SeasonId ?? "";
+        if (seasonId.Length == 0 && !repository.Playable.ContainsKey(requestedSeason))
+        {
+            requestedSeason = "";
+        }
+
+        var runtime = repository.Runtime(requestedSeason);
+        var definition = runtime.Definition;
+        var seasonal =
+            selected?.Created == true && selected.SeasonId == definition.Id
+                ? saves.GetProfile(new MongoId(selected.ProfileId)).CharacterData!.PmcData
+                : null;
+        var snapshot = new ServerSnapshot
         {
             ProtocolVersion = 2,
-            SeasonId = repository.Current.Definition.Id,
-            SeasonName = repository.Current.Definition.Name,
-            PackRevision = repository.Current.Definition.Revision,
-            BannerImage = repository.Current.Definition.Branding.Banner,
-            LegacyBranding = repository.Current.Definition.Legacy,
-            DocumentTemplates = repository.Current.Definition.Documents.Select(d => d.ItemId).ToList(),
-            Catalogue = Catalogue,
-            Locale = Locale,
-            Unavailable = Unavailable,
-            Rules = Rules,
+            SeasonId = definition.Id,
+            SeasonName = definition.Name,
+            Seasons = repository
+                .Playable.Values.Select(r => r.Definition)
+                .OrderBy(d => d.Name)
+                .Select(d => new SeasonChoice
+                {
+                    Id = d.Id,
+                    Name = d.Name,
+                    Description = d.Description,
+                })
+                .ToList(),
+            SelectedCharacterId = seasonal == null ? "" : selected!.ProfileId,
+            PackRevision = definition.Revision,
+            BannerImage = definition.Branding.Banner,
+            LegacyBranding = definition.Legacy,
+            DocumentTemplates = definition.Documents.Select(d => d.ItemId).ToList(),
+            Catalogue = definition.Perks,
+            Locale = definition.Locales["en"],
+            Unavailable = Unsupported(definition.Perks),
+            Rules = definition.Rules,
             ActiveMode = link.Mode,
             EffectiveProfileId = EffectiveId(root),
             State = seasonal == null ? new PerkState() : State(seasonal),
-            Characters = new()
-            {
-                new()
-                {
-                    Mode = "normal",
-                    Name = normal.Info?.Nickname ?? "PMC",
-                    Level = normal.Info?.Level ?? 1,
-                    Exists = true,
-                    Side = normal.Info?.Side ?? "Usec",
-                    Visual = Visual(normal),
-                },
-                new()
-                {
-                    Mode = "seasonal",
-                    Name = seasonal?.Info?.Nickname ?? "Create seasonal character",
-                    Level = seasonal?.Info?.Level ?? 1,
-                    Exists = seasonal != null,
-                    Side = seasonal?.Info?.Side ?? "Usec",
-                    Visual = seasonal == null ? null : Visual(seasonal),
-                },
-            },
         };
+        void Add(string id, string mode, string season, bool created)
+        {
+            var pmc = created && saves.ProfileExists(new MongoId(id)) ? saves.GetProfile(new MongoId(id)).CharacterData?.PmcData : null;
+            var entry = link.Characters.FirstOrDefault(c => c.ProfileId == id);
+            var name = repository.Playable.TryGetValue(season, out var pack) ? pack.Definition.Name : season;
+            snapshot.Characters.Add(
+                new()
+                {
+                    Id = id,
+                    Mode = mode,
+                    SeasonId = season,
+                    SeasonName = name,
+                    CreationOperationId = link.Characters.FirstOrDefault(c => c.ProfileId == id)?.CreationOperationId ?? "",
+                    Available = mode == "normal" || repository.Playable.ContainsKey(season),
+                    Name = pmc?.Info?.Nickname ?? entry?.Name ?? "Wiped character",
+                    Wiped = entry?.Wiped == true,
+                    Level = pmc?.Info?.Level ?? 1,
+                    Exists = pmc?.Info != null,
+                    Side = pmc?.Info?.Side ?? "Usec",
+                    Visual = pmc?.Info == null ? null : Visual(pmc),
+                }
+            );
+        }
+        Add(root, "normal", "", true);
+        foreach (var character in link.Characters.Where(c => c.Created || c.Wiped))
+        {
+            Add(character.ProfileId, "seasonal", character.SeasonId, character.Created);
+        }
+
+        foreach (var perk in snapshot.Catalogue.All)
+        {
+            perk.ImageUrl = "/wtt-seasonal/icons/" + perk.Id + ".png";
+        }
+
+        return snapshot;
+    }
+
+    private static Dictionary<string, string> Unsupported(Catalogue catalogue)
+    {
+        var result = new Dictionary<string, string>();
+        foreach (var perk in catalogue.All)
+        {
+            var reason =
+                EffectSupport.UnavailableReason(perk)
+                ?? perk.Effects.Select(EffectParametersValidator.Error).FirstOrDefault(e => e != null);
+            if (reason != null)
+            {
+                result[perk.Id] = reason;
+            }
+        }
+        return result;
     }
 
     private CharacterVisual? Visual(PmcData profile)
@@ -259,15 +339,61 @@ public sealed class SeasonService(
     public RuntimeEffects Effects(string effectiveId)
     {
         var pmc = saves.GetProfile(new MongoId(effectiveId)).CharacterData!.PmcData!;
-        return new RuntimeEffects(Catalogue, IsSeasonal(effectiveId) ? State(pmc).SeasonalPerks : []);
+        return Effects(pmc);
     }
 
     public async Task<ServerSnapshot> Create(string root, Mutation request)
     {
-        var link = Link(root);
-        if (link.Created)
+        if (request.PerkIds == null)
         {
-            throw new InvalidOperationException("A seasonal character already exists.");
+            throw new InvalidOperationException("A personal perk selection is required.");
+        }
+        var link = Link(root);
+        var definition = repository.Runtime(request.SeasonId).Definition;
+        var entry =
+            request.CharacterId.Length > 0
+                ? link.Characters.FirstOrDefault(c => c.ProfileId == request.CharacterId)
+                    ?? throw new InvalidOperationException("This character does not belong to this account.")
+            : request.OperationId.Length > 0 ? link.Characters.FirstOrDefault(c => c.CreationOperationId == request.OperationId)
+            : link.Characters.FirstOrDefault(c =>
+                !c.Created && !c.Wiped && c.SeasonId == definition.Id && c.CreationOperationId.Length == 0
+            );
+        if (entry?.Created == true && entry.CreationOperationId != request.OperationId)
+        {
+            throw new InvalidOperationException("Wipe this character before creating it again.");
+        }
+        var restartRecreation = entry?.Wiped == true && !entry.Created && entry.CreationOperationId != request.OperationId;
+
+        var fingerprint = JsonConvert.SerializeObject(
+            new
+            {
+                definition.Id,
+                request.Side,
+                Nickname = CleanNickname(request.Nickname),
+                request.HeadId,
+                request.VoiceId,
+                Perks = request.PerkIds.OrderBy(id => id, StringComparer.Ordinal).ToArray(),
+            }
+        );
+        if (!restartRecreation && entry != null && entry.CreationFingerprint.Length > 0 && entry.CreationFingerprint != fingerprint)
+        {
+            throw new InvalidOperationException(
+                "This creation request was already used with different choices. Start a new character draft."
+            );
+        }
+        if (entry != null && entry.SeasonId != definition.Id)
+        {
+            throw new InvalidOperationException("The creation request belongs to another season.");
+        }
+
+        if (entry?.Created == true)
+        {
+            return GetSnapshot(root, entry.SeasonId, entry.ProfileId);
+        }
+
+        if (request.OperationId.Length == 0 && link.Characters.Any(c => c.Created && c.SeasonId == definition.Id))
+        {
+            throw new InvalidOperationException("A creation operation ID is required for an additional character.");
         }
 
         if (request.Side is not ("Usec" or "Bear"))
@@ -275,17 +401,32 @@ public sealed class SeasonService(
             throw new InvalidOperationException("Invalid faction.");
         }
 
-        Validate(request);
+        Validate(request, definition);
         var headId = CreationCustomization(request.Side, "5cc085e214c02e000c6bea67", request.HeadId);
         var voiceId = CreationCustomization(request.Side, "5fc100cf95572123ae738483", request.VoiceId);
         var account = saves.GetProfile(new MongoId(root));
-        EnsureNotInRaid(root);
-        if (link.SeasonalId == null)
+        EnsureNotInRaid(EffectiveId(root));
+        if (entry == null)
         {
-            link.SeasonalId = NewId();
+            entry = new SeasonCharacterLink
+            {
+                ProfileId = NewId(),
+                SeasonId = definition.Id,
+                CreationOperationId = request.OperationId,
+                CreationFingerprint = fingerprint,
+            };
+            link.Characters.Add(entry);
+        }
+        if (entry.Wiped && (entry.CreationOperationId.Length == 0 || restartRecreation))
+        {
+            // The achievement receipt lives in the account link until recreation is complete.
+            // Clear a file left by an interrupted wipe before reserving the creation request.
+            RemoveRetiredProfile(entry.ProfileId);
+            entry.CreationOperationId = request.OperationId;
+            entry.CreationFingerprint = fingerprint;
         }
         await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
-        var id = new MongoId(link.SeasonalId);
+        var id = new MongoId(entry.ProfileId);
         if (!saves.ProfileExists(id))
         {
             saves.CreateProfile(
@@ -295,9 +436,10 @@ public sealed class SeasonService(
                     ScavengerId = new MongoId(NewId()),
                     Aid = saves.GetProfiles().Values.Max(p => p.ProfileInfo?.Aid ?? 0) + 1,
                     Username = (account.ProfileInfo!.Username ?? "PMC") + "-seasonal",
-                    Edition = string.IsNullOrEmpty(repository.Current.Definition.Starting.Preset)
-                        ? account.ProfileInfo.Edition
-                        : repository.Current.Definition.Starting.Preset,
+                    Edition =
+                        entry.Wiped || string.IsNullOrEmpty(definition.Starting.Preset)
+                            ? account.ProfileInfo.Edition
+                            : definition.Starting.Preset,
                     IsWiped = false,
                 }
             );
@@ -306,6 +448,10 @@ public sealed class SeasonService(
         var existing = saves.GetProfile(id).CharacterData!.PmcData!;
         if (existing.Info == null)
         {
+            if (entry.Wiped)
+            {
+                existing.Achievements = entry.PreservedAchievements.ToDictionary(p => new MongoId(p.Key), p => p.Value);
+            }
             // Use SPT's own starter profile and faction-specific cosmetics, never clone player progression.
             await creator.CreateProfile(
                 id,
@@ -318,48 +464,70 @@ public sealed class SeasonService(
                 }
             );
         }
-        repository.CheckGameplay(repository.Current.Definition);
-        await starting.Apply(id, request.Side);
+        repository.CheckGameplay(definition);
+        await starting.Apply(id, request.Side, definition.Id);
         // Resume a creation interrupted after its profile/receipts were committed.
         if (State(saves.GetProfile(id).CharacterData!.PmcData!).Revision == 0)
         {
-            await ApplySelection(id, request.PerkIds, 0, root);
+            await ApplySelection(id, request.PerkIds, 0, root, definition.Id);
         }
 
-        repository.MarkUsed(repository.Current.Definition);
-        link.Created = true;
+        repository.MarkUsed(definition);
+        var before = SeasonCompiler.Copy(link);
+        entry.Created = true;
+        entry.Wiped = false;
+        entry.PreservedAchievements.Clear();
+        if (link.Mode == "normal")
+        {
+            SelectLink(link, entry);
+        }
+
         try
         {
             await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
         }
         catch
         {
-            link.Created = false;
+            _links[root] = before;
             throw;
         }
-        return GetSnapshot(root);
+        return GetSnapshot(root, definition.Id, entry.ProfileId);
+    }
+
+    private static void SelectLink(AccountLink link, SeasonCharacterLink entry)
+    {
+        link.SeasonalId = entry.ProfileId;
+        link.CurrentSeasonId = entry.SeasonId;
+        link.Created = entry.Created;
+    }
+
+    private static SeasonCharacterLink Owned(AccountLink link, string id)
+    {
+        return link.Characters.FirstOrDefault(c => c.ProfileId == id && c.Created)
+            ?? throw new InvalidOperationException("This character does not belong to this account.");
     }
 
     public async Task<ServerSnapshot> Edit(string root, Mutation request)
     {
         var link = Link(root);
-        if (!link.Created)
+        var entry = Owned(link, request.CharacterId.Length > 0 ? request.CharacterId : link.SeasonalId ?? "");
+        var definition = repository.Runtime(entry.SeasonId).Definition;
+        if (request.SeasonId.Length > 0 && request.SeasonId != entry.SeasonId)
         {
-            throw new InvalidOperationException("Create a seasonal character first.");
+            throw new InvalidOperationException("These modifiers belong to a different season.");
         }
-
-        if (!Rules.AllowEdits)
+        if (!definition.Rules.AllowEdits)
         {
-            throw new InvalidOperationException("Perk editing is disabled in the server settings.");
+            throw new InvalidOperationException("Perk editing is disabled in this season.");
         }
 
         EnsureNotInRaid(EffectiveId(root));
-        Validate(request);
-        await ApplySelection(new MongoId(link.SeasonalId!), request.PerkIds, request.ExpectedRevision);
-        return GetSnapshot(root);
+        Validate(request, definition);
+        await ApplySelection(new MongoId(entry.ProfileId), request.PerkIds, request.ExpectedRevision);
+        return GetSnapshot(root, entry.SeasonId, entry.ProfileId);
     }
 
-    public async Task<ServerSnapshot> Switch(string root, string mode)
+    public async Task<ServerSnapshot> Switch(string root, string mode, string characterId = "")
     {
         var link = Link(root);
         if (mode is not ("normal" or "seasonal"))
@@ -367,15 +535,21 @@ public sealed class SeasonService(
             throw new InvalidOperationException("Unknown character mode.");
         }
 
-        if (mode == "seasonal" && !link.Created)
+        var entry = mode == "seasonal" ? Owned(link, characterId.Length > 0 ? characterId : link.SeasonalId ?? "") : null;
+        if (entry != null)
         {
-            throw new InvalidOperationException("Create a seasonal character first.");
+            repository.Runtime(entry.SeasonId);
         }
 
         var current = EffectiveId(root);
         EnsureNotInRaid(current);
         await saves.SaveProfileAsync(new MongoId(current));
-        var previous = link.Mode;
+        var before = SeasonCompiler.Copy(link);
+        if (entry != null)
+        {
+            SelectLink(link, entry);
+        }
+
         link.Mode = mode;
         try
         {
@@ -383,16 +557,146 @@ public sealed class SeasonService(
         }
         catch
         {
-            link.Mode = previous;
+            _links[root] = before;
             throw;
         }
         return GetSnapshot(root);
     }
 
-    private async Task ApplySelection(MongoId id, List<string> personal, long revision, string? root = null)
+    public async Task<ServerSnapshot> Delete(string root, Mutation request)
+    {
+        var link = Link(root);
+        if (link.RetiredCharacters.ContainsKey(request.CharacterId) && !link.Characters.Any(c => c.ProfileId == request.CharacterId))
+        {
+            RemoveRetiredProfile(request.CharacterId);
+            return GetSnapshot(root);
+        }
+        var entry =
+            link.Characters.FirstOrDefault(c => c.ProfileId == request.CharacterId && (c.Created || c.Wiped))
+            ?? throw new InvalidOperationException("This character does not belong to this account.");
+        EnsureNotInRaid(EffectiveId(root));
+        if (saves.ProfileExists(new MongoId(entry.ProfileId)))
+        {
+            EnsureNotInRaid(entry.ProfileId);
+        }
+
+        if (EffectiveId(root) == entry.ProfileId)
+        {
+            throw new InvalidOperationException("Switch to another character before deleting or wiping this one.");
+        }
+
+        var before = SeasonCompiler.Copy(link);
+        link.Characters.Remove(entry);
+        link.RetiredCharacters.TryAdd(entry.ProfileId, "");
+        foreach (var old in link.Seasons.Where(p => p.Value.ProfileId == entry.ProfileId).Select(p => p.Key).ToArray())
+        {
+            link.Seasons.Remove(old);
+        }
+
+        if (link.SeasonalId == entry.ProfileId)
+        {
+            link.SeasonalId = null;
+            link.Created = false;
+            link.CurrentSeasonId = null;
+        }
+        try
+        {
+            await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
+        }
+        catch
+        {
+            _links[root] = before;
+            throw;
+        }
+        RemoveRetiredProfile(entry.ProfileId);
+        return GetSnapshot(root);
+    }
+
+    private void RemoveRetiredProfile(string profileId)
+    {
+        var id = new MongoId(profileId);
+        if (!saves.ProfileExists(id))
+        {
+            return;
+        }
+
+        var original = saves.GetProfile(id);
+        if (!saves.RemoveProfile(id))
+        {
+            saves.AddProfile(original);
+            throw new InvalidOperationException(
+                "Character removed from selection, but SPT could not remove its saved file. Retry deletion."
+            );
+        }
+    }
+
+    public async Task<ServerSnapshot> Wipe(string root, Mutation request)
+    {
+        if (string.IsNullOrEmpty(request.OperationId))
+        {
+            throw new InvalidOperationException("A wipe operation ID is required.");
+        }
+
+        var link = Link(root);
+        var entry =
+            link.Characters.FirstOrDefault(c => c.ProfileId == request.CharacterId)
+            ?? throw new InvalidOperationException("This character does not belong to this account.");
+        if (entry.WipeOperationId == request.OperationId || entry.Wiped)
+        {
+            // A repeated confirmation cannot erase a newly recreated character.
+            if (entry.Wiped && entry.CreationOperationId.Length == 0)
+            {
+                RemoveRetiredProfile(entry.ProfileId);
+            }
+
+            return GetSnapshot(root, entry.SeasonId, entry.ProfileId);
+        }
+        if (!entry.Created)
+        {
+            throw new InvalidOperationException("Finish creating this character before wiping it.");
+        }
+        EnsureNotInRaid(EffectiveId(root));
+        EnsureNotInRaid(entry.ProfileId);
+        if (EffectiveId(root) == entry.ProfileId)
+        {
+            throw new InvalidOperationException("Switch to another character before wiping this one.");
+        }
+
+        repository.Runtime(entry.SeasonId);
+        var pmc = saves.GetProfile(new MongoId(entry.ProfileId)).CharacterData!.PmcData!;
+        var before = SeasonCompiler.Copy(link);
+        entry.PreservedAchievements = pmc.Achievements?.ToDictionary(p => p.Key.ToString(), p => p.Value) ?? new();
+        entry.Name = pmc.Info?.Nickname ?? "Seasonal";
+        entry.Wiped = true;
+        entry.Created = false;
+        entry.WipeOperationId = request.OperationId;
+        entry.CreationOperationId = entry.CreationFingerprint = "";
+        if (link.SeasonalId == entry.ProfileId)
+        {
+            link.SeasonalId = null;
+            link.CurrentSeasonId = null;
+            link.Created = false;
+        }
+        try
+        {
+            await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
+        }
+        catch
+        {
+            _links[root] = before;
+            throw;
+        }
+        // Persist the achievement-only receipt before removing all character progression.
+        RemoveRetiredProfile(entry.ProfileId);
+        return GetSnapshot(root, entry.SeasonId, entry.ProfileId);
+    }
+
+    private async Task ApplySelection(MongoId id, List<string> personal, long revision, string? root = null, string seasonId = "")
     {
         var pmc = saves.GetProfile(id).CharacterData!.PmcData!;
         var state = State(pmc);
+        var definition = repository.Runtime(seasonId.Length > 0 ? seasonId : state.SeasonId ?? "").Definition;
+        var catalogue = definition.Perks;
         if (state.Revision != revision)
         {
             throw new InvalidOperationException("Perks changed since this screen opened. Refresh and try again.");
@@ -401,17 +705,17 @@ public sealed class SeasonService(
         var previousState = State(pmc);
         var previousProgress = pmc.Skills!.Common.Select(skill => (skill, skill.Progress)).ToArray();
         state.RootAccountId ??= root;
-        state.SeasonId ??= repository.Current.Definition.Id;
-        state.GameplayHash ??= SeasonRepository.GameplayHash(repository.Current.Definition);
-        state.SeasonalPerks = Rules.EnabledCommonIds.Concat(personal).Distinct().ToList();
-        ConsumableEffects.UpdateParameters(Catalogue, state);
+        state.SeasonId ??= definition.Id;
+        state.GameplayHash ??= SeasonRepository.GameplayHash(definition);
+        state.SeasonalPerks = definition.Rules.EnabledCommonIds.Concat(personal).Distinct().ToList();
+        ConsumableEffects.UpdateParameters(catalogue, state);
         AllergyEffects.UpdateParameters(
-            Catalogue,
+            catalogue,
             state,
             effect => TemplateFilters.Candidates(templates, effect),
             RandomNumberGenerator.GetInt32
         );
-        foreach (var p in Catalogue.All.Where(p => state.SeasonalPerks.Contains(p.Id)))
+        foreach (var p in catalogue.All.Where(p => state.SeasonalPerks.Contains(p.Id)))
         {
             foreach (var e in p.Effects.Where(e => e.EffectId == "skill_level_preset"))
             {
@@ -439,7 +743,7 @@ public sealed class SeasonService(
             }
         }
         state.Revision++;
-        var effects = new RuntimeEffects(Catalogue, state.SeasonalPerks);
+        var effects = new RuntimeEffects(catalogue, state.SeasonalPerks);
         foreach (var skill in pmc.Skills!.Common!)
         {
             skill.Progress = Math.Min(skill.Progress, effects.SkillCap(skill.Id.ToString()) * 100d);
@@ -468,13 +772,13 @@ public sealed class SeasonService(
         }
     }
 
-    private void Validate(Mutation request)
+    private static void Validate(Mutation request, SeasonDefinition definition)
     {
         if (request.PerkIds == null)
         {
             throw new InvalidOperationException("A personal perk selection is required.");
         }
-        var error = Selection.Validate(Catalogue, request.PerkIds, Rules, Unavailable);
+        var error = Selection.Validate(definition.Perks, request.PerkIds, definition.Rules, Unsupported(definition.Perks));
         if (error != null)
         {
             throw new InvalidOperationException(error);
@@ -528,7 +832,7 @@ public sealed class SeasonService(
         {
             return sessionId;
         }
-        if (!saves.ProfileExists(new MongoId(parent)) || Link(parent).SeasonalId != sessionId)
+        if (!saves.ProfileExists(new MongoId(parent)) || !Link(parent).Characters.Any(c => c.ProfileId == sessionId))
         {
             throw new InvalidOperationException("The seasonal account link is invalid.");
         }

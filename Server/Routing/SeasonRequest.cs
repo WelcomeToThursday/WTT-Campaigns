@@ -7,6 +7,8 @@ public record SeasonRequest : IRequestData
 {
     public int ProtocolVersion { get; set; }
     public string SeasonId { get; set; } = "";
+    public string CharacterId { get; set; } = "";
+    public string OperationId { get; set; } = "";
     public long ExpectedRevision { get; set; }
     public List<string> PerkIds { get; set; } = [];
     public string Mode { get; set; } = "normal";
@@ -19,6 +21,10 @@ public record SeasonRequest : IRequestData
     {
         return new()
         {
+            ProtocolVersion = ProtocolVersion,
+            SeasonId = SeasonId,
+            CharacterId = CharacterId,
+            OperationId = OperationId,
             ExpectedRevision = ExpectedRevision,
             PerkIds = PerkIds,
             Mode = Mode,

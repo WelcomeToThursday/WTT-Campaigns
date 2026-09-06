@@ -13,6 +13,11 @@ public sealed partial class HubGameplay
 {
     public async Task StartRaid(string sessionId, StartLocalRaidRequestData request, StartLocalRaidResponseData response)
     {
+        if (_runtimes != null)
+        {
+            await ForSession(sessionId).StartRaid(sessionId, request, response);
+            return;
+        }
         if (!_ready || !seasons.IsSeasonal(sessionId) || !string.Equals(request.PlayerSide, "pmc", StringComparison.OrdinalIgnoreCase))
         {
             return;
@@ -222,6 +227,10 @@ public sealed partial class HubGameplay
 
     public async Task<HubResult> Pickup(string sessionId, HubRequest request)
     {
+        if (_runtimes != null)
+        {
+            return await ForSession(sessionId).Pickup(sessionId, request);
+        }
         ValidateSeasonRequest(request);
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
@@ -289,6 +298,10 @@ public sealed partial class HubGameplay
 
     public bool RaidFinished(string sessionId, string? raidId)
     {
+        if (_runtimes != null)
+        {
+            return ForSession(sessionId).RaidFinished(sessionId, raidId);
+        }
         return _ready
             && seasons.IsSeasonal(sessionId)
             && raidId != null
@@ -298,6 +311,11 @@ public sealed partial class HubGameplay
 
     public async Task FinishRaid(string sessionId, EndLocalRaidRequestData request, bool leaseHeld = false)
     {
+        if (_runtimes != null)
+        {
+            await ForSession(sessionId).FinishRaid(sessionId, request, leaseHeld);
+            return;
+        }
         if (!_ready || !seasons.IsSeasonal(sessionId) || request.ServerId == null)
         {
             return;

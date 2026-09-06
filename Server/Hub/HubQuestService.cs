@@ -16,13 +16,29 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
     private Dictionary<string, JObject> _captured = new();
     private readonly Dictionary<string, string> _unavailable = new();
     public HashSet<string> Imported { get; } = new();
+    private readonly Dictionary<string, HashSet<string>> _seasonQuests = new();
+
+    public bool Allowed(string questId, string seasonId)
+    {
+        return !Imported.Contains(questId) || _seasonQuests.TryGetValue(seasonId, out var quests) && quests.Contains(questId);
+    }
 
     public void Initialize()
     {
+        foreach (var runtime in repository.Playable.Values)
+        {
+            var definition = runtime.Definition;
+            _seasonQuests[definition.Id] = definition
+                .Quests.OfType<JObject>()
+                .Where(q => (bool?)q["_seasonalEnabled"] != false)
+                .Select(q => (string)q["_id"]!)
+                .ToHashSet();
+        }
         _captured = repository
-            .Current.Definition.Quests.OfType<JObject>()
+            .Playable.Values.SelectMany(r => r.Definition.Quests.OfType<JObject>())
             .Where(q => (bool?)q["_seasonalEnabled"] != false)
-            .ToDictionary(q => (string)q["_id"]!);
+            .GroupBy(q => (string)q["_id"]!)
+            .ToDictionary(g => g.Key, g => g.First());
         foreach (var id in _captured.Keys)
         {
             Validate(id, new HashSet<string>());

@@ -61,7 +61,19 @@ public sealed partial class SeasonalScreen
             _ui.Label(_body, "CreationExplanation", explanation, 20, 1660, 66, 0, 397).alignment = TextAnchor.MiddleCenter;
             if (common)
             {
-                CreationArt("season-banner", 660, 190, 0, 292).preserveAspect = true;
+                var season = _state.Seasons.FirstOrDefault(value => value.Id == _state.SeasonId);
+                var label = _ui.Label(
+                    _body,
+                    "ChosenSeason",
+                    season?.Name.ToUpperInvariant() ?? "SEASONAL CHARACTER",
+                    32,
+                    1400,
+                    100,
+                    0,
+                    292
+                );
+                label.alignment = TextAnchor.MiddleCenter;
+                label.color = new Color(.392f, .855f, .655f);
             }
             else
             {

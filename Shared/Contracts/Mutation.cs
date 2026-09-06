@@ -4,6 +4,8 @@ public sealed class Mutation
 {
     public int ProtocolVersion { get; set; } = 2;
     public string SeasonId { get; set; } = "";
+    public string CharacterId { get; set; } = "";
+    public string OperationId { get; set; } = "";
     public long ExpectedRevision { get; set; }
     public List<string> PerkIds { get; set; } = new();
     public string Mode { get; set; } = "normal";

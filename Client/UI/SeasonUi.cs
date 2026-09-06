@@ -13,7 +13,7 @@ using UnityEngine.UI;
 
 namespace SeasonalPerks.Client.UI;
 
-public sealed class SeasonUi : MonoBehaviour
+public sealed partial class SeasonUi : MonoBehaviour
 {
     internal static SeasonUi Instance = null!;
     internal AssetBundle UiBundle
@@ -169,6 +169,9 @@ public sealed class SeasonUi : MonoBehaviour
         _screen.CloseRequested = Close;
         _screen.SaveRequested = Save;
         _screen.SwitchRequested = Switch;
+        _screen.SeasonChosen = ChooseSeason;
+        _screen.RecreationRequested = (id, season) => ChooseSeason(season, id);
+        _screen.CharacterManagementRequested = ManageCharacter;
     }
 
     internal SeasonalScreen CreateView(Transform parent, bool embedded = false)
@@ -205,6 +208,16 @@ public sealed class SeasonUi : MonoBehaviour
         return new ScreenState
         {
             ActiveMode = snapshot.ActiveMode,
+            SeasonId = snapshot.SeasonId,
+            SelectedCharacterId = snapshot.SelectedCharacterId,
+            Seasons = snapshot
+                .Seasons.Select(season => new SeasonEntry
+                {
+                    Id = season.Id,
+                    Name = season.Name,
+                    Description = season.Description,
+                })
+                .ToArray(),
             StartingPoints = snapshot.Rules.StartingPoints,
             EnforceBudget = snapshot.Rules.EnforceBudget,
             AllowEdits = snapshot.Rules.AllowEdits,
@@ -213,9 +226,14 @@ public sealed class SeasonUi : MonoBehaviour
                 .Characters.Select(character => new CharacterEntry
                 {
                     Mode = character.Mode,
+                    Id = character.Id,
+                    SeasonId = character.SeasonId,
+                    SeasonName = character.SeasonName,
+                    Available = character.Available,
                     Name = character.Name,
                     Level = character.Level,
                     Exists = character.Exists,
+                    Wiped = character.Wiped,
                     Side = character.Side,
                 })
                 .ToArray(),
@@ -259,8 +277,8 @@ public sealed class SeasonUi : MonoBehaviour
             return;
         }
         Plugin.Busy = true;
-        var created = Plugin.Current.Characters.Any(character => character.Mode == "seasonal" && character.Exists);
-        var creationFlow = !created && _screen.Page == ScreenPage.CreationPersonal;
+        var creationFlow = _screen.Page == ScreenPage.CreationPersonal;
+        var created = !creationFlow;
         ClientSnapshot? completedCreation = null;
         _screen.SetBusy(true, creationFlow ? "" : "Saving seasonal character...");
         try
@@ -274,6 +292,9 @@ public sealed class SeasonUi : MonoBehaviour
                 created ? "edit" : "create",
                 new Mutation
                 {
+                    SeasonId = _screen.SeasonId,
+                    CharacterId = creationFlow ? _screen.CreationCharacterId : Plugin.Current.SelectedCharacterId,
+                    OperationId = creationFlow ? _screen.CreationOperationId : "",
                     ExpectedRevision = Plugin.Current.State.Revision,
                     PerkIds = _screen.Selected.ToList(),
                     Nickname = _screen.Nickname,
@@ -286,8 +307,7 @@ public sealed class SeasonUi : MonoBehaviour
             {
                 // Retain the created profile if switching or reloading needs a retry.
                 completedCreation = snapshot;
-                Plugin.Accept(snapshot);
-                snapshot = await Plugin.Request("switch", new Mutation { Mode = "seasonal" });
+                snapshot = await Plugin.Request("switch", new Mutation { Mode = "seasonal", CharacterId = snapshot.SelectedCharacterId });
                 completedCreation = snapshot;
                 await Plugin.Reload(snapshot);
                 _startup = false;
@@ -320,7 +340,11 @@ public sealed class SeasonUi : MonoBehaviour
                     // A response can be lost after the server commits creation or switching.
                     // Recover the authoritative identity before offering a retry.
                     var recovered = await Plugin.Request("snapshot");
-                    if (recovered.Characters.Any(character => character.Mode == "seasonal" && character.Exists))
+                    if (
+                        recovered.Characters.Any(character =>
+                            character.CreationOperationId == _screen.CreationOperationId && character.Exists
+                        )
+                    )
                     {
                         completedCreation = recovered;
                     }
@@ -333,7 +357,20 @@ public sealed class SeasonUi : MonoBehaviour
             _screen.SetBusy(false);
             if (completedCreation != null)
             {
-                Plugin.Accept(completedCreation);
+                if (
+                    completedCreation.ActiveMode == "seasonal"
+                    && completedCreation.SelectedCharacterId != completedCreation.EffectiveProfileId
+                )
+                {
+                    // Creation can finish before switching while another seasonal PMC
+                    // is loaded. Expose the new card without applying its modifiers.
+                    Plugin.Current!.Characters = completedCreation.Characters;
+                    completedCreation = Plugin.Current;
+                }
+                else
+                {
+                    Plugin.Accept(completedCreation);
+                }
                 _startup = true;
                 _screen.StartupSelection = true;
                 _screen.SetState(Presentation(completedCreation), ScreenPage.Characters);
@@ -370,13 +407,23 @@ public sealed class SeasonUi : MonoBehaviour
         }
     }
 
-    private async void Switch(string mode)
+    private async void Switch(string characterId)
     {
+        var character = Plugin.Current?.Characters.FirstOrDefault(c => c.Id == characterId || c.Mode == characterId);
+        if (character == null)
+        {
+            return;
+        }
+
+        var mode = character.Mode;
         if (Plugin.Busy || Plugin.InRaid || _screen == null)
         {
             return;
         }
-        if (CharacterSession.IsLoaded(Plugin.Current, mode, Plugin.App?.Session?.Profile?.Id))
+        if (
+            Plugin.Current?.EffectiveProfileId == character.Id
+            && CharacterSession.IsLoaded(Plugin.Current, mode, Plugin.App?.Session?.Profile?.Id)
+        )
         {
             _startup = false;
             _screen.StartupSelection = false;
@@ -388,7 +435,7 @@ public sealed class SeasonUi : MonoBehaviour
         try
         {
             await Plugin.FlushPendingOperations();
-            await Plugin.Reload(await Plugin.Request("switch", new Mutation { Mode = mode }));
+            await Plugin.Reload(await Plugin.Request("switch", new Mutation { Mode = mode, CharacterId = character.Id }));
             _startup = false;
             _screen.StartupSelection = false;
             _screen.SetBusy(false);
@@ -409,7 +456,7 @@ public sealed class SeasonUi : MonoBehaviour
 
     private void LoadCharacter(string mode, RawImage target)
     {
-        var visual = Plugin.Current?.Characters.FirstOrDefault(character => character.Mode == mode)?.Visual;
+        var visual = Plugin.Current?.Characters.FirstOrDefault(character => character.Id == mode || character.Mode == mode)?.Visual;
         if (visual == null)
         {
             return;
@@ -548,7 +595,7 @@ public sealed class SeasonUi : MonoBehaviour
             throw new OperationCanceledException("Seasonal UI closed.");
         }
         var texture = new Texture2D(2, 2);
-        if (!ImageConversion.LoadImage(texture, bytes) || texture.width != 272 || texture.height != 272)
+        if (!ImageConversion.LoadImage(texture, bytes) || texture.width > 4096 || texture.height > 4096)
         {
             Destroy(texture);
             throw new InvalidDataException("Invalid perk icon: " + id);

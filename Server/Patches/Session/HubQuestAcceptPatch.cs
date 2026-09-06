@@ -36,12 +36,12 @@ public class HubQuestAcceptPatch(SeasonService seasons, HubQuestService quests, 
     [UsedImplicitly]
     private static bool Prefix(MongoId sessionID, AcceptQuestRequestData acceptedQuest, ref ItemEventRouterResponse __result)
     {
-        if (_seasons.IsSeasonal(sessionID.ToString()) || !_quests.Imported.Contains(acceptedQuest.QuestId.ToString()))
+        if (_quests.Allowed(acceptedQuest.QuestId.ToString(), _seasons.CharacterSeasonId(sessionID.ToString())))
         {
             return true;
         }
         __result = _output.GetOutput(sessionID);
-        _responses.AppendErrorToOutput(__result, "This task belongs to the Seasonal character.");
+        _responses.AppendErrorToOutput(__result, "This task belongs to a different season.");
         return false;
     }
 }

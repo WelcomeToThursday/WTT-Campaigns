@@ -87,7 +87,11 @@ public sealed class Plugin : BaseUnityPlugin
     {
         mutation ??= new Mutation();
         mutation.ProtocolVersion = 2;
-        mutation.SeasonId = Current?.SeasonId ?? "";
+        if (mutation.SeasonId.Length == 0 && operation != "snapshot")
+        {
+            mutation.SeasonId = Current?.SeasonId ?? "";
+        }
+
         var json = await RequestHandler.PostJsonAsync("/wtt-seasonal/" + operation, JsonConvert.SerializeObject(mutation));
         var snapshot =
             JsonConvert.DeserializeObject<ClientSnapshot>(json, EftJsonConverters.Converters)

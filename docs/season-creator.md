@@ -38,7 +38,7 @@ Preserve these files and SPT’s profiles/profile data together. Do not remove a
 
 A failed pending activation leaves the last valid season selected and shows an error in the library. Draft corruption falls back to its atomic backup when available. Competing editor tabs must reload after a save conflict. Used seasons permit presentation revisions; gameplay edits require **Duplicate as new season**. Duplication remaps owned content and internal references while preserving installed dependencies.
 
-Existing account links migrate lazily to a season-to-character mapping without replacing either profile. The original character belongs to the bundled legacy season. Switching seasons resets the selected mode to Normal; activating an earlier season restores its character and progress. Inactive seasonal sessions cannot claim rewards or perform inventory mutations. Item templates needed by archived characters remain registered; quests and gameplay use only the active definition.
+Existing account links migrate lazily to a character list without replacing profiles. The original character belongs to the bundled legacy season. Multiple characters can share a season, and all compatible published seasons can be played during the same server session. The configured active pack supplies the default season; changing it does not reset character selection unless that character's season is unavailable. Quests, gameplay and rewards resolve from the selected character's season. Inactive seasonal sessions cannot perform inventory mutations. See [character selection and wipe behavior](characters.md).
 
 ## Implementation map
 

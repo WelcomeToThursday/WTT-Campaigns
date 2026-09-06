@@ -17,7 +17,15 @@ public sealed class SeasonRouter(JsonUtil json, SeasonService seasons, SeasonRep
         [
             new RouteAction<SeasonRequest>(
                 "/wtt-seasonal/snapshot",
-                async (_, r, id, _, _) => await Respond(json, s, id.ToString(), r, repository, root => Task.FromResult(s.GetSnapshot(root)))
+                async (_, r, id, _, _) =>
+                    await Respond(
+                        json,
+                        s,
+                        id.ToString(),
+                        r,
+                        repository,
+                        root => Task.FromResult(s.GetSnapshot(root, r.SeasonId, r.CharacterId))
+                    )
             ),
             new RouteAction<SeasonRequest>(
                 "/wtt-seasonal/create",
@@ -29,7 +37,16 @@ public sealed class SeasonRouter(JsonUtil json, SeasonService seasons, SeasonRep
             ),
             new RouteAction<SeasonRequest>(
                 "/wtt-seasonal/switch",
-                async (_, r, id, _, _) => await Respond(json, s, id.ToString(), r, repository, root => s.Switch(root, r.Mode))
+                async (_, r, id, _, _) =>
+                    await Respond(json, s, id.ToString(), r, repository, root => s.Switch(root, r.Mode, r.CharacterId))
+            ),
+            new RouteAction<SeasonRequest>(
+                "/wtt-seasonal/delete",
+                async (_, r, id, _, _) => await Respond(json, s, id.ToString(), r, repository, root => s.Delete(root, r.ToMutation()))
+            ),
+            new RouteAction<SeasonRequest>(
+                "/wtt-seasonal/wipe",
+                async (_, r, id, _, _) => await Respond(json, s, id.ToString(), r, repository, root => s.Wipe(root, r.ToMutation()))
             ),
         ];
     }
@@ -48,11 +65,6 @@ public sealed class SeasonRouter(JsonUtil json, SeasonService seasons, SeasonRep
             if (!repository.Current.Definition.Legacy && request.ProtocolVersion != 2)
             {
                 throw new InvalidOperationException("Update the Seasonal client and server together (creator protocol 2 required).");
-            }
-
-            if (request.SeasonId.Length > 0 && request.SeasonId != repository.Current.Definition.Id)
-            {
-                throw new InvalidOperationException("The active season changed. Reconnect to the server.");
             }
 
             root = seasons.ResolveRoot(root);

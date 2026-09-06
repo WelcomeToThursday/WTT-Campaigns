@@ -24,10 +24,10 @@ public sealed class SeasonStartingService(
     JsonUtil json
 )
 {
-    public async Task Apply(MongoId id, string side)
+    public async Task Apply(MongoId id, string side, string seasonId = "")
     {
         var original = saves.GetProfile(id);
-        var season = repository.Current.Definition;
+        var season = repository.Runtime(seasonId).Definition;
         var key = "wttSeasonalStarting:" + season.Id;
         if (original.CharacterData!.PmcData!.ExtensionData.ContainsKey(key))
         {

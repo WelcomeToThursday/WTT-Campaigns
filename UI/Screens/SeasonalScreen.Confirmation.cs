@@ -16,28 +16,7 @@ public sealed partial class SeasonalScreen
         {
             return;
         }
-        ClearCardHover();
-        _dialog = Object.Instantiate(_prefab("level49-2761"), _panel, false);
-        _dialog.name = "SaveModifiers";
-        _dialog.SetActive(true);
-        DisableLayout(_dialog);
-        UiElements.Stretch((RectTransform)_dialog.transform, -100, -100, -100, -100);
-        var firewall = (RectTransform)_dialog.transform.Find("Firewall ");
-        UiElements.Stretch(firewall);
-        UiElements.Fill(firewall, new Color(0, 0, 0, .6f), true);
-
-        // Geometry and colors from SeasonalPersonalPerksConfirmationWindow (level49-2761).
-        var window = (RectTransform)_dialog.transform.Find("Window");
-        Place(window, 1000, 546, 0, 0);
-        UiElements.Fill(window, new Color32(4, 5, 5, 250), true);
-        foreach (Transform child in window)
-        {
-            child.gameObject.SetActive(false);
-        }
-        ConfirmationBorder(window, "Frame", new Color32(149, 158, 163, 110));
-        var caption = UiElements.Rect("Caption", window, 996, 20, 0, 261);
-        UiElements.Fill(caption, new Color32(84, 88, 91, 77));
-        _ui.Label(caption, "Title", "Save modifiers", 14, 982, 18).color = Color.white;
+        var window = ConfirmationWindow("SaveModifiers", "Save modifiers");
         var description = _ui.Label(
             window,
             "SaveDescription",
@@ -98,22 +77,58 @@ public sealed partial class SeasonalScreen
             }
         }
 
+        ConfirmationActions(window, CreateCharacter);
+        LayoutRebuilder.ForceRebuildLayoutImmediate(scroll.content);
+        scroll.verticalNormalizedPosition = 1;
+        scroll.verticalScrollbar.SetValueWithoutNotify(1);
+    }
+
+    private RectTransform ConfirmationWindow(string name, string title)
+    {
+        ClearCardHover();
+        _dialog = Object.Instantiate(_prefab("level49-2761"), _panel, false);
+        _dialog.name = name;
+        _dialog.SetActive(true);
+        DisableLayout(_dialog);
+        UiElements.Stretch((RectTransform)_dialog.transform, -100, -100, -100, -100);
+        var firewall = (RectTransform)_dialog.transform.Find("Firewall ");
+        UiElements.Stretch(firewall);
+        UiElements.Fill(firewall, new Color(0, 0, 0, .6f), true);
+
+        // Geometry and colors from SeasonalPersonalPerksConfirmationWindow (level49-2761).
+        var window = (RectTransform)_dialog.transform.Find("Window");
+        Place(window, 1000, 546, 0, 0);
+        UiElements.Fill(window, new Color32(4, 5, 5, 250), true);
+        foreach (Transform child in window)
+        {
+            child.gameObject.SetActive(false);
+        }
+        ConfirmationBorder(window, "Frame", new Color32(149, 158, 163, 110));
+        var caption = UiElements.Rect("Caption", window, 996, 20, 0, 261);
+        UiElements.Fill(caption, new Color32(84, 88, 91, 77));
+        _ui.Label(caption, "Title", title, 14, 982, 18).color = Color.white;
+        return window;
+    }
+
+    private void ConfirmationActions(Transform window, System.Action action, string acceptCaption = "ACCEPT", bool canAccept = true)
+    {
         var accepted = false;
         var accept = ConfirmationButton(
             window,
-            "ACCEPT",
+            acceptCaption,
             -95,
             () =>
             {
-                if (accepted || _busy || _dialog == null)
+                if (!canAccept || accepted || _busy || _dialog == null)
                 {
                     return;
                 }
                 accepted = true;
                 DismissDialog();
-                CreateCharacter();
+                action();
             }
         );
+        accept.interactable = canAccept;
         var cancel = ConfirmationButton(window, "CANCEL", 95, DismissDialog);
         accept.navigation = new Navigation
         {
@@ -132,9 +147,6 @@ public sealed partial class SeasonalScreen
             _previousFocus = EventSystem.current.currentSelectedGameObject;
             EventSystem.current.SetSelectedGameObject(cancel.gameObject);
         }
-        LayoutRebuilder.ForceRebuildLayoutImmediate(scroll.content);
-        scroll.verticalNormalizedPosition = 1;
-        scroll.verticalScrollbar.SetValueWithoutNotify(1);
     }
 
     private void ConfirmationRow(Transform parent, PerkEntry perk)

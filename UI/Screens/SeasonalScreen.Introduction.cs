@@ -22,9 +22,9 @@ public sealed partial class SeasonalScreen
 
     private static readonly string[] IntroductionText =
     {
-        "<color=#83C5A9>WELCOME TO KORD BREACH</color>",
-        "<color=#83C5A9>SEASONS</color>\n\nExplore seasonal content, modifiers, a Battle Pass\nand seasonal rewards. The active season is\nconfigured on your SPT server.",
-        "<color=#83C5A9>SEASONAL CHARACTER</color>\n\nCreate a separate seasonal PMC with its own equipment\nand progression. Your regular character remains available.\nSeason changes and resets are managed by your server.",
+        "<color=#83C5A9>WELCOME TO SEASONS</color>",
+        "<color=#83C5A9>SEASONS</color>\n\nExplore seasonal content, modifiers, a Battle Pass\nand seasonal rewards. Choose from the seasons installed\non your SPT server.",
+        "<color=#83C5A9>SEASONAL CHARACTER</color>\n\nCreate a separate seasonal PMC with its own equipment\nand progression. Your regular character remains available.\nCreate several characters and choose a season for each.",
         "<color=#83C5A9>MODIFIER SYSTEM</color>\n\nCustomize your character with personal modifiers.\nBalance beneficial perks with detrimental modifiers.\nCommon modifiers apply to the seasonal PMC.",
         "<color=#83C5A9>BATTLE PASS</color>\n\nCollect documents in raids and complete requirements\nto unlock rewards in the Seasons hub.\nProgress belongs to your local seasonal character.",
     };

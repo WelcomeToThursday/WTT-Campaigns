@@ -14,17 +14,21 @@ public sealed class HubService(SeasonRepository repository)
     public void Initialize(ImageRouter images)
     {
         _state = repository.Current.Hub;
-        var ids = _state
-            .Pages.SelectMany(p => p.Rewards)
-            .Concat(_state.SeasonalRewards)
-            .SelectMany(r => new[] { r.Image, r.BigImage })
-            .Concat(_state.Documents.SelectMany(d => new[] { d.Image, d.UnavailableImage }))
-            .Concat(_state.Slides.Select(s => s.Image))
-            .Append(_state.BadgeImage)
-            .Append(_state.BannerImage)
-            .Where(SeasonalPerks.Shared.Seasons.SeasonValidator.IsId)
-            .Append(_state.UniversalImage)
-            .Append(_state.UniversalUnavailableImage)
+        var ids = repository
+            .Playable.Values.Select(r => r.Hub)
+            .SelectMany(state =>
+                state
+                    .Pages.SelectMany(p => p.Rewards)
+                    .Concat(state.SeasonalRewards)
+                    .SelectMany(r => new[] { r.Image, r.BigImage })
+                    .Concat(state.Documents.SelectMany(d => new[] { d.Image, d.UnavailableImage }))
+                    .Concat(state.Slides.Select(s => s.Image))
+                    .Append(state.BadgeImage)
+                    .Append(state.BannerImage)
+                    .Where(SeasonalPerks.Shared.Seasons.SeasonValidator.IsId)
+                    .Append(state.UniversalImage)
+                    .Append(state.UniversalUnavailableImage)
+            )
             .Distinct(StringComparer.Ordinal);
         foreach (var id in ids)
         {

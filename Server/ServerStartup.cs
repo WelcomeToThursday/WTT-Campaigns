@@ -24,7 +24,7 @@ public sealed class ServerStartup(
         Seasons = seasons;
         seasons.Initialize();
         hub.Initialize(images);
-        foreach (var perk in seasons.Catalogue.All)
+        foreach (var perk in repository.Playable.Values.SelectMany(r => r.Definition.Perks.All).GroupBy(p => p.Id).Select(g => g.First()))
         {
             var file = repository.AssetPath(perk.ImageUrl) ?? "";
             if (!File.Exists(file))

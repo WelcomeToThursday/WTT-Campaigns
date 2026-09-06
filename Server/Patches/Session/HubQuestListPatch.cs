@@ -28,9 +28,7 @@ public class HubQuestListPatch(SeasonService seasons, HubQuestService quests) : 
     [UsedImplicitly]
     private static void Postfix(MongoId sessionId, ref List<Quest> __result)
     {
-        if (!_seasons.IsSeasonal(sessionId.ToString()))
-        {
-            __result = __result.Where(q => !_quests.Imported.Contains(q.Id.ToString())).ToList();
-        }
+        var season = _seasons.CharacterSeasonId(sessionId.ToString());
+        __result = __result.Where(q => _quests.Allowed(q.Id.ToString(), season)).ToList();
     }
 }

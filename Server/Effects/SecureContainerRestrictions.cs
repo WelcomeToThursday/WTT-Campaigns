@@ -23,7 +23,7 @@ public sealed class SecureContainerRestrictions(TemplateTable templates, Invento
 
     internal bool Check(PmcData pmc, object request, MongoId sessionId, ItemEventRouterResponse output)
     {
-        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
+        var effects = ServerStartup.Seasons.Effects(pmc);
         if (!effects.Has(SecureContainerRules.EffectId))
         {
             return true;

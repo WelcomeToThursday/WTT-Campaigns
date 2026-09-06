@@ -35,12 +35,7 @@ public sealed class SeasonContentService(
     {
         // Keep legacy templates available to old profiles even when another season is active.
         Register(repository.Legacy, false);
-        var selected = repository.Selection.Active;
-        foreach (
-            var pack in repository
-                .Packs()
-                .Where(p => p.Key == selected || p.Key == repository.Selection.Pending || repository.IsUsed(p.Manifest.SeasonId))
-        )
+        foreach (var pack in repository.Packs())
         {
             try
             {
@@ -94,6 +89,34 @@ public sealed class SeasonContentService(
                 repository.Activate("legacy");
             }
             repository.ActivationFailed(e.Message);
+        }
+        repository.Playable[repository.Current.Definition.Id] = repository.Current;
+        var candidates = repository
+            .Packs()
+            .GroupBy(p => p.Manifest.SeasonId)
+            .SelectMany(g => g.OrderByDescending(p => p.Manifest.Revision).Select(p => p.Key))
+            .Prepend("legacy");
+        foreach (var key in candidates)
+        {
+            try
+            {
+                var definition = repository.Pack(key);
+                if (repository.Playable.ContainsKey(definition.Id))
+                {
+                    continue;
+                }
+                if (key != "legacy" && !Validate(definition).CanActivate)
+                {
+                    continue;
+                }
+                repository.CheckGameplay(definition);
+                Register(definition, true);
+                repository.Playable[definition.Id] = new SeasonRuntimeSnapshot(definition);
+            }
+            catch (Exception e)
+            {
+                repository.StorageWarnings.Add("Season " + key + " unavailable: " + e.Message);
+            }
         }
         Ready = true;
     }

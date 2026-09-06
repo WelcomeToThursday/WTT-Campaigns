@@ -29,7 +29,10 @@ public sealed class ProfileSelection
         bool startup,
         Material? glowMaterial,
         Action<InterfaceSound>? sounds = null,
-        Action<bool>? hoverSound = null
+        Action<bool>? hoverSound = null,
+        Action<CharacterEntry, bool>? manage = null,
+        Func<bool>? canNavigate = null,
+        Action<CharacterEntry>? recreate = null
     )
     {
         _ui = new UiElements(font, sounds);
@@ -45,8 +48,37 @@ public sealed class ProfileSelection
         glow.color = new Color(1, 1, 1, .282353f);
         _ui.Label(root, "Title", "SELECT PROFILE AND MODE", 42, 1275, 50, 0, 478).alignment = TextAnchor.MiddleCenter;
         root.Find("Title").GetComponent<Text>().color = new Color(.851f, .851f, .851f);
-        Card(root, state, "normal", -205, model, select, edit, seasonIntro, hoverSound);
-        Card(root, state, "seasonal", 205, model, select, edit, seasonIntro, hoverSound);
+        var viewport = UiElements.Rect("ProfileCarousel", root, 1720, 1020, 0, -10);
+        UiElements.Fill(viewport, Color.clear, true);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        var carousel = viewport.gameObject.AddComponent<ProfileCarousel>();
+        carousel.CanNavigate = canNavigate;
+        var characters = state
+            .Characters.Where(c => c.Exists || c.Wiped)
+            .Concat(new[] { new CharacterEntry { Mode = "seasonal" } })
+            .ToArray();
+        foreach (var character in characters)
+        {
+            carousel.Add(Card(viewport, state, character, model, select, edit, seasonIntro, hoverSound, manage, recreate));
+        }
+
+        var previous = _ui.Button(root, "‹", 70, -885, -10, () => carousel.Move(-1), 90);
+        var next = _ui.Button(root, "›", 70, 885, -10, () => carousel.Move(1), 90);
+        previous.name = "PreviousProfile";
+        next.name = "NextProfile";
+        previous.targetGraphic.color = next.targetGraphic.color = Color.clear;
+        previous.GetComponentInChildren<Text>().fontSize = next.GetComponentInChildren<Text>().fontSize = 52;
+        carousel.Counter = _ui.Label(root, "ProfileCount", "", 18, 150, 30, 0, -477);
+        carousel.Counter.alignment = TextAnchor.MiddleCenter;
+        var hint = _ui.Label(root, "CarouselHint", "SCROLL  /  DRAG  /  LEFT & RIGHT     TO BROWSE CHARACTERS", 16, 950, 30, 0, -508);
+        hint.alignment = TextAnchor.MiddleCenter;
+        hint.color = UiElements.Muted;
+        var create = _ui.Button(root, "+ NEW SEASONAL CHARACTER", 340, 0, -441, edit, 38);
+        create.targetGraphic.color = Color.clear;
+        create.GetComponentInChildren<Text>().color = new Color(.392f, .855f, .655f);
+        carousel.Focus(
+            Array.FindIndex(characters, c => c.Id == (state.ActiveMode == "seasonal" ? state.SelectedCharacterId : characters[0].Id))
+        );
         if (!startup)
         {
             var back = _ui.Button(root, "BACK", 120, 830, -488, close);
@@ -62,7 +94,7 @@ public sealed class ProfileSelection
 
     public void Fit(Vector2 viewport)
     {
-        // Backgrounds follow the viewport; the two cards retain their native proportions.
+        // Backgrounds follow the viewport; cards retain their native proportions.
         _background.sizeDelta = viewport;
         _topGlow.sizeDelta = new Vector2(viewport.x, 512);
         _topGlow.anchoredPosition = new Vector2(0, viewport.y * .5f);
@@ -76,21 +108,22 @@ public sealed class ProfileSelection
         return image;
     }
 
-    private void Card(
+    private RectTransform Card(
         Transform parent,
         ScreenState state,
-        string mode,
-        float x,
+        CharacterEntry character,
         Action<string, RawImage> model,
         Action<string> select,
         Action edit,
         Action seasonIntro,
-        Action<bool>? hoverSound
+        Action<bool>? hoverSound,
+        Action<CharacterEntry, bool>? manage,
+        Action<CharacterEntry>? recreate
     )
     {
+        var mode = character.Mode;
         var seasonal = mode == "seasonal";
-        var character = state.Characters.FirstOrDefault(value => value.Mode == mode) ?? new CharacterEntry { Mode = mode };
-        var rect = UiElements.Rect(mode + "-profile", parent, 390, 800, x);
+        var rect = UiElements.Rect((character.Exists || character.Wiped ? character.Id : "new-seasonal") + "-profile", parent, 390, 800);
         UiElements.Fill(rect, Color.clear, true);
         var hover = rect.gameObject.AddComponent<ProfileCardHover>();
         hover.Seasonal = seasonal;
@@ -122,12 +155,11 @@ public sealed class ProfileSelection
         Art(rect, character.Side == "Bear" ? "bear" : "usec", 386, 602, 0, -8).color = new Color(1, 1, 1, .078431f);
         var preview = UiElements.Rect("CharacterPreview", rect, 386, 740, 0, -5);
         hover.Model = preview.gameObject.AddComponent<CanvasGroup>();
-        var raw = preview.gameObject.AddComponent<RawImage>();
-        raw.color = Color.clear;
-        raw.raycastTarget = false;
         if (character.Exists)
         {
-            model(mode, raw);
+            var loader = rect.gameObject.AddComponent<ProfileCardPreview>();
+            loader.Host = preview;
+            loader.Load = raw => model(character.Id.Length > 0 ? character.Id : mode, raw);
         }
         else
         {
@@ -141,7 +173,12 @@ public sealed class ProfileSelection
             ? new Color(tint.r, tint.g, tint.b, .6f)
             : UiElements.Muted;
         Art(rect, "footer-gradient", 390, 104, 0, -348);
-        var info = UiElements.Rect("CharacterInfo", rect, 390, 190, 0, -150);
+        // Live reveals the sliding information through the card, rather than drawing
+        // the off-card portion of the panel while it moves into place. Keep the
+        // oversized glow layers outside this mask so their intended spill is retained.
+        var contentMask = UiElements.Rect("CardContentMask", rect, 390, 800);
+        contentMask.gameObject.AddComponent<RectMask2D>();
+        var info = UiElements.Rect("CharacterInfo", contentMask, 390, 190, 0, -150);
         hover.Info = info;
         var infoBackground = Art(info, "info-gradient", 390, 270, 0, 24);
         infoBackground.type = Image.Type.Sliced;
@@ -151,7 +188,9 @@ public sealed class ProfileSelection
         _ui.Label(
             info,
             "Nickname",
-            character.Exists ? character.Name + " | " + character.Level : "NEW CHARACTER",
+            character.Exists ? character.Name + " | " + character.Level
+                : character.Wiped ? "CHARACTER WIPED"
+                : "NEW CHARACTER",
             24,
             328,
             38,
@@ -162,8 +201,12 @@ public sealed class ProfileSelection
             info,
             "Description",
             seasonal
-                ? "• Temporary seasonal character in Tarkov\n• Progress resets each season"
-                : "• Your main character in Tarkov\n• Fight against AI opponents\n• Progress does not reset\n• Partial sync with EFT: Arena",
+                ? (
+                    character.Exists ? "• Separate seasonal progression\n• " + character.SeasonName
+                    : character.Wiped ? "• Earned achievements kept\n• Choose your character again"
+                    : "• Create another seasonal character\n• Choose a season and personal modifiers"
+                )
+                : "• Your main character in Tarkov\n• Fight against AI opponents\n• Progress does not reset\n• Independent equipment and progression",
             16,
             350,
             100,
@@ -179,11 +222,22 @@ public sealed class ProfileSelection
         hover.Description = description;
         if (seasonal)
         {
-            Art(info, "season-banner", 386, 92, 0, -143);
+            var seasonLabel = _ui.Label(
+                info,
+                "SeasonName",
+                character.Exists || character.Wiped ? character.SeasonName.ToUpperInvariant() : "CHOOSE YOUR SEASON",
+                19,
+                350,
+                34,
+                0,
+                -95
+            );
+            seasonLabel.color = tint;
+            seasonLabel.alignment = TextAnchor.MiddleCenter;
             var details = UiElements.Rect("SeasonDetails", info, 390, 420, 0, -348);
             hover.Details = details.gameObject.AddComponent<CanvasGroup>();
             hover.Details.alpha = 0;
-            var rules = state.Perks.Where(perk => perk.Common).ToArray();
+            var rules = state.Perks.Where(perk => perk.Common && character.SeasonId == state.SeasonId).Take(6).ToArray();
             for (var i = 0; i < rules.Length; i++)
             {
                 var px = i % 2 == 0 ? -95 : 95;
@@ -214,7 +268,9 @@ public sealed class ProfileSelection
         }
         var button = _ui.Button(
             rect,
-            character.Exists ? "SELECT" : "CREATE",
+            character.Exists ? "SELECT"
+                : character.Wiped ? "RECREATE"
+                : "CREATE",
             386,
             0,
             -356,
@@ -222,7 +278,11 @@ public sealed class ProfileSelection
             {
                 if (character.Exists)
                 {
-                    select(mode);
+                    select(character.Id.Length > 0 ? character.Id : mode);
+                }
+                else if (character.Wiped)
+                {
+                    recreate?.Invoke(character);
                 }
                 else
                 {
@@ -234,6 +294,22 @@ public sealed class ProfileSelection
         button.name = "Select-" + mode;
         button.targetGraphic.color = Color.clear;
         button.GetComponentInChildren<Text>().fontSize = 24;
+        button.interactable = character.Available;
+        if (character.Exists && !character.Available)
+        {
+            button.GetComponentInChildren<Text>().text = "SEASON UNAVAILABLE";
+        }
+
+        if (seasonal && (character.Exists || character.Wiped) && manage != null)
+        {
+            var wipe = _ui.Button(rect, "WIPE", 170, -94, -288, () => manage(character, true), 40);
+            var delete = _ui.Button(rect, "DELETE", 170, 94, -288, () => manage(character, false), 40);
+            wipe.targetGraphic.color = delete.targetGraphic.color = new Color(.035f, .04f, .035f, .9f);
+            delete.GetComponentInChildren<Text>().color = UiElements.Negative;
+            wipe.gameObject.SetActive(!character.Wiped);
+            wipe.interactable = character.Available;
+        }
         hover.Apply(0);
+        return rect;
     }
 }

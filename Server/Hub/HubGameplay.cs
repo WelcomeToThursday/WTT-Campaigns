@@ -39,6 +39,17 @@ public sealed partial class HubGameplay(
     private readonly Dictionary<string, TraderAssort> _offers = new();
     private readonly Dictionary<string, string> _offerIds = new();
     private bool _ready;
+    private Dictionary<string, HubGameplay>? _runtimes;
+    private HubGameplay? _manager;
+    private SeasonRuntimeSnapshot _runtime = null!;
+
+    private HubGameplay ForSession(string sessionId)
+    {
+        var root = seasons.ResolveRoot(sessionId);
+        var profile = saves.GetProfile(new MongoId(seasons.EffectiveId(root))).CharacterData!.PmcData!;
+        return _runtimes![seasons.SeasonIdFor(profile)];
+    }
+
     public HubConfiguration Configuration { get; private set; } = new();
 
     internal HubProgress Progress(PmcData pmc)
@@ -66,14 +77,33 @@ public sealed partial class HubGameplay(
             throw new InvalidOperationException("Open the Seasonal character to use the Battle Pass.");
         }
 
-        return saves.GetProfile(new MongoId(id));
+        var profile = saves.GetProfile(new MongoId(id));
+        if (seasons.SeasonIdFor(profile.CharacterData!.PmcData!) != _presentation.SeasonId)
+        {
+            throw new InvalidOperationException("The selected season changed. Refresh and try again.");
+        }
+        return profile;
     }
 
     public void Initialize()
     {
-        _catalogue = repository.Current.Gameplay;
-        _presentation = repository.Current.Hub;
-        var settings = repository.Current.Definition.Collection;
+        _runtimes = new();
+        foreach (var runtime in repository.Playable.Values)
+        {
+            var handler = new HubGameplay(seasons, saves, templates, traders, inventory, json, cloner, quests, repository);
+            handler._manager = this;
+            handler.InitializeRuntime(runtime);
+            _runtimes.Add(runtime.Definition.Id, handler);
+        }
+        _ready = true;
+    }
+
+    private void InitializeRuntime(SeasonRuntimeSnapshot runtime)
+    {
+        _runtime = runtime;
+        _catalogue = runtime.Gameplay;
+        _presentation = runtime.Hub;
+        var settings = runtime.Definition.Collection;
         Configuration = new HubConfiguration
         {
             DocumentsPerRaid = settings.DocumentsPerRaid,
@@ -118,6 +148,11 @@ public sealed partial class HubGameplay(
 
     public HubState Read(string sessionId)
     {
+        if (_runtimes != null)
+        {
+            return ForSession(sessionId).Read(sessionId);
+        }
+
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
         return Snapshot(root);
@@ -351,7 +386,7 @@ public sealed partial class HubGameplay(
         if (
             (
                 template is "6a3567f687d90a0deb066c1b" or "6a4fa628b4831242f306e8cd"
-                || repository.Current.Definition.Crates.Any(c => c.ItemId == template)
+                || _runtime.Definition.Crates.Any(c => c.ItemId == template)
             )
             && inventory.GetRandomLootContainerRewardDetails(id) == null
         )
@@ -363,6 +398,11 @@ public sealed partial class HubGameplay(
 
     public async Task<HubResult> Transact(string sessionId, HubRequest request, string action)
     {
+        if (_runtimes != null)
+        {
+            return await ForSession(sessionId).Transact(sessionId, request, action);
+        }
+
         ValidateSeasonRequest(request);
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
@@ -457,7 +497,7 @@ public sealed partial class HubGameplay(
 
     internal void ValidateSeasonRequest(HubRequest request)
     {
-        if (!repository.Current.Definition.Legacy && request.ProtocolVersion != 2)
+        if (!_runtime.Definition.Legacy && request.ProtocolVersion != 2)
         {
             throw new InvalidOperationException("Update the Seasonal client and server together.");
         }

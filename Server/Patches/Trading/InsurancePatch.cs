@@ -28,7 +28,7 @@ public class InsurancePatch(EventOutputHolder output) : AbstractPatch
     [UsedImplicitly]
     private static bool Prefix(PmcData pmcData, MongoId sessionId, ref ItemEventRouterResponse __result)
     {
-        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmcData).SeasonalPerks);
+        var effects = ServerStartup.Seasons.Effects(pmcData);
         if (!effects.Has("insurance_disabled"))
         {
             return true;

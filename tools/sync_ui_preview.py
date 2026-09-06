@@ -13,6 +13,8 @@ RUNTIME_SOURCES = {
     'UiElements.cs',
     'PerkPointer.cs',
     'ProfileCardHover.cs',
+    'ProfileCarousel.cs',
+    'ProfileCardPreview.cs',
     'UiButtonFeedback.cs',
     'InterfaceSound.cs',
     'PerkCardHover.cs',

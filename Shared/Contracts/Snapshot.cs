@@ -9,6 +9,8 @@ public class Snapshot
     public int ProtocolVersion { get; set; }
     public string SeasonId { get; set; } = "";
     public string SeasonName { get; set; } = "Season One";
+    public List<SeasonChoice> Seasons { get; set; } = new();
+    public string SelectedCharacterId { get; set; } = "";
     public long PackRevision { get; set; }
     public string BannerImage { get; set; } = "";
     public bool LegacyBranding { get; set; } = true;

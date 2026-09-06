@@ -1,5 +1,9 @@
 # UI update 0.1.24
 
+## Multiple seasonal characters
+
+The current selector uses a wrapping horizontal card carousel, a season picker, and separate delete/wipe confirmations. Wipes preserve earned achievements and return to faction, appearance and modifier creation. See [character selection, persistence and verification](characters.md); this supersedes the historical two-card layout described below.
+
 ## Battle Pass and seasonal hub
 
 The Seasonal character's main menu now exposes the KORD BREACH banner and the recorded Battle Pass, Seasonal Rewards and About the Season views. The full captured reward catalogue is browsable, with neutral progress and unavailable transaction actions. See [reference, asset workflow and validation](battle-pass-ui.md). Reward progression, exchanges, purchases and automatic resets remain unimplemented.
@@ -34,7 +38,7 @@ The two underlying Normal and Seasonal profiles now use PvE Zone / PvE Season ca
 
 The expanded seasonal card removes the custom SEASON MODIFIERS heading and VIEW GLOBAL RULES / EDIT PERSONAL PERKS buttons. It retains the KORD BREACH banner, six uniformly tinted common modifier labels, the recovered separator and the live SEASON STATS section: Battle Pass rewards, Story Chapters, K/D and Survivals. Statistics have presentation bindings but remain blank until their backing systems supply values. Existing editing remains reachable from the main seasonal interface.
 
-The description brightens on hover and the information block moves by the captured 455 units. The modifier list and statistics move with it. Original divider and stat icon sprites (sharedassets47.assets objects 53, 74, 75, 64 and 37) are bundled; perk icons still come from the local server. Their assignments were recovered from the serialized CharacterSelectionSeasonPanel stat-icon dictionary. Captured English stat labels are retained in the localization fixture.
+The description brightens on hover and the information block moves by the captured 455 units. The modifier list and statistics move with it and are clipped to the card while entering, matching live's reveal instead of drawing below the card. Original divider and stat icon sprites (sharedassets47.assets objects 53, 74, 75, 64 and 37) are bundled; perk icons still come from the local server. Their assignments were recovered from the serialized CharacterSelectionSeasonPanel stat-icon dictionary. Captured English stat labels are retained in the localization fixture.
 
 Unity checks cover original labels, statistics rows, blank unimplemented values and removal of custom shortcuts at 1080p, 1440p and the wider window size. The earlier live hover recording is no longer present at its supplied path, so this revision uses the recovered live hierarchy, metadata and captured localization. Final in-game visual comparison remains pending.
 

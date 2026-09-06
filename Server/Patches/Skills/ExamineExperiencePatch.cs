@@ -36,7 +36,7 @@ public class ExamineExperiencePatch : AbstractPatch
             return;
         }
 
-        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
+        var effects = ServerStartup.Seasons.Effects(pmc);
         pmc.Info.Experience = ExperienceScaling.Total(previous, current, effects.Multiplier("pmc_experience_multiplicator"));
     }
 }

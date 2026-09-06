@@ -44,7 +44,7 @@ public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentH
             return false;
         }
 
-        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
+        var effects = ServerStartup.Seasons.Effects(pmc);
         if (effects.TraderMultiplier(request.TransactionId.ToString(), "buy") == 1m)
         {
             return true;

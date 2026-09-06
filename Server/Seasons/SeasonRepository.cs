@@ -58,6 +58,19 @@ public sealed class SeasonRepository
     private readonly string _root;
     public const string LegacyId = "69e232a764dfe95549003f0f";
     public SeasonRuntimeSnapshot Current { get; private set; }
+    public Dictionary<string, SeasonRuntimeSnapshot> Playable { get; } = new();
+
+    public SeasonRuntimeSnapshot Runtime(string id)
+    {
+        if (string.IsNullOrEmpty(id))
+        {
+            return Current;
+        }
+        return Playable.TryGetValue(id, out var runtime)
+            ? runtime
+            : throw new InvalidOperationException("This season is unavailable. Install its pack and restart the server.");
+    }
+
     public SeasonSelection Selection { get; private set; }
     public SeasonDefinition Legacy { get; }
 

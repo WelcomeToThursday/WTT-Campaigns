@@ -144,6 +144,15 @@ public sealed partial class HubGameplay
 
     public TraderAssort FilterOffers(string sessionId, string traderId, TraderAssort original)
     {
+        if (_runtimes != null)
+        {
+            foreach (var runtime in _runtimes.Values)
+            {
+                original = runtime.FilterOffers(sessionId, traderId, original);
+            }
+
+            return original;
+        }
         if (!_ready)
         {
             return original;
@@ -158,7 +167,7 @@ public sealed partial class HubGameplay
         )
         {
             var target = (string)grant["target"]!;
-            if (!_offerIds.TryGetValue(target, out var mapped) || OfferAllowed(sessionId, mapped))
+            if (!_offerIds.TryGetValue(target, out var mapped) || (_manager ?? this).OfferAllowed(sessionId, mapped))
             {
                 continue;
             }
@@ -173,6 +182,19 @@ public sealed partial class HubGameplay
 
     public bool OfferAllowed(string sessionId, string offerId)
     {
+        if (_runtimes != null)
+        {
+            if (seasons.IsSeasonal(sessionId))
+            {
+                var activePmc = saves.GetProfile(new MongoId(sessionId)).CharacterData!.PmcData!;
+                if (_runtimes.TryGetValue(seasons.SeasonIdFor(activePmc), out var active) && active._offerIds.ContainsValue(offerId))
+                {
+                    return active.OfferAllowed(sessionId, offerId);
+                }
+            }
+            return _runtimes.Values.All(r => r.OfferAllowed(sessionId, offerId));
+        }
+
         if (!_ready)
         {
             return true;
@@ -186,12 +208,27 @@ public sealed partial class HubGameplay
         {
             return !targets.Any(_fallbackOffers.Contains);
         }
-        var progress = Progress(saves.GetProfile(new MongoId(sessionId)).CharacterData!.PmcData!);
+        var pmc = saves.GetProfile(new MongoId(sessionId)).CharacterData!.PmcData!;
+        if (seasons.SeasonIdFor(pmc) != _presentation.SeasonId)
+        {
+            return !targets.Any(_fallbackOffers.Contains);
+        }
+
+        var progress = Progress(pmc);
         return targets.Any(progress.UnlockedOffers.Contains);
     }
 
     public void RestoreFallbackOffers(string traderId)
     {
+        if (_runtimes != null)
+        {
+            foreach (var runtime in _runtimes.Values)
+            {
+                runtime.RestoreFallbackOffers(traderId);
+            }
+
+            return;
+        }
         if (!_ready || !traders.TryGetValue(new MongoId(traderId), out var trader) || trader.Assort == null)
         {
             return;

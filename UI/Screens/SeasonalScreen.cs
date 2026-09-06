@@ -108,7 +108,13 @@ public sealed partial class SeasonalScreen : IDisposable
 
     private bool Created
     {
-        get { return _state.Characters.Any(character => character.Mode == "seasonal" && character.Exists); }
+        get
+        {
+            return !_creating
+                && _state.Characters.Any(character =>
+                    character.Id == _state.SelectedCharacterId && character.Mode == "seasonal" && character.Exists
+                );
+        }
     }
 
     private int Remaining
@@ -235,6 +241,11 @@ public sealed partial class SeasonalScreen : IDisposable
             return;
         }
         Page = page;
+        if (page == ScreenPage.Characters)
+        {
+            _creating = false;
+        }
+
         var fullScreen = page == ScreenPage.Characters || CreationPage;
         foreach (Transform child in _panel)
         {
@@ -303,7 +314,7 @@ public sealed partial class SeasonalScreen : IDisposable
                 },
                 (mode, target) => CharacterRequested?.Invoke(mode, target),
                 mode => WithDiscardConfirmation(() => SwitchRequested?.Invoke(mode)),
-                () => ShowPage(Created ? ScreenPage.Personal : ScreenPage.CreationIdentity),
+                ChooseSeason,
                 ShowSeasonIntroduction,
                 RequestClose,
                 StartupSelection,
@@ -314,6 +325,15 @@ public sealed partial class SeasonalScreen : IDisposable
                     if (!_busy)
                     {
                         ProfileHoverSound?.Invoke(seasonal);
+                    }
+                },
+                ManageCharacter,
+                () => !_busy && !DialogOpen,
+                character =>
+                {
+                    if (!_busy && !DialogOpen)
+                    {
+                        RecreationRequested?.Invoke(character.Id, character.SeasonId);
                     }
                 }
             );
