@@ -23,8 +23,11 @@ def main():
     records = []
     source_hash = hashlib.sha256(source.read_bytes()).hexdigest()
     for sound_type, object_id, name in [(70, 4016, 'profile-hover-normal'), (82, 4241, 'profile-hover-seasonal'),
-                                         (61, 4354, 'perk-off'), (62, 4004, 'perk-on'), (63, 3941, 'perk-reset')]:
+                                         (61, 4354, 'perk-off'), (62, 4004, 'perk-on'), (63, 3941, 'perk-reset'),
+                                         (74, None, 'hub-click'), (75, None, 'hub-hover')]:
         binding = next(entry for entry in wrapper['_UIAudioClips'] if entry['_soundType'] == sound_type)
+        if object_id is None:
+            object_id = binding['_sound']['m_PathID']
         assert binding['_sound'] == {'m_FileID': 0, 'm_PathID': object_id}
         clip = objects[object_id].read()
         samples = clip.samples
@@ -38,6 +41,15 @@ def main():
                         'name': clip.m_Name, 'duration': clip.m_Length,
                         'sha256': hashlib.sha256(data).hexdigest()})
         print(name, clip.m_Length, len(data))
+    source = LIVE / 'EscapeFromTarkov_Data/sharedassets44.assets'
+    env = UnityPy.load(str(source))
+    objects = next(f for f in env.files.values() if hasattr(f, 'objects')).objects
+    clip = objects[452].read()
+    raw = next(iter(clip.samples.values()))
+    (OUT / 'hub-hover-loop.wav').write_bytes(raw)
+    records.append({'file': 'hub-hover-loop.wav', 'source': source.name, 'objectId': 452,
+                    'name': clip.m_Name, 'duration': clip.m_Length, 'sourceSha256': hashlib.sha256(source.read_bytes()).hexdigest(),
+                    'sha256': hashlib.sha256(raw).hexdigest(), 'volume': .3, 'fadeIn': .1, 'fadeOut': .3})
     (OUT / 'provenance.json').write_text(json.dumps(records, indent=2), encoding='utf-8')
 
 

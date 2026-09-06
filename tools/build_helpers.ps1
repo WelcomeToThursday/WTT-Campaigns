@@ -11,8 +11,15 @@ function Get-SeasonalBuildOutput {
 
 function Copy-SeasonalServerOutput {
     param([string]$Source, [string]$Destination)
+    foreach ($image in (Get-Content -LiteralPath (Join-Path $Source 'data\hub-images.json') -Raw | ConvertFrom-Json)) {
+        if ($image.Id -notmatch '^[0-9a-f]{24}$') { throw 'Invalid hub image identifier.' }
+        $path = Join-Path $Source ('hub-images\' + $image.Id + '.png')
+        if (!(Test-Path -LiteralPath $path) -or (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $image.Sha256) {
+            throw ('Missing or modified hub image: ' + $image.Id)
+        }
+    }
     # Never copy the entire bin directory: it can contain DLLs from earlier project names.
-    foreach ($name in @('WTT-Seasonal.Server.dll', 'WTT-Seasonal.Shared.dll', 'Newtonsoft.Json.dll', 'WTT-Seasonal.Server.deps.json', 'data', 'icons')) {
+    foreach ($name in @('WTT-Seasonal.Server.dll', 'WTT-Seasonal.Shared.dll', 'Newtonsoft.Json.dll', 'WTT-Seasonal.Server.deps.json', 'data', 'icons', 'hub-images')) {
         Copy-Item -LiteralPath (Join-Path $Source $name) -Destination $Destination -Recurse -Force
     }
 }

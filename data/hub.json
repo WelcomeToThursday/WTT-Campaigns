@@ -1,0 +1,1880 @@
+{
+  "Id": "6a27da69f3610ccfe5e71ab5",
+  "SeasonId": "69e232a764dfe95549003f0f",
+  "Pages": [
+    {
+      "PreviousRequirement": 0,
+      "Rewards": [
+        {
+          "Id": "6a39565cb73318f5837a1b12",
+          "Name": "Dogtag",
+          "Description": "",
+          "Kind": "DOGTAG",
+          "Side": "",
+          "Image": "6a5e665f5a56a948810bb5bb",
+          "BigImage": "6a5e6763cd043de3220f19a1",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3956afe60afa485936b2a1",
+          "Name": "Tarcoins (50)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3956f1fbbe3f20e2c3abf2",
+          "Name": "BURN poster",
+          "Description": "A poster for fatalists and pyromaniacs alike.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66a03d0e6b95910b85fe",
+          "BigImage": "6a5e6798438217c0b20b65ba",
+          "X": 0,
+          "Y": 1,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3957223554eef69cf88014",
+          "Name": "Black Division gear crate",
+          "Description": "A heavy transport crate with no identifying markings. Inside is a random package of Black Division equipment: helmets, body armor, chest rigs, backpacks, or protective gear.\n\nJudging by its contents, this crate was prepared for a team expected to operate far from any safe zone.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66573f7a5533040ca2df",
+          "BigImage": "6a5e675d3f7a5533040ca2e4",
+          "X": 1,
+          "Y": 1,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3957435ac872d42bee58f9",
+          "Name": "Black wood ceiling",
+          "Description": "A clean, understated ceiling finished with natural wood paneling.",
+          "Kind": "HIDEOUT CUSTOMIZATION",
+          "Side": "",
+          "Image": "6a5e66bc5a56a948810bb5bd",
+          "BigImage": "6a635e9519f0ae49350a23e8",
+          "X": 0,
+          "Y": 2,
+          "Width": 2,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 4,
+      "Rewards": [
+        {
+          "Id": "6a3957e4d82423a64ff5789c",
+          "Name": "Gentex Ops-Core SOTR respirator",
+          "Description": "The SOTR respirator was developed by Gentex to protect operators from hazardous airborne compounds and particles, intended for use only in ground operations. Provides reliable filtration against most harmful particles, including lead, asbestos, lubricants, and smoke from burning materials.",
+          "Kind": "TRADE OFFER",
+          "Side": "",
+          "Image": "6a5e66863f7a5533040ca2e0",
+          "BigImage": "6a5e677c3f7a5533040ca2e5",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3958105e4dbacb0c5995bb",
+          "Name": "Red Hawaii",
+          "Description": "Hawaii shirt",
+          "Kind": "UPPER CLOTHING",
+          "Side": "",
+          "Image": "6a5e6725c6956153430432c1",
+          "BigImage": "6a5e6854ac605a08520e2a57",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a39584c2656776bf411c522",
+          "Name": "Black Division gear crate",
+          "Description": "A heavy transport crate with no identifying markings. Inside is a random package of Black Division equipment: helmets, body armor, chest rigs, backpacks, or protective gear.\n\nJudging by its contents, this crate was prepared for a team expected to operate far from any safe zone.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66573f7a5533040ca2df",
+          "BigImage": "6a5e675d3f7a5533040ca2e4",
+          "X": 0,
+          "Y": 1,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 3
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395871b9e8fb5ac162cc16",
+          "Name": "Scorpion target",
+          "Description": "This target is perfect for arachnophobes. And yes, scorpions and spiders are basically cousins anyway.",
+          "Kind": "HIDEOUT CUSTOMIZATION",
+          "Side": "",
+          "Image": "6a5e6704438217c0b20b65b7",
+          "BigImage": "6a5e67f9bf561127450b27c8",
+          "X": 0,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 1
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 1
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a39588933dd1c4b65255fa3",
+          "Name": "Tarcoins (50)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 1,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 4,
+      "Rewards": [
+        {
+          "Id": "6a395936ba89eae351196a36",
+          "Name": "Mystery Ranch NICE Frame Load Sling",
+          "Description": "The Load Sling by Mystery Ranch allows to carry heavy, irregularly shaped cargo. Its strap system secures items safely and reliably, while the external MOLLE straps provide versatile attachment points for smaller gear. This particular model is equipped with a spacious case offering extra protection.",
+          "Kind": "TRADE OFFER",
+          "Side": "",
+          "Image": "6a5e668acd043de3220f199d",
+          "BigImage": "6a5e6783cd043de3220f19a2",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 1
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a39595c0b12a43eefc2ce69",
+          "Name": "Black Division gear crate",
+          "Description": "A heavy transport crate with no identifying markings. Inside is a random package of Black Division equipment: helmets, body armor, chest rigs, backpacks, or protective gear.\n\nJudging by its contents, this crate was prepared for a team expected to operate far from any safe zone.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66573f7a5533040ca2df",
+          "BigImage": "6a5e675d3f7a5533040ca2e4",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a39597b35b8a2cf97c202d4",
+          "Name": "Black Herringbone",
+          "Description": "Stylish and understated herringbone flooring crafted from smoked oak. An exclusive, luxurious choice.",
+          "Kind": "HIDEOUT CUSTOMIZATION",
+          "Side": "",
+          "Image": "6a5e66c2ac605a08520e2a50",
+          "BigImage": "6a635e9ecf0acff88d03331e",
+          "X": 0,
+          "Y": 1,
+          "Width": 2,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3959b7bea374d8ab321511",
+          "Name": "Tarcoins (50)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 0,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3959e1aefbf567c0286951",
+          "Name": "Heart",
+          "Description": "It seems this mannequin likes you.",
+          "Kind": "HIDEOUT CUSTOMIZATION",
+          "Side": "",
+          "Image": "6a5e66cadffe83817c03096c",
+          "BigImage": "6a5e67c4dffe83817c030971",
+          "X": 1,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 1
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 4,
+      "Rewards": [
+        {
+          "Id": "6a395a1b9873aebec52dd45b",
+          "Name": "Dogtag",
+          "Description": "",
+          "Kind": "DOGTAG",
+          "Side": "",
+          "Image": "6a5e666dac605a08520e2a4e",
+          "BigImage": "6a5e6767ac605a08520e2a53",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395a37531dc2d2ec7e0232",
+          "Name": "Microtech Jagdkommando knife",
+          "Description": "A full-metal tactical dagger distinguished by its unique triple-edged spiral blade. Designed for deep penetration and devastating puncture wounds. A dangerous and truly one-of-a-kind weapon.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e6652ae0ff1630b08d1be",
+          "BigImage": "6a5e6876c6956153430432c7",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395a61062c6287662f1e4a",
+          "Name": "Tarcoins (50)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 0,
+          "Y": 1,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395a95917f6a3f1fc2a56b",
+          "Name": "Beware the Bear poster",
+          "Description": "Who would you rather run into in the woods: a bear or a BEAR?",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e6696c0e52002fd09d8ab",
+          "BigImage": "6a5e6793b793ab50a2074172",
+          "X": 0,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395abfb882591270cdfb47",
+          "Name": "Black Division gear crate",
+          "Description": "A heavy transport crate with no identifying markings. Inside is a random package of Black Division equipment: helmets, body armor, chest rigs, backpacks, or protective gear.\n\nJudging by its contents, this crate was prepared for a team expected to operate far from any safe zone.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66573f7a5533040ca2df",
+          "BigImage": "6a5e675d3f7a5533040ca2e4",
+          "X": 1,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 4,
+      "Rewards": [
+        {
+          "Id": "6a395b8e5d0bbeae6f1f39b7",
+          "Name": "Orange Hawaii",
+          "Description": "Hawaiian shirt",
+          "Kind": "UPPER CLOTHING",
+          "Side": "",
+          "Image": "6a5e67295a56a948810bb5bf",
+          "BigImage": "6a5e685ab793ab50a2074175",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395bbc59ec3d199948bce1",
+          "Name": "Tarcoins (50)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 1
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 1
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395beac60fc762e08aefc9",
+          "Name": "Black Division target",
+          "Description": "A shooting target featuring some of the toughest enemies in Tarkov. A great way to practice without risking your life.",
+          "Kind": "HIDEOUT CUSTOMIZATION",
+          "Side": "",
+          "Image": "6a5e66ff3d0e6b95910b8600",
+          "BigImage": "6a5e67f4438217c0b20b65bc",
+          "X": 1,
+          "Y": 1,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395c5a1a95a225b2a63995",
+          "Name": "Black Division gear crate",
+          "Description": "A heavy transport crate with no identifying markings. Inside is a random package of Black Division equipment: helmets, body armor, chest rigs, backpacks, or protective gear.\n\nJudging by its contents, this crate was prepared for a team expected to operate far from any safe zone.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66573f7a5533040ca2df",
+          "BigImage": "6a5e675d3f7a5533040ca2e4",
+          "X": 0,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395c9190622e6650a9e8f7",
+          "Name": "Ferro Concepts FCPC V5 Plate Carrier (Black Division)",
+          "Description": "The fifth-generation FCPC plate carrier continues Ferro Concepts’ focus on lightweight, adaptable gear. In this version, the plate bags and carrier contour have been redesigned for improved comfort and mobility. Coyote Brown version. Equipped with two radios for communicating with both the assigned squad and HQ.",
+          "Kind": "TRADE OFFER",
+          "Side": "",
+          "Image": "6a5e667d86013ce1c70df990",
+          "BigImage": "6a5e677486013ce1c70df995",
+          "X": 1,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 4,
+      "Rewards": [
+        {
+          "Id": "6a395cd003d9d0a158ff1b0b",
+          "Name": "Knyazev",
+          "Description": "Knyazev",
+          "Kind": "HEAD",
+          "Side": "BEAR",
+          "Image": "6a5e66b1905106a6860e004b",
+          "BigImage": "6a5e67a63f7a5533040ca2e6",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395ce8cff37d9268f96a93",
+          "Name": "O’Connor",
+          "Description": "O’Connor",
+          "Kind": "HEAD",
+          "Side": "USEC",
+          "Image": "6a5e66a6438217c0b20b65b5",
+          "BigImage": "6a5e679dbf561127450b27c6",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a57cbc21e873aa07370ea1f",
+          "Name": "Howa Type 20 5.56x45 assault rifle",
+          "Description": "A Japanese 5.56x45 assault rifle developed by Howa Machinery as the successor to the Type 89. Designed to meet modern battlefield requirements, it features improved ergonomics, ambidextrous controls, and enhanced reliability in harsh environments. Currently in service with the Japan Ground Self-Defense Force.",
+          "Kind": "TRADE OFFER",
+          "Side": "",
+          "Image": "6a5e6739dffe83817c03096e",
+          "BigImage": "6a5e6867ae0ff1630b08d1c9",
+          "X": 0,
+          "Y": 2,
+          "Width": 2,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 2,
+      "Rewards": [
+        {
+          "Id": "6a395d743b0b0cc7d0cf1792",
+          "Name": "Dogtag",
+          "Description": "",
+          "Kind": "DOGTAG",
+          "Side": "",
+          "Image": "6a5e6678dffe83817c03096a",
+          "BigImage": "6a5e676fdffe83817c03096f",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395d908b1f267b469769bd",
+          "Name": "Tarcoins (50)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395dba2419a4e641a8dbc0",
+          "Name": "Scorpion upper",
+          "Description": "Tactical shirt",
+          "Kind": "UPPER CLOTHING",
+          "Side": "",
+          "Image": "6a5e6709bf561127450b27c3",
+          "BigImage": "6a6b4834168e3ef7740acefd",
+          "X": 0,
+          "Y": 1,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395dd8e286988dc179e91b",
+          "Name": "Scorpion lower",
+          "Description": "Jeans",
+          "Kind": "LOWER CLOTHING",
+          "Side": "",
+          "Image": "6a5e66eecd043de3220f199f",
+          "BigImage": "6a5e67e7e2d6c908db0d5d58",
+          "X": 1,
+          "Y": 1,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 3,
+      "Rewards": [
+        {
+          "Id": "6a395e0d100359d9b85dbc00",
+          "Name": "Black Division gear crate",
+          "Description": "A heavy transport crate with no identifying markings. Inside is a random package of Black Division equipment: helmets, body armor, chest rigs, backpacks, or protective gear.\n\nJudging by its contents, this crate was prepared for a team expected to operate far from any safe zone.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66573f7a5533040ca2df",
+          "BigImage": "6a5e675d3f7a5533040ca2e4",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395e76b8d92c943051146e",
+          "Name": "Tarcoins (50)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395e96009f8b1e6f9ae257",
+          "Name": "White accent walls",
+          "Description": "Wall finishes for those who appreciate clean lines and bold white accents.",
+          "Kind": "HIDEOUT CUSTOMIZATION",
+          "Side": "",
+          "Image": "6a5e66c6b793ab50a207416e",
+          "BigImage": "6a635ea3ac917886310de21f",
+          "X": 0,
+          "Y": 1,
+          "Width": 2,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395eb72bbf56b4c648ab4e",
+          "Name": "Arch",
+          "Description": "The mannequin seems to be checking whether you've seen the classics.",
+          "Kind": "HIDEOUT CUSTOMIZATION",
+          "Side": "",
+          "Image": "6a5e66d9ae0ff1630b08d1c1",
+          "BigImage": "6a5e67dec6956153430432c5",
+          "X": 0,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395ed1aadc9f2ebc14f181",
+          "Name": "Dome",
+          "Description": "Gotta keep that nonexistent haircut fresh.",
+          "Kind": "HIDEOUT CUSTOMIZATION",
+          "Side": "",
+          "Image": "6a5e66d086013ce1c70df992",
+          "BigImage": "6a5e67cd86013ce1c70df997",
+          "X": 1,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 1
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 4,
+      "Rewards": [
+        {
+          "Id": "6a395f41bb0e43e700c9f3b0",
+          "Name": "Spiritus Systems LV-119 Plate Carrier (Black Division V2)",
+          "Description": "A highly customizable modular plate carrier by Spiritus Systems, built for maximum comfort in combat. Black version. This setup is equipped with breaching charges and multiple GP pouches for maximum equipment flexibility.",
+          "Kind": "TRADE OFFER",
+          "Side": "",
+          "Image": "6a5e6681ae0ff1630b08d1bf",
+          "BigImage": "6a5e6778905106a6860e004f",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a395f79913cf65265e9636e",
+          "Name": "Tarcoins (50)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3961b198b8c1819918311f",
+          "Name": "Tasmanian Tiger Modular Pack 45 Plus (MultiCam Black)",
+          "Description": "The TT Modular Pack 45 is a system that can be customized to suit the user’s needs. The top flap can be raised to increase capacity or removed entirely if required. External straps allow attachment of bulky gear or equipment that needs to remain easily accessible. MultiCam Black version.",
+          "Kind": "TRADE OFFER",
+          "Side": "",
+          "Image": "6a5e668fe2d6c908db0d5d51",
+          "BigImage": "6a5e678aac605a08520e2a54",
+          "X": 0,
+          "Y": 1,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a39627221260bfa74b21b28",
+          "Name": "Black Division gear crate",
+          "Description": "A heavy transport crate with no identifying markings. Inside is a random package of Black Division equipment: helmets, body armor, chest rigs, backpacks, or protective gear.\n\nJudging by its contents, this crate was prepared for a team expected to operate far from any safe zone.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66573f7a5533040ca2df",
+          "BigImage": "6a5e675d3f7a5533040ca2e4",
+          "X": 1,
+          "Y": 1,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a396429514b9e8381a872b1",
+          "Name": "Server Room",
+          "Description": "A noisy technical room, not designed for long periods of time spent inside.",
+          "Kind": "MENU BACKGROUND",
+          "Side": "",
+          "Image": "6a5e66e63f7a5533040ca2e2",
+          "BigImage": "6a5e67e35a56a948810bb5c3",
+          "X": 0,
+          "Y": 2,
+          "Width": 2,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 4,
+      "Rewards": [
+        {
+          "Id": "6a3964d6103d6d1686d286fc",
+          "Name": "Anton",
+          "Description": "",
+          "Kind": "VOICE",
+          "Side": "BEAR",
+          "Image": "6a5e672fac605a08520e2a52",
+          "BigImage": "6a5e685edffe83817c030973",
+          "X": 0,
+          "Y": 0,
+          "Width": 2,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3964f40a4dc22a4ae57636",
+          "Name": "Garrett",
+          "Description": "",
+          "Kind": "VOICE",
+          "Side": "USEC",
+          "Image": "6a5e6734b793ab50a2074170",
+          "BigImage": "6a5e686386013ce1c70df999",
+          "X": 0,
+          "Y": 1,
+          "Width": 2,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a396512c0def5eaec171bcc",
+          "Name": "Black Division gear crate",
+          "Description": "A heavy transport crate with no identifying markings. Inside is a random package of Black Division equipment: helmets, body armor, chest rigs, backpacks, or protective gear.\n\nJudging by its contents, this crate was prepared for a team expected to operate far from any safe zone.",
+          "Kind": "ITEM",
+          "Side": "",
+          "Image": "6a5e66573f7a5533040ca2df",
+          "BigImage": "6a5e675d3f7a5533040ca2e4",
+          "X": 0,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a396557b1e990e9ffff815e",
+          "Name": "Tarcoins (100)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 1,
+          "Y": 2,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 3,
+      "Rewards": [
+        {
+          "Id": "6a39684c57e765deddcb578c",
+          "Name": "Dogtag",
+          "Description": "",
+          "Kind": "DOGTAG",
+          "Side": "",
+          "Image": "6a5e6673b793ab50a207416c",
+          "BigImage": "6a5e676cb793ab50a2074171",
+          "X": 0,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 2
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a396865f879644b881711f0",
+          "Name": "Tarcoins (150)",
+          "Description": "",
+          "Kind": "CURRENCY",
+          "Side": "",
+          "Image": "6a5e66fbc0e52002fd09d8ad",
+          "BigImage": "6a5e67f03d0e6b95910b8605",
+          "X": 1,
+          "Y": 0,
+          "Width": 1,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 3
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a39677dd87dbb4cb017e95d",
+          "Name": "Knyazev (After Battle)",
+          "Description": "Knyazev (After Battle)",
+          "Kind": "HEAD",
+          "Side": "BEAR",
+          "Image": "6a5e66b6c6956153430432bf",
+          "BigImage": "6a5e67aacd043de3220f19a3",
+          "X": 0,
+          "Y": 1,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 3
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a3967ea7acfe5ed42f5bfb2",
+          "Name": "O’Connor (After Battle)",
+          "Description": "O’Connor (After Battle)",
+          "Kind": "HEAD",
+          "Side": "USEC",
+          "Image": "6a5e66abbf561127450b27c1",
+          "BigImage": "6a5e67a2905106a6860e0050",
+          "X": 1,
+          "Y": 1,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 3
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    },
+    {
+      "PreviousRequirement": 3,
+      "Rewards": [
+        {
+          "Id": "6a39691eb728f33e86f9c75a",
+          "Name": "Norinco QBZ-191 5.8x42 assault rifle",
+          "Description": "A Chinese 5.8x42 assault rifle developed by Norinco as the successor to the QBZ-95. Featuring a conventional layout, fully ambidextrous controls, and a full-length optics rail, it was designed to improve ergonomics, modularity, and overall combat effectiveness.",
+          "Kind": "TRADE OFFER",
+          "Side": "",
+          "Image": "6a5e674586013ce1c70df994",
+          "BigImage": "6a5e687f5a56a948810bb5c5",
+          "X": 0,
+          "Y": 0,
+          "Width": 2,
+          "Height": 1,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 7
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 5
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a39693da5f0e85060da2fd9",
+          "Name": "Nocturnal upper",
+          "Description": "Combat shirt",
+          "Kind": "UPPER CLOTHING",
+          "Side": "",
+          "Image": "6a5e671a905106a6860e004d",
+          "BigImage": "6a6b4839b2f3ecde0c0658d8",
+          "X": 0,
+          "Y": 1,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 1
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 1
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        },
+        {
+          "Id": "6a39695f399e36c9c9f1ec02",
+          "Name": "Nocturnal lower",
+          "Description": "Combat pants",
+          "Kind": "LOWER CLOTHING",
+          "Side": "",
+          "Image": "6a5e66f4e2d6c908db0d5d53",
+          "BigImage": "6a5e67ecc0e52002fd09d8b2",
+          "X": 1,
+          "Y": 1,
+          "Width": 1,
+          "Height": 2,
+          "Costs": [
+            {
+              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "Count": 6
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 4
+            },
+            {
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "Count": 3
+            }
+          ],
+          "Requirements": [],
+          "Claimed": false
+        }
+      ]
+    }
+  ],
+  "SeasonalRewards": [
+    {
+      "Id": "6a4dfeed8f8e957fd91ed127",
+      "Name": "Gatorz Specter MILSPEC ballistic glasses",
+      "Description": "The Gatorz Specter glasses provide full eye protection and are designed to be worn with helmets, headsets, or ear protection.",
+      "Kind": "TRADE OFFER",
+      "Side": "",
+      "Image": "6a622c0999e01ebeb30f04bb",
+      "BigImage": "6a622c2aaac6064a460e92b1",
+      "X": 0,
+      "Y": 0,
+      "Width": 1,
+      "Height": 1,
+      "Costs": [],
+      "Requirements": [
+        "Complete the task: [KORD BREACH] Reverse Gear"
+      ],
+      "Claimed": false
+    },
+    {
+      "Id": "6a4dff7d183eda81ef8525a2",
+      "Name": "Avon M53A1 gas mask",
+      "Description": "The gas mask from Avon Protection was developed under the JSGPM (Joint Service General Purpose Mask) program to provide special operations forces with maximum protection against CBRN threats while keeping the design lightweight and comfortable for use in a wide range of conditions.",
+      "Kind": "TRADE OFFER",
+      "Side": "",
+      "Image": "6a622bf9909760e7df00819f",
+      "BigImage": "6a622c357173bfec3b07706a",
+      "X": 1,
+      "Y": 0,
+      "Width": 1,
+      "Height": 1,
+      "Costs": [],
+      "Requirements": [
+        "Complete the task: [KORD BREACH] Forbidden Knowledge"
+      ],
+      "Claimed": false
+    },
+    {
+      "Id": "6a4e00acbda8fdbd37db7877",
+      "Name": "Spiritus Systems LV-119 Plate Carrier (Black Division V1)",
+      "Description": "A highly customizable modular plate carrier by Spiritus Systems, built for maximum comfort in combat. Wolf Grey version. This setup allows full freedom of movement while providing an ergonomic layout for ammunition and essential gear.",
+      "Kind": "TRADE OFFER",
+      "Side": "",
+      "Image": "6a5e68b8c0e52002fd09d8b4",
+      "BigImage": "6a5e68c13d0e6b95910b8607",
+      "X": 2,
+      "Y": 0,
+      "Width": 1,
+      "Height": 2,
+      "Costs": [],
+      "Requirements": [
+        "Complete the task: ",
+        "Complete the task: [KORD BREACH] Digital Puzzle"
+      ],
+      "Claimed": false
+    },
+    {
+      "Id": "6a4dffde4df0ac625d7a3db1",
+      "Name": "Mystery Ranch 2 Day Assault Pack (Black)",
+      "Description": "This Mystery Ranch backpack is designed for short missions of up to two days. Its compact size is offset by excellent ergonomics. External straps provide convenient attachment points for tools and gear you might need on the go.",
+      "Kind": "TRADE OFFER",
+      "Side": "",
+      "Image": "6a69e79fedde32c28f0dc31c",
+      "BigImage": "6a60d3222fa684a5ee01c7bc",
+      "X": 0,
+      "Y": 1,
+      "Width": 2,
+      "Height": 1,
+      "Costs": [],
+      "Requirements": [
+        "Complete the task: ",
+        "Complete the task: [KORD BREACH] Sheep in Wolf's Clothing"
+      ],
+      "Claimed": false
+    },
+    {
+      "Id": "6a4e010dd8e65128452573bb",
+      "Name": "First Spear Siege-R Optimized M.A.S.S. Plate Carrier (Black Division)",
+      "Description": "A Siege-R Optimized plate carrier equipped with the M.A.S.S. Shoulder System. Provides reliable all-around protection while offering ample workspace for equipment placement. Black version.",
+      "Kind": "TRADE OFFER",
+      "Side": "",
+      "Image": "6a5e68c6438217c0b20b65be",
+      "BigImage": "6a5e68cabf561127450b27ca",
+      "X": 3,
+      "Y": 0,
+      "Width": 1,
+      "Height": 2,
+      "Costs": [],
+      "Requirements": [
+        "Complete the task: ",
+        "Complete the task: [KORD BREACH] Historical Perspectives"
+      ],
+      "Claimed": false
+    }
+  ],
+  "Documents": [
+    {
+      "Id": "6a318aa1a3afbdeaf55b578e",
+      "Name": "Financial documents",
+      "Image": "6a5f4f074187fd0cf20c3d80",
+      "UnavailableImage": "6a5f4f02e8ab40ef3d0ba7fa",
+      "Count": 0
+    },
+    {
+      "Id": "6a318b84fab84feb6aa71fe4",
+      "Name": "PMC personnel files",
+      "Image": "6a5f4f40e748ef9ba90e6b80",
+      "UnavailableImage": "6a5f4f338acc148b2208bb50",
+      "Count": 0
+    },
+    {
+      "Id": "6a318c000357e1cc214ff8b4",
+      "Name": "Project documentation",
+      "Image": "6a5f4f561846e4697506c266",
+      "UnavailableImage": "6a5f4f468acc148b2208bb51",
+      "Count": 0
+    },
+    {
+      "Id": "6a318c4787bb92f2d5f13088",
+      "Name": "Blueprints and technical documentation",
+      "Image": "6a5f4f751846e4697506c267",
+      "UnavailableImage": "6a5f4f6c6a6a362af303acae",
+      "Count": 0
+    },
+    {
+      "Id": "6a318c7d1ee27abd10b8c6d8",
+      "Name": "Test documentation",
+      "Image": "6a5f4f7fe748ef9ba90e6b82",
+      "UnavailableImage": "6a5f4f7b1aa62b661c025709",
+      "Count": 0
+    },
+    {
+      "Id": "6a318c87a7e717b20bcda2df",
+      "Name": "User documentation",
+      "Image": "6a5f4f8883a7b9f6210b257c",
+      "UnavailableImage": "6a5f4f836a6a362af303acaf",
+      "Count": 0
+    },
+    {
+      "Id": "6a318c87a8e42ee82c93d1c6",
+      "Name": "Medical documents",
+      "Image": "6a5f4f1e1aa62b661c025707",
+      "UnavailableImage": "6a5f4f0fe8ab40ef3d0ba7fb",
+      "Count": 0
+    },
+    {
+      "Id": "6a318c88c4e0f26c1820632c",
+      "Name": "Technical documentation",
+      "Image": "6a5f4f2e6a6a362af303acac",
+      "UnavailableImage": "6a5f4f294e7788903c0b013e",
+      "Count": 0
+    }
+  ],
+  "Slides": [
+    {
+      "Image": "sharedassets48-389",
+      "Text": "WELCOME TO KORD BREACH"
+    },
+    {
+      "Image": "sharedassets48-480",
+      "Text": "SEASONS\n\nLimited-time gameplay cycles featuring new content,\na Battle Pass, and exclusive rewards available only\nduring the current season."
+    },
+    {
+      "Image": "sharedassets48-324",
+      "Text": "SEASONAL CHARACTER\n\nCreated on dedicated seasonal servers.\nProgress is reset at the start of each new season,\nwhile earned rewards remain on your account."
+    },
+    {
+      "Image": "sharedassets48-500",
+      "Text": "MODIFIER SYSTEM\n\nCustomize the season to match your playstyle with\npersonal modifiers. Global modifiers affect all\nplayers and change at the start of each new season."
+    },
+    {
+      "Image": "sharedassets48-493",
+      "Text": "BATTLE PASS\n\nProgress through the Battle Pass by completing tasks in\nany game mode. Your Battle Pass progress and unlocked rewards\nare synchronized across all game modes."
+    }
+  ],
+  "DocumentLimit": 30,
+  "ClaimedRewards": 0,
+  "PreviewOnly": true,
+  "UniversalImage": "6a5f4f67e748ef9ba90e6b81",
+  "UniversalUnavailableImage": "6a5f4f5f1aa62b661c025708",
+  "UniversalCount": 0
+}

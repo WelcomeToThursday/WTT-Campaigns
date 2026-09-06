@@ -55,6 +55,31 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            var hub = client.MainModule.GetType("SeasonalPerks.Client.SeasonHubUi");
+            Check(hub != null, "Season hub client adapter is packaged");
+            var availability = hub!.Methods.Single(m => m.Name == "get_Available").Body.Instructions;
+            Check(
+                availability.Any(i => Equals(i.Operand, "seasonal"))
+                    && availability.Any(i => i.Operand is MethodReference method && method.Name == "get_InRaid")
+                    && availability.Any(i => i.Operand is FieldReference field && field.Name == "Busy"),
+                "Hub visibility checks Seasonal, raid and busy state"
+            );
+            var menu = client.MainModule.GetType("SeasonalPerks.Client.Patches.UI.MenuEntry").Methods.Single(m => m.Name == "Postfix");
+            Check(
+                menu.Body.Instructions.Any(i => i.Operand is MethodReference method && method.Name == "AttachMenu")
+                    && menu.Body.ExceptionHandlers.Any(h => h.CatchType?.FullName == "System.Exception"),
+                "Optional hub entry cannot throw through native menu initialization"
+            );
+            var input = client.MainModule.GetType("SeasonalPerks.Client.SeasonUi").Methods.Single(m => m.Name == "get_InputBlocked");
+            Check(
+                input.Body.Instructions.Any(i => i.Operand is MethodReference method && method.DeclaringType.Name == "SeasonHubUi"),
+                "Native input guard includes hub visibility"
+            );
+            var video = client.MainModule.GetType("SeasonalPerks.Client.HubVideo").Methods.Single(m => m.Name == "OnDisable");
+            Check(
+                video.Body.Instructions.Any(i => i.Operand is MethodReference method && method.Name == "Stop"),
+                "Hidden hub videos stop their decoder"
+            );
             var patch = client.MainModule.GetType("SeasonalPerks.Client.Patches.UI.SkillsTabPatch");
             var initialization = patch.Methods.Single(method =>
                 method.HasBody

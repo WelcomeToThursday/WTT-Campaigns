@@ -18,5 +18,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="$(SeasonalAssetsDir)Icons\*.png" Link="icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="$(SeasonalAssetsDir)HubImages\*.png" Link="hub-images\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

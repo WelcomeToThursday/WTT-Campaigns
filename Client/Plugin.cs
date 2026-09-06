@@ -9,7 +9,7 @@ using SPT.Common.Http;
 
 namespace SeasonalPerks.Client;
 
-[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.1.23")]
+[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.1.24")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 public sealed class Plugin : BaseUnityPlugin
 {
@@ -50,6 +50,7 @@ public sealed class Plugin : BaseUnityPlugin
         Instance = this;
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
+        gameObject.AddComponent<SeasonHubUi>();
     }
 
     internal static void Accept(ClientSnapshot snapshot)

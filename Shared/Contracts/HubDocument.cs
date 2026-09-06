@@ -1,0 +1,12 @@
+using System;
+
+namespace SeasonalPerks.Shared.Contracts;
+
+public sealed class HubDocument
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public string Image { get; set; } = "";
+    public string UnavailableImage { get; set; } = "";
+    public int Count { get; set; } = 0;
+}

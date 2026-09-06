@@ -11,6 +11,8 @@ $clientOutput = Get-SeasonalBuildOutput $projectRoot 'Client'
 $serverOutput = Get-SeasonalBuildOutput $projectRoot 'Server'
 dotnet run --project (Join-Path $projectRoot 'Tests') -c Release --no-build -- (Join-Path $sptRoot 'BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll') | Out-Host
 if ($LASTEXITCODE) { throw 'Contract or client compatibility checks failed.' }
+dotnet run --project (Join-Path $projectRoot 'Tests') -c Release --no-build -- --ui (Join-Path $sptRoot 'BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll') (Join-Path $clientOutput 'WTT-Seasonal.Client.dll') | Out-Host
+if ($LASTEXITCODE) { throw 'UI compatibility checks failed.' }
 dotnet run --project (Join-Path $projectRoot 'Tests') -c Release --no-build -- --resource-hooks $sptRoot (Join-Path $clientOutput 'WTT-Seasonal.Client.dll') | Out-Host
 if ($LASTEXITCODE) { throw 'Item-resource client hook checks failed.' }
 

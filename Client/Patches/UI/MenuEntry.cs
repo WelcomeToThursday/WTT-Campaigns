@@ -19,6 +19,14 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("SeasonalPerks.Me
     private static void Postfix(MenuScreen __instance)
     {
         SeasonUi.Instance.ShowStartupSelection();
+        try
+        {
+            SeasonHubUi.Instance.AttachMenu(__instance);
+        }
+        catch (Exception exception)
+        {
+            Plugin.Error(exception);
+        }
         var existing = __instance
             .GetComponentsInChildren<DefaultUIButton>(true)
             .FirstOrDefault(button => button.name == "SeasonalPerksEntry");

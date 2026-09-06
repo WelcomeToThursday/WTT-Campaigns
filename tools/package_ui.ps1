@@ -26,6 +26,7 @@ foreach ($name in @('WTT-Seasonal.Client.dll', 'WTT-Seasonal.UI.dll', 'WTT-Seaso
 Copy-Item -LiteralPath (Join-Path $projectRoot 'docs\ui.md') -Destination $output
 Copy-Item -LiteralPath (Join-Path $projectRoot 'docs\creation-reference.md') -Destination $output
 Copy-Item -LiteralPath (Join-Path $projectRoot 'docs\skills-reference.md') -Destination $output
+Copy-Item -LiteralPath (Join-Path $projectRoot 'docs\battle-pass-ui.md') -Destination $output
 foreach ($name in @('LICENSE', 'THIRD_PARTY_NOTICES.md'))
 {
     Copy-Item -LiteralPath (Join-Path $projectRoot $name) -Destination $output

@@ -1,0 +1,19 @@
+using System;
+
+namespace SeasonalPerks.Shared.Contracts;
+
+public sealed class HubState
+{
+    public string Id { get; set; } = "";
+    public string SeasonId { get; set; } = "";
+    public HubPage[] Pages { get; set; } = Array.Empty<HubPage>();
+    public HubReward[] SeasonalRewards { get; set; } = Array.Empty<HubReward>();
+    public HubDocument[] Documents { get; set; } = Array.Empty<HubDocument>();
+    public HubSlide[] Slides { get; set; } = Array.Empty<HubSlide>();
+    public string UniversalImage { get; set; } = "";
+    public string UniversalUnavailableImage { get; set; } = "";
+    public int UniversalCount { get; set; }
+    public int DocumentLimit { get; set; } = 30;
+    public int ClaimedRewards { get; set; } = 0;
+    public bool PreviewOnly { get; set; } = true;
+}

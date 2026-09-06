@@ -1,0 +1,30 @@
+{
+  "sources": [
+    {
+      "file": "requests/client/battle-pass/active/response/resp.client.battle-pass.active_1788587615.json",
+      "sha256": "55656ea2156c1471ec2536cad5626ad68faa060a7f3242821ceeb29a07821b6a"
+    },
+    {
+      "file": "requests/client/season/active/response/resp.client.season.active_1788587615.json",
+      "sha256": "d9ab2f9e9ba3d09e7ac1b4589be4c51b65f1130b3da6b150916dce1c0cac8a3c"
+    },
+    {
+      "file": "requests/client/locale/en/response/resp.client.locale.en_1788587530.json",
+      "sha256": "84646649cb4d6a51f4d746df7998b93f0ee217285335fa2d13a66e453f5f4451"
+    },
+    {
+      "file": "requests/client/items/response/resp.client.items_1788587615.json",
+      "sha256": "d4fbce665743d1f151e308c2099b142c6ae0ba94f3ebce358bbc4eac69000c2c"
+    },
+    {
+      "file": "requests/client/customization/response/resp.client.customization_1788587615.json",
+      "sha256": "8b5b61758ffd2bdbea6cbc78b1e72e82fb939235f7ef04ecc0414bd2f1d5f7f9"
+    },
+    {
+      "file": "requests/client/globals/response/resp.client.globals_1788587615.json",
+      "sha256": "909be51f10416b7287e2005f5f5940073efc79d6b5476fc4d40de4e5030c17f3"
+    }
+  ],
+  "battlePassId": "6a27da69f3610ccfe5e71ab5",
+  "seasonId": "69e232a764dfe95549003f0f"
+}

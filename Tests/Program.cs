@@ -163,6 +163,7 @@ Check(
 SeasonalPerks.Tests.ConsumableChecks.Run(c, Check);
 SeasonalPerks.Tests.AllergyContainerChecks.Run(c, Check);
 SeasonalPerks.Tests.SerializationChecks.Run(c, Check);
+SeasonalPerks.Tests.HubChecks.Run(Check);
 if (args.Length > 0)
 {
     SeasonalPerks.Tests.CompatibilityChecks.Run(args[0], Check);

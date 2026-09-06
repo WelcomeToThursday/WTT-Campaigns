@@ -14,6 +14,15 @@ namespace SeasonalPerks.Client;
 public sealed class SeasonUi : MonoBehaviour
 {
     internal static SeasonUi Instance = null!;
+    internal AssetBundle UiBundle
+    {
+        get
+        {
+            return _bundle ??=
+                AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonalperks_ui.bundle"))
+                ?? throw new InvalidDataException("Missing seasonal UI bundle.");
+        }
+    }
     private readonly Dictionary<string, Task<Sprite>> _images = new();
     private AssetBundle? _bundle;
     private GameObject? _canvas;
@@ -47,7 +56,7 @@ public sealed class SeasonUi : MonoBehaviour
 
     internal bool InputBlocked
     {
-        get { return IsOpen || Time.frameCount <= _inputBlockedThrough; }
+        get { return IsOpen || (SeasonHubUi.Instance && SeasonHubUi.Instance.InputBlocked) || Time.frameCount <= _inputBlockedThrough; }
     }
 
     private void Awake()
@@ -82,6 +91,11 @@ public sealed class SeasonUi : MonoBehaviour
         {
             return;
         }
+        if (SeasonHubUi.Instance)
+        {
+            SeasonHubUi.Instance.Close();
+        }
+
         if (IsOpen)
         {
             _screen!.ShowPage(page);
@@ -479,7 +493,7 @@ public sealed class SeasonUi : MonoBehaviour
         }
     }
 
-    private async void LoadIcon(string id, Image target)
+    internal async void LoadIcon(string id, Image target)
     {
         try
         {

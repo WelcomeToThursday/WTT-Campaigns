@@ -1,4 +1,8 @@
-# UI update 0.1.17
+# UI update 0.1.24
+
+## Battle Pass and seasonal hub
+
+The Seasonal character's main menu now exposes the KORD BREACH banner and the recorded Battle Pass, Seasonal Rewards and About the Season views. The full captured reward catalogue is browsable, with neutral progress and unavailable transaction actions. See [reference, asset workflow and validation](battle-pass-ui.md). Reward progression, exchanges, purchases and automatic resets remain unimplemented.
 
 ## Save modifiers confirmation
 

@@ -6,7 +6,7 @@ using SPTarkov.Server.Core.Routers;
 namespace SeasonalPerks.Server;
 
 [Injectable(InjectionType.Singleton, OnLoadOrder.Preload)]
-public sealed class ServerStartup(SeasonService seasons, ImageRouter images, IEnumerable<IRuntimePatch> patches) : IOnLoad
+public sealed class ServerStartup(SeasonService seasons, HubService hub, ImageRouter images, IEnumerable<IRuntimePatch> patches) : IOnLoad
 {
     internal static SeasonService Seasons = null!;
 
@@ -14,6 +14,7 @@ public sealed class ServerStartup(SeasonService seasons, ImageRouter images, IEn
     {
         Seasons = seasons;
         seasons.Initialize();
+        hub.Initialize(images);
         foreach (var perk in seasons.Catalogue.All)
         {
             var file = Path.Combine(Metadata.DirectoryPath, "icons", Path.GetFileName(perk.ImageUrl));
