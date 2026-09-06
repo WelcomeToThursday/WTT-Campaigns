@@ -169,7 +169,7 @@ public sealed class SeasonUi : MonoBehaviour
         return view;
     }
 
-    internal static ScreenState Presentation(Snapshot snapshot)
+    internal static ScreenState Presentation(ClientSnapshot snapshot)
     {
         return new ScreenState
         {
@@ -239,7 +239,7 @@ public sealed class SeasonUi : MonoBehaviour
             character.Mode == "seasonal" && character.Exists
         );
         var creationFlow = !created && _screen.Page == ScreenPage.CreationPersonal;
-        Snapshot? completedCreation = null;
+        ClientSnapshot? completedCreation = null;
         _screen.SetBusy(true, creationFlow ? "" : "Saving seasonal character...");
         try
         {

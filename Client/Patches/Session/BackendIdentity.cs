@@ -26,8 +26,9 @@ internal class BackendIdentity : ModulePatch
         }
         if (Plugin.SessionId == null)
         {
-            var snapshot = JsonConvert.DeserializeObject<Snapshot>(
-                RequestHandler.PostJson("/seasonal-perks/snapshot", "{}")
+            var snapshot = JsonConvert.DeserializeObject<ClientSnapshot>(
+                RequestHandler.PostJson("/seasonal-perks/snapshot", "{}"),
+                EftJsonConverters.Converters
             )!;
             Plugin.Accept(snapshot);
             Plugin.SessionId = snapshot.EffectiveProfileId;

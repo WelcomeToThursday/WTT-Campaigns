@@ -11,12 +11,12 @@ using UnityEngine;
 
 namespace SeasonalPerks.Client;
 
-[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.1.18")]
+[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.1.23")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 public sealed class Plugin : BaseUnityPlugin
 {
     internal static Plugin Instance = null!;
-    internal static Snapshot? Current;
+    internal static ClientSnapshot? Current;
     internal static string? SessionId;
     internal static string? PendingSessionId;
     internal static RuntimeEffects Effects = new(new Catalogue(), Array.Empty<string>());
@@ -45,7 +45,7 @@ public sealed class Plugin : BaseUnityPlugin
         gameObject.AddComponent<SeasonUi>();
     }
 
-    internal static void Accept(Snapshot snapshot)
+    internal static void Accept(ClientSnapshot snapshot)
     {
         if (snapshot.Error != null)
         {
@@ -55,18 +55,21 @@ public sealed class Plugin : BaseUnityPlugin
         Current = snapshot;
         Effects = new RuntimeEffects(
             snapshot.Catalogue,
-            snapshot.ActiveMode == "seasonal" ? snapshot.State.SeasonalPerks : Array.Empty<string>()
+            snapshot.ActiveMode == "seasonal"
+                ? snapshot.State.SeasonalPerks
+                : Array.Empty<string>(),
+            snapshot.State.SeasonalPerkEffectParameters
         );
     }
 
-    internal static async Task<Snapshot> Request(string operation, Mutation? mutation = null)
+    internal static async Task<ClientSnapshot> Request(string operation, Mutation? mutation = null)
     {
         var json = await RequestHandler.PostJsonAsync(
             "/seasonal-perks/" + operation,
             JsonConvert.SerializeObject(mutation ?? new Mutation())
         );
         var snapshot =
-            JsonConvert.DeserializeObject<Snapshot>(json)
+            JsonConvert.DeserializeObject<ClientSnapshot>(json, EftJsonConverters.Converters)
             ?? throw new InvalidDataException("Seasonal server returned an empty response.");
         if (snapshot.Error != null)
         {
@@ -91,7 +94,7 @@ public sealed class Plugin : BaseUnityPlugin
     }
 
     // Callers flush once before the server mutation; never flush again after switching its identity.
-    internal static async Task Reload(Snapshot snapshot)
+    internal static async Task Reload(ClientSnapshot snapshot)
     {
         var app = App ?? throw new InvalidOperationException("The game menu is not ready.");
         if (InRaid)

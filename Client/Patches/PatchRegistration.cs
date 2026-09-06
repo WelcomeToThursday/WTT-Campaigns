@@ -2,6 +2,7 @@ using EFT.HealthSystem;
 using EFT.Interactive;
 using EFT.UI;
 using SeasonalPerks.Client.Patches.Health;
+using SeasonalPerks.Client.Patches.Hideout;
 using SeasonalPerks.Client.Patches.Items;
 using SeasonalPerks.Client.Patches.Movement;
 using SeasonalPerks.Client.Patches.Session;
@@ -19,6 +20,7 @@ internal static class PatchRegistration
         EnableSkills();
         EnableMovement();
         EnableItems();
+        EnableHideout();
         EnableUi();
     }
 
@@ -35,15 +37,27 @@ internal static class PatchRegistration
         new DamageContextPatch().Enable();
         new InjuryProbabilityPatch().Enable();
         new FreshWoundPatch().Enable();
+        new ConsumableRegenerationStartPatch().Enable();
+        new ConsumableRegenerationTickPatch().Enable();
     }
 
     private static void EnableSkills()
     {
         new SkillProgressPatch().Enable();
+        new ProfileExperiencePatch().Enable();
+        new TreatmentExperiencePatch().Enable();
+        new RaidExperiencePatch().Enable();
     }
 
     private static void EnableMovement()
     {
+        new BushTriggerPatch(nameof(TreeInteractive.OnTriggerEnter)).Enable();
+        new BushTriggerPatch(nameof(TreeInteractive.OnTriggerExit)).Enable();
+        new BushMovementPatch().Enable();
+        new BushCleanupPatch().Enable();
+        new BushSoundPatch(nameof(TreeInteractive.OnTriggerEnter)).Enable();
+        new BushSoundPatch("IPhysicsTriggerWithStay.OnTriggerStay").Enable();
+        new BushSoundPatch(nameof(TreeInteractive.PlaySoundBank)).Enable();
         new SprintSpeedPatch().Enable();
         new StaminaConsumptionPatch(nameof(Stamina.Consume)).Enable();
         new StaminaConsumptionPatch(nameof(Stamina.Process)).Enable();
@@ -55,6 +69,12 @@ internal static class PatchRegistration
 
     private static void EnableItems()
     {
+        new ConsumableUsePatch().Enable();
+        new MedicineCompletionPatch().Enable();
+        new SecureGridPatch().Enable();
+        new SecureMovePatch().Enable();
+        new SecureAddPatch().Enable();
+        new SecureTransferPatch().Enable();
         new ItemResourcePatch(
             typeof(ActiveHealthController.MedEffect),
             nameof(ActiveHealthController.MedEffect.RegularUpdate)
@@ -69,6 +89,11 @@ internal static class PatchRegistration
         ).Enable();
         new KeyUsagePatch(typeof(WorldInteractiveObject)).Enable();
         new KeyUsagePatch(typeof(KeycardDoor)).Enable();
+    }
+
+    private static void EnableHideout()
+    {
+        new FoundInRaidPatch().Enable();
     }
 
     private static void EnableUi()

@@ -1,7 +1,5 @@
 using EFT;
 using EFT.UI;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -18,7 +16,7 @@ public sealed class CharacterPreview : MonoBehaviour
     private Camera? _camera;
     private Light[] _lights = Array.Empty<Light>();
 
-    internal async void Show(JObject visual, GameObject cameraPrefab, Font font)
+    internal async void Show(CharacterVisual visual, GameObject cameraPrefab, Font font)
     {
         try
         {
@@ -51,13 +49,8 @@ public sealed class CharacterPreview : MonoBehaviour
             _image.InitCamera(camera);
             GetComponent<RawImage>().color = Color.white;
             // Use EFT's own equipment descriptor and converters, without creating a game session.
-            var descriptor =
-                JsonConvert.DeserializeObject<PlayerVisualRepresentationDescriptor>(
-                    visual.ToString(),
-                    EftJsonConverters.Converters
-                ) ?? throw new InvalidDataException("Missing character appearance.");
             await _view.Show(
-                new PlayerVisualRepresentation(descriptor),
+                new PlayerVisualRepresentation(visual.CreateDescriptor()),
                 position: Vector3.zero,
                 animateWeapon: true
             );

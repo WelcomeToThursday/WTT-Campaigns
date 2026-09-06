@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
@@ -20,8 +19,7 @@ public sealed class SeasonService(
     SaveServer saves,
     ProfileDataService profileData,
     CreateProfileService creator,
-    TemplateTable templates,
-    SPTarkov.Server.Core.Utils.JsonUtil json
+    TemplateTable templates
 )
 {
     private const string StateKey = "cjSeasonalPerksState";
@@ -136,19 +134,19 @@ public sealed class SeasonService(
     private static void SetState(PmcData pmc, PerkState state)
     {
         pmc.ExtensionData ??= new();
-        // A JSON string keeps Newtonsoft tokens out of SPT's System.Text.Json serializer.
+        // Keep the persisted state contract independent of SPT's System.Text.Json serializer.
         // State and creation receipts are committed in the SAME profile save as the grant.
         pmc.ExtensionData[StateKey] = JsonConvert.SerializeObject(state);
     }
 
-    public Snapshot GetSnapshot(string root)
+    public ServerSnapshot GetSnapshot(string root)
     {
         var link = Link(root);
         var normal = saves.GetProfile(new MongoId(root)).CharacterData!.PmcData!;
         var seasonal = link.Created
             ? saves.GetProfile(new MongoId(link.SeasonalId!)).CharacterData!.PmcData
             : null;
-        return new Snapshot
+        return new ServerSnapshot
         {
             Catalogue = Catalogue,
             Locale = Locale,
@@ -181,7 +179,7 @@ public sealed class SeasonService(
         };
     }
 
-    private JObject? Visual(PmcData profile)
+    private CharacterVisual? Visual(PmcData profile)
     {
         if (
             profile.Inventory?.Items == null
@@ -207,25 +205,21 @@ public sealed class SeasonService(
             }
         } while (added);
         // Only the visible character contract leaves the server. Stash and progression are excluded.
-        return JObject.Parse(
-            json.Serialize(
-                new
-                {
-                    Info = new
-                    {
-                        profile.Info!.Nickname,
-                        profile.Info.Level,
-                        profile.Info.Side,
-                    },
-                    Customization = profile.Customization,
-                    Equipment = new
-                    {
-                        Id = inventory.Equipment,
-                        Items = items.Where(item => ids.Contains(item.Id.ToString())).ToArray(),
-                    },
-                }
-            )!
-        );
+        return new CharacterVisual
+        {
+            Info = new CharacterVisualInfo
+            {
+                Nickname = profile.Info.Nickname,
+                Level = profile.Info.Level,
+                Side = profile.Info.Side,
+            },
+            Customization = profile.Customization,
+            Equipment = new CharacterEquipment
+            {
+                Id = inventory.Equipment,
+                Items = items.Where(item => ids.Contains(item.Id.ToString())).ToArray(),
+            },
+        };
     }
 
     public RuntimeEffects Effects(string effectiveId)
@@ -234,7 +228,7 @@ public sealed class SeasonService(
         return new RuntimeEffects(Catalogue, State(pmc).SeasonalPerks);
     }
 
-    public async Task<Snapshot> Create(string root, Mutation request)
+    public async Task<ServerSnapshot> Create(string root, Mutation request)
     {
         var link = Link(root);
         if (link.Created)
@@ -315,7 +309,7 @@ public sealed class SeasonService(
         return GetSnapshot(root);
     }
 
-    public async Task<Snapshot> Edit(string root, Mutation request)
+    public async Task<ServerSnapshot> Edit(string root, Mutation request)
     {
         var link = Link(root);
         if (!link.Created)
@@ -338,7 +332,7 @@ public sealed class SeasonService(
         return GetSnapshot(root);
     }
 
-    public async Task<Snapshot> Switch(string root, string mode)
+    public async Task<ServerSnapshot> Switch(string root, string mode)
     {
         var link = Link(root);
         if (mode is not ("normal" or "seasonal"))
@@ -389,11 +383,18 @@ public sealed class SeasonService(
             .ToArray();
         state.RootAccountId ??= root;
         state.SeasonalPerks = Rules.EnabledCommonIds.Concat(personal).Distinct().ToList();
+        ConsumableEffects.UpdateParameters(Catalogue, state);
+        AllergyEffects.UpdateParameters(
+            Catalogue,
+            state,
+            effect => SeasonalPerks.Server.Effects.TemplateFilters.Candidates(templates, effect),
+            RandomNumberGenerator.GetInt32
+        );
         foreach (var p in Catalogue.All.Where(p => state.SeasonalPerks.Contains(p.Id)))
         {
-            foreach (var e in p.Effects.Where(e => (string?)e["effectId"] == "skill_level_preset"))
+            foreach (var e in p.Effects.Where(e => e.EffectId == "skill_level_preset"))
             {
-                foreach (var skill in ((JArray)e["skillIds"]!).Values<string>())
+                foreach (var skill in e.SkillIds ?? Enumerable.Empty<string>())
                 {
                     var receipt = p.Id + ":" + skill;
                     if (state.AppliedGrants.Contains(receipt))
@@ -411,7 +412,7 @@ public sealed class SeasonService(
                     {
                         value.Progress = Math.Max(
                             value.Progress,
-                            Math.Clamp((int)e["intValue"]!, 0, 51) * 100d
+                            Math.Clamp(e.IntValue ?? 0, 0, 51) * 100d
                         );
                     }
 

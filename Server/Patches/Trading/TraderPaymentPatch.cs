@@ -1,0 +1,41 @@
+using System.Reflection;
+using HarmonyLib;
+using SeasonalPerks.Server.Effects;
+using SPTarkov.DI.Annotations;
+using SPTarkov.Reflection.Patching;
+using SPTarkov.Server.Core.Helpers.Commerce;
+using SPTarkov.Server.Core.Models.Common;
+using SPTarkov.Server.Core.Models.Eft.Common;
+using SPTarkov.Server.Core.Models.Eft.ItemEvent;
+using SPTarkov.Server.Core.Models.Eft.Trade;
+
+namespace SeasonalPerks.Server.Patches.Trading;
+
+[Injectable]
+public class TraderPaymentPatch(TraderPaymentValidation validation) : AbstractPatch
+{
+    private static TraderPaymentValidation _validation = null!;
+
+    protected override MethodBase GetTargetMethod()
+    {
+        _validation = validation;
+        return AccessTools.Method(typeof(TradeHelper), nameof(TradeHelper.BuyItem));
+    }
+
+    [PatchPrefix]
+    private static bool Prefix(
+        PmcData pmcData,
+        ProcessBuyTradeRequestData buyRequestData,
+        MongoId sessionId,
+        ItemEventRouterResponse output,
+        out Lock? __state
+    )
+    {
+        __state = null;
+        __state = TraderPaymentValidation.Begin();
+        return _validation.Validate(pmcData, buyRequestData, sessionId, output);
+    }
+
+    [PatchFinalizer]
+    private static void Finalizer(Lock? __state) => __state?.Exit();
+}

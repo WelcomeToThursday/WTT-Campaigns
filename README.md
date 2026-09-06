@@ -2,9 +2,9 @@
 
 Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
 
-The project imports the captured 39-entry catalogue and English localization, serves all perk icons from the local SPT server, creates an independent seasonal PMC/Scav profile, persists selections and grant receipts, and supplies a client selection screen with recovered perk cards and a confirmation window. Twenty-three catalogue entries currently have implementations; sixteen remain unavailable in selection. Actual in-game switching and gameplay still need validation.
+The project imports the captured 39-entry catalogue and English localization, serves all perk icons from the local SPT server, creates an independent seasonal PMC/Scav profile, persists selections and grant receipts, and supplies a client selection screen with recovered perk cards and a confirmation window. Thirty-three catalogue entries currently have implementations; six remain unavailable in selection. Actual in-game switching and gameplay still need validation.
 
-Build **0.1.18** adds Well That Hurt! and Diet: filtered medical and provision resource consumption in raids and the stash, with server persistence. See [behavior, rounding and validation](docs/item-resources.md). Install both client and server from the full gameplay package produced by `tools/package.ps1`.
+Build **0.1.23** adds Allergic (three persistent random medication/provision targets and three symptoms per use) and Broken Secure Container (the captured recursive item allow-list, enforced on client and server). See [behavior and validation](docs/allergy-container.md). It retains the [consumable perks](docs/consumables.md), [experience/flea perks](docs/experience-flea.md) and [trader-price perks](docs/trader-prices.md). Install both client and server from the full gameplay package produced by `tools/package.ps1`.
 
 For a fresh checkout, start with [development setup](CONTRIBUTING.md). This repository contains mod source, reviewed documentation and sanitized data. Game binaries, recovered assets, generated bundles, research output, test profiles and releases remain local. Original code is MIT-licensed; see [third-party notices](THIRD_PARTY_NOTICES.md) for captured data and external dependencies.
 

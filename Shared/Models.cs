@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 namespace SeasonalPerks.Shared;
 
@@ -15,7 +14,7 @@ public sealed class Catalogue
     public IEnumerable<Perk> All => Common.Concat(Personal);
 }
 
-public sealed class Perk
+public sealed class Perk : ExtensibleJsonModel
 {
     [JsonProperty("id")]
     public string Id { get; set; } = "";
@@ -30,13 +29,10 @@ public sealed class Perk
     public int? Points { get; set; }
 
     [JsonProperty("effects")]
-    public List<JObject> Effects { get; set; } = new();
+    public List<PerkEffect> Effects { get; set; } = new();
 
     [JsonProperty("mutuallyExclusiveSeasonalPerkIds")]
     public List<string> Conflicts { get; set; } = new();
-
-    [JsonExtensionData]
-    public IDictionary<string, JToken>? Extra { get; set; }
 }
 
 public sealed class Rules
@@ -53,22 +49,23 @@ public sealed class PerkState
     public int SchemaVersion { get; set; } = 1;
     public long Revision { get; set; }
     public List<string> SeasonalPerks { get; set; } = new();
-    public JObject SeasonalPerkEffectParameters { get; set; } = new();
+    public EffectParameters SeasonalPerkEffectParameters { get; set; } = new();
     public HashSet<string> AppliedGrants { get; set; } = new();
     public Dictionary<string, long> MailNextDue { get; set; } = new();
 }
 
-public sealed class CharacterSummary
+public sealed class CharacterSummary<TVisual>
+    where TVisual : class
 {
     public string Mode { get; set; } = "normal";
     public string Name { get; set; } = "";
     public int Level { get; set; }
     public bool Exists { get; set; }
     public string Side { get; set; } = "Usec";
-    public JObject? Visual { get; set; }
+    public TVisual? Visual { get; set; }
 }
 
-public sealed class Snapshot
+public class Snapshot
 {
     public string EffectiveProfileId { get; set; } = "";
     public Catalogue Catalogue { get; set; } = new();
@@ -76,9 +73,15 @@ public sealed class Snapshot
     public Dictionary<string, string> Unavailable { get; set; } = new();
     public Rules Rules { get; set; } = new();
     public PerkState State { get; set; } = new();
-    public List<CharacterSummary> Characters { get; set; } = new();
     public string ActiveMode { get; set; } = "normal";
     public string? Error { get; set; }
+}
+
+// Each side uses its native appearance model while sharing the rest of the response contract.
+public class Snapshot<TVisual> : Snapshot
+    where TVisual : class
+{
+    public List<CharacterSummary<TVisual>> Characters { get; set; } = new();
 }
 
 public sealed class Mutation

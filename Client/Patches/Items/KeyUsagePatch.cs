@@ -69,9 +69,9 @@ internal class KeyUsagePatch(Type doorType) : ModulePatch("SeasonalPerks.KeyUsag
         var chance = 1f;
         foreach (var effect in Plugin.Effects.Matching("key_durability_multiplicator"))
         {
-            if (RuntimeEffects.Contains(effect["keyTypes"], keyType))
+            if (RuntimeEffects.Contains(effect.KeyTypes, keyType))
             {
-                chance *= KeyUsage.ConsumptionChance((float?)effect["multiplicator"] ?? 0);
+                chance *= KeyUsage.ConsumptionChance((float?)effect.Multiplier ?? 0);
             }
         }
 

@@ -11,6 +11,12 @@ if ($LASTEXITCODE) { throw 'Contract or client compatibility checks failed.' }
 dotnet run --project (Join-Path $projectRoot 'Tests') -c Release --no-build -- --resource-hooks $sptRoot (Join-Path $projectRoot 'Client\bin\Release\netstandard2.1\SeasonalPerks.Client.dll')
 if ($LASTEXITCODE) { throw 'Item-resource client hook checks failed.' }
 
+dotnet run --project (Join-Path $projectRoot 'Tests') -c Release --no-build -- --bush-hooks $sptRoot (Join-Path $projectRoot 'Client\bin\Release\netstandard2.1\SeasonalPerks.Client.dll')
+if ($LASTEXITCODE) { throw 'Bush client hook checks failed.' }
+
+dotnet run --project (Join-Path $projectRoot 'Tests') -c Release --no-build -- --experience-hooks $sptRoot (Join-Path $projectRoot 'Client\bin\Release\netstandard2.1\SeasonalPerks.Client.dll')
+if ($LASTEXITCODE) { throw 'Experience client hook checks failed.' }
+
 # Unique staging folders preserve previous builds and avoid destructive cleanup.
 $version = ([xml](Get-Content -LiteralPath (Join-Path $projectRoot 'Directory.Build.props') -Raw)).Project.PropertyGroup.Version
 $output = Join-Path $projectRoot ('release\SeasonalPerks-' + $version + '-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))

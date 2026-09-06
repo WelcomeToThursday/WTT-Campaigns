@@ -30,6 +30,23 @@ def request(path,payload=None,session=None,raw=False,allow_error=False):
         return value.get('data')
     return value
 
+def check_visual(snapshot, pmc, mode):
+    visual = next(c['Visual'] for c in snapshot['Characters'] if c['Mode'] == mode)
+    check(set(visual) == {'Info', 'Customization', 'Equipment'}, mode + ' appearance-only response')
+    check(visual['Info'] == {key: pmc['Info'][key] for key in ['Nickname', 'Level', 'Side']},
+          mode + ' typed appearance info preserves the native contract')
+    check(visual['Customization'] == pmc['Customization'], mode + ' native customization preserved')
+    equipment = pmc['Inventory']['equipment']
+    visible = {equipment}
+    while True:
+        descendants = {item['_id'] for item in pmc['Inventory']['items'] if item.get('parentId') in visible}
+        if descendants <= visible:
+            break
+        visible.update(descendants)
+    expected = [item for item in pmc['Inventory']['items'] if item['_id'] in visible]
+    check(visual['Equipment'] == {'Id': equipment, 'Items': expected},
+          mode + ' complete native equipment data preserved without stash items')
+
 def main():
     username='season-test-'+str(int(time.time()))
     registered=request('/launcher/v2/register',{'username':username,'edition':'Standard'})
@@ -41,6 +58,7 @@ def main():
     request('/client/game/profile/create',{'side':'Usec','nickname':'NormalTest','headId':cosmetic('5cc085e214c02e000c6bea67'),'voiceId':cosmetic('5fc100cf95572123ae738483')},root)
     normal=request('/client/game/profile/list',session=root)
     snapshot=request('/seasonal-perks/snapshot',session=root)
+    check_visual(snapshot, normal[0], 'normal')
     check(snapshot['ActiveMode']=='normal','Normal character initially active')
     catalogue=snapshot['Catalogue'];all_perks=catalogue['common']+catalogue['personal']
     check(len(all_perks)==39,'39 catalogue entries served')
@@ -61,6 +79,7 @@ def main():
     child=switched['EffectiveProfileId']
     check(child!=root,'Independent session identities')
     seasonal=request('/client/game/profile/list',session=child)
+    check_visual(switched, seasonal[0], 'seasonal')
     check(seasonal[0]['Info']['Nickname']=='SeasonTest','Seasonal session loads seasonal PMC')
     skills={s['Id']:s['Progress'] for s in seasonal[0]['Skills']['Common']}
     check(skills['Strength']==1500 and skills['Endurance']==1500,'Hercules creates level 15 Strength and Endurance')
@@ -89,8 +108,8 @@ def main():
         result=request('/seasonal-perks/switch',{'Mode':mode},root)
         check(result['ActiveMode']==mode,'Repeated switch to '+mode)
     after=request('/client/game/profile/list',session=root)
+    differences=[]
     if after != normal:
-        differences=[]
         def compare(a,b,path=''):
             if isinstance(a,dict) and isinstance(b,dict):
                 for key in set(a)|set(b):compare(a.get(key),b.get(key),path+'/'+key)
@@ -99,7 +118,15 @@ def main():
             elif a!=b:differences.append({'path':path,'before':a,'after':b})
         compare(normal,after)
         (PROJECT/'Testing/integration-differences.json').write_text(json.dumps(differences,indent=2),encoding='utf-8')
-    check(after==normal,'Normal PMC and Scav are unchanged after creation, edits and switching')
+    def core_housekeeping(change):
+        if change['path']=='/0/Hideout/sptUpdateLastRunTimestamp':
+            return isinstance(change['after'],int) and change['after'] >= (change['before'] or 0)
+        for index,area in enumerate(normal[0]['Hideout']['Areas']):
+            if area['type']==4 and area['level']==0 and not any(slot.get('items') for slot in area.get('slots',[])):
+                if change['path']==f'/0/Hideout/Areas/{index}/active':
+                    return change['before'] is True and change['after'] is False
+        return False
+    check(all(core_housekeeping(change) for change in differences),'Normal PMC and Scav unchanged except verified SPT hideout housekeeping')
     (PROJECT/'Testing/restart-state.json').write_text(json.dumps({'root':root,'child':child,'selected':selected,'revision':2,'normalHash':hashlib.sha256(json.dumps(normal,sort_keys=True).encode()).hexdigest()}))
     (PROJECT/'Testing/normal-baseline.json').write_text(json.dumps(normal),encoding='utf-8')
     (PROJECT/'Research/integration-results.json').write_text(json.dumps({'checks':checks,'passed':len(checks)},indent=2))

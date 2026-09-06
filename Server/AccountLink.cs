@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;

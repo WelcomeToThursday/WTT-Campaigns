@@ -4,21 +4,14 @@ This build is **not full parity**. Compilation, assembly inspection and backend 
 
 ## Implemented catalogue entries
 
-No Insurance, Handyman, Hemophilia, Osteoporosis, Incompetent, Polydipsia, Chronic Fatigue Syndrome, Dr. Jekyll, Marathon Runner, The Tarkov Shooter, Thrombophilia, Hypodipsia, Polyphagia, Sturdy Bones, Prodigy, Exhaustion, Safecracker, Youth, Hercules, Sprinter, Average, Well That Hurt! and Diet.
+No Insurance, Handyman, Hemophilia, Osteoporosis, Incompetent, Polydipsia, Chronic Fatigue Syndrome, Dr. Jekyll, Marathon Runner, The Tarkov Shooter, Thrombophilia, Hypodipsia, Polyphagia, Sturdy Bones, Prodigy, Exhaustion, Safecracker, Youth, Hercules, Sprinter, Average, Well That Hurt!, Diet, Bushborne, No FiR for Hideout, Personality Vacuum, Third Leg, Seasoned PMCs, No Flea Market, Juice Time, Sailor's Nostalgia, Allergic and Broken Secure Container.
 
-These cover skill presets/gain/caps, metabolism, body-part stamina capacity/restoration/consumption, injury probabilities, fall damage, sprint speed, mechanical-key consumption, filtered consumable resources, server crafting time and insurance rejection. Client hooks are scoped to the active seasonal PMC. AI, Scav and normal PMC effects are excluded. See [item-resource behavior and validation](item-resources.md).
+These cover skill presets/gain/caps, metabolism, body-part stamina capacity/restoration/consumption, injury probabilities, fall damage, sprint speed, mechanical-key consumption, filtered consumable resources, bush slowdown/noise, hideout FiR requirements, server crafting time, trader purchase prices and insurance rejection. Client hooks are scoped to the active seasonal PMC. AI, Scav and normal PMC effects are excluded. See [item-resource behavior and validation](item-resources.md).
 
 ## Deliberately unavailable
 
 Selection rejects any entry with an unimplemented effect family:
 
-- Seasoned PMCs: all PMC XP sources still need integration.
-- No FiR for Hideout: server requirements and client requirement views still need integration.
-- Personality Vacuum and Third Leg: trader pricing and payment validation remain unfinished.
-- Allergic, Juice Time and Sailor's Nostalgia: native random-selection semantics were investigated, but persistent target generation and timed consumable effects remain unfinished.
-- No Flea Market: NPC-only offer filtering, purchase validation and listing restrictions remain unfinished.
-- Bushborne: bush interaction hooks remain unfinished.
-- Broken Secure Container: preserve the live allow-list; apply it to available SPT items without importing the 45 missing live templates. Runtime container restrictions remain unfinished.
 - Street Tax and Kappa Protocol: reward contents and initial delivery timing are unverified. No mail or scheduled grant is sent.
 - Lucky and Unlucky: actual behavior is unverified.
 - Armor Shortage and Black Division: empty effect arrays are not treated as no-ops. Supporting world/bot/asset analysis remains open.
@@ -33,14 +26,22 @@ Live `ActiveHealthController.Wound.DefaultWorkTime` at RVA `0x40B20A0` returns p
 
 Live `PerkRuntimeUtility.ConvertDurabilityMultiplierToUsageChance` at RVA `0x4019390` converts values <=0 to 1, values >1 to their reciprocal, and other values to `1 - value`. Safecracker 0.25 therefore consumes on 75% of successful mechanical-key uses. The client patch replaces only the validated unlock increment, preserving SPT's last-use disposal logic. Shared boundary tests and actual IL site checks pass; empirical in-game probability testing remains open.
 
-Live `ActiveHealthController.ApplyPerkItemUseEffect` at RVA `0x2BDF630` samples enabled sub-effects without replacement using **RandomSlotCount**. For Allergic that is three sub-effects. `appliedRandomEffectCount` is absent from this build's metadata contract and is not assumed to control native execution. Rate-effect duration, partial-use/interruption and persistent target behavior need further verification before enabling allergy entries.
+Live `ActiveHealthController.ApplyPerkItemUseEffect` at RVA `0x2BDF630` samples enabled sub-effects without replacement using **RandomSlotCount**. For Allergic that is three sub-effects. `appliedRandomEffectCount` is absent from this build's metadata contract and is not assumed to control native execution. Juice Time and Sailor's Nostalgia each have one enabled sub-effect and four fixed targets, so the selection is deterministic; see [consumable evidence and validation](consumables.md).
 
-Native reports record the GameAssembly hash. The inspection tool uses PE function boundaries and stops at padding to avoid attributing following code to a method. Recovered UI provenance records source levels 47â€“50 and object IDs.
+Native reports record the GameAssembly hash. The inspection tool uses PE function boundaries and stops at padding to avoid attributing following code to a method. Recovered UI provenance records source levels 47Ã¢â‚¬â€œ50 and object IDs.
 
 ## Validation status
 
+- Allergic / Broken Secure Container: 55 isolated server checks and five restart checks pass. Actual raid symptoms and inventory UI feedback remain unverified. See [details](allergy-container.md).
+
+- Juice Time / Sailor's Nostalgia: 55 isolated server checks and five restart checks pass. Actual in-game timing, animations and HP persistence remain unverified. See [details](consumables.md).
+
+- Seasoned PMCs / No Flea Market: 45 isolated server checks and six restart checks pass. The actual raid XP transpiler passes against the installed assembly; gameplay and client UI checks still need an in-game session. See [behavior and limits](experience-flea.md).
+
 - Release/Debug compilation: zero errors and warnings.
-- Shared contracts plus actual client assembly compatibility: 96 assertions passed; all three resource transpilers also pass against the installed game methods.
+- Shared contracts plus actual client assembly compatibility: 253 assertions passed; all three resource, three bush sound and the raid XP transpilers also pass against the installed game methods.
+- Trader prices: 98 isolated server checks and four restart checks pass, including all eight captured traders, three currencies, barters, rejection without inventory/stock changes, flea filtering/lookups/build requests and concurrent normal/seasonal searches. See [details](trader-prices.md).
+- Bushborne / No FiR: 10 isolated upgrade/selection checks and three restart checks pass; gameplay and movement/audio checks still need an in-game session. See [details](bush-hideout.md).
 - Item resources: 33 isolated server checks and two resource-persistence checks after a normal logout/save and restart passed. Actual in-game animations, interruptions, UI refresh and raid-end persistence remain unverified.
 - Real isolated SPT server: 66 checks passed, including all icons, profile creation, skill presets, budget/conflict handling, edits, unsupported entry rejection and repeated switching.
 - Restart recovery: 10 checks passed, including selected mode, revision, raid lock, child-to-root resolution, grant receipts and unchanged normal PMC/Scav.

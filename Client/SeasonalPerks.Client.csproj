@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
-        <Version>0.1.18</Version>
+        <Version>0.1.23</Version>
     </PropertyGroup>
     <ItemGroup>
         <Reference
@@ -24,6 +24,11 @@
             Private="false"
         />
         <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />
+        <Reference
+            Include="UnityEngine.PhysicsModule"
+            HintPath="$(ManagedDir)UnityEngine.PhysicsModule.dll"
+            Private="false"
+        />
         <Reference
             Include="UnityEngine.AudioModule"
             HintPath="$(ManagedDir)UnityEngine.AudioModule.dll"

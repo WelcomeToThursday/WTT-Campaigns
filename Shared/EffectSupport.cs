@@ -23,6 +23,12 @@ public static class EffectSupport
         "key_durability_multiplicator",
         "fresh_wounds_until_raid_end",
         "item_resource_drain_multiplicator",
+        "bush_interaction_multiplicators",
+        "hideout_fir",
+        "trader_prices_by_trader_multiplicator",
+        "flea_market_npc_only",
+        "pmc_experience_multiplicator",
+        "pouch_item_filter_restrict",
     };
 
     public static string? UnavailableReason(Perk perk)
@@ -34,8 +40,12 @@ public static class EffectSupport
 
         foreach (var effect in perk.Effects)
         {
-            var id = (string?)effect["effectId"] ?? "unknown";
-            if (Implemented.Contains(id))
+            var id = effect.EffectId ?? "unknown";
+            if (
+                Implemented.Contains(id)
+                || ConsumableEffects.Describe(effect) != null
+                || AllergyEffects.Supports(effect)
+            )
             {
                 continue;
             }

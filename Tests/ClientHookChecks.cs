@@ -7,10 +7,15 @@ using Mono.Cecil.Cil;
 
 namespace SeasonalPerks.Tests;
 
-internal static class ItemResourceHookChecks
+internal static class ClientHookChecks
 {
     // Exercise the real transpiler against real game instructions without starting EFT.
-    internal static void Run(string sptRoot, string clientPath)
+    internal static void Run(
+        string sptRoot,
+        string clientPath,
+        bool bush = false,
+        bool experience = false
+    )
     {
         sptRoot = Path.GetFullPath(sptRoot);
         clientPath = Path.GetFullPath(clientPath);
@@ -40,13 +45,26 @@ internal static class ItemResourceHookChecks
             .Select(f => (System.Reflection.Emit.OpCode)f.GetValue(null)!)
             .ToDictionary(o => o.Value);
         using var assembly = AssemblyDefinition.ReadAssembly(game.Location);
-        var patch = client.GetType("SeasonalPerks.Client.Patches.Items.ItemResourcePatch")!;
+        var patch = client.GetType(
+            experience ? "SeasonalPerks.Client.Patches.Skills.RaidExperiencePatch"
+            : bush ? "SeasonalPerks.Client.Patches.Movement.BushSoundPatch"
+            : "SeasonalPerks.Client.Patches.Items.ItemResourcePatch"
+        )!;
         var transpiler = patch.GetMethod(
             "Transpiler",
             BindingFlags.Static | BindingFlags.NonPublic
         )!;
         foreach (
-            var (owner, methodName) in new[]
+            var (owner, methodName) in experience
+                ? new[] { ("BaseStatisticsManager", "EndStatisticsSession") }
+            : bush
+                ? new[]
+                {
+                    ("TreeInteractive", "OnTriggerEnter"),
+                    ("TreeInteractive", "IPhysicsTriggerWithStay.OnTriggerStay"),
+                    ("TreeInteractive", "PlaySoundBank"),
+                }
+            : new[]
             {
                 ("ActiveHealthController", "RegularUpdate"),
                 ("ActiveHealthController", "Residue"),
@@ -54,22 +72,33 @@ internal static class ItemResourceHookChecks
             }
         )
         {
-            var type = game.GetType("EFT.HealthSystem." + owner + "+MedEffect")!;
-            var target = type.GetMethod(
-                methodName,
-                BindingFlags.Public
-                    | BindingFlags.NonPublic
-                    | BindingFlags.Instance
-                    | BindingFlags.DeclaredOnly
+            var type = game.GetType(
+                experience ? "EFT.BaseStatisticsManager"
+                : bush ? "EFT.Interactive.TreeInteractive"
+                : "EFT.HealthSystem." + owner + "+MedEffect"
             )!;
+            var target = experience
+                ? type.GetMethod(
+                    methodName,
+                    new[] { game.GetType("EFT.ExitStatus")!, typeof(float) }
+                )!
+                : type.GetMethod(
+                    methodName,
+                    BindingFlags.Public
+                        | BindingFlags.NonPublic
+                        | BindingFlags.Instance
+                        | BindingFlags.DeclaredOnly
+                )!;
             var definition = assembly
                 .MainModule.GetTypes()
                 .Single(t => t.FullName == type.FullName!.Replace('+', '/'))
-                .Methods.Single(m => m.Name == methodName);
+                .Methods.Single(m =>
+                    m.Name == methodName && (!experience || m.Parameters.Count == 2)
+                );
             var instructions = (IList)
                 Activator.CreateInstance(typeof(List<>).MakeGenericType(instructionType))!;
             var generator = new DynamicMethod(
-                "resourceCheck",
+                "clientHookCheck",
                 typeof(void),
                 Type.EmptyTypes
             ).GetILGenerator();
@@ -81,6 +110,10 @@ internal static class ItemResourceHookChecks
             {
                 object? operand = instruction.Operand switch
                 {
+                    // The dump publicizer unseals EFT delegate types, which CoreCLR
+                    // refuses to resolve. This transpiler only matches the bonus field;
+                    // preserve other metadata operands without loading their owners.
+                    MemberReference m when experience && m.Name != "ExperienceBonusMult" => m,
                     MethodReference m => game.ManifestModule.ResolveMethod(
                         m.MetadataToken.ToInt32()
                     ),
@@ -115,17 +148,26 @@ internal static class ItemResourceHookChecks
                 || definedLabels.Distinct().Count() != labels.Count
                 || labels.Values.Except(definedLabels).Any()
             )
-                throw new Exception("Resource patch lost or duplicated branch labels: " + target);
+                throw new Exception("Client patch lost or duplicated branch labels: " + target);
             var storeIndex = instructions
                 .Cast<object>()
                 .Select((instruction, index) => (instruction, index))
                 .First(pair =>
                     (System.Reflection.Emit.OpCode)
                         instructionType.GetField("opcode")!.GetValue(pair.instruction)!
-                        == System.Reflection.Emit.OpCodes.Stfld
+                        == (
+                            bush
+                                ? System.Reflection.Emit.OpCodes.Ldfld
+                                : System.Reflection.Emit.OpCodes.Stfld
+                        )
                     && instructionType.GetField("operand")!.GetValue(pair.instruction)
                         is FieldInfo field
-                    && field.Name == "HpResource"
+                    && field.Name
+                        == (
+                            experience ? "ExperienceBonusMult"
+                            : bush ? "Rolloff"
+                            : "HpResource"
+                        )
                 )
                 .index;
             instructions.RemoveAt(storeIndex);
@@ -141,11 +183,9 @@ internal static class ItemResourceHookChecks
                 rejected = true;
             }
             if (!rejected)
-                throw new Exception(
-                    "Resource patch accepted a missing consumption site: " + target
-                );
+                throw new Exception("Client patch accepted a missing consumption site: " + target);
             Console.WriteLine(
-                $"PASS actual resource transpiler: {owner}.{methodName} ({result.Length} instructions; labels preserved; missing site rejected)"
+                $"PASS actual {(experience ? "experience" : bush ? "bush" : "resource")} transpiler: {owner}.{methodName} ({result.Length} instructions; labels preserved; missing site rejected)"
             );
         }
     }
