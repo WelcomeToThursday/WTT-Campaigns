@@ -64,21 +64,12 @@ public sealed partial class SeasonalScreen
 
         foreach (var positive in new[] { true, false })
         {
-            var perks = _state
-                .Perks.Where(perk =>
-                    !perk.Common && _selected.Contains(perk.Id) && (perk.Points < 0) == positive
-                )
-                .ToArray();
+            var perks = _state.Perks.Where(perk => !perk.Common && _selected.Contains(perk.Id) && (perk.Points < 0) == positive).ToArray();
             if (perks.Length == 0)
             {
                 continue;
             }
-            var group = UiElements.Rect(
-                positive ? "PositiveGroup" : "NegativeGroup",
-                scroll.content,
-                922,
-                0
-            );
+            var group = UiElements.Rect(positive ? "PositiveGroup" : "NegativeGroup", scroll.content, 922, 0);
             var rows = group.gameObject.AddComponent<VerticalLayoutGroup>();
             rows.spacing = 2;
             rows.childControlWidth = rows.childControlHeight = true;
@@ -86,27 +77,12 @@ public sealed partial class SeasonalScreen
             rows.childForceExpandHeight = false;
             var header = UiElements.Rect("Header", group, 922, 28);
             header.gameObject.AddComponent<LayoutElement>().preferredHeight = 28;
-            var label = _ui.Label(
-                header,
-                "Label",
-                (positive ? "POSITIVE" : "NEGATIVE") + " (" + perks.Length + ")",
-                18,
-                156,
-                28,
-                -383
-            );
+            var label = _ui.Label(header, "Label", (positive ? "POSITIVE" : "NEGATIVE") + " (" + perks.Length + ")", 18, 156, 28, -383);
             label.color = positive ? new Color32(99, 124, 76, 255) : new Color32(161, 72, 75, 255);
             var headerWidth = label.preferredWidth;
             Place(label.rectTransform, headerWidth, 28, -461 + headerWidth / 2, 0);
             UiElements.Fill(
-                UiElements.Rect(
-                    "Line",
-                    header,
-                    922 - headerWidth - 16,
-                    1,
-                    (headerWidth + 16) / 2,
-                    0
-                ),
+                UiElements.Rect("Line", header, 922 - headerWidth - 16, 1, (headerWidth + 16) / 2, 0),
                 new Color(1, 1, 1, .102f)
             );
             foreach (var perk in perks)
@@ -117,24 +93,12 @@ public sealed partial class SeasonalScreen
         if (_selected.Count == 0)
         {
             scroll.verticalScrollbar.gameObject.SetActive(false);
-            var empty = _ui.Label(
-                scroll.transform,
-                "Empty",
-                "No modifiers selected",
-                18,
-                340,
-                20,
-                0,
-                20
-            );
+            var empty = _ui.Label(scroll.transform, "Empty", "No modifiers selected", 18, 340, 20, 0, 20);
             empty.alignment = TextAnchor.MiddleCenter;
             empty.color = new Color32(95, 96, 96, 255);
             foreach (var y in new[] { -6, 46 })
             {
-                UiElements.Fill(
-                    UiElements.Rect("Separator", scroll.transform, 20, 2, 0, y),
-                    new Color32(95, 96, 96, 76)
-                );
+                UiElements.Fill(UiElements.Rect("Separator", scroll.transform, 20, 2, 0, y), new Color32(95, 96, 96, 76));
             }
         }
 
@@ -209,10 +173,7 @@ public sealed partial class SeasonalScreen
         Place(name.rectTransform, 184, height - 8, 25, 0);
         var iconBackground = (RectTransform)nameContainer.Find("IconBackground");
         Place(iconBackground, 42, 42, -96, 0);
-        UiElements.Fill(
-            iconBackground,
-            perk.Points < 0 ? new Color32(45, 67, 42, 255) : new Color32(77, 36, 39, 255)
-        );
+        UiElements.Fill(iconBackground, perk.Points < 0 ? new Color32(45, 67, 42, 255) : new Color32(77, 36, 39, 255));
         var border = iconBackground.Find("Border").GetComponent<Image>();
         ArtworkRequested?.Invoke("confirmation-border", border);
         border.type = Image.Type.Sliced;
@@ -240,12 +201,7 @@ public sealed partial class SeasonalScreen
         image.color = color;
     }
 
-    private Button ConfirmationButton(
-        Transform parent,
-        string caption,
-        float x,
-        System.Action action
-    )
+    private Button ConfirmationButton(Transform parent, string caption, float x, System.Action action)
     {
         var button = _ui.Button(parent, caption, 150, x, -234, action, 43);
         button.targetGraphic.color = Color.clear;

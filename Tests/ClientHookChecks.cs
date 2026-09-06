@@ -10,12 +10,7 @@ namespace SeasonalPerks.Tests;
 internal static class ClientHookChecks
 {
     // Exercise the real transpiler against real game instructions without starting EFT.
-    internal static void Run(
-        string sptRoot,
-        string clientPath,
-        bool bush = false,
-        bool experience = false
-    )
+    internal static void Run(string sptRoot, string clientPath, bool bush = false, bool experience = false)
     {
         sptRoot = Path.GetFullPath(sptRoot);
         clientPath = Path.GetFullPath(clientPath);
@@ -29,14 +24,10 @@ internal static class ClientHookChecks
         };
         AssemblyLoadContext.Default.Resolving += (_, name) =>
         {
-            var path = folders
-                .Select(f => Path.Combine(f, name.Name + ".dll"))
-                .FirstOrDefault(File.Exists);
+            var path = folders.Select(f => Path.Combine(f, name.Name + ".dll")).FirstOrDefault(File.Exists);
             return path == null ? null : AssemblyLoadContext.Default.LoadFromAssemblyPath(path);
         };
-        var game = AssemblyLoadContext.Default.LoadFromAssemblyPath(
-            Path.Combine(folders[1], "Assembly-CSharp.dll")
-        );
+        var game = AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.Combine(folders[1], "Assembly-CSharp.dll"));
         var client = AssemblyLoadContext.Default.LoadFromAssemblyPath(clientPath);
         var harmony = Assembly.Load("0Harmony");
         var instructionType = harmony.GetType("HarmonyLib.CodeInstruction")!;
@@ -50,13 +41,9 @@ internal static class ClientHookChecks
             : bush ? "SeasonalPerks.Client.Patches.Movement.BushSoundPatch"
             : "SeasonalPerks.Client.Patches.Items.ItemResourcePatch"
         )!;
-        var transpiler = patch.GetMethod(
-            "Transpiler",
-            BindingFlags.Static | BindingFlags.NonPublic
-        )!;
+        var transpiler = patch.GetMethod("Transpiler", BindingFlags.Static | BindingFlags.NonPublic)!;
         foreach (
-            var (owner, methodName) in experience
-                ? new[] { ("BaseStatisticsManager", "EndStatisticsSession") }
+            var (owner, methodName) in experience ? new[] { ("BaseStatisticsManager", "EndStatisticsSession") }
             : bush
                 ? new[]
                 {
@@ -78,34 +65,18 @@ internal static class ClientHookChecks
                 : "EFT.HealthSystem." + owner + "+MedEffect"
             )!;
             var target = experience
-                ? type.GetMethod(
-                    methodName,
-                    new[] { game.GetType("EFT.ExitStatus")!, typeof(float) }
-                )!
+                ? type.GetMethod(methodName, new[] { game.GetType("EFT.ExitStatus")!, typeof(float) })!
                 : type.GetMethod(
                     methodName,
-                    BindingFlags.Public
-                        | BindingFlags.NonPublic
-                        | BindingFlags.Instance
-                        | BindingFlags.DeclaredOnly
+                    BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly
                 )!;
             var definition = assembly
                 .MainModule.GetTypes()
                 .Single(t => t.FullName == type.FullName!.Replace('+', '/'))
-                .Methods.Single(m =>
-                    m.Name == methodName && (!experience || m.Parameters.Count == 2)
-                );
-            var instructions = (IList)
-                Activator.CreateInstance(typeof(List<>).MakeGenericType(instructionType))!;
-            var generator = new DynamicMethod(
-                "clientHookCheck",
-                typeof(void),
-                Type.EmptyTypes
-            ).GetILGenerator();
-            var labels = definition.Body.Instructions.ToDictionary(
-                i => i,
-                _ => generator.DefineLabel()
-            );
+                .Methods.Single(m => m.Name == methodName && (!experience || m.Parameters.Count == 2));
+            var instructions = (IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(instructionType))!;
+            var generator = new DynamicMethod("clientHookCheck", typeof(void), Type.EmptyTypes).GetILGenerator();
+            var labels = definition.Body.Instructions.ToDictionary(i => i, _ => generator.DefineLabel());
             foreach (var instruction in definition.Body.Instructions)
             {
                 object? operand = instruction.Operand switch
@@ -114,9 +85,7 @@ internal static class ClientHookChecks
                     // refuses to resolve. This transpiler only matches the bonus field;
                     // preserve other metadata operands without loading their owners.
                     MemberReference m when experience && m.Name != "ExperienceBonusMult" => m,
-                    MethodReference m => game.ManifestModule.ResolveMethod(
-                        m.MetadataToken.ToInt32()
-                    ),
+                    MethodReference m => game.ManifestModule.ResolveMethod(m.MetadataToken.ToInt32()),
                     FieldReference f => game.ManifestModule.ResolveField(f.MetadataToken.ToInt32()),
                     TypeReference t => game.ManifestModule.ResolveType(t.MetadataToken.ToInt32()),
                     Instruction branch => labels[branch],
@@ -125,23 +94,14 @@ internal static class ClientHookChecks
                     ParameterDefinition parameter => parameter.Index + 1,
                     _ => instruction.Operand,
                 };
-                var converted = Activator.CreateInstance(
-                    instructionType,
-                    opCodes[instruction.OpCode.Value],
-                    operand
-                )!;
-                ((IList)instructionType.GetField("labels")!.GetValue(converted)!).Add(
-                    labels[instruction]
-                );
+                var converted = Activator.CreateInstance(instructionType, opCodes[instruction.OpCode.Value], operand)!;
+                ((IList)instructionType.GetField("labels")!.GetValue(converted)!).Add(labels[instruction]);
                 instructions.Add(converted);
             }
-            var transformed = (IEnumerable)
-                transpiler.Invoke(null, new object[] { instructions, target })!;
+            var transformed = (IEnumerable)transpiler.Invoke(null, new object[] { instructions, target })!;
             var result = transformed.Cast<object>().ToArray(); // Execute all shape guards.
             var definedLabels = result
-                .SelectMany(i =>
-                    ((IEnumerable)instructionType.GetField("labels")!.GetValue(i)!).Cast<Label>()
-                )
+                .SelectMany(i => ((IEnumerable)instructionType.GetField("labels")!.GetValue(i)!).Cast<Label>())
                 .ToArray();
             if (
                 definedLabels.Length != labels.Count
@@ -153,15 +113,9 @@ internal static class ClientHookChecks
                 .Cast<object>()
                 .Select((instruction, index) => (instruction, index))
                 .First(pair =>
-                    (System.Reflection.Emit.OpCode)
-                        instructionType.GetField("opcode")!.GetValue(pair.instruction)!
-                        == (
-                            bush
-                                ? System.Reflection.Emit.OpCodes.Ldfld
-                                : System.Reflection.Emit.OpCodes.Stfld
-                        )
-                    && instructionType.GetField("operand")!.GetValue(pair.instruction)
-                        is FieldInfo field
+                    (System.Reflection.Emit.OpCode)instructionType.GetField("opcode")!.GetValue(pair.instruction)!
+                        == (bush ? System.Reflection.Emit.OpCodes.Ldfld : System.Reflection.Emit.OpCodes.Stfld)
+                    && instructionType.GetField("operand")!.GetValue(pair.instruction) is FieldInfo field
                     && field.Name
                         == (
                             experience ? "ExperienceBonusMult"
@@ -174,9 +128,7 @@ internal static class ClientHookChecks
             var rejected = false;
             try
             {
-                ((IEnumerable)transpiler.Invoke(null, new object[] { instructions, target })!)
-                    .Cast<object>()
-                    .ToArray();
+                ((IEnumerable)transpiler.Invoke(null, new object[] { instructions, target })!).Cast<object>().ToArray();
             }
             catch (InvalidOperationException)
             {

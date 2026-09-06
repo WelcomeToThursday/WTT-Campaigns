@@ -8,35 +8,25 @@ using SPTarkov.Server.Core.Utils;
 namespace SeasonalPerks.Server;
 
 [Injectable]
-public sealed class SeasonRouter(JsonUtil json, SeasonService seasons)
-    : StaticRouter(json, Routes(json, seasons))
+public sealed class SeasonRouter(JsonUtil json, SeasonService seasons) : StaticRouter(json, Routes(json, seasons))
 {
     private static List<RouteAction> Routes(JsonUtil json, SeasonService s) =>
         [
             new RouteAction<SeasonRequest>(
                 "/seasonal-perks/snapshot",
-                async (_, _, id, _, _) =>
-                    await Respond(
-                        json,
-                        s,
-                        id.ToString(),
-                        root => Task.FromResult(s.GetSnapshot(root))
-                    )
+                async (_, _, id, _, _) => await Respond(json, s, id.ToString(), root => Task.FromResult(s.GetSnapshot(root)))
             ),
             new RouteAction<SeasonRequest>(
                 "/seasonal-perks/create",
-                async (_, r, id, _, _) =>
-                    await Respond(json, s, id.ToString(), root => s.Create(root, r.ToMutation()))
+                async (_, r, id, _, _) => await Respond(json, s, id.ToString(), root => s.Create(root, r.ToMutation()))
             ),
             new RouteAction<SeasonRequest>(
                 "/seasonal-perks/edit",
-                async (_, r, id, _, _) =>
-                    await Respond(json, s, id.ToString(), root => s.Edit(root, r.ToMutation()))
+                async (_, r, id, _, _) => await Respond(json, s, id.ToString(), root => s.Edit(root, r.ToMutation()))
             ),
             new RouteAction<SeasonRequest>(
                 "/seasonal-perks/switch",
-                async (_, r, id, _, _) =>
-                    await Respond(json, s, id.ToString(), root => s.Switch(root, r.Mode))
+                async (_, r, id, _, _) => await Respond(json, s, id.ToString(), root => s.Switch(root, r.Mode))
             ),
         ];
 
@@ -51,10 +41,7 @@ public sealed class SeasonRouter(JsonUtil json, SeasonService seasons)
         {
             root = seasons.ResolveRoot(root);
             using var lease = seasons.Enter(root);
-            return JsonConvert.SerializeObject(
-                await action(root),
-                new CharacterVisualConverter(json)
-            );
+            return JsonConvert.SerializeObject(await action(root), new CharacterVisualConverter(json));
         }
         catch (InvalidOperationException e)
         {

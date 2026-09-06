@@ -43,8 +43,7 @@ public sealed class ProfileSelection
         glow.rectTransform.pivot = new Vector2(.5f, 0);
         glow.rectTransform.localRotation = Quaternion.Euler(0, 0, 180);
         glow.color = new Color(1, 1, 1, .282353f);
-        _ui.Label(root, "Title", "SELECT PROFILE AND MODE", 42, 1275, 50, 0, 478).alignment =
-            TextAnchor.MiddleCenter;
+        _ui.Label(root, "Title", "SELECT PROFILE AND MODE", 42, 1275, 50, 0, 478).alignment = TextAnchor.MiddleCenter;
         root.Find("Title").GetComponent<Text>().color = new Color(.851f, .851f, .851f);
         Card(root, state, "normal", -205, model, select, edit, global, hoverSound);
         Card(root, state, "seasonal", 205, model, select, edit, global, hoverSound);
@@ -71,10 +70,7 @@ public sealed class ProfileSelection
 
     private Image Art(Transform parent, string name, float width, float height, float x, float y)
     {
-        var image = UiElements.Fill(
-            UiElements.Rect(name, parent, width, height, x, y),
-            Color.white
-        );
+        var image = UiElements.Fill(UiElements.Rect(name, parent, width, height, x, y), Color.white);
         image.enabled = false;
         _artwork(name, image);
         return image;
@@ -93,9 +89,7 @@ public sealed class ProfileSelection
     )
     {
         var seasonal = mode == "seasonal";
-        var character =
-            state.Characters.FirstOrDefault(value => value.Mode == mode)
-            ?? new CharacterEntry { Mode = mode };
+        var character = state.Characters.FirstOrDefault(value => value.Mode == mode) ?? new CharacterEntry { Mode = mode };
         var rect = UiElements.Rect(mode + "-profile", parent, 390, 800, x, 0);
         UiElements.Fill(rect, Color.clear, true);
         var hover = rect.gameObject.AddComponent<ProfileCardHover>();
@@ -112,14 +106,7 @@ public sealed class ProfileSelection
             for (var i = 0; i < 3; i++)
             {
                 hover.IdleFrames[i] = Art(idle, "seasonal-glow-" + (i + 1), 664, 1016, 0, 0);
-                hover.HoverFrames[i] = Art(
-                    highlight,
-                    "seasonal-hover-" + (i + 1),
-                    664,
-                    1016,
-                    0,
-                    i == 0 ? -10 : 0
-                );
+                hover.HoverFrames[i] = Art(highlight, "seasonal-hover-" + (i + 1), 664, 1016, 0, i == 0 ? -10 : 0);
             }
             hover.AnimateGlow(0);
         }
@@ -132,12 +119,7 @@ public sealed class ProfileSelection
         }
         hover.Glow.alpha = 0;
         Art(rect, seasonal ? "seasonal-card" : "normal-card", 390, 800, 0, 0);
-        Art(rect, character.Side == "Bear" ? "bear" : "usec", 386, 602, 0, -8).color = new Color(
-            1,
-            1,
-            1,
-            .078431f
-        );
+        Art(rect, character.Side == "Bear" ? "bear" : "usec", 386, 602, 0, -8).color = new Color(1, 1, 1, .078431f);
         var preview = UiElements.Rect("CharacterPreview", rect, 386, 740, 0, -5);
         hover.Model = preview.gameObject.AddComponent<CanvasGroup>();
         var raw = preview.gameObject.AddComponent<RawImage>();
@@ -154,10 +136,10 @@ public sealed class ProfileSelection
 
         var tint = seasonal ? new Color(.392f, .855f, .655f) : new Color(.482f, .639f, .667f);
         Art(rect, seasonal ? "seasonal-badge" : "normal-badge", 92, 92, -150, 355);
-        _ui.Label(rect, "Mode", seasonal ? "PvE Season" : "PvE Zone", 36, 286, 47, 28, 370).color =
-            tint;
-        _ui.Label(rect, "Type", seasonal ? "SEASONAL" : "REGULAR", 16, 286, 26, 28, 336).color =
-            seasonal ? new Color(tint.r, tint.g, tint.b, .6f) : UiElements.Muted;
+        _ui.Label(rect, "Mode", seasonal ? "PvE Season" : "PvE Zone", 36, 286, 47, 28, 370).color = tint;
+        _ui.Label(rect, "Type", seasonal ? "SEASONAL" : "REGULAR", 16, 286, 26, 28, 336).color = seasonal
+            ? new Color(tint.r, tint.g, tint.b, .6f)
+            : UiElements.Muted;
         Art(rect, "footer-gradient", 390, 104, 0, -348);
         var info = UiElements.Rect("CharacterInfo", rect, 390, 190, 0, -150);
         hover.Info = info;
@@ -192,10 +174,7 @@ public sealed class ProfileSelection
         description.lineSpacing = 1.44f;
         description.rectTransform.pivot = new Vector2(.5f, 1);
         description.rectTransform.anchoredPosition = new Vector2(0, -26);
-        description.rectTransform.sizeDelta = new Vector2(
-            350,
-            Mathf.Max(100, description.preferredHeight)
-        );
+        description.rectTransform.sizeDelta = new Vector2(350, Mathf.Max(100, description.preferredHeight));
         description.color = new Color(.584f, .62f, .639f, .6f);
         hover.Description = description;
         if (seasonal)
@@ -209,45 +188,21 @@ public sealed class ProfileSelection
             {
                 var px = i % 2 == 0 ? -95 : 95;
                 var py = 153 - i / 2 * 34;
-                var icon = UiElements.Fill(
-                    UiElements.Rect("PerkIcon-" + rules[i].Id, details, 24, 24, px - 69, py),
-                    Color.clear
-                );
+                var icon = UiElements.Fill(UiElements.Rect("PerkIcon-" + rules[i].Id, details, 24, 24, px - 69, py), Color.clear);
                 // The caller resolves perk icons separately from decorative artwork.
                 _artwork("perk:" + rules[i].Id, icon);
-                _ui.Label(details, "PerkName", rules[i].Name, 16, 150, 28, px + 24, py).color =
-                    new Color(.392f, .855f, .655f, .6f);
+                _ui.Label(details, "PerkName", rules[i].Name, 16, 150, 28, px + 24, py).color = new Color(.392f, .855f, .655f, .6f);
             }
             Art(details, "season-stats-divider", 389, 12, 0, 47);
-            _ui.Label(details, "StatsTitle", "SEASON STATS", 18, 354, 24, 0, 9).color = new Color(
-                .851f,
-                .851f,
-                .851f
-            );
+            _ui.Label(details, "StatsTitle", "SEASON STATS", 18, 354, 24, 0, 9).color = new Color(.851f, .851f, .851f);
             var captions = new[] { "Battle Pass rewards", "Story Chapters", "K/D", "Survivals" };
-            var artwork = new[]
-            {
-                "season-stat-rewards",
-                "season-stat-story",
-                "season-stat-kd",
-                "season-stat-survivals",
-            };
-            var values = new[]
-            {
-                character.BattlePassRewards,
-                character.StoryChapters,
-                character.Kd,
-                character.Survivals,
-            };
+            var artwork = new[] { "season-stat-rewards", "season-stat-story", "season-stat-kd", "season-stat-survivals" };
+            var values = new[] { character.BattlePassRewards, character.StoryChapters, character.Kd, character.Survivals };
             for (var i = 0; i < captions.Length; i++)
             {
                 var row = UiElements.Rect("SeasonStat-" + i, details, 354, 24, 0, -29 - i * 32);
                 Art(row, artwork[i], 24, 24, -165, 0);
-                _ui.Label(row, "Caption", captions[i], 16, 238, 24, -28, 0).color = new Color(
-                    .584f,
-                    .620f,
-                    .639f
-                );
+                _ui.Label(row, "Caption", captions[i], 16, 238, 24, -28, 0).color = new Color(.584f, .620f, .639f);
                 var value = _ui.Label(row, "Value", values[i], 16, 72, 24, 141, 0);
                 value.alignment = TextAnchor.MiddleRight;
                 value.color = new Color(.584f, .620f, .639f);

@@ -18,18 +18,10 @@ public class SecureTransferItemPatch(SecureContainerRestrictions restrictions) :
     protected override MethodBase GetTargetMethod()
     {
         _restrictions = restrictions;
-        return AccessTools.Method(
-            typeof(InventoryController),
-            nameof(InventoryController.TransferItem)
-        );
+        return AccessTools.Method(typeof(InventoryController), nameof(InventoryController.TransferItem));
     }
 
     [PatchPrefix]
     private static bool Prefix(object[] __args) =>
-        _restrictions.Check(
-            (PmcData)__args[0],
-            __args[1],
-            (MongoId)__args[2],
-            (ItemEventRouterResponse)__args[3]
-        );
+        _restrictions.Check((PmcData)__args[0], __args[1], (MongoId)__args[2], (ItemEventRouterResponse)__args[3]);
 }

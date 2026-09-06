@@ -20,21 +20,14 @@ using SPTarkov.Server.Core.Services.Profile;
 namespace SeasonalPerks.Server;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class SeasonService(
-    SaveServer saves,
-    ProfileDataService profileData,
-    CreateProfileService creator,
-    TemplateTable templates
-)
+public sealed class SeasonService(SaveServer saves, ProfileDataService profileData, CreateProfileService creator, TemplateTable templates)
 {
     private const string StateKey = "cjSeasonalPerksState";
     private const string LinkKey = "cjSeasonalPerksAccount";
     private readonly ConcurrentDictionary<string, AccountLink> _links = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates = new();
     public Catalogue Catalogue { get; } =
-        JsonConvert.DeserializeObject<Catalogue>(
-            File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data/catalogue.json"))
-        )!;
+        JsonConvert.DeserializeObject<Catalogue>(File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data/catalogue.json")))!;
     public Dictionary<string, string> Locale { get; } =
         JsonConvert.DeserializeObject<Dictionary<string, string>>(
             File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data/locales/en.json"))
@@ -56,26 +49,16 @@ public sealed class SeasonService(
         if (File.Exists(path))
         {
             Rules =
-                JsonConvert.DeserializeObject<Rules>(File.ReadAllText(path))
-                ?? throw new InvalidDataException("Invalid seasonal rules");
+                JsonConvert.DeserializeObject<Rules>(File.ReadAllText(path)) ?? throw new InvalidDataException("Invalid seasonal rules");
         }
         else
         {
-            Rules.EnabledCommonIds = Catalogue
-                .Common.Where(p => !Unavailable.ContainsKey(p.Id))
-                .Select(p => p.Id)
-                .ToList();
+            Rules.EnabledCommonIds = Catalogue.Common.Where(p => !Unavailable.ContainsKey(p.Id)).Select(p => p.Id).ToList();
             File.WriteAllText(path, JsonConvert.SerializeObject(Rules, Formatting.Indented));
         }
-        if (
-            Rules.EnabledCommonIds.Any(id =>
-                Unavailable.ContainsKey(id) || !Catalogue.Common.Any(p => p.Id == id)
-            )
-        )
+        if (Rules.EnabledCommonIds.Any(id => Unavailable.ContainsKey(id) || !Catalogue.Common.Any(p => p.Id == id)))
         {
-            throw new InvalidDataException(
-                "EnabledCommonIds contains an unsupported or unknown global modifier."
-            );
+            throw new InvalidDataException("EnabledCommonIds contains an unsupported or unknown global modifier.");
         }
     }
 
@@ -106,12 +89,7 @@ public sealed class SeasonService(
     private AccountLink Link(string root) =>
         _links.GetOrAdd(
             root,
-            id =>
-                profileData
-                    .GetProfileDataAsync<AccountLink>(new MongoId(id), LinkKey)
-                    .GetAwaiter()
-                    .GetResult()
-                ?? new AccountLink()
+            id => profileData.GetProfileDataAsync<AccountLink>(new MongoId(id), LinkKey).GetAwaiter().GetResult() ?? new AccountLink()
         );
 
     public string EffectiveId(string root)
@@ -120,8 +98,7 @@ public sealed class SeasonService(
         return link.Mode == "seasonal" && link.Created ? link.SeasonalId! : root;
     }
 
-    public bool IsSeasonal(string id) =>
-        State(saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!).Revision > 0;
+    public bool IsSeasonal(string id) => State(saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!).Revision > 0;
 
     public static PerkState State(PmcData pmc)
     {
@@ -131,9 +108,7 @@ public sealed class SeasonService(
         }
 
         var json = raw is System.Text.Json.JsonElement j ? j.GetString() : raw?.ToString();
-        return string.IsNullOrWhiteSpace(json)
-            ? new PerkState()
-            : JsonConvert.DeserializeObject<PerkState>(json)!;
+        return string.IsNullOrWhiteSpace(json) ? new PerkState() : JsonConvert.DeserializeObject<PerkState>(json)!;
     }
 
     private static void SetState(PmcData pmc, PerkState state)
@@ -148,9 +123,7 @@ public sealed class SeasonService(
     {
         var link = Link(root);
         var normal = saves.GetProfile(new MongoId(root)).CharacterData!.PmcData!;
-        var seasonal = link.Created
-            ? saves.GetProfile(new MongoId(link.SeasonalId!)).CharacterData!.PmcData
-            : null;
+        var seasonal = link.Created ? saves.GetProfile(new MongoId(link.SeasonalId!)).CharacterData!.PmcData : null;
         return new ServerSnapshot
         {
             Catalogue = Catalogue,
@@ -186,11 +159,7 @@ public sealed class SeasonService(
 
     private CharacterVisual? Visual(PmcData profile)
     {
-        if (
-            profile.Inventory?.Items == null
-            || profile.Inventory.Equipment == null
-            || profile.Info == null
-        )
+        if (profile.Inventory?.Items == null || profile.Inventory.Equipment == null || profile.Info == null)
         {
             return null;
         }
@@ -247,16 +216,8 @@ public sealed class SeasonService(
         }
 
         Validate(request);
-        var headId = CreationCustomization(
-            request.Side,
-            "5cc085e214c02e000c6bea67",
-            request.HeadId
-        );
-        var voiceId = CreationCustomization(
-            request.Side,
-            "5fc100cf95572123ae738483",
-            request.VoiceId
-        );
+        var headId = CreationCustomization(request.Side, "5cc085e214c02e000c6bea67", request.HeadId);
+        var voiceId = CreationCustomization(request.Side, "5fc100cf95572123ae738483", request.VoiceId);
         var account = saves.GetProfile(new MongoId(root));
         EnsureNotInRaid(root);
         if (link.SeasonalId == null)
@@ -329,11 +290,7 @@ public sealed class SeasonService(
 
         EnsureNotInRaid(EffectiveId(root));
         Validate(request);
-        await ApplySelection(
-            new MongoId(link.SeasonalId!),
-            request.PerkIds,
-            request.ExpectedRevision
-        );
+        await ApplySelection(new MongoId(link.SeasonalId!), request.PerkIds, request.ExpectedRevision);
         return GetSnapshot(root);
     }
 
@@ -367,25 +324,17 @@ public sealed class SeasonService(
         return GetSnapshot(root);
     }
 
-    private async Task ApplySelection(
-        MongoId id,
-        List<string> personal,
-        long revision,
-        string? root = null
-    )
+    private async Task ApplySelection(MongoId id, List<string> personal, long revision, string? root = null)
     {
         var pmc = saves.GetProfile(id).CharacterData!.PmcData!;
         var state = State(pmc);
         if (state.Revision != revision)
         {
-            throw new InvalidOperationException(
-                "Perks changed since this screen opened. Refresh and try again."
-            );
+            throw new InvalidOperationException("Perks changed since this screen opened. Refresh and try again.");
         }
 
         var previousState = State(pmc);
-        var previousProgress = pmc.Skills!.Common!.Select(skill => (skill, skill.Progress))
-            .ToArray();
+        var previousProgress = pmc.Skills!.Common!.Select(skill => (skill, skill.Progress)).ToArray();
         state.RootAccountId ??= root;
         state.SeasonalPerks = Rules.EnabledCommonIds.Concat(personal).Distinct().ToList();
         ConsumableEffects.UpdateParameters(Catalogue, state);
@@ -415,10 +364,7 @@ public sealed class SeasonService(
                     var value = pmc.Skills?.Common?.FirstOrDefault(s => s.Id == skillId);
                     if (value != null)
                     {
-                        value.Progress = Math.Max(
-                            value.Progress,
-                            Math.Clamp(e.IntValue ?? 0, 0, 51) * 100d
-                        );
+                        value.Progress = Math.Max(value.Progress, Math.Clamp(e.IntValue ?? 0, 0, 51) * 100d);
                     }
 
                     state.AppliedGrants.Add(receipt);
@@ -474,19 +420,10 @@ public sealed class SeasonService(
         {
             return DefaultCustomization(side, parent);
         }
-        var item = templates.Customization.Values.FirstOrDefault(value =>
-            value.Id.ToString() == requested
-        );
-        if (
-            item == null
-            || item.Parent != parent
-            || !item.Properties.AvailableAsDefault
-            || !item.Properties.Side.Contains(side)
-        )
+        var item = templates.Customization.Values.FirstOrDefault(value => value.Id.ToString() == requested);
+        if (item == null || item.Parent != parent || !item.Properties.AvailableAsDefault || !item.Properties.Side.Contains(side))
         {
-            throw new InvalidOperationException(
-                "The selected head or voice is unavailable for this faction."
-            );
+            throw new InvalidOperationException("The selected head or voice is unavailable for this faction.");
         }
         return item.Id;
     }
@@ -496,9 +433,7 @@ public sealed class SeasonService(
         return
             templates
                 .Customization.Values.Where(item =>
-                    item.Parent == parent
-                    && item.Properties.AvailableAsDefault
-                    && item.Properties.Side.Contains(side)
+                    item.Parent == parent && item.Properties.AvailableAsDefault && item.Properties.Side.Contains(side)
                 )
                 .OrderBy(item => item.Id.ToString(), StringComparer.Ordinal)
                 .Select(item => item.Id)
@@ -513,22 +448,15 @@ public sealed class SeasonService(
     {
         var root = ResolveRoot(id);
         var location = saves.GetProfile(new MongoId(id)).InraidData?.Location;
-        if (
-            Link(root).ActiveRaidProfiles.Count > 0
-            || (!string.IsNullOrEmpty(location) && location != "none")
-        )
+        if (Link(root).ActiveRaidProfiles.Count > 0 || (!string.IsNullOrEmpty(location) && location != "none"))
         {
-            throw new InvalidOperationException(
-                "Finish the raid before changing characters or modifiers."
-            );
+            throw new InvalidOperationException("Finish the raid before changing characters or modifiers.");
         }
     }
 
     public string ResolveRoot(string sessionId)
     {
-        var parent = State(
-            saves.GetProfile(new MongoId(sessionId)).CharacterData!.PmcData!
-        ).RootAccountId;
+        var parent = State(saves.GetProfile(new MongoId(sessionId)).CharacterData!.PmcData!).RootAccountId;
         if (parent == null || parent == sessionId)
         {
             return sessionId;
@@ -564,9 +492,7 @@ public sealed class SeasonService(
         {
             return "Seasonal";
         }
-        value = new string(
-            value.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_').Take(15).ToArray()
-        );
+        value = new string(value.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_').Take(15).ToArray());
         return value.Length < 3 ? "Seasonal" : value;
     }
 }

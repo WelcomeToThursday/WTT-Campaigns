@@ -47,9 +47,6 @@ public static class Selection
     public static long Balance(Catalogue catalogue, IEnumerable<string> ids, int startingPoints)
     {
         var selected = new HashSet<string>(ids);
-        return startingPoints
-            + catalogue
-                .Personal.Where(p => selected.Contains(p.Id))
-                .Sum(p => (long)(p.Points ?? 0));
+        return startingPoints + catalogue.Personal.Where(p => selected.Contains(p.Id)).Sum(p => (long)(p.Points ?? 0));
     }
 }

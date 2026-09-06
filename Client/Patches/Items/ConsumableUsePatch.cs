@@ -10,16 +10,10 @@ namespace SeasonalPerks.Client.Patches.Items;
 
 internal class ConsumableUsePatch : ModulePatch
 {
-    private static readonly ConditionalWeakTable<
-        ActiveHealthController.MedEffect,
-        ConsumptionReceipt
-    > Receipts = new();
+    private static readonly ConditionalWeakTable<ActiveHealthController.MedEffect, ConsumptionReceipt> Receipts = new();
 
     protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(
-            typeof(ActiveHealthController.MedEffect),
-            nameof(ActiveHealthController.MedEffect.RegularUpdate)
-        );
+        AccessTools.Method(typeof(ActiveHealthController.MedEffect), nameof(ActiveHealthController.MedEffect.RegularUpdate));
 
     [PatchPrefix]
     private static void Prefix(ActiveHealthController.MedEffect __instance, out float __state) =>
@@ -33,11 +27,7 @@ internal class ConsumableUsePatch : ModulePatch
             || __instance.MedItem == null
             || !Receipts
                 .GetOrCreateValue(__instance)
-                .Observe(
-                    __state,
-                    __instance._foodDrink?.HpPercent ?? __instance._medKit?.HpResource ?? 0,
-                    __instance._interrupted
-                )
+                .Observe(__state, __instance._foodDrink?.HpPercent ?? __instance._medKit?.HpResource ?? 0, __instance._interrupted)
         )
             return;
         Apply(__instance);
@@ -66,10 +56,6 @@ internal class ConsumableUsePatch : ModulePatch
                 count => UnityEngine.Random.Range(0, count)
             )
         )
-            ConsumableHealthEffects.Apply(
-                __instance.HealthController,
-                effect,
-                __instance.MedItem.StringTemplateId
-            );
+            ConsumableHealthEffects.Apply(__instance.HealthController, effect, __instance.MedItem.StringTemplateId);
     }
 }

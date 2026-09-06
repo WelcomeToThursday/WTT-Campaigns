@@ -17,10 +17,7 @@ public class FleaListingRestrictionPatch(FleaRestrictions restrictions) : Abstra
     protected override MethodBase GetTargetMethod()
     {
         _restrictions = restrictions;
-        return AccessTools.Method(
-            typeof(RagfairController),
-            nameof(RagfairController.AddPlayerOffer)
-        );
+        return AccessTools.Method(typeof(RagfairController), nameof(RagfairController.AddPlayerOffer));
     }
 
     [PatchPrefix]

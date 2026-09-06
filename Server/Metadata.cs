@@ -5,8 +5,7 @@ namespace SeasonalPerks.Server;
 
 public sealed record Metadata : IModMetadata
 {
-    public static string DirectoryPath =>
-        Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+    public static string DirectoryPath => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
     public string ModGuid { get; init; } = "com.cj.seasonalperks";
     public string Name { get; init; } = "Seasonal Perks";
     public string Author { get; init; } = "CJ-SPT";
@@ -17,6 +16,5 @@ public sealed record Metadata : IModMetadata
     public List<string>? Incompatibilities { get; init; }
     public Dictionary<string, SemanticVersioning.Range>? ModDependencies { get; init; }
     public string? Url { get; init; }
-    public string License { get; init; } =
-        "MIT (code); game assets retain their original ownership";
+    public string License { get; init; } = "MIT (code); game assets retain their original ownership";
 }

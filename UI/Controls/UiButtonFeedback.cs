@@ -14,12 +14,7 @@ public sealed class UiButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPoi
     private Func<bool>? _allowed;
     private bool _hovered;
 
-    public void Initialize(
-        Button button,
-        Action<InterfaceSound> play,
-        InterfaceSound click,
-        Func<bool>? allowed
-    )
+    public void Initialize(Button button, Action<InterfaceSound> play, InterfaceSound click, Func<bool>? allowed)
     {
         if (_button)
         {
@@ -32,8 +27,7 @@ public sealed class UiButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPoi
         button.onClick.AddListener(Click);
     }
 
-    private bool CanPlay =>
-        _button && _button!.IsActive() && _button.IsInteractable() && (_allowed?.Invoke() ?? true);
+    private bool CanPlay => _button && _button!.IsActive() && _button.IsInteractable() && (_allowed?.Invoke() ?? true);
 
     private void Click()
     {

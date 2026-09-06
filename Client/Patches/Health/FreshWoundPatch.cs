@@ -9,10 +9,7 @@ internal class FreshWoundPatch : ModulePatch
 {
     protected override MethodBase GetTargetMethod()
     {
-        return AccessTools.PropertyGetter(
-            typeof(ActiveHealthController.Wound),
-            nameof(ActiveHealthController.Wound.DefaultWorkTime)
-        );
+        return AccessTools.PropertyGetter(typeof(ActiveHealthController.Wound), nameof(ActiveHealthController.Wound.DefaultWorkTime));
     }
 
     [PatchPostfix]

@@ -13,37 +13,27 @@ namespace SeasonalPerks.Client.Patches.Items;
 internal class ItemResourcePatch(Type effectType, string methodName)
     : ModulePatch("SeasonalPerks.ItemResource." + effectType.DeclaringType!.Name + "." + methodName)
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.DeclaredMethod(effectType, methodName);
+    protected override MethodBase GetTargetMethod() => AccessTools.DeclaredMethod(effectType, methodName);
 
     internal static float Multiplier(object effect)
     {
         Item item;
         if (effect is ActiveHealthController.MedEffect active)
         {
-            if (
-                !Plugin.SeasonalPlayer
-                || !ReferenceEquals(active.HealthController, Plugin.Player!.ActiveHealthController)
-            )
+            if (!Plugin.SeasonalPlayer || !ReferenceEquals(active.HealthController, Plugin.Player!.ActiveHealthController))
                 return 1f;
             item = active.MedItem;
         }
         else if (effect is OfflineHealthController.MedEffect offline)
         {
-            if (
-                Plugin.Current?.ActiveMode != "seasonal"
-                || !ReferenceEquals(offline._health._skills, Plugin.App?.Session?.Profile?.Skills)
-            )
+            if (Plugin.Current?.ActiveMode != "seasonal" || !ReferenceEquals(offline._health._skills, Plugin.App?.Session?.Profile?.Skills))
                 return 1f;
             item = offline.MedItem;
         }
         else
             return 1f;
 
-        return Plugin.Effects.ItemResourceMultiplier(
-            item.StringTemplateId,
-            Ancestors(item.Template)
-        );
+        return Plugin.Effects.ItemResourceMultiplier(item.StringTemplateId, Ancestors(item.Template));
     }
 
     private static IEnumerable<string> Ancestors(ItemTemplate template)
@@ -84,10 +74,7 @@ internal class ItemResourcePatch(Type effectType, string methodName)
     }
 
     [PatchTranspiler]
-    private static IEnumerable<CodeInstruction> Transpiler(
-        IEnumerable<CodeInstruction> instructions,
-        MethodBase __originalMethod
-    )
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
     {
         var code = instructions.ToList();
         var med = typeof(MedKitComponent).GetField(nameof(MedKitComponent.HpResource))!;
@@ -129,11 +116,7 @@ internal class ItemResourcePatch(Type effectType, string methodName)
                 helper = nameof(Cost);
                 costs++;
             }
-            else if (
-                instruction.opcode == OpCodes.Sub
-                && i + 1 < code.Count
-                && code[i + 1].StoresField(med)
-            )
+            else if (instruction.opcode == OpCodes.Sub && i + 1 < code.Count && code[i + 1].StoresField(med))
             {
                 helper = nameof(Spend);
                 spends++;
@@ -161,10 +144,7 @@ internal class ItemResourcePatch(Type effectType, string methodName)
             yield return load;
             yield return new CodeInstruction(
                 OpCodes.Call,
-                typeof(ItemResourcePatch).GetMethod(
-                    helper,
-                    BindingFlags.Static | BindingFlags.NonPublic
-                )
+                typeof(ItemResourcePatch).GetMethod(helper, BindingFlags.Static | BindingFlags.NonPublic)
             );
         }
         if (
@@ -173,8 +153,6 @@ internal class ItemResourcePatch(Type effectType, string methodName)
             || spends != (offline ? 2 : 1)
             || foods != (residue ? 0 : 1)
         )
-            throw new InvalidOperationException(
-                "Unsupported item-resource implementation: " + __originalMethod
-            );
+            throw new InvalidOperationException("Unsupported item-resource implementation: " + __originalMethod);
     }
 }

@@ -5,8 +5,7 @@ using SPT.Reflection.Patching;
 
 namespace SeasonalPerks.Client.Patches.Movement;
 
-internal class StaminaConsumptionPatch(string methodName)
-    : ModulePatch("SeasonalPerks." + methodName)
+internal class StaminaConsumptionPatch(string methodName) : ModulePatch("SeasonalPerks." + methodName)
 {
     protected override MethodBase GetTargetMethod()
     {
@@ -14,10 +13,7 @@ internal class StaminaConsumptionPatch(string methodName)
     }
 
     [PatchTranspiler]
-    private static IEnumerable<CodeInstruction> Transpiler(
-        IEnumerable<CodeInstruction> instructions,
-        MethodBase __originalMethod
-    )
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
     {
         var code = instructions.ToList();
         var scale = AccessTools.Method(typeof(StaminaConsumptionPatch), nameof(ScaleConsumption));
@@ -45,9 +41,7 @@ internal class StaminaConsumptionPatch(string methodName)
         var expected = __originalMethod.Name == nameof(Stamina.Consume) ? 1 : 2;
         if (matched != expected)
         {
-            throw new InvalidOperationException(
-                "Unsupported stamina implementation: " + __originalMethod.Name
-            );
+            throw new InvalidOperationException("Unsupported stamina implementation: " + __originalMethod.Name);
         }
     }
 
@@ -64,12 +58,6 @@ internal class StaminaConsumptionPatch(string methodName)
             : ReferenceEquals(stamina, physical.HandsStamina) ? "arms"
             : null;
 
-        return bodyPart == null
-            ? value
-            : value
-                * Plugin.Effects.Multiplier(
-                    "stamina_consumption_body_parts_multiplicator",
-                    bodyPart
-                );
+        return bodyPart == null ? value : value * Plugin.Effects.Multiplier("stamina_consumption_body_parts_multiplicator", bodyPart);
     }
 }

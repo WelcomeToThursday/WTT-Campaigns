@@ -10,10 +10,7 @@ internal static class ItemResourceEffects
 {
     internal static float Multiplier(PmcData pmc, Item item, ItemHelper items)
     {
-        var effects = new RuntimeEffects(
-            ServerStartup.Seasons.Catalogue,
-            SeasonService.State(pmc).SeasonalPerks
-        );
+        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
         var parents = new List<string>();
         var template = items.GetItem(item.Template).Value;
         var seen = new HashSet<MongoId>();

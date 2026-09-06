@@ -13,8 +13,7 @@ using SPTarkov.Server.Core.Services.Ragfair;
 namespace SeasonalPerks.Server.Patches.Trading;
 
 [Injectable]
-public class FleaPurchaseRestrictionPatch(FleaRestrictions restrictions, RagfairOfferService offers)
-    : AbstractPatch
+public class FleaPurchaseRestrictionPatch(FleaRestrictions restrictions, RagfairOfferService offers) : AbstractPatch
 {
     private static FleaRestrictions _restrictions = null!;
     private static RagfairOfferService _offers = null!;
@@ -23,18 +22,11 @@ public class FleaPurchaseRestrictionPatch(FleaRestrictions restrictions, Ragfair
     {
         _restrictions = restrictions;
         _offers = offers;
-        return AccessTools.Method(
-            typeof(TradeController),
-            nameof(TradeController.ConfirmRagfairTrading)
-        );
+        return AccessTools.Method(typeof(TradeController), nameof(TradeController.ConfirmRagfairTrading));
     }
 
     [PatchPrefix]
-    private static bool Prefix(
-        MongoId sessionID,
-        ProcessRagfairTradeRequestData request,
-        ref ItemEventRouterResponse __result
-    )
+    private static bool Prefix(MongoId sessionID, ProcessRagfairTradeRequestData request, ref ItemEventRouterResponse __result)
     {
         if (!FleaRestrictions.Active(sessionID))
             return true;

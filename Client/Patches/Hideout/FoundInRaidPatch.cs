@@ -9,10 +9,7 @@ namespace SeasonalPerks.Client.Patches.Hideout;
 internal class FoundInRaidPatch : ModulePatch
 {
     protected override MethodBase GetTargetMethod() =>
-        AccessTools.PropertyGetter(
-            typeof(ItemRequirement),
-            nameof(ItemRequirement.IsSpawnedInSession)
-        );
+        AccessTools.PropertyGetter(typeof(ItemRequirement), nameof(ItemRequirement.IsSpawnedInSession));
 
     [PatchPostfix]
     private static void Postfix(ref bool __result)

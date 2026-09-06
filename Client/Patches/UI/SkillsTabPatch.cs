@@ -9,10 +9,7 @@ internal sealed class SkillsTabPatch : ModulePatch
 {
     protected override MethodBase GetTargetMethod()
     {
-        return AccessTools.Method(
-            typeof(SkillsAndMasteringScreen),
-            nameof(SkillsAndMasteringScreen.Show)
-        );
+        return AccessTools.Method(typeof(SkillsAndMasteringScreen), nameof(SkillsAndMasteringScreen.Show));
     }
 
     [PatchPostfix]
@@ -21,9 +18,7 @@ internal sealed class SkillsTabPatch : ModulePatch
         // Show activates the screen, allowing Awake to create the native tab group.
         try
         {
-            var component =
-                __instance.GetComponent<SeasonalSkillsTab>()
-                ?? __instance.gameObject.AddComponent<SeasonalSkillsTab>();
+            var component = __instance.GetComponent<SeasonalSkillsTab>() ?? __instance.gameObject.AddComponent<SeasonalSkillsTab>();
             component.Initialize(__instance, profile.Side == EFT.EPlayerSide.Savage);
         }
         catch (Exception exception)

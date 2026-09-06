@@ -21,12 +21,7 @@ public static class AllergyEffects
             || include.Count != 3
             || include.Any(r => r.Field != "ParentId")
             || !new HashSet<string>(include.Select(r => r.Value)).SetEquals(
-                new[]
-                {
-                    "5448f3a14bdc2d27728b4569",
-                    "5448f3a64bdc2d60728b456a",
-                    "543be6674bdc2df1348b4569",
-                }
+                new[] { "5448f3a14bdc2d27728b4569", "5448f3a64bdc2d60728b456a", "543be6674bdc2df1348b4569" }
             )
             || effect.SubEffects is not { } subs
         )
@@ -71,8 +66,7 @@ public static class AllergyEffects
         Func<int, int> next
     )
     {
-        var allergy =
-            state.SeasonalPerkEffectParameters.Allergy ?? new Dictionary<string, AllergyTargets>();
+        var allergy = state.SeasonalPerkEffectParameters.Allergy ?? new Dictionary<string, AllergyTargets>();
         foreach (var perk in catalogue.All.Where(p => state.SeasonalPerks.Contains(p.Id)))
         {
             var effect = perk.Effects.FirstOrDefault(Supports);
@@ -90,32 +84,21 @@ public static class AllergyEffects
                 continue;
             var targets = Sample(candidates(effect), 3, next);
             if (targets.Length != 3)
-                throw new InvalidOperationException(
-                    "Allergic needs at least three compatible item templates."
-                );
+                throw new InvalidOperationException("Allergic needs at least three compatible item templates.");
             allergy[perk.Id] = new AllergyTargets { TargetItems = targets.ToList() };
         }
         if (allergy.Count > 0)
             state.SeasonalPerkEffectParameters.Allergy = allergy;
     }
 
-    public static IEnumerable<ConsumableEffect> ForItem(
-        RuntimeEffects runtime,
-        string templateId,
-        Func<int, int> next
-    )
+    public static IEnumerable<ConsumableEffect> ForItem(RuntimeEffects runtime, string templateId, Func<int, int> next)
     {
         foreach (var perk in runtime.Perks)
         foreach (var symptom in ForPerk(perk, runtime.Parameters, templateId, next))
             yield return symptom;
     }
 
-    internal static IEnumerable<ConsumableEffect> ForPerk(
-        Perk perk,
-        EffectParameters parameters,
-        string templateId,
-        Func<int, int> next
-    )
+    internal static IEnumerable<ConsumableEffect> ForPerk(Perk perk, EffectParameters parameters, string templateId, Func<int, int> next)
     {
         if (
             parameters.Allergy == null

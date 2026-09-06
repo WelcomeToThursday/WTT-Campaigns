@@ -14,25 +14,19 @@ public sealed class TraderPriceEffects(ICloner cloner)
     internal sealed class SearchScope(RuntimeEffects effects)
     {
         internal RuntimeEffects Effects { get; } = effects;
-        internal Dictionary<RagfairOffer, RagfairOffer> Offers { get; } =
-            new(ReferenceEqualityComparer.Instance);
+        internal Dictionary<RagfairOffer, RagfairOffer> Offers { get; } = new(ReferenceEqualityComparer.Instance);
     }
 
     internal static readonly AsyncLocal<SearchScope?> Search = new();
 
-    internal static bool Visible(RagfairOffer offer) =>
-        Search.Value?.Effects.Has("flea_market_npc_only") != true || offer.IsTraderOffer();
+    internal static bool Visible(RagfairOffer offer) => Search.Value?.Effects.Has("flea_market_npc_only") != true || offer.IsTraderOffer();
 
     internal TraderAssort Assort(TraderAssort original, decimal multiplier)
     {
         if (multiplier == 1m)
             return original;
-        var result =
-            cloner.Clone(original)
-            ?? throw new InvalidOperationException("Could not copy trader assortment.");
-        foreach (
-            var requirement in result.BarterScheme.Values.SelectMany(s => s).SelectMany(s => s)
-        )
+        var result = cloner.Clone(original) ?? throw new InvalidOperationException("Could not copy trader assortment.");
+        foreach (var requirement in result.BarterScheme.Values.SelectMany(s => s).SelectMany(s => s))
             if (requirement.Count is double count)
                 requirement.Count = TraderPricing.Scale(count, multiplier);
         return result;
@@ -48,9 +42,7 @@ public sealed class TraderPriceEffects(ICloner cloner)
         var multiplier = scope.Effects.TraderMultiplier(original.User.Id.ToString(), "buy");
         if (multiplier == 1m)
             return original;
-        var result =
-            cloner.Clone(original)
-            ?? throw new InvalidOperationException("Could not copy flea offer.");
+        var result = cloner.Clone(original) ?? throw new InvalidOperationException("Could not copy flea offer.");
         foreach (var requirement in result.Requirements ?? [])
             if (requirement.Count is double count)
                 requirement.Count = TraderPricing.Scale(count, multiplier);

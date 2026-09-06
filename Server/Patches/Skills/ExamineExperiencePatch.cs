@@ -12,12 +12,10 @@ namespace SeasonalPerks.Server.Patches.Skills;
 [Injectable]
 public class ExamineExperiencePatch : AbstractPatch
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(typeof(InventoryController), "FlagItemsAsInspectedAndRewardXp");
+    protected override MethodBase GetTargetMethod() => AccessTools.Method(typeof(InventoryController), "FlagItemsAsInspectedAndRewardXp");
 
     [PatchPrefix]
-    private static void Prefix(SptProfile fullProfile, out int? __state) =>
-        __state = fullProfile.CharacterData?.PmcData?.Info?.Experience;
+    private static void Prefix(SptProfile fullProfile, out int? __state) => __state = fullProfile.CharacterData?.PmcData?.Info?.Experience;
 
     [PatchPostfix]
     private static void Postfix(SptProfile fullProfile, int? __state)
@@ -25,14 +23,7 @@ public class ExamineExperiencePatch : AbstractPatch
         var pmc = fullProfile.CharacterData?.PmcData;
         if (__state is not int previous || pmc?.Info?.Experience is not int current)
             return;
-        var effects = new RuntimeEffects(
-            ServerStartup.Seasons.Catalogue,
-            SeasonService.State(pmc).SeasonalPerks
-        );
-        pmc.Info.Experience = ExperienceScaling.Total(
-            previous,
-            current,
-            effects.Multiplier("pmc_experience_multiplicator")
-        );
+        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
+        pmc.Info.Experience = ExperienceScaling.Total(previous, current, effects.Multiplier("pmc_experience_multiplicator"));
     }
 }

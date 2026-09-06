@@ -11,10 +11,7 @@ internal class InjuryProbabilityPatch : ModulePatch
 {
     protected override MethodBase GetTargetMethod()
     {
-        return AccessTools.Method(
-            typeof(EffectsSettings.ProbabilitySetting),
-            nameof(EffectsSettings.ProbabilitySetting.Try)
-        );
+        return AccessTools.Method(typeof(EffectsSettings.ProbabilitySetting), nameof(EffectsSettings.ProbabilitySetting.Try));
     }
 
     [PatchPrefix]

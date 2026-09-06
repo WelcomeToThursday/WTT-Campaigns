@@ -13,12 +13,7 @@ internal sealed class SeasonalUiInputPatch : ModulePatch
     }
 
     [PatchPrefix]
-    private static bool Prefix(
-        InputNode __instance,
-        List<ECommand> commands,
-        ref float[] axes,
-        ref ECursorResult shouldLockCursor
-    )
+    private static bool Prefix(InputNode __instance, List<ECommand> commands, ref float[] axes, ref ECursorResult shouldLockCursor)
     {
         if (__instance is not UIInputRoot || !SeasonUi.Instance || !SeasonUi.Instance.InputBlocked)
         {

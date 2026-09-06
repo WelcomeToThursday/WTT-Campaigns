@@ -10,11 +10,7 @@ public sealed class RuntimeEffects
     public IReadOnlyList<Perk> Perks { get; }
     public EffectParameters Parameters { get; }
 
-    public RuntimeEffects(
-        Catalogue catalogue,
-        IEnumerable<string> selected,
-        EffectParameters? parameters = null
-    )
+    public RuntimeEffects(Catalogue catalogue, IEnumerable<string> selected, EffectParameters? parameters = null)
     {
         var ids = new HashSet<string>(selected);
         Perks = catalogue.All.Where(p => ids.Contains(p.Id)).ToArray();
@@ -24,24 +20,19 @@ public sealed class RuntimeEffects
 
     public bool Has(string id) => Effects.Any(e => e.EffectId == id);
 
-    public bool HideoutRequiresFir(bool original) =>
-        original && !Matching("hideout_fir").Any(e => e.Mode == "not_require");
+    public bool HideoutRequiresFir(bool original) => original && !Matching("hideout_fir").Any(e => e.Mode == "not_require");
 
     // Native TryApply maps primary to slowdown and secondary to noise.
     public float BushSlowdownMultiplier => BushMultiplier(effect => effect.PrimaryMultiplier);
     public float BushNoiseMultiplier => BushMultiplier(effect => effect.SecondaryMultiplier);
 
     private float BushMultiplier(Func<PerkEffect, float?> multiplier) =>
-        Matching("bush_interaction_multiplicators")
-            .Aggregate(1f, (value, effect) => value * (multiplier(effect) ?? 1f));
+        Matching("bush_interaction_multiplicators").Aggregate(1f, (value, effect) => value * (multiplier(effect) ?? 1f));
 
     public float Multiplier(string id, string? body = null) =>
-        Matching(id)
-            .Where(e => body == null || Contains(e.BodyPartTypes, body))
-            .Aggregate(1f, (v, e) => v * ((float?)e.Multiplier ?? 1f));
+        Matching(id).Where(e => body == null || Contains(e.BodyPartTypes, body)).Aggregate(1f, (v, e) => v * ((float?)e.Multiplier ?? 1f));
 
-    public int Offset(string id, string body) =>
-        Matching(id).Where(e => Contains(e.BodyPartTypes, body)).Sum(e => e.IntValue ?? 0);
+    public int Offset(string id, string body) => Matching(id).Where(e => Contains(e.BodyPartTypes, body)).Sum(e => e.IntValue ?? 0);
 
     public float SkillMultiplier(string skill) =>
         Matching("skill_experience_multiplicator")
@@ -49,14 +40,9 @@ public sealed class RuntimeEffects
             .Aggregate(1f, (v, e) => v * ((float?)e.Multiplier ?? 1));
 
     public int SkillCap(string skill) =>
-        Matching("skill_max_level_cap")
-            .Where(e => Contains(e.SkillIds, skill))
-            .Select(e => e.IntValue ?? 51)
-            .DefaultIfEmpty(51)
-            .Min();
+        Matching("skill_max_level_cap").Where(e => Contains(e.SkillIds, skill)).Select(e => e.IntValue ?? 51).DefaultIfEmpty(51).Min();
 
-    public bool SkillBlocked(string skill) =>
-        Matching("skill_not_growing").Any(e => Contains(e.SkillIds, skill));
+    public bool SkillBlocked(string skill) => Matching("skill_not_growing").Any(e => Contains(e.SkillIds, skill));
 
     public decimal TraderMultiplier(string trader, string action) =>
         Matching("trader_prices_by_trader_multiplicator")
@@ -81,14 +67,9 @@ public sealed class RuntimeEffects
 
     public IEnumerable<PerkEffect> Matching(string id) => Effects.Where(e => e.EffectId == id);
 
-    public static bool Contains(IEnumerable<string>? values, string value) =>
-        values?.Contains(value) ?? false;
+    public static bool Contains(IEnumerable<string>? values, string value) => values?.Contains(value) ?? false;
 
-    public static bool MatchesFilter(
-        ItemFilter? filter,
-        string templateId,
-        IEnumerable<string> ancestors
-    )
+    public static bool MatchesFilter(ItemFilter? filter, string templateId, IEnumerable<string> ancestors)
     {
         if (filter == null)
         {
@@ -105,7 +86,6 @@ public sealed class RuntimeEffects
             };
         var include = filter.Include;
         var exclude = filter.Exclude;
-        return (include == null || include.Count == 0 || include.Any(Match))
-            && !(exclude?.Any(Match) ?? false);
+        return (include == null || include.Count == 0 || include.Any(Match)) && !(exclude?.Any(Match) ?? false);
     }
 }

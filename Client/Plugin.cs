@@ -26,19 +26,12 @@ public sealed class Plugin : BaseUnityPlugin
     internal static bool Busy;
     private static TarkovApplication? _application;
     internal static TarkovApplication? App =>
-        _application
-            ? _application
-            : _application = UnityEngine.Object.FindObjectOfType<TarkovApplication>();
+        _application ? _application : _application = UnityEngine.Object.FindObjectOfType<TarkovApplication>();
     internal static Player? Player =>
-        Comfort.Common.Singleton<GameWorld>.Instantiated
-            ? Comfort.Common.Singleton<GameWorld>.Instance.MainPlayer
-            : null;
-    internal static bool InRaid =>
-        Player != null && !(Comfort.Common.Singleton<GameWorld>.Instance is HideoutGameWorld);
+        Comfort.Common.Singleton<GameWorld>.Instantiated ? Comfort.Common.Singleton<GameWorld>.Instance.MainPlayer : null;
+    internal static bool InRaid => Player != null && !(Comfort.Common.Singleton<GameWorld>.Instance is HideoutGameWorld);
     internal static bool SeasonalPlayer =>
-        Player != null
-        && Current?.ActiveMode == "seasonal"
-        && Player.Profile.Id == App?.Session?.Profile?.Id;
+        Player != null && Current?.ActiveMode == "seasonal" && Player.Profile.Id == App?.Session?.Profile?.Id;
     internal static string Folder => Path.GetDirectoryName(typeof(Plugin).Assembly.Location)!;
 
     private void Awake()
@@ -58,9 +51,7 @@ public sealed class Plugin : BaseUnityPlugin
         Current = snapshot;
         Effects = new RuntimeEffects(
             snapshot.Catalogue,
-            snapshot.ActiveMode == "seasonal"
-                ? snapshot.State.SeasonalPerks
-                : Array.Empty<string>(),
+            snapshot.ActiveMode == "seasonal" ? snapshot.State.SeasonalPerks : Array.Empty<string>(),
             snapshot.State.SeasonalPerkEffectParameters
         );
     }
@@ -89,9 +80,7 @@ public sealed class Plugin : BaseUnityPlugin
         var result = await app.Session.FlushOperationQueue();
         if (!result.Succeed)
         {
-            throw new InvalidOperationException(
-                "Pending profile operations could not be saved: " + result.Error
-            );
+            throw new InvalidOperationException("Pending profile operations could not be saved: " + result.Error);
         }
         LogInfo("Seasonal switch/save: pending operations saved.");
     }
@@ -115,14 +104,10 @@ public sealed class Plugin : BaseUnityPlugin
             await app.RecreateBackend(mode, force: true);
             if (!CharacterSession.IsLoaded(snapshot, snapshot.ActiveMode, app.Session?.Profile?.Id))
             {
-                throw new InvalidOperationException(
-                    "The requested character did not finish loading. Select it again to retry."
-                );
+                throw new InvalidOperationException("The requested character did not finish loading. Select it again to retry.");
             }
             Accept(snapshot);
-            LogInfo(
-                "Seasonal switch/save: " + snapshot.ActiveMode + " character loaded and verified."
-            );
+            LogInfo("Seasonal switch/save: " + snapshot.ActiveMode + " character loaded and verified.");
         }
         finally
         {

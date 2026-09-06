@@ -13,36 +13,18 @@ using SPTarkov.Server.Core.Routers;
 namespace SeasonalPerks.Server.Effects;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class SecureContainerRestrictions(
-    TemplateTable templates,
-    InventoryHelper inventory,
-    EventOutputHolder outputs
-)
+public sealed class SecureContainerRestrictions(TemplateTable templates, InventoryHelper inventory, EventOutputHolder outputs)
 {
     internal ItemEventRouterResponse Output(MongoId sessionId) => outputs.GetOutput(sessionId);
 
-    internal bool Check(
-        PmcData pmc,
-        object request,
-        MongoId sessionId,
-        ItemEventRouterResponse output
-    )
+    internal bool Check(PmcData pmc, object request, MongoId sessionId, ItemEventRouterResponse output)
     {
-        var effects = new RuntimeEffects(
-            ServerStartup.Seasons.Catalogue,
-            SeasonService.State(pmc).SeasonalPerks
-        );
+        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
         if (!effects.Has(SecureContainerRules.EffectId))
             return true;
         var items = pmc.Inventory!.Items!;
-        static MongoId? Id(string? value) =>
-            string.IsNullOrEmpty(value) ? (MongoId?)null : new MongoId(value);
-        bool Reject(
-            IEnumerable<Item> source,
-            MongoId? itemId,
-            MongoId? parentId,
-            Dictionary<MongoId, MongoId?>? replacements = null
-        )
+        static MongoId? Id(string? value) => string.IsNullOrEmpty(value) ? (MongoId?)null : new MongoId(value);
+        bool Reject(IEnumerable<Item> source, MongoId? itemId, MongoId? parentId, Dictionary<MongoId, MongoId?>? replacements = null)
         {
             if (itemId == null || parentId == null)
                 return false;
@@ -50,33 +32,20 @@ public sealed class SecureContainerRestrictions(
             var seen = new HashSet<MongoId>();
             var parent = parentId;
             bool secure = false;
-            while (
-                parent.HasValue
-                && seen.Add(parent.Value)
-                && destination.TryGetValue(parent.Value, out var container)
-            )
+            while (parent.HasValue && seen.Add(parent.Value) && destination.TryGetValue(parent.Value, out var container))
             {
-                if (
-                    TemplateFilters
-                        .Ancestors(templates, container.Template)
-                        .Contains(SecureContainerRules.Category)
-                )
+                if (TemplateFilters.Ancestors(templates, container.Template).Contains(SecureContainerRules.Category))
                 {
                     secure = true;
                     break;
                 }
-                parent =
-                    replacements != null && replacements.TryGetValue(container.Id, out var moved)
-                        ? moved
-                        : Id(container.ParentId);
+                parent = replacements != null && replacements.TryGetValue(container.Id, out var moved) ? moved : Id(container.ParentId);
             }
             if (!secure)
                 return false;
             var tree = source.ToArray();
             var children = tree.ToLookup(i =>
-                replacements != null && replacements.TryGetValue(i.Id, out var moved)
-                    ? moved
-                    : Id(i.ParentId)
+                replacements != null && replacements.TryGetValue(i.Id, out var moved) ? moved : Id(i.ParentId)
             );
             var queue = new Queue<MongoId>();
             queue.Enqueue(itemId.Value);
@@ -89,11 +58,7 @@ public sealed class SecureContainerRestrictions(
                 var item = tree.FirstOrDefault(i => i.Id == id);
                 if (
                     item == null
-                    || !SecureContainerRules.Allows(
-                        effects,
-                        item.Template.ToString(),
-                        TemplateFilters.Ancestors(templates, item.Template)
-                    )
+                    || !SecureContainerRules.Allows(effects, item.Template.ToString(), TemplateFilters.Ancestors(templates, item.Template))
                 )
                     return true;
                 foreach (var child in children[id])
@@ -118,17 +83,11 @@ public sealed class SecureContainerRestrictions(
             InventoryTransferRequestData r => CheckAction(r, r.Item, r.With),
             InventorySwapRequestData r =>
             // Native swap uses FromOwner to select the complete inventory.
-            (
-                r.FromOwner == null || r.FromOwner.Type != "Profile" || Id(r.FromOwner.Id) == pmc.Id
-            ) && (Reject(items, r.Item, Id(r.To?.Id)) || Reject(items, r.Item2, Id(r.To2?.Id))),
+            (r.FromOwner == null || r.FromOwner.Type != "Profile" || Id(r.FromOwner.Id) == pmc.Id)
+                && (Reject(items, r.Item, Id(r.To?.Id)) || Reject(items, r.Item2, Id(r.To2?.Id))),
             InventorySortRequestData r => r.ChangedItems != null
                 && r.ChangedItems.Any(change =>
-                    Reject(
-                        items,
-                        change.Id,
-                        Id(change.ParentId),
-                        r.ChangedItems.ToDictionary(i => i.Id, i => Id(i.ParentId))
-                    )
+                    Reject(items, change.Id, Id(change.ParentId), r.ChangedItems.ToDictionary(i => i.Id, i => Id(i.ParentId)))
                 ),
             _ => false,
         };

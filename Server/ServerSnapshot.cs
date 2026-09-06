@@ -34,11 +34,8 @@ internal sealed class CharacterVisualConverter(JsonUtil json) : JsonConverter<Ch
 {
     public override bool CanRead => false;
 
-    public override void WriteJson(
-        JsonWriter writer,
-        CharacterVisual? value,
-        JsonSerializer serializer
-    ) => writer.WriteRawValue(json.Serialize(value));
+    public override void WriteJson(JsonWriter writer, CharacterVisual? value, JsonSerializer serializer) =>
+        writer.WriteRawValue(json.Serialize(value));
 
     public override CharacterVisual? ReadJson(
         JsonReader reader,

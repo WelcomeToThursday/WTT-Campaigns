@@ -8,26 +8,19 @@ namespace SeasonalPerks.Client.Patches.Movement;
 
 internal static class BushOccupancy
 {
-    private static readonly ConditionalWeakTable<
-        MovementContext,
-        HashSet<(TreeInteractive Tree, Collider Collider)>
-    > Entries = new();
+    private static readonly ConditionalWeakTable<MovementContext, HashSet<(TreeInteractive Tree, Collider Collider)>> Entries = new();
 
     internal static bool Contains(MovementContext context)
     {
         if (!Entries.TryGetValue(context, out var entries))
             return false;
-        entries.RemoveWhere(e =>
-            !e.Tree || !e.Tree.isActiveAndEnabled || !e.Collider || !e.Collider.enabled
-        );
+        entries.RemoveWhere(e => !e.Tree || !e.Tree.isActiveAndEnabled || !e.Collider || !e.Collider.enabled);
         return entries.Count != 0;
     }
 
     internal static bool RemoveInactive(MovementContext context) =>
         Entries.TryGetValue(context, out var entries)
-        && entries.RemoveWhere(e =>
-            !e.Tree || !e.Tree.isActiveAndEnabled || !e.Collider || !e.Collider.enabled
-        ) != 0;
+        && entries.RemoveWhere(e => !e.Tree || !e.Tree.isActiveAndEnabled || !e.Collider || !e.Collider.enabled) != 0;
 
     internal static void Update(TreeInteractive tree, Collider collider, bool enter)
     {

@@ -24,9 +24,6 @@ internal sealed class AllergyParametersConverter : JsonConverter<Dictionary<stri
         return serializer.Deserialize<Dictionary<string, AllergyTargets>>(reader);
     }
 
-    public override void WriteJson(
-        JsonWriter writer,
-        Dictionary<string, AllergyTargets>? value,
-        JsonSerializer serializer
-    ) => throw new NotSupportedException();
+    public override void WriteJson(JsonWriter writer, Dictionary<string, AllergyTargets>? value, JsonSerializer serializer) =>
+        throw new NotSupportedException();
 }

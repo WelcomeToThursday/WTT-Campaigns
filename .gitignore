@@ -43,8 +43,26 @@ coverage/
 *.key
 
 # IDE, editor and operating-system state
-.vs/
-.idea/
+# Share only the solution's formatter defaults; keep IDE caches and personal state local.
+/.vs/*
+!/.vs/SeasonalPerks/
+/.vs/SeasonalPerks/*
+!/.vs/SeasonalPerks/v16/
+!/.vs/SeasonalPerks/v17/
+/.vs/SeasonalPerks/v16/*
+/.vs/SeasonalPerks/v17/*
+!/.vs/SeasonalPerks/v16/csharpier.json
+!/.vs/SeasonalPerks/v17/csharpier.json
+/.idea/*
+!/.idea/.idea.SeasonalPerks/
+/.idea/.idea.SeasonalPerks/*
+!/.idea/.idea.SeasonalPerks/.idea/
+/.idea/.idea.SeasonalPerks/.idea/*
+!/.idea/.idea.SeasonalPerks/.idea/CSharpierPlugin.xml
+!/.idea/.idea.SeasonalPerks/.idea/externalDependencies.xml
+!/.idea/.idea.SeasonalPerks/.idea/codeStyles/
+/.idea/.idea.SeasonalPerks/.idea/codeStyles/*
+!/.idea/.idea.SeasonalPerks/.idea/codeStyles/codeStyleConfig.xml
 .vscode/
 *.user
 *.suo

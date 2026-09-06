@@ -10,8 +10,7 @@ namespace SeasonalPerks.Client.Patches.Items;
 
 internal class SecureGridPatch : ModulePatch
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(typeof(Grid), nameof(Grid.CheckCompatibility));
+    protected override MethodBase GetTargetMethod() => AccessTools.Method(typeof(Grid), nameof(Grid.CheckCompatibility));
 
     [PatchPostfix]
     private static void Postfix(Grid __instance, Item item, ref bool __result)

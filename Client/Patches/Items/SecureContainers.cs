@@ -26,12 +26,8 @@ internal static class SecureContainers
             return false;
         if (!parent.GetAllParentItemsAndSelf().OfType<MobContainer>().Any(c => c.isSecured))
             return false;
-        var contents = item is ContainerCollection collection
-            ? collection.GetAllItemsFromCollection()
-            : new[] { item };
-        return contents.Any(i =>
-            !SecureContainerRules.Allows(Plugin.Effects, i.StringTemplateId, Ancestors(i.Template))
-        );
+        var contents = item is ContainerCollection collection ? collection.GetAllItemsFromCollection() : new[] { item };
+        return contents.Any(i => !SecureContainerRules.Allows(Plugin.Effects, i.StringTemplateId, Ancestors(i.Template)));
     }
 
     private static IEnumerable<string> Ancestors(ItemTemplate template)

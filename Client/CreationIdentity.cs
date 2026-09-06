@@ -26,13 +26,7 @@ internal sealed class CreationIdentity : ICreationIdentity
     private bool _disposed;
     private Task _pending = Task.CompletedTask;
 
-    internal CreationIdentity(
-        Transform host,
-        CreationDraft draft,
-        Font font,
-        Action complete,
-        Action back
-    )
+    internal CreationIdentity(Transform host, CreationDraft draft, Font font, Action complete, Action back)
     {
         _host = host;
         _draft = draft;
@@ -47,25 +41,14 @@ internal sealed class CreationIdentity : ICreationIdentity
         _busy = true;
         try
         {
-            _message = _ui.Label(
-                _host,
-                "IdentityStatus",
-                "LOADING CHARACTER PREVIEWS...",
-                20,
-                1500,
-                44,
-                0,
-                -385
-            );
+            _message = _ui.Label(_host, "IdentityStatus", "LOADING CHARACTER PREVIEWS...", 20, 1500, 44, 0, -385);
             _message.alignment = TextAnchor.MiddleCenter;
             var source = Resources
                 .FindObjectsOfTypeAll<EftAccountSideSelectionScreen>()
                 .FirstOrDefault(value => value.gameObject.scene.IsValid());
             if (!source)
             {
-                throw new InvalidOperationException(
-                    "EFT's faction and appearance screen is unavailable."
-                );
+                throw new InvalidOperationException("EFT's faction and appearance screen is unavailable.");
             }
             var profiles = await Task.WhenAll(
                 CreateProfileOperation.LoadProfile(CreateProfileOperation.DEFAULT_BEAR_PROFILE),
@@ -77,9 +60,7 @@ internal sealed class CreationIdentity : ICreationIdentity
             }
             if (profiles.Any(profile => profile == null))
             {
-                throw new InvalidOperationException(
-                    "EFT's default character previews could not be loaded."
-                );
+                throw new InvalidOperationException("EFT's default character previews could not be loaded.");
             }
             _screen = UnityEngine.Object.Instantiate(source, _host, false);
             _screen.name = "SeasonalNativeIdentity";
@@ -194,14 +175,10 @@ internal sealed class CreationIdentity : ICreationIdentity
             && (
                 _appearance
                     ? _appearanceReady
-                        && _screen!._headSelectionState._nicknameField.ValidationError(
-                            _data.Nickname
-                        ) == ENicknameError.ValidNickname
+                        && _screen!._headSelectionState._nicknameField.ValidationError(_data.Nickname) == ENicknameError.ValidNickname
                     : _data.HasSide
             );
-        _next.GetComponentInChildren<Text>().color = _next.interactable
-            ? UiElements.Ink
-            : UiElements.Muted;
+        _next.GetComponentInChildren<Text>().color = _next.interactable ? UiElements.Ink : UiElements.Muted;
     }
 
     private async Task ShowAppearance()
@@ -217,9 +194,7 @@ internal sealed class CreationIdentity : ICreationIdentity
         SetStateVisibility(head, false);
         if (_draft.Side == _data.Side.ToString() && !string.IsNullOrEmpty(_draft.HeadId))
         {
-            _screen._headSelectionState._previewProfiles[_data.Side].Customization[
-                EBodyModelPart.Head
-            ] = _draft.HeadId;
+            _screen._headSelectionState._previewProfiles[_data.Side].Customization[EBodyModelPart.Head] = _draft.HeadId;
         }
         await _screen._headSelectionState.ShowState();
         if (_disposed)
@@ -345,10 +320,7 @@ internal sealed class CreationIdentity : ICreationIdentity
         var head = _screen!._headSelectionState;
         // Read the selected dropdown directly; voice playback completes asynchronously.
         var voice = head._voiceSelector.CurrentIndex;
-        _draft.VoiceId =
-            voice >= 0 && voice < head._voiceTemplates.Count
-                ? head._voiceTemplates[voice].Key.ToString()
-                : _data.VoiceId;
+        _draft.VoiceId = voice >= 0 && voice < head._voiceTemplates.Count ? head._voiceTemplates[voice].Key.ToString() : _data.VoiceId;
         _draft.Appearance = _appearance;
     }
 
@@ -380,8 +352,7 @@ internal sealed class CreationIdentity : ICreationIdentity
             _screen!._sideSelectionState.OnStateReady -= SideReady;
             _screen._headSelectionState.OnNicknameValueChanged -= NicknameChanged;
             _screen._headSelectionState.OnNicknameSubmited -= NicknameSubmitted;
-            _screen._headSelectionState._preview.PlayerModelView.LoadingCompletedEvent -=
-                AppearanceLoaded;
+            _screen._headSelectionState._preview.PlayerModelView.LoadingCompletedEvent -= AppearanceLoaded;
             _screen._sideSelectionState.Close();
             _screen._headSelectionState.Close();
             foreach (var preview in _screen.GetComponentsInChildren<PlayerProfilePreview>(true))

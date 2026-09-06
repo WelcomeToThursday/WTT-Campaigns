@@ -33,8 +33,6 @@ internal class BackendIdentity : ModulePatch
             Plugin.Accept(snapshot);
             Plugin.SessionId = snapshot.EffectiveProfileId;
         }
-        AccessTools
-            .Field(typeof(TarkovApplication), "_cachedPhpSessionId")
-            .SetValue(__instance, Plugin.SessionId);
+        AccessTools.Field(typeof(TarkovApplication), "_cachedPhpSessionId").SetValue(__instance, Plugin.SessionId);
     }
 }

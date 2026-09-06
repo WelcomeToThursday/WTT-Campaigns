@@ -44,24 +44,17 @@ public static class EffectSupport
         foreach (var effect in perk.Effects)
         {
             var id = effect.EffectId ?? "unknown";
-            if (
-                Implemented.Contains(id)
-                || ConsumableEffects.Describe(effect) != null
-                || AllergyEffects.Supports(effect)
-            )
+            if (Implemented.Contains(id) || ConsumableEffects.Describe(effect) != null || AllergyEffects.Supports(effect))
             {
                 continue;
             }
 
             return id switch
             {
-                "scheduled_mail" =>
-                    "Reward contents and first delivery timing have not been verified.",
+                "scheduled_mail" => "Reward contents and first delivery timing have not been verified.",
                 "lucky" or "unlucky" => "Luck behavior has not been verified.",
-                "allergy" =>
-                    "Item-triggered effects and random sub-effect selection are not yet available.",
-                "key_durability_multiplicator" =>
-                    "Key consumption behavior is still being verified.",
+                "allergy" => "Item-triggered effects and random sub-effect selection are not yet available.",
+                "key_durability_multiplicator" => "Key consumption behavior is still being verified.",
                 _ => "This modifier's gameplay integration is not yet available.",
             };
         }

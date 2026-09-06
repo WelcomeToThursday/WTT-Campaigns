@@ -8,18 +8,12 @@ namespace SeasonalPerks.Client.Patches.Health;
 internal class EnergyDrainPatch : ModulePatch
 {
     protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(
-            typeof(ActiveHealthController.Existence),
-            nameof(ActiveHealthController.Existence.GetEnergyDamage)
-        );
+        AccessTools.Method(typeof(ActiveHealthController.Existence), nameof(ActiveHealthController.Existence.GetEnergyDamage));
 
     [PatchPostfix]
     private static void Postfix(ActiveHealthController.Existence __instance, ref float __result)
     {
-        if (
-            Plugin.SeasonalPlayer
-            && ReferenceEquals(__instance.HealthController, Plugin.Player!.ActiveHealthController)
-        )
+        if (Plugin.SeasonalPlayer && ReferenceEquals(__instance.HealthController, Plugin.Player!.ActiveHealthController))
         {
             __result *= Plugin.Effects.Multiplier("energy_drain_multiplicator");
         }

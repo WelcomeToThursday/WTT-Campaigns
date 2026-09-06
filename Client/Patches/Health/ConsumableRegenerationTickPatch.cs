@@ -8,10 +8,7 @@ namespace SeasonalPerks.Client.Patches.Health;
 internal class ConsumableRegenerationTickPatch : ModulePatch
 {
     protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(
-            typeof(ActiveHealthController.HealthBoost),
-            nameof(ActiveHealthController.HealthBoost.RegularUpdate)
-        );
+        AccessTools.Method(typeof(ActiveHealthController.HealthBoost), nameof(ActiveHealthController.HealthBoost.RegularUpdate));
 
     [PatchPrefix]
     private static bool Prefix(ActiveHealthController.HealthBoost __instance, float deltaTime)

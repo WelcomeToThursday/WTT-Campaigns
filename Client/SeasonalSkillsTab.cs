@@ -23,10 +23,7 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
         {
             return;
         }
-        var group = (TabGroup?)
-            AccessTools
-                .Field(typeof(SkillsAndMasteringScreen), "_skillMasterTabGroup")
-                .GetValue(screen);
+        var group = (TabGroup?)AccessTools.Field(typeof(SkillsAndMasteringScreen), "_skillMasterTabGroup").GetValue(screen);
         if (group == null)
         {
             throw new InvalidOperationException("EFT has not initialized the skills tab group.");
@@ -43,10 +40,7 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
             var rect = (RectTransform)_tab.transform;
             if (!_tab.transform.parent.GetComponent<UnityEngine.UI.HorizontalLayoutGroup>())
             {
-                rect.anchoredPosition += new Vector2(
-                    ((RectTransform)screen._masteringTab.transform).rect.width + 12,
-                    0
-                );
+                rect.anchoredPosition += new Vector2(((RectTransform)screen._masteringTab.transform).rect.width + 12, 0);
             }
             foreach (var localized in _tab.GetComponentsInChildren<LocalizedText>(true))
             {
@@ -62,16 +56,10 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
                 {
                     continue;
                 }
-                foreach (
-                    var icon in version
-                        .GetComponentsInChildren<UnityEngine.UI.Image>(true)
-                        .Where(image => image.name == "Icon")
-                )
+                foreach (var icon in version.GetComponentsInChildren<UnityEngine.UI.Image>(true).Where(image => image.name == "Icon"))
                 {
                     SeasonUi.Instance.LoadArtwork(
-                        version == _tab._selectedVersion
-                            ? "modifiers-tab-selected"
-                            : "modifiers-tab-normal",
+                        version == _tab._selectedVersion ? "modifiers-tab-selected" : "modifiers-tab-normal",
                         icon
                     );
                 }
@@ -79,12 +67,7 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
             _tab.Init(this);
             _tab.UpdateVisual(false);
             var source = (RectTransform)screen._skillsScreen.transform;
-            var host = UiElements.Rect(
-                "SeasonalPerksContent",
-                source.parent,
-                source.sizeDelta.x,
-                source.sizeDelta.y
-            );
+            var host = UiElements.Rect("SeasonalPerksContent", source.parent, source.sizeDelta.x, source.sizeDelta.y);
             host.anchorMin = source.anchorMin;
             host.anchorMax = source.anchorMax;
             host.pivot = source.pivot;
@@ -137,12 +120,7 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
             var state = SeasonUi.Presentation(snapshot);
             state.CanOpenEditor =
                 !Plugin.InRaid
-                && (
-                    state.AllowEdits
-                    || !state.Characters.Any(character =>
-                        character.Mode == "seasonal" && character.Exists
-                    )
-                );
+                && (state.AllowEdits || !state.Characters.Any(character => character.Mode == "seasonal" && character.Exists));
             state.IsScav = _isScav;
             if (_isScav)
             {

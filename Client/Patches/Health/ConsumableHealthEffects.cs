@@ -22,14 +22,8 @@ internal static class ConsumableHealthEffects
         internal float Hydration => Kind == "hydrationRecovery" ? Rate : 0;
     }
 
-    private static readonly ConditionalWeakTable<
-        ActiveHealthController,
-        ActiveEffects
-    > Controllers = new();
-    internal static readonly ConditionalWeakTable<
-        ActiveHealthController.HealthBoost,
-        RegenerationRate
-    > Regeneration = new();
+    private static readonly ConditionalWeakTable<ActiveHealthController, ActiveEffects> Controllers = new();
+    internal static readonly ConditionalWeakTable<ActiveHealthController.HealthBoost, RegenerationRate> Regeneration = new();
 
     internal static bool IsLocalRaid(ActiveHealthController health) =>
         Plugin.InRaid
@@ -38,11 +32,7 @@ internal static class ConsumableHealthEffects
         && Plugin.Player!.Profile.Info.Side != EPlayerSide.Savage
         && ReferenceEquals(health, Plugin.Player.ActiveHealthController);
 
-    internal static void Apply(
-        ActiveHealthController health,
-        ConsumableEffect effect,
-        string templateId
-    )
+    internal static void Apply(ActiveHealthController health, ConsumableEffect effect, string templateId)
     {
         if (!IsLocalRaid(health))
             return;
@@ -60,9 +50,7 @@ internal static class ConsumableHealthEffects
         }
         if (effect.Kind == "onPainkillers")
         {
-            var existing = health.FindExistingEffect<ActiveHealthController.PainKiller>(
-                EBodyPart.Common
-            );
+            var existing = health.FindExistingEffect<ActiveHealthController.PainKiller>(EBodyPart.Common);
             if (existing != null)
                 existing.AddWorkTime(effect.Duration, true);
             else
@@ -97,11 +85,7 @@ internal static class ConsumableHealthEffects
         regeneration.NextState();
     }
 
-    private static void Refresh<T>(
-        ActiveHealthController health,
-        float duration,
-        float? strength = null
-    )
+    private static void Refresh<T>(ActiveHealthController health, float duration, float? strength = null)
         where T : ActiveHealthController.Effect, new()
     {
         var existing = health.FindExistingEffect<T>(EBodyPart.Common);
@@ -111,11 +95,7 @@ internal static class ConsumableHealthEffects
             health.AddEffect<T>(EBodyPart.Common, 0, duration, 0, strength, null);
     }
 
-    internal static void Tick(
-        ActiveHealthController.HealthBoost effect,
-        RegenerationRate rates,
-        float deltaTime
-    )
+    internal static void Tick(ActiveHealthController.HealthBoost effect, RegenerationRate rates, float deltaTime)
     {
         if (!IsLocalRaid(effect.HealthController))
         {
@@ -138,10 +118,7 @@ internal static class ConsumableHealthEffects
         {
             var part = parts[(start + i) % parts.Count];
             var health = effect.HealthController;
-            if (
-                health.IsBodyPartDestroyed(part)
-                || (rate > 0 && health.GetBodyPartHealth(part).AtMaximum)
-            )
+            if (health.IsBodyPartDestroyed(part) || (rate > 0 && health.GetBodyPartHealth(part).AtMaximum))
                 continue;
             // Live applies one total tick to the first eligible part in a randomly
             // rotated body-part list, with native clamping and no spillover.

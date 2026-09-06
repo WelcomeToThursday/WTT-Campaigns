@@ -7,22 +7,13 @@ using UnityEngine.UI;
 
 namespace SeasonalPerks.Client.Patches.UI;
 
-internal sealed class MenuEntry(Type screenType)
-    : ModulePatch("SeasonalPerks.MenuEntry." + screenType.Name)
+internal sealed class MenuEntry(Type screenType) : ModulePatch("SeasonalPerks.MenuEntry." + screenType.Name)
 {
     protected override MethodBase GetTargetMethod()
     {
         return screenType
-            .GetMethods(
-                BindingFlags.Instance
-                    | BindingFlags.Public
-                    | BindingFlags.NonPublic
-                    | BindingFlags.DeclaredOnly
-            )
-            .Single(method =>
-                method.Name == "Show"
-                && method.GetParameters().FirstOrDefault()?.ParameterType == typeof(EFT.Profile)
-            );
+            .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+            .Single(method => method.Name == "Show" && method.GetParameters().FirstOrDefault()?.ParameterType == typeof(EFT.Profile));
     }
 
     [PatchPostfix]
@@ -40,11 +31,7 @@ internal sealed class MenuEntry(Type screenType)
         var source = __instance._playerButton;
         var parent = source.transform.parent;
         var inMenuList = parent.GetComponent<VerticalLayoutGroup>() != null;
-        var entry = UnityEngine.Object.Instantiate(
-            source,
-            inMenuList ? parent : __instance.transform,
-            false
-        );
+        var entry = UnityEngine.Object.Instantiate(source, inMenuList ? parent : __instance.transform, false);
         entry.name = "SeasonalPerksEntry";
         entry.OnClick.RemoveAllListeners();
         entry.OnClick.AddListener(() => SeasonUi.Instance.Open());

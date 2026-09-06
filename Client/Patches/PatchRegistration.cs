@@ -75,18 +75,9 @@ internal static class PatchRegistration
         new SecureMovePatch().Enable();
         new SecureAddPatch().Enable();
         new SecureTransferPatch().Enable();
-        new ItemResourcePatch(
-            typeof(ActiveHealthController.MedEffect),
-            nameof(ActiveHealthController.MedEffect.RegularUpdate)
-        ).Enable();
-        new ItemResourcePatch(
-            typeof(ActiveHealthController.MedEffect),
-            nameof(ActiveHealthController.MedEffect.Residue)
-        ).Enable();
-        new ItemResourcePatch(
-            typeof(OfflineHealthController.MedEffect),
-            nameof(OfflineHealthController.MedEffect.Started)
-        ).Enable();
+        new ItemResourcePatch(typeof(ActiveHealthController.MedEffect), nameof(ActiveHealthController.MedEffect.RegularUpdate)).Enable();
+        new ItemResourcePatch(typeof(ActiveHealthController.MedEffect), nameof(ActiveHealthController.MedEffect.Residue)).Enable();
+        new ItemResourcePatch(typeof(OfflineHealthController.MedEffect), nameof(OfflineHealthController.MedEffect.Started)).Enable();
         new KeyUsagePatch(typeof(WorldInteractiveObject)).Enable();
         new KeyUsagePatch(typeof(KeycardDoor)).Enable();
     }

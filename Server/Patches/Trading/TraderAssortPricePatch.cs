@@ -24,8 +24,6 @@ public class TraderAssortPricePatch(TraderPriceEffects prices) : AbstractPatch
     private static void Postfix(MongoId sessionId, MongoId traderId, ref TraderAssort __result) =>
         __result = _prices.Assort(
             __result,
-            ServerStartup
-                .Seasons.Effects(sessionId.ToString())
-                .TraderMultiplier(traderId.ToString(), "buy")
+            ServerStartup.Seasons.Effects(sessionId.ToString()).TraderMultiplier(traderId.ToString(), "buy")
         );
 }

@@ -16,10 +16,7 @@ public class FleaOfferTypePricesPatch(TraderPriceEffects prices) : AbstractPatch
     protected override MethodBase GetTargetMethod()
     {
         _prices = prices;
-        return AccessTools.Method(
-            typeof(RagfairOfferService),
-            nameof(RagfairOfferService.GetOffersOfType)
-        );
+        return AccessTools.Method(typeof(RagfairOfferService), nameof(RagfairOfferService.GetOffersOfType));
     }
 
     [PatchPostfix]

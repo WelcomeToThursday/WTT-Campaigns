@@ -143,32 +143,23 @@ public sealed class SeasonUi : MonoBehaviour
             _bundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf")
             ?? Resources
                 .FindObjectsOfTypeAll<Font>()
-                .FirstOrDefault(value =>
-                    value.name.Equals(
-                        "Jovanny Lemonad - Bender",
-                        StringComparison.OrdinalIgnoreCase
-                    )
-                )
+                .FirstOrDefault(value => value.name.Equals("Jovanny Lemonad - Bender", StringComparison.OrdinalIgnoreCase))
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
         var view = new SeasonalScreen(
             parent,
             name =>
-                _bundle.LoadAsset<GameObject>(
-                    "assets/mods/seasonalperks.assets/ui/" + name + ".prefab"
-                ) ?? throw new InvalidDataException("Missing seasonal UI layout: " + name),
+                _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/ui/" + name + ".prefab")
+                ?? throw new InvalidDataException("Missing seasonal UI layout: " + name),
             font,
             embedded
         );
         view.IconRequested = LoadIcon;
         view.SoundRequested = PlayInterfaceSound;
         view.ProfileHoverSound = PlayProfileHover;
-        view.GlowMaterial = _bundle.LoadAsset<Material>(
-            "assets/mods/seasonalperks.assets/ui/selection-additive.mat"
-        );
+        view.GlowMaterial = _bundle.LoadAsset<Material>("assets/mods/seasonalperks.assets/ui/selection-additive.mat");
         view.ArtworkRequested = LoadArtwork;
         view.CharacterRequested = LoadCharacter;
-        view.IdentityRequested = (host, draft, complete, back) =>
-            new CreationIdentity(host, draft, font, complete, back);
+        view.IdentityRequested = (host, draft, complete, back) => new CreationIdentity(host, draft, font, complete, back);
         return view;
     }
 
@@ -180,11 +171,7 @@ public sealed class SeasonUi : MonoBehaviour
             StartingPoints = snapshot.Rules.StartingPoints,
             EnforceBudget = snapshot.Rules.EnforceBudget,
             AllowEdits = snapshot.Rules.AllowEdits,
-            Selected = snapshot
-                .State.SeasonalPerks.Where(id =>
-                    snapshot.Catalogue.Personal.Any(perk => perk.Id == id)
-                )
-                .ToArray(),
+            Selected = snapshot.State.SeasonalPerks.Where(id => snapshot.Catalogue.Personal.Any(perk => perk.Id == id)).ToArray(),
             Characters = snapshot
                 .Characters.Select(character => new CharacterEntry
                 {
@@ -199,21 +186,12 @@ public sealed class SeasonUi : MonoBehaviour
                 .Catalogue.All.Select(perk => new PerkEntry
                 {
                     Id = perk.Id,
-                    Name = snapshot.Locale.TryGetValue(perk.Id + " name", out var name)
-                        ? name
-                        : perk.Id,
-                    Description = snapshot.Locale.TryGetValue(
-                        perk.Id + " description",
-                        out var description
-                    )
-                        ? description
-                        : "",
+                    Name = snapshot.Locale.TryGetValue(perk.Id + " name", out var name) ? name : perk.Id,
+                    Description = snapshot.Locale.TryGetValue(perk.Id + " description", out var description) ? description : "",
                     Points = perk.Points ?? 0,
                     Common = snapshot.Catalogue.Common.Contains(perk),
                     Enabled = snapshot.Rules.EnabledCommonIds.Contains(perk.Id),
-                    Unavailable = snapshot.Unavailable.TryGetValue(perk.Id, out var reason)
-                        ? reason
-                        : "",
+                    Unavailable = snapshot.Unavailable.TryGetValue(perk.Id, out var reason) ? reason : "",
                     Conflicts = perk.Conflicts.ToArray(),
                 })
                 .ToArray(),
@@ -238,9 +216,7 @@ public sealed class SeasonUi : MonoBehaviour
             return;
         }
         Plugin.Busy = true;
-        var created = Plugin.Current.Characters.Any(character =>
-            character.Mode == "seasonal" && character.Exists
-        );
+        var created = Plugin.Current.Characters.Any(character => character.Mode == "seasonal" && character.Exists);
         var creationFlow = !created && _screen.Page == ScreenPage.CreationPersonal;
         ClientSnapshot? completedCreation = null;
         _screen.SetBusy(true, creationFlow ? "" : "Saving seasonal character...");
@@ -288,15 +264,8 @@ public sealed class SeasonUi : MonoBehaviour
                 Plugin.Accept(snapshot);
             }
             _screen.SetBusy(false);
-            _screen.SetState(
-                Presentation(snapshot),
-                created ? ScreenPage.Personal : ScreenPage.Characters
-            );
-            _screen.SetMessage(
-                created
-                    ? "Your perk changes have been saved."
-                    : "Seasonal character created. Select it to begin."
-            );
+            _screen.SetState(Presentation(snapshot), created ? ScreenPage.Personal : ScreenPage.Characters);
+            _screen.SetMessage(created ? "Your perk changes have been saved." : "Seasonal character created. Select it to begin.");
         }
         catch (Exception exception)
         {
@@ -308,11 +277,7 @@ public sealed class SeasonUi : MonoBehaviour
                     // A response can be lost after the server commits creation or switching.
                     // Recover the authoritative identity before offering a retry.
                     var recovered = await Plugin.Request("snapshot");
-                    if (
-                        recovered.Characters.Any(character =>
-                            character.Mode == "seasonal" && character.Exists
-                        )
-                    )
+                    if (recovered.Characters.Any(character => character.Mode == "seasonal" && character.Exists))
                     {
                         completedCreation = recovered;
                     }
@@ -329,11 +294,7 @@ public sealed class SeasonUi : MonoBehaviour
                 _startup = true;
                 _screen.StartupSelection = true;
                 _screen.SetState(Presentation(completedCreation), ScreenPage.Characters);
-                _screen.SetMessage(
-                    "Your character was created. Select PvE Season to retry loading it. "
-                        + exception.Message,
-                    true
-                );
+                _screen.SetMessage("Your character was created. Select PvE Season to retry loading it. " + exception.Message, true);
             }
             else
             {
@@ -395,10 +356,7 @@ public sealed class SeasonUi : MonoBehaviour
         {
             Plugin.Error(exception);
             _screen.SetBusy(false);
-            _screen.SetMessage(
-                exception.Message + " Restart the client if reconnecting fails.",
-                true
-            );
+            _screen.SetMessage(exception.Message + " Restart the client if reconnecting fails.", true);
         }
         finally
         {
@@ -408,17 +366,13 @@ public sealed class SeasonUi : MonoBehaviour
 
     private void LoadCharacter(string mode, RawImage target)
     {
-        var visual = Plugin
-            .Current?.Characters.FirstOrDefault(character => character.Mode == mode)
-            ?.Visual;
+        var visual = Plugin.Current?.Characters.FirstOrDefault(character => character.Mode == mode)?.Visual;
         if (visual == null)
         {
             return;
         }
 
-        var camera = _bundle!.LoadAsset<GameObject>(
-            "assets/mods/seasonalperks.assets/ui/selection-camera.prefab"
-        );
+        var camera = _bundle!.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/ui/selection-camera.prefab");
         if (!camera)
         {
             return;
@@ -426,9 +380,7 @@ public sealed class SeasonUi : MonoBehaviour
 
         var font =
             _bundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf")
-            ?? Resources
-                .FindObjectsOfTypeAll<Font>()
-                .FirstOrDefault(value => value.name == "Jovanny Lemonad - Bender")
+            ?? Resources.FindObjectsOfTypeAll<Font>().FirstOrDefault(value => value.name == "Jovanny Lemonad - Bender")
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
         target.gameObject.AddComponent<CharacterPreview>().Show(visual, camera, font);
     }
@@ -468,8 +420,7 @@ public sealed class SeasonUi : MonoBehaviour
         }
     }
 
-    private void PlayProfileHover(bool seasonal) =>
-        PlayBundledSound(seasonal ? "profile-hover-seasonal" : "profile-hover-normal");
+    private void PlayProfileHover(bool seasonal) => PlayBundledSound(seasonal ? "profile-hover-seasonal" : "profile-hover-normal");
 
     private void PlayBundledSound(string name)
     {
@@ -479,9 +430,7 @@ public sealed class SeasonUi : MonoBehaviour
         }
         try
         {
-            var clip = _bundle!.LoadAsset<AudioClip>(
-                "assets/mods/seasonalperks.assets/audio/" + name + ".wav"
-            );
+            var clip = _bundle!.LoadAsset<AudioClip>("assets/mods/seasonalperks.assets/audio/" + name + ".wav");
             if (!clip)
             {
                 throw new InvalidDataException("Missing bundled interface sound: " + name);
@@ -501,9 +450,7 @@ public sealed class SeasonUi : MonoBehaviour
             _bundle ??=
                 AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonalperks_ui.bundle"))
                 ?? throw new InvalidDataException("Missing seasonal UI bundle.");
-            var sprite = _bundle.LoadAsset<Sprite>(
-                "assets/mods/seasonalperks.assets/selectionartwork/" + name + ".png"
-            );
+            var sprite = _bundle.LoadAsset<Sprite>("assets/mods/seasonalperks.assets/selectionartwork/" + name + ".png");
             if (!sprite)
             {
                 throw new InvalidDataException("Missing bundled selection artwork: " + name);
@@ -552,11 +499,7 @@ public sealed class SeasonUi : MonoBehaviour
             throw new OperationCanceledException("Seasonal UI closed.");
         }
         var texture = new Texture2D(2, 2);
-        if (
-            !ImageConversion.LoadImage(texture, bytes)
-            || texture.width != 272
-            || texture.height != 272
-        )
+        if (!ImageConversion.LoadImage(texture, bytes) || texture.width != 272 || texture.height != 272)
         {
             Destroy(texture);
             throw new InvalidDataException("Invalid perk icon: " + id);
@@ -572,9 +515,7 @@ public sealed class SeasonUi : MonoBehaviour
         {
             Destroy(_canvas);
         }
-        foreach (
-            var task in _images.Values.Where(task => task.Status == TaskStatus.RanToCompletion)
-        )
+        foreach (var task in _images.Values.Where(task => task.Status == TaskStatus.RanToCompletion))
         {
             Destroy(task.Result.texture);
             Destroy(task.Result);

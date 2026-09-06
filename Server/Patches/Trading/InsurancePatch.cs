@@ -23,16 +23,9 @@ public class InsurancePatch(EventOutputHolder output) : AbstractPatch
     }
 
     [PatchPrefix]
-    private static bool Prefix(
-        PmcData pmcData,
-        MongoId sessionId,
-        ref ItemEventRouterResponse __result
-    )
+    private static bool Prefix(PmcData pmcData, MongoId sessionId, ref ItemEventRouterResponse __result)
     {
-        var effects = new RuntimeEffects(
-            ServerStartup.Seasons.Catalogue,
-            SeasonService.State(pmcData).SeasonalPerks
-        );
+        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmcData).SeasonalPerks);
         if (!effects.Has("insurance_disabled"))
         {
             return true;
@@ -41,13 +34,7 @@ public class InsurancePatch(EventOutputHolder output) : AbstractPatch
         // The item-event batch ultimately serializes its shared output holder.
         __result = _output.GetOutput(sessionId);
         __result.Warnings ??= [];
-        __result.Warnings.Add(
-            new Warning
-            {
-                Index = 0,
-                ErrorMessage = "Insurance is disabled for this seasonal character.",
-            }
-        );
+        __result.Warnings.Add(new Warning { Index = 0, ErrorMessage = "Insurance is disabled for this seasonal character." });
         return false;
     }
 }

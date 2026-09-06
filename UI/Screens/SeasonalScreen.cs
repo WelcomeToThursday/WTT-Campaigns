@@ -28,8 +28,7 @@ public sealed partial class SeasonalScreen : IDisposable
     private readonly Button _reset;
     private readonly Dictionary<ScreenPage, Button> _tabs = new Dictionary<ScreenPage, Button>();
     private readonly HashSet<string> _selected = new HashSet<string>();
-    private readonly List<(PerkEntry Entry, GameObject Card)> _cards =
-        new List<(PerkEntry, GameObject)>();
+    private readonly List<(PerkEntry Entry, GameObject Card)> _cards = new List<(PerkEntry, GameObject)>();
     private ScreenState _state = new ScreenState();
     private InputField? _search;
     private InputField? _nickname;
@@ -71,25 +70,14 @@ public sealed partial class SeasonalScreen : IDisposable
     public string VoiceId => _creationDraft.VoiceId;
     private bool PersonalPage => Page == ScreenPage.Personal || Page == ScreenPage.CreationPersonal;
     private bool CreationPage =>
-        Page == ScreenPage.CreationIdentity
-        || Page == ScreenPage.CreationCommon
-        || Page == ScreenPage.CreationPersonal;
+        Page == ScreenPage.CreationIdentity || Page == ScreenPage.CreationCommon || Page == ScreenPage.CreationPersonal;
     public bool Dirty => !_selected.SetEquals(_state.Selected);
     public bool DialogOpen => _dialog != null;
-    private bool Created =>
-        _state.Characters.Any(character => character.Mode == "seasonal" && character.Exists);
+    private bool Created => _state.Characters.Any(character => character.Mode == "seasonal" && character.Exists);
     private int Remaining =>
-        _state.StartingPoints
-        + _state
-            .Perks.Where(perk => !perk.Common && _selected.Contains(perk.Id))
-            .Sum(perk => perk.Points);
+        _state.StartingPoints + _state.Perks.Where(perk => !perk.Common && _selected.Contains(perk.Id)).Sum(perk => perk.Points);
 
-    public SeasonalScreen(
-        Transform parent,
-        Func<string, GameObject> prefab,
-        Font font,
-        bool embedded = false
-    )
+    public SeasonalScreen(Transform parent, Func<string, GameObject> prefab, Font font, bool embedded = false)
     {
         _ui = new UiElements(font, sound => SoundRequested?.Invoke(sound));
         _prefab = prefab;
@@ -110,22 +98,11 @@ public sealed partial class SeasonalScreen : IDisposable
             AddTab(ScreenPage.Personal, "PERSONAL PERKS", -355);
             AddTab(ScreenPage.Global, "GLOBAL RULES", -55);
         }
-        UiElements.Fill(
-            UiElements.Rect("HeaderLine", _panel, 1740, 1, 0, 294),
-            new Color(.29f, .29f, .23f)
-        );
+        UiElements.Fill(UiElements.Rect("HeaderLine", _panel, 1740, 1, 0, 294), new Color(.29f, .29f, .23f));
         _body = UiElements.Rect("Page", _panel, 1740, 610, 0, -26);
         _status = _ui.Label(_panel, "Status", "", 18, 1710, 46, -10, -365);
         _balance = _ui.Label(_panel, "SelectionSummary", "", 19, 1010, 50, -360, -425);
-        _reset = _ui.Button(
-            _panel,
-            "RESET",
-            160,
-            460,
-            -425,
-            ResetSelection,
-            clickSound: InterfaceSound.PerkReset
-        );
+        _reset = _ui.Button(_panel, "RESET", 160, 460, -425, ResetSelection, clickSound: InterfaceSound.PerkReset);
         _primary = _ui.Button(_panel, "REVIEW SELECTION", 275, 722, -425, PrimaryAction);
         Root.SetActive(false);
     }
@@ -219,9 +196,7 @@ public sealed partial class SeasonalScreen : IDisposable
         var fullScreen = page == ScreenPage.Characters || CreationPage;
         foreach (Transform child in _panel)
         {
-            child.gameObject.SetActive(
-                (_embedded || fullScreen) ? child == _body || child == _status.transform : true
-            );
+            child.gameObject.SetActive((_embedded || fullScreen) ? child == _body || child == _status.transform : true);
         }
         Place(_body, fullScreen ? 1920 : 1740, fullScreen ? 1080 : 610, 0, fullScreen ? 0 : -26);
         if (_embedded)
@@ -250,8 +225,7 @@ public sealed partial class SeasonalScreen : IDisposable
         }
         foreach (var tab in _tabs)
         {
-            ((Image)tab.Value.targetGraphic).color =
-                tab.Key == page ? new Color(.35f, .33f, .24f) : new Color(.12f, .13f, .11f);
+            ((Image)tab.Value.targetGraphic).color = tab.Key == page ? new Color(.35f, .33f, .24f) : new Color(.12f, .13f, .11f);
         }
         _title.text =
             page == ScreenPage.Characters ? "CHARACTER SELECTION"
@@ -259,15 +233,11 @@ public sealed partial class SeasonalScreen : IDisposable
             : page == ScreenPage.Global ? "GLOBAL MODIFIERS"
             : "SEASONAL PERKS";
         _subtitle.text =
-            page == ScreenPage.Characters
-                ? "Choose your character. Each has its own progression and equipment."
-            : page == ScreenPage.Personal
-                ? "Balance detrimental modifiers with beneficial perks. Review your selection before saving."
-            : page == ScreenPage.Global
-                ? "Season-wide rules are configured on the SPT server and apply to your seasonal PMC."
+            page == ScreenPage.Characters ? "Choose your character. Each has its own progression and equipment."
+            : page == ScreenPage.Personal ? "Balance detrimental modifiers with beneficial perks. Review your selection before saving."
+            : page == ScreenPage.Global ? "Season-wide rules are configured on the SPT server and apply to your seasonal PMC."
             : _state.IsScav ? "Seasonal PMC perks do not apply to your Scav."
-            : _state.ActiveMode == "seasonal"
-                ? "Perks currently applied to this seasonal character."
+            : _state.ActiveMode == "seasonal" ? "Perks currently applied to this seasonal character."
             : "Your normal character has no seasonal modifiers.";
         if (_embedded)
         {
@@ -350,24 +320,15 @@ public sealed partial class SeasonalScreen : IDisposable
         _primary.interactable =
             !_busy
             && (Page != ScreenPage.Summary || _state.CanOpenEditor)
-            && (
-                !personal
-                || ((_state.AllowEdits || !Created) && (!Created || Dirty) && ValidSelection())
-            );
+            && (!personal || ((_state.AllowEdits || !Created) && (!Created || Dirty) && ValidSelection()));
         label.color = _primary.interactable ? UiElements.Ink : UiElements.Muted;
-        _reset.GetComponentInChildren<Text>().color = _reset.interactable
-            ? UiElements.Ink
-            : UiElements.Muted;
-        _balance.color =
-            Remaining < 0 && _state.EnforceBudget && personal
-                ? UiElements.Negative
-                : UiElements.Ink;
+        _reset.GetComponentInChildren<Text>().color = _reset.interactable ? UiElements.Ink : UiElements.Muted;
+        _balance.color = Remaining < 0 && _state.EnforceBudget && personal ? UiElements.Negative : UiElements.Ink;
         _balance.text =
             personal
                 ? $"{_selected.Count} SELECTED     |     {Remaining} POINTS REMAINING"
                     + (_state.EnforceBudget ? "" : "     |     FREE SELECTION")
-            : Page == ScreenPage.Global
-                ? $"{_state.Perks.Count(perk => perk.Common && perk.Enabled)} ACTIVE GLOBAL RULES"
+            : Page == ScreenPage.Global ? $"{_state.Perks.Count(perk => perk.Common && perk.Enabled)} ACTIVE GLOBAL RULES"
             : Page == ScreenPage.Summary
                 ? (
                     _state.IsScav ? "SCAV CHARACTER"
@@ -393,10 +354,7 @@ public sealed partial class SeasonalScreen : IDisposable
         return (!_state.EnforceBudget || Remaining >= 0)
             && _state
                 .Perks.Where(perk => _selected.Contains(perk.Id))
-                .All(perk =>
-                    string.IsNullOrEmpty(perk.Unavailable)
-                    && !perk.Conflicts.Any(_selected.Contains)
-                );
+                .All(perk => string.IsNullOrEmpty(perk.Unavailable) && !perk.Conflicts.Any(_selected.Contains));
     }
 
     private string LockReason(PerkEntry perk)
@@ -428,9 +386,7 @@ public sealed partial class SeasonalScreen : IDisposable
             }
             _selected.Add(perk.Id);
         }
-        SoundRequested?.Invoke(
-            _selected.Contains(perk.Id) ? InterfaceSound.PerkOn : InterfaceSound.PerkOff
-        );
+        SoundRequested?.Invoke(_selected.Contains(perk.Id) ? InterfaceSound.PerkOn : InterfaceSound.PerkOff);
         RefreshCards();
     }
 

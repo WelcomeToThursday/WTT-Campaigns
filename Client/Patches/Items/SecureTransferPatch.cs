@@ -15,11 +15,7 @@ internal class SecureTransferPatch : ModulePatch
         AccessTools.Method(typeof(ItemManipulator), nameof(ItemManipulator.TransferMaxStackCount));
 
     [PatchPrefix]
-    private static bool Prefix(
-        Item source,
-        Item target,
-        ref OperationResult<TransferResult> __result
-    )
+    private static bool Prefix(Item source, Item target, ref OperationResult<TransferResult> __result)
     {
         if (!SecureContainers.Reject(source, target))
             return true;

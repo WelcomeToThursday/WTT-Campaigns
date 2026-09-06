@@ -37,9 +37,7 @@ public sealed partial class SeasonalScreen
             var empty = _ui.Label(
                 scroll.content,
                 "NoModifiers",
-                _state.IsScav
-                    ? "Seasonal modifiers do not apply to your Scav."
-                    : "Your normal character has no seasonal modifiers.",
+                _state.IsScav ? "Seasonal modifiers do not apply to your Scav." : "Your normal character has no seasonal modifiers.",
                 18,
                 1568,
                 80
@@ -56,15 +54,8 @@ public sealed partial class SeasonalScreen
         logo.rectTransform.anchoredPosition = new Vector2(-96, 0);
         ArtworkRequested?.Invoke("season-banner", logo);
         logo.preserveAspect = true;
-        var active = _state
-            .Perks.Where(perk => perk.Common ? perk.Enabled : _state.Selected.Contains(perk.Id))
-            .ToArray();
-        ModifierSection(
-            scroll.content,
-            "CommonModifiers",
-            "COMMON MODIFIERS",
-            active.Where(perk => perk.Common).ToArray()
-        );
+        var active = _state.Perks.Where(perk => perk.Common ? perk.Enabled : _state.Selected.Contains(perk.Id)).ToArray();
+        ModifierSection(scroll.content, "CommonModifiers", "COMMON MODIFIERS", active.Where(perk => perk.Common).ToArray());
         ModifierSection(
             scroll.content,
             "PositiveModifiers",
@@ -108,10 +99,7 @@ public sealed partial class SeasonalScreen
                 height = Mathf.Max(height, ModifierCard(row, perks[i + 1]));
             }
             row.gameObject.AddComponent<LayoutElement>().preferredHeight = height;
-            foreach (
-                var cardLayout in row.GetComponentsInChildren<LayoutElement>()
-                    .Where(value => value.transform.parent == row)
-            )
+            foreach (var cardLayout in row.GetComponentsInChildren<LayoutElement>().Where(value => value.transform.parent == row))
             {
                 cardLayout.preferredHeight = height;
             }
@@ -120,11 +108,7 @@ public sealed partial class SeasonalScreen
 
     private float ModifierCard(Transform parent, PerkEntry perk)
     {
-        var card = Object.Instantiate(
-            _prefab(perk.Common ? "sharedassets44-1471" : "sharedassets44-3075"),
-            parent,
-            false
-        );
+        var card = Object.Instantiate(_prefab(perk.Common ? "sharedassets44-1471" : "sharedassets44-3075"), parent, false);
         card.name = perk.Id;
         card.SetActive(true);
         DisableLayout(card);
@@ -162,13 +146,7 @@ public sealed partial class SeasonalScreen
         if (!perk.Common)
         {
             var node = perk.Points > 0 ? "Background_Idle_Negative" : "Background_Idle_Positive";
-            Layer(
-                node,
-                "modifier-tint",
-                perk.Points > 0
-                    ? new Color(.831f, .161f, .161f, .220f)
-                    : new Color(.439f, .690f, .208f, .220f)
-            );
+            Layer(node, "modifier-tint", perk.Points > 0 ? new Color(.831f, .161f, .161f, .220f) : new Color(.439f, .690f, .208f, .220f));
             var tint = (RectTransform)background.Find(node);
             tint.sizeDelta = new Vector2(-450, 0);
             tint.anchoredPosition = new Vector2(-225, 0);
@@ -202,8 +180,7 @@ public sealed partial class SeasonalScreen
         title.rectTransform.anchoredPosition = Vector2.zero;
         ConfigureText(
             title,
-            perk.Name.ToUpperInvariant()
-                + (perk.Common ? "" : " (" + (perk.Points > 0 ? "+" : "") + perk.Points + ")"),
+            perk.Name.ToUpperInvariant() + (perk.Common ? "" : " (" + (perk.Points > 0 ? "+" : "") + perk.Points + ")"),
             18,
             new Color(.851f, .851f, .851f)
         );

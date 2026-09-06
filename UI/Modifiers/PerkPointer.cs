@@ -4,12 +4,7 @@ using UnityEngine.EventSystems;
 
 namespace SeasonalPerks.UI.Modifiers;
 
-public sealed class PerkPointer
-    : MonoBehaviour,
-        IPointerEnterHandler,
-        IPointerExitHandler,
-        ISelectHandler,
-        IDeselectHandler
+public sealed class PerkPointer : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, ISelectHandler, IDeselectHandler
 {
     public Action? Enter;
     public Action? Exit;

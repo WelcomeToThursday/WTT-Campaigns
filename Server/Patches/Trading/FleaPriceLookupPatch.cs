@@ -12,10 +12,7 @@ namespace SeasonalPerks.Server.Patches.Trading;
 public class FleaPriceLookupPatch : AbstractPatch
 {
     protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(
-            typeof(RagfairController),
-            nameof(RagfairController.GetOfferByInternalId)
-        );
+        AccessTools.Method(typeof(RagfairController), nameof(RagfairController.GetOfferByInternalId));
 
     [PatchPrefix]
     private static void Prefix(MongoId sessionId, out TraderPriceEffects.SearchScope? __state)
@@ -25,6 +22,5 @@ public class FleaPriceLookupPatch : AbstractPatch
     }
 
     [PatchFinalizer]
-    private static void Finalizer(TraderPriceEffects.SearchScope? __state) =>
-        TraderPriceEffects.Search.Value = __state;
+    private static void Finalizer(TraderPriceEffects.SearchScope? __state) => TraderPriceEffects.Search.Value = __state;
 }

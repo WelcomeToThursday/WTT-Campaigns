@@ -14,16 +14,11 @@ using SPTarkov.Server.Core.Utils;
 namespace SeasonalPerks.Server.Effects;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class TraderPaymentValidation(
-    TraderAssortHelper assorts,
-    PaymentHelper payment,
-    HttpResponseUtil responses
-)
+public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentHelper payment, HttpResponseUtil responses)
 {
     // Validate under the same reentrant lock that native BuyItem holds while granting
     // items and charging payment. Concurrent requests must not validate stale funds.
-    private static readonly Lock BuyLock = (Lock)
-        AccessTools.Field(typeof(TradeHelper), "_buyLock").GetValue(null)!;
+    private static readonly Lock BuyLock = (Lock)AccessTools.Field(typeof(TradeHelper), "_buyLock").GetValue(null)!;
 
     internal static Lock Begin()
     {
@@ -31,19 +26,11 @@ public sealed class TraderPaymentValidation(
         return BuyLock;
     }
 
-    internal bool Validate(
-        PmcData pmc,
-        ProcessBuyTradeRequestData request,
-        MongoId session,
-        ItemEventRouterResponse output
-    )
+    internal bool Validate(PmcData pmc, ProcessBuyTradeRequestData request, MongoId session, ItemEventRouterResponse output)
     {
         if (request.Type == "buy_from_ragfair_pmc")
             return true;
-        var effects = new RuntimeEffects(
-            ServerStartup.Seasons.Catalogue,
-            SeasonService.State(pmc).SeasonalPerks
-        );
+        var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
         if (effects.TraderMultiplier(request.TransactionId.ToString(), "buy") == 1m)
             return true;
 
@@ -76,18 +63,13 @@ public sealed class TraderPaymentValidation(
             if (requirement.Count is not > 0 || !double.IsFinite(requirement.Count.Value))
                 return Reject();
             var count = TraderPricing.Required(requirement.Count.Value, request.Count.Value);
-            expected[requirement.Template] =
-                expected.GetValueOrDefault(requirement.Template) + count;
+            expected[requirement.Template] = expected.GetValueOrDefault(requirement.Template) + count;
         }
         var supplied = new Dictionary<MongoId, double>();
         var stacks = new Dictionary<MongoId, double>();
         foreach (var entry in request.SchemeItems)
         {
-            if (
-                entry.Count is not > 0
-                || !double.IsFinite(entry.Count.Value)
-                || Math.Truncate(entry.Count.Value) != entry.Count.Value
-            )
+            if (entry.Count is not > 0 || !double.IsFinite(entry.Count.Value) || Math.Truncate(entry.Count.Value) != entry.Count.Value)
                 return Reject();
             var item = inventory.FirstOrDefault(i => i.Id == entry.Id);
             // SPT also accepts a currency template ID and chooses stacks itself.
@@ -102,20 +84,12 @@ public sealed class TraderPaymentValidation(
                     return Reject();
             }
         }
-        if (
-            expected.Count == 0
-            || supplied.Count != expected.Count
-            || expected.Any(e => supplied.GetValueOrDefault(e.Key) != e.Value)
-        )
+        if (expected.Count == 0 || supplied.Count != expected.Count || expected.Any(e => supplied.GetValueOrDefault(e.Key) != e.Value))
             return Reject();
         // Currency-template payments can draw from multiple stacks. Check total funds
         // before native BuyItem grants items and decrements trader stock.
         foreach (var entry in supplied.Where(e => payment.IsMoneyTpl(e.Key)))
-            if (
-                inventory
-                    .Where(i => i.Template == entry.Key)
-                    .Sum(i => i.Upd?.StackObjectsCount ?? 1) < entry.Value
-            )
+            if (inventory.Where(i => i.Template == entry.Key).Sum(i => i.Upd?.StackObjectsCount ?? 1) < entry.Value)
                 return Reject();
         return true;
     }

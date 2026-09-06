@@ -25,7 +25,7 @@ Patches are grouped by feature with matching namespaces. Client registration liv
 
 Asset sources, all 39 PNGs, recovered layout data and the Unity editor builder are in `../CJ-SDK/Assets/Mods/SeasonalPerks.Assets`. The UI bundle contains layout prefabs, all 26 decorative artwork sprites, fonts and materials. **Perk icons remain outside the bundle.** Icons are fetched lazily by perk ID from `/seasonal-perks/icons/{id}.png`. Installed operation does not use the live backend or CDN.
 
-Formatting follows the four-space indentation, file-scoped namespaces, expanded braces and patch folders used by Use Items Anywhere and Skills Extended. Restore the formatter from `.config/dotnet-tools.json` with `dotnet tool restore`, then run `dotnet csharpier format Client UI Server Shared Tests`. Text files use LF line endings.
+Formatting and shared Rider/Visual Studio defaults follow SP-Tushonka/server-csharp. See [editor setup](CONTRIBUTING.md#editor-and-ide-defaults). Restore the formatter from `.config/dotnet-tools.json` with `dotnet tool restore`, then run `dotnet csharpier format Client UI Server Shared Tests`. Text files use UTF-8 and LF line endings.
 
 ## Build and stage
 

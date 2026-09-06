@@ -18,24 +18,20 @@ public sealed partial class SeasonalScreen
         var common = Page == ScreenPage.Global;
         if (personal && !Created)
         {
-            _ui.Label(_body, "NicknameLabel", "NICKNAME", 15, 110, 32, -805, 270).color =
-                UiElements.Muted;
+            _ui.Label(_body, "NicknameLabel", "NICKNAME", 15, 110, 32, -805, 270).color = UiElements.Muted;
             _nickname = _ui.Input(_body, "Nickname", "Seasonal", 300, -590, 270);
             _nickname.text = _name;
             _nickname.characterLimit = 15;
             _nickname.contentType = InputField.ContentType.Alphanumeric;
             _nickname.onValueChanged.AddListener(value => _name = value);
-            _ui.Label(_body, "FactionLabel", "FACTION", 15, 100, 32, -355, 270).color =
-                UiElements.Muted;
+            _ui.Label(_body, "FactionLabel", "FACTION", 15, 100, 32, -355, 270).color = UiElements.Muted;
             Button? usec = null;
             Button? bear = null;
             void Faction(string side)
             {
                 _side = side;
-                ((Image)usec!.targetGraphic).color =
-                    side == "Usec" ? new Color(.35f, .33f, .23f) : new Color(.14f, .14f, .12f);
-                ((Image)bear!.targetGraphic).color =
-                    side == "Bear" ? new Color(.35f, .33f, .23f) : new Color(.14f, .14f, .12f);
+                ((Image)usec!.targetGraphic).color = side == "Usec" ? new Color(.35f, .33f, .23f) : new Color(.14f, .14f, .12f);
+                ((Image)bear!.targetGraphic).color = side == "Bear" ? new Color(.35f, .33f, .23f) : new Color(.14f, .14f, .12f);
             }
             usec = _ui.Button(_body, "USEC", 115, -245, 270, () => Faction("Usec"), 42);
             bear = _ui.Button(_body, "BEAR", 115, -115, 270, () => Faction("Bear"), 42);
@@ -64,39 +60,21 @@ public sealed partial class SeasonalScreen
         });
         var left = _ui.Scroll(_body, "Detrimental", 850, 492, -440, -42);
         var right = _ui.Scroll(_body, "Beneficial", 850, 492, 440, -42);
-        _ui.Label(
-            _body,
-            "LeftHeading",
-            common ? "GLOBAL MODIFIERS" : "DETRIMENTAL",
-            19,
-            650,
-            32,
-            -530,
-            217
-        ).color = common ? UiElements.Accent : UiElements.Negative;
-        _ui.Label(
-            _body,
-            "RightHeading",
-            common ? "GLOBAL MODIFIERS" : "BENEFICIAL",
-            19,
-            650,
-            32,
-            350,
-            217
-        ).color = common ? UiElements.Accent : UiElements.Positive;
+        _ui.Label(_body, "LeftHeading", common ? "GLOBAL MODIFIERS" : "DETRIMENTAL", 19, 650, 32, -530, 217).color = common
+            ? UiElements.Accent
+            : UiElements.Negative;
+        _ui.Label(_body, "RightHeading", common ? "GLOBAL MODIFIERS" : "BENEFICIAL", 19, 650, 32, 350, 217).color = common
+            ? UiElements.Accent
+            : UiElements.Positive;
         var entries = _state.Perks.Where(perk => common ? perk.Common : !perk.Common);
         if (Page == ScreenPage.Summary)
         {
             entries =
                 _state.ActiveMode == "seasonal"
-                    ? _state.Perks.Where(perk =>
-                        perk.Common ? perk.Enabled : _state.Selected.Contains(perk.Id)
-                    )
+                    ? _state.Perks.Where(perk => perk.Common ? perk.Enabled : _state.Selected.Contains(perk.Id))
                     : Array.Empty<PerkEntry>();
         }
-        var ordered = entries
-            .OrderBy(perk => perk.Name, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
+        var ordered = entries.OrderBy(perk => perk.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         var index = 0;
         foreach (var perk in ordered)
         {
@@ -112,9 +90,7 @@ public sealed partial class SeasonalScreen
             var placeholder = _ui.Label(
                 scroll.content,
                 "Empty",
-                Page == ScreenPage.Summary
-                    ? "No active modifiers in this group."
-                    : "No matching perks.",
+                Page == ScreenPage.Summary ? "No active modifiers in this group." : "No matching perks.",
                 21,
                 780,
                 115
@@ -149,9 +125,7 @@ public sealed partial class SeasonalScreen
         var hover = CardArtwork(card, perk);
         var iconRect = (RectTransform)content.Find("Icon");
         Place(iconRect, 104, 104, 66, 0, new Vector2(0, .5f));
-        var icon = iconRect
-            .GetComponentsInChildren<Image>(true)
-            .First(image => image.name == "NetworkImageView");
+        var icon = iconRect.GetComponentsInChildren<Image>(true).First(image => image.name == "NetworkImageView");
         UiElements.Stretch(icon.rectTransform);
         icon.gameObject.SetActive(true);
         icon.color = new Color(1, 1, 1, .08f);
@@ -176,14 +150,7 @@ public sealed partial class SeasonalScreen
         state.rectTransform.anchorMin = state.rectTransform.anchorMax = new Vector2(0, .5f);
         state.rectTransform.pivot = new Vector2(0, .5f);
         state.rectTransform.anchoredPosition = new Vector2(134, -65);
-        var points = _ui.Label(
-            content,
-            "SignedPoints",
-            perk.Common ? "" : (perk.Points > 0 ? "+" : "") + perk.Points,
-            25,
-            58,
-            46
-        );
+        var points = _ui.Label(content, "SignedPoints", perk.Common ? "" : (perk.Points > 0 ? "+" : "") + perk.Points, 25, 58, 46);
         Place(points.rectTransform, 58, 46, -36, 36, new Vector2(1, .5f));
         points.alignment = TextAnchor.MiddleCenter;
         points.color = perk.Points > 0 ? UiElements.Negative : UiElements.Positive;
@@ -208,12 +175,7 @@ public sealed partial class SeasonalScreen
         _ui.Feedback(
             button,
             InterfaceSound.None,
-            () =>
-                PersonalPage
-                && !perk.Common
-                && !_busy
-                && _dialog == null
-                && (_state.AllowEdits || !Created)
+            () => PersonalPage && !perk.Common && !_busy && _dialog == null && (_state.AllowEdits || !Created)
         );
         button.onClick.AddListener(() => Toggle(perk));
         hover.Entered = () =>
@@ -239,9 +201,7 @@ public sealed partial class SeasonalScreen
             var reason = PersonalPage ? LockReason(perk) : perk.Unavailable;
             var locked = reason.Length > 0;
             pair.Card.GetComponent<PerkCardHover>().Refresh(!perk.Common && chosen);
-            var state = pair
-                .Card.GetComponentsInChildren<Text>(true)
-                .First(text => text.name == "SelectionState");
+            var state = pair.Card.GetComponentsInChildren<Text>(true).First(text => text.name == "SelectionState");
             state.text =
                 locked ? (!string.IsNullOrEmpty(perk.Unavailable) ? "UNAVAILABLE" : "CONFLICT")
                 : chosen
@@ -253,10 +213,7 @@ public sealed partial class SeasonalScreen
                 : perk.Common ? "DISABLED ON SERVER"
                 : "";
             state.color = locked ? UiElements.Negative : UiElements.Positive;
-            pair
-                .Card.GetComponentsInChildren<Text>(true)
-                .First(text => text.name == "SelectionMark")
-                .text = chosen ? "[x]" : "[ ]";
+            pair.Card.GetComponentsInChildren<Text>(true).First(text => text.name == "SelectionMark").text = chosen ? "[x]" : "[ ]";
         }
         FilterCards();
         RefreshFooter();
@@ -270,8 +227,7 @@ public sealed partial class SeasonalScreen
             pair.Card.SetActive(
                 _query.Length == 0
                     || pair.Entry.Name.IndexOf(_query, StringComparison.OrdinalIgnoreCase) >= 0
-                    || pair.Entry.Description.IndexOf(_query, StringComparison.OrdinalIgnoreCase)
-                        >= 0
+                    || pair.Entry.Description.IndexOf(_query, StringComparison.OrdinalIgnoreCase) >= 0
             );
         }
         foreach (var scroll in _body.GetComponentsInChildren<ScrollRect>())
@@ -279,11 +235,7 @@ public sealed partial class SeasonalScreen
             var empty = scroll.content.Find("Empty");
             if (empty)
             {
-                empty.gameObject.SetActive(
-                    !_cards.Any(pair =>
-                        pair.Card.transform.parent == scroll.content && pair.Card.activeSelf
-                    )
-                );
+                empty.gameObject.SetActive(!_cards.Any(pair => pair.Card.transform.parent == scroll.content && pair.Card.activeSelf));
             }
             if (resetScroll)
             {
@@ -319,14 +271,7 @@ public sealed partial class SeasonalScreen
         text.raycastTarget = false;
     }
 
-    private static void Place(
-        RectTransform rect,
-        float width,
-        float height,
-        float x,
-        float y,
-        Vector2? anchor = null
-    )
+    private static void Place(RectTransform rect, float width, float height, float x, float y, Vector2? anchor = null)
     {
         rect.anchorMin = rect.anchorMax = anchor ?? new Vector2(.5f, .5f);
         rect.pivot = new Vector2(.5f, .5f);

@@ -16,10 +16,7 @@ public class RaidStartPatch(SeasonService seasons) : AbstractPatch
     protected override MethodBase GetTargetMethod()
     {
         _seasons = seasons;
-        return AccessTools.Method(
-            typeof(MatchController),
-            nameof(MatchController.StartLocalRaidAsync)
-        );
+        return AccessTools.Method(typeof(MatchController), nameof(MatchController.StartLocalRaidAsync));
     }
 
     [PatchPrefix]
@@ -34,10 +31,7 @@ public class RaidStartPatch(SeasonService seasons) : AbstractPatch
         __result = Complete(__result, sessionId.ToString());
     }
 
-    private static async Task<StartLocalRaidResponseData> Complete(
-        Task<StartLocalRaidResponseData> original,
-        string id
-    )
+    private static async Task<StartLocalRaidResponseData> Complete(Task<StartLocalRaidResponseData> original, string id)
     {
         try
         {

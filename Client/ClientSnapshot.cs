@@ -13,11 +13,7 @@ public sealed class CharacterVisual
 
     public PlayerVisualRepresentationDescriptor CreateDescriptor()
     {
-        var equipment = new InventoryEquipmentDescriptor
-        {
-            _id = Equipment.Id,
-            _items = Equipment.Items,
-        };
+        var equipment = new InventoryEquipmentDescriptor { _id = Equipment.Id, _items = Equipment.Items };
         // Building the equipment tree requires ItemFactory. Defer it until the preview
         // opens; snapshots also load during backend creation before the factory exists.
         equipment.OnJSONDeserialized(default);

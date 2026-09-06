@@ -9,10 +9,7 @@ internal class SprintSpeedPatch : ModulePatch
 {
     protected override MethodBase GetTargetMethod()
     {
-        return AccessTools.PropertyGetter(
-            typeof(MovementContext),
-            nameof(MovementContext.StateSprintSpeedLimit)
-        );
+        return AccessTools.PropertyGetter(typeof(MovementContext), nameof(MovementContext.StateSprintSpeedLimit));
     }
 
     [PatchPostfix]

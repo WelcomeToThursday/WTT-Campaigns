@@ -1,28 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net10.0</TargetFramework>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    </PropertyGroup>
-    <ItemGroup>
-        <FrameworkReference Include="Microsoft.AspNetCore.App" />
-        <ProjectReference Include="..\Shared\SeasonalPerks.Shared.csproj" />
-    </ItemGroup>
-    <ItemGroup>
-        <PackageReference Include="SPTarkov.Server.Core" Version="4.1.0" ExcludeAssets="runtime" />
-        <PackageReference Include="SPTarkov.Reflection" Version="4.1.0" ExcludeAssets="runtime" />
-    </ItemGroup>
-    <ItemGroup>
-        <None
-            Include="..\data\**\*"
-            Link="data\%(RecursiveDir)%(Filename)%(Extension)"
-            CopyToOutputDirectory="PreserveNewest"
-        />
-    </ItemGroup>
-    <ItemGroup>
-        <None
-            Include="$(SeasonalAssetsDir)Icons\*.png"
-            Link="icons\%(Filename)%(Extension)"
-            CopyToOutputDirectory="PreserveNewest"
-        />
-    </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\Shared\SeasonalPerks.Shared.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="SPTarkov.Server.Core" Version="4.1.0" ExcludeAssets="runtime" />
+    <PackageReference Include="SPTarkov.Reflection" Version="4.1.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\data\**\*" Link="data\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(SeasonalAssetsDir)Icons\*.png" Link="icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

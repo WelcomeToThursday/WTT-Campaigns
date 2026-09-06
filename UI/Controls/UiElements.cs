@@ -21,15 +21,9 @@ public sealed class UiElements
         _sound = sound;
     }
 
-    public void Feedback(
-        Button button,
-        InterfaceSound click = InterfaceSound.ButtonClick,
-        Func<bool>? allowed = null
-    )
+    public void Feedback(Button button, InterfaceSound click = InterfaceSound.ButtonClick, Func<bool>? allowed = null)
     {
-        var feedback =
-            button.GetComponent<UiButtonFeedback>()
-            ?? button.gameObject.AddComponent<UiButtonFeedback>();
+        var feedback = button.GetComponent<UiButtonFeedback>() ?? button.gameObject.AddComponent<UiButtonFeedback>();
         feedback.Initialize(button, sound => _sound?.Invoke(sound), click, allowed);
     }
 
@@ -45,14 +39,7 @@ public sealed class UiElements
         }
     }
 
-    public static RectTransform Rect(
-        string name,
-        Transform parent,
-        float width,
-        float height,
-        float x = 0,
-        float y = 0
-    )
+    public static RectTransform Rect(string name, Transform parent, float width, float height, float x = 0, float y = 0)
     {
         var rect = (RectTransform)new GameObject(name, typeof(RectTransform)).transform;
         rect.SetParent(parent, false);
@@ -61,13 +48,7 @@ public sealed class UiElements
         return rect;
     }
 
-    public static void Stretch(
-        RectTransform rect,
-        float left = 0,
-        float right = 0,
-        float top = 0,
-        float bottom = 0
-    )
+    public static void Stretch(RectTransform rect, float left = 0, float right = 0, float top = 0, float bottom = 0)
     {
         rect.anchorMin = Vector2.zero;
         rect.anchorMax = Vector2.one;
@@ -86,16 +67,7 @@ public sealed class UiElements
         return image;
     }
 
-    public Text Label(
-        Transform parent,
-        string name,
-        string value,
-        int size,
-        float width,
-        float height,
-        float x = 0,
-        float y = 0
-    )
+    public Text Label(Transform parent, string name, string value, int size, float width, float height, float x = 0, float y = 0)
     {
         var text = Rect(name, parent, width, height, x, y).gameObject.AddComponent<Text>();
         text.font = Font;
@@ -131,19 +103,11 @@ public sealed class UiElements
         button.colors = colors;
         Feedback(button, clickSound);
         button.onClick.AddListener(() => action());
-        Label(rect, "Label", caption, 18, width - 20, height - 4).alignment =
-            TextAnchor.MiddleCenter;
+        Label(rect, "Label", caption, 18, width - 20, height - 4).alignment = TextAnchor.MiddleCenter;
         return button;
     }
 
-    public InputField Input(
-        Transform parent,
-        string name,
-        string placeholder,
-        float width,
-        float x,
-        float y
-    )
+    public InputField Input(Transform parent, string name, string placeholder, float width, float x, float y)
     {
         var rect = Rect(name, parent, width, 42, x, y);
         Fill(rect, new Color(.095f, .095f, .078f), true);
@@ -155,14 +119,7 @@ public sealed class UiElements
         return input;
     }
 
-    public ScrollRect Scroll(
-        Transform parent,
-        string name,
-        float width,
-        float height,
-        float x,
-        float y
-    )
+    public ScrollRect Scroll(Transform parent, string name, float width, float height, float x, float y)
     {
         var rect = Rect(name, parent, width, height, x, y);
         Fill(rect, new Color(.035f, .038f, .032f), true);
@@ -180,9 +137,7 @@ public sealed class UiElements
         layout.childControlHeight = true;
         layout.childForceExpandWidth = true;
         layout.childForceExpandHeight = false;
-        content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter
-            .FitMode
-            .PreferredSize;
+        content.gameObject.AddComponent<ContentSizeFitter>().verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         var track = Rect("Scrollbar", rect, 8, 0);
         track.anchorMin = new Vector2(1, 0);
         track.anchorMax = Vector2.one;

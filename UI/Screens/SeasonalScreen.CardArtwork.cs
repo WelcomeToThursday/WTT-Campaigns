@@ -36,8 +36,7 @@ public sealed partial class SeasonalScreen
         if (!perk.Common)
         {
             var sign = perk.Points > 0 ? "Negative" : "Positive";
-            var tint =
-                perk.Points > 0 ? new Color32(212, 41, 41, 56) : new Color32(112, 176, 53, 56);
+            var tint = perk.Points > 0 ? new Color32(212, 41, 41, 56) : new Color32(112, 176, 53, 56);
             var idle = Layer("Background_Idle_" + sign, "modifier-tint", tint);
             idle.rectTransform.sizeDelta = new Vector2(-450, 0);
             idle.rectTransform.anchoredPosition = new Vector2(-225, 0);

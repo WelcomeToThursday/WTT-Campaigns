@@ -16,11 +16,7 @@ internal class BushMovementPatch : ModulePatch
         );
 
     [PatchPrefix]
-    private static void Prefix(
-        MovementContext __instance,
-        ref float speedLimit,
-        Player.ESpeedLimit cause
-    )
+    private static void Prefix(MovementContext __instance, ref float speedLimit, Player.ESpeedLimit cause)
     {
         if (
             cause == Player.ESpeedLimit.Swamp
@@ -28,9 +24,6 @@ internal class BushMovementPatch : ModulePatch
             && ReferenceEquals(__instance, Plugin.Player!.MovementContext)
             && BushOccupancy.Contains(__instance)
         )
-            speedLimit = BushInteraction.SpeedLimit(
-                speedLimit,
-                Plugin.Effects.BushSlowdownMultiplier
-            );
+            speedLimit = BushInteraction.SpeedLimit(speedLimit, Plugin.Effects.BushSlowdownMultiplier);
     }
 }

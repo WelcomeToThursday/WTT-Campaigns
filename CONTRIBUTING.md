@@ -2,6 +2,16 @@
 
 Use .NET SDK 10. `global.json` accepts stable 10.0 feature bands and does not silently select a different major SDK. Restore the formatter with `dotnet tool restore`; the manifest lives in `.config/dotnet-tools.json`.
 
+## Editor and IDE defaults
+
+The shared settings come from [SP-Tushonka/server-csharp at revision 7d7add5](https://github.com/SP-Tushonka/server-csharp/tree/7d7add556a6f781e9a531fa3b0cf4cc925986e03). `.editorconfig` adopts its formatting, naming, and inspection preferences, including a 140-character line limit, four-space C# indentation, two-space JSON/YAML/XML project indentation, and file-scoped namespaces. The existing UTF-8 default is retained for all text files. CSharpier remains pinned to the same upstream version, 1.3.0.
+
+`SeasonalPerks.sln.DotSettings` supplies the upstream Rider/ReSharper inspections, abbreviations, and dictionary. The shared Rider configuration selects project code style, declares the CSharpier plugin dependency, and enables format on save. The Visual Studio v16/v17 CSharpier defaults also enable format on save. IDE directories use this solution's name rather than the upstream name.
+
+Install the CSharpier extension in your IDE and run `dotnet tool restore`. In Rider, verify **Editor / Code Style / Enable EditorConfig Support** and the **Project** scheme. The upstream setup also recommends **Tools / Actions on Save / Reformat and Cleanup Code**, using **Reformat & Apply Syntax Style** on **Changed lines**. Format on save requires the IDE extension; copying settings does not install it.
+
+Only these shared defaults are tracked inside `.idea` and `.vs`. Workspace state, caches, and `*.DotSettings.user` remain local. Format edited files with `dotnet csharpier format <paths>`, or format the whole project with `dotnet csharpier format .`. Verify formatting with `dotnet csharpier check .`.
+
 ## Checks without a game installation
 
 From a clean checkout:

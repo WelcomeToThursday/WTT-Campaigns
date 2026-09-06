@@ -16,10 +16,7 @@ public class RaidEndPatch(SeasonService seasons) : AbstractPatch
     protected override MethodBase GetTargetMethod()
     {
         _seasons = seasons;
-        return AccessTools.Method(
-            typeof(MatchController),
-            nameof(MatchController.EndLocalRaidAsync)
-        );
+        return AccessTools.Method(typeof(MatchController), nameof(MatchController.EndLocalRaidAsync));
     }
 
     [PatchPostfix]

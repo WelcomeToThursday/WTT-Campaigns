@@ -18,9 +18,7 @@ internal class KeyUsagePatch(Type doorType) : ModulePatch("SeasonalPerks.KeyUsag
     }
 
     [PatchTranspiler]
-    private static IEnumerable<CodeInstruction> Transpiler(
-        IEnumerable<CodeInstruction> instructions
-    )
+    private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
         var code = instructions.ToList();
         var uses = AccessTools.Field(typeof(KeyComponent), nameof(KeyComponent.NumberOfUsages));
@@ -38,9 +36,7 @@ internal class KeyUsagePatch(Type doorType) : ModulePatch("SeasonalPerks.KeyUsag
             )
             {
                 matches++;
-                yield return new CodeInstruction(OpCodes.Ldarg_1)
-                    .MoveLabelsFrom(code[index])
-                    .MoveBlocksFrom(code[index]);
+                yield return new CodeInstruction(OpCodes.Ldarg_1).MoveLabelsFrom(code[index]).MoveBlocksFrom(code[index]);
                 yield return new CodeInstruction(OpCodes.Ldarg_2);
                 yield return new CodeInstruction(OpCodes.Call, delta);
                 continue;
@@ -57,11 +53,7 @@ internal class KeyUsagePatch(Type doorType) : ModulePatch("SeasonalPerks.KeyUsag
 
     private static int GetUsageDelta(KeyComponent key, Player player)
     {
-        if (
-            !Plugin.SeasonalPlayer
-            || !ReferenceEquals(player, Plugin.Player)
-            || key.Template.MaximumNumberOfUsage <= 0
-        )
+        if (!Plugin.SeasonalPlayer || !ReferenceEquals(player, Plugin.Player) || key.Template.MaximumNumberOfUsage <= 0)
         {
             return 1;
         }

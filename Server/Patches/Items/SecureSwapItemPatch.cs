@@ -19,19 +19,11 @@ public class SecureSwapItemPatch(SecureContainerRestrictions restrictions) : Abs
     protected override MethodBase GetTargetMethod()
     {
         _restrictions = restrictions;
-        return AccessTools.Method(
-            typeof(InventoryController),
-            nameof(InventoryController.SwapItem)
-        );
+        return AccessTools.Method(typeof(InventoryController), nameof(InventoryController.SwapItem));
     }
 
     [PatchPrefix]
-    private static bool Prefix(
-        PmcData pmcData,
-        InventorySwapRequestData request,
-        MongoId sessionId,
-        ref ItemEventRouterResponse __result
-    )
+    private static bool Prefix(PmcData pmcData, InventorySwapRequestData request, MongoId sessionId, ref ItemEventRouterResponse __result)
     {
         var output = _restrictions.Output(sessionId);
         if (_restrictions.Check(pmcData, request, sessionId, output))
