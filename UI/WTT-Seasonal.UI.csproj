@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <RootNamespace>SeasonalPerks.UI</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
     <!-- These sources also compile in Unity previews without SDK-generated global usings. -->
     <ImplicitUsings>disable</ImplicitUsings>

@@ -6,6 +6,7 @@ $settings.ThrowOnAssemblyResolveErrors = $false
 $decompiler = [ICSharpCode.Decompiler.CSharp.CSharpDecompiler]::new($Assembly, $settings)
 $result = $decompiler.DecompileTypeAsString([ICSharpCode.Decompiler.TypeSystem.FullTypeName]::new($Type))
 if ($Output) {
+    $Output = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Output)
     [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($Output)) | Out-Null
     [IO.File]::WriteAllText($Output, $result)
 } else { $result }

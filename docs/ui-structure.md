@@ -1,6 +1,6 @@
 # UI project organization
 
-`SeasonalPerks.UI` contains Unity presentation code without EFT or SPT dependencies. Namespaces match folders beneath `UI`, for example `SeasonalPerks.UI.Screens`.
+`WTT-Seasonal.UI` contains Unity presentation code without EFT or SPT dependencies. Namespaces match folders beneath `UI`, for example `SeasonalPerks.UI.Screens`.
 
 | Folder / namespace suffix | Responsibility |
 | --- | --- |

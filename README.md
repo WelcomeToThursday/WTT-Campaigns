@@ -1,4 +1,4 @@
-# Seasonal Perks
+# WTT-Seasonal
 
 Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
 
@@ -12,7 +12,9 @@ For a fresh checkout, start with [development setup](CONTRIBUTING.md). This repo
 
 UI build **0.1.7** includes the seasonal creation sequence and a native reconnect adapter for character switching. See [UI changes and validation limits](docs/ui.md).
 
-Open `SeasonalPerks.sln` in this directory. Each C# project has its own directory:
+Open `WTT-Seasonal.sln` in this directory. Each C# project has its own directory:
+
+Projects and built assemblies use the `WTT-Seasonal` prefix (for example, `WTT-Seasonal.Client.csproj` produces `WTT-Seasonal.Client.dll`). C# namespaces remain under `SeasonalPerks` for compatibility with the companion Unity preview sources.
 
 - `Client`: BepInEx plugin, SPT `ModulePatch` hooks and UI controllers.
 - `UI`: Unity views shared by the client and CJ-SDK preview, organized into [screens, models, creation, profiles, modifiers, controls and audio](docs/ui-structure.md).
@@ -29,11 +31,15 @@ Formatting and shared Rider/Visual Studio defaults follow SP-Tushonka/server-csh
 
 ## Build and stage
 
-The projects use .NET SDK 10 and the local SPT references configured in `Directory.Build.props`. Restore/build with `dotnet build SeasonalPerks.sln`. Client references require the supplied dumped Assembly-CSharp and installed BepInEx/SPT assemblies.
+The projects use .NET SDK 10 and the local SPT references configured in `Directory.Build.props`. Restore/build with `dotnet build WTT-Seasonal.sln`. Client references require the supplied dumped Assembly-CSharp and installed BepInEx/SPT assemblies.
 
 Use Unity 2022.3.43f1 to open CJ-SDK and run **SDK / Seasonal Perks / Build recovered UI**. The builder writes `Client/Resources/seasonalperks_ui.bundle` and checks that no icon dependencies are present. It does not rebuild unrelated mod assets.
 
 Run `tools/package.ps1` to build Release, run contract/assembly checks, and create a timestamped `release` directory. It stages files only; it does not install into the running SPT environment. The package uses this installation's `SPT_Runtime/user/mods/SeasonalPerks` server location and `BepInEx/plugins/SeasonalPerks` client location. Copy the server folder into the active server's `user/mods` if using another installation layout. Install both parts together.
+
+Release folders are named `WTT-Seasonal-<version>-<timestamp>` and `WTT-Seasonal-UI-<version>-<timestamp>`. Both packaging scripts return only the package directory on the PowerShell success stream, so it can be captured with `$package = & ./tools/package_ui.ps1` and passed to `./tools/install_ui.ps1 -Package $package`. Build and check messages remain visible in the console.
+
+When upgrading an older installation manually, remove the old `SeasonalPerks.Client.dll`, `SeasonalPerks.UI.dll`, `SeasonalPerks.Shared.dll`, `SeasonalPerks.Server.dll` and corresponding PDB/deps files from the two mod directories before copying in the renamed assemblies. Preserve `config.json` and profile data. The UI installer and isolated-server staging script back up the old assemblies automatically. Existing mod directory names, asset paths and saved-state keys remain stable.
 
 For UI update 0.1.4, use `tools/package_ui.ps1`. It builds the client and the server's perk-icon/appearance adapter without adding gameplay behavior. Close the game and installed server, then run `tools/install_ui.ps1` to back up and install the update. See [UI usage, previews and validation](docs/ui.md).
 

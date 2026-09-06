@@ -1,11 +1,13 @@
 param([int]$Port = 6975)
 
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'build_helpers.ps1')
 $projectRoot = Split-Path $PSScriptRoot -Parent
 $sptRoot = [System.IO.Path]::GetFullPath((Join-Path $projectRoot '..\..'))
 $source = Join-Path $sptRoot 'SPT_Runtime'
 $staging = Join-Path $projectRoot 'Testing\Server'
 New-Item -ItemType Directory -Path $staging -Force | Out-Null
+if (Get-Process SPT.Server -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq (Join-Path $staging 'SPT.Server.exe') }) { throw 'Stop the isolated server before staging a new build.' }
 New-Item -ItemType Directory -Path (Join-Path $projectRoot 'Research\UI') -Force | Out-Null
 
 # A separate complete runtime and empty user folder prevent tests touching installed profiles.
@@ -24,12 +26,14 @@ $http.backendPort = $Port
 $http.webAuthenticationConfig.enabled = $false
 $http | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $httpPath
 
-dotnet build (Join-Path $projectRoot 'SeasonalPerks.sln') --nologo -v:q
+dotnet build (Join-Path $projectRoot 'Server') -c Debug --nologo -v:q | Out-Host
 if ($LASTEXITCODE) { throw 'Build failed' }
+$serverOutput = Get-SeasonalBuildOutput $projectRoot 'Server' 'Debug'
 $mod = Join-Path $staging 'user\mods\SeasonalPerks'
 New-Item -ItemType Directory -Path $mod -Force | Out-Null
-& robocopy (Join-Path $projectRoot 'Server\bin\Debug\net10.0') $mod /E /NFL /NDL /NJH /NJS /NP | Out-Null
-if ($LASTEXITCODE -gt 7) { throw 'Mod staging failed' }
+$legacyBackup = Join-Path $projectRoot ('Testing\LegacyBuilds\' + (Get-Date -Format 'yyyyMMdd-HHmmss-fff'))
+Backup-LegacySeasonalAssemblies $staging $legacyBackup @('user\mods\SeasonalPerks')
+Copy-SeasonalServerOutput $serverOutput $mod
 $process = Start-Process -FilePath (Join-Path $staging 'SPT.Server.exe') -WorkingDirectory $staging -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $projectRoot 'Research\test-server.stdout.log') -RedirectStandardError (Join-Path $projectRoot 'Research\test-server.stderr.log')
 $process.Id | Set-Content -LiteralPath (Join-Path $staging 'test-server.pid')
 $deadline = [DateTime]::UtcNow.AddSeconds(30)

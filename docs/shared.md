@@ -1,6 +1,6 @@
 # Shared project organization
 
-`SeasonalPerks.Shared` contains the contracts and game-independent logic used by the client and server. Namespaces match folders beneath `Shared`, for example `SeasonalPerks.Shared.Effects.Items`.
+`WTT-Seasonal.Shared` contains the contracts and game-independent logic used by the client and server. Namespaces match folders beneath `Shared`, for example `SeasonalPerks.Shared.Effects.Items`.
 
 | Folder / namespace suffix | Responsibility |
 | --- | --- |

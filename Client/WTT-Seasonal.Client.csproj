@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <RootNamespace>SeasonalPerks.Client</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
     <Version>0.1.23</Version>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="spt-reflection" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-reflection.dll" Private="false" />
-    <ProjectReference Include="..\Shared\SeasonalPerks.Shared.csproj" />
-    <ProjectReference Include="..\UI\SeasonalPerks.UI.csproj" />
+    <ProjectReference Include="..\Shared\WTT-Seasonal.Shared.csproj" />
+    <ProjectReference Include="..\UI\WTT-Seasonal.UI.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Sirenix.Serialization" HintPath="$(ManagedDir)Sirenix.Serialization.dll" Private="false" />
