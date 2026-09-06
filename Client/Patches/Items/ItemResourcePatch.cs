@@ -13,7 +13,10 @@ namespace SeasonalPerks.Client.Patches.Items;
 internal class ItemResourcePatch(Type effectType, string methodName)
     : ModulePatch("SeasonalPerks.ItemResource." + effectType.DeclaringType!.Name + "." + methodName)
 {
-    protected override MethodBase GetTargetMethod() => AccessTools.DeclaredMethod(effectType, methodName);
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.DeclaredMethod(effectType, methodName);
+    }
 
     internal static float Multiplier(object effect)
     {
@@ -21,17 +24,25 @@ internal class ItemResourcePatch(Type effectType, string methodName)
         if (effect is ActiveHealthController.MedEffect active)
         {
             if (!Plugin.SeasonalPlayer || !ReferenceEquals(active.HealthController, Plugin.Player!.ActiveHealthController))
+            {
                 return 1f;
+            }
+
             item = active.MedItem;
         }
         else if (effect is OfflineHealthController.MedEffect offline)
         {
             if (Plugin.Current?.ActiveMode != "seasonal" || !ReferenceEquals(offline._health._skills, Plugin.App?.Session?.Profile?.Skills))
+            {
                 return 1f;
+            }
+
             item = offline.MedItem;
         }
         else
+        {
             return 1f;
+        }
 
         return Plugin.Effects.ItemResourceMultiplier(item.StringTemplateId, Ancestors(item.Template));
     }
@@ -39,37 +50,54 @@ internal class ItemResourcePatch(Type effectType, string methodName)
     private static IEnumerable<string> Ancestors(ItemTemplate template)
     {
         for (var parent = template.Parent; parent != null; parent = parent.Parent)
+        {
             yield return parent._id.ToString();
+        }
     }
 
     private static float Capacity(float resource, object effect)
     {
         var multiplier = Multiplier(effect);
-        if (multiplier == 1f)
+        if (multiplier.Equals(1f))
+        {
             return resource;
+        }
+
         var capacity = resource / multiplier;
         // Stash healing rounds HP upward; use whole affordable HP to prevent an overdraft.
         return effect is OfflineHealthController.MedEffect ? Mathf.Floor(capacity) : capacity;
     }
 
-    private static float Cost(float cost, object effect) => cost * Multiplier(effect);
+    private static float Cost(float cost, object effect)
+    {
+        return cost * Multiplier(effect);
+    }
 
     private static float Spend(float resource, float amount, object effect)
     {
         var multiplier = Multiplier(effect);
-        if (multiplier == 1f)
+        if (multiplier.Equals(1f))
+        {
             return resource - amount;
+        }
+
         return Mathf.Max(0f, resource - amount * multiplier);
     }
 
     private static float SpendFood(float resource, float amount, object effect)
     {
         var multiplier = Multiplier(effect);
-        if (multiplier == 1f)
+        if (multiplier.Equals(1f))
+        {
             return resource - amount;
+        }
+
         var cost = amount * multiplier;
         if (effect is OfflineHealthController.MedEffect)
+        {
             cost = Mathf.Round(cost);
+        }
+
         return Mathf.Max(0f, resource - cost);
     }
 
@@ -88,7 +116,7 @@ internal class ItemResourcePatch(Type effectType, string methodName)
         for (var i = 0; i < code.Count; i++)
         {
             var instruction = code[i];
-            string? helper = null;
+            string helper;
             // Heal limit: Mathf.Min(healing, resource / multiplier).
             if (
                 instruction.LoadsField(med)
@@ -140,7 +168,10 @@ internal class ItemResourcePatch(Type effectType, string methodName)
             }
             var load = new CodeInstruction(OpCodes.Ldarg_0);
             if (instruction.opcode == OpCodes.Sub)
+            {
                 load.MoveLabelsFrom(instruction).MoveBlocksFrom(instruction);
+            }
+
             yield return load;
             yield return new CodeInstruction(
                 OpCodes.Call,
@@ -153,6 +184,8 @@ internal class ItemResourcePatch(Type effectType, string methodName)
             || spends != (offline ? 2 : 1)
             || foods != (residue ? 0 : 1)
         )
+        {
             throw new InvalidOperationException("Unsupported item-resource implementation: " + __originalMethod);
+        }
     }
 }

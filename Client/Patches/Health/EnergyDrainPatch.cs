@@ -7,8 +7,10 @@ namespace SeasonalPerks.Client.Patches.Health;
 
 internal class EnergyDrainPatch : ModulePatch
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(typeof(ActiveHealthController.Existence), nameof(ActiveHealthController.Existence.GetEnergyDamage));
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(ActiveHealthController.Existence), nameof(ActiveHealthController.Existence.GetEnergyDamage));
+    }
 
     [PatchPostfix]
     private static void Postfix(ActiveHealthController.Existence __instance, ref float __result)

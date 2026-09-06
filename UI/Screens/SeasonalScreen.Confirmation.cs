@@ -16,7 +16,6 @@ public sealed partial class SeasonalScreen
         {
             return;
         }
-        HideTooltip();
         ClearCardHover();
         _dialog = Object.Instantiate(_prefab("level49-2761"), _panel, false);
         _dialog.name = "SaveModifiers";
@@ -81,10 +80,7 @@ public sealed partial class SeasonalScreen
             label.color = positive ? new Color32(99, 124, 76, 255) : new Color32(161, 72, 75, 255);
             var headerWidth = label.preferredWidth;
             Place(label.rectTransform, headerWidth, 28, -461 + headerWidth / 2, 0);
-            UiElements.Fill(
-                UiElements.Rect("Line", header, 922 - headerWidth - 16, 1, (headerWidth + 16) / 2, 0),
-                new Color(1, 1, 1, .102f)
-            );
+            UiElements.Fill(UiElements.Rect("Line", header, 922 - headerWidth - 16, 1, (headerWidth + 16) / 2), new Color(1, 1, 1, .102f));
             foreach (var perk in perks)
             {
                 ConfirmationRow(group, perk);

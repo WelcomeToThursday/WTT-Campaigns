@@ -1,11 +1,6 @@
-using System.Reflection;
-using Diz.LanguageExtensions;
 using EFT;
 using EFT.InventoryLogic;
-using EFT.InventoryLogic.Operations;
-using HarmonyLib;
 using SeasonalPerks.Shared.Effects.Items;
-using SPT.Reflection.Patching;
 
 namespace SeasonalPerks.Client.Patches.Items;
 
@@ -23,9 +18,15 @@ internal static class SecureContainers
             || parent.Owner == null
             || !ReferenceEquals(parent.Owner, profile.Inventory.Equipment.Owner)
         )
+        {
             return false;
+        }
+
         if (!parent.GetAllParentItemsAndSelf().OfType<MobContainer>().Any(c => c.isSecured))
+        {
             return false;
+        }
+
         var contents = item is ContainerCollection collection ? collection.GetAllItemsFromCollection() : new[] { item };
         return contents.Any(i => !SecureContainerRules.Allows(Plugin.Effects, i.StringTemplateId, Ancestors(i.Template)));
     }
@@ -33,6 +34,8 @@ internal static class SecureContainers
     private static IEnumerable<string> Ancestors(ItemTemplate template)
     {
         for (var parent = template.Parent; parent != null; parent = parent.Parent)
+        {
             yield return parent._id.ToString();
+        }
     }
 }

@@ -12,12 +12,16 @@ internal class ConsumableUsePatch : ModulePatch
 {
     private static readonly ConditionalWeakTable<ActiveHealthController.MedEffect, ConsumptionReceipt> Receipts = new();
 
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(typeof(ActiveHealthController.MedEffect), nameof(ActiveHealthController.MedEffect.RegularUpdate));
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(ActiveHealthController.MedEffect), nameof(ActiveHealthController.MedEffect.RegularUpdate));
+    }
 
     [PatchPrefix]
-    private static void Prefix(ActiveHealthController.MedEffect __instance, out float __state) =>
+    private static void Prefix(ActiveHealthController.MedEffect __instance, out float __state)
+    {
         __state = __instance._foodDrink?.HpPercent ?? __instance._medKit?.HpResource ?? 0;
+    }
 
     [PatchPostfix]
     private static void Postfix(ActiveHealthController.MedEffect __instance, float __state)
@@ -29,7 +33,10 @@ internal class ConsumableUsePatch : ModulePatch
                 .GetOrCreateValue(__instance)
                 .Observe(__state, __instance._foodDrink?.HpPercent ?? __instance._medKit?.HpResource ?? 0, __instance._interrupted)
         )
+        {
             return;
+        }
+
         Apply(__instance);
     }
 
@@ -42,9 +49,14 @@ internal class ConsumableUsePatch : ModulePatch
             || effect._interrupted
             || (effect._medKit != null && effect._medKit.HpResource <= 0)
         )
+        {
             return;
+        }
+
         if (Receipts.GetOrCreateValue(effect).Observe(1, 0, false))
+        {
             Apply(effect);
+        }
     }
 
     private static void Apply(ActiveHealthController.MedEffect __instance)
@@ -56,6 +68,8 @@ internal class ConsumableUsePatch : ModulePatch
                 count => UnityEngine.Random.Range(0, count)
             )
         )
+        {
             ConsumableHealthEffects.Apply(__instance.HealthController, effect, __instance.MedItem.StringTemplateId);
+        }
     }
 }

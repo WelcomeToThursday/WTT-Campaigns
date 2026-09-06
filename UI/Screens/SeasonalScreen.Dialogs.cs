@@ -1,7 +1,6 @@
 using System;
 using System.Linq;
 using SeasonalPerks.UI.Controls;
-using SeasonalPerks.UI.Models;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -13,44 +12,9 @@ public sealed partial class SeasonalScreen
 {
     private GameObject? _previousFocus;
 
-    private void ShowTooltip(PerkEntry perk, RectTransform card)
-    {
-        if (_busy || _dialog != null || !Root.activeInHierarchy)
-        {
-            return;
-        }
-        HideTooltip();
-        var local = _panel.InverseTransformPoint(card.position);
-        var tooltip = UiElements.Rect("PerkTooltip", _panel, 760, 240, local.x < 0 ? 460 : -460, Mathf.Clamp(local.y, -205, 205));
-        _tooltip = tooltip.gameObject;
-        UiElements.Fill(tooltip, new Color(.014f, .016f, .012f, .99f));
-        UiElements.Fill(UiElements.Rect("TopLine", tooltip, 760, 2, 0, 119), UiElements.Accent);
-        _ui.Label(tooltip, "PerkName", perk.Name, 23, 720, 44, 0, 84);
-        var reason = PersonalPage ? LockReason(perk) : perk.Unavailable;
-        var text = _ui.Label(tooltip, "Details", perk.Description + (reason.Length == 0 ? "" : "\n\n" + reason), 19, 720, 155, 0, -25);
-        text.alignment = TextAnchor.UpperLeft;
-        var height = Mathf.Clamp(text.preferredHeight, 130, 310);
-        tooltip.sizeDelta = new Vector2(760, height + 100);
-        text.rectTransform.sizeDelta = new Vector2(720, height);
-        Place((RectTransform)tooltip.Find("TopLine"), 760, 2, 0, (height + 100) / 2 - 1);
-        Place((RectTransform)tooltip.Find("PerkName"), 720, 44, 0, (height + 100) / 2 - 30);
-        text.rectTransform.anchoredPosition = new Vector2(0, -28);
-    }
-
-    public void HideTooltip()
-    {
-        if (_tooltip)
-        {
-            _tooltip!.SetActive(false);
-            UiElements.Destroy(_tooltip);
-        }
-        _tooltip = null;
-    }
-
     private RectTransform Dialog(string title, string description, string accept, Action action)
     {
         DismissDialog();
-        HideTooltip();
         _dialog = Object.Instantiate(_prefab("level49-2761"), _panel, false);
         _dialog.name = "SeasonalConfirmation";
         ClearCardHover();
@@ -158,7 +122,7 @@ public sealed partial class SeasonalScreen
                 var row = UiElements.Rect(perk.Id, scroll.content, 950, 80);
                 row.gameObject.AddComponent<LayoutElement>().preferredHeight = 80;
                 UiElements.Fill(row, new Color(.067f, .073f, .058f));
-                var icon = UiElements.Fill(UiElements.Rect("Icon", row, 62, 62, -435, 0), Color.clear);
+                var icon = UiElements.Fill(UiElements.Rect("Icon", row, 62, 62, -435), Color.clear);
                 icon.preserveAspect = true;
                 IconRequested?.Invoke(perk.Id, icon);
                 _ui.Label(row, "Perk", perk.Name + "  (" + (perk.Points > 0 ? "+" : "") + perk.Points + ")", 20, 810, 32, 40, 18);

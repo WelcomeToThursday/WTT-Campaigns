@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Shared.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -23,6 +24,7 @@ public class InsurancePatch(EventOutputHolder output) : AbstractPatch
     }
 
     [PatchPrefix]
+    [UsedImplicitly]
     private static bool Prefix(PmcData pmcData, MongoId sessionId, ref ItemEventRouterResponse __result)
     {
         var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmcData).SeasonalPerks);

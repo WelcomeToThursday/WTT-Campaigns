@@ -25,16 +25,16 @@ public sealed partial class SeasonalScreen
             _nickname.contentType = InputField.ContentType.Alphanumeric;
             _nickname.onValueChanged.AddListener(value => _name = value);
             _ui.Label(_body, "FactionLabel", "FACTION", 15, 100, 32, -355, 270).color = UiElements.Muted;
-            Button? usec = null;
-            Button? bear = null;
+            var usec = _ui.Button(_body, "USEC", 115, -245, 270, () => { }, 42);
+            var bear = _ui.Button(_body, "BEAR", 115, -115, 270, () => { }, 42);
             void Faction(string side)
             {
                 _side = side;
-                ((Image)usec!.targetGraphic).color = side == "Usec" ? new Color(.35f, .33f, .23f) : new Color(.14f, .14f, .12f);
-                ((Image)bear!.targetGraphic).color = side == "Bear" ? new Color(.35f, .33f, .23f) : new Color(.14f, .14f, .12f);
+                ((Image)usec.targetGraphic).color = side == "Usec" ? new Color(.35f, .33f, .23f) : new Color(.14f, .14f, .12f);
+                ((Image)bear.targetGraphic).color = side == "Bear" ? new Color(.35f, .33f, .23f) : new Color(.14f, .14f, .12f);
             }
-            usec = _ui.Button(_body, "USEC", 115, -245, 270, () => Faction("Usec"), 42);
-            bear = _ui.Button(_body, "BEAR", 115, -115, 270, () => Faction("Bear"), 42);
+            usec.onClick.AddListener(() => Faction("Usec"));
+            bear.onClick.AddListener(() => Faction("Bear"));
             Faction(_side);
         }
         else
@@ -221,7 +221,6 @@ public sealed partial class SeasonalScreen
 
     private void FilterCards(bool resetScroll = false)
     {
-        HideTooltip();
         foreach (var pair in _cards)
         {
             pair.Card.SetActive(

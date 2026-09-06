@@ -147,7 +147,6 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
         {
             _host!.SetActive(false);
         }
-        _view?.HideTooltip();
         return Task.FromResult(true);
     }
 

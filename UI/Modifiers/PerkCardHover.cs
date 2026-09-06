@@ -53,7 +53,13 @@ public sealed class PerkCardHover : MonoBehaviour, IPointerEnterHandler, IPointe
         }
     }
 
-    public void OnPointerExit(PointerEventData eventData) => ClearHover();
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        ClearHover();
+    }
 
-    private void OnDisable() => ClearHover();
+    private void OnDisable()
+    {
+        ClearHover();
+    }
 }

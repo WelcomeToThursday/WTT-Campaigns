@@ -90,7 +90,7 @@ public sealed class ProfileSelection
     {
         var seasonal = mode == "seasonal";
         var character = state.Characters.FirstOrDefault(value => value.Mode == mode) ?? new CharacterEntry { Mode = mode };
-        var rect = UiElements.Rect(mode + "-profile", parent, 390, 800, x, 0);
+        var rect = UiElements.Rect(mode + "-profile", parent, 390, 800, x);
         UiElements.Fill(rect, Color.clear, true);
         var hover = rect.gameObject.AddComponent<ProfileCardHover>();
         hover.Seasonal = seasonal;
@@ -202,8 +202,8 @@ public sealed class ProfileSelection
             {
                 var row = UiElements.Rect("SeasonStat-" + i, details, 354, 24, 0, -29 - i * 32);
                 Art(row, artwork[i], 24, 24, -165, 0);
-                _ui.Label(row, "Caption", captions[i], 16, 238, 24, -28, 0).color = new Color(.584f, .620f, .639f);
-                var value = _ui.Label(row, "Value", values[i], 16, 72, 24, 141, 0);
+                _ui.Label(row, "Caption", captions[i], 16, 238, 24, -28).color = new Color(.584f, .620f, .639f);
+                var value = _ui.Label(row, "Value", values[i], 16, 72, 24, 141);
                 value.alignment = TextAnchor.MiddleRight;
                 value.color = new Color(.584f, .620f, .639f);
             }

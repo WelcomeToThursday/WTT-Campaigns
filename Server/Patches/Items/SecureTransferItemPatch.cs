@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -22,6 +23,9 @@ public class SecureTransferItemPatch(SecureContainerRestrictions restrictions) :
     }
 
     [PatchPrefix]
-    private static bool Prefix(object[] __args) =>
-        _restrictions.Check((PmcData)__args[0], __args[1], (MongoId)__args[2], (ItemEventRouterResponse)__args[3]);
+    [UsedImplicitly]
+    private static bool Prefix(object[] __args)
+    {
+        return _restrictions.Check((PmcData)__args[0], __args[1], (MongoId)__args[2], (ItemEventRouterResponse)__args[3]);
+    }
 }

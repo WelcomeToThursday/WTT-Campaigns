@@ -6,7 +6,10 @@ namespace SeasonalPerks.Client.Patches.Movement;
 
 internal class StaminaRestorationPatch(string methodName) : ModulePatch("SeasonalPerks." + methodName)
 {
-    protected override MethodBase GetTargetMethod() => AccessTools.Method(typeof(Physical), methodName);
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(Physical), methodName);
+    }
 
     [PatchPostfix]
     private static void Postfix(Physical __instance, MethodBase __originalMethod, ref float __result)

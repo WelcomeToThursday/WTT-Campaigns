@@ -1,20 +1,18 @@
-using System.Net.Http;
 using System.Reflection;
-using BepInEx;
 using EFT;
 using HarmonyLib;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Contracts;
 using SPT.Common.Http;
 using SPT.Reflection.Patching;
-using UnityEngine;
 
 namespace SeasonalPerks.Client.Patches.Session;
 
 internal class BackendIdentity : ModulePatch
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(typeof(TarkovApplication), nameof(TarkovApplication.CreateBackend));
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(TarkovApplication), nameof(TarkovApplication.CreateBackend));
+    }
 
     [PatchPrefix]
     private static void Prefix(TarkovApplication __instance)

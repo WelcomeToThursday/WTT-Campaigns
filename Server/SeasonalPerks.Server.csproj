@@ -9,6 +9,7 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="SPTarkov.Server.Core" Version="4.1.0" ExcludeAssets="runtime" />
+    <PackageReference Include="JetBrains.Annotations" Version="2026.2.0" PrivateAssets="all" />
     <PackageReference Include="SPTarkov.Reflection" Version="4.1.0" ExcludeAssets="runtime" />
   </ItemGroup>
   <ItemGroup>

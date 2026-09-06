@@ -11,15 +11,22 @@ namespace SeasonalPerks.Client.Patches.Movement;
 
 internal class BushSoundPatch(string methodName) : ModulePatch("SeasonalPerks.BushSound." + methodName)
 {
-    protected override MethodBase GetTargetMethod() => AccessTools.Method(typeof(TreeInteractive), methodName);
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(TreeInteractive), methodName);
+    }
 
-    private static float ScaleForCollider(float value, Collider collider) =>
-        Plugin.SeasonalPlayer && ReferenceEquals(Singleton<GameWorld>.Instance.GetPlayerByCollider(collider), Plugin.Player)
+    private static float ScaleForCollider(float value, Collider collider)
+    {
+        return Plugin.SeasonalPlayer && ReferenceEquals(Singleton<GameWorld>.Instance.GetPlayerByCollider(collider), Plugin.Player)
             ? value * Plugin.Effects.BushNoiseMultiplier
             : value;
+    }
 
-    private static float ScaleForBridge(float value, IObserverToPlayerBridge player) =>
-        Plugin.SeasonalPlayer && ReferenceEquals(player.iPlayer, Plugin.Player) ? value * Plugin.Effects.BushNoiseMultiplier : value;
+    private static float ScaleForBridge(float value, IObserverToPlayerBridge player)
+    {
+        return Plugin.SeasonalPlayer && ReferenceEquals(player.iPlayer, Plugin.Player) ? value * Plugin.Effects.BushNoiseMultiplier : value;
+    }
 
     [PatchTranspiler]
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
@@ -39,15 +46,26 @@ internal class BushSoundPatch(string methodName) : ModulePatch("SeasonalPerks.Bu
             bool radius = instruction.LoadsField(rolloff);
             bool volume = instruction.Calls(randomVolume);
             if (!radius && !volume)
+            {
                 continue;
+            }
+
             if (radius)
+            {
                 radii++;
+            }
+
             if (volume)
+            {
                 volumes++;
+            }
+
             yield return new CodeInstruction(playback ? OpCodes.Ldarg_3 : OpCodes.Ldarg_1);
             yield return new CodeInstruction(OpCodes.Call, scale);
         }
         if (radii != 1 || volumes != (playback ? 1 : 0))
+        {
             throw new InvalidOperationException("Unexpected bush sound patch sites: " + __originalMethod);
+        }
     }
 }

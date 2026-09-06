@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using SeasonalPerks.UI.Controls;
 using SeasonalPerks.UI.Models;
@@ -186,7 +185,7 @@ public sealed partial class SeasonalScreen
         );
         var description = info.Find("Description").GetComponent<Text>();
         title.fontStyle = FontStyle.Bold;
-        UiElements.Stretch(description.rectTransform, 8, 0, 28, 0);
+        UiElements.Stretch(description.rectTransform, 8, 0, 28);
         ConfigureText(description, perk.Description, 16, grey);
         description.alignment = TextAnchor.UpperLeft;
         if (!string.IsNullOrEmpty(perk.Unavailable))

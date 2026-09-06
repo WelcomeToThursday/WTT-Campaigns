@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Shared.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -11,10 +12,13 @@ namespace SeasonalPerks.Server.Patches.Hideout;
 [Injectable]
 public class CraftTimePatch : AbstractPatch
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(typeof(HideoutHelper), nameof(HideoutHelper.GetAdjustedCraftTimeWithSkills));
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(HideoutHelper), nameof(HideoutHelper.GetAdjustedCraftTimeWithSkills));
+    }
 
     [PatchPostfix]
+    [UsedImplicitly]
     private static void Postfix(PmcData pmcData, ref double? __result)
     {
         var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmcData).SeasonalPerks);

@@ -1,8 +1,6 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Contracts;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
-using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Utils;
 
 namespace SeasonalPerks.Server;
@@ -10,7 +8,9 @@ namespace SeasonalPerks.Server;
 [Injectable]
 public sealed class SeasonRouter(JsonUtil json, SeasonService seasons) : StaticRouter(json, Routes(json, seasons))
 {
-    private static List<RouteAction> Routes(JsonUtil json, SeasonService s) =>
+    private static List<RouteAction> Routes(JsonUtil json, SeasonService s)
+    {
+        return
         [
             new RouteAction<SeasonRequest>(
                 "/seasonal-perks/snapshot",
@@ -29,6 +29,7 @@ public sealed class SeasonRouter(JsonUtil json, SeasonService seasons) : StaticR
                 async (_, r, id, _, _) => await Respond(json, s, id.ToString(), root => s.Switch(root, r.Mode))
             ),
         ];
+    }
 
     private static async ValueTask<string> Respond(
         JsonUtil json,

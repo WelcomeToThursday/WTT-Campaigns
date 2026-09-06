@@ -11,5 +11,8 @@ public sealed class Catalogue
     public List<Perk> Personal { get; set; } = new();
 
     [JsonIgnore]
-    public IEnumerable<Perk> All => Common.Concat(Personal);
+    public IEnumerable<Perk> All
+    {
+        get { return Common.Concat(Personal); }
+    }
 }

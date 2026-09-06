@@ -23,7 +23,7 @@ public sealed class CharacterPreview : MonoBehaviour
             _rig = new GameObject("SeasonalCharacterPreviewRig");
             _rig.transform.position = new Vector3(5000 + (++_next % 100) * 100, 0, 5000);
             _view = _rig.AddComponent<PlayerModelView>();
-            var label = new UiElements(font).Label(transform, "LoadingModel", "LOADING CHARACTER...", 16, 350, 40, 0, 0);
+            var label = new UiElements(font).Label(transform, "LoadingModel", "LOADING CHARACTER...", 16, 350, 40);
             _view._progressSpinner = label.gameObject.AddComponent<ProgressSpinner>();
             var cameras = Instantiate(cameraPrefab, _rig.transform, false);
             var camera = cameras.GetComponentInChildren<Camera>(true);
@@ -68,7 +68,10 @@ public sealed class CharacterPreview : MonoBehaviour
         }
     }
 
-    private void OnDisable() => Release();
+    private void OnDisable()
+    {
+        Release();
+    }
 
     private void BeforeCamera(Camera camera)
     {
@@ -82,7 +85,10 @@ public sealed class CharacterPreview : MonoBehaviour
         }
     }
 
-    private void OnDestroy() => Release();
+    private void OnDestroy()
+    {
+        Release();
+    }
 
     private void Release()
     {

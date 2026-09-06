@@ -11,11 +11,7 @@ internal static class UiCompatibilityChecks
         var count = 0;
         void Check(bool value, string description)
         {
-            if (!value)
-            {
-                throw new InvalidOperationException(description);
-            }
-            count++;
+            count += value ? 1 : throw new InvalidOperationException(description);
         }
         foreach (var name in new[] { "EFT.UI.MenuScreen", "EFT.UI.SkillsAndMasteringScreen" })
         {

@@ -7,8 +7,10 @@ namespace SeasonalPerks.Client.Patches.Health;
 
 internal class HydrationDrainPatch : ModulePatch
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(typeof(ActiveHealthController.Existence), nameof(ActiveHealthController.Existence.GetHydrationDamage));
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(ActiveHealthController.Existence), nameof(ActiveHealthController.Existence.GetHydrationDamage));
+    }
 
     [PatchPostfix]
     private static void Postfix(ActiveHealthController.Existence __instance, ref float __result)

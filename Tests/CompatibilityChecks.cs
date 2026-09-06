@@ -87,10 +87,13 @@ internal static class CompatibilityChecks
         var medUpdate = Method("EFT.HealthSystem.ActiveHealthController/MedEffect", "RegularUpdate");
         check(medUpdate.Parameters.Single().ParameterType.FullName == "System.Single", "Consumable tick signature");
         foreach (var field in new[] { "_foodDrink", "_interrupted" })
+        {
             check(
                 types["EFT.HealthSystem.ActiveHealthController/MedEffect"].Fields.Any(f => f.Name == field && f.IsPublic),
                 "Consumable hook field: " + field
             );
+        }
+
         check(
             medUpdate.Body.Instructions.Any(i => i.OpCode == OpCodes.Stfld && i.Operand is FieldReference f && f.Name == "HpPercent"),
             "Food consumption occurs inside patched tick"
@@ -103,10 +106,13 @@ internal static class CompatibilityChecks
         );
         Method("EFT.HealthSystem.ActiveHealthController/HealthBoost", "Started");
         foreach (var symptom in new[] { "Pain", "Tremor", "TunnelVision" })
+        {
             check(
                 types["EFT.HealthSystem.ActiveHealthController/" + symptom].Methods.Any(m => m.IsConstructor && m.IsPublic),
                 "Native allergy symptom constructor: " + symptom
             );
+        }
+
         check(
             types["EFT.HealthSystem.ActiveHealthController/MedEffect"].Fields.Any(f => f.Name == "_medKit" && f.IsPublic),
             "Medicine resource binding"
@@ -164,10 +170,13 @@ internal static class CompatibilityChecks
             experienceSetter.Parameters.Single().Name == "value" && experienceSetter.Parameters[0].ParameterType.FullName == "System.Int32",
             "Profile award setter parameter binding"
         );
-        bool CallsExperienceSetter(MethodDefinition method, string owner) =>
-            method.Body.Instructions.Any(i =>
+        bool CallsExperienceSetter(MethodDefinition method, string owner)
+        {
+            return method.Body.Instructions.Any(i =>
                 i.Operand is MethodReference m && m.Name == "set_Experience" && m.DeclaringType.FullName == owner
             );
+        }
+
         check(CallsExperienceSetter(experienceSetter, "EFT.ProfileInfo"), "Award wrapper writes ProfileInfo");
         check(
             CallsExperienceSetter(

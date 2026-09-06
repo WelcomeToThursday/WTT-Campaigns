@@ -108,7 +108,10 @@ internal static class ClientHookChecks
                 || definedLabels.Distinct().Count() != labels.Count
                 || labels.Values.Except(definedLabels).Any()
             )
+            {
                 throw new Exception("Client patch lost or duplicated branch labels: " + target);
+            }
+
             var storeIndex = instructions
                 .Cast<object>()
                 .Select((instruction, index) => (instruction, index))
@@ -128,14 +131,17 @@ internal static class ClientHookChecks
             var rejected = false;
             try
             {
-                ((IEnumerable)transpiler.Invoke(null, new object[] { instructions, target })!).Cast<object>().ToArray();
+                _ = ((IEnumerable)transpiler.Invoke(null, new object[] { instructions, target })!).Cast<object>().ToArray();
             }
             catch (InvalidOperationException)
             {
                 rejected = true;
             }
             if (!rejected)
+            {
                 throw new Exception("Client patch accepted a missing consumption site: " + target);
+            }
+
             Console.WriteLine(
                 $"PASS actual {(experience ? "experience" : bush ? "bush" : "resource")} transpiler: {owner}.{methodName} ({result.Length} instructions; labels preserved; missing site rejected)"
             );

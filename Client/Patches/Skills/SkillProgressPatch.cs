@@ -7,7 +7,10 @@ namespace SeasonalPerks.Client.Patches.Skills;
 
 internal class SkillProgressPatch : ModulePatch
 {
-    protected override MethodBase GetTargetMethod() => AccessTools.Method(typeof(BaseSkill), nameof(BaseSkill.SetCurrent));
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(BaseSkill), nameof(BaseSkill.SetCurrent));
+    }
 
     [PatchPrefix]
     private static void Prefix(BaseSkill __instance, ref float value)

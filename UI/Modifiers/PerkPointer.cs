@@ -9,13 +9,28 @@ public sealed class PerkPointer : MonoBehaviour, IPointerEnterHandler, IPointerE
     public Action? Enter;
     public Action? Exit;
 
-    public void OnPointerEnter(PointerEventData eventData) => Enter?.Invoke();
+    public void OnPointerEnter(PointerEventData eventData)
+    {
+        Enter?.Invoke();
+    }
 
-    public void OnPointerExit(PointerEventData eventData) => Exit?.Invoke();
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        Exit?.Invoke();
+    }
 
-    public void OnSelect(BaseEventData eventData) => Enter?.Invoke();
+    public void OnSelect(BaseEventData eventData)
+    {
+        Enter?.Invoke();
+    }
 
-    public void OnDeselect(BaseEventData eventData) => Exit?.Invoke();
+    public void OnDeselect(BaseEventData eventData)
+    {
+        Exit?.Invoke();
+    }
 
-    private void OnDisable() => Exit?.Invoke();
+    private void OnDisable()
+    {
+        Exit?.Invoke();
+    }
 }

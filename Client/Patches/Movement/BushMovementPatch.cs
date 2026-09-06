@@ -8,12 +8,14 @@ namespace SeasonalPerks.Client.Patches.Movement;
 
 internal class BushMovementPatch : ModulePatch
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(
             typeof(MovementContext),
             nameof(MovementContext.AddStateSpeedLimit),
             new[] { typeof(float), typeof(Player.ESpeedLimit) }
         );
+    }
 
     [PatchPrefix]
     private static void Prefix(MovementContext __instance, ref float speedLimit, Player.ESpeedLimit cause)
@@ -24,6 +26,8 @@ internal class BushMovementPatch : ModulePatch
             && ReferenceEquals(__instance, Plugin.Player!.MovementContext)
             && BushOccupancy.Contains(__instance)
         )
+        {
             speedLimit = BushInteraction.SpeedLimit(speedLimit, Plugin.Effects.BushSlowdownMultiplier);
+        }
     }
 }

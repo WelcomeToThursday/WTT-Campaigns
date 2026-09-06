@@ -8,6 +8,7 @@
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <TarkovDir Condition="'$(TarkovDir)' == ''">$(MSBuildThisFileDirectory)..\..\</TarkovDir>
     <ManagedDir Condition="'$(ManagedDir)' == ''">$(TarkovDir)EscapeFromTarkov_Data\Managed\</ManagedDir>
     <ServerDir Condition="'$(ServerDir)' == ''">$(TarkovDir)SPT_Runtime\</ServerDir>

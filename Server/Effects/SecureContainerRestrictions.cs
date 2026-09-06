@@ -15,19 +15,32 @@ namespace SeasonalPerks.Server.Effects;
 [Injectable(InjectionType.Singleton)]
 public sealed class SecureContainerRestrictions(TemplateTable templates, InventoryHelper inventory, EventOutputHolder outputs)
 {
-    internal ItemEventRouterResponse Output(MongoId sessionId) => outputs.GetOutput(sessionId);
+    internal ItemEventRouterResponse Output(MongoId sessionId)
+    {
+        return outputs.GetOutput(sessionId);
+    }
 
     internal bool Check(PmcData pmc, object request, MongoId sessionId, ItemEventRouterResponse output)
     {
         var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
         if (!effects.Has(SecureContainerRules.EffectId))
+        {
             return true;
+        }
+
         var items = pmc.Inventory!.Items!;
-        static MongoId? Id(string? value) => string.IsNullOrEmpty(value) ? (MongoId?)null : new MongoId(value);
+        static MongoId? Id(string? value)
+        {
+            return string.IsNullOrEmpty(value) ? (MongoId?)null : new MongoId(value);
+        }
+
         bool Reject(IEnumerable<Item> source, MongoId? itemId, MongoId? parentId, Dictionary<MongoId, MongoId?>? replacements = null)
         {
             if (itemId == null || parentId == null)
+            {
                 return false;
+            }
+
             var destination = items.ToDictionary(i => i.Id);
             var seen = new HashSet<MongoId>();
             var parent = parentId;
@@ -42,7 +55,10 @@ public sealed class SecureContainerRestrictions(TemplateTable templates, Invento
                 parent = replacements != null && replacements.TryGetValue(container.Id, out var moved) ? moved : Id(container.ParentId);
             }
             if (!secure)
+            {
                 return false;
+            }
+
             var tree = source.ToArray();
             var children = tree.ToLookup(i =>
                 replacements != null && replacements.TryGetValue(i.Id, out var moved) ? moved : Id(i.ParentId)
@@ -54,15 +70,23 @@ public sealed class SecureContainerRestrictions(TemplateTable templates, Invento
             {
                 var id = queue.Dequeue();
                 if (!seen.Add(id))
+                {
                     continue;
+                }
+
                 var item = tree.FirstOrDefault(i => i.Id == id);
                 if (
                     item == null
                     || !SecureContainerRules.Allows(effects, item.Template.ToString(), TemplateFilters.Ancestors(templates, item.Template))
                 )
+                {
                     return true;
+                }
+
                 foreach (var child in children[id])
+                {
                     queue.Enqueue(child.Id);
+                }
             }
             return false;
         }
@@ -70,7 +94,10 @@ public sealed class SecureContainerRestrictions(TemplateTable templates, Invento
         bool CheckAction(InventoryBaseActionRequestData action, MongoId? item, MongoId? parent)
         {
             if (!item.HasValue)
+            {
                 return false;
+            }
+
             var owners = inventory.GetOwnerInventoryItems(action, item.Value, sessionId);
             return ReferenceEquals(owners.To, items) && Reject(owners.From ?? [], item, parent);
         }
@@ -92,7 +119,10 @@ public sealed class SecureContainerRestrictions(TemplateTable templates, Invento
             _ => false,
         };
         if (!rejected)
+        {
             return true;
+        }
+
         output.Warnings ??= [];
         output.Warnings.Add(new Warning { Index = 0, ErrorMessage = SecureContainerRules.Message });
         return false;

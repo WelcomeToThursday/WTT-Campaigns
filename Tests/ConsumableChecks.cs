@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Effects.Consumables;
 using SeasonalPerks.Shared.Perks;
@@ -22,7 +21,7 @@ internal static class ConsumableChecks
             var effect = ConsumableEffects.Describe(perk.Effects.Single())!;
             check(EffectSupport.UnavailableReason(perk) == null, "Consumable perk is selectable: " + id);
             check(
-                effect.Kind == kind && effect.Duration == duration && effect.Rate == rate,
+                effect.Kind == kind && effect.Duration.Equals(duration) && effect.Rate.Equals(rate),
                 "Captured consumable magnitude and duration: " + id
             );
             check(effect.Targets.Count == 4, "All four fixed targets are available: " + id);
@@ -69,7 +68,7 @@ internal static class ConsumableChecks
         {
             var expected = ConsumableEffects.Describe(catalogue.All.Single(p => p.Id == id).Effects[0])!.Targets;
             check(
-                state.SeasonalPerkEffectParameters.Allergy![id].TargetItems.SequenceEqual(expected),
+                state.SeasonalPerkEffectParameters.Allergy![id].TargetItems!.SequenceEqual(expected),
                 "Persist complete fixed target set: " + id
             );
         }
@@ -88,7 +87,7 @@ internal static class ConsumableChecks
         );
         check(
             JsonNode.Parse(JsonConvert.SerializeObject(state.SeasonalPerkEffectParameters))!["other"]!["value"]!.GetValue<int>() == 7
-                && state.SeasonalPerkEffectParameters.Allergy!["legacy"].TargetItems[0] == "preserved",
+                && state.SeasonalPerkEffectParameters.Allergy!["legacy"].TargetItems![0] == "preserved",
             "Unrelated parameters are preserved"
         );
         state.SeasonalPerks.Add(juice);

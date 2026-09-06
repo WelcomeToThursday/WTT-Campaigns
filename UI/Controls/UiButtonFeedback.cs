@@ -27,7 +27,10 @@ public sealed class UiButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPoi
         button.onClick.AddListener(Click);
     }
 
-    private bool CanPlay => _button && _button!.IsActive() && _button.IsInteractable() && (_allowed?.Invoke() ?? true);
+    private bool CanPlay
+    {
+        get { return _button && _button!.IsActive() && _button.IsInteractable() && (_allowed?.Invoke() ?? true); }
+    }
 
     private void Click()
     {
@@ -50,7 +53,13 @@ public sealed class UiButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPoi
         }
     }
 
-    public void OnPointerExit(PointerEventData eventData) => _hovered = false;
+    public void OnPointerExit(PointerEventData eventData)
+    {
+        _hovered = false;
+    }
 
-    private void OnDisable() => _hovered = false;
+    private void OnDisable()
+    {
+        _hovered = false;
+    }
 }

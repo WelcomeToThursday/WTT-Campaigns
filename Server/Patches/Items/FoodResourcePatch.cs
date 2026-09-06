@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -32,19 +33,28 @@ public class FoodResourcePatch(ItemHelper items, InventoryHelper inventory, Even
     }
 
     [PatchPrefix]
+    [UsedImplicitly]
     private static bool Prefix(PmcData pmcData, OffraidEatRequestData request, MongoId sessionID, ref ItemEventRouterResponse __result)
     {
         var item = pmcData.Inventory?.Items?.FirstOrDefault(i => i.Id == request.Item);
         if (item == null)
+        {
             return true; // Preserve native missing-item error handling.
+        }
+
         var multiplier = ItemResourceEffects.Multiplier(pmcData, item, _items);
-        if (multiplier == 1f)
+        if (multiplier.Equals(1f))
+        {
             return true;
+        }
 
         var properties = _items.GetItem(item.Template).Value?.Properties;
         var maximum = properties?.MaxResource ?? 0;
         if (maximum <= 0 || !request.Count.HasValue || request.Count < 0)
+        {
             return true;
+        }
+
         __result = _output.GetOutput(sessionID);
         var current = item.Upd?.FoodDrink?.HpPercent ?? maximum;
         // Same banker's rounding as EFT's Mathf.Round for stash consumption. Single-use
@@ -54,7 +64,9 @@ public class FoodResourcePatch(ItemHelper items, InventoryHelper inventory, Even
         item.Upd.FoodDrink ??= new UpdFoodDrink();
         item.Upd.FoodDrink.HpPercent = remaining;
         if (remaining <= 0)
+        {
             _inventory.RemoveItem(pmcData, request.Item, sessionID, __result);
+        }
 
         // Preserve SPT's existing energy/hydration calculation using the unscaled request.
         foreach (var (factor, details) in properties!.EffectsHealth ?? [])
@@ -66,7 +78,10 @@ public class FoodResourcePatch(ItemHelper items, InventoryHelper inventory, Even
                 _ => null,
             };
             if (value == null)
+            {
                 continue;
+            }
+
             value.Current += maximum == 1 ? details.Value : request.Count;
             value.Current = Math.Clamp(value.Current ?? 0, 0, value.Maximum ?? 0);
         }

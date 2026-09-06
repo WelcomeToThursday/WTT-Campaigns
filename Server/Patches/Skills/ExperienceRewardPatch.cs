@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Shared.Effects.Skills;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -11,12 +12,18 @@ namespace SeasonalPerks.Server.Patches.Skills;
 [Injectable]
 public class ExperienceRewardPatch : AbstractPatch
 {
-    protected override MethodBase GetTargetMethod() => AccessTools.Method(typeof(ProfileHelper), nameof(ProfileHelper.AddExperienceToPmc));
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(ProfileHelper), nameof(ProfileHelper.AddExperienceToPmc));
+    }
 
     [PatchPrefix]
-    private static void Prefix(MongoId sessionId, ref int experienceToAdd) =>
+    [UsedImplicitly]
+    private static void Prefix(MongoId sessionId, ref int experienceToAdd)
+    {
         experienceToAdd = ExperienceScaling.Award(
             experienceToAdd,
             ServerStartup.Seasons.Effects(sessionId.ToString()).Multiplier("pmc_experience_multiplicator")
         );
+    }
 }

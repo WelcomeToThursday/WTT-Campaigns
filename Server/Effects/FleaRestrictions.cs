@@ -8,7 +8,10 @@ namespace SeasonalPerks.Server.Effects;
 [Injectable(InjectionType.Singleton)]
 public sealed class FleaRestrictions(EventOutputHolder output)
 {
-    internal static bool Active(MongoId sessionId) => ServerStartup.Seasons.Effects(sessionId.ToString()).Has("flea_market_npc_only");
+    internal static bool Active(MongoId sessionId)
+    {
+        return ServerStartup.Seasons.Effects(sessionId.ToString()).Has("flea_market_npc_only");
+    }
 
     internal ItemEventRouterResponse Reject(MongoId sessionId)
     {

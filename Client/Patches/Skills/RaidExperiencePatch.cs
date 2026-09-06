@@ -8,12 +8,14 @@ namespace SeasonalPerks.Client.Patches.Skills;
 
 public class RaidExperiencePatch : ModulePatch
 {
-    protected override MethodBase GetTargetMethod() =>
-        AccessTools.Method(
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(
             typeof(BaseStatisticsManager),
             nameof(BaseStatisticsManager.EndStatisticsSession),
             new[] { typeof(ExitStatus), typeof(float) }
         );
+    }
 
     [PatchTranspiler]
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
@@ -22,7 +24,10 @@ public class RaidExperiencePatch : ModulePatch
         var field = typeof(ProfileStats).GetField(nameof(ProfileStats.ExperienceBonusMult))!;
         var sites = code.Where(i => i.StoresField(field)).ToArray();
         if (sites.Length != 1)
+        {
             throw new InvalidOperationException("Expected one raid experience bonus store in " + __originalMethod);
+        }
+
         foreach (var instruction in code)
         {
             if (ReferenceEquals(instruction, sites[0]))
@@ -39,5 +44,8 @@ public class RaidExperiencePatch : ModulePatch
         }
     }
 
-    private static float Scale(float original, BaseStatisticsManager manager) => original * PmcExperience.Multiplier(manager.Profile);
+    private static float Scale(float original, BaseStatisticsManager manager)
+    {
+        return original * PmcExperience.Multiplier(manager.Profile);
+    }
 }

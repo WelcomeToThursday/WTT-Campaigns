@@ -1,6 +1,4 @@
 using System.Reflection;
-using EFT;
-using EFT.Ballistics;
 using EFT.HealthSystem;
 using HarmonyLib;
 using SPT.Reflection.Patching;

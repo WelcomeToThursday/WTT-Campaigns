@@ -1,10 +1,10 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
 using SPTarkov.Server.Core.Models.Common;
-using SPTarkov.Server.Core.Models.Eft.Match;
 
 namespace SeasonalPerks.Server.Patches.Session;
 
@@ -20,6 +20,7 @@ public class NewClientSessionPatch(SeasonService seasons) : AbstractPatch
     }
 
     [PatchPostfix]
+    [UsedImplicitly]
     private static void Postfix(MongoId sessionId)
     {
         // Solo SPT starts a new client session after a crash; the previous local raid cannot resume.

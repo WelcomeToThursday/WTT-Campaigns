@@ -32,16 +32,24 @@ public sealed class CharacterEquipment
 // Keep those converters when embedding an appearance in our Newtonsoft response.
 internal sealed class CharacterVisualConverter(JsonUtil json) : JsonConverter<CharacterVisual>
 {
-    public override bool CanRead => false;
+    public override bool CanRead
+    {
+        get { return false; }
+    }
 
-    public override void WriteJson(JsonWriter writer, CharacterVisual? value, JsonSerializer serializer) =>
+    public override void WriteJson(JsonWriter writer, CharacterVisual? value, JsonSerializer serializer)
+    {
         writer.WriteRawValue(json.Serialize(value));
+    }
 
-    public override CharacterVisual? ReadJson(
+    public override CharacterVisual ReadJson(
         JsonReader reader,
         Type objectType,
         CharacterVisual? existingValue,
         bool hasExistingValue,
         JsonSerializer serializer
-    ) => throw new NotSupportedException();
+    )
+    {
+        throw new NotSupportedException();
+    }
 }

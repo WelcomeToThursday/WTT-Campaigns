@@ -8,7 +8,6 @@ using SeasonalPerks.UI.Models;
 using SeasonalPerks.UI.Profiles;
 using UnityEngine;
 using UnityEngine.UI;
-using Object = UnityEngine.Object;
 
 namespace SeasonalPerks.UI.Screens;
 
@@ -33,7 +32,6 @@ public sealed partial class SeasonalScreen : IDisposable
     private InputField? _search;
     private InputField? _nickname;
     private GameObject? _dialog;
-    private GameObject? _tooltip;
     private bool _busy;
     private bool _disposed;
     private ProfileSelection? _profileSelection;
@@ -63,19 +61,63 @@ public sealed partial class SeasonalScreen : IDisposable
     public Func<Transform, CreationDraft, Action, Action, ICreationIdentity>? IdentityRequested;
     public bool StartupSelection;
     public Material? GlowMaterial;
-    public string[] Selected => _selected.OrderBy(id => id, StringComparer.Ordinal).ToArray();
-    public string Nickname => _name;
-    public string Side => _side;
-    public string HeadId => _creationDraft.HeadId;
-    public string VoiceId => _creationDraft.VoiceId;
-    private bool PersonalPage => Page == ScreenPage.Personal || Page == ScreenPage.CreationPersonal;
-    private bool CreationPage =>
-        Page == ScreenPage.CreationIdentity || Page == ScreenPage.CreationCommon || Page == ScreenPage.CreationPersonal;
-    public bool Dirty => !_selected.SetEquals(_state.Selected);
-    public bool DialogOpen => _dialog != null;
-    private bool Created => _state.Characters.Any(character => character.Mode == "seasonal" && character.Exists);
-    private int Remaining =>
-        _state.StartingPoints + _state.Perks.Where(perk => !perk.Common && _selected.Contains(perk.Id)).Sum(perk => perk.Points);
+    public string[] Selected
+    {
+        get { return _selected.OrderBy(id => id, StringComparer.Ordinal).ToArray(); }
+    }
+
+    public string Nickname
+    {
+        get { return _name; }
+    }
+
+    public string Side
+    {
+        get { return _side; }
+    }
+
+    public string HeadId
+    {
+        get { return _creationDraft.HeadId; }
+    }
+
+    public string VoiceId
+    {
+        get { return _creationDraft.VoiceId; }
+    }
+
+    private bool PersonalPage
+    {
+        get { return Page == ScreenPage.Personal || Page == ScreenPage.CreationPersonal; }
+    }
+
+    private bool CreationPage
+    {
+        get { return Page == ScreenPage.CreationIdentity || Page == ScreenPage.CreationCommon || Page == ScreenPage.CreationPersonal; }
+    }
+
+    public bool Dirty
+    {
+        get { return !_selected.SetEquals(_state.Selected); }
+    }
+
+    public bool DialogOpen
+    {
+        get { return _dialog != null; }
+    }
+
+    private bool Created
+    {
+        get { return _state.Characters.Any(character => character.Mode == "seasonal" && character.Exists); }
+    }
+
+    private int Remaining
+    {
+        get
+        {
+            return _state.StartingPoints + _state.Perks.Where(perk => !perk.Common && _selected.Contains(perk.Id)).Sum(perk => perk.Points);
+        }
+    }
 
     public SeasonalScreen(Transform parent, Func<string, GameObject> prefab, Font font, bool embedded = false)
     {
@@ -171,7 +213,6 @@ public sealed partial class SeasonalScreen : IDisposable
         ClearCardHover();
         _controls.interactable = !busy;
         _controls.blocksRaycasts = true;
-        HideTooltip();
         if (busy)
         {
             DismissDialog();
@@ -205,7 +246,6 @@ public sealed partial class SeasonalScreen : IDisposable
         }
         _status.rectTransform.anchoredPosition = new Vector2(-10, fullScreen ? -520 : -365);
         _query = "";
-        HideTooltip();
         _cards.Clear();
         _search = null;
         _nickname = null;

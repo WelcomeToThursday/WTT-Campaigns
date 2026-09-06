@@ -24,7 +24,7 @@ internal sealed class CreationIdentity : ICreationIdentity
     private bool _appearanceReady;
     private bool _busy;
     private bool _disposed;
-    private Task _pending = Task.CompletedTask;
+    private Task _pending;
 
     internal CreationIdentity(Transform host, CreationDraft draft, Font font, Action complete, Action back)
     {
@@ -46,7 +46,7 @@ internal sealed class CreationIdentity : ICreationIdentity
             var source = Resources
                 .FindObjectsOfTypeAll<EftAccountSideSelectionScreen>()
                 .FirstOrDefault(value => value.gameObject.scene.IsValid());
-            if (!source)
+            if (source == null)
             {
                 throw new InvalidOperationException("EFT's faction and appearance screen is unavailable.");
             }
@@ -143,7 +143,10 @@ internal sealed class CreationIdentity : ICreationIdentity
         return button;
     }
 
-    private void SideReady(bool ready) => Refresh();
+    private void SideReady(bool ready)
+    {
+        Refresh();
+    }
 
     private void NicknameChanged(string value)
     {

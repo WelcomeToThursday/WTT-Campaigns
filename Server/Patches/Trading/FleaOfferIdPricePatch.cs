@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -20,9 +21,12 @@ public class FleaOfferIdPricePatch(TraderPriceEffects prices) : AbstractPatch
     }
 
     [PatchPostfix]
+    [UsedImplicitly]
     private static void Postfix(ref RagfairOffer? __result)
     {
         if (__result != null)
+        {
             __result = TraderPriceEffects.Visible(__result) ? _prices.Offer(__result) : null;
+        }
     }
 }

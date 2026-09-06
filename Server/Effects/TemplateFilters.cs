@@ -16,12 +16,14 @@ internal static class TemplateFilters
         }
     }
 
-    internal static IEnumerable<string> Candidates(TemplateTable templates, PerkEffect effect) =>
-        templates
+    internal static IEnumerable<string> Candidates(TemplateTable templates, PerkEffect effect)
+    {
+        return templates
             .Items.Where(pair =>
                 pair.Value.Type == "Item"
                 && RuntimeEffects.MatchesFilter(effect.ItemFilter, pair.Key.ToString(), Ancestors(templates, pair.Key))
             )
             .Select(pair => pair.Key.ToString())
             .OrderBy(id => id, StringComparer.Ordinal);
+    }
 }

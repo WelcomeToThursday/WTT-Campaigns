@@ -1,9 +1,5 @@
-using Newtonsoft.Json;
 using SeasonalPerks.Shared.Contracts;
-using SPTarkov.DI.Annotations;
-using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Utils;
-using SPTarkov.Server.Core.Utils;
 
 namespace SeasonalPerks.Server;
 
@@ -17,8 +13,9 @@ public record SeasonRequest : IRequestData
     public string HeadId { get; set; } = "";
     public string VoiceId { get; set; } = "";
 
-    public Mutation ToMutation() =>
-        new()
+    public Mutation ToMutation()
+    {
+        return new()
         {
             ExpectedRevision = ExpectedRevision,
             PerkIds = PerkIds,
@@ -28,4 +25,5 @@ public record SeasonRequest : IRequestData
             HeadId = HeadId,
             VoiceId = VoiceId,
         };
+    }
 }

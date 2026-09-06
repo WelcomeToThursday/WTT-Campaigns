@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -21,10 +22,14 @@ public class FleaExtendRestrictionPatch(FleaRestrictions restrictions) : Abstrac
     }
 
     [PatchPrefix]
+    [UsedImplicitly]
     private static bool Prefix(MongoId sessionId, ref ItemEventRouterResponse __result)
     {
         if (!FleaRestrictions.Active(sessionId))
+        {
             return true;
+        }
+
         __result = _restrictions.Reject(sessionId);
         return false;
     }

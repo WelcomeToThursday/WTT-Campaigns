@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
@@ -20,12 +21,14 @@ public class RaidStartPatch(SeasonService seasons) : AbstractPatch
     }
 
     [PatchPrefix]
+    [UsedImplicitly]
     private static void Prefix(MongoId sessionId)
     {
         _seasons.MarkRaid(sessionId.ToString(), true).GetAwaiter().GetResult();
     }
 
     [PatchPostfix]
+    [UsedImplicitly]
     private static void Postfix(MongoId sessionId, ref Task<StartLocalRaidResponseData> __result)
     {
         __result = Complete(__result, sessionId.ToString());

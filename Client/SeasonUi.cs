@@ -40,10 +40,20 @@ public sealed class SeasonUi : MonoBehaviour
         }
     }
 
-    internal bool IsOpen => _screen != null && _screen.Root && _screen.Root.activeSelf;
-    internal bool InputBlocked => IsOpen || Time.frameCount <= _inputBlockedThrough;
+    internal bool IsOpen
+    {
+        get { return _screen != null && _screen.Root && _screen.Root.activeSelf; }
+    }
 
-    private void Awake() => Instance = this;
+    internal bool InputBlocked
+    {
+        get { return IsOpen || Time.frameCount <= _inputBlockedThrough; }
+    }
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     private void Update()
     {
@@ -147,9 +157,9 @@ public sealed class SeasonUi : MonoBehaviour
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
         var view = new SeasonalScreen(
             parent,
-            name =>
-                _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/ui/" + name + ".prefab")
-                ?? throw new InvalidDataException("Missing seasonal UI layout: " + name),
+            layoutName =>
+                _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/ui/" + layoutName + ".prefab")
+                ?? throw new InvalidDataException("Missing seasonal UI layout: " + layoutName),
             font,
             embedded
         );
@@ -204,7 +214,6 @@ public sealed class SeasonUi : MonoBehaviour
         {
             return;
         }
-        _screen?.HideTooltip();
         _screen?.Root.SetActive(false);
         _inputBlockedThrough = Time.frameCount + 1;
     }
@@ -420,9 +429,12 @@ public sealed class SeasonUi : MonoBehaviour
         }
     }
 
-    private void PlayProfileHover(bool seasonal) => PlayBundledSound(seasonal ? "profile-hover-seasonal" : "profile-hover-normal");
+    private void PlayProfileHover(bool seasonal)
+    {
+        PlayBundledSound(seasonal ? "profile-hover-seasonal" : "profile-hover-normal");
+    }
 
-    private void PlayBundledSound(string name)
+    private void PlayBundledSound(string clipName)
     {
         if (_destroyed)
         {
@@ -430,10 +442,10 @@ public sealed class SeasonUi : MonoBehaviour
         }
         try
         {
-            var clip = _bundle!.LoadAsset<AudioClip>("assets/mods/seasonalperks.assets/audio/" + name + ".wav");
+            var clip = _bundle!.LoadAsset<AudioClip>("assets/mods/seasonalperks.assets/audio/" + clipName + ".wav");
             if (!clip)
             {
-                throw new InvalidDataException("Missing bundled interface sound: " + name);
+                throw new InvalidDataException("Missing bundled interface sound: " + clipName);
             }
             Singleton<GUISounds>.Instance.PlaySound(clip);
         }
@@ -443,17 +455,17 @@ public sealed class SeasonUi : MonoBehaviour
         }
     }
 
-    internal void LoadArtwork(string name, Image target)
+    internal void LoadArtwork(string artworkName, Image target)
     {
         try
         {
             _bundle ??=
                 AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonalperks_ui.bundle"))
                 ?? throw new InvalidDataException("Missing seasonal UI bundle.");
-            var sprite = _bundle.LoadAsset<Sprite>("assets/mods/seasonalperks.assets/selectionartwork/" + name + ".png");
+            var sprite = _bundle.LoadAsset<Sprite>("assets/mods/seasonalperks.assets/selectionartwork/" + artworkName + ".png");
             if (!sprite)
             {
-                throw new InvalidDataException("Missing bundled selection artwork: " + name);
+                throw new InvalidDataException("Missing bundled selection artwork: " + artworkName);
             }
             if (!_destroyed && target)
             {

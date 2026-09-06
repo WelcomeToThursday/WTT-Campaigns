@@ -5,7 +5,11 @@ namespace SeasonalPerks.Server;
 
 public sealed record Metadata : IModMetadata
 {
-    public static string DirectoryPath => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!;
+    public static string DirectoryPath
+    {
+        get { return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!; }
+    }
+
     public string ModGuid { get; init; } = "com.cj.seasonalperks";
     public string Name { get; init; } = "Seasonal Perks";
     public string Author { get; init; } = "CJ-SPT";

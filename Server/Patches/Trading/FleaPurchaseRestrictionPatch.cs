@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -26,10 +27,13 @@ public class FleaPurchaseRestrictionPatch(FleaRestrictions restrictions, Ragfair
     }
 
     [PatchPrefix]
+    [UsedImplicitly]
     private static bool Prefix(MongoId sessionID, ProcessRagfairTradeRequestData request, ref ItemEventRouterResponse __result)
     {
         if (!FleaRestrictions.Active(sessionID))
+        {
             return true;
+        }
         // Preflight the entire basket: a disallowed later offer must not leave an
         // earlier trader purchase committed. Recheck live offers, never client ownership.
         foreach (var requested in request.Offers ?? [])

@@ -1,6 +1,5 @@
 using System.Reflection;
 using EFT.UI;
-using HarmonyLib;
 using SPT.Reflection.Patching;
 using UnityEngine;
 using UnityEngine.UI;
@@ -23,7 +22,7 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("SeasonalPerks.Me
         var existing = __instance
             .GetComponentsInChildren<DefaultUIButton>(true)
             .FirstOrDefault(button => button.name == "SeasonalPerksEntry");
-        if (existing)
+        if (existing != null)
         {
             existing.gameObject.SetActive(!Plugin.InRaid);
             return;

@@ -60,10 +60,10 @@ internal static class SerializationChecks
             JsonNode.DeepEquals(JsonNode.Parse(savedParameters), JsonNode.Parse(JsonConvert.SerializeObject(runtime.Parameters))),
             "Runtime parameter copies preserve known and future saved fields"
         );
-        parameters.Allergy!["saved-perk"].TargetItems[0] = "changed";
+        parameters.Allergy!["saved-perk"].TargetItems![0] = "changed";
         parameters.Allergy.Clear();
         check(
-            runtime.Parameters.Allergy!["saved-perk"].TargetItems.SequenceEqual(new[] { "a", "b", "c" }),
+            runtime.Parameters.Allergy!["saved-perk"].TargetItems!.SequenceEqual(new[] { "a", "b", "c" }),
             "Runtime parameters own independent maps and target lists"
         );
         var incomplete = JsonConvert.DeserializeObject<EffectParameters>("{allergy:{empty:null,missingTargets:{targetItems:null}}}")!;
@@ -90,7 +90,7 @@ internal static class SerializationChecks
                 new[] { "resource" }
             );
             check(
-                resources.ItemResourceMultiplier("any", Array.Empty<string>()) == 1,
+                resources.ItemResourceMultiplier("any", Array.Empty<string>()).Equals(1),
                 "Nonpositive and NaN resource multipliers remain neutral: " + multiplier
             );
         }
@@ -110,7 +110,7 @@ internal static class SerializationChecks
                         },
                     },
                     new[] { "missing" }
-                ).Multiplier("test") == 1,
+                ).Multiplier("test").Equals(1),
             "Absent optional filter and multiplier fields retain their neutral defaults"
         );
     }

@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -26,6 +27,7 @@ public class FleaTraderPaymentPatch(TraderPaymentValidation validation) : Abstra
     // This caller decrements flea stock after BuyItem even on a warning. Reject here
     // as well as at BuyItem so a stale flea payment cannot consume shared stock.
     [PatchPrefix]
+    [UsedImplicitly]
     private static bool Prefix(
         MongoId sessionId,
         PmcData pmcData,
@@ -55,5 +57,9 @@ public class FleaTraderPaymentPatch(TraderPaymentValidation validation) : Abstra
     }
 
     [PatchFinalizer]
-    private static void Finalizer(Lock? __state) => __state?.Exit();
+    [UsedImplicitly]
+    private static void Finalizer(Lock? __state)
+    {
+        __state?.Exit();
+    }
 }

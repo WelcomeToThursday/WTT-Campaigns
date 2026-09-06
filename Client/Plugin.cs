@@ -1,16 +1,11 @@
-using System.Net.Http;
-using System.Reflection;
 using BepInEx;
 using EFT;
-using HarmonyLib;
 using Newtonsoft.Json;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Perks;
 using SeasonalPerks.Shared.Profiles;
 using SPT.Common.Http;
-using SPT.Reflection.Patching;
-using UnityEngine;
 
 namespace SeasonalPerks.Client;
 
@@ -25,14 +20,30 @@ public sealed class Plugin : BaseUnityPlugin
     internal static RuntimeEffects Effects = new(new Catalogue(), Array.Empty<string>());
     internal static bool Busy;
     private static TarkovApplication? _application;
-    internal static TarkovApplication? App =>
-        _application ? _application : _application = UnityEngine.Object.FindObjectOfType<TarkovApplication>();
-    internal static Player? Player =>
-        Comfort.Common.Singleton<GameWorld>.Instantiated ? Comfort.Common.Singleton<GameWorld>.Instance.MainPlayer : null;
-    internal static bool InRaid => Player != null && !(Comfort.Common.Singleton<GameWorld>.Instance is HideoutGameWorld);
-    internal static bool SeasonalPlayer =>
-        Player != null && Current?.ActiveMode == "seasonal" && Player.Profile.Id == App?.Session?.Profile?.Id;
-    internal static string Folder => Path.GetDirectoryName(typeof(Plugin).Assembly.Location)!;
+    internal static TarkovApplication? App
+    {
+        get { return _application ? _application : _application = UnityEngine.Object.FindObjectOfType<TarkovApplication>(); }
+    }
+
+    internal static Player? Player
+    {
+        get { return Comfort.Common.Singleton<GameWorld>.Instantiated ? Comfort.Common.Singleton<GameWorld>.Instance.MainPlayer : null; }
+    }
+
+    internal static bool InRaid
+    {
+        get { return Player != null && !(Comfort.Common.Singleton<GameWorld>.Instance is HideoutGameWorld); }
+    }
+
+    internal static bool SeasonalPlayer
+    {
+        get { return Player != null && Current?.ActiveMode == "seasonal" && Player.Profile.Id == App?.Session?.Profile?.Id; }
+    }
+
+    internal static string Folder
+    {
+        get { return Path.GetDirectoryName(typeof(Plugin).Assembly.Location)!; }
+    }
 
     private void Awake()
     {
@@ -115,7 +126,13 @@ public sealed class Plugin : BaseUnityPlugin
         }
     }
 
-    internal static void Error(Exception e) => Instance.Logger.LogError(e);
+    internal static void Error(Exception e)
+    {
+        Instance.Logger.LogError(e);
+    }
 
-    internal static void LogInfo(string message) => Instance.Logger.LogInfo(message);
+    internal static void LogInfo(string message)
+    {
+        Instance.Logger.LogInfo(message);
+    }
 }

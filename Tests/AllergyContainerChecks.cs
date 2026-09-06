@@ -17,7 +17,7 @@ internal static class AllergyContainerChecks
         var candidates = Enumerable.Range(0, 15).Select(i => "item" + i).ToArray();
         var random = new Random(947);
         AllergyEffects.UpdateParameters(catalogue, state, _ => candidates, random.Next);
-        var targets = state.SeasonalPerkEffectParameters.Allergy![AllergyEffects.PerkId].TargetItems.ToArray();
+        var targets = state.SeasonalPerkEffectParameters.Allergy![AllergyEffects.PerkId].TargetItems!.ToArray();
         check(
             targets.Length == 3 && targets.Distinct().Count() == 3 && targets.All(t => candidates.Contains(t)),
             "Three distinct targets are drawn from the eligible pool"
@@ -29,7 +29,7 @@ internal static class AllergyContainerChecks
         var runtime = new RuntimeEffects(catalogue, state.SeasonalPerks, state.SeasonalPerkEffectParameters);
         foreach (var target in targets)
         {
-            var samples = Enumerable.Range(0, 200).Select(_ => AllergyEffects.ForItem(runtime, target!, random.Next).ToArray()).ToArray();
+            var samples = Enumerable.Range(0, 200).Select(_ => AllergyEffects.ForItem(runtime, target, random.Next).ToArray()).ToArray();
             check(
                 samples.All(s => s.Length == 3 && s.Select(e => e.Kind).Distinct().Count() == 3),
                 "Exactly three distinct symptoms per use: " + target
@@ -41,9 +41,9 @@ internal static class AllergyContainerChecks
                     .All(e =>
                         e.Kind switch
                         {
-                            "pain" => e.Duration == 30 && e.Rate == 0,
-                            "tremor" or "tunnelVision" => e.Duration == 20 && e.Rate == 0,
-                            _ => e.Duration == 30 && e.Rate == -3,
+                            "pain" => e.Duration.Equals(30) && e.Rate == 0,
+                            "tremor" or "tunnelVision" => e.Duration.Equals(20) && e.Rate == 0,
+                            _ => e.Duration.Equals(30) && e.Rate.Equals(-3),
                         }
                     ),
                 "Captured symptom timings and negative rates: " + target
@@ -64,22 +64,22 @@ internal static class AllergyContainerChecks
         var combined = new RuntimeEffects(catalogue, new[] { AllergyEffects.PerkId, "69c40ae21d8aec4a2b0551c2" }, combinedParameters);
         var combinedUse = ConsumableEffects.ForUse(combined, fish, n => n == 6 ? 3 : 0).ToArray();
         check(
-            combinedUse.Length == 4 && combinedUse.Last().Kind == "healthRegeneration" && combinedUse.Last().Rate == 2,
+            combinedUse.Length == 4 && combinedUse.Last().Kind == "healthRegeneration" && combinedUse.Last().Rate.Equals(2),
             "Overlapping allergy and canned-fish effects retain catalogue application order"
         );
         check(
-            combinedUse.Take(3).Any(e => e.Kind == "healthRegeneration" && e.Rate == -3),
+            combinedUse.Take(3).Any(e => e.Kind == "healthRegeneration" && e.Rate.Equals(-3)),
             "Negative and positive rate descriptors remain distinct before refresh"
         );
         check(
-            !AllergyEffects.ForItem(new RuntimeEffects(catalogue, state.SeasonalPerks), targets[0]!, random.Next).Any(),
+            !AllergyEffects.ForItem(new RuntimeEffects(catalogue, state.SeasonalPerks), targets[0], random.Next).Any(),
             "Missing parameters do not cause client rerolls"
         );
         state.SeasonalPerks.Clear();
         AllergyEffects.UpdateParameters(catalogue, state, _ => candidates, random.Next);
         check(
             !AllergyEffects
-                .ForItem(new RuntimeEffects(catalogue, state.SeasonalPerks, state.SeasonalPerkEffectParameters), targets[0]!, random.Next)
+                .ForItem(new RuntimeEffects(catalogue, state.SeasonalPerks, state.SeasonalPerkEffectParameters), targets[0], random.Next)
                 .Any(),
             "Removed allergy does not trigger despite retained receipt"
         );

@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
+using SeasonalPerks.Server.Effects;
 using SeasonalPerks.Shared.Configuration;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Effects;
@@ -86,11 +87,13 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
         }
     }
 
-    private AccountLink Link(string root) =>
-        _links.GetOrAdd(
+    private AccountLink Link(string root)
+    {
+        return _links.GetOrAdd(
             root,
             id => profileData.GetProfileDataAsync<AccountLink>(new MongoId(id), LinkKey).GetAwaiter().GetResult() ?? new AccountLink()
         );
+    }
 
     public string EffectiveId(string root)
     {
@@ -98,22 +101,24 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
         return link.Mode == "seasonal" && link.Created ? link.SeasonalId! : root;
     }
 
-    public bool IsSeasonal(string id) => State(saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!).Revision > 0;
+    public bool IsSeasonal(string id)
+    {
+        return State(saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!).Revision > 0;
+    }
 
     public static PerkState State(PmcData pmc)
     {
-        if (pmc.ExtensionData?.TryGetValue(StateKey, out var raw) != true)
+        if (!pmc.ExtensionData.TryGetValue(StateKey, out var raw))
         {
             return new PerkState();
         }
 
-        var json = raw is System.Text.Json.JsonElement j ? j.GetString() : raw?.ToString();
+        var json = raw is System.Text.Json.JsonElement j ? j.GetString() : raw.ToString();
         return string.IsNullOrWhiteSpace(json) ? new PerkState() : JsonConvert.DeserializeObject<PerkState>(json)!;
     }
 
     private static void SetState(PmcData pmc, PerkState state)
     {
-        pmc.ExtensionData ??= new();
         // Keep the persisted state contract independent of SPT's System.Text.Json serializer.
         // State and creation receipts are committed in the SAME profile save as the grant.
         pmc.ExtensionData[StateKey] = JsonConvert.SerializeObject(state);
@@ -172,7 +177,7 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
             added = false;
             foreach (var item in items)
             {
-                if (item.ParentId != null && ids.Contains(item.ParentId.ToString()))
+                if (item.ParentId != null && ids.Contains(item.ParentId))
                 {
                     added |= ids.Add(item.Id.ToString());
                 }
@@ -334,14 +339,14 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
         }
 
         var previousState = State(pmc);
-        var previousProgress = pmc.Skills!.Common!.Select(skill => (skill, skill.Progress)).ToArray();
+        var previousProgress = pmc.Skills!.Common.Select(skill => (skill, skill.Progress)).ToArray();
         state.RootAccountId ??= root;
         state.SeasonalPerks = Rules.EnabledCommonIds.Concat(personal).Distinct().ToList();
         ConsumableEffects.UpdateParameters(Catalogue, state);
         AllergyEffects.UpdateParameters(
             Catalogue,
             state,
-            effect => SeasonalPerks.Server.Effects.TemplateFilters.Candidates(templates, effect),
+            effect => TemplateFilters.Candidates(templates, effect),
             RandomNumberGenerator.GetInt32
         );
         foreach (var p in Catalogue.All.Where(p => state.SeasonalPerks.Contains(p.Id)))
@@ -484,7 +489,10 @@ public sealed class SeasonService(SaveServer saves, ProfileDataService profileDa
         await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
     }
 
-    private static string NewId() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(12));
+    private static string NewId()
+    {
+        return Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(12));
+    }
 
     private static string CleanNickname(string value)
     {

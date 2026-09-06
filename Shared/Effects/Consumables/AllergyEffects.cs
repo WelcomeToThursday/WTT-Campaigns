@@ -1,4 +1,3 @@
-using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Perks;
 using SeasonalPerks.Shared.Profiles;
 
@@ -20,12 +19,15 @@ public static class AllergyEffects
             || exclude.Count != 0
             || include.Count != 3
             || include.Any(r => r.Field != "ParentId")
-            || !new HashSet<string>(include.Select(r => r.Value)).SetEquals(
+            || !new HashSet<string?>(include.Select(r => r.Value)).SetEquals(
                 new[] { "5448f3a14bdc2d27728b4569", "5448f3a64bdc2d60728b456a", "543be6674bdc2df1348b4569" }
             )
             || effect.SubEffects is not { } subs
         )
+        {
             return false;
+        }
+
         var expected = new Dictionary<string, (float duration, float rate)>
         {
             ["pain"] = (30, 0),
@@ -39,8 +41,8 @@ public static class AllergyEffects
         return enabled.Length == expected.Count
             && enabled.All(p =>
                 expected.TryGetValue(p.Key, out var value)
-                && p.Value.DurationSeconds == value.duration
-                && (p.Value.Amount ?? 0) == value.rate
+                && p.Value.DurationSeconds.Equals(value.duration)
+                && (p.Value.Amount ?? 0).Equals(value.rate)
             );
     }
 
@@ -52,7 +54,10 @@ public static class AllergyEffects
         {
             var offset = next(pool.Length - i);
             if (offset < 0 || offset >= pool.Length - i)
+            {
                 throw new ArgumentOutOfRangeException(nameof(next));
+            }
+
             var j = i + offset;
             (pool[i], pool[j]) = (pool[j], pool[i]);
         }
@@ -71,7 +76,9 @@ public static class AllergyEffects
         {
             var effect = perk.Effects.FirstOrDefault(Supports);
             if (effect == null)
+            {
                 continue;
+            }
             // Keep the original roll even across deselection. Runtime always checks
             // selection; retaining parameters prevents edit-based rerolling.
             if (
@@ -81,21 +88,33 @@ public static class AllergyEffects
                 && saved.All(s => !string.IsNullOrEmpty(s))
                 && saved.Distinct().Count() == 3
             )
+            {
                 continue;
+            }
+
             var targets = Sample(candidates(effect), 3, next);
             if (targets.Length != 3)
+            {
                 throw new InvalidOperationException("Allergic needs at least three compatible item templates.");
+            }
+
             allergy[perk.Id] = new AllergyTargets { TargetItems = targets.ToList() };
         }
         if (allergy.Count > 0)
+        {
             state.SeasonalPerkEffectParameters.Allergy = allergy;
+        }
     }
 
     public static IEnumerable<ConsumableEffect> ForItem(RuntimeEffects runtime, string templateId, Func<int, int> next)
     {
         foreach (var perk in runtime.Perks)
-        foreach (var symptom in ForPerk(perk, runtime.Parameters, templateId, next))
-            yield return symptom;
+        {
+            foreach (var symptom in ForPerk(perk, runtime.Parameters, templateId, next))
+            {
+                yield return symptom;
+            }
+        }
     }
 
     internal static IEnumerable<ConsumableEffect> ForPerk(Perk perk, EffectParameters parameters, string templateId, Func<int, int> next)
@@ -106,17 +125,22 @@ public static class AllergyEffects
             || receipt?.TargetItems is not { } targets
             || !targets.Contains(templateId)
         )
+        {
             yield break;
+        }
+
         foreach (var effect in perk.Effects.Where(Supports))
         {
             var enabled = effect.SubEffects!.Where(p => p.Value.Enabled == true);
             foreach (var sub in Sample(enabled, 3, next))
+            {
                 yield return new ConsumableEffect(
                     sub.Key,
                     sub.Value.DurationSeconds!.Value,
                     sub.Value.Amount ?? 0,
                     targets.Select(s => s!).ToArray()
                 );
+            }
         }
     }
 }

@@ -29,10 +29,15 @@ public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentH
     internal bool Validate(PmcData pmc, ProcessBuyTradeRequestData request, MongoId session, ItemEventRouterResponse output)
     {
         if (request.Type == "buy_from_ragfair_pmc")
+        {
             return true;
+        }
+
         var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);
         if (effects.TraderMultiplier(request.TransactionId.ToString(), "buy") == 1m)
+        {
             return true;
+        }
 
         bool Reject()
         {
@@ -45,23 +50,34 @@ public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentH
         }
 
         if (request.Count is not > 0 || request.SchemeId is not >= 0 || request.SchemeItems == null)
+        {
             return Reject();
+        }
+
         var inventory = pmc.Inventory?.Items;
         if (inventory == null)
+        {
             return Reject();
+        }
+
         var assort = assorts.GetAssort(session, request.TransactionId);
         if (
             !assort.BarterScheme.TryGetValue(request.ItemId, out var variants)
             || request.SchemeId.Value >= variants.Count
             || !assort.Items.Any(i => i.Id == request.ItemId)
         )
+        {
             return Reject();
+        }
 
         var expected = new Dictionary<MongoId, double>();
         foreach (var requirement in variants[request.SchemeId.Value])
         {
             if (requirement.Count is not > 0 || !double.IsFinite(requirement.Count.Value))
+            {
                 return Reject();
+            }
+
             var count = TraderPricing.Required(requirement.Count.Value, request.Count.Value);
             expected[requirement.Template] = expected.GetValueOrDefault(requirement.Template) + count;
         }
@@ -69,28 +85,51 @@ public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentH
         var stacks = new Dictionary<MongoId, double>();
         foreach (var entry in request.SchemeItems)
         {
-            if (entry.Count is not > 0 || !double.IsFinite(entry.Count.Value) || Math.Truncate(entry.Count.Value) != entry.Count.Value)
+            if (
+                entry.Count is not > 0
+                || !double.IsFinite(entry.Count.Value)
+                || !Math.Truncate(entry.Count.Value).Equals(entry.Count.Value)
+            )
+            {
                 return Reject();
+            }
+
             var item = inventory.FirstOrDefault(i => i.Id == entry.Id);
             // SPT also accepts a currency template ID and chooses stacks itself.
             var template = item?.Template ?? entry.Id;
             if (item == null && !payment.IsMoneyTpl(template))
+            {
                 return Reject();
+            }
+
             supplied[template] = supplied.GetValueOrDefault(template) + entry.Count.Value;
             if (item != null)
             {
                 stacks[item.Id] = stacks.GetValueOrDefault(item.Id) + entry.Count.Value;
                 if (stacks[item.Id] > (item.Upd?.StackObjectsCount ?? 1))
+                {
                     return Reject();
+                }
             }
         }
-        if (expected.Count == 0 || supplied.Count != expected.Count || expected.Any(e => supplied.GetValueOrDefault(e.Key) != e.Value))
+        if (
+            expected.Count == 0
+            || supplied.Count != expected.Count
+            || expected.Any(e => !supplied.GetValueOrDefault(e.Key).Equals(e.Value))
+        )
+        {
             return Reject();
+        }
         // Currency-template payments can draw from multiple stacks. Check total funds
         // before native BuyItem grants items and decrements trader stock.
         foreach (var entry in supplied.Where(e => payment.IsMoneyTpl(e.Key)))
+        {
             if (inventory.Where(i => i.Template == entry.Key).Sum(i => i.Upd?.StackObjectsCount ?? 1) < entry.Value)
+            {
                 return Reject();
+            }
+        }
+
         return true;
     }
 }

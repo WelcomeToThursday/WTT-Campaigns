@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -23,6 +24,7 @@ public class TraderPaymentPatch(TraderPaymentValidation validation) : AbstractPa
     }
 
     [PatchPrefix]
+    [UsedImplicitly]
     private static bool Prefix(
         PmcData pmcData,
         ProcessBuyTradeRequestData buyRequestData,
@@ -37,5 +39,9 @@ public class TraderPaymentPatch(TraderPaymentValidation validation) : AbstractPa
     }
 
     [PatchFinalizer]
-    private static void Finalizer(Lock? __state) => __state?.Exit();
+    [UsedImplicitly]
+    private static void Finalizer(Lock? __state)
+    {
+        __state?.Exit();
+    }
 }

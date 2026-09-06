@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using EFT;
-using EFT.Interactive;
 using EFT.InventoryLogic;
 using HarmonyLib;
 using SeasonalPerks.Shared.Effects;

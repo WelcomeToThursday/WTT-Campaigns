@@ -12,6 +12,12 @@ Install the CSharpier extension in your IDE and run `dotnet tool restore`. In Ri
 
 Only these shared defaults are tracked inside `.idea` and `.vs`. Workspace state, caches, and `*.DotSettings.user` remain local. Format edited files with `dotnet csharpier format <paths>`, or format the whole project with `dotnet csharpier format .`. Verify formatting with `dotnet csharpier check .`.
 
+The **Format** GitHub workflow runs CSharpier on every branch push and commits formatting changes back to that branch when needed. Pull those commits before continuing local work. Repository rules must allow GitHub Actions to push to the branch. Formatting commits use `GITHUB_TOKEN`, so they do not trigger another workflow run; source checks run on the original push.
+
+CSharpier controls layout; it does not convert expression-bodied members or apply inspection fixes. Apply the configured warning-level C# style fixes with `dotnet format style SeasonalPerks.sln --severity warn`, then run CSharpier. Verify them with `dotnet format style SeasonalPerks.sln --severity warn --verify-no-changes`. These solution-wide commands require the game references described below. Builds also enforce the configured code-style diagnostics.
+
+Server patch callbacks use `UsedImplicitly` to identify methods invoked through SPT reflection. Keep those annotations alongside the patch attributes. UI sources use explicit imports because the same files compile in Unity's preview assemblies without SDK-generated global usings.
+
 ## Checks without a game installation
 
 From a clean checkout:

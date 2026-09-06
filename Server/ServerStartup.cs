@@ -1,8 +1,6 @@
-using Microsoft.AspNetCore.Http;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.DI;
-using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Routers;
 
 namespace SeasonalPerks.Server;

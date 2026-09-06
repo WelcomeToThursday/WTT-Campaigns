@@ -7,7 +7,7 @@ namespace SeasonalPerks.Shared.Effects;
 public sealed class PerkEffect : ExtensibleJsonModel
 {
     [JsonProperty("effectId")]
-    public string EffectId { get; set; } = "";
+    public string? EffectId { get; set; } = "";
 
     [JsonProperty("multiplicator", NullValueHandling = NullValueHandling.Ignore)]
     public double? Multiplier { get; set; }

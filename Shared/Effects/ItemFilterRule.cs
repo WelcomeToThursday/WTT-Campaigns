@@ -9,5 +9,5 @@ public sealed class ItemFilterRule : ExtensibleJsonModel
     public string Field { get; set; } = "";
 
     [JsonProperty("value")]
-    public string Value { get; set; } = "";
+    public string? Value { get; set; } = "";
 }

@@ -1,5 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
+using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
@@ -23,11 +24,15 @@ public class SecureSwapItemPatch(SecureContainerRestrictions restrictions) : Abs
     }
 
     [PatchPrefix]
+    [UsedImplicitly]
     private static bool Prefix(PmcData pmcData, InventorySwapRequestData request, MongoId sessionId, ref ItemEventRouterResponse __result)
     {
         var output = _restrictions.Output(sessionId);
         if (_restrictions.Check(pmcData, request, sessionId, output))
+        {
             return true;
+        }
+
         __result = output;
         return false;
     }

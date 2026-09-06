@@ -9,6 +9,8 @@ public abstract class ExtensibleJsonModel
     [JsonExtensionData]
     private IDictionary<string, JToken>? _extra;
 
-    protected void CopyExtraTo(ExtensibleJsonModel copy) =>
+    protected void CopyExtraTo(ExtensibleJsonModel copy)
+    {
         copy._extra = _extra?.ToDictionary(pair => pair.Key, pair => pair.Value.DeepClone());
+    }
 }
