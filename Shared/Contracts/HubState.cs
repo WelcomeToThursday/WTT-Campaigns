@@ -16,4 +16,14 @@ public sealed class HubState
     public int DocumentLimit { get; set; } = 30;
     public int ClaimedRewards { get; set; } = 0;
     public bool PreviewOnly { get; set; } = true;
+
+    public long Revision { get; set; } = 0;
+    public int RemainingDocuments { get; set; } = 0;
+    public long NextResetTime { get; set; } = 0;
+    public long Tarcoins { get; set; } = 0;
+    public string Error { get; set; } = "";
+    public string ExchangeUnavailableReason { get; set; } = "";
+    public string CrateUnavailableReason { get; set; } = "";
+    public int ExchangeRate { get; set; } = 0;
+    public int CrateCost { get; set; } = 0;
 }

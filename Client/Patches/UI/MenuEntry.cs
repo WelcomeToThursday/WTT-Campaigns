@@ -1,5 +1,7 @@
 using System.Reflection;
 using EFT.UI;
+using SeasonalPerks.Client.Hub;
+using SeasonalPerks.Client.UI;
 using SPT.Reflection.Patching;
 using UnityEngine;
 using UnityEngine.UI;

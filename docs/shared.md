@@ -5,6 +5,7 @@
 | Folder / namespace suffix | Responsibility |
 | --- | --- |
 | `Contracts` | API requests and responses: `Mutation`, `Snapshot`, and `CharacterSummary` |
+| `Hub` | Conserved document identities, rolling pickup allowance, raid and transaction receipts |
 | `Configuration` | Server-configurable selection rules |
 | `Perks` | Catalogue entries and selection validation / point balance |
 | `Profiles` | Saved perk state, rolled effect parameters, and loaded-character identity checks |

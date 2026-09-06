@@ -1,3 +1,4 @@
+using EFT;
 using EFT.HealthSystem;
 using EFT.Interactive;
 using EFT.UI;
@@ -69,6 +70,12 @@ internal static class PatchRegistration
 
     private static void EnableItems()
     {
+        new HubDocumentPickupPatch().Enable();
+        new HubDocumentMergePatch().Enable();
+        new HubDocumentTransferPatch().Enable();
+        new HubDocumentSplitPatch().Enable();
+        new HubDocumentRaidPatch(nameof(EftClientBackendSession.LocalRaidStarted)).Enable();
+        new HubDocumentRaidPatch(nameof(EftClientBackendSession.LocalRaidEnded)).Enable();
         new ConsumableUsePatch().Enable();
         new MedicineCompletionPatch().Enable();
         new SecureGridPatch().Enable();

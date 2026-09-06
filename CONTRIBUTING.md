@@ -51,7 +51,7 @@ Use the isolated-server scripts for backend integration tests. `Testing/` is dis
 
 ## Changes and review
 
-Follow the [patch](docs/patches.md), [shared project](docs/shared.md), and [UI project](docs/ui-structure.md) organization guides. Format edited C# files with `dotnet csharpier format <paths>`. Source uses UTF-8 and LF line endings; `.gitattributes` also normalizes text when Git adds it.
+Follow the [client/server](docs/client-server-structure.md), [patch](docs/patches.md), [shared project](docs/shared.md), and [UI project](docs/ui-structure.md) organization guides. Format edited C# files with `dotnet csharpier format <paths>`. Source uses UTF-8 and LF line endings; `.gitattributes` also normalizes text when Git adds it.
 
 Keep game binaries, generated bundles, recovered media, raw captures, profiles, credentials and machine-specific settings out of commits. The whole `Research/` tree is ignored; preserve useful conclusions in reviewed `docs/` files. Keep sanitized catalogue/localization data and fixtures in their existing directories.
 

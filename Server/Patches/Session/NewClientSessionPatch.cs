@@ -1,6 +1,7 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
+using SeasonalPerks.Server.Profiles;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;

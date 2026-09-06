@@ -11,9 +11,10 @@ namespace SeasonalPerks.Server.Effects;
 [Injectable(InjectionType.Singleton)]
 public sealed class TraderPriceEffects(ICloner cloner)
 {
-    internal sealed class SearchScope(RuntimeEffects effects)
+    internal sealed class SearchScope(RuntimeEffects effects, Func<RagfairOffer, bool>? allowed = null)
     {
         internal RuntimeEffects Effects { get; } = effects;
+        internal Func<RagfairOffer, bool>? Allowed { get; } = allowed;
         internal Dictionary<RagfairOffer, RagfairOffer> Offers { get; } = new(ReferenceEqualityComparer.Instance);
     }
 
@@ -21,7 +22,8 @@ public sealed class TraderPriceEffects(ICloner cloner)
 
     internal static bool Visible(RagfairOffer offer)
     {
-        return Search.Value?.Effects.Has("flea_market_npc_only") != true || offer.IsTraderOffer();
+        return (Search.Value?.Effects.Has("flea_market_npc_only") != true || offer.IsTraderOffer())
+            && Search.Value?.Allowed?.Invoke(offer) != false;
     }
 
     internal TraderAssort Assort(TraderAssort original, decimal multiplier)

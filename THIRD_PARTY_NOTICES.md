@@ -8,3 +8,5 @@ The MIT license applies to the original Seasonal Perks mod code, consistent with
 - `Tests/fixtures/captured-perk-state.json` contains only perk/template identifiers and effect parameters. Full profiles and request headers are excluded.
 - NuGet and Python dependencies retain their own licenses. Their versions are declared in the project files, tool manifest and `tools/requirements.txt`; dependency binaries are not vendored.
 - The companion CJ-SDK Unity project and its recovered asset workspace are maintained separately and are not included here.
+
+Seasonal document/crate definitions, quest definitions, reward payloads and associated localization are recovered game data. Source hashes and object identifiers are retained with the import provenance. Rebuilt item bundles, compressed textures, models, shaders and native reference audits remain local and ignored, and are included only in locally staged runtime packages.

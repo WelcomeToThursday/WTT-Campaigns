@@ -24,3 +24,7 @@ Run `python tools/sync_ui_preview.py` after editing UI sources. It searches subf
 Attachable components, their sound enum and the shared `UiElements` helper compile under `PreviewRuntime`; other sources compile under `Editor/Generated`. When adding a runtime component, update `RUNTIME_SOURCES` and keep its dependencies in that assembly. The sync script preserves metadata GUIDs when moving generated sources between these directories. Generated sources are not bundle dependencies.
 
 Update the client and the companion SDK's editor preview/check imports when moving types. Build the solution, run the UI assembly compatibility checks described in [CONTRIBUTING](../CONTRIBUTING.md), and use **SDK / Seasonal Perks / Render UI previews** for Unity interaction checks. These namespace changes preserve UI behavior and layouts, but consumers must rebuild against the new CLR type names.
+
+## Battle Pass transactions
+
+`SeasonsHubScreen.Transactions` presents claim/shortage, exchange and result dialogs through `HubAction` callbacks. `HubRequirement` carries structured eligibility without EFT types. Client adapters save pending operation IDs, flush native inventory operations, reconcile responses and reload the profile. Copy the reviewed `tools/unity/SeasonalHubPreview.cs` into the SDK editor folder after syncing UI sources to exercise the transaction fixtures.

@@ -147,6 +147,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
 
     private void ClearPage()
     {
+        DismissDialog();
         HideTooltip();
         PageClosing?.Invoke();
         if (_page)
@@ -267,7 +268,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
         button.targetGraphic = image;
         button.interactable = false;
         button.transition = Selectable.Transition.None;
-        Hint(image.gameObject, "Not available yet. This preview supports browsing only.", x, y - 85);
+        Hint(image.gameObject, "Online document purchases are unavailable in SPT.", x, y - 85);
     }
 
     private void Hint(GameObject target, string text, float x, float y)
@@ -328,6 +329,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
 
     public void Close()
     {
+        DismissDialog();
         HideTooltip();
         PageClosing?.Invoke();
         Root.SetActive(false);

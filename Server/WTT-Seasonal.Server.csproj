@@ -20,4 +20,23 @@
     <None Include="$(SeasonalAssetsDir)Icons\*.png" Link="icons\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <None Include="$(SeasonalAssetsDir)HubImages\*.png" Link="hub-images\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <None
+      Include="..\Research\SeasonItems\wtt-seasonal\assets\**\*.bundle"
+      Link="bundles\wtt-seasonal\assets\%(RecursiveDir)%(Filename)%(Extension)"
+      CopyToOutputDirectory="PreserveNewest"
+    />
+    <None
+      Include="..\Research\SeasonItems\bundles.json"
+      Link="bundles.json"
+      CopyToOutputDirectory="PreserveNewest"
+      Condition="Exists('..\Research\SeasonItems\bundles.json')"
+    />
+    <None
+      Include="..\Research\SeasonItems\audit.json"
+      Link="season-items-audit.json"
+      CopyToOutputDirectory="PreserveNewest"
+      Condition="Exists('..\Research\SeasonItems\audit.json')"
+    />
+  </ItemGroup>
 </Project>

@@ -1,8 +1,8 @@
-# Seasonal hub UI 0.1.24
+# Seasonal hub UI 0.2.0
 
 The Seasonal character's main menu gains a KORD BREACH banner opening Battle Pass, Seasonal Rewards and About the Season. Normal characters have no banner. Back or Escape returns to the menu; Q/E and the page arrows browse rewards or the season carousel. Reward selection survives tab changes until the hub closes.
 
-This release is a browsing preview. Claims, purchases/exchanges, leagues and unrecorded tutorial/transaction dialogs are unavailable. Installed data has zero claims and documents, and no countdown. It does not award items, enable online services, import live account progress or change profiles. Captured carousel text describes live season features; synchronization and automatic resets are not implemented.
+The hub now includes local claim, Classified-shortage confirmation, exchange and result dialogs. Fresh Seasonal progress starts at zero, with no season countdown. Leagues, ratings, online purchases and the unrecorded tutorial remain unavailable. See [gameplay, dependency locks and asset reproduction](battle-pass-gameplay.md) for transaction behavior and validation. Captured carousel text describes live season features; online synchronization and automatic resets are not implemented.
 
 ## Reference evidence
 
@@ -45,3 +45,5 @@ The 0.1.24 validation run passed 382 contract/client assertions, 31 native UI co
 Installed SPT 4.1.3 checks confirmed banner entry, Q/E paging, reward selection, tab restoration, Seasonal Rewards, the About carousel, modifier tooltips, disabled-action explanations, Escape-to-menu and hiding the banner after switching to Normal. Runtime inspection caught and corrected the native beta-notice overlap and video frame binding. The static logo fallback now yields to the decoded video. The banner sits above SPT's beta notice, which is retained.
 
 Exact visual/audio parity is not signed off by these checks. Audible mixing, raid-entry cleanup, reconnects and deliberate network-failure/close-during-load timing still require runtime acceptance. Catalogue/image requests observed in the game use the local server; no external artwork access is used by the implementation. External networking was not disabled globally during the installed-game check.
+
+The 0.2.0 editor run adds claim/Classified confirmation, exchange, result and dialog-cleanup fixtures: 141 checks at each requested resolution. Native compatibility also covers document stack events and backend raid boundaries. Gameplay/restart/raid results and remaining dependency locks are documented in [Battle Pass gameplay](battle-pass-gameplay.md). Installed checks above describe the earlier browsing release; they do not sign off the new transactions.

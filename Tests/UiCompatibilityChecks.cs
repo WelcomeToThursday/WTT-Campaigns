@@ -55,7 +55,7 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
-            var hub = client.MainModule.GetType("SeasonalPerks.Client.SeasonHubUi");
+            var hub = client.MainModule.GetType("SeasonalPerks.Client.Hub.SeasonHubUi");
             Check(hub != null, "Season hub client adapter is packaged");
             var availability = hub!.Methods.Single(m => m.Name == "get_Available").Body.Instructions;
             Check(
@@ -70,12 +70,12 @@ internal static class UiCompatibilityChecks
                     && menu.Body.ExceptionHandlers.Any(h => h.CatchType?.FullName == "System.Exception"),
                 "Optional hub entry cannot throw through native menu initialization"
             );
-            var input = client.MainModule.GetType("SeasonalPerks.Client.SeasonUi").Methods.Single(m => m.Name == "get_InputBlocked");
+            var input = client.MainModule.GetType("SeasonalPerks.Client.UI.SeasonUi").Methods.Single(m => m.Name == "get_InputBlocked");
             Check(
                 input.Body.Instructions.Any(i => i.Operand is MethodReference method && method.DeclaringType.Name == "SeasonHubUi"),
                 "Native input guard includes hub visibility"
             );
-            var video = client.MainModule.GetType("SeasonalPerks.Client.HubVideo").Methods.Single(m => m.Name == "OnDisable");
+            var video = client.MainModule.GetType("SeasonalPerks.Client.Hub.HubVideo").Methods.Single(m => m.Name == "OnDisable");
             Check(
                 video.Body.Instructions.Any(i => i.Operand is MethodReference method && method.Name == "Stop"),
                 "Hidden hub videos stop their decoder"
@@ -85,7 +85,7 @@ internal static class UiCompatibilityChecks
                 method.HasBody
                 && method.Body.Instructions.Any(instruction =>
                     instruction.Operand is MethodReference called
-                    && called.DeclaringType.FullName == "SeasonalPerks.Client.SeasonalSkillsTab"
+                    && called.DeclaringType.FullName == "SeasonalPerks.Client.UI.SeasonalSkillsTab"
                     && called.Name == "Initialize"
                 )
             );
@@ -148,6 +148,27 @@ internal static class UiCompatibilityChecks
             "Appearance-only profile descriptor"
         );
         var reconnect = types["EFT.TarkovApplication"].Methods.Single(method => method.Name == "RecreateBackend");
+        foreach (var name in new[] { "MergeResult", "SplitResult", "TransferResult" })
+        {
+            var method = types["EFT.InventoryLogic." + name].Methods.Single(m => m.Name == "RaiseEvents");
+            Check(
+                method.Parameters.Select(p => p.Name).SequenceEqual(new[] { "controller", "status" }),
+                "Document provenance event arguments: " + name
+            );
+            Check(method.Parameters[1].ParameterType.Name == "CommandStatus", "Successful native operation status: " + name);
+        }
+        Check(
+            types["EFT.InventoryLogic.MergeResult"].Fields.Any(f => f.Name == "_transferResult" && f.FieldType.Name == "TransferResult"),
+            "Merge exposes exact transferred quantity"
+        );
+        Check(
+            types["EFT.InventoryLogic.TransferResult"].Fields.Any(f => f.Name == "Count" && f.FieldType.Name == "Int32"),
+            "Transfer exposes exact quantity"
+        );
+        Check(
+            types["EFT.InventoryLogic.InternalSplitResult"].Properties.Any(p => p.Name == "ResultItem"),
+            "Split exposes the new item identity"
+        );
         Check(
             reconnect.IsPublic
                 && reconnect.Parameters.Count == 2
@@ -155,6 +176,13 @@ internal static class UiCompatibilityChecks
                 && reconnect.Parameters[1].ParameterType.FullName == "System.Boolean",
             "Native reconnect supports forced same-mode profile switching"
         );
+        foreach (var name in new[] { "LocalRaidStarted", "LocalRaidEnded" })
+        {
+            Check(
+                types["EFT.EftClientBackendSession"].Methods.Count(m => m.Name == name) == 1,
+                "Document journal flush binds native backend " + name
+            );
+        }
         Console.WriteLine($"UI compatibility: {count} checks passed against {Path.GetFileName(path)}.");
     }
 }

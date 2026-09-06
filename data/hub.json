@@ -291,7 +291,7 @@
               "Count": 1
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
               "Count": 1
             }
           ],
@@ -316,7 +316,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318c88c4e0f26c1820632c",
               "Count": 2
             },
             {
@@ -341,7 +341,7 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
               "Count": 2
             },
             {
@@ -382,7 +382,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
               "Count": 1
             }
           ],
@@ -407,11 +407,11 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 1
             },
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 1
             }
           ],
@@ -445,7 +445,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
               "Count": 1
             }
           ],
@@ -470,7 +470,7 @@
               "Count": 4
             },
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 3
             },
             {
@@ -503,7 +503,7 @@
               "Count": 3
             },
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 2
             }
           ],
@@ -528,7 +528,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 2
             },
             {
@@ -595,15 +595,15 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
-              "Count": 2
-            },
-            {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
               "Count": 2
             },
             {
               "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "Count": 2
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 1
             }
           ],
@@ -632,11 +632,11 @@
               "Count": 1
             },
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 1
             },
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
               "Count": 1
             }
           ],
@@ -665,7 +665,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 1
             }
           ],
@@ -694,7 +694,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 1
             }
           ],
@@ -719,7 +719,7 @@
               "Count": 3
             },
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
               "Count": 2
             },
             {
@@ -749,7 +749,7 @@
           "Height": 2,
           "Costs": [
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 4
             },
             {
@@ -782,7 +782,7 @@
           "Height": 2,
           "Costs": [
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 4
             },
             {
@@ -853,15 +853,15 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 5
             },
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 3
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
               "Count": 2
             }
           ],
@@ -882,7 +882,7 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c88c4e0f26c1820632c",
               "Count": 4
             },
             {
@@ -911,7 +911,7 @@
           "Height": 2,
           "Costs": [
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 5
             },
             {
@@ -944,7 +944,7 @@
           "Height": 2,
           "Costs": [
             {
-              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 5
             },
             {
@@ -982,7 +982,7 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
               "Count": 2
             },
             {
@@ -990,7 +990,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 2
             }
           ],
@@ -1044,7 +1044,7 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 6
             },
             {
@@ -1077,7 +1077,7 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 3
             },
             {
@@ -1085,7 +1085,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 1
             }
           ],
@@ -1106,7 +1106,7 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 1
             },
             {
@@ -1144,7 +1144,7 @@
               "Count": 4
             },
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
               "Count": 4
             },
             {
@@ -1173,15 +1173,15 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 3
             },
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
               "Count": 2
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318c88c4e0f26c1820632c",
               "Count": 1
             }
           ],
@@ -1202,7 +1202,7 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 5
             },
             {
@@ -1231,15 +1231,15 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c88c4e0f26c1820632c",
               "Count": 2
             },
             {
-              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 2
             },
             {
-              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 1
             }
           ],
@@ -1268,7 +1268,7 @@
               "Count": 4
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
               "Count": 4
             },
             {
@@ -1276,7 +1276,7 @@
               "Count": 2
             },
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
               "Count": 2
             }
           ],
@@ -1302,15 +1302,15 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 6
             },
             {
-              "DocumentId": "6a318c88c4e0f26c1820632c",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 5
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
               "Count": 5
             },
             {
@@ -1339,15 +1339,15 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 6
             },
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 5
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
               "Count": 5
             },
             {
@@ -1376,11 +1376,11 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 3
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 3
             },
             {
@@ -1405,19 +1405,19 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c88c4e0f26c1820632c",
               "Count": 5
             },
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 4
             },
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 2
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
               "Count": 2
             }
           ],
@@ -1443,19 +1443,19 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c88c4e0f26c1820632c",
               "Count": 4
             },
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 3
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
               "Count": 2
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318c87a8e42ee82c93d1c6",
               "Count": 2
             }
           ],
@@ -1476,7 +1476,7 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
               "Count": 5
             },
             {
@@ -1484,11 +1484,11 @@
               "Count": 5
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 3
             },
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 3
             }
           ],
@@ -1509,16 +1509,12 @@
           "Height": 2,
           "Costs": [
             {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 5
+            },
+            {
               "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 5
-            },
-            {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
-              "Count": 5
-            },
-            {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
-              "Count": 3
             },
             {
               "DocumentId": "6a318c4787bb92f2d5f13088",
@@ -1526,6 +1522,10 @@
             },
             {
               "DocumentId": "6a318c88c4e0f26c1820632c",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 3
             }
           ],
@@ -1546,16 +1546,12 @@
           "Height": 2,
           "Costs": [
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 5
             },
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 5
-            },
-            {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
-              "Count": 3
             },
             {
               "DocumentId": "6a318c87a8e42ee82c93d1c6",
@@ -1563,6 +1559,10 @@
             },
             {
               "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "Count": 3
+            },
+            {
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
               "Count": 3
             }
           ],
@@ -1588,23 +1588,23 @@
           "Height": 1,
           "Costs": [
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 7
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
+              "Count": 6
             },
             {
               "DocumentId": "6a318c87a8e42ee82c93d1c6",
               "Count": 6
             },
             {
-              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
-              "Count": 6
-            },
-            {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
               "Count": 5
             },
             {
-              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 5
             }
           ],
@@ -1625,31 +1625,31 @@
           "Height": 2,
           "Costs": [
             {
-              "DocumentId": "6a318b84fab84feb6aa71fe4",
-              "Count": 6
-            },
-            {
               "DocumentId": "6a318c7d1ee27abd10b8c6d8",
-              "Count": 5
+              "Count": 6
             },
             {
               "DocumentId": "6a318c88c4e0f26c1820632c",
               "Count": 5
             },
             {
-              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "DocumentId": "6a318b84fab84feb6aa71fe4",
+              "Count": 5
+            },
+            {
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 4
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 3
             },
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c4787bb92f2d5f13088",
               "Count": 1
             },
             {
-              "DocumentId": "6a318c87a8e42ee82c93d1c6",
+              "DocumentId": "6a318aa1a3afbdeaf55b578e",
               "Count": 1
             }
           ],
@@ -1670,7 +1670,7 @@
           "Height": 2,
           "Costs": [
             {
-              "DocumentId": "6a318c87a7e717b20bcda2df",
+              "DocumentId": "6a318c7d1ee27abd10b8c6d8",
               "Count": 6
             },
             {
@@ -1678,11 +1678,11 @@
               "Count": 5
             },
             {
-              "DocumentId": "6a318c4787bb92f2d5f13088",
+              "DocumentId": "6a318c87a7e717b20bcda2df",
               "Count": 5
             },
             {
-              "DocumentId": "6a318aa1a3afbdeaf55b578e",
+              "DocumentId": "6a318c000357e1cc214ff8b4",
               "Count": 4
             },
             {
@@ -1747,7 +1747,7 @@
       "Height": 2,
       "Costs": [],
       "Requirements": [
-        "Complete the task: ",
+        "Reach level 30",
         "Complete the task: [KORD BREACH] Digital Puzzle"
       ],
       "Claimed": false
@@ -1766,7 +1766,7 @@
       "Height": 1,
       "Costs": [],
       "Requirements": [
-        "Complete the task: ",
+        "Reach level 25",
         "Complete the task: [KORD BREACH] Sheep in Wolf's Clothing"
       ],
       "Claimed": false
@@ -1785,7 +1785,7 @@
       "Height": 2,
       "Costs": [],
       "Requirements": [
-        "Complete the task: ",
+        "Reach level 30",
         "Complete the task: [KORD BREACH] Historical Perspectives"
       ],
       "Claimed": false

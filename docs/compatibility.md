@@ -57,3 +57,11 @@ Use a disposable SPT test account with both staged components. Verify menu -> cr
 UI 0.1.4 opens a two-card profile selector at startup, using original selection artwork and Bender typography. The seasonal card expands on hover. Each existing profile supplies an appearance-only equipment descriptor to SPT's native character renderer, using recovered camera/light settings. Live's specialized hover animation remains unported; runtime framing, lighting, model lifecycle and exact visual parity still need in-game validation. The native PERKS tab and personal/global editor remain available. See [UI details](ui.md).
 
 The package contains all icons and has no runtime CDN requests. Runtime offline behavior still needs testing with external networking unavailable. Battle Pass and Seasonal Rewards browsing are included in UI 0.1.24, alongside About the Season. Reward delivery, document transactions, leaderboards and automatic wipes remain outside scope. See [hub evidence and validation](battle-pass-ui.md).
+
+## Battle Pass gameplay 0.2.0
+
+See [Battle Pass gameplay](battle-pass-gameplay.md) for capture changes, dependency gates, item recovery and tests. Documents/crates register during Preload, before the SPT database-integrity checkpoint. Nine bundles use unique `wtt-seasonal/` keys and SDK-generated PreviewPivot references mapped to the installed native type.
+
+Native document hooks bind successful `ItemController.RaiseAddEvent` and `MergeResult`, `TransferResult`, and `SplitResult.RaiseEvents`. The profile commit adapter verifies the SPT 4.1 `SaveServer.profiles` concurrent dictionary because `GetProfiles()` returns a copy. Raid-end deduplication and native inventory operations share the account lock. These bindings must be rechecked when SPT changes. No CommonLib quest import dependency is added.
+
+Automated server and SDK results are separate from installed-game acceptance. Item rendering, native event timing, animation, audio and profile-reload behavior still need an in-game pass; visual parity is not declared.

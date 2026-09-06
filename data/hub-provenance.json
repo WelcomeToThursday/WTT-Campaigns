@@ -1,28 +1,28 @@
 {
   "sources": [
     {
-      "file": "requests/client/battle-pass/active/response/resp.client.battle-pass.active_1788587615.json",
-      "sha256": "55656ea2156c1471ec2536cad5626ad68faa060a7f3242821ceeb29a07821b6a"
+      "file": "gw-pvp-season.escapefromtarkov.com/client/battle-pass/active/response/resp.client.battle-pass.active_1788671674.json",
+      "sha256": "2ecd11a1d0d49919d7367ab4b30d6955d51192016714ad4c9dfcc79f0981a0d6"
     },
     {
-      "file": "requests/client/season/active/response/resp.client.season.active_1788587615.json",
-      "sha256": "d9ab2f9e9ba3d09e7ac1b4589be4c51b65f1130b3da6b150916dce1c0cac8a3c"
+      "file": "gw-pvp-season.escapefromtarkov.com/client/season/active/response/resp.client.season.active_1788671674.json",
+      "sha256": "abf1b1abcd03fbd02df005e653aac2b73014184d594d12bfc6965f864c6f27fb"
     },
     {
-      "file": "requests/client/locale/en/response/resp.client.locale.en_1788587530.json",
-      "sha256": "84646649cb4d6a51f4d746df7998b93f0ee217285335fa2d13a66e453f5f4451"
+      "file": "gw-pve.escapefromtarkov.com/client/locale/en/response/resp.client.locale.en_1788671622.json",
+      "sha256": "1bd9bc77ef66051e4d96a08aada5ec84535887c55457e769643227e21dec4ab5"
     },
     {
-      "file": "requests/client/items/response/resp.client.items_1788587615.json",
-      "sha256": "d4fbce665743d1f151e308c2099b142c6ae0ba94f3ebce358bbc4eac69000c2c"
+      "file": "gw-pvp-season.escapefromtarkov.com/client/items/response/resp.client.items_1788671675.json",
+      "sha256": "77b9574d08f3e8cf846551177d6f1da98980475c560769f5b42afc490163c45c"
     },
     {
-      "file": "requests/client/customization/response/resp.client.customization_1788587615.json",
-      "sha256": "8b5b61758ffd2bdbea6cbc78b1e72e82fb939235f7ef04ecc0414bd2f1d5f7f9"
+      "file": "gw-pvp-season.escapefromtarkov.com/client/customization/response/resp.client.customization_1788671674.json",
+      "sha256": "a02116248c20deff9eb914828b3464613cd22fb0860507a35f05cf3621b133fc"
     },
     {
-      "file": "requests/client/globals/response/resp.client.globals_1788587615.json",
-      "sha256": "909be51f10416b7287e2005f5f5940073efc79d6b5476fc4d40de4e5030c17f3"
+      "file": "gw-pvp-season.escapefromtarkov.com/client/globals/response/resp.client.globals_1788671674.json",
+      "sha256": "d238a3b64eae27df414ea29ae6299ff6e1c76774432126e0396cce4d9c49e6db"
     }
   ],
   "battlePassId": "6a27da69f3610ccfe5e71ab5",

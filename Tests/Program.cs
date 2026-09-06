@@ -32,6 +32,7 @@ void Check(bool value, string name)
     count++;
 }
 var rules = new Rules();
+SeasonalPerks.Tests.HubGameplayChecks.Run(Check);
 var seasoned = new RuntimeEffects(c, new[] { "69c41adf883efd5e3b09ccae" });
 Check(seasoned.Multiplier("pmc_experience_multiplicator").Equals(1.25f), "Captured PMC experience bonus");
 Check(ExperienceScaling.Award(1700, 1.25f) == 2125, "Quest XP gains 25 percent");

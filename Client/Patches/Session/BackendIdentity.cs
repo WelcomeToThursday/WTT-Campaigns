@@ -2,6 +2,7 @@ using System.Reflection;
 using EFT;
 using HarmonyLib;
 using Newtonsoft.Json;
+using SeasonalPerks.Client.Profiles;
 using SPT.Common.Http;
 using SPT.Reflection.Patching;
 

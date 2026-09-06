@@ -65,7 +65,13 @@ public sealed partial class SeasonsHubScreen
                 Caption(
                     root,
                     "PreviousPageRequirement",
-                    "□  Claim rewards from page " + PageIndex + "          0/" + page.PreviousRequirement,
+                    (_state.Pages[PageIndex - 1].ClaimedCount >= page.PreviousRequirement ? "✓  " : "□  ")
+                        + "Claim rewards from page "
+                        + PageIndex
+                        + "          "
+                        + _state.Pages[PageIndex - 1].ClaimedCount
+                        + "/"
+                        + page.PreviousRequirement,
                     18,
                     1412,
                     top,
@@ -101,7 +107,7 @@ public sealed partial class SeasonsHubScreen
                     TextAnchor.MiddleRight;
             }
             top += Math.Max(1, (selected.Costs.Length + 4) / 5) * 78;
-            DisabledAction(root, selected.Claimed ? "CLAIMED" : "CLAIM REWARD", "sharedassets48-545", 1412, top, 380);
+            ClaimAction(root, selected, 1412, top, 380);
             Caption(
                 root,
                 "ClaimHelp",
@@ -114,16 +120,28 @@ public sealed partial class SeasonsHubScreen
             ).alignment = TextAnchor.MiddleCenter;
         }
         Caption(root, "DocumentsLabel", "ⓘ  Documents", 17, 554, 930, 350, 28);
-        Caption(
+        var allowance = Caption(
             root,
             "DocumentLimit",
-            "Available limit:  " + _state.DocumentLimit + "/" + _state.DocumentLimit,
+            "Available limit:  " + (_state.PreviewOnly ? _state.DocumentLimit : _state.RemainingDocuments) + "/" + _state.DocumentLimit,
             15,
             1080,
             930,
             290,
             28
-        ).alignment = TextAnchor.MiddleRight;
+        );
+        allowance.alignment = TextAnchor.MiddleRight;
+        Hint(
+            allowance.gameObject,
+            "30 first pickups per 23-hour window."
+                + (
+                    _state.NextResetTime > 0
+                        ? "\nResets: " + DateTimeOffset.FromUnixTimeSeconds(_state.NextResetTime).ToLocalTime().ToString("g")
+                        : "\nThe window starts with your first pickup."
+                ),
+            1040,
+            835
+        );
         for (var i = 0; i < _state.Documents.Length; i++)
         {
             var doc = _state.Documents[i];
@@ -142,10 +160,15 @@ public sealed partial class SeasonsHubScreen
             154,
             78
         );
-        Hint(universal.gameObject, "Universal documents\nNot available yet.", 1110, 870);
+        Hint(universal.gameObject, "Classified documents cover reward document shortages 1:1. They cannot be exchanged.", 1110, 870);
         Caption(root, "UniversalCount", "x" + _state.UniversalCount, 16, 1318, 1016, 40, 24);
         DisabledAction(root, "BUY DOCUMENTS", "sharedassets48-537", 1396, 966, 416);
-        DisabledAction(root, "EXCHANGE DOCUMENTS", "sharedassets48-526", 1396, 1009, 416);
+        var exchange = Button(root, "EXCHANGE DOCUMENTS", 1396, 1009, 416, 36, OpenExchange);
+        exchange.interactable = !_state.PreviewOnly && _state.ExchangeUnavailableReason.Length == 0;
+        if (!exchange.interactable)
+        {
+            Hint(exchange.gameObject, _state.PreviewOnly ? "Not available in this preview." : _state.ExchangeUnavailableReason, 1396, 920);
+        }
     }
 
     private void RewardTile(Transform parent, HubReward reward, bool selected, float cellWidth, float cellHeight, Action select)
@@ -170,8 +193,18 @@ public sealed partial class SeasonsHubScreen
             frame.type = Image.Type.Sliced;
             frame.color = new Color(.38f, .66f, .57f, .75f);
         }
-        Art(rect, "State", reward.Claimed ? "sharedassets48-448" : "sharedassets48-375", width - 24, height - 24, 14, 14).preserveAspect =
-            true;
+        if (reward.Claimed || !reward.CanClaim)
+        {
+            Art(
+                rect,
+                "State",
+                reward.Claimed ? "sharedassets48-448" : "sharedassets48-375",
+                width - 24,
+                height - 24,
+                14,
+                14
+            ).preserveAspect = true;
+        }
         if (reward.Side.Length > 0)
         {
             Caption(rect, "Faction", reward.Side, 12, 6, 5, width - 12, 25);

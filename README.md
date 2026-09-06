@@ -2,7 +2,7 @@
 
 Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
 
-Build **0.1.24** adds the [Battle Pass and seasonal hub UI](docs/battle-pass-ui.md): the Seasonal-only KORD BREACH menu banner, 53 Battle Pass rewards, five seasonal rewards and the season information carousel. Browsing is functional; progression and transaction actions remain unavailable. Install both client and server.
+Build **0.2.0** adds [Battle Pass gameplay](docs/battle-pass-gameplay.md) to the Seasonal hub: document acquisition, local claims, exchanges and persistent progress, using the amended capture. WTT-Seasonal includes the eight document items and two season crate definitions. Missing quest, customization and crate-content dependencies remain explicitly locked; online purchases stay disabled. Install both client and server.
 
 The project imports the captured 39-entry catalogue and English localization, serves all perk icons from the local SPT server, creates an independent seasonal PMC/Scav profile, persists selections and grant receipts, and supplies a client selection screen with recovered perk cards and a confirmation window. Thirty-three catalogue entries currently have implementations; six remain unavailable in selection. Actual in-game switching and gameplay still need validation.
 
@@ -25,7 +25,7 @@ Projects and built assemblies use the `WTT-Seasonal` prefix (for example, `WTT-S
 - `Tests`: contract tests and read-only assembly compatibility checks.
 - `tools`, `data`, `docs`, `Research`: import/build tools, sanitized data and investigation evidence.
 
-Patches are grouped by feature with matching namespaces. Client registration lives in `Client/Patches/PatchRegistration.cs`; server patches are discovered through SPT dependency injection. See [patch organization and extension guide](docs/patches.md).
+Client and server code use [folders with matching feature namespaces](docs/client-server-structure.md). Client registration lives in `Client/Patches/PatchRegistration.cs`; server patches are discovered through SPT dependency injection. See [patch organization and extension guide](docs/patches.md).
 
 Asset sources, all 39 PNGs, recovered layout data and the Unity editor builder are in `../CJ-SDK/Assets/Mods/SeasonalPerks.Assets`. The UI bundle contains layout prefabs, all 26 decorative artwork sprites, fonts and materials. **Perk icons remain outside the bundle.** Icons are fetched lazily by perk ID from `/seasonal-perks/icons/{id}.png`. Installed operation does not use the live backend or CDN.
 

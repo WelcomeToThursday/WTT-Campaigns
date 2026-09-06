@@ -1,6 +1,9 @@
 using BepInEx;
 using EFT;
 using Newtonsoft.Json;
+using SeasonalPerks.Client.Hub;
+using SeasonalPerks.Client.Profiles;
+using SeasonalPerks.Client.UI;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Perks;
@@ -9,7 +12,7 @@ using SPT.Common.Http;
 
 namespace SeasonalPerks.Client;
 
-[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.1.24")]
+[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.2.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 public sealed class Plugin : BaseUnityPlugin
 {

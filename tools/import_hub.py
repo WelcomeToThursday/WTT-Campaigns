@@ -14,13 +14,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--logs', type=Path, default=DEFAULT_LOGS)
     parser.add_argument('--download-images', action='store_true')
+    parser.add_argument('--mode-dump', type=Path, help='Multi-host capture; Seasonal is authoritative, PvE supplies missing public definitions.')
     args = parser.parse_args()
-    requests = args.logs / 'requests'
+    requests = args.mode_dump / 'gw-pvp-season.escapefromtarkov.com' if args.mode_dump else args.logs / 'requests'
     sources = []
 
     def response(name):
-        path = sorted(requests.rglob('resp.' + name + '_*.json'))[-1]
-        sources.append({'file': str(path.relative_to(args.logs)).replace('\\', '/'), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
+        paths = sorted(requests.rglob('resp.' + name + '_*.json'))
+        if not paths and args.mode_dump:
+            paths = sorted((args.mode_dump / 'gw-pve.escapefromtarkov.com').rglob('resp.' + name + '_*.json'))
+        path = paths[-1]
+        sources.append({'file': str(path.relative_to(args.mode_dump or args.logs)).replace('\\', '/'), 'sha256': hashlib.sha256(path.read_bytes()).hexdigest()})
         return read(path)
 
     battle = response('client.battle-pass.active')['battlePasses'][0]
@@ -63,8 +67,11 @@ def main():
                             'ShootingRangeMark': 'HIDEOUT CUSTOMIZATION', 'MannequinPose': 'HIDEOUT CUSTOMIZATION', 'EnvironmentUI': 'MENU BACKGROUND'}.get(category, display_kind)
         requirements = []
         for condition in value.get('conditions', []):
-            quest = condition.get('target', '')
-            requirements.append('Complete the task: ' + locale.get(quest + ' name', locale.get(quest + ' Name', 'Seasonal task')))
+            if condition['conditionType'] == 'Level':
+                requirements.append('Reach level ' + str(condition['value']))
+            else:
+                quest = condition.get('target', '')
+                requirements.append('Complete the task: ' + locale.get(quest + ' name', locale.get(quest + ' Name', 'Seasonal task')))
         loc = value['location']
         return {'Id': value['id'], 'Name': name, 'Description': localized(target, 'Description'),
                 'Kind': display_kind,

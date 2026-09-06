@@ -38,9 +38,23 @@ public sealed partial class SeasonsHubScreen
         Caption(root, "SeasonalRewardKind", selected.Kind, 13, 1336, 390, 456, 22);
         Caption(root, "SeasonalRewardName", selected.Name, 21, 1336, 414, 456, 55);
         Remote(root, "SeasonalFullImage", selected.BigImage, 1336, 470, 456, 350);
-        var text = string.Join("\n", selected.Requirements.Select(r => "□  " + r + "  0/1"));
+        var text = string.Join(
+            "\n",
+            selected.Requirements.Select(
+                (r, i) =>
+                {
+                    var requirement = selected.Eligibility.ElementAtOrDefault(i);
+                    return (requirement?.Met == true ? "✓  " : "□  ")
+                        + r
+                        + "  "
+                        + (requirement?.Current ?? 0)
+                        + "/"
+                        + (requirement?.Required ?? 1);
+                }
+            )
+        );
         Caption(root, "SeasonalRequirements", text, 16, 1336, 850, 456, 112);
-        DisabledAction(root, "CLAIM CONDITIONS NOT MET", "sharedassets48-545", 1336, 982, 456);
+        ClaimAction(root, selected, 1336, 982, 456);
         var info = Caption(root, "RewardInfo", "ⓘ", 22, 1757, 810, 35, 32);
         Hint(info.gameObject, selected.Description.Length > 0 ? selected.Description : selected.Name, 1340, 700);
     }

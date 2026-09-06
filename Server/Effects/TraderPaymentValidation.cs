@@ -1,4 +1,6 @@
 using HarmonyLib;
+using SeasonalPerks.Server.Hub;
+using SeasonalPerks.Server.Profiles;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Effects.Trading;
 using SPTarkov.DI.Annotations;
@@ -14,7 +16,7 @@ using SPTarkov.Server.Core.Utils;
 namespace SeasonalPerks.Server.Effects;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentHelper payment, HttpResponseUtil responses)
+public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentHelper payment, HttpResponseUtil responses, HubGameplay hub)
 {
     // Validate under the same reentrant lock that native BuyItem holds while granting
     // items and charging payment. Concurrent requests must not validate stale funds.
@@ -31,6 +33,15 @@ public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentH
         if (request.Type == "buy_from_ragfair_pmc")
         {
             return true;
+        }
+        if (!hub.OfferAllowed(session.ToString(), request.ItemId.ToString()))
+        {
+            responses.AppendErrorToOutput(
+                output,
+                "Claim the required Battle Pass reward before buying this offer.",
+                BackendErrorCodes.UnknownTradingError
+            );
+            return false;
         }
 
         var effects = new RuntimeEffects(ServerStartup.Seasons.Catalogue, SeasonService.State(pmc).SeasonalPerks);

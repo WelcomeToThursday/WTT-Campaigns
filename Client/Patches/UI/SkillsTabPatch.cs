@@ -1,6 +1,7 @@
 using System.Reflection;
 using EFT.UI;
 using HarmonyLib;
+using SeasonalPerks.Client.UI;
 using SPT.Reflection.Patching;
 
 namespace SeasonalPerks.Client.Patches.UI;

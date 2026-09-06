@@ -8,17 +8,19 @@ from test_integration import PROJECT, SERVER, request
 
 def main():
     expected = json.loads((PROJECT / 'data/hub.json').read_text(encoding='utf-8'))
+    account = json.loads((PROJECT / 'Testing/restart-state.json').read_text())
+    request('/seasonal-perks/switch', {'Mode': 'seasonal'}, account['root'])
     paths = list((SERVER / 'user/profiles').glob('*.json'))
     before = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
     results = []
     def check(value, description):
         assert value, description
         results.append(description)
-    data = request('/seasonal-perks/hub')
-    check(data == expected, 'Local hub response preserves the sanitized catalogue')
+    data = request('/seasonal-perks/hub', session=account['child'])
+    check([r['Id'] for p in data['Pages'] for r in p['Rewards']] == [r['Id'] for p in expected['Pages'] for r in p['Rewards']], 'Local hub response preserves the sanitized catalogue ordering')
     check(len(data['Pages']) == 12 and sum(len(p['Rewards']) for p in data['Pages']) == 53, 'All 12 pages and 53 rewards')
     check(len(data['SeasonalRewards']) == 5 and len(data['Slides']) == 5, 'Five seasonal rewards and five carousel slides')
-    check(data['PreviewOnly'] and data['ClaimedRewards'] == 0 and all(d['Count'] == 0 for d in data['Documents']), 'Neutral preview state')
+    check(not data['PreviewOnly'] and data['ClaimedRewards'] == 0 and all(d['Count'] == 0 for d in data['Documents']) and data['UniversalCount'] == 0 and data['NextResetTime'] == 0, 'New gameplay state is zero with no captured progress or countdown')
     docs = {d['Id'] for d in data['Documents']}
     for index, page in enumerate(data['Pages']):
         cells = set()

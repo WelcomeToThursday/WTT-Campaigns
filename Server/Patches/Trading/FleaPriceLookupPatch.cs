@@ -2,6 +2,7 @@ using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
 using SeasonalPerks.Server.Effects;
+using SeasonalPerks.Server.Hub;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
@@ -10,10 +11,13 @@ using SPTarkov.Server.Core.Models.Common;
 namespace SeasonalPerks.Server.Patches.Trading;
 
 [Injectable]
-public class FleaPriceLookupPatch : AbstractPatch
+public class FleaPriceLookupPatch(HubGameplay hub) : AbstractPatch
 {
+    private static HubGameplay _hub = null!;
+
     protected override MethodBase GetTargetMethod()
     {
+        _hub = hub;
         return AccessTools.Method(typeof(RagfairController), nameof(RagfairController.GetOfferByInternalId));
     }
 
@@ -22,7 +26,10 @@ public class FleaPriceLookupPatch : AbstractPatch
     private static void Prefix(MongoId sessionId, out TraderPriceEffects.SearchScope? __state)
     {
         __state = TraderPriceEffects.Search.Value;
-        TraderPriceEffects.Search.Value = new(ServerStartup.Seasons.Effects(sessionId.ToString()));
+        TraderPriceEffects.Search.Value = new(
+            ServerStartup.Seasons.Effects(sessionId.ToString()),
+            offer => _hub.FleaOfferAllowed(sessionId.ToString(), offer)
+        );
     }
 
     [PatchFinalizer]

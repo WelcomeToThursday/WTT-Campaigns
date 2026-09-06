@@ -1,0 +1,39 @@
+{
+  "sources": [
+    {
+      "file": "gw-pvp-season.escapefromtarkov.com/client/battle-pass/active/response/resp.client.battle-pass.active_1788671674.json",
+      "sha256": "2ecd11a1d0d49919d7367ab4b30d6955d51192016714ad4c9dfcc79f0981a0d6"
+    },
+    {
+      "file": "gw-pvp-season.escapefromtarkov.com/client/season/active/response/resp.client.season.active_1788671674.json",
+      "sha256": "abf1b1abcd03fbd02df005e653aac2b73014184d594d12bfc6965f864c6f27fb"
+    },
+    {
+      "file": "gw-pve.escapefromtarkov.com/client/quest/list/response/resp.client.quest.list_1788671784.json",
+      "sha256": "6392212d48d8ba4c47fda4c77ba4f4cff4ffad267d32e90275bfab1844bbf0fe"
+    },
+    {
+      "file": "gw-pvp-season.escapefromtarkov.com/client/quest/list/response/resp.client.quest.list_1788671684.json",
+      "sha256": "32ab61a583c3c265fc24b9bd84cb368ef96a1be1ada483a11c90ecf3d891cc52"
+    },
+    {
+      "file": "gw-pvp-season.escapefromtarkov.com/client/trading/api/getTraderAssort/58330581ace78e27b8b10cee/response/resp.client.trading.api.getTraderAssort.58330581ace78e27b8b10cee_1788671756.json",
+      "sha256": "ce7b5d9f3e78f7c02c1ac2f98391cc6865488d885d1e1145400e7b8e8f6691c5"
+    },
+    {
+      "file": "gw-pvp-season.escapefromtarkov.com/client/trading/api/getTraderAssort/5935c25fb3acc3127c3d8cd9/response/resp.client.trading.api.getTraderAssort.5935c25fb3acc3127c3d8cd9_1788671756.json",
+      "sha256": "99ec50cc2f629365efe08c009821990501a4b6b53155ae8643d69ceed870c965"
+    },
+    {
+      "file": "gw-pvp-season.escapefromtarkov.com/client/trading/api/getTraderAssort/5ac3b934156ae10c4430e83c/response/resp.client.trading.api.getTraderAssort.5ac3b934156ae10c4430e83c_1788671759.json",
+      "sha256": "50fd0d086bc8fac0901a8b294d6ec386b740e11a0c243cb22f9074c0f65ba963"
+    },
+    {
+      "file": "gw-pvp-season.escapefromtarkov.com/client/locations/response/resp.client.locations_1788671682.json",
+      "sha256": "1406b11df9daedd2dd3d50743b1c0e6633e9c6ecd61db0981469d25530838712"
+    }
+  ],
+  "missingQuests": [
+    "6a4f82e11b7350af050b2e1c"
+  ]
+}

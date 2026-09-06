@@ -1,6 +1,7 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
+using SeasonalPerks.Server.Profiles;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Effects.Skills;
 using SPTarkov.DI.Annotations;

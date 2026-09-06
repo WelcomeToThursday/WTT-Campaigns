@@ -1,3 +1,4 @@
+using SeasonalPerks.Server.Profiles;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Effects.Items;
 using SPTarkov.DI.Annotations;

@@ -18,5 +18,10 @@ public sealed class HubReward
     public int Height = 1;
     public HubCost[] Costs = Array.Empty<HubCost>();
     public string[] Requirements = Array.Empty<string>();
+    public HubRequirement[] Eligibility = Array.Empty<HubRequirement>();
     public bool Claimed = false;
+
+    public bool CanClaim = false;
+    public string UnavailableReason = "";
+    public int UniversalNeeded = 0;
 }

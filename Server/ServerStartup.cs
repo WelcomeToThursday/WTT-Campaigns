@@ -1,3 +1,5 @@
+using SeasonalPerks.Server.Hub;
+using SeasonalPerks.Server.Profiles;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.DI;

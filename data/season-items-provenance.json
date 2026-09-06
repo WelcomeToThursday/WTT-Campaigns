@@ -1,0 +1,1413 @@
+{
+  "sources": [
+    {
+      "file": "gw-pvp-season.escapefromtarkov.com/client/items/response/resp.client.items_1788671675.json",
+      "sha256": "77b9574d08f3e8cf846551177d6f1da98980475c560769f5b42afc490163c45c"
+    },
+    {
+      "file": "gw-pve.escapefromtarkov.com/client/locale/en/response/resp.client.locale.en_1788671622.json",
+      "sha256": "1bd9bc77ef66051e4d96a08aada5ec84535887c55457e769643227e21dec4ab5"
+    }
+  ],
+  "assets": [
+    {
+      "key": "assets/content/items/barter/item_barter_info_personal/item_barter_info_personal.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": -0.004033617675304413,
+          "y": 0.0,
+          "z": -0.0013423000928014517
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": 0.0010000000474974513,
+            "y": -0.0060000005178153515,
+            "z": 0.0
+          },
+          "hasOffset": true,
+          "rotation": {
+            "x": 0.15663404762744904,
+            "y": -0.03310415521264076,
+            "z": -0.0031546782702207565,
+            "w": 0.9870967268943787
+          },
+          "boundsScale": 0.841001033782959,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "62c6b763f60246a8356f8cef8751f539086f30ec1f33619a8d842a5e69f91188",
+      "objects": [
+        {
+          "id": -8374195354765281374,
+          "type": "Texture2D"
+        },
+        {
+          "id": -7505599454138933310,
+          "type": "Texture2D"
+        },
+        {
+          "id": -6216296039019480195,
+          "type": "Transform"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -4293428512244401283,
+          "type": "Transform"
+        },
+        {
+          "id": -4186727420119843971,
+          "type": "MeshCollider"
+        },
+        {
+          "id": -2943162495979717763,
+          "type": "BoxCollider"
+        },
+        {
+          "id": -954455658549249155,
+          "type": "GameObject"
+        },
+        {
+          "id": -858531060407259060,
+          "type": "Material"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 2860963240712960893,
+          "type": "GameObject"
+        },
+        {
+          "id": 3214783925492939645,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": 3538844399812689367,
+          "type": "Mesh"
+        },
+        {
+          "id": 3586528965639618007,
+          "type": "Mesh"
+        },
+        {
+          "id": 4643509495523408765,
+          "type": "LODGroup"
+        },
+        {
+          "id": 4684517625429523325,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": 6289975248167074685,
+          "type": "GameObject"
+        },
+        {
+          "id": 6810412795156626768,
+          "type": "Texture2D"
+        },
+        {
+          "id": 6837896157813898109,
+          "type": "MeshFilter"
+        },
+        {
+          "id": 7625672894403410813,
+          "type": "Transform"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    },
+    {
+      "key": "assets/content/items/barter/item_barter_info_finance/item_barter_info_finance.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": 0.0032854191958904266,
+          "y": -0.006445348262786865,
+          "z": 0.0028246291913092136
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": 0.0,
+            "y": 0.0,
+            "z": 0.0
+          },
+          "hasOffset": false,
+          "rotation": {
+            "x": 0.09410473704338074,
+            "y": 0.008687806315720081,
+            "z": -0.0008212396060116589,
+            "w": 0.9955240488052368
+          },
+          "boundsScale": 0.8480014204978943,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "6d0a6ecbccddb2feb5dd7d36d64096138f8f0ed884c193a4d643ed58bad3ad2c",
+      "objects": [
+        {
+          "id": -8845235804563675780,
+          "type": "GameObject"
+        },
+        {
+          "id": -8535618378262616708,
+          "type": "Transform"
+        },
+        {
+          "id": -8503391559653563012,
+          "type": "MeshFilter"
+        },
+        {
+          "id": -8089860961301740148,
+          "type": "Mesh"
+        },
+        {
+          "id": -7471967570276031108,
+          "type": "Transform"
+        },
+        {
+          "id": -7370968225116494468,
+          "type": "GameObject"
+        },
+        {
+          "id": -7139707619862493812,
+          "type": "Mesh"
+        },
+        {
+          "id": -6636463587376579349,
+          "type": "Texture2D"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -3248258822742607421,
+          "type": "Texture2D"
+        },
+        {
+          "id": -2459753992232528773,
+          "type": "Material"
+        },
+        {
+          "id": -359569666322569860,
+          "type": "Transform"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 390753006468225387,
+          "type": "Texture2D"
+        },
+        {
+          "id": 597083839305770364,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": 604742571873494396,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": 2667680024836531580,
+          "type": "MeshCollider"
+        },
+        {
+          "id": 3818212274170717564,
+          "type": "LODGroup"
+        },
+        {
+          "id": 4865047784186078588,
+          "type": "BoxCollider"
+        },
+        {
+          "id": 8304778570395379068,
+          "type": "GameObject"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    },
+    {
+      "key": "assets/content/items/barter/item_barter_info_project/item_barter_info_project.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": 0.007285848259925842,
+          "y": -0.013296931982040405,
+          "z": -0.0045064836740493774
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": -0.007000000681728125,
+            "y": 0.003000000026077032,
+            "z": 0.0
+          },
+          "hasOffset": true,
+          "rotation": {
+            "x": 0.21955791115760803,
+            "y": -0.10391899943351746,
+            "z": -0.0008878558874130249,
+            "w": 0.970048725605011
+          },
+          "boundsScale": 0.9349997043609619,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "62b76912f9ebd9030fea7d9db13c4b6999f045f72cd6e5f1af7281d437f18926",
+      "objects": [
+        {
+          "id": -8187420297022228339,
+          "type": "Transform"
+        },
+        {
+          "id": -8033950895193933683,
+          "type": "GameObject"
+        },
+        {
+          "id": -6529709765518536225,
+          "type": "Mesh"
+        },
+        {
+          "id": -5585613747400165235,
+          "type": "MeshCollider"
+        },
+        {
+          "id": -5025414384106751859,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -4863033967469807475,
+          "type": "BoxCollider"
+        },
+        {
+          "id": -4609774063159494515,
+          "type": "GameObject"
+        },
+        {
+          "id": -4457954239724734323,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": -4136135187817056115,
+          "type": "Transform"
+        },
+        {
+          "id": -4123080606859478899,
+          "type": "MeshFilter"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 38521795710439903,
+          "type": "Mesh"
+        },
+        {
+          "id": 573650440038365325,
+          "type": "Transform"
+        },
+        {
+          "id": 736334752286554253,
+          "type": "LODGroup"
+        },
+        {
+          "id": 2925092004379342697,
+          "type": "Material"
+        },
+        {
+          "id": 3065375154583675150,
+          "type": "Texture2D"
+        },
+        {
+          "id": 3445642002778247647,
+          "type": "Mesh"
+        },
+        {
+          "id": 3460770935449368717,
+          "type": "MeshFilter"
+        },
+        {
+          "id": 6347626918741938714,
+          "type": "Texture2D"
+        },
+        {
+          "id": 7304892621543981890,
+          "type": "Texture2D"
+        },
+        {
+          "id": 7387680934541441165,
+          "type": "Transform"
+        },
+        {
+          "id": 8383312446918473869,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": 8468179022028847245,
+          "type": "GameObject"
+        },
+        {
+          "id": 8788049705778591885,
+          "type": "GameObject"
+        },
+        {
+          "id": 8946573892737153165,
+          "type": "BoxCollider"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    },
+    {
+      "key": "assets/content/items/barter/item_barter_info_scheme/item_barter_info_scheme.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": 0.0,
+          "y": -0.004878610372543335,
+          "z": -0.02087610773742199
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": 2.3283064365386963e-10,
+            "y": -0.001999999862164259,
+            "z": 0.0
+          },
+          "hasOffset": true,
+          "rotation": {
+            "x": 0.05005662143230438,
+            "y": -0.1450337916612625,
+            "z": 0.007347139064222574,
+            "w": 0.9881323575973511
+          },
+          "boundsScale": 0.8810009956359863,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "cc8bf31f060498c66b11f58f3796a27edd15e6e79304f05b101820b05301c73c",
+      "objects": [
+        {
+          "id": -9109673474754584454,
+          "type": "Texture2D"
+        },
+        {
+          "id": -8786077898976950399,
+          "type": "Mesh"
+        },
+        {
+          "id": -8224559251235020465,
+          "type": "GameObject"
+        },
+        {
+          "id": -8005058189295777919,
+          "type": "Mesh"
+        },
+        {
+          "id": -7947659963949784753,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -7747209664632135345,
+          "type": "MeshFilter"
+        },
+        {
+          "id": -7221867379994992305,
+          "type": "Transform"
+        },
+        {
+          "id": -6710105822812315313,
+          "type": "LODGroup"
+        },
+        {
+          "id": -6249231436173876913,
+          "type": "Transform"
+        },
+        {
+          "id": -6058312521214795441,
+          "type": "Transform"
+        },
+        {
+          "id": -5616628449802940808,
+          "type": "Texture2D"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -3555172855916296319,
+          "type": "Mesh"
+        },
+        {
+          "id": -2237509353544162993,
+          "type": "BoxCollider"
+        },
+        {
+          "id": -1989130784183990138,
+          "type": "Material"
+        },
+        {
+          "id": -1615879621402500785,
+          "type": "GameObject"
+        },
+        {
+          "id": -1270410203515723441,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -252353656814116529,
+          "type": "MeshFilter"
+        },
+        {
+          "id": -231995526241328817,
+          "type": "MeshFilter"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 2304085134261716865,
+          "type": "Mesh"
+        },
+        {
+          "id": 3616008461913416015,
+          "type": "Transform"
+        },
+        {
+          "id": 3852165597055869263,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": 4189260728182366543,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": 5256346381326999887,
+          "type": "MeshCollider"
+        },
+        {
+          "id": 5675370480218349173,
+          "type": "Texture2D"
+        },
+        {
+          "id": 6841577518270099251,
+          "type": "Material"
+        },
+        {
+          "id": 6865543385576497487,
+          "type": "BoxCollider"
+        },
+        {
+          "id": 7049697961005736271,
+          "type": "GameObject"
+        },
+        {
+          "id": 7802890773320950095,
+          "type": "MeshCollider"
+        },
+        {
+          "id": 8238880133012709711,
+          "type": "GameObject"
+        },
+        {
+          "id": 8383124259513448329,
+          "type": "Texture2D"
+        },
+        {
+          "id": 9177126994263198381,
+          "type": "Texture2D"
+        },
+        {
+          "id": 9183937645602922831,
+          "type": "GameObject"
+        },
+        {
+          "id": 9203594466852790607,
+          "type": "Transform"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    },
+    {
+      "key": "assets/content/items/barter/item_barter_info_testing/item_barter_info_testing.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": 0.0016119927167892456,
+          "y": 0.011568799614906311,
+          "z": -0.009419815614819527
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": 0.0010000000474974513,
+            "y": -0.0020000000949949026,
+            "z": 0.0
+          },
+          "hasOffset": true,
+          "rotation": {
+            "x": -0.05146311968564987,
+            "y": -0.006971977185457945,
+            "z": -0.00035928457509726286,
+            "w": 0.9986504912376404
+          },
+          "boundsScale": 0.84200119972229,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "4b3a3c4443746e3196aabc8157ce3d39a5c9d8cc04a42e4a0778ddb1123859c4",
+      "objects": [
+        {
+          "id": -8085320127481372340,
+          "type": "Mesh"
+        },
+        {
+          "id": -7938381960005163972,
+          "type": "MeshFilter"
+        },
+        {
+          "id": -7841090816145562564,
+          "type": "GameObject"
+        },
+        {
+          "id": -7678397507231882180,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -5575865612595247168,
+          "type": "Texture2D"
+        },
+        {
+          "id": -5069954298583260100,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -4319291476027317188,
+          "type": "Transform"
+        },
+        {
+          "id": -1694953425818557380,
+          "type": "GameObject"
+        },
+        {
+          "id": -370584039646698436,
+          "type": "Transform"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 479808131544376380,
+          "type": "BoxCollider"
+        },
+        {
+          "id": 1266271760598295612,
+          "type": "MeshCollider"
+        },
+        {
+          "id": 1901725470650852412,
+          "type": "Transform"
+        },
+        {
+          "id": 3094616088765166826,
+          "type": "Material"
+        },
+        {
+          "id": 3426176582363652428,
+          "type": "Mesh"
+        },
+        {
+          "id": 3986044804661392344,
+          "type": "Texture2D"
+        },
+        {
+          "id": 6644443171308364860,
+          "type": "GameObject"
+        },
+        {
+          "id": 7465872038072738876,
+          "type": "LODGroup"
+        },
+        {
+          "id": 8454651013838845556,
+          "type": "Texture2D"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    },
+    {
+      "key": "assets/content/items/barter/item_barter_info_user/item_barter_info_user.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": -0.0013075023889541626,
+          "y": 0.016934990882873535,
+          "z": -0.00459754653275013
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": -0.001999999862164259,
+            "y": -0.0010000000474974513,
+            "z": 0.0
+          },
+          "hasOffset": true,
+          "rotation": {
+            "x": -0.190801739692688,
+            "y": -0.0016651208279654384,
+            "z": 0.008566305041313171,
+            "w": -0.9815897941589355
+          },
+          "boundsScale": 0.8220015168190002,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "2321e3ca2c67c9c56b805812f4e509ad9c2bf2fe1cf90cb54fe16cba3b9a6559",
+      "objects": [
+        {
+          "id": -8316287839725094824,
+          "type": "GameObject"
+        },
+        {
+          "id": -8039678457473533864,
+          "type": "Transform"
+        },
+        {
+          "id": -7819706340642850728,
+          "type": "GameObject"
+        },
+        {
+          "id": -7469530165887097076,
+          "type": "Texture2D"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -4700403700427786152,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -4539303932908013480,
+          "type": "Transform"
+        },
+        {
+          "id": -3053587922905392914,
+          "type": "Mesh"
+        },
+        {
+          "id": -2420977367746152360,
+          "type": "MeshFilter"
+        },
+        {
+          "id": -2064884894497572776,
+          "type": "MeshCollider"
+        },
+        {
+          "id": -1395767572490618792,
+          "type": "BoxCollider"
+        },
+        {
+          "id": -861844270992918440,
+          "type": "MeshCollider"
+        },
+        {
+          "id": -308771853036685224,
+          "type": "MeshFilter"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 354386131023427672,
+          "type": "Transform"
+        },
+        {
+          "id": 663562249544407278,
+          "type": "Mesh"
+        },
+        {
+          "id": 1280253623902926936,
+          "type": "Transform"
+        },
+        {
+          "id": 1826171951575402660,
+          "type": "Texture2D"
+        },
+        {
+          "id": 2872173267441380558,
+          "type": "Texture2D"
+        },
+        {
+          "id": 4220713491913111640,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": 4501317365506316526,
+          "type": "Mesh"
+        },
+        {
+          "id": 5139124645032028440,
+          "type": "Material"
+        },
+        {
+          "id": 7618379297911339096,
+          "type": "LODGroup"
+        },
+        {
+          "id": 7784686945454782552,
+          "type": "GameObject"
+        },
+        {
+          "id": 7843712901022808152,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": 7875961940139440216,
+          "type": "GameObject"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    },
+    {
+      "key": "assets/content/items/barter/item_barter_info_medicine/item_barter_info_medicine.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": 0.0004025101661682129,
+          "y": 0.01722799241542816,
+          "z": 0.009960739873349667
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": 0.003000000026077032,
+            "y": -0.009000000543892384,
+            "z": 0.0
+          },
+          "hasOffset": true,
+          "rotation": {
+            "x": 0.0015903032617643476,
+            "y": -0.9832174777984619,
+            "z": -0.008580508641898632,
+            "w": -0.18222858011722565
+          },
+          "boundsScale": 0.8830008506774902,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "93ebceef99c79c51b64f3e6859d67b1979dfcc1f81607f5cb3fb1acefe79e854",
+      "objects": [
+        {
+          "id": -8856902455341437284,
+          "type": "Material"
+        },
+        {
+          "id": -8682276246177261908,
+          "type": "GameObject"
+        },
+        {
+          "id": -8642237141374216532,
+          "type": "GameObject"
+        },
+        {
+          "id": -8190237735001139540,
+          "type": "Transform"
+        },
+        {
+          "id": -8018398176038562132,
+          "type": "BoxCollider"
+        },
+        {
+          "id": -7190546313951783252,
+          "type": "Transform"
+        },
+        {
+          "id": -6706477695764015444,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -6671761944443103572,
+          "type": "BoxCollider"
+        },
+        {
+          "id": -6351890466558126420,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -6027206028357937492,
+          "type": "MeshFilter"
+        },
+        {
+          "id": -5515855713124690260,
+          "type": "Transform"
+        },
+        {
+          "id": -5290992390905866580,
+          "type": "GameObject"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -4617131067490935521,
+          "type": "Mesh"
+        },
+        {
+          "id": -3811030333791048183,
+          "type": "Texture2D"
+        },
+        {
+          "id": -2768971438648011092,
+          "type": "LODGroup"
+        },
+        {
+          "id": -1043150362191726219,
+          "type": "Texture2D"
+        },
+        {
+          "id": -705413841780091220,
+          "type": "GameObject"
+        },
+        {
+          "id": -687693528836876628,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 250778647605073580,
+          "type": "MeshCollider"
+        },
+        {
+          "id": 292610640657307308,
+          "type": "MeshFilter"
+        },
+        {
+          "id": 2241173541827827372,
+          "type": "Transform"
+        },
+        {
+          "id": 3139899331552763167,
+          "type": "Mesh"
+        },
+        {
+          "id": 9148067474771431347,
+          "type": "Texture2D"
+        },
+        {
+          "id": 9168900514504465695,
+          "type": "Mesh"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    },
+    {
+      "key": "assets/content/items/barter/item_barter_info_operating/item_barter_info_operating.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": 0.00820833444595337,
+          "y": 8.83340835571289e-05,
+          "z": 0.0049019623547792435
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": -0.0030000004917383194,
+            "y": -0.009000000543892384,
+            "z": 0.0
+          },
+          "hasOffset": true,
+          "rotation": {
+            "x": -0.18126145005226135,
+            "y": 0.012738448567688465,
+            "z": -0.010638769716024399,
+            "w": -0.9832949042320251
+          },
+          "boundsScale": 0.8310016393661499,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "0e305708bdcf00aecef708eea6b3f5963f7fcdc7fd345bbb5461b1f45292acb4",
+      "objects": [
+        {
+          "id": -8613352643367942149,
+          "type": "GameObject"
+        },
+        {
+          "id": -7772269654278223877,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -7127439913294575621,
+          "type": "Transform"
+        },
+        {
+          "id": -6758396945927059461,
+          "type": "MeshFilter"
+        },
+        {
+          "id": -6644111571944749061,
+          "type": "GameObject"
+        },
+        {
+          "id": -6414464504094799877,
+          "type": "GameObject"
+        },
+        {
+          "id": -5400796095777748997,
+          "type": "Transform"
+        },
+        {
+          "id": -4923357902962046981,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -4664872358407583749,
+          "type": "BoxCollider"
+        },
+        {
+          "id": -2865010917917093769,
+          "type": "Texture2D"
+        },
+        {
+          "id": -2818172617005324294,
+          "type": "Mesh"
+        },
+        {
+          "id": -1476416843052038149,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -505464059576632335,
+          "type": "Material"
+        },
+        {
+          "id": -185061920527444787,
+          "type": "Texture2D"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 859132836665214971,
+          "type": "LODGroup"
+        },
+        {
+          "id": 1978887991108290555,
+          "type": "Transform"
+        },
+        {
+          "id": 2754239750267217914,
+          "type": "Mesh"
+        },
+        {
+          "id": 3031609021678864379,
+          "type": "MeshFilter"
+        },
+        {
+          "id": 3631980940308891643,
+          "type": "MeshCollider"
+        },
+        {
+          "id": 3929270752886956707,
+          "type": "Texture2D"
+        },
+        {
+          "id": 4044669310126835707,
+          "type": "Transform"
+        },
+        {
+          "id": 7005160019315967995,
+          "type": "MeshCollider"
+        },
+        {
+          "id": 7015956258943346682,
+          "type": "Mesh"
+        },
+        {
+          "id": 8862864908984240123,
+          "type": "GameObject"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    },
+    {
+      "key": "assets/content/items/containers/item_container_tarkov_battlepass/item_container_tarkov_battlepass.bundle",
+      "pivot": {
+        "pivotPosition": {
+          "x": 0.0,
+          "y": 0.14772528409957886,
+          "z": 0.0
+        },
+        "pivotRotation": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0,
+          "w": 1.0
+        },
+        "scale": {
+          "x": 1.0,
+          "y": 1.0,
+          "z": 1.0
+        },
+        "SpawnPosition": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "Icon": {
+          "position": {
+            "x": 2.3283064365386963e-10,
+            "y": -0.0060000005178153515,
+            "z": 0.0
+          },
+          "hasOffset": true,
+          "rotation": {
+            "x": -0.42158907651901245,
+            "y": -0.06322082132101059,
+            "z": -0.029480377212166786,
+            "w": 0.9040999412536621
+          },
+          "boundsScale": 0.931000292301178,
+          "perspective": 15.0,
+          "orthographic": false,
+          "orthographicSize": 10.0
+        }
+      },
+      "dependencies": [
+        "assets/commonassets/physics/physicsmaterials.bundle",
+        "cubemaps",
+        "shaders"
+      ],
+      "sha256": "4c569a9a76998002d4f1a85d1d14bb0a569a56a5192e84708dc79463ff6cc2f0",
+      "objects": [
+        {
+          "id": -8581587968147491707,
+          "type": "Material"
+        },
+        {
+          "id": -7942544094158791898,
+          "type": "GameObject"
+        },
+        {
+          "id": -7080309574476219948,
+          "type": "Texture2D"
+        },
+        {
+          "id": -6298388051579184346,
+          "type": "GameObject"
+        },
+        {
+          "id": -6119588448922445018,
+          "type": "MeshFilter"
+        },
+        {
+          "id": -4922001045810101060,
+          "type": "MonoScript"
+        },
+        {
+          "id": -4854532516571184723,
+          "type": "Mesh"
+        },
+        {
+          "id": -3973478617162982618,
+          "type": "MeshCollider"
+        },
+        {
+          "id": -3121949296260949210,
+          "type": "LODGroup"
+        },
+        {
+          "id": -2680105920887137498,
+          "type": "BoxCollider"
+        },
+        {
+          "id": -2618368326411560154,
+          "type": "Transform"
+        },
+        {
+          "id": -2488503396513742419,
+          "type": "Mesh"
+        },
+        {
+          "id": -1708553395002025178,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": -1565946403930907866,
+          "type": "Transform"
+        },
+        {
+          "id": -661324775084331118,
+          "type": "Texture2D"
+        },
+        {
+          "id": 1,
+          "type": "AssetBundle"
+        },
+        {
+          "id": 1771965628418238958,
+          "type": "Texture2D"
+        },
+        {
+          "id": 2222236485181692710,
+          "type": "Transform"
+        },
+        {
+          "id": 3472342382672730918,
+          "type": "GameObject"
+        },
+        {
+          "id": 5105382778792631078,
+          "type": "GameObject"
+        },
+        {
+          "id": 6578647334055303974,
+          "type": "BoxCollider"
+        },
+        {
+          "id": 6865084586095467302,
+          "type": "MeshFilter"
+        },
+        {
+          "id": 7551778537297084845,
+          "type": "Mesh"
+        },
+        {
+          "id": 8468254501750823718,
+          "type": "MonoBehaviour"
+        },
+        {
+          "id": 8792676109832870694,
+          "type": "MeshRenderer"
+        },
+        {
+          "id": 8884485805901273894,
+          "type": "Transform"
+        }
+      ],
+      "scripts": [
+        "PreviewPivot"
+      ]
+    }
+  ],
+  "adaptations": {
+    "documents": "Native information-item parent; original template IDs, models, dimensions and properties preserved. Prefab bundle keys use the wtt-seasonal/ prefix to avoid content-mod collisions.",
+    "crates": "Original random-loot-container parent retained. Claim/exchange gated until a verified loot pool is available."
+  }
+}
