@@ -52,9 +52,7 @@ internal static class HubDocuments
         LoadJournal();
         while (_pending.Count > 0)
         {
-            var result = JsonConvert.DeserializeObject<HubResult>(
-                RequestHandler.PostJson("/wtt-seasonal/hub/raid-document", _pending[0])
-            );
+            var result = JsonConvert.DeserializeObject<HubResult>(RequestHandler.PostJson("/wtt-seasonal/hub/raid-document", _pending[0]));
             if (result == null || !string.IsNullOrEmpty(result.Error))
             {
                 throw new InvalidOperationException(result?.Error ?? "The document operation was not acknowledged.");
