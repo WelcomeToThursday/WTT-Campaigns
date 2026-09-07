@@ -434,7 +434,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         _screen.SetBusy(true, "Loading " + mode + " character...");
         try
         {
-            await ShowSwitchLoader();
+            await ShowSwitchLoader(character);
             await Plugin.FlushPendingOperations();
             await Plugin.Reload(await Plugin.Request("switch", new Mutation { Mode = mode, CharacterId = character.Id }));
             _startup = false;
