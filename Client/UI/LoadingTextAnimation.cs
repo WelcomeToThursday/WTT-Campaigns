@@ -8,8 +8,19 @@ public sealed class LoadingTextAnimation : MonoBehaviour
     // (sharedassets49.assets, clip 98). Keep the text legible at its dimmest.
     private static readonly float[] Brightness =
     {
-        .572f, .650f, .793f, .936f, .992f, .866f, .632f,
-        .727f, .698f, .664f, .635f, .601f, .572f,
+        .572f,
+        .650f,
+        .793f,
+        .936f,
+        .992f,
+        .866f,
+        .632f,
+        .727f,
+        .698f,
+        .664f,
+        .635f,
+        .601f,
+        .572f,
     };
 
     private Animator _logo = null!;
