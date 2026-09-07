@@ -434,6 +434,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         _screen.SetBusy(true, "Loading " + mode + " character...");
         try
         {
+            await ShowSwitchLoader();
             await Plugin.FlushPendingOperations();
             await Plugin.Reload(await Plugin.Request("switch", new Mutation { Mode = mode, CharacterId = character.Id }));
             _startup = false;
@@ -444,12 +445,17 @@ public sealed partial class SeasonUi : MonoBehaviour
         }
         catch (Exception exception)
         {
+            if (_destroyed)
+            {
+                return;
+            }
             Plugin.Error(exception);
             _screen.SetBusy(false);
             _screen.SetMessage(exception.Message + " Restart the client if reconnecting fails.", true);
         }
         finally
         {
+            HideSwitchLoader();
             Plugin.Busy = false;
         }
     }
@@ -606,6 +612,7 @@ public sealed partial class SeasonUi : MonoBehaviour
     private void OnDestroy()
     {
         _destroyed = true;
+        HideSwitchLoader();
         _screen?.Dispose();
         if (_canvas)
         {

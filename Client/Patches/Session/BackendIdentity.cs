@@ -18,6 +18,7 @@ internal class BackendIdentity : ModulePatch
     [PatchPrefix]
     private static void Prefix(TarkovApplication __instance)
     {
+        SeasonalPerks.Client.Progression.ProgressionClient.Reset();
         if (Plugin.PendingSessionId != null)
         {
             Plugin.SessionId = Plugin.PendingSessionId;

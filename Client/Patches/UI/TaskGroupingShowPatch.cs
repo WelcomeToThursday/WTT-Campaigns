@@ -1,0 +1,55 @@
+using System;
+using System.Reflection;
+using EFT;
+using EFT.Quests;
+using EFT.Trading;
+using EFT.UI;
+using HarmonyLib;
+using SeasonalPerks.Client.Progression;
+using SPT.Reflection.Patching;
+using TMPro;
+using UnityEngine;
+
+namespace SeasonalPerks.Client.Patches.UI;
+
+internal sealed class TaskGroupingShowPatch : ModulePatch
+{
+    protected override MethodBase GetTargetMethod()
+    {
+        return AccessTools.Method(typeof(QuestsListView), nameof(QuestsListView.Show));
+    }
+
+    [PatchPrefix]
+    private static void Prefix(QuestsListView __instance)
+    {
+        __instance.GetComponent<GroupedTaskList>()?.Clear();
+        try
+        {
+            ProgressionClient.Load();
+        }
+        catch (Exception e)
+        {
+            Plugin.LogInfo("Trader progression metadata unavailable: " + e.Message);
+        }
+    }
+
+    [PatchPostfix]
+    private static void Postfix(QuestsListView __instance, IEftSession backendSession, QuestController questController, Trader trader)
+    {
+        try
+        {
+            if (ProgressionClient.Metadata == null)
+            {
+                return;
+            }
+            var groups = __instance.GetComponent<GroupedTaskList>() ?? __instance.gameObject.AddComponent<GroupedTaskList>();
+            groups.Initialize(__instance, questController, backendSession.Profile, trader);
+        }
+        catch (Exception e)
+        {
+            __instance.GetComponent<GroupedTaskList>()?.Clear();
+            __instance.UpdateVisibility();
+            Plugin.LogInfo("Trader task grouping unavailable: " + e.Message);
+        }
+    }
+}

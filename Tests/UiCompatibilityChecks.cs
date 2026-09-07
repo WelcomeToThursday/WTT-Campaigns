@@ -29,6 +29,23 @@ internal static class UiCompatibilityChecks
                 .Fields.Any(field => field.Name == "_loader" && field.FieldType.FullName == "UnityEngine.GameObject" && field.IsPublic),
             "Native loading indicator is available to the seasonal creation overlay"
         );
+        Check(
+            types["EFT.UI.PreloaderUI"].Fields.Any(field =>
+                field.Name == "_pveLoadingScreen"
+                && field.FieldType.FullName == "EFT.Hideout.PveGameModeLoadingScreen"
+                && field.IsPublic
+            ),
+            "Native full-screen loading artwork is available before character switching"
+        );
+        var loadingScreen = types["EFT.Hideout.PveGameModeLoadingScreen"];
+        foreach (var field in new[] { "_logoGroup", "_screenAnimator" })
+        {
+            Check(loadingScreen.Fields.Any(value => value.Name == field && value.IsPublic), "Immediate loading screen binding: " + field);
+        }
+        Check(
+            loadingScreen.Methods.Any(method => method.HasBody && method.Body.Instructions.Any(i => Equals(i.Operand, "LoadingState"))),
+            "Native loading animation state is available"
+        );
         foreach (var field in new[] { "_masteringTab", "_skillsScreen", "_skillMasterTabGroup" })
         {
             Check(types["EFT.UI.SkillsAndMasteringScreen"].Fields.Any(value => value.Name == field), "Native skills field " + field);

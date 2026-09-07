@@ -2,6 +2,8 @@
 
 Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
 
+Build **0.4.0** adds [live trader and task progression](docs/trader-progression.md) for normal and seasonal characters: captured loyalty requirements without spending gates, reputation changes for 381 existing tasks, and a grouped native task list. Missing live tasks are excluded. Existing reputation and task progress are preserved; loyalty may decrease under the new thresholds. Install both client and server. In-game visual acceptance remains a release gate.
+
 Build **0.3.0** adds the [Season Creator](docs/season-creator.md), hosted in SPT’s administrator web interface at `/wtt-seasonal/creator`. Create and duplicate drafts, configure supported content, validate and export packs, and select a default season for the next restart. The [character selector](docs/characters.md) supports several characters per season, simultaneous playable seasons, a wrapping carousel, and confirmed deletion or achievement-preserving wipes. Install the client and server together. Browser interaction and installed-game visual acceptance remain release gates.
 
 Build **0.2.0** adds [Battle Pass gameplay](docs/battle-pass-gameplay.md) to the Seasonal hub: document acquisition, local claims, exchanges and persistent progress, using the amended capture. WTT-Seasonal includes the eight document items and two season crate definitions. Missing quest, customization and crate-content dependencies remain explicitly locked; online purchases stay disabled. Install both client and server.

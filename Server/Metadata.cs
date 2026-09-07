@@ -18,7 +18,7 @@ public sealed record Metadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMeta
     public string Name { get; init; } = "Seasonal Perks";
     public string Author { get; init; } = "CJ-SPT";
     public List<string>? Contributors { get; init; }
-    public SemanticVersioning.Version Version { get; init; } = new("0.3.0");
+    public SemanticVersioning.Version Version { get; init; } = new("0.4.0");
     public Range SptVersion { get; init; } = new("~4.1.3");
     public bool HasPrepatcher { get; init; }
     public List<string>? Incompatibilities { get; init; }

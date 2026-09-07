@@ -38,6 +38,11 @@ void Check(bool value, string name)
     count++;
 }
 var rules = new Rules();
+SeasonalPerks.Tests.ProgressionChecks.Run(Check);
+if (args.Length > 0 && File.Exists(args[0]))
+{
+    SeasonalPerks.Tests.ProgressionChecks.Hooks(args[0], Check);
+}
 SeasonalPerks.Tests.CreatorChecks.Run(Check);
 SeasonalPerks.Tests.HubGameplayChecks.Run(Check);
 var seasoned = new RuntimeEffects(c, new[] { "69c41adf883efd5e3b09ccae" });

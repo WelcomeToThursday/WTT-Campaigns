@@ -96,6 +96,12 @@ internal static class PatchRegistration
 
     private static void EnableUi()
     {
+        new TaskGroupingShowPatch().Enable();
+        new TaskGroupingRefreshPatch(nameof(QuestsListView.UpdateVisibility)).Enable();
+        new TaskGroupingRefreshPatch(nameof(QuestsListView.QuestAddedHandler)).Enable();
+        new TaskGroupingSelectPatch().Enable();
+        new TraderSpendingTooltipPatch().Enable();
+        new TaskTierBadgePatch().Enable();
         new MenuEntry(typeof(MenuScreen)).Enable();
         new SkillsTabPatch().Enable();
         new SeasonalUiInputPatch().Enable();

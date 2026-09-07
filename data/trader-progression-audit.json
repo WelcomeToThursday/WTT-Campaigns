@@ -1,0 +1,2356 @@
+{
+  "SkippedQuests": [
+    "6a4532e48e82d8ffea0c3eae",
+    "68c6a8551dfbf3fb78018562",
+    "6903d779fdfc4078740a4bd0",
+    "68e3a35002661eb2d30ce387",
+    "68cbd33676fe74b1e80bfd91",
+    "6902443b0d98240ccf07e8b4",
+    "68cbcdc4c964ab83cc0c928e",
+    "6900927ab7d28358f80b9421",
+    "69052e18e680c2d3e3034d3a",
+    "69789660b2187365e70bb94a",
+    "68da36cf7cff54fc6109874a",
+    "68da33fe00868edcb6025ac4",
+    "69d38381cea4b428690ea1d9",
+    "68e784b7fa3f1fa3770094ba",
+    "68e4cf5136a9240a3704e777",
+    "68e3a3e51edf1ca810009a99",
+    "68ffe808f4ec6f4d8d078232",
+    "68ffe7ff6120149f4f0f2d61",
+    "68e3a3bc02661eb2d30ce389",
+    "68e3a3d2ff05916c250a898b",
+    "68ffe8149f98d8e00f0ce6a8",
+    "68ffe7f5955bb2fc200c6f5f",
+    "68ffe821841a7a1cac00dd05",
+    "697878057aa1273126030fb0",
+    "6942b44f891369fc790e385a",
+    "69788d4e963f08d9140bce19",
+    "6978907718bd6d7cbd0e8b8e",
+    "6a5cd2178fd7c2b201032f3f",
+    "6a5c1578f2689567c30eb0f3",
+    "6a5ccda873f06065630d61b0",
+    "68bdb3b00deb8afba70216bd",
+    "69fe13048588099d740c1a7d",
+    "692d64d15848ea322008ffd1",
+    "69ba7a57df4943bf320ec69d",
+    "6a11ba5a87da0c62ff0778ea",
+    "69c27158e350f01390049e77",
+    "69fb04933bca906c71052ddc",
+    "6a05dc1ec12a1948c60a0968",
+    "69baaaae8f45d6b3fa020ade",
+    "69c2a2d004de49c8f0055a3d",
+    "6a05e47ec8c57a62940cd74a",
+    "69ce1cfb298a6529b30d712b",
+    "6a0447bccc5a801e9d03825e",
+    "690de79555141933e30d98e8",
+    "69ba91078fe4c6a8d400a1ab",
+    "69c2a3c017b6954e740821d7",
+    "69eb680847f27502e600de57",
+    "6a05dfd31681410e9e0b9afc",
+    "6a0c95739d5c5d02fa026cc6",
+    "69fbd2a6abee5a6fcb03fac2",
+    "69c277f3ea6da9c23e07f8d2",
+    "691536d636f1a31d7f0d4a51",
+    "69c26c07683c9831020018c7",
+    "69b2c6beb8ae58006c084f73",
+    "6a5424ae135497b9df0c68be",
+    "68ee1c18b4e5bc9a68018cd7",
+    "68ea9b0b8bfb4ae0aa04ddf9",
+    "68fc083c9586df0c2d000533",
+    "678f9df57252f8f0ae02f2d6",
+    "67bdf2cecf0cc29475092199",
+    "68fc08c5d715af8c6b091498",
+    "68bdb25ad9e4342bb10c3449",
+    "678fa2fe2e048957490ce617",
+    "6924820dbf8cf5498b05dac0",
+    "678f6bd1e8d46e40ff021605",
+    "68c00c0ee726287ae60edd72",
+    "68ffdaf2853a782081039a16",
+    "68fc085cef27fb1d220085d7",
+    "68cc07e96a6359b02109da18",
+    "68c02056b4000f84a4026e06",
+    "68e7e20801bd936405037bee",
+    "678fa1463977eb69290a3a06",
+    "68fc0894c976e4105e0587b2",
+    "6914f60df06f0ee753006191",
+    "679cdd71af268e67ff086be8",
+    "6913d08bf1f922ac650cc9da",
+    "68dfa85efdedf14d640a6ee0",
+    "68d5be85d12284307b08175e",
+    "67bdeeee884b40ea9d08b5c4",
+    "68e9156369a053d132045c56",
+    "68e90a73a3d110355b03e3a2",
+    "68b58c2745550ec0f408ee56",
+    "69247ccc803723e83c0439fd",
+    "68fc0828380751d8b20a57ce",
+    "68588ec88b0cb7b6f80f9339",
+    "6914d59b1bd36f988e0d95bc",
+    "68588ed2b2a45312020df028",
+    "67ced00fd47d32692302aca6",
+    "68588edf975681ee130def28",
+    "68fc08009586df0c2d00052f",
+    "68588edb1dbd9790be0f5ee9",
+    "6904244bd56548751f04160c",
+    "68ec64b49012da9779025825",
+    "68588ecc10ea119db4095de7",
+    "68588ed9f981006b1e0a7718",
+    "68f0f549e3f6be22030204a9",
+    "69152d020a086d181f00a0e9",
+    "690413d50750895a590a3bbd",
+    "68f0f54d0a378517c900226e",
+    "68f0f54bdae477041501acfc",
+    "68588eca1d2ea426e9085c29",
+    "68ee523e54da3fa9aa01af75",
+    "694a6c7b2ff4f21af6040103",
+    "68f0f557ac6ab778470752ad",
+    "68588edc157cc3165608f2b7",
+    "68588ed5c7a9b3b530005ec8",
+    "67ced017029b9dbe190f3c77",
+    "68f0f55b6310272fc402e2dc",
+    "67ced018d1e611aa410235e5",
+    "6917c6efa59476a52c02e149",
+    "691530ed4f8a7c75100a3887",
+    "6910f05a8618d8915f00106f",
+    "67ced0157844ea90d80fd6a5",
+    "68f0f54ffdd0d2e55404aff6",
+    "68f0f5516871d33422038cd2",
+    "68f0f55917a7f61dc70e7353",
+    "68588ede90466842410d7bb8",
+    "68e79a6301bd936405037b5a",
+    "67ced01bc23108bd9e031725",
+    "68f0f556dae477041501acfe",
+    "67ced00eceefc356a10fd405",
+    "68f0f55328dbd5787907a2b9",
+    "67ced014c43709665f0fbe46",
+    "67ced01a39a6a1807f093ec5",
+    "68588ed156fb54c7e00e4318",
+    "68588ed4257202ddee073e07",
+    "68e79a90851650b3be000427",
+    "67ced012152372f12708b7b6",
+    "68caba2738519597bf0abeb4",
+    "6915bb41efc107ce960110d9",
+    "6915bb52dff93d50490eaf54",
+    "68caba3985c14c12720e9287",
+    "6915a36080bc8396530efe7f",
+    "68fab1c73754850d130f5c61",
+    "67bdafa17c1ef7a64804319c",
+    "69125a2fec72e1b67a0ace56",
+    "68e3a3abf1bccd83c50a5887",
+    "68caba2d7d1e2d4df2032efe",
+    "68caba3b09dc3189010e49cc",
+    "68d9b97ef19ccd1e51002c80",
+    "68faaab4615a04b8ee0be7ff",
+    "68caba2cc567ca20cc01c775",
+    "6a04b0b7d4b07b5ef1064e38",
+    "67b892b832f50fb7ec084426",
+    "67bc9970a23671dbdd023d38",
+    "67bca04f21692c74e700bc72",
+    "68d96e13ad43b0dd520c6cb8",
+    "68d68948fa5f24b696041a6d",
+    "67b892b338076c36e50abfb5",
+    "67bc9d70adb794ecb40f5755",
+    "68f9ef8a1dbc7a9f81001a87",
+    "68caba3fcc16a93b26096721",
+    "68caba3128f428794e0780fd",
+    "6915343638075d35a20d90dd",
+    "68caba2ae86db94cdc051418",
+    "67bc9eda1d99d6ebe5014b65",
+    "68f170a1f8b4707778060f50",
+    "67bc9e3e7801bf5c41017b82",
+    "67b892bb1c013f0fcb058246",
+    "67bc93e6adb794ecb40f574d",
+    "68dbf867ff23e2cbe2014c02",
+    "67b892b6b4c09aae5309c275",
+    "68f16d504a7305f74f0c746b",
+    "68f2e2738926b2d0ec025b8e",
+    "68d6894a05ab6c954c01f65e",
+    "68caba33f193c0b4fb01cc2d",
+    "68d9b9bb6f5ed3885f00e9e0",
+    "68e6a5b42a3fa47e9100c196",
+    "67b892ba0e9aad30720bfc56",
+    "69152ae1af875c1a1b083434",
+    "68f9eed31dbc7a9f81001a3a",
+    "68d9b97c42007d9a0a0f901c",
+    "68caba2f28ffeb58ad030255",
+    "68caba3606c31ae60602980f",
+    "68caba3da331c68e8209b55a",
+    "67b892b4884d39aaea04ef26",
+    "69d3a645472b60329903b737",
+    "69aae3aa97c076d9b503bceb",
+    "69aaecdf174ff467ef0acc38",
+    "69fd18770cf10ab3ea096a1b",
+    "68f4d992fa1bcd70ee0f4ecb",
+    "68e2d8d52a2449612b06ac9b",
+    "69a961df27397b6c1e098689",
+    "69aafbfa47e01d12cc087d0f",
+    "67bc801c7801bf5c41017b6d",
+    "68f4de9df50153689f033320",
+    "68f4d9739f8e86cffa043d9e",
+    "69e5583240c3e6c8ba0edbd5",
+    "69c101ad6f858059840d7bb9",
+    "69b2b0cc0a7db6b331031267",
+    "67bc798e612537def10eac17",
+    "69b04f2f4ec955a5f40828a3",
+    "69ba68f4a50582c0b80e7659",
+    "69fd20990edd2aeacb081867",
+    "690b65b50bb26b80c40db801",
+    "69baba34790f8452d305ae08",
+    "68e2ecfeb88d405a420774f5",
+    "67bc8c817801bf5c41017b73",
+    "69b2bb74ac1e735d5c0f9a57",
+    "67bc646c6e34475fea09d2a5",
+    "69fa1243426d4dd265031b36",
+    "69ce213a298a6529b30d7134",
+    "69a044d82c3521e14b023507",
+    "69fd0f3ddf3fd2bd5c0d3105",
+    "68fbdbae729bd58bc80974f1",
+    "67bc79321d99d6ebe5014b5a",
+    "69bbd63fcc93b653fd061f39",
+    "69ce1de03e15cd80bd06f6c9",
+    "68d922a310451b42200b33bf",
+    "68dac755bf449210f60f0e6e",
+    "68f4d983469a22a0670b5c38",
+    "69f1cd1c7a6f9bce6d093bda",
+    "67bc86024e7dbc3aa202431b",
+    "67bc6acd21692c74e700bc66",
+    "69c2612fb5663267790dd555",
+    "67bc7abc7801bf5c41017b68",
+    "69bc1265402142259105e144",
+    "69ce1f84ebbdbf36a200627c",
+    "68dbf539675bd8efd403ec10",
+    "68f4d9aaf50153689f033316",
+    "69bbfae89ce356593c0e2f35",
+    "69c151fd9c9149a8dd01a29a",
+    "69a9bc08babf5c053607fef7",
+    "69ce204c8702b378f9091e4b",
+    "68d82d29d34befa7d30b8771",
+    "69f9d3a1380722e86208fce4",
+    "69c14feae2c5125aa504e9d7",
+    "69c267f6a27845a6970384fa",
+    "68f4d9639daae872d508cf00",
+    "6895bf42a3de8e8f1d0426a8",
+    "6895bed8e7dac53c7c08797d",
+    "69bd688f14c985e64208896a",
+    "68c6a4ece3e3d7f69d0a5bd9",
+    "68fc085738c4a9e0060bddfc",
+    "69bd7ddcd5e479cdc90915f7",
+    "69c07eda4e4a455718064e9b",
+    "6895bf0872e2151e9e0a59fa",
+    "68c6aa0e2f0a1d31380ad618",
+    "6895bfd30cb3a157480db00a",
+    "6895bf1ecfb48128340d5a89",
+    "6895bf915bcf5c38e90b83d8",
+    "6895bfa355ad4ab76001a1c9",
+    "6909e9db9ce51fc8cd014c6e",
+    "6895bbb0e7dac53c7c08797b",
+    "69c0804347f588a3050c9d8b",
+    "69c08283d2ffcc5e23016da1",
+    "69029e0aede95b6cf90c04f7",
+    "69bd7d8753a07591760f8429",
+    "69bae55c94e71dc3b103e629",
+    "68db9c7557bc51a8c804c14b",
+    "68588ee109509e9fa1045b38",
+    "6a45208043b8d7604d00b8d5",
+    "69ba8cd91c440c14bb09a955",
+    "67bdf8c066ca1d79a202463a",
+    "67ced01df816f16d9a00d586",
+    "68caba4119f13a8d1b0ad3ac",
+    "69d392247ad7670883046095",
+    "679cdee4ce3a208fee0ad657",
+    "67b892bd55eaf7b06d011436",
+    "69ce21e990144e437802b1e0",
+    "6a91840a740be0cff50e0310",
+    "697895277d31587eab080266",
+    "68cd7d6d9510d63fdb05a76a",
+    "68f0f55ea607c91a6006cebb"
+  ],
+  "SkippedTraders": [
+    "67f7af56c117b6140af2a607",
+    "68fe15910f29ba3fdbba9d54",
+    "68fe15990f29ba3fdbba9d55",
+    "688246518448b05efd61d461",
+    "688246958448b05efd61d462",
+    "69e0d6cc77b63940375b9173"
+  ],
+  "Adaptations": [
+    {
+      "QuestId": "675c1cf4a757ddd00404f0a3",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43cd31d85cd616ceb0f3df",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e4ca86f77409dd5cdf2c",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4533d03f35ccf23f3fe818",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71e8ed54b755a3b53eb67",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4536726ba0df9bc29e6366",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e43786f7740a212217fa",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43ce5cc1b3ad54c4dd4793",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5edab4b1218d181e29451435",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a453555279305f4656ccb86",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e48186f77443e625e386",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43eaa20a88bf63fd47e312",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "63a88045abf76d719f42d715",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43e9e0f70bbd5e9a520a0d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e2ee86f77443e35162ea",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43cba4257c0584e53d16fe",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e4ad86f77443e625e387",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43f10b9538033e8ccd8242",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e2c386f77443e7549029",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43cf86e0364dab9cfa7de4",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "669fa3979b0ce3feae01a130",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43f1c7a90006f0243f7997",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e44386f77409453bce7b",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43cee5e8931e9af59ce72b",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e46e86f77409453bce7c",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43cabd74b6c31309f9a6a5",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e729cf5698ee7b05057439",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a43c77b3ee1758d722ef805",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac345dc86f774288030817f",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf4f0a9f9fe8ad8d54dea",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6179ad0a6e9dd54ac275e3f2",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a453040b5fec39844094eeb",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "608a768d82e40b3c727fd17d",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a452ed96403401c4ca26585",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "66ab9da7eb102b9bcd08591c",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4530f1658ff9be9d2e80c8",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e2cc86f77443e47ae019",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4531410c5a4f2a97fb7d51",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e2b486f77409de05bba0",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a452f721977a58e972d05cd",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e45e86f77408251c4bfa",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a452fda409c034e81788cd9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639135e8c115f907b14700aa",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf350856d0183cb220993",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae3267986f7742a413592fe",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf54b7d8d240f68fb47be",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae3277186f7745973054106",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d06923e380b93dedbe4d3",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac3467986f7741d6224abc2",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf083568a94e7beae41b1",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "675c1570526ff496850895d9",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3bee21f93d55d68c9bd900",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac2428686f77412450b42bf",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3c0680db988d432db35e1e",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac23c6186f7741247042bad",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3bda9a408ef52190ac78ca",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71d6d7fcf9c556f325055",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3c061d1cf21218265e4589",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac2426c86f774138762edfe",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3bf6c5bdb041727fc51dc5",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d2495a886f77425cd51e403",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": [
+        {
+          "Condition": "6a3d2b4f3e1b25e87035d40a",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6179b3bdc7560e13d23eeb8d",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0c492ff3d383c1076a6c",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae449c386f7744bde357697",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b3757c4724593f07e762d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac3477486f7741d651d6885",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf42d43e4e379cb85e4f9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "66aa74571e5e199ecd094f18",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf528353a56e4bc430872",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "64ee9df4496db64f9b7a4432",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0c9522c447cba712082c",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac3464c86f7741d651d6877",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a63c9fd669b86eea7a02a41",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6573382e557ff128bf3da536",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf0c18ceebb036ddcb71e",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac3475486f7741d6224abd3",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3bef618fffa6b44ad5dcd1",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae448f286f77448d73c0131",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b390edce9a13bbb6c6be6",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae3280386f7742a41359364",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0fe3dae3d5cc38bb08c4",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ac3462b86f7741d6118b983",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3c0697ccc916a30472e08e",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae4490786f7744ca822adcc",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b39baf441ee861e11a6f9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c139eb686f7747878361a6f",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0e90e26cf4f9dc9e8cb1",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5b47799d86f7746c5d6a5fd8",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0ff1c6201854bd856b55",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c1128e386f7746565181106",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0e3079a0e860e4ee0c53",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6179b3a12153c15e937d52bc",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0de20773ad727b11ae23",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6578ec473dbd035d04531a8d",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3bf690d565ddd321f60ede",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae327c886f7745c7b3f2f3f",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0d5b4183439c5ed55ad8",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "657315e4a6af4ab4b50f3459",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "68dfd865aaf6f3c722200252",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5f04886a3937dc337a6b8238",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf0e76a3dc5f844b8e4e5",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae448bf86f7744d733e55ee",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b3845723a4707a0ad4420",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639872f9decada40426d3447",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3cf479bcc09d262c1aa91b",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639872fc93ae507d5858c3a6",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0dada08a68efb8e8227b",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae4493486f7744efa289417",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b3a3b374cec11d07aa1c9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639872fa9b4fb827b200d8e5",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3d0c0c02240d023ff33fdf",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae4493d86f7744b8e15aa8f",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b3a93533200e3f230ab33",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5b47891f86f7744d1b23c571",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5769ca7fc68cdd9c8de550",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5b478b1886f7744d1b23c57d",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b61d3576dc193890244dd",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae449b386f77446d8741719",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b3bfb43ab251a6b60d8f1",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae4498786f7744bde357695",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b62991248a8b00360f4cf",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5b478d0f86f7744d190d91b5",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b6380e21b6d80558855cb",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae449d986f774453a54a7e1",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b62feecb813c1763e8f01",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71dc0a94be721b065bbfc",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b3c7bb6bcf854842aa133",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5b47926a86f7747ccc057c15",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a8f916a4e4b5d2f5e4ca9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "596b36c586f77450d6045ad2",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a8e2360cf004801084b67",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "64f6aafd67e11a7c6206e0d0",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a954fcaf3070cb0a6d0d3",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae448e586f7744dcf0c2a67",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b605e58a01ce8fd46dd9d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c1234c286f77406fa13baeb",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ab38aeac0839cd31b7ab8",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "658027799634223183395339",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a920526f21a16f9634797",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5b478eca86f7744642012254",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a97c6bcb34ee22fc79feb",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "657315e270bb0b8dba00cc48",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6917b4c8e0ec62f3d7a46246",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5979eee086f774311955e614",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a9158e59661ee467d6e2d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "669fa39c64ea11e84c0642a6",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ab27d3f13f76f04f70ac0",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5b478ff486f7744d184ecbbf",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a991df320624911d562bb",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5979ed3886f77431307dc512",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a9293c6e51d646eec64ff",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "596b43fb86f77457ca186186",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a909ec3e6d53ec5e3b41c",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639135a7e705511c8a4a1b78",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b619fafdbe81603c572ff",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639dbaf17c898a131e1cffff",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a96931ac5646f7e7c95be",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c112d7e86f7740d6f647486",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5750646953e5d1f28416fa",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "675c3582f6ddc329a90f9c6d",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a8f2858343795678c8bb4",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c10f94386f774227172c572",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4b3d0677168485e665599b",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "608974af4b05530f55550c21",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5761a49f13b0687add12b4",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6089743983426423753cd58a",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ab8502a294d6240265ad3",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6572e876dc0d635f633a5714",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ab9a7766ade631c404649",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c0bde0986f77479cf22c2f8",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a4f5aadb685ad42e7a403cc",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5edabd13218d181e29451442",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ab8f3e33e7ae011d46a61",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a27b7a786f774579c3eb376",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5c14522a1363c38d9813a4",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "669fa38fad7f1eac2607ed46",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5c1497dd3caf961c5ffd41",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "626bd75d5bef5d7d590bd415",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5aba20177a1cd1a116535c",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a0449d586f77474e66227b7",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5c14cfa2627215a46fe6f2",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a27bb1e86f7741f27621b7e",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cd375512938938e82dbc8",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71ccb5688f6424c7bfec4",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cd716f09e630c0f4ef8c3",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639282134ed9512be67647ed",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ccd6900eebaca2d32a762",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c0d4c12d09282029f539173",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cd854c0637e0963014995",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639135534b15ca31f76bc317",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a7303c529291f42679875cc",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a27b80086f774429a5d7e20",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cce729e178248c4114d5f",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639135f286e646067c176a87",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ccf35b5318bec427b2906",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6179b5eabca27a099552e052",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cda6dd21182206df76c36",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a27ba1c86f77461ea5a3c56",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cd06848f50fb151dba3b7",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c0d4e61d09282029f53920e",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cdb909787085f199aff19",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a03296886f774569778596a",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5e6258fe76f81230c9b8f7",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71c9ad54b755a3b53eb66",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cd5e7e0c446ef0379f330",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a27b87686f77460de0252a8",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ccee7fbe7bd1df628669e",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5ae4495086f77443c122bc40",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": [
+        {
+          "Condition": "6a5a07ed5316701e2859a09d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5936da9e86f7742d65037edf",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a549d7e28bc65f81906cab4",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60896b7bfa70fc097863b8f5",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a32e9cb18a6e85182dc98d7",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "669fa3a40c828825de06d6a1",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a330b1867c4b6a3181e2caa",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c0bd94186f7747a727f09b2",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a268606eb3ec3bc4c460e83",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "657315e1dccd301f1301416a",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a26853c8b6be04aa1955f83",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "59674cd986f7744ab26e32f2",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a2683da6aaa3aaa04c037ad",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "63a5cf262964a7488f5243ce",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a26df623e68c3ca8f1836c1",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5967530a86f77462ba22226b",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a2684c65635319a712fa1cc",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "675c3507a06634b5110e3c18",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a2685856fc13648f3a9560b",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "66ab970848ddbe9d4a0c49a8",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a32e931fdf2c8d0034693aa",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "596a0e1686f7741ddf17dbee",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a541bbff43cda8994db38b7",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "675c03d1f7da9792a405549a",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5423ce0bb60fa8e88a1dc1",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5edaba7c0c502106f869bc02",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a568d403c4c69b5ce40551e",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5eda19f0edce541157209cee",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a26e2c8c47ce34914fe1e5e",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "59675ea386f77414b32bded2",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a26e0672e49b1577082c7a1",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "675c047fa46173572a0bd878",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a542455920f7f2be967e229",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5967733e86f774602332fc84",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a541c59ad49c0df49871093",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "59689ee586f7740d1570bbd5",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a567fe394373d4ef646db38",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60896e28e4a85c72ef3fa301",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a56910a672be13e89497a88",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639136f086e646067c176a8b",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a26e47f87674ec2fd38476d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5967725e86f774601a446662",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a2687c6cf807954f797de75",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "626bd75c71bd851e971b82a5",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a32ec845a0244c95a60d4c7",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5968eb3186f7741dde183a4d",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a54230d5372cccd9882b855",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5969f9e986f7741dde183a50",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a542395eded4179f78f17bc",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "64f731ab83cfca080a361e42",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5684151f8461538d9a0909",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6573397ef3f8344c4575cd87",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a26e3ed8a625af7e6c6e6e0",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "64f3176921045e77405d63b5",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a56821dbe37c1cbc6794a5d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "63a9ae24009ffc6a551631a5",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3318a6174071e3a7452400",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "675c1ff1a757ddd00404f0aa",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a557c941360c129d2497805",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "59c124d686f774189b3c843f",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a2686ed241cbac1770933b9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "596a1e6c86f7741ddc2d3206",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a56734a3d84b3f25f92f1d3",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639135e0fa894f0a866afde6",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5674e5d4dca6fa8ac96d16",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "657315ddab5a49b71f098853",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "68dfd6d220b777b168d7ef72",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "67a09673972c11a3f507731d",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5683baf14384a719bfcc17",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "59674eb386f774539f14813a",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a269b11d5ea81aadc5c5952",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71bb4e456d449cd47ca75",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a3319b26e99b8bc4b9ba19d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "59689fbd86f7740d137ebfc4",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a541aee0f558b660e06709d",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "61958c366726521dd96828ec",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cd548fd1cb6b6390ae5c5",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71b62a0beca400d69efc4",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a331a17e38c9986c69e4674",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71c11d54b755a3b53eb65",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5abd447c0cd5dbc9fcd692",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60896888e4a85c72ef3fa300",
+      "Action": "use captured trader assignment",
+      "PreviousTrader": "5935c25fb3acc3127c3d8cd9",
+      "TraderId": "58330581ace78e27b8b10cee"
+    },
+    {
+      "QuestId": "59ca1a6286f774509a270942",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a330c986377a9ab6d16e3f9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c0d0f1886f77457b8210226",
+      "Action": "use captured trader assignment",
+      "PreviousTrader": "5935c25fb3acc3127c3d8cd9",
+      "TraderId": "58330581ace78e27b8b10cee"
+    },
+    {
+      "QuestId": "5c0d0f1886f77457b8210226",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5aba5abbb53b1da38bdaec",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a27c99a86f7747d2c6bdd8e",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a975c62deebb4829b2bdc",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6179aff8f57fb279792c60a1",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cd47d3f8c836446bcb635",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71c48c1bfa3050473b8e5",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a56928eb6f60e911714b7d5",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "626bd75b05f287031503c7f6",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a579d91f292d23d06efc168",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6179ad56c760af5ad2053587",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a568fbb6325469a81a27d4f",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "596a218586f77420d232807c",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a568d87630f63e248d59349",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5edac63b930f5454f51e128b",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cd81b244fdfe0b0eca7db",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "67a09636b8725511260bc421",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": [
+        {
+          "Condition": "6a706ca6741520ee6e967cad",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5979f9ba86f7740f6c3fe9f2",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": [
+        {
+          "Condition": "6a705e229056ca220534c604",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5bc4776586f774512d07cf05",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": [
+        {
+          "Condition": "6a43f2b9b69e39318bc45176",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "64f5deac39e45b527a7c4232",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5527a09ee0da33ac34ceca",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5d25e44f86f77443e625e385",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a452e54e82f2dd5fb1c27a9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "68341eb25619c8e2a9031501",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": [
+        {
+          "Condition": "68341eb25619c8e2a9031503",
+          "Type": "Quest",
+          "Reason": "missing prerequisite"
+        }
+      ]
+    },
+    {
+      "QuestId": "5a27b7d686f77460d847e6a6",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cceadbb8e3df6203c40c6",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "639135c3744e452011470807",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a95aa033186f393cb1ce9",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5c0bd01e86f7747cdd799e56",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5cdadc542c14bbc62ea9c3",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5979f8bb86f7743ec214c7a6",
+      "Action": "use captured trader assignment",
+      "PreviousTrader": "54cb50c76803fa8b248b4571",
+      "TraderId": "58330581ace78e27b8b10cee"
+    },
+    {
+      "QuestId": "5979f8bb86f7743ec214c7a6",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a9010cb4d9fd9229667d7",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "5b4794cb86f774598100d5d4",
+      "Action": "use captured trader assignment",
+      "PreviousTrader": "58330581ace78e27b8b10cee",
+      "TraderId": "5935c25fb3acc3127c3d8cd9"
+    },
+    {
+      "QuestId": "5b4794cb86f774598100d5d4",
+      "Tier": 1,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5c13a7b3f0cbbfd739a762",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "60e71ce009d7c801eb0c0ec6",
+      "Tier": 4,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a62912d9709ae6226d37e53",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "596b455186f77457cb50eccb",
+      "Tier": 2,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5a94c4c4de657ffc7a5f83",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6193850f60b34236ee0483de",
+      "Tier": 3,
+      "Action": "use loyalty tier for unsupported gates",
+      "Conditions": [
+        {
+          "Condition": "6a5ab93a6c796f99243131ed",
+          "Type": "GlobalVariableValue",
+          "Reason": "unsupported live condition"
+        }
+      ]
+    },
+    {
+      "QuestId": "6834233fecd5cf3a440d855b",
+      "Action": "use captured trader assignment",
+      "PreviousTrader": "6617beeaa9cfa777ca915b7c",
+      "TraderId": "579dc571d53a0658a154fbec"
+    },
+    {
+      "QuestId": "6834233fecd5cf3a440d855b",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": [
+        {
+          "Condition": "6834233fecd5cf3a440d855e",
+          "Type": "Quest",
+          "Reason": "missing prerequisite"
+        }
+      ]
+    }
+  ],
+  "Counts": {
+    "Captured": 645,
+    "Beta": 558,
+    "Applied": 381,
+    "Tiered": 238
+  },
+  "Sources": [
+    {
+      "File": "resp.client.quest.list_1788671784.json",
+      "Sha256": "6392212d48d8ba4c47fda4c77ba4f4cff4ffad267d32e90275bfab1844bbf0fe"
+    },
+    {
+      "File": "resp.client.trading.api.traderSettings_1788671771.json",
+      "Sha256": "e95597a9f73c2281f4db3373c98f85598ada41d27f387af546a69e5accaf1de0"
+    },
+    {
+      "File": "quests.json",
+      "Sha256": "81d3ffc69f009723d62e3da93d4c88f3da108fc9cfb0657ce827913efe359956"
+    }
+  ]
+}

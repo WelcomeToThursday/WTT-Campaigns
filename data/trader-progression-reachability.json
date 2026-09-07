@@ -1,0 +1,130 @@
+{
+  "Assumptions": "Optimistic static bound: level 79, zero initial reputation, all traders unlocked, no repeatables, objectives assumed completable, branch prerequisites treated as terminal, optional penalties ignored. Not a playthrough guarantee.",
+  "InstalledTasks": 558,
+  "CapturedTasks": 645,
+  "AppliedTasks": 381,
+  "SkippedLiveTasks": 264,
+  "OptimisticallyReachableTasks": 521,
+  "Traders": [
+    {
+      "Id": "54cb50c76803fa8b248b4571",
+      "Name": "Prapor",
+      "HighestLoyalty": 4,
+      "MaximumLoyalty": 4,
+      "OptimisticStanding": 22.13,
+      "MaximumRequired": 7.9,
+      "MissingLiveSuccessReputation": 1.5,
+      "Shortfall": 0
+    },
+    {
+      "Id": "54cb57776803fa99248b456e",
+      "Name": "Therapist",
+      "HighestLoyalty": 4,
+      "MaximumLoyalty": 4,
+      "OptimisticStanding": 14.2,
+      "MaximumRequired": 5.8,
+      "MissingLiveSuccessReputation": 0.1,
+      "Shortfall": 0
+    },
+    {
+      "Id": "579dc571d53a0658a154fbec",
+      "Name": "Fence",
+      "HighestLoyalty": 1,
+      "MaximumLoyalty": 2,
+      "OptimisticStanding": 1.34,
+      "MaximumRequired": 6.0,
+      "MissingLiveSuccessReputation": 0,
+      "Shortfall": 4.66
+    },
+    {
+      "Id": "58330581ace78e27b8b10cee",
+      "Name": "Skier",
+      "HighestLoyalty": 4,
+      "MaximumLoyalty": 4,
+      "OptimisticStanding": 15.4,
+      "MaximumRequired": 5.8,
+      "MissingLiveSuccessReputation": 0,
+      "Shortfall": 0
+    },
+    {
+      "Id": "5935c25fb3acc3127c3d8cd9",
+      "Name": "Peacekeeper",
+      "HighestLoyalty": 4,
+      "MaximumLoyalty": 4,
+      "OptimisticStanding": 22.49,
+      "MaximumRequired": 6.0,
+      "MissingLiveSuccessReputation": 1.1,
+      "Shortfall": 0
+    },
+    {
+      "Id": "5a7c2eca46aef81a7ca2145d",
+      "Name": "Mechanic",
+      "HighestLoyalty": 4,
+      "MaximumLoyalty": 4,
+      "OptimisticStanding": 21.0,
+      "MaximumRequired": 7.6,
+      "MissingLiveSuccessReputation": 3.0,
+      "Shortfall": 0
+    },
+    {
+      "Id": "5ac3b934156ae10c4430e83c",
+      "Name": "Ragman",
+      "HighestLoyalty": 4,
+      "MaximumLoyalty": 4,
+      "OptimisticStanding": 10.41,
+      "MaximumRequired": 6.5,
+      "MissingLiveSuccessReputation": 0,
+      "Shortfall": 0
+    },
+    {
+      "Id": "5c0647fdd443bc2504c2d371",
+      "Name": "Jaeger",
+      "HighestLoyalty": 4,
+      "MaximumLoyalty": 4,
+      "OptimisticStanding": 20.5,
+      "MaximumRequired": 7.3,
+      "MissingLiveSuccessReputation": 2.25,
+      "Shortfall": 0
+    },
+    {
+      "Id": "638f541a29ffd1183d187f57",
+      "Name": "Lightkeeper",
+      "HighestLoyalty": 1,
+      "MaximumLoyalty": 1,
+      "OptimisticStanding": 0.08,
+      "MaximumRequired": 0.0,
+      "MissingLiveSuccessReputation": 0,
+      "Shortfall": 0
+    },
+    {
+      "Id": "6864e812f9fe664cb8b8e152",
+      "Name": "6864e812f9fe664cb8b8e152",
+      "HighestLoyalty": 1,
+      "MaximumLoyalty": 1,
+      "OptimisticStanding": 0.0,
+      "MaximumRequired": 0.0,
+      "MissingLiveSuccessReputation": 0,
+      "Shortfall": 0
+    },
+    {
+      "Id": "656f0f98d80a697f855d34b1",
+      "Name": "BTR Driver",
+      "HighestLoyalty": 1,
+      "MaximumLoyalty": 1,
+      "OptimisticStanding": 1.27,
+      "MaximumRequired": 0.0,
+      "MissingLiveSuccessReputation": 0.01,
+      "Shortfall": 0
+    },
+    {
+      "Id": "6617beeaa9cfa777ca915b7c",
+      "Name": "Ref",
+      "HighestLoyalty": 3,
+      "MaximumLoyalty": 4,
+      "OptimisticStanding": 0.61,
+      "MaximumRequired": 1.2,
+      "MissingLiveSuccessReputation": 0.11,
+      "Shortfall": 0.59
+    }
+  ]
+}

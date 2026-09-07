@@ -304,8 +304,8 @@ public sealed class ProfileSelection
         {
             var wipe = _ui.Button(rect, "WIPE", 170, -94, -288, () => manage(character, true), 40);
             var delete = _ui.Button(rect, "DELETE", 170, 94, -288, () => manage(character, false), 40);
-            wipe.targetGraphic.color = delete.targetGraphic.color = new Color(.035f, .04f, .035f, .9f);
-            delete.GetComponentInChildren<Text>().color = UiElements.Negative;
+            wipe.targetGraphic.color = delete.targetGraphic.color = Color.clear;
+            wipe.GetComponentInChildren<Text>().fontSize = delete.GetComponentInChildren<Text>().fontSize = 24;
             wipe.gameObject.SetActive(!character.Wiped);
             wipe.interactable = character.Available;
         }
