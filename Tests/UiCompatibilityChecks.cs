@@ -30,11 +30,12 @@ internal static class UiCompatibilityChecks
             "Native loading indicator is available to the seasonal creation overlay"
         );
         Check(
-            types["EFT.UI.PreloaderUI"].Fields.Any(field =>
-                field.Name == "_pveLoadingScreen"
-                && field.FieldType.FullName == "EFT.Hideout.PveGameModeLoadingScreen"
-                && field.IsPublic
-            ),
+            types["EFT.UI.PreloaderUI"]
+                .Fields.Any(field =>
+                    field.Name == "_pveLoadingScreen"
+                    && field.FieldType.FullName == "EFT.Hideout.PveGameModeLoadingScreen"
+                    && field.IsPublic
+                ),
             "Native full-screen loading artwork is available before character switching"
         );
         var loadingScreen = types["EFT.Hideout.PveGameModeLoadingScreen"];
