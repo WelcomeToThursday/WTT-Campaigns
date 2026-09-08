@@ -9,7 +9,8 @@ public partial class Creator
     private string _librarySearch = "";
     private DraftStatus _draftView;
     private string _draftSort = "recent";
-    private DraftEnvelope? _renamingDraft, _trashDraft;
+    private DraftEnvelope? _renamingDraft,
+        _trashDraft;
     private string _draftName = "";
     private string? _draftMenu;
     private ElementReference _draftActionFocus;
@@ -29,7 +30,10 @@ public partial class Creator
         var matches = drafts.Where(d => d.Status == _draftView && LibraryMatches(d.Definition.Name, d.Definition.Description));
         return _draftSort switch
         {
-            "name" => matches.OrderBy(d => d.Definition.Name, StringComparer.OrdinalIgnoreCase).ThenByDescending(d => d.LastEditedUtc).ThenBy(d => d.Id),
+            "name" => matches
+                .OrderBy(d => d.Definition.Name, StringComparer.OrdinalIgnoreCase)
+                .ThenByDescending(d => d.LastEditedUtc)
+                .ThenBy(d => d.Id),
             "oldest" => matches.OrderBy(d => d.LastEditedUtc).ThenBy(d => d.Id),
             _ => matches.OrderByDescending(d => d.LastEditedUtc).ThenBy(d => d.Id),
         };
@@ -37,7 +41,12 @@ public partial class Creator
 
     private static string DraftViewName(DraftStatus status)
     {
-        return status switch { DraftStatus.Archived => "Archived", DraftStatus.Trashed => "Trash", _ => "Drafts" };
+        return status switch
+        {
+            DraftStatus.Archived => "Archived",
+            DraftStatus.Trashed => "Trash",
+            _ => "Drafts",
+        };
     }
 
     private void SelectDraftView(DraftStatus status)
@@ -65,7 +74,10 @@ public partial class Creator
 
     private void RenameLibraryDraft()
     {
-        if (_renamingDraft == null) { return; }
+        if (_renamingDraft == null)
+        {
+            return;
+        }
         Run(() =>
         {
             var renamed = Repository.RenameDraft(_renamingDraft.Id, _renamingDraft.Revision, _draftName);
@@ -76,8 +88,14 @@ public partial class Creator
 
     private void RenameDraftKey(KeyboardEventArgs args)
     {
-        if (args.Key == "Enter") { RenameLibraryDraft(); }
-        else if (args.Key == "Escape") { RefreshDraftLibrary(); }
+        if (args.Key == "Enter")
+        {
+            RenameLibraryDraft();
+        }
+        else if (args.Key == "Escape")
+        {
+            RefreshDraftLibrary();
+        }
     }
 
     private void BeginDraftTrash(DraftEnvelope draft)
@@ -99,7 +117,8 @@ public partial class Creator
             {
                 DraftStatus.Active => $"{draft.Definition.Name} restored to Drafts.",
                 DraftStatus.Archived => $"{draft.Definition.Name} archived. Restore it from Archived whenever you need it.",
-                _ => $"{draft.Definition.Name} moved to Trash. You can restore it at any time; published packs and characters are unchanged.",
+                _ =>
+                    $"{draft.Definition.Name} moved to Trash. You can restore it at any time; published packs and characters are unchanged.",
             };
         });
     }
@@ -111,7 +130,9 @@ public partial class Creator
             var current = Repository.Load(draft.Id);
             if (current.Status != DraftStatus.Active)
             {
-                throw new InvalidOperationException("This draft was moved in another tab. Refresh the library and restore it to Drafts before editing.");
+                throw new InvalidOperationException(
+                    "This draft was moved in another tab. Refresh the library and restore it to Drafts before editing."
+                );
             }
             RefreshDraftLibrary();
             Open(current);

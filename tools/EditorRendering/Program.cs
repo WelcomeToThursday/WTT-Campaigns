@@ -20,11 +20,24 @@ var root = Path.GetFullPath(args.Length > 0 ? args[0] : ".");
 var output = Path.Combine(root, "Research", "EditorRendering");
 Directory.CreateDirectory(output);
 var tables = Activator.CreateInstance<TemplateTable>();
-foreach (var property in typeof(TemplateTable).GetProperties().Where(p => p.CanWrite && p.PropertyType.GetConstructor(Type.EmptyTypes) != null))
+foreach (
+    var property in typeof(TemplateTable).GetProperties().Where(p => p.CanWrite && p.PropertyType.GetConstructor(Type.EmptyTypes) != null)
+)
     property.SetValue(tables, Activator.CreateInstance(property.PropertyType));
 var localeTable = Activator.CreateInstance<LocaleTable>();
-typeof(LocaleTable).GetProperty("Global")!.SetValue(localeTable, new Dictionary<string, LazyLoad<GlobalLocaleDictionary>> { ["en"] = new(() => new()) });
-var content = new SeasonContentService(null!, tables, new TradersTable(), null!, new LocaleService(null!, localeTable, null!), localeTable, null!, null!);
+typeof(LocaleTable)
+    .GetProperty("Global")!
+    .SetValue(localeTable, new Dictionary<string, LazyLoad<GlobalLocaleDictionary>> { ["en"] = new(() => new()) });
+var content = new SeasonContentService(
+    null!,
+    tables,
+    new TradersTable(),
+    null!,
+    new LocaleService(null!, localeTable, null!),
+    localeTable,
+    null!,
+    null!
+);
 var services = new ServiceCollection().AddLogging();
 services.AddMudServices();
 services.AddSingleton(content);
@@ -33,47 +46,126 @@ services.AddSingleton<NavigationManager, OfflineNavigation>();
 await using var provider = services.BuildServiceProvider();
 await using var renderer = new HtmlRenderer(provider, provider.GetRequiredService<ILoggerFactory>());
 var season = new SeasonDefinition { Story = new() };
-season.Story.Variables.Add(new() { Id = "phase", Scope = StoryVariableScope.Profile, InitialValue = 0 });
+season.Story.Variables.Add(
+    new()
+    {
+        Id = "phase",
+        Scope = StoryVariableScope.Profile,
+        InitialValue = 0,
+    }
+);
 var quest = NativeQuestAuthoring.Create();
 var counter = NativeQuestAuthoring.Condition("CounterCreator");
 counter["value"] = 5;
 var kills = NativeQuestAuthoring.Condition("Kills");
 ((JArray)counter["counter"]!["conditions"]!).Add(kills);
 var pages = new Dictionary<string, string>();
-pages["counter"] = await Render<NativeObjectiveFields>(new() { ["Season"] = season, ["Quest"] = quest, ["Value"] = counter });
+pages["counter"] = await Render<NativeObjectiveFields>(
+    new()
+    {
+        ["Season"] = season,
+        ["Quest"] = quest,
+        ["Value"] = counter,
+    }
+);
 Require(Count(pages["counter"], "Objective text") == 1, "Counter filters must not render another objective-text field");
 Require(Count(pages["counter"], "Required objective") == 2, "Only the parent counter has a required-objective control and its tooltip");
-Require(pages["counter"].Contains("Combat restrictions") && pages["counter"].Contains("Distance (metres)"), "Nested combat groups and distance units render");
-pages["handover"] = await Render<NativeObjectiveFields>(new() { ["Season"] = season, ["Quest"] = quest, ["Value"] = NativeQuestAuthoring.Condition("HandoverItem") });
-Require(pages["handover"].Contains("Accepted item quality") && pages["handover"].Contains("consumed"), "Handover groups and specific help render");
-pages["prerequisite"] = await Render<NativeObjectiveFields>(new() { ["Season"] = season, ["Quest"] = quest, ["Value"] = NativeQuestAuthoring.Condition("Quest") });
+Require(
+    pages["counter"].Contains("Combat restrictions") && pages["counter"].Contains("Distance (metres)"),
+    "Nested combat groups and distance units render"
+);
+pages["handover"] = await Render<NativeObjectiveFields>(
+    new()
+    {
+        ["Season"] = season,
+        ["Quest"] = quest,
+        ["Value"] = NativeQuestAuthoring.Condition("HandoverItem"),
+    }
+);
+Require(
+    pages["handover"].Contains("Accepted item quality") && pages["handover"].Contains("consumed"),
+    "Handover groups and specific help render"
+);
+pages["prerequisite"] = await Render<NativeObjectiveFields>(
+    new()
+    {
+        ["Season"] = season,
+        ["Quest"] = quest,
+        ["Value"] = NativeQuestAuthoring.Condition("Quest"),
+    }
+);
 Require(pages["prerequisite"].Contains("Accepted prerequisite statuses"), "Prerequisites offer multiple accepted statuses");
 NativeQuestAuthoring.AddQuestReward(quest, "Experience");
 NativeQuestAuthoring.AddQuestReward(quest, "TraderStanding", "Fail");
 pages["rewards"] = await Render<QuestRewards>(new() { ["Quest"] = quest });
-Require(pages["rewards"].Contains("On completion") && pages["rewards"].Contains("On acceptance") && pages["rewards"].Contains("On failure"), "All three reward stages render");
-var condition = new StoryCondition { Type = "VariableValue", Target = "phase", Value = 3 };
+Require(
+    pages["rewards"].Contains("On completion") && pages["rewards"].Contains("On acceptance") && pages["rewards"].Contains("On failure"),
+    "All three reward stages render"
+);
+var condition = new StoryCondition
+{
+    Type = "VariableValue",
+    Target = "phase",
+    Value = 3,
+};
 pages["variable-condition"] = await Render<StoryFields>(new() { ["Season"] = season, ["Value"] = condition });
-Require(pages["variable-condition"].Contains("Variable threshold") && pages["variable-condition"].Contains("Profile scope"), "Selected variable context reaches rendered help");
+Require(
+    pages["variable-condition"].Contains("Variable threshold") && pages["variable-condition"].Contains("Profile scope"),
+    "Selected variable context reaches rendered help"
+);
 condition.Type = "TraderReputation";
 pages["reputation-condition"] = await Render<StoryFields>(new() { ["Season"] = season, ["Value"] = condition });
-Require(pages["reputation-condition"].Contains("Reputation threshold") && !pages["reputation-condition"].Contains("Variable threshold"), "Type changes replace the rendered label and help");
-var theme = File.ReadAllText(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget/packages/sptarkov.server.web/4.1.0/staticwebassets/css/spt-theme.css"));
+Require(
+    pages["reputation-condition"].Contains("Reputation threshold") && !pages["reputation-condition"].Contains("Variable threshold"),
+    "Type changes replace the rendered label and help"
+);
+var theme = File.ReadAllText(
+    Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        ".nuget/packages/sptarkov.server.web/4.1.0/staticwebassets/css/spt-theme.css"
+    )
+);
 var css = File.ReadAllText(Path.Combine(root, "Server/wwwroot/creator.css"));
 foreach (var (name, markup) in pages)
-    File.WriteAllText(Path.Combine(output, name + ".html"), "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Editor rendering: " + name + "</title><style>" + theme + css + "</style></head><body><main class=\"season-creator\"><div class=\"editor-body\" style=\"max-width:1100px;margin:auto\">" + markup + "</div></main></body></html>");
+    File.WriteAllText(
+        Path.Combine(output, name + ".html"),
+        "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Editor rendering: "
+            + name
+            + "</title><style>"
+            + theme
+            + css
+            + "</style></head><body><main class=\"season-creator\"><div class=\"editor-body\" style=\"max-width:1100px;margin:auto\">"
+            + markup
+            + "</div></main></body></html>"
+    );
 Console.WriteLine($"PASS: rendered {pages.Count} real editor component scenarios into {output}");
 
-async Task<string> Render<T>(Dictionary<string, object?> parameters) where T : IComponent => await renderer.Dispatcher.InvokeAsync(async () => (await renderer.RenderComponentAsync<T>(ParameterView.FromDictionary(parameters))).ToHtmlString());
+async Task<string> Render<T>(Dictionary<string, object?> parameters)
+    where T : IComponent =>
+    await renderer.Dispatcher.InvokeAsync(async () =>
+        (await renderer.RenderComponentAsync<T>(ParameterView.FromDictionary(parameters))).ToHtmlString()
+    );
 static int Count(string value, string text) => value.Split(text).Length - 1;
-static void Require(bool result, string description) { if (!result) throw new Exception(description); }
+static void Require(bool result, string description)
+{
+    if (!result)
+        throw new Exception(description);
+}
+
 sealed class OfflineJs : IJSRuntime
 {
     public ValueTask<TValue> InvokeAsync<TValue>(string identifier, object?[]? args) => ValueTask.FromResult(default(TValue)!);
-    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) => ValueTask.FromResult(default(TValue)!);
+
+    public ValueTask<TValue> InvokeAsync<TValue>(string identifier, CancellationToken cancellationToken, object?[]? args) =>
+        ValueTask.FromResult(default(TValue)!);
 }
+
 sealed class OfflineNavigation : NavigationManager
 {
-    public OfflineNavigation() { Initialize("http://localhost/", "http://localhost/editor-preview"); }
+    public OfflineNavigation()
+    {
+        Initialize("http://localhost/", "http://localhost/editor-preview");
+    }
+
     protected override void NavigateToCore(string uri, bool forceLoad) { }
 }

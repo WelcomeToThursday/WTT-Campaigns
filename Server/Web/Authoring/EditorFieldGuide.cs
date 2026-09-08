@@ -12,11 +12,15 @@ public static class EditorFieldGuide
         var title = StoryAuthoring.Friendly((kind ?? "").Replace('_', ' ').Replace("multiplicator", "multiplier"));
         return title.Length == 0 ? "Settings" : char.ToUpperInvariant(title[0]) + title[1..];
     }
+
     public static string NativeKind(JObject value)
     {
-        return value.AncestorsAndSelf().OfType<JObject>()
-        .Select(v => (string?)v["conditionType"] ?? (string?)v["effectId"] ?? (string?)v["type"])
-        .FirstOrDefault(v => !string.IsNullOrEmpty(v)) ?? "Imported settings";
+        return value
+                .AncestorsAndSelf()
+                .OfType<JObject>()
+                .Select(v => (string?)v["conditionType"] ?? (string?)v["effectId"] ?? (string?)v["type"])
+                .FirstOrDefault(v => !string.IsNullOrEmpty(v))
+            ?? "Imported settings";
     }
 
     public static string NativeLabel(JObject value, string field)
@@ -33,7 +37,7 @@ public static class EditorFieldGuide
                 "Skill" => "Skill points",
                 "CounterCreator" => "Required event count",
                 "FindItem" or "HandoverItem" or "HasItem" or "LeaveItemAtLocation" or "Item" => "Item quantity",
-                _ => "Value"
+                _ => "Value",
             },
             "target" => NativeKind(value) switch
             {
@@ -45,7 +49,7 @@ public static class EditorFieldGuide
                 "ExitStatus" => "Accepted raid outcomes",
                 "ExitName" => "Extraction names",
                 "Skill" => "Skill",
-                _ => "Target"
+                _ => "Target",
             },
             "onlyFoundInRaid" => "Require found in raid",
             "minDurability" => "Minimum durability (%)",
@@ -56,7 +60,7 @@ public static class EditorFieldGuide
             "_tpl" => "Item template",
             "StackObjectsCount" => "Stack quantity",
             "compareMethod" => "Comparison",
-            _ => StoryAuthoring.Friendly(field.Replace("multiplicator", "multiplier"))
+            _ => StoryAuthoring.Friendly(field.Replace("multiplicator", "multiplier")),
         };
     }
 
@@ -66,12 +70,18 @@ public static class EditorFieldGuide
         {
             "target" or "value" or "traderId" or "_tpl" or "compareMethod" => "Target and amount",
             "onlyFoundInRaid" or "minDurability" or "maxDurability" or "dogtagLevel" or "isEncoded" => "Accepted item quality",
-            "weapon" or "weaponModsInclusive" or "weaponModsExclusive" or "bodyPart" or "distance" or "enemyEquipmentInclusive" or "enemyEquipmentExclusive" => "Combat restrictions",
+            "weapon"
+            or "weaponModsInclusive"
+            or "weaponModsExclusive"
+            or "bodyPart"
+            or "distance"
+            or "enemyEquipmentInclusive"
+            or "enemyEquipmentExclusive" => "Combat restrictions",
             "zoneId" or "location" or "locations" or "plantTime" or "availableAfter" or "oneSessionOnly" => "Location and timing",
             "items" or "upd" or "count" or "StackObjectsCount" => "Item contents",
             "include" or "exclude" or "skillIds" or "traderIds" or "bodyPartTypes" => "Affected targets",
             "multiplicator" or "multiplicatorPrimary" or "multiplicatorSecondary" or "intValue" => "Effect strength",
-            _ => "Additional settings"
+            _ => "Additional settings",
         };
     }
 
@@ -85,8 +95,10 @@ public static class EditorFieldGuide
             {
                 "energy_drain_multiplicator" => "Energy depletion rate. Lower values make energy last longer.",
                 "hydration_drain_multiplicator" => "Hydration depletion rate. Lower values make hydration last longer.",
-                "stamina_consumption_body_parts_multiplicator" => "Stamina consumption in the selected arms or legs pool. Lower values reduce stamina use.",
-                "stamina_restore_body_parts_multiplicator" => "Stamina recovery in the selected arms or legs pool. Higher values restore stamina faster.",
+                "stamina_consumption_body_parts_multiplicator" =>
+                    "Stamina consumption in the selected arms or legs pool. Lower values reduce stamina use.",
+                "stamina_restore_body_parts_multiplicator" =>
+                    "Stamina recovery in the selected arms or legs pool. Higher values restore stamina faster.",
                 "craft_time_multiplicator" => "Hideout crafting duration. Lower values finish crafts faster.",
                 "skill_experience_multiplicator" => "Experience gain for the selected skills. Higher values increase skill progression.",
                 "pmc_experience_multiplicator" => "PMC experience gain. Higher values increase character experience earned.",
@@ -94,8 +106,9 @@ public static class EditorFieldGuide
                 "fall_damage_multiplicator" => "Damage from falling. Lower values reduce fall damage.",
                 "bleeding_chance_multiplicator" => "Chance of bleeding. Lower values reduce the chance.",
                 "fracture_chance_multiplicator" => "Chance of a fracture. Lower values reduce the chance.",
-                "item_resource_drain_multiplicator" => "Resource consumption for the selected item filters. Lower values reduce resource use.",
-                _ => $"Multiplier for {NativeTitle(kind)}. Whether a lower value helps depends on this effect."
+                "item_resource_drain_multiplicator" =>
+                    "Resource consumption for the selected item filters. Lower values reduce resource use.",
+                _ => $"Multiplier for {NativeTitle(kind)}. Whether a lower value helps depends on this effect.",
             };
             return behavior + $" Current multiplier: {amount}. 1 keeps the normal value, 0.8 is 20% lower and 1.2 is 20% higher.";
         }
@@ -103,14 +116,18 @@ public static class EditorFieldGuide
         {
             return kind switch
             {
-                "skill_level_preset" => $"Starting level assigned to the selected skills: {amount}. This sets a level rather than increasing experience gain.",
+                "skill_level_preset" =>
+                    $"Starting level assigned to the selected skills: {amount}. This sets a level rather than increasing experience gain.",
                 "skill_max_level_cap" => $"Maximum level the selected skills may reach: {amount}.",
-                _ => $"Stamina capacity offset for the selected arms or legs pool: {amount}. This is a whole-number offset, not a multiplier."
+                _ =>
+                    $"Stamina capacity offset for the selected arms or legs pool: {amount}. This is a whole-number offset, not a multiplier.",
             };
         }
         if (field == "value" && (string?)value["field"] is "_tpl" or "ParentId")
         {
-            return (string?)value["field"] == "_tpl" ? "Select the individual item matched by this filter." : "Select the item category matched by this filter. All items in that category are affected.";
+            return (string?)value["field"] == "_tpl"
+                ? "Select the individual item matched by this filter."
+                : "Select the item category matched by this filter. All items in that category are affected.";
         }
 
         if (field == "value" && value.Parent is JProperty { Name: "distance" })
@@ -123,17 +140,27 @@ public static class EditorFieldGuide
             return kind switch
             {
                 "Level" => $"Compare the player's level against {amount}. Use at least (>=) for a minimum level requirement.",
-                "TraderLoyalty" => $"Required loyalty level with the selected trader. Current threshold: {amount}; normal levels are 1 through 4.",
-                "FindItem" => $"Number of accepted items the player must find. Current requirement: {amount}. Item quality restrictions below also apply.",
-                "HandoverItem" => $"Number of accepted items to hand over to the quest trader. Current requirement: {amount}; handed-in items are consumed.",
+                "TraderLoyalty" =>
+                    $"Required loyalty level with the selected trader. Current threshold: {amount}; normal levels are 1 through 4.",
+                "FindItem" =>
+                    $"Number of accepted items the player must find. Current requirement: {amount}. Item quality restrictions below also apply.",
+                "HandoverItem" =>
+                    $"Number of accepted items to hand over to the quest trader. Current requirement: {amount}; handed-in items are consumed.",
                 "HasItem" => $"Number of accepted items the player must possess. Current requirement: {amount}.",
                 "LeaveItemAtLocation" => $"Number of accepted items to place at the configured zone. Current requirement: {amount}.",
-                "CounterCreator" => $"Number of qualifying events required: {amount}. The nested filters define which events count. " + ((bool?)value["oneSessionOnly"] == true ? "Progress must be made in one raid." : "The counter can accumulate across raids."),
+                "CounterCreator" => $"Number of qualifying events required: {amount}. The nested filters define which events count. "
+                    + (
+                        (bool?)value["oneSessionOnly"] == true
+                            ? "Progress must be made in one raid."
+                            : "The counter can accumulate across raids."
+                    ),
                 "Experience" => $"Grants {amount} character experience points when this reward's stage is reached. Use a whole number.",
-                "TraderStanding" => $"Changes the selected trader's reputation by {amount}. Positive values add standing; negative values remove it (for example, 0.02).",
+                "TraderStanding" =>
+                    $"Changes the selected trader's reputation by {amount}. Positive values add standing; negative values remove it (for example, 0.02).",
                 "Skill" => $"Skill points granted to the selected skill: {amount}. This is a reward amount, not a required player level.",
                 "Item" => "Native item reward amount. Individual inventory stack quantities are configured under Item contents.",
-                _ => $"Numeric value for {StoryAuthoring.Friendly(kind)}. Consult the imported definition for the units used by this native type."
+                _ =>
+                    $"Numeric value for {StoryAuthoring.Friendly(kind)}. Consult the imported definition for the units used by this native type.",
             };
         }
 
@@ -143,44 +170,61 @@ public static class EditorFieldGuide
             {
                 "Quest" => "Select the prerequisite quest. Required quest status and the delay below decide when this requirement passes.",
                 "HandoverItem" => "Item templates the trader accepts for hand-in. Quantity and item quality are configured separately.",
-                "FindItem" => "Item templates that count as finds for this objective. Require found in raid adds the raid-origin restriction.",
-                "HasItem" or "LeaveItemAtLocation" or "UseItem" => $"Accepted item templates for {StoryAuthoring.Friendly(kind)}. Select each item by name.",
+                "FindItem" =>
+                    "Item templates that count as finds for this objective. Require found in raid adds the raid-origin restriction.",
+                "HasItem" or "LeaveItemAtLocation" or "UseItem" =>
+                    $"Accepted item templates for {StoryAuthoring.Friendly(kind)}. Select each item by name.",
                 "TraderStanding" => "Trader whose reputation changes when this reward is granted.",
                 "TraderUnlock" => "Trader made available by this reward.",
                 "TraderLoyalty" => "Trader whose loyalty level is tested against the required level.",
-                "Kills" or "Shots" => "Native target category (for example Any). Combat restrictions further constrain which targets and hits qualify.",
+                "Kills" or "Shots" =>
+                    "Native target category (for example Any). Combat restrictions further constrain which targets and hits qualify.",
                 "Location" => "Runtime map keys where the counter can progress, for example woods. These are map keys, not item IDs.",
                 "ExitStatus" => "Accepted native raid outcomes for this counter, for example Survived.",
                 "ExitName" => "Exact extraction names that qualify for this counter.",
                 "Skill" => "Skill that receives the points from this reward.",
-                _ => $"Target reference for {StoryAuthoring.Friendly(kind)}. Preserve the native reference format when editing imported content."
+                _ =>
+                    $"Target reference for {StoryAuthoring.Friendly(kind)}. Preserve the native reference format when editing imported content.",
             };
         }
 
         return field switch
         {
-            "onlyFoundInRaid" => (bool?)value[field] == true ? $"Only found-in-raid items qualify for this {StoryAuthoring.Friendly(kind)} objective." : "Items can qualify without a found-in-raid mark. Enable to restrict accepted items to found in raid.",
-            "minDurability" or "maxDurability" => $"Accept items with durability from {value["minDurability"] ?? new JValue(0)}% to {value["maxDurability"] ?? new JValue(100)}%. Minimum must not exceed maximum.",
+            "onlyFoundInRaid" => (bool?)value[field] == true
+                ? $"Only found-in-raid items qualify for this {StoryAuthoring.Friendly(kind)} objective."
+                : "Items can qualify without a found-in-raid mark. Enable to restrict accepted items to found in raid.",
+            "minDurability" or "maxDurability" =>
+                $"Accept items with durability from {value["minDurability"] ?? new JValue(0)}% to {value["maxDurability"] ?? new JValue(100)}%. Minimum must not exceed maximum.",
             "availableAfter" => $"Wait {amount} seconds after the prerequisite reaches the selected status. Zero adds no delay.",
-            "oneSessionOnly" => (bool?)value[field] == true ? "All required counter progress must be earned in one raid." : "Counter progress can accumulate across raids. Enable for a single-raid challenge.",
+            "oneSessionOnly" => (bool?)value[field] == true
+                ? "All required counter progress must be earned in one raid."
+                : "Counter progress can accumulate across raids. Enable for a single-raid challenge.",
             "plantTime" => $"The player must spend {amount} seconds placing an item at this objective's zone.",
-            "zoneId" => $"Exact in-game zone identifier for {StoryAuthoring.Friendly(kind)}. This is a zone inside a map, not the map name.",
+            "zoneId" =>
+                $"Exact in-game zone identifier for {StoryAuthoring.Friendly(kind)}. This is a zone inside a map, not the map name.",
             "weapon" => "Only events using these weapon templates count. An empty list applies no weapon restriction.",
-            "weaponModsInclusive" => "Required weapon attachment templates for a qualifying event. Preserve nested alternative groups from imported quests.",
+            "weaponModsInclusive" =>
+                "Required weapon attachment templates for a qualifying event. Preserve nested alternative groups from imported quests.",
             "weaponModsExclusive" => "Weapon attachment templates that disqualify an event.",
             "bodyPart" => "Body regions that qualifying hits must affect. An empty list applies no body-part restriction.",
-            "compareMethod" => $"Comparison used by {StoryAuthoring.Friendly(kind)}: {amount}. >= accepts values at or above the threshold; == requires an exact match.",
-            "include" or "exclude" => $"{(field == "include" ? "Allow" : "Exclude")} the listed item filters for {StoryAuthoring.Friendly(kind)}. Each entry chooses an item or category.",
-            "field" => "Choose whether this filter matches an individual item template or a whole item category. The value picker follows this selection.",
-            "multiplicator" or "multiplicatorPrimary" or "multiplicatorSecondary" => $"Multiplier for {StoryAuthoring.Friendly(kind)}. 1 is unchanged, 0.8 is 20% lower and 1.2 is 20% higher. A lower value is beneficial only for effects where less is better.",
-            "intValue" => $"Whole-number setting for {StoryAuthoring.Friendly(kind)}. The selected effect determines whether this is a level, capacity or offset; validation checks its supported range.",
+            "compareMethod" =>
+                $"Comparison used by {StoryAuthoring.Friendly(kind)}: {amount}. >= accepts values at or above the threshold; == requires an exact match.",
+            "include" or "exclude" =>
+                $"{(field == "include" ? "Allow" : "Exclude")} the listed item filters for {StoryAuthoring.Friendly(kind)}. Each entry chooses an item or category.",
+            "field" =>
+                "Choose whether this filter matches an individual item template or a whole item category. The value picker follows this selection.",
+            "multiplicator" or "multiplicatorPrimary" or "multiplicatorSecondary" =>
+                $"Multiplier for {StoryAuthoring.Friendly(kind)}. 1 is unchanged, 0.8 is 20% lower and 1.2 is 20% higher. A lower value is beneficial only for effects where less is better.",
+            "intValue" =>
+                $"Whole-number setting for {StoryAuthoring.Friendly(kind)}. The selected effect determines whether this is a level, capacity or offset; validation checks its supported range.",
             "_tpl" => "Inventory item template. Select by name; attachments retain their own item templates.",
             "StackObjectsCount" or "count" => $"Number of units in this inventory stack: {amount}. Use a positive whole number.",
             "dogtagLevel" => $"Minimum player level recorded on an accepted dogtag: {amount}.",
             "skillIds" => $"Skills affected by {StoryAuthoring.Friendly(kind)}. Select each skill that should receive this modifier.",
             "traderId" or "traderIds" => $"Trader selection for {StoryAuthoring.Friendly(kind)}. Search using the trader's name.",
             "bodyPartTypes" => "Stamina pool affected by this modifier: arms or legs.",
-            _ => $"{NativeLabel(value, field)} belongs to {StoryAuthoring.Friendly(kind)}. This imported setting is preserved; check its native definition before changing unfamiliar values."
+            _ =>
+                $"{NativeLabel(value, field)} belongs to {StoryAuthoring.Friendly(kind)}. This imported setting is preserved; check its native definition before changing unfamiliar values.",
         };
     }
 
@@ -198,11 +242,12 @@ public static class EditorFieldGuide
             "Visibility" or "Trigger" or "Condition" or "Conditions" or "InRaidOnly" or "Random" => "When this applies",
             "Target" or "Value" or "Operator" or "Status" or "ConditionId" => "Target and comparison",
             "Actions" or "AutoStart" or "AutoComplete" or "PersistOnDeath" or "Once" => "Progression and outcomes",
-            "ChapterId" or "QuestId" or "ConditionIds" or "StatusNotes" or "Links" or "Main" or "Hidden" or "Order" => "Organization and links",
+            "ChapterId" or "QuestId" or "ConditionIds" or "StatusNotes" or "Links" or "Main" or "Hidden" or "Order" =>
+                "Organization and links",
             "TraderId" or "DialogId" or "StartPoint" or "StartPoints" or "MainVariable" or "EntryPointId" => "Conversation routing",
             "Location" or "Scene" or "ObjectPath" or "ItemId" or "MediaId" => "Raid event target",
             "Bundle" or "Asset" or "Sha256" => "Media source",
-            _ => "Settings"
+            _ => "Settings",
         };
     }
 
@@ -217,16 +262,17 @@ public static class EditorFieldGuide
                 "TraderLoyalty" => "Loyalty level",
                 "HasItem" or "HasItemForHandover" => "Required item count",
                 "HasFreeSpecialSlot" => "Free special slots",
-                "CompleteCondition" or "QuestConditionStatus" or "HasNewQuests" or "LocationTrigger" or "CompletableItem" => "Expected state (0 or 1)",
+                "CompleteCondition" or "QuestConditionStatus" or "HasNewQuests" or "LocationTrigger" or "CompletableItem" =>
+                    "Expected state (0 or 1)",
                 "VariableValue" => "Variable threshold",
                 "Skill" => "Skill level",
                 "HideoutArea" => "Area level",
-                _ => "Value"
+                _ => "Value",
             },
             (StoryAction { Type: StoryActionType.SetVariable }, "Value") => "Assign value",
             (StoryCondition, "Type") => "Condition type",
             (StoryAction, "Type") => "Action type",
-            _ => StoryAuthoring.Friendly(field)
+            _ => StoryAuthoring.Friendly(field),
         };
     }
 
@@ -234,7 +280,12 @@ public static class EditorFieldGuide
     {
         if (owner is StoryVariable variable && field is "Scope" or "InitialValue")
         {
-            return $"This {variable.Scope} variable begins at {variable.InitialValue}. " + (variable.Scope == StoryVariableScope.Profile ? "Its value persists for this character." : variable.Scope == StoryVariableScope.Session ? "Its value resets on reconnect." : "Its value belongs to the current conversation.");
+            return $"This {variable.Scope} variable begins at {variable.InitialValue}. "
+                + (
+                    variable.Scope == StoryVariableScope.Profile ? "Its value persists for this character."
+                    : variable.Scope == StoryVariableScope.Session ? "Its value resets on reconnect."
+                    : "Its value belongs to the current conversation."
+                );
         }
         if (owner is StoryCondition c)
         {
@@ -253,11 +304,16 @@ public static class EditorFieldGuide
                 "HasNewQuests" => "new quests from this trader (1 = available, 0 = none)",
                 "LocationTrigger" => "raid trigger state (1 = reached, 0 = not reached)",
                 "CompletableItem" => "story item completion (1 = completed, 0 = incomplete)",
-                _ => StoryAuthoring.Friendly(c.Type)
+                _ => StoryAuthoring.Friendly(c.Type),
             };
             if (field is "Value" or "Operator")
             {
-                return $"Tests {subject} using {c.Operator} {c.Value}. " + (c.Type == "TraderReputation" ? "Reputation uses decimal values, for example 0.2." : c.Type == "VariableValue" ? VariableHelp(season, c.Target) : "Choose a threshold and comparison that match the intended requirement.");
+                return $"Tests {subject} using {c.Operator} {c.Value}. "
+                    + (
+                        c.Type == "TraderReputation" ? "Reputation uses decimal values, for example 0.2."
+                        : c.Type == "VariableValue" ? VariableHelp(season, c.Target)
+                        : "Choose a threshold and comparison that match the intended requirement."
+                    );
             }
 
             if (field == "Type")
@@ -270,7 +326,12 @@ public static class EditorFieldGuide
                     "QuestStatus" => "Checks whether the selected quest has any of the accepted statuses below.",
                     "CurrentTrader" => "Passes only while interacting with the selected trader.",
                     "Location" => "Requires an active raid on the exact map key entered below.",
-                    _ => $"Checks {subject}. " + (c.InRaidOnly ? "This test also requires an active raid." : "The In raid only option can restrict this test to raids.")
+                    _ => $"Checks {subject}. "
+                        + (
+                            c.InRaidOnly
+                                ? "This test also requires an active raid."
+                                : "The In raid only option can restrict this test to raids."
+                        ),
                 };
             }
 
@@ -280,7 +341,8 @@ public static class EditorFieldGuide
                 {
                     "VariableValue" => "Choose the variable whose current value is compared. " + VariableHelp(season, c.Target),
                     "QuestStatus" => "Quest whose status is checked. Any one of the accepted statuses below can satisfy the condition.",
-                    "CompleteCondition" or "QuestConditionStatus" => "Objective whose completion is tested as 1 (complete) or 0 (incomplete). This checks completion, not partial progress.",
+                    "CompleteCondition" or "QuestConditionStatus" =>
+                        "Objective whose completion is tested as 1 (complete) or 0 (incomplete). This checks completion, not partial progress.",
                     "HasItemForHandover" => "Handover objective whose eligible item count is compared with the required amount.",
                     "HasItem" => "Item template to count in the player's inventory.",
                     "Location" => "Exact runtime map key, for example woods. This condition requires the player to be in that raid.",
@@ -290,7 +352,7 @@ public static class EditorFieldGuide
                     "HideoutArea" => "Native hideout area key whose level is compared with the required threshold.",
                     "CurrentTrader" => "Trader the player must currently be interacting with.",
                     "HasNewQuests" => "Trader to check for newly available quests.",
-                    _ => $"Select the trader used to test the {subject}."
+                    _ => $"Select the trader used to test the {subject}.",
                 };
             }
         }
@@ -306,14 +368,16 @@ public static class EditorFieldGuide
                 return a.Type switch
                 {
                     StoryActionType.DiaryNote => "Publishes the selected journal note when this action runs.",
-                    StoryActionType.SwitchDialog => "Switches to the selected conversation. Configure its entry phases in Conversation routing.",
+                    StoryActionType.SwitchDialog =>
+                        "Switches to the selected conversation. Configure its entry phases in Conversation routing.",
                     StoryActionType.EmbedQuestDialog => "Embeds the selected quest conversation in the current story flow.",
                     StoryActionType.AcceptQuest => "Accepts the selected owned quest when its start requirements allow it.",
                     StoryActionType.FinishQuest => "Finishes the selected owned quest when its required objectives allow completion.",
-                    StoryActionType.HandoverItem => "Hands eligible items to the selected owned quest's handover objective. Choose that objective below.",
+                    StoryActionType.HandoverItem =>
+                        "Hands eligible items to the selected owned quest's handover objective. Choose that objective below.",
                     StoryActionType.PlayerReward => "Requests the native rewards for the selected owned quest through the quest adapter.",
                     StoryActionType.StartCinematic => "Plays the selected cinematic or video media reference.",
-                    _ => null
+                    _ => null,
                 };
             }
         }
@@ -323,6 +387,13 @@ public static class EditorFieldGuide
     private static string VariableHelp(SeasonDefinition? season, string id)
     {
         var variable = season?.Story?.Variables.FirstOrDefault(v => v.Id == id);
-        return variable == null ? "Select a declared variable to see its scope and initial value." : $"Selected variable: {variable.Scope} scope, initial value {variable.InitialValue}. " + (variable.Scope == StoryVariableScope.Profile ? "Its value persists for this character." : variable.Scope == StoryVariableScope.Session ? "Its value resets on reconnect." : "Its value belongs to the current conversation.");
+        return variable == null
+            ? "Select a declared variable to see its scope and initial value."
+            : $"Selected variable: {variable.Scope} scope, initial value {variable.InitialValue}. "
+                + (
+                    variable.Scope == StoryVariableScope.Profile ? "Its value persists for this character."
+                    : variable.Scope == StoryVariableScope.Session ? "Its value resets on reconnect."
+                    : "Its value belongs to the current conversation."
+                );
     }
 }
