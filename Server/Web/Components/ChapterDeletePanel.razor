@@ -1,0 +1,36 @@
+@using SeasonalPerks.Server.Web.Authoring
+@using SeasonalPerks.Shared.Story
+<section class="editor-card chapter-delete-panel" aria-label="Delete chapter options">
+    <h3>Delete @Chapter.Name</h3>
+    <p>This chapter contains @Memberships.Count() quest(s) and @Notes.Count() journal note(s). Choose what happens to them before deleting the chapter.</p>
+    <ul>@foreach (var quest in Memberships) { <li>Quest: @QuestName(quest.QuestId)</li> }@foreach (var note in Notes) { <li>Journal note: @note.Text</li> }</ul>
+    <label>Chapter contents<select @bind="_mode"><option value="move">Move quests and notes to another chapter</option><option value="delete">Delete this chapter, its quests and its notes</option></select></label>
+    @if (_mode == "move")
+    {
+        <label>Destination chapter<select @bind="_destination"><option value="">Choose a chapter…</option>@foreach (var chapter in Season.Story!.Chapters.Where(c => c.Id != Chapter.Id)) { <option value="@chapter.Id">@chapter.Name</option> }</select></label>
+        @if (Season.Story!.Chapters.Count == 1) { <p>Create another chapter first to keep these quests and notes, or choose to delete the contents.</p> }
+    }
+    else { <p>Native quests, their objectives and rewards, chapter membership, and this chapter's notes will be removed from the draft. Conversations and other external references must be reassigned first. Changes take effect when you save.</p> }
+    @if (Ready && Uses.Count > 0)
+    {
+        <div class="notice error" role="alert"><strong>Other content still uses these records.</strong><p>Open each record below to remove or reassign its reference, or move this chapter's contents instead.</p>
+        @foreach (var use in Uses) { <div>@if (use.Navigation.Length > 0) { <button @onclick="@(() => Navigate.InvokeAsync(use.Navigation))">Open @use.Name</button> } else { <p>@use.Name</p> }<details class="reference-details"><summary>Reference details</summary><code>@use.Path</code></details></div> }
+        </div>
+    }
+    <div class="row"><button @onclick="Cancel">Cancel</button><button class="danger" disabled="@(!Ready || Uses.Count > 0)" @onclick="Confirm">@(_mode == "move" ? "Move contents and delete chapter" : "Delete chapter and listed contents")</button></div>
+</section>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public StoryChapter Chapter { get; set; } = null!;
+    [Parameter] public EventCallback Deleted { get; set; }
+    [Parameter] public EventCallback Cancel { get; set; }
+    [Parameter] public EventCallback<string> Navigate { get; set; }
+    private string _mode = "move", _destination = "", _chapterId = "";
+    protected override void OnParametersSet() { if (_chapterId != Chapter.Id) { _chapterId = Chapter.Id; _mode = Season.Story!.Chapters.Count > 1 && (Memberships.Any() || Notes.Any()) ? "move" : "delete"; _destination = ""; } }
+    private IEnumerable<StoryQuest> Memberships => Season.Story!.Quests.Where(q => q.ChapterId == Chapter.Id);
+    private IEnumerable<StoryNote> Notes => Season.Story!.Notes.Where(n => n.ChapterId == Chapter.Id);
+    private bool Ready => _mode == "delete" || Season.Story!.Chapters.Any(c => c.Id == _destination && c.Id != Chapter.Id);
+    private IReadOnlyList<ChapterDeletionUse> Uses => Ready ? ChapterDeletion.Check(Season, Chapter.Id, _mode == "move" ? _destination : null) : [];
+    private string QuestName(string id) => StoryAuthoring.Choices(Season, "quests").FirstOrDefault(q => q.Id == id).Name ?? "Missing quest · " + id;
+    private async Task Confirm() { if (!Ready) return; if (ChapterDeletion.Delete(Season, Chapter.Id, _mode == "move" ? _destination : null).Count == 0) await Deleted.InvokeAsync(); }
+}

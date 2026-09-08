@@ -1,0 +1,41 @@
+@inject SeasonContentService Content
+@using System.Collections
+@using System.Globalization
+@using SeasonalPerks.Shared.Story
+@using SeasonalPerks.Server.Web.Authoring
+<div class="form-grid"><label>Player level<input type="number" min="1" @bind="Facts.Level" /></label><label>Location<input @bind="Facts.Location" placeholder="woods" /></label><label class="check"><input type="checkbox" @bind="Facts.InRaid" />In raid</label><label>Free special slots<input type="number" min="0" @bind="Facts.FreeSpecialSlots" /></label></div>
+<ContentPicker Kind="traders" Label="Current trader" @bind-Value="Facts.TraderId" />
+@foreach (var property in typeof(StoryFacts).GetProperties().Where(p => p.GetValue(Facts) is IDictionary))
+{
+    var dictionary = (IDictionary)property.GetValue(Facts)!; var field = property.Name; var valueType = property.PropertyType.GetGenericArguments()[1];
+    <details class="editor-card"><summary>@StoryAuthoring.Friendly(field) · @dictionary.Count</summary>
+    <p>@FactHelp(field)</p>
+    @foreach(var key in dictionary.Keys.Cast<string>().ToArray())
+    {
+        <div class="inline-fields"><label>@Name(field, key)
+        @if (field == "QuestStatuses") { <select value="@dictionary[key]" @onchange="@(e => dictionary[key] = e.Value?.ToString() ?? "Locked")">@foreach(var status in StoryRules.QuestStatuses) { <option>@status</option> }</select> }
+        else { <input type="number" step="@(valueType == typeof(int) ? "1" : "any")" value="@Convert.ToString(dictionary[key], CultureInfo.InvariantCulture)" @onchange="@(e => Set(dictionary, key, valueType, e.Value?.ToString()))" /> }
+        </label><button @onclick="@(() => dictionary.Remove(key))">Remove</button></div>
+    }
+    <StoryValue Season="Season" Owner="Facts" Field="@field" Kind="@Kind(field)" Caption="Add fact target" Value="@_keys.GetValueOrDefault(field, "")" Changed="@(v => _keys[field] = (string)v)" />
+    <button disabled="@(!_keys.TryGetValue(field, out var keyValue) || keyValue.Length == 0 || dictionary.Contains(keyValue))" @onclick="@(() => Add(dictionary, field, valueType))">Add fact</button>
+    </details>
+}
+@foreach (var property in typeof(StoryFacts).GetProperties().Where(p => p.PropertyType == typeof(HashSet<string>)))
+{
+    var values = (HashSet<string>)property.GetValue(Facts)!; var field = property.Name;
+    <details class="editor-card"><summary>@StoryAuthoring.Friendly(field) · @values.Count</summary>
+    @foreach(var key in values.ToArray()) { <div class="row"><span>@Name(field, key)</span><button @onclick="@(() => values.Remove(key))">Remove</button></div> }
+    <StoryValue Season="Season" Owner="Facts" Field="@field" Kind="@Kind(field)" Caption="Add fact target" Value="@_keys.GetValueOrDefault(field, "")" Changed="@(v => _keys[field] = (string)v)" />
+    <button @onclick="@(() => { if (_keys.TryGetValue(field, out var value) && value.Length > 0) values.Add(value); })">Add fact</button></details>
+}
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public StoryFacts Facts { get; set; } = null!;
+    private readonly Dictionary<string, string> _keys = new();
+    private static string? Kind(string field) => field switch { "QuestStatuses" => "quests", "CompletedConditions" or "ConditionCounters" or "HandoverItems" => "objectives", "TraderLoyalty" or "TraderReputation" or "TradersWithNewQuests" => "traders", "Items" => "items", "Skills" => "skills", "SessionVariables" => "variables", _ => null };
+    private string Name(string field, string id) => ReferenceNames.Resolve(Season, Kind(field) ?? "", id, Content.Name);
+    private static void Set(IDictionary dictionary, string key, Type type, string? text) { if (double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var value) && double.IsFinite(value) && (type != typeof(int) || value >= int.MinValue && value <= int.MaxValue && value == Math.Truncate(value))) dictionary[key] = Convert.ChangeType(value, type, CultureInfo.InvariantCulture); }
+    private void Add(IDictionary dictionary, string field, Type type) { var key = _keys.GetValueOrDefault(field, ""); if (key.Length > 0 && !dictionary.Contains(key)) dictionary.Add(key, type == typeof(string) ? "Locked" : Activator.CreateInstance(type)); }
+    private static string FactHelp(string field) => field switch { "HandoverItems" => "Eligible ordinary item count by handover objective ID. Also set inventory counts under Items.", "ConditionCounters" => "Simulated progress by objective ID. Set raid counters here after a simulated event.", "Items" => "Ordinary inventory quantities by template. Native stack structure and item filters still need an in-game check.", "QuestStatuses" => "Set owned or external prerequisite quest statuses. Story actions only mutate owned quests.", _ => "Values used by story conditions. These facts exist only in this rehearsal." };
+}

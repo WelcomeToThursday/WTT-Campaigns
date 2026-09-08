@@ -1,0 +1,17 @@
+<div class="content-navigator">
+@if (Choices.Any())
+{
+    <label>Search @Label.ToLowerInvariant()<input @bind="_search" @bind:event="oninput" placeholder="Name or ID…" /></label>
+    <label>Select @Label.ToLowerInvariant()<select value="@Value" @onchange="@(e => ValueChanged.InvokeAsync(e.Value?.ToString() ?? ""))"><option value="">Choose…</option>@foreach(var choice in Choices.Where(c => c.Id == Value || _search.Length == 0 || c.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) || c.Id.Contains(_search, StringComparison.OrdinalIgnoreCase))) { <option value="@choice.Id">@choice.Name</option> }</select></label>
+}
+else { <p class="navigator-empty">No @Label.ToLowerInvariant() yet.</p> }
+@if (Actions != null) { <div class="navigator-actions">@Actions</div> }
+</div>
+@code {
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public string Label { get; set; } = "Content";
+    [Parameter] public IEnumerable<ContentChoice> Choices { get; set; } = [];
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    private string _search = "";
+}

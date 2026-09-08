@@ -1,3 +1,4 @@
+@using SeasonalPerks.Server.Web.Authoring
 @page "/wtt-seasonal/creator"
 @attribute [Authorize(Policy = "Administrator")]
 @rendermode InteractiveServer
@@ -8,34 +9,134 @@
 <PageTitle>Season Creator</PageTitle>
 <HeadContent><link rel="stylesheet" href="/seasonal-creator-assets/creator.css" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
-<main class="season-creator" @onchange="Dirty" @oninput="Dirty">
+<main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="Dirty" @oninput="Dirty">
     <header class="creator-header">
-        <div><h1><span class="app-mark" aria-hidden="true">S</span>Season Creator</h1><p>Create, configure and publish seasonal content.</p></div>
-        <div class="header-status"><span class="status-dot" aria-hidden="true"></span><span>Active season <strong>@Repository.Current.Definition.Name</strong></span><HelpTip Text="The active season stays unchanged while you edit. A published pack takes effect only after you select it and restart SPT." /></div>
+        <div><h1><span class="app-mark" aria-hidden="true">S</span>Season Creator</h1><p>Create and publish seasons. Each seasonal character chooses its own season.</p></div>
+        <div class="row"><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
     </header>
+    @if (_showHelp) { <CreatorHelp HasDraft="@(_draft != null)" Navigate="OpenGuideSection" StartTutorial="StartTutorial" Close="@(() => _showHelp = false)" /> }
+    @if (_tutorialTrack.Length > 0 && !_tutorialPaused) { <CreatorTutorial Track="@_tutorialTrack" Index="_tutorialStep" HasDraft="@(_draft != null)" IndexChanged="@(i => _tutorialStep = i)" Navigate="OpenGuideSection" Pause="@(() => _tutorialPaused = true)" Finish="FinishTutorial" /> }
+    @if (_tutorialFinished.Length > 0) { <div class="notice" role="status">Walkthrough finished: @_tutorialFinished. Save and validate your draft to check your work. You can revisit either tutorial from Help and tutorials. <button class="subtle" @onclick="@(() => _tutorialFinished = "")">Dismiss</button></div> }
     @foreach (var warning in Repository.StorageWarnings) { <div class="notice error">Storage needs attention: @warning</div> }
     @if (_message.Length > 0) { <div class="notice" role="status">@_message</div> }
-    @if (Repository.Selection.Error.Length > 0) { <div class="notice error">Activation failed: @Repository.Selection.Error</div> }
-    @if (Repository.Selection.Pending != null) { <div class="notice">A published season is selected for the next server restart. The running season has not changed.</div> }
+    @if (Repository.Selection.Error.Length > 0) { <div class="notice error">Season loading issue: @Repository.Selection.Error</div> }
+
     @if (_discard != null)
     {
         <div class="notice"><strong>You have unsaved changes.</strong><button @onclick="ConfirmDiscard">Discard and continue</button><button @onclick="@(() => _discard = null)">Keep editing</button></div>
     }
     @if (_draft == null)
     {
-        <section class="library-actions"><h2>Your seasons</h2><div class="row"><button class="primary" @onclick="@(() => Run(() => Open(Repository.Create(false))))">Create blank season</button><button @onclick="@(() => Run(() => Open(Repository.Create(true))))">Duplicate active season</button><label class="upload">Import season pack<InputFile OnChange="Import" accept=".zip" /></label></div></section>
-        <div class="library-grid">
-            @foreach (var draft in Repository.Drafts())
-            {
-                <article class="library-card"><span class="eyebrow">DRAFT · @draft.Definition.Version</span><h3>@draft.Definition.Name</h3><p>@draft.Definition.Description</p><div class="row"><button class="primary" @onclick="@(() => Open(draft))">Edit draft</button><button @onclick="@(() => Run(() => Open(Repository.Create(true, draft.Definition))))">Duplicate</button></div></article>
-            }
+        var drafts = Repository.Drafts(null);
+        var packs = Repository.Packs();
+        var visibleDrafts = LibraryDrafts(drafts).ToArray();
+        var visiblePacks = packs.Where(p => LibraryMatches(p.Manifest.Name)).ToArray();
+        <div class="season-library">
+            <section class="library-heading" aria-labelledby="library-title">
+                <div><span class="eyebrow">YOUR WORKSPACE</span><h2 id="library-title">Season library</h2><p>Build something new, or pick up where you left off.</p></div>
+                <button class="primary library-create" @onclick="@(() => Run(() => Open(Repository.Create(false))))"><span aria-hidden="true">＋</span> Create blank season</button>
+            </section>
+            <div class="library-layout">
+                <div class="library-content">
+                    <div class="library-searchbar">
+                        <label for="season-library-search">Find a season</label>
+                        <div class="library-search-input"><input id="season-library-search" type="search" placeholder="Search drafts and published packs…" @bind="_librarySearch" @bind:event="oninput" />@if (_librarySearch.Length > 0) { <button class="subtle" @onclick="@(() => _librarySearch = "")">Clear</button> }</div>
+                    </div>
+                    <section class="library-section" aria-labelledby="drafts-title">
+                                                <header class="library-section-heading"><div><h3 id="drafts-title">Draft management</h3><p>@(_draftView == DraftStatus.Archived ? "Set aside drafts you may return to. Restore a draft to edit it." : _draftView == DraftStatus.Trashed ? "Removed drafts stay here until you restore them. Nothing is automatically deleted." : "Rename, organize and edit your work. Published packs stay separate.")</p></div></header>
+                        <div class="draft-management-toolbar">
+                            <div class="draft-view-tabs" role="group" aria-label="Draft view">
+                                @foreach (var view in Enum.GetValues<DraftStatus>())
+                                {
+                                    <button class="subtle" aria-pressed="@(_draftView == view)" @onclick="@(() => SelectDraftView(view))">@DraftViewName(view) <span class="library-count">@drafts.Count(d => d.Status == view)</span></button>
+                                }
+                            </div>
+                            <div class="draft-sort-controls"><label>Sort drafts<select aria-label="Sort drafts" @bind="_draftSort"><option value="recent">Last edited: newest</option><option value="oldest">Last edited: oldest</option><option value="name">Name: A–Z</option></select></label><button class="subtle" @onclick="RefreshDraftLibrary">Refresh library</button></div>
+                        </div>
+                        @if (_renamingDraft != null)
+                        {
+                            <section class="draft-action-panel" aria-labelledby="rename-draft-title">
+                                <h4 id="rename-draft-title">Rename @_renamingDraft.Definition.Name</h4><p>This changes the draft name. Existing published packs keep their names.</p>
+                                <label>Draft name<input @ref="_draftActionFocus" maxlength="120" @bind="_draftName" @bind:event="oninput" @onkeydown="RenameDraftKey" /></label>
+                                <div class="row"><button class="primary" disabled="@string.IsNullOrWhiteSpace(_draftName)" @onclick="RenameLibraryDraft">Save name</button><button @onclick="RefreshDraftLibrary">Cancel</button></div>
+                            </section>
+                        }
+                        @if (_trashDraft != null)
+                        {
+                            <section class="draft-action-panel" aria-labelledby="trash-draft-title">
+                                <h4 id="trash-draft-title">Move @_trashDraft.Definition.Name to Trash?</h4><p>You can restore this draft at any time. Published packs and characters are unaffected.</p>
+                                <div class="row"><button class="danger" @onclick="@(() => MoveLibraryDraft(_trashDraft, DraftStatus.Trashed))">Move to Trash</button><button @ref="_draftActionFocus" @onclick="RefreshDraftLibrary">Cancel</button></div>
+                            </section>
+                        }
+                        <p class="draft-results" role="status">@visibleDrafts.Length of @drafts.Count(d => d.Status == _draftView) @DraftViewName(_draftView).ToLowerInvariant()</p>
+                        <div class="library-grid">
+                            @foreach (var draft in visibleDrafts)
+                            {
+                                <article class="library-card" @key="draft.Id">
+                                    <div class="library-card-meta"><span class="library-status">@(draft.Status == DraftStatus.Active ? "DRAFT" : draft.Status == DraftStatus.Archived ? "ARCHIVED" : "IN TRASH")</span><span>v@(draft.Definition.Version) · Revision @draft.Revision</span></div>
+                                    <h4>@draft.Definition.Name</h4><time class="draft-edited" datetime="@draft.LastEditedUtc?.ToString("O")" title="@draft.LastEditedUtc?.ToString("u")">Edited @draft.LastEditedUtc?.ToLocalTime().ToString("MMM d, yyyy · h:mm tt")</time>
+                                    <p class="library-description" title="@draft.Definition.Description">@(string.IsNullOrWhiteSpace(draft.Definition.Description) ? "Add a description in Overview to introduce this season." : draft.Definition.Description)</p>
+                                    <div class="library-facts"><span>@LibraryQuantity(draft.Definition.Quests.Count, "quest")</span><span>@LibraryQuantity(draft.Definition.Perks.All.Count(), "perk")</span><span>@LibraryQuantity(draft.Definition.AllRewards.Count(), "reward")</span></div>
+                                                                        <div class="library-card-actions">
+                                        @if (draft.Status == DraftStatus.Active) { <button @onclick="@(() => OpenLibraryDraft(draft))">Edit draft <span aria-hidden="true">→</span></button> }
+                                        else { <button @onclick="@(() => MoveLibraryDraft(draft, DraftStatus.Active))">Restore to Drafts <span aria-hidden="true">↩</span></button> }
+                                        @if (draft.Status != DraftStatus.Trashed)
+                                        {
+                                            <details class="draft-card-menu" open="@(_draftMenu == draft.Id)"><summary aria-label="@($"Manage {draft.Definition.Name}")" @onclick="@(() => _draftMenu = _draftMenu == draft.Id ? null : draft.Id)" @onclick:preventDefault>Manage</summary><div>
+                                                @if (draft.Status == DraftStatus.Active) { <button @onclick="@(() => BeginDraftRename(draft))">Rename</button> }
+                                                <button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Load(draft.Id).Definition))))">Duplicate</button>
+                                                @if (draft.Status == DraftStatus.Active) { <button @onclick="@(() => MoveLibraryDraft(draft, DraftStatus.Archived))">Archive</button> }
+                                                <button class="danger" @onclick="@(() => BeginDraftTrash(draft))">Move to Trash…</button>
+                                            </div></details>
+                                        }
+                                    </div>
+                                </article>
+                            }
+                        </div>
+                        @if (visibleDrafts.Length == 0)
+                        {
+                            <div class="library-empty"><strong>@(_librarySearch.Trim().Length > 0 ? "No matching drafts" : _draftView == DraftStatus.Archived ? "No archived drafts" : _draftView == DraftStatus.Trashed ? "Trash is empty" : "Your first season starts here")</strong><p>@(_librarySearch.Trim().Length > 0 ? "Try another name or clear the search." : _draftView == DraftStatus.Active ? "Create a blank season above, duplicate a published pack, or restore a draft from Archived or Trash." : "Use Manage on a draft to move it here. You can always restore it to Drafts.")</p></div>
+                        }
+                    </section>
+                    <section class="library-section" aria-labelledby="packs-title">
+                        <header class="library-section-heading"><div><h3 id="packs-title">Published packs <span class="library-count">@(packs.Count + 1)</span></h3><p>Saved releases you can share or use as a starting point.</p></div></header>
+                        <div class="library-pack-list">
+                            @if (LibraryMatches("Built-in Season One"))
+                            {
+                                <article class="library-pack">
+                                    <div class="library-pack-info"><span class="library-status built-in">BUILT-IN</span><h4>Built-in Season One</h4><p>Duplicate the original season to make it your own.</p></div>
+                                    <div class="row"><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Legacy))))">Duplicate</button></div>
+                                </article>
+                            }
+                            @foreach (var pack in visiblePacks)
+                            {
+                                <article class="library-pack" @key="pack.Key">
+                                    <div class="library-pack-info"><span class="library-status published">PUBLISHED · REVISION @pack.Manifest.Revision</span><h4>@pack.Manifest.Name</h4><p>Version @pack.Manifest.Version</p></div>
+                                    <div class="row"><button @onclick="@(() => EditPublished(pack.Key))">Edit revision</button><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Pack(pack.Key)))))">Duplicate as new season</button><a class="button subtle" href="@($"/wtt-seasonal/creator/packs/{pack.Key}/download")" download>Export pack <span aria-hidden="true">↓</span></a></div>
+                                </article>
+                            }
+                        </div>
+                        @if (visiblePacks.Length == 0 && !LibraryMatches("Built-in Season One"))
+                        {
+                            <div class="library-empty"><strong>No matching published packs</strong><p>Try another name or clear the search.</p></div>
+                        }
+                        <p class="library-play-note">Each seasonal character chooses its own season. Restart SPT to load newly published packs with their required dependencies, then choose one when creating a character.</p>
+                    </section>
+                </div>
+                <aside class="library-sidebar" aria-label="Import and learn">
+                    <section class="library-side-panel">
+                        <span class="eyebrow">BRING YOUR CONTENT</span><h3>Import a season</h3><p>Open a shared season pack as an editable draft.</p>
+                        <label class="library-import"><span>Choose a .zip file <span aria-hidden="true">↑</span></span><InputFile OnChange="Import" accept=".zip" aria-label="Import season pack" /></label>
+                        <small>Save, validate and publish the imported draft to make it a local pack.</small>
+                    </section>
+                    <section class="library-side-panel library-learn">
+                        <span class="eyebrow">LEARN AS YOU BUILD</span><h3>A little guidance</h3><p>Follow a walkthrough alongside your draft.</p>
+                        <button class="library-guide" @onclick="@(() => StartTutorial("basics"))"><strong>Season basics <span aria-hidden="true">→</span></strong><span>From a blank draft to your first published pack.</span></button>
+                        <button class="library-guide" @onclick="@(() => StartTutorial("story"))"><strong>Your first story quest <span aria-hidden="true">→</span></strong><span>Connect a quest, conversation and journal entry.</span></button>
+                    </section>
+                </aside>
+            </div>
         </div>
-        <h2>Published packs</h2>
-        <article class="library-card"><h3>Built-in Season One</h3><div class="row"><button @onclick="@(() => Run(() => Queue("legacy")))">Activate after restart</button><button @onclick="@(() => Open(Repository.Create(true, Repository.Legacy)))">Duplicate</button></div></article>
-        @foreach (var pack in Repository.Packs())
-        {
-            <article class="library-card"><span class="eyebrow">PUBLISHED · REVISION @pack.Manifest.Revision</span><h3>@pack.Manifest.Name</h3><div class="row"><button @onclick="@(() => Run(() => Queue(pack.Key)))">Activate after restart</button><button @onclick="@(() => EditPublished(pack.Key))">Edit revision</button><button @onclick="@(() => Open(Repository.Create(true, Repository.Pack(pack.Key))))">Duplicate as new season</button><a class="button" href="@($"/wtt-seasonal/creator/packs/{pack.Key}/download")" download>Export pack</a></div></article>
-        }
     }
     else
     {
@@ -44,58 +145,101 @@
             <strong class="draft-title">@S.Name</strong><span class="save-state @(DirtyState ? "unsaved" : "")">@(DirtyState ? "Unsaved changes" : "Saved")</span>
             <div class="toolbar-actions">
                 <MudTooltip Text="Check content, artwork and installed dependencies. Errors link back to the relevant section." ShowOnFocus="true"><button @onclick="Validate">Validate</button></MudTooltip>
-                <MudTooltip Text="Create an immutable pack from the saved draft. Publishing does not activate it." ShowOnFocus="true"><button @onclick="Publish">Publish pack</button></MudTooltip>
-                <MudTooltip Text="Save this draft without changing the running season." ShowOnFocus="true"><button class="primary" @onclick="Save">Save changes</button></MudTooltip>
+                <MudTooltip Text="Create an immutable pack from the saved draft. Restart SPT to load new packs for character creation." ShowOnFocus="true"><button @onclick="Publish">Publish pack</button></MudTooltip>
+                <MudTooltip Text="Save this draft without changing published packs or characters." ShowOnFocus="true"><button class="primary" @onclick="Save">Save changes</button></MudTooltip>
             </div>
         </div>
         <div class="editor-shell">
-            <nav class="editor-nav" aria-label="Editor sections"><div class="panel-caption">SEASON CONTENT</div>@foreach (var section in Sections) { <button class="@(section == _section ? "selected" : "")" aria-current="@(section == _section ? "page" : null)" @onclick="@(() => _section = section)">@section</button> }</nav>
-            <section class="editor-body"><div class="section-heading"><div><h2>@_section</h2><p>@SectionDescription(_section)</p></div><span class="section-counter">@(Array.IndexOf(Sections, _section) + 1) / @Sections.Length</span></div>
+            <nav class="editor-nav" aria-label="Editor sections">
+                @foreach (var group in NavigationGroups)
+                {
+                    <div class="panel-caption">@group.Name</div>
+                    @foreach (var section in group.Sections) { <button class="@(section == _section ? "selected" : "")" aria-current="@(section == _section ? "page" : null)" @onclick="@(() => NavigateWorkspace(section))">@SectionTitle(section)</button> }
+                }
+            </nav>
+            <section class="editor-body">@if (_workspaceHistory.Count > 0) { <button class="workspace-back" @onclick="BackWorkspace">← Back to @SectionTitle(_workspaceHistory.Peek().Section)</button> }<div class="section-heading"><div><h2>@SectionTitle(_section)</h2><p>@SectionDescription(_section)</p></div><span class="section-counter">@(Array.IndexOf(Sections, _section) + 1) / @Sections.Length</span></div>
+            @if (SeasonalPerks.Server.Web.Authoring.CreatorGuidance.Topics.FirstOrDefault(t => t.Section == _section) is { } instructions)
+            {
+                <details class="section-instructions" @key="_section"><summary>How to use this section</summary><p>@instructions.Purpose</p><ol>@foreach(var instruction in instructions.Instructions) { <li>@instruction</li> }</ol><p class="guide-tip">@instructions.Tip</p><button @onclick="@(() => _showHelp = true)">Browse all instructions</button></details>
+            }
             @switch (_section)
             {
                 case "Overview":
-                    <div class="form-grid"><label>Season name<input @bind="S.Name" /></label><label>Version <HelpTip Text="An author-facing version such as 1.0.0. Published pack revisions are numbered automatically." /><input @bind="S.Version" /></label><label>Author<input @bind="S.Author" /></label><label>Description<textarea @bind="S.Description"></textarea></label><AssetPicker Label="Season badge" @bind-Value="S.Branding.Badge" ArtAssets="ArtAssets" /><AssetPicker Label="Menu banner" @bind-Value="S.Branding.Banner" ArtAssets="ArtAssets" /></div>
-                    <h3>Introductory slides</h3>
-                    @foreach (var slide in S.Slides.ToArray()) { <div class="editor-card"><AssetPicker Label="Slide artwork" @bind-Value="slide.Image" ArtAssets="ArtAssets" /><label>Slide text<textarea @bind="slide.Text"></textarea></label><button @onclick="@(() => S.Slides.Remove(slide))">Remove slide</button></div> }
+                <section class="inspector-panel"><div class="panel-heading"><h3>Season summary</h3><span class="small-tag">DRAFT</span></div><strong>@S.Name</strong>
+                    @if(SeasonValidator.IsId(S.Branding.Badge)) { <img class="season-badge" src="@AssetUrl(S.Branding.Badge)" alt="Season badge" /> }
+                    <p>@S.Description</p><dl><dt>Perks</dt><dd>@S.Perks.All.Count()</dd><dt>Documents</dt><dd>@S.Documents.Count / 8</dd><dt>Pages</dt><dd>@S.Pages.Count</dd><dt>Rewards</dt><dd>@S.AllRewards.Count()</dd><dt>Total document cost</dt><dd>@S.AllRewards.SelectMany(r => r.Costs).Sum(c => (long)c.Count)</dd><dt>Custom quests</dt><dd>@S.Quests.Count</dd></dl>
+                </section>
+                    <EditorSection Title="Identity and branding" Description="Name, describe and illustrate the season players will choose.">
+<div class="form-grid"><label>Season name<input @bind="S.Name" /></label><label>Version <HelpTip Text="An author-facing version such as 1.0.0. Published pack revisions are numbered automatically." /><input @bind="S.Version" /></label><label>Author<input @bind="S.Author" /></label><label>Description<textarea @bind="S.Description"></textarea></label><AssetPicker Label="Season badge" @bind-Value="S.Branding.Badge" ArtAssets="ArtAssets" /><AssetPicker Label="Menu banner" @bind-Value="S.Branding.Banner" ArtAssets="ArtAssets" /></div>
+
+</EditorSection>
+<EditorSection Title="First-launch introduction" Description="Select a slide to edit its artwork and text.">
+
+                    <ContentCollection Items="S.Slides" Label="Slides" Name="@(s => s.Text)" Changed="Dirty"><ChildContent Context="slide"><div class="editor-card"><AssetPicker Label="Slide artwork" @bind-Value="slide.Image" ArtAssets="ArtAssets" /><label>Slide text<textarea @bind="slide.Text"></textarea></label><button @onclick="@(() => S.Slides.Remove(slide))">Remove slide</button></div></ChildContent></ContentCollection>
                     <button @onclick="@(() => S.Slides.Add(new() { Image = DefaultImage }))">Add slide</button>
+
+</EditorSection>
                     break;
                 case "Starting character":
                     <p>Start with an installed SPT preset. Stash items are added; equipment replaces the chosen slot. Perks apply afterward.</p>
-                    <ContentPicker Kind="presets" Label="Starter preset (blank uses account edition)" @bind-Value="S.Starting.Preset" />
+                    <EditorSection Title="Loadout by faction" Description="Choose the base preset, then configure inventory and equipment for the selected faction.">
+<ContentPicker Kind="presets" Label="Starter preset (blank uses account edition)" @bind-Value="S.Starting.Preset" />
                     <label>Faction<select @bind="_faction"><option>Usec</option><option>Bear</option></select></label>
-                    @foreach (var item in Starter.Items.ToArray()) { <div class="editor-card"><ContentPicker Label="Starting item or currency" @bind-Value="item.Template" Additional="OwnedItems" /><div class="inline-fields"><label>Quantity<input type="number" min="1" @bind="item.Count" /></label><label>Destination <HelpTip Text="Stash adds the item to the starting inventory. An equipment slot replaces that slot’s original item and attachments." /><select @bind="item.Slot"><option value="">Stash</option>@foreach(var slot in EquipmentSlots) { <option>@slot</option> }</select></label><button @onclick="@(() => Starter.Items.Remove(item))">Remove</button></div></div> }
+                    <ContentCollection Items="Starter.Items" Label="Starting items" Name="@(s => ReferenceNames.Resolve(S, "items", s.Template, Content.Name) + " · " + (s.Slot.Length == 0 ? "Stash" : s.Slot))" Changed="Dirty"><ChildContent Context="item"><div class="editor-card"><ContentPicker Label="Starting item or currency" @bind-Value="item.Template" Additional="OwnedItems" /><div class="inline-fields"><label>Quantity<input type="number" min="1" @bind="item.Count" /></label><label>Destination <HelpTip Text="Stash adds the item to the starting inventory. An equipment slot replaces that slot’s original item and attachments." /><select @bind="item.Slot"><option value="">Stash</option>@foreach(var slot in EquipmentSlots) { <option>@slot</option> }</select></label><button @onclick="@(() => Starter.Items.Remove(item))">Remove</button></div></div></ChildContent></ContentCollection>
                     <button @onclick="@(() => Starter.Items.Add(new()))">Add starting item</button>
-                    <h3>Starting skills</h3>
+
+</EditorSection>
+                    <EditorSection Title="Skill levels" Description="Starting skill levels for the faction selected above.">
+
                     @foreach (var skill in Starter.Skills.ToArray()) { <div class="inline-fields"><span>@skill.Key</span><input aria-label="@($"{skill.Key} starting level")" type="number" min="0" max="51" value="@skill.Value" @onchange="@(e => Starter.Skills[skill.Key] = Int(e, 0))" /><button @onclick="@(() => Starter.Skills.Remove(skill.Key))">Remove</button></div> }
                     <ContentPicker Kind="skills" Label="Add skill" ValueChanged="@(v => { if(v.Length > 0) Starter.Skills.TryAdd(v, 1); })" />
+
+</EditorSection>
                     break;
                 case "Perks":
-                    <div class="form-grid"><label>Starting points <HelpTip Text="The points available before selecting perks. Negative perk points spend the budget; positive points add to it." /><input type="number" @bind="S.Rules.StartingPoints" /></label><label class="check"><input type="checkbox" @bind="S.Rules.EnforceBudget" />Enforce selection budget</label><label class="check"><input type="checkbox" @bind="S.Rules.AllowEdits" />Allow perk edits outside raids</label></div>
-                    <div class="row"><button @onclick="@(() => AddPerk(false))">Add personal perk</button><button @onclick="@(() => AddPerk(true))">Add common perk</button></div>
-                    @foreach (var perk in S.Perks.All.ToArray())
+                    <EditorSection Title="Season-wide perk rules" Description="Budget and editing rules apply to every perk selection.">
+<div class="form-grid"><label>Starting points <HelpTip Text="The points available before selecting perks. Negative perk points spend the budget; positive points add to it." /><input type="number" @bind="S.Rules.StartingPoints" /></label><label class="check"><input type="checkbox" @bind="S.Rules.EnforceBudget" />Enforce selection budget</label><label class="check"><input type="checkbox" @bind="S.Rules.AllowEdits" />Allow perk edits outside raids</label></div>
+
+</EditorSection>
+<EditorSection Title="Perk catalogue" Description="Select one perk to edit its presentation, selection rules and effects.">
+<div class="row"><button @onclick="@(() => AddPerk(false))">Add personal perk</button><button @onclick="@(() => AddPerk(true))">Add common perk</button></div>
+                    <ContentNavigator Label="Perks" Choices="@(S.Perks.All.Select(p => new ContentChoice(p.Id, PerkName(p))))" Value="@SelectedContent("Perks", S.Perks.All.Select(p => new ContentChoice(p.Id, PerkName(p))))" ValueChanged="@(v => _contentSelection["Perks"] = v)" />
+                    @foreach (var perk in S.Perks.All.Where(perk => perk.Id == SelectedContent("Perks", S.Perks.All.Select(p => new ContentChoice(p.Id, PerkName(p))))).ToArray())
                     {
-                        <details class="editor-card" @key="perk.Id"><summary>@PerkName(perk) · @perk.Type · @(perk.Points?.ToString() ?? "Common")</summary>
+                        <details class="editor-card" open @key="perk.Id"><summary>@PerkName(perk) · @perk.Type · @(perk.Points?.ToString() ?? "Common")</summary>
                             <label class="check"><input type="checkbox" @bind="perk.Enabled" />Enabled</label><div class="form-grid"><label>Name<input value="@PerkName(perk)" @onchange="@(e => S.Locales["en"][perk.Id + " name"] = Text(e))" /></label><label>Description<textarea value="@S.Locales["en"].GetValueOrDefault(perk.Id + " description")" @onchange="@(e => S.Locales["en"][perk.Id + " description"] = Text(e))"></textarea></label><AssetPicker Label="Perk icon" @bind-Value="perk.ImageUrl" ArtAssets="ArtAssets" /></div>
                             @if (perk.Type == "personal") { <label>Points (benefits cost negative points) <HelpTip Text="Use -1 for a benefit that costs one point, or +1 for a drawback that adds one point to the selection budget." /><input type="number" @bind="perk.Points" /></label><h4>Conflicts <HelpTip Text="Conflicting personal perks cannot be selected together. This relationship applies in both directions." /></h4>@foreach (var other in S.Perks.Personal.Where(p => p.Id != perk.Id)) { <label class="check"><input type="checkbox" checked="@perk.Conflicts.Contains(other.Id)" @onchange="@(e => Conflict(perk, other, (bool)e.Value!))" />@PerkName(other)</label> } }
                             else { <label class="check"><input type="checkbox" checked="@S.Rules.EnabledCommonIds.Contains(perk.Id)" @onchange="@(e => Common(perk.Id, (bool)e.Value!))" />Apply to every seasonal character</label> }
                             @for (var i = 0; i < perk.Effects.Count; i++)
                             {
                                 var index = i; var effect = perk.Effects[index];
-                                <details open class="effect"><summary>@effect.EffectId</summary><StructuredFields OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Value="EffectObject(effect)" Changed="@(() => UpdateEffect(perk, index, effect))" /><button @onclick="@(() => { perk.Effects.RemoveAt(index); Dirty(); })">Remove effect</button></details>
+                                <details open class="effect"><summary>@EditorFieldGuide.NativeTitle(effect.EffectId)</summary><StructuredFields OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Value="EffectObject(effect)" Changed="@(() => UpdateEffect(perk, index, effect))" /><button @onclick="@(() => { perk.Effects.RemoveAt(index); Dirty(); })">Remove effect</button></details>
                             }
                             <select aria-label="Add supported effect" @onchange="@(e => AddEffect(perk, Text(e)))"><option value="">Add an implemented effect…</option>@foreach(var template in EffectTemplates) { <option value="@template.Key">@template.Label</option> }</select>
                             <button class="danger" @onclick="@(() => RemovePerk(perk))">Delete perk</button>
                         </details>
                     }
+
+</EditorSection>
                     break;
                 case "Documents":
-                    <div class="form-grid"><label>Documents per raid <HelpTip Text="Maximum ordinary documents placed in a seasonal PMC raid, from zero to eight. Map overrides replace this cap; the remaining collection allowance can reduce it." /><input type="number" min="0" max="8" @bind="S.Collection.DocumentsPerRaid" /></label><label>Collection allowance <HelpTip Text="How many newly collected document units a character can pick up during one collection window. Splitting or merging a stack does not add allowance." /><input type="number" min="1" @bind="S.Collection.DocumentLimit" /></label><label>Collection window (seconds) <HelpTip Text="The collection allowance resets after this many seconds. The default 23-hour window is 82,800 seconds." /><input type="number" min="60" @bind="S.Collection.WindowSeconds" /></label><label>Classified chance (%) <HelpTip Text="Chance of earning a Classified bonus for a newly collected document extracted from a survived raid. The default is 5 percent." /><input type="number" min="0" max="100" @bind="S.Collection.ClassifiedChancePercent" /></label></div>
-                    <h3>Map overrides <HelpTip Text="A listed map uses its own document cap. Unlisted maps use Documents per raid." /></h3>
+                    <EditorSection Title="Collection rules" Description="Control raid placement, collection limits and the Classified bonus.">
+<div class="form-grid"><label>Documents per raid <HelpTip Text="Maximum ordinary documents placed in a seasonal PMC raid, from zero to eight. Map overrides replace this cap; the remaining collection allowance can reduce it." /><input type="number" min="0" max="8" @bind="S.Collection.DocumentsPerRaid" /></label><label>Collection allowance <HelpTip Text="How many newly collected document units a character can pick up during one collection window. Splitting or merging a stack does not add allowance." /><input type="number" min="1" @bind="S.Collection.DocumentLimit" /></label><label>Collection window (seconds) <HelpTip Text="The collection allowance resets after this many seconds. The default 23-hour window is 82,800 seconds." /><input type="number" min="60" @bind="S.Collection.WindowSeconds" /></label><label>Classified chance (%) <HelpTip Text="Chance of earning a Classified bonus for a newly collected document extracted from a survived raid. The default is 5 percent." /><input type="number" min="0" max="100" @bind="S.Collection.ClassifiedChancePercent" /></label></div>
+
+</EditorSection>
+<EditorSection Title="Map-specific placement" Description="Override the ordinary document cap for individual maps.">
+<h3>Map overrides <HelpTip Text="A listed map uses its own document cap. Unlisted maps use Documents per raid." /></h3>
                     @foreach (var map in S.Collection.MapCounts.ToArray()) { <div class="inline-fields"><span>@map.Key</span><input aria-label="@($"{map.Key} document cap")" type="number" min="0" max="8" value="@map.Value" @onchange="@(e => S.Collection.MapCounts[map.Key] = Int(e, 8))" /><button @onclick="@(() => S.Collection.MapCounts.Remove(map.Key))">Remove</button></div> }
                     <div class="inline-fields"><select aria-label="Map" @bind="_map">@foreach(var map in MapNames) { <option>@map</option> }</select><button @onclick="@(() => S.Collection.MapCounts.TryAdd(_map, S.Collection.DocumentsPerRaid))">Add override</button></div>
-                    @foreach (var doc in S.Documents.ToArray()) { <div class="editor-card"><label>Name<input @bind="doc.Name" /></label><ContentPicker Label="Document item template" @bind-Value="doc.ItemId" Additional="OwnedItems" /><div class="form-grid"><AssetPicker Label="Available artwork" @bind-Value="doc.Image" ArtAssets="ArtAssets" /><AssetPicker Label="Unavailable artwork" @bind-Value="doc.UnavailableImage" ArtAssets="ArtAssets" /></div><button @onclick="@(() => S.Documents.Remove(doc))">Remove document</button><button @onclick="@(() => CloneDocument(doc))">Create own item from this model</button></div> }
+
+</EditorSection>
+<EditorSection Title="Document types and artwork" Description="Edit one ordinary document at a time, then configure Classified artwork.">
+<ContentNavigator Label="Documents" Choices="@(S.Documents.Select(p => new ContentChoice(p.Id, p.Name)))" Value="@SelectedContent("Documents", S.Documents.Select(p => new ContentChoice(p.Id, p.Name)))" ValueChanged="@(v => _contentSelection["Documents"] = v)" />
+                    @foreach (var doc in S.Documents.Where(doc => doc.Id == SelectedContent("Documents", S.Documents.Select(p => new ContentChoice(p.Id, p.Name)))).ToArray()) { <div class="editor-card"><label>Name<input @bind="doc.Name" /></label><ContentPicker Label="Document item template" @bind-Value="doc.ItemId" Additional="OwnedItems" /><div class="form-grid"><AssetPicker Label="Available artwork" @bind-Value="doc.Image" ArtAssets="ArtAssets" /><AssetPicker Label="Unavailable artwork" @bind-Value="doc.UnavailableImage" ArtAssets="ArtAssets" /></div><button @onclick="@(() => RemoveContent(doc, () => S.Documents.Remove(doc)))">Remove document</button><button @onclick="@(() => CloneDocument(doc))">Create own item from this model</button></div> }
                     <button disabled="@(S.Documents.Count >= 8)" @onclick="AddDocument">Add document type</button>
                     <div class="form-grid"><AssetPicker Label="Classified artwork" @bind-Value="S.UniversalImage" ArtAssets="ArtAssets" /><AssetPicker Label="Unavailable Classified artwork" @bind-Value="S.UniversalUnavailableImage" ArtAssets="ArtAssets" /></div>
+
+</EditorSection>
                     break;
                 case "Battle pass":
                 case "Rewards":
@@ -104,61 +248,96 @@
                         <div class="inline-fields"><label>Page<select @bind="PageIndex">@for (var i = 0; i < S.Pages.Count; i++) { <option value="@i">Page @(i + 1)</option> }</select></label><button @onclick="AddPage">Add page</button><button @onclick="DuplicatePage">Duplicate page</button><button @onclick="@(() => MovePage(-1))">Move earlier</button><button @onclick="@(() => MovePage(1))">Move later</button><button @onclick="DeletePage">Delete page</button></div>
                         @if (S.Pages.Count > 0) { <label>Required claims from previous page <HelpTip Text="How many rewards must be claimed on the immediately preceding page to unlock this page. Use zero on the first page." /><input type="number" min="0" @bind="S.Pages[PageIndex].PreviousRequirement" /></label> }
                     }
-                    <div class="canvas-toolbar"><span>@Columns × @Rows reward layout</span><span>@Tiles.Count tiles</span><HelpTip Text="Drag a tile into an empty cell. Select it to edit in the inspector. Width and height change its size in cells; tiles cannot overlap or leave the grid." /></div>
+                    <div class="canvas-toolbar"><span>@Columns × @Rows reward layout</span><span>@Tiles.Count tiles</span><HelpTip Text="Drag a tile into an empty cell. Select it to edit its details below the grid. Width and height change its size in cells; tiles cannot overlap or leave the grid." /></div>
                     <div class="reward-grid" style="grid-template-columns:repeat(@Columns, minmax(0,1fr));grid-template-rows:repeat(@Rows,var(--reward-row))">
                         @for(var y = 0; y < Rows; y++) { @for(var x = 0; x < Columns; x++) { var cx = x; var cy = y; <div class="grid-cell" style="grid-column:@(x+1);grid-row:@(y+1)" @ondragover:preventDefault @ondrop="@(() => Drop(cx, cy))"></div> } }
                         @foreach(var tile in Tiles) { <button class="reward-tile @(tile == _reward ? "chosen" : "") @(!tile.Enabled ? "tile-disabled" : "")" aria-pressed="@(tile == _reward)" aria-label="@($"Edit {tile.Name}, {tile.Width} by {tile.Height} cells")" style="grid-column:@(tile.X+1) / span @Math.Clamp(tile.Width,1,Columns);grid-row:@(tile.Y+1) / span @Math.Clamp(tile.Height,1,Rows)" draggable="true" @ondragstart="@(() => _dragged = tile)" @onclick="@(() => _reward = tile)">@if(SeasonValidator.IsId(tile.Image)) { <img src="@AssetUrl(tile.Image)" alt="" /> }<span>@tile.Name</span><small>@(tile.Enabled ? $"{tile.Width} × {tile.Height}" : "Disabled")</small></button> }
                     </div>
                     <div class="row"><button @onclick="AddReward">Add reward</button>@if (_reward != null && Tiles.Contains(_reward)) { <button @onclick="DuplicateReward">Duplicate reward</button><button @onclick="DeleteReward">Delete reward</button> }</div>
+                    <section class="editor-section reward-selection"><div class="panel-heading"><h3>Selected reward</h3><HelpTip Text="Changes here apply to the selected tile. Save changes in the top bar to keep your edits." /></div>
+                    @if (_reward != null && Tiles.Contains(_reward)) { <p class="selection-name">@_reward.Name</p><RewardEditor @key="_reward.Id" Reward="_reward" Columns="Columns" Rows="Rows" Documents="S.Documents" ArtAssets="ArtAssets" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /> }
+                    else { <div class="empty-selection"><span aria-hidden="true">▦</span><strong>No tile selected</strong><p>Select a reward in the grid to edit its artwork, size, costs and contents.</p></div> }
+                    </section>
                     
                     break;
                 case "Items and crates":
-                    <p>Create new item definitions using installed models. No Unity rebuild is needed.</p><button @onclick="@(() => S.Items.Add(new() { Id = SeasonRepository.NewId() }))">Create item</button>
-                    @foreach(var item in S.Items.ToArray()) { <details open class="editor-card"><summary>@item.Name</summary><div class="form-grid"><label>Name<input @bind="item.Name" /></label><label>Description<textarea @bind="item.Description"></textarea></label><ContentPicker Label="Installed source model" @bind-Value="item.CloneFrom" /><label>Width<input type="number" min="1" max="10" @bind="item.Width" /></label><label>Height<input type="number" min="1" max="10" @bind="item.Height" /></label><label>Maximum stack <HelpTip Text="Maximum units in one inventory stack. This does not change a character’s collection allowance." /><input type="number" min="1" @bind="item.StackMax" /></label></div><button @onclick="@(() => S.Items.Remove(item))">Remove item</button></details> }
-                    <h3>Exchanges</h3><div class="form-grid"><label>Ordinary documents per exchange <HelpTip Text="The number of ordinary documents spent to receive one document of the selected type. Default: five." /><input type="number" min="1" @bind="S.ExchangeRate" /></label><ContentPicker Label="Exchange crate (blank disables)" @bind-Value="S.ExchangeCrate" Additional="OwnedItems" /><label>Documents per crate <HelpTip Text="The total number of ordinary documents required by the optional crate exchange." /><input type="number" min="1" @bind="S.CrateCost" /></label></div>
-                    <h3>Crate contents</h3><button @onclick="@(() => S.Crates.Add(new()))">Add crate definition</button>
-                    @foreach(var crate in S.Crates.ToArray()) { <div class="editor-card"><ContentPicker Label="Crate template" @bind-Value="crate.ItemId" Additional="OwnedItems" /><div class="form-grid"><label>Items rolled <HelpTip Text="Number of rewards SPT draws from this crate’s weighted pool when it opens. Repeated items are possible." /><input type="number" min="1" max="100" @bind="crate.RewardCount" /></label><label class="check"><input type="checkbox" @bind="crate.FoundInRaid" />Rewards found in raid <HelpTip Text="Marks items produced by this crate as found in raid. This setting does not affect the crate itself." /></label></div>@foreach(var pool in crate.Pool.ToArray()) { <div class="inline-fields"><ContentPicker Label="Pool item" Value="@pool.Key" ValueChanged="@(v => ChangePool(crate, pool.Key, v))" Additional="OwnedItems" /><label>Weight <HelpTip Text="Relative likelihood, not a percentage. An item with weight 2 is twice as likely as an item with weight 1." /><input type="number" step="any" min="0.001" value="@pool.Value" @onchange="@(e => crate.Pool[pool.Key] = Number(e, 1))" /></label><button @onclick="@(() => crate.Pool.Remove(pool.Key))">Remove</button></div> }<ContentPicker Label="Add item to pool" ValueChanged="@(v => { if(v.Length > 0) crate.Pool.TryAdd(v, 1); })" Additional="OwnedItems" /><button @onclick="@(() => S.Crates.Remove(crate))">Remove crate definition</button></div> }
+                    <EditorSection Title="Custom item catalogue" Description="Select a source model and define inventory size and stack limit.">
+<p>Create new item definitions using installed models. No Unity rebuild is needed.</p><button @onclick="@(() => S.Items.Add(new() { Id = SeasonRepository.NewId() }))">Create item</button>
+                    <ContentNavigator Label="Items" Choices="@(S.Items.Select(p => new ContentChoice(p.Id, p.Name)))" Value="@SelectedContent("Items", S.Items.Select(p => new ContentChoice(p.Id, p.Name)))" ValueChanged="@(v => _contentSelection["Items"] = v)" />
+                    @foreach (var item in S.Items.Where(item => item.Id == SelectedContent("Items", S.Items.Select(p => new ContentChoice(p.Id, p.Name)))).ToArray()) { <details open class="editor-card"><summary>@item.Name</summary><div class="form-grid"><label>Name<input @bind="item.Name" /></label><label>Description<textarea @bind="item.Description"></textarea></label><ContentPicker Label="Installed source model" @bind-Value="item.CloneFrom" /><label>Width<input type="number" min="1" max="10" @bind="item.Width" /></label><label>Height<input type="number" min="1" max="10" @bind="item.Height" /></label><label>Maximum stack <HelpTip Text="Maximum units in one inventory stack. This does not change a character’s collection allowance." /><input type="number" min="1" @bind="item.StackMax" /></label></div><button @onclick="@(() => RemoveContent(item, () => S.Items.Remove(item)))">Remove item</button></details> }
+
+</EditorSection>
+<EditorSection Title="Exchange rules" Description="Configure document exchanges and the optional crate purchase.">
+<div class="form-grid"><label>Ordinary documents per exchange <HelpTip Text="The number of ordinary documents spent to receive one document of the selected type. Default: five." /><input type="number" min="1" @bind="S.ExchangeRate" /></label><ContentPicker Label="Exchange crate (blank disables)" @bind-Value="S.ExchangeCrate" Additional="OwnedItems" /><label>Documents per crate <HelpTip Text="@(S.ExchangeCrate.Length == 0 ? "The crate exchange is disabled. Choose an exchange crate to use this cost." : $"The selected crate costs {S.CrateCost} ordinary documents per exchange.")" /><input type="number" min="1" @bind="S.CrateCost" /></label></div>
+
+</EditorSection>
+<EditorSection Title="Crate reward pools" Description="Select a crate to edit its weighted contents and opening behavior.">
+<button @onclick="@(() => S.Crates.Add(new()))">Add crate definition</button>
+                    <ContentCollection Items="S.Crates" Label="Crates" Name="@(s => ReferenceNames.Resolve(S, "items", s.ItemId, Content.Name))" Changed="Dirty"><ChildContent Context="crate"><div class="editor-card"><ContentPicker Label="Crate template" @bind-Value="crate.ItemId" Additional="OwnedItems" /><div class="form-grid"><label>Items rolled <HelpTip Text="Number of rewards SPT draws from this crate’s weighted pool when it opens. Repeated items are possible." /><input type="number" min="1" max="100" @bind="crate.RewardCount" /></label><label class="check"><input type="checkbox" @bind="crate.FoundInRaid" />Rewards found in raid <HelpTip Text="Marks items produced by this crate as found in raid. This setting does not affect the crate itself." /></label></div>@foreach(var pool in crate.Pool.ToArray()) { <div class="inline-fields"><ContentPicker Label="Pool item" Value="@pool.Key" ValueChanged="@(v => ChangePool(crate, pool.Key, v))" Additional="OwnedItems" /><label>Weight <HelpTip Text="@($"Relative weight in this pool. Current share: {(crate.Pool.Values.Sum() > 0 ? pool.Value / crate.Pool.Values.Sum() * 100 : 0):0.##}% per draw. The crate makes {crate.RewardCount} draws; repeated items are possible.")" /><input type="number" step="any" min="0.001" value="@pool.Value" @onchange="@(e => crate.Pool[pool.Key] = Number(e, 1))" /></label><button @onclick="@(() => crate.Pool.Remove(pool.Key))">Remove</button></div> }<ContentPicker Label="Add item to pool" ValueChanged="@(v => { if(v.Length > 0) crate.Pool.TryAdd(v, 1); })" Additional="OwnedItems" /><button @onclick="@(() => S.Crates.Remove(crate))">Remove crate definition</button></div></ChildContent></ContentCollection>
+
+</EditorSection>
                     break;
                 case "Quests":
-                    <button @onclick="AddQuest">Create quest</button><p>Installed quests can be selected directly in reward requirements. Custom quests support ordinary item finding/handovers, level, trader loyalty, and prerequisite quests.</p>
-                    @foreach(var quest in S.Quests.OfType<JObject>().ToArray())
-                    {
-                        <details class="editor-card" @key="quest"><summary>@QuestName(quest)</summary><label class="check"><input type="checkbox" checked="@((bool?)quest["_seasonalEnabled"] != false)" @onchange="@(e => quest["_seasonalEnabled"] = (bool)e.Value!)" />Enabled</label><label>Name<input value="@QuestName(quest)" @onchange="@(e => QuestText(quest, "name", Text(e)))" /></label><label>Description<textarea value="@QuestLocale(quest, "description")" @onchange="@(e => QuestText(quest, "description", Text(e)))"></textarea></label><ContentPicker Kind="traders" Label="Quest trader" Value="@((string?)quest["traderId"] ?? string.Empty)" ValueChanged="@(v => quest["traderId"] = v)" />
-                        @foreach(var stage in new[] { "AvailableForStart", "AvailableForFinish" })
-                        { <h4>@(stage == "AvailableForStart" ? "Start requirements" : "Completion objectives")</h4>@foreach(var condition in ((JArray)quest["conditions"]![stage]!).OfType<JObject>().ToArray()) { <div class="editor-card"><strong>@condition["conditionType"]</strong><label>Objective text<input value="@quest["localization"]?["en"]?[(string)condition["id"]!]" @onchange="@(e => quest["localization"]!["en"]![(string)condition["id"]!] = Text(e))" /></label><StructuredFields OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Value="condition" Changed="Dirty" /><button @onclick="@(() => condition.Remove())">Remove objective</button></div> }<select aria-label="@($"Add {stage} objective")" @onchange="@(e => AddCondition(quest, stage, Text(e)))"><option value="">Add objective…</option><option>Level</option><option>Quest</option><option>TraderLoyalty</option><option>FindItem</option><option>HandoverItem</option></select> }
-                        <h4>Quest rewards</h4><label>New reward type<select @bind="_questRewardKind"><option>Item</option><option>Experience</option><option>TraderStanding</option><option>TraderUnlock</option><option>Skill</option></select></label><StructuredFields OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Value="@((JObject)quest["rewards"]!)" Changed="Dirty" /><button @onclick="@(() => AddQuestReward(quest))">Add quest reward</button><button class="danger" @onclick="@(() => quest.Remove())">Delete quest</button></details>
-                    }
+                    <QuestWorkspace Season="S" FocusId="@_focusId" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
+                    break;
+                case "Chapters":
+                case "Journal notes":
+                case "Conversations":
+                case "Variables":
+                case "Entry points":
+                case "Raid events":
+                case "Story media":
+                    <StoryWorkspace Season="S" Section="@_section" FocusId="@_focusId" FocusChildId="@_focusChildId" ChildSelectionChanged="@(v => _focusChildId = v)" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
+                    break;
+                case "Story rehearsal":
+                    <StoryRehearsalPanel Season="S" />
                     break;
                 case "Localization":
-                    <div class="inline-fields"><select aria-label="Language" @bind="_language">@foreach(var language in S.Locales.Keys) { <option>@language</option> }</select><input aria-label="New language code" placeholder="Language code" @bind="_newLanguage" /><button @onclick="AddLanguage">Add language</button></div><input aria-label="Filter localized text" placeholder="Filter text…" @bind="_localeSearch" @bind:event="oninput" />
+                    <EditorSection Title="Translation workspace" Description="Select a language and filter by text or reference before editing.">
+<div class="inline-fields"><select aria-label="Language" @bind="_language">@foreach(var language in S.Locales.Keys) { <option>@language</option> }</select><input aria-label="New language code" placeholder="Language code" @bind="_newLanguage" /><button @onclick="AddLanguage">Add language</button></div><input aria-label="Filter localized text" placeholder="Filter text…" @bind="_localeSearch" @bind:event="oninput" />
                     @foreach(var text in LocaleEntries.Where(p => _localeSearch.Length == 0 || p.Key.Contains(_localeSearch, StringComparison.OrdinalIgnoreCase) || p.Value.Contains(_localeSearch, StringComparison.OrdinalIgnoreCase)).Take(200).ToArray()) { <label class="locale-entry">@text.Key<textarea value="@text.Value" @onchange="@(e => SetLocale(text.Key, Text(e)))"></textarea></label> }
+
+</EditorSection>
                     break;
                 case "Preview and publish":
-                    <p>Simulated progress only. This preview does not read or change a player profile.</p><div class="form-grid"><label>Player level<input type="number" min="1" @bind="_previewLevel" /></label><label>Faction<select @bind="_previewFaction"><option>USEC</option><option>BEAR</option></select></label></div>
-                    <h3>Document balances</h3><label>Classified documents<input type="number" min="0" @bind="_previewClassified" /></label>@foreach(var document in S.Documents) { <label>@document.Name<input type="number" min="0" value="@_previewDocuments.GetValueOrDefault(document.Id)" @onchange="@(e => _previewDocuments[document.Id] = Int(e, 0))" /></label> }
-                    <h3>Completed quests</h3>@foreach(var quest in S.AllRewards.SelectMany(r => r.Conditions).Where(c => (string?)c["conditionType"] == "Quest").Select(c => (string)c["target"]!).Distinct()) { <label class="check"><input type="checkbox" checked="@_previewQuests.Contains(quest)" @onchange="@(e => Toggle(_previewQuests, quest, (bool)e.Value!))" />@(OwnedQuests.FirstOrDefault(q => q.Id == quest)?.Name ?? quest)</label> }
-                    <h3>Perk budget</h3>@foreach(var perk in S.Perks.Personal) { <label class="check"><input type="checkbox" checked="@_previewPerks.Contains(perk.Id)" @onchange="@(e => Toggle(_previewPerks, perk.Id, (bool)e.Value!))" />@PerkName(perk) (@perk.Points)</label> }<p>Remaining points: <strong>@SeasonalPerks.Shared.Perks.Selection.Balance(S.Perks, _previewPerks, S.Rules.StartingPoints)</strong></p><p>@SeasonalPerks.Shared.Perks.Selection.Validate(S.Perks, _previewPerks, S.Rules, S.Perks.All.Where(p => EffectSupport.UnavailableReason(p) != null).ToDictionary(p => p.Id, p => EffectSupport.UnavailableReason(p)!))</p>
-                    <h3>Reward eligibility</h3>@foreach(var reward in S.AllRewards) { <div class="preview-reward"><label class="check"><input type="checkbox" checked="@_previewClaims.Contains(reward.Id)" @onchange="@(e => Toggle(_previewClaims, reward.Id, (bool)e.Value!))" />@reward.Name</label><span>@PreviewReason(reward)</span></div> }
-                    <h3>Pack contents</h3><p>Manifest, season definition, and @SeasonCompiler.Assets(S).Count(SeasonValidator.IsId) PNG files.</p><details><summary>Installed dependencies</summary>@foreach (var dependency in SeasonCompiler.Dependencies(S)) { <p>@dependency</p> }</details><h3>Validation report</h3><button @onclick="Validate">Run validation</button>
-                    @if (_validation != null) { <p>@(_validation.CanActivate ? "Ready to publish and activate." : _validation.CanPublish ? "Exportable; resolve dependencies before activation." : "Fix errors before publishing.")</p>@foreach(var issue in _validation.Issues) { <button class="issue @issue.Severity" @onclick="@(() => GoToIssue(issue.Path))">@issue.Severity · @issue.Path — @issue.Message</button> } }
-                    @if (_published != null) { <div class="notice"><strong>Published successfully.</strong><a class="button" href="@($"/wtt-seasonal/creator/packs/{_published}/download")" download>Download season pack</a><button @onclick="@(() => Run(() => Queue(_published)))">Activate after restart</button></div> }
+                    <EditorSection Title="Simulated character" Description="Set the player state used for this preview.">
+<p>Simulated progress only. This preview does not read or change a player profile.</p><div class="form-grid"><label>Player level<input type="number" min="1" @bind="_previewLevel" /></label><label>Faction<select @bind="_previewFaction"><option>USEC</option><option>BEAR</option></select></label></div>
+
+</EditorSection>
+<EditorSection Title="Simulated document wallet" Description="Balances used to check reward costs.">
+<label>Classified documents<input type="number" min="0" @bind="_previewClassified" /></label>@foreach(var document in S.Documents) { <label>@document.Name<input type="number" min="0" value="@_previewDocuments.GetValueOrDefault(document.Id)" @onchange="@(e => _previewDocuments[document.Id] = Int(e, 0))" /></label> }
+
+</EditorSection>
+<EditorSection Title="Simulated quest progress" Description="Mark prerequisites complete to test reward eligibility.">
+@foreach(var quest in S.AllRewards.SelectMany(r => r.Conditions).Where(c => (string?)c["conditionType"] == "Quest").Select(c => (string)c["target"]!).Distinct()) { <label class="check"><input type="checkbox" checked="@_previewQuests.Contains(quest)" @onchange="@(e => Toggle(_previewQuests, quest, (bool)e.Value!))" />@(ReferenceNames.Resolve(S, "quests", quest, Content.Name))</label> }
+
+</EditorSection>
+<EditorSection Title="Perk selection preview" Description="Try combinations and check the remaining selection budget.">
+@foreach(var perk in S.Perks.Personal) { <label class="check"><input type="checkbox" checked="@_previewPerks.Contains(perk.Id)" @onchange="@(e => Toggle(_previewPerks, perk.Id, (bool)e.Value!))" />@PerkName(perk) (@perk.Points)</label> }<p>Remaining points: <strong>@SeasonalPerks.Shared.Perks.Selection.Balance(S.Perks, _previewPerks, S.Rules.StartingPoints)</strong></p><p>@SeasonalPerks.Shared.Perks.Selection.Validate(S.Perks, _previewPerks, S.Rules, S.Perks.All.Where(p => EffectSupport.UnavailableReason(p) != null).ToDictionary(p => p.Id, p => EffectSupport.UnavailableReason(p)!))</p>
+
+</EditorSection>
+<EditorSection Title="Reward eligibility preview" Description="Check why each reward can or cannot be claimed.">
+@foreach(var reward in S.AllRewards) { <div class="preview-reward"><label class="check"><input type="checkbox" checked="@_previewClaims.Contains(reward.Id)" @onchange="@(e => Toggle(_previewClaims, reward.Id, (bool)e.Value!))" />@reward.Name</label><span>@PreviewReason(reward)</span></div> }
+
+</EditorSection>
+<EditorSection Title="Validation and publication" Description="Review the pack and resolve validation issues before publishing.">
+<h3>Pack contents</h3><p>Manifest, season definition, and @SeasonCompiler.Assets(S).Count(SeasonValidator.IsId) PNG files.</p><details><summary>Installed dependencies</summary>@foreach (var dependency in SeasonCompiler.Dependencies(S)) { <p>@dependency</p> }</details><h3>Validation report</h3><button @onclick="Validate">Run validation</button>
+                    @if (_validation != null) { @if (ValidationStale) { <p class="notice">Draft changed since validation. Run validation again before publishing.</p> } <p>@(_validation.CanActivate ? "Ready to publish. Restart SPT to load the pack for play." : _validation.CanPublish ? "Exportable; install required dependencies before playing." : "Fix errors before publishing.")</p>@foreach(var issue in _validation.Issues) { <button class="issue @issue.Severity" @onclick="@(() => GoToIssue(issue.Path))">@issue.Severity · @issue.Path — @issue.Message</button> } }
+                    @if (_published != null) { <div class="notice"><strong>Published successfully.</strong><a class="button" href="@($"/wtt-seasonal/creator/packs/{_published}/download")" download>Download season pack</a><p>Restart SPT to load new packs, then choose a season when creating a seasonal character.</p></div> }
+
+</EditorSection>
                     break;
             }
             </section>
-            <aside class="editor-preview" aria-label="Season inspector">
-                @if (_section is "Battle pass" or "Rewards")
-                {
-                    <section class="inspector-panel"><div class="panel-heading"><h3>Selection</h3><HelpTip Text="Changes here apply to the selected tile. Save changes in the top bar to keep your edits." /></div>
-                    @if (_reward != null && Tiles.Contains(_reward)) { <p class="selection-name">@_reward.Name</p><RewardEditor @key="_reward.Id" Reward="_reward" Documents="S.Documents" ArtAssets="ArtAssets" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /> }
-                    else { <div class="empty-selection"><span aria-hidden="true">▦</span><strong>No tile selected</strong><p>Select a reward in the grid to edit its artwork, size, costs and contents.</p></div> }
-                    </section>
-                }
-                <section class="inspector-panel"><div class="panel-heading"><h3>Season summary</h3><span class="small-tag">DRAFT</span></div><strong>@S.Name</strong>
-                    @if(SeasonValidator.IsId(S.Branding.Badge)) { <img class="season-badge" src="@AssetUrl(S.Branding.Badge)" alt="Season badge" /> }
-                    <p>@S.Description</p><dl><dt>Perks</dt><dd>@S.Perks.All.Count()</dd><dt>Documents</dt><dd>@S.Documents.Count / 8</dd><dt>Pages</dt><dd>@S.Pages.Count</dd><dt>Rewards</dt><dd>@S.AllRewards.Count()</dd><dt>Total document cost</dt><dd>@S.AllRewards.SelectMany(r => r.Costs).Sum(c => (long)c.Count)</dd><dt>Custom quests</dt><dd>@S.Quests.Count</dd></dl>
+            <details class="inspector-drawer"><summary>Help and inspector</summary><aside class="editor-preview" aria-label="Season inspector">
+                <div class="row workspace-tabs" role="tablist" aria-label="Inspector">@foreach(var tab in new[] { "Help", "Connections", "Preview" }) { <button role="tab" aria-selected="@(_inspectorTab == tab)" @onclick="@(() => _inspectorTab = tab)">@tab</button> }</div>
+                <section class="inspector-panel">
+                @if (_inspectorTab == "Help") { <h3>@_section guidance</h3><p>@SectionDescription(_section)</p><p>@SectionGuidance(_section)</p><p>Hover or focus a ? marker for field help. Changes remain in this draft until you save and publish.</p> }
+                else if (_inspectorTab == "Connections") { <h3>Content relationships</h3><p>Chapters contain quests and notes. Conversations change variables, publish notes and progress owned quests. Entry points and raid events make conversations available.</p><button @onclick="@(() => _section = "Chapters")">Browse chapters</button><p>Use the selected story record's Connections view for its references and dialogue flow.</p> }
+                else { <h3>Player preview</h3><p>Open a story record's Preview view for text and artwork, or rehearse its progression with simulated player state.</p><button @onclick="@(() => _section = "Story rehearsal")">Rehearse story</button> }
                 </section>
-                <section class="inspector-panel"><h3>Publication</h3><p>@(_validation == null ? "Validate to check this draft before publishing." : _validation.CanActivate ? "Validation passed. Save and publish when ready." : $"{_validation.Issues.Count} issues to review.")</p><p class="muted">Save → Validate → Publish → Select for restart</p><HelpTip Text="After a character has used a season, only text and artwork can change. Duplicate it to change gameplay without altering existing progress." /></section>
-            </aside>
+                <section class="inspector-panel"><h3>Publication</h3><p>@(_validation == null ? "Validate to check this draft before publishing." : ValidationStale ? "Draft changed. Validation needs to run again." : _validation.CanActivate ? "Validation passed. Save and publish when ready." : $"{_validation.Issues.Count} issues to review.")</p><p class="muted">Save → Validate → Publish → Restart SPT → Create a character</p><HelpTip Text="After a character has used a season, only text and artwork can change. Duplicate it to change gameplay without altering existing progress." /></section>
+            </aside></details>
         </div>
     }
 </main>

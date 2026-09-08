@@ -1,0 +1,26 @@
+@inject SeasonContentService Content
+@using SeasonalPerks.Shared.Story
+@using SeasonalPerks.Server.Web.Authoring
+<div class="story-presentation"><span class="eyebrow">TEXT AND ARTWORK PREVIEW</span>
+@if (Value is StoryChapter chapter)
+{
+    @if (SeasonValidator.IsId(chapter.Image)) { <img class="chapter-art" src="@($"/wtt-seasonal/creator/assets/{chapter.Image}.png")" alt="Chapter artwork" /> }
+    <h2>@chapter.Name</h2>
+    @foreach (var quest in Season.Story!.Quests.Where(q => q.ChapterId == chapter.Id && !q.Hidden))
+    { <p>□ @QuestName(quest.QuestId) · @(quest.Main ? "Required" : "Optional")</p> }
+    @foreach (var note in Season.Story.Notes.Where(n => n.ChapterId == chapter.Id)) { <blockquote>@note.Text</blockquote> }
+}
+else if (Value is StoryNote note)
+{ <blockquote>@note.Text</blockquote>@foreach(var link in note.Links) { <span class="small-tag">@link.Kind · @ReferenceNames.Resolve(Season, StoryAuthoring.ReferenceKind(link, "Target") ?? "", link.Kind == "Offer" ? link.TraderId + "/" + link.Target : link.Target, Content.Name)</span> } }
+else if (Value is StoryDialog dialog)
+{
+    @foreach (var line in dialog.Lines) { <div class="dialogue-line @line.Side.ToLowerInvariant()"><small>@line.Side · conditional line</small><p>@line.Text</p>@if(line.Confirmation.Length > 0) { <p>Confirmation: @line.Confirmation</p> }</div> }
+}
+else { <h3>@StoryAuthoring.Label(Value)</h3><p>Use rehearsal to inspect availability and state changes for this content.</p> }
+<p class="muted">Layout is illustrative. Unity rooms, animations and raid placement require an in-game check.</p>
+</div>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public object Value { get; set; } = null!;
+    private string QuestName(string id) => ReferenceNames.Resolve(Season, "quests", id, Content.Name);
+}

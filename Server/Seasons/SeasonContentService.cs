@@ -1,5 +1,6 @@
 using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Hub;
+using SeasonalPerks.Server.Web.Authoring;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Seasons;
 using SPTarkov.DI.Annotations;
@@ -25,10 +26,12 @@ public sealed class SeasonContentService(
     InventoryConfig inventory,
     LocaleService locales,
     LocaleTable localeTable,
+    HideoutTable hideout,
     JsonUtil json
 ) : IOnLoad
 {
     public bool Ready { get; private set; }
+
     private readonly Dictionary<string, string> _owners = new();
 
     public Task OnLoadAsync(CancellationToken cancellationToken)
@@ -49,6 +52,7 @@ public sealed class SeasonContentService(
             { /* Unselected packs do not prevent the creator opening for repair. */
             }
         }
+
         return Task.CompletedTask;
     }
 
@@ -80,6 +84,7 @@ public sealed class SeasonContentService(
                 {
                     throw new InvalidDataException("Previous pack failed validation.");
                 }
+
                 Register(previous, true);
                 repository.Activate(selected);
             }
@@ -88,8 +93,10 @@ public sealed class SeasonContentService(
                 Register(repository.Legacy, true);
                 repository.Activate("legacy");
             }
+
             repository.ActivationFailed(e.Message);
         }
+
         repository.Playable[repository.Current.Definition.Id] = repository.Current;
         var candidates = repository
             .Packs()
@@ -105,10 +112,12 @@ public sealed class SeasonContentService(
                 {
                     continue;
                 }
+
                 if (key != "legacy" && !Validate(definition).CanActivate)
                 {
                     continue;
                 }
+
                 repository.CheckGameplay(definition);
                 Register(definition, true);
                 repository.Playable[definition.Id] = new SeasonRuntimeSnapshot(definition);
@@ -118,43 +127,13 @@ public sealed class SeasonContentService(
                 repository.StorageWarnings.Add("Season " + key + " unavailable: " + e.Message);
             }
         }
+
         Ready = true;
     }
 
     public List<ContentChoice> Choices(string kind, string search = "")
     {
-        var locale = locales.GetLocaleDb("en");
-        string Name(string id, string fallback)
-        {
-            return locale.GetValueOrDefault(id + " Name") ?? locale.GetValueOrDefault(id + " name") ?? fallback;
-        }
-
-        IEnumerable<ContentChoice> choices = kind switch
-        {
-            "items" => templates
-                .Items.Values.Where(i => i.Type == "Item")
-                .Select(i => new ContentChoice(i.Id.ToString(), Name(i.Id.ToString(), i.Name ?? i.Id.ToString()))),
-            "quests" => templates.Quests.Values.Select(q => new ContentChoice(q.Id.ToString(), Name(q.Id.ToString(), q.Id.ToString()))),
-            "traders" => traders.Keys.Select(t => new ContentChoice(t.ToString(), Name(t.ToString(), t.ToString()))),
-            "customizations" => templates
-                .Customization.Values.Where(c => HubGameplay.CustomizationKind(c.Parent) != null)
-                .Select(c => new ContentChoice(c.Id.ToString(), Name(c.Id.ToString(), c.Name ?? c.Id.ToString()))),
-            "presets" => templates.Profiles.Keys.Select(p => new ContentChoice(p, p)),
-            "skills" => Enum.GetNames<SkillTypes>().Select(p => new ContentChoice(p, p)),
-            "offers" => traders.SelectMany(t =>
-                t.Value.Assort?.Items.Where(i => t.Value.Assort.BarterScheme.ContainsKey(i.Id))
-                    .Select(i => new ContentChoice(
-                        t.Key + "/" + i.Id,
-                        Name(i.Template.ToString(), i.Template.ToString()) + " — " + Name(t.Key.ToString(), t.Key.ToString())
-                    ))
-                ?? []
-            ),
-            "categories" => templates
-                .Items.Values.Where(i => i.Type != "Item")
-                .Select(i => new ContentChoice(i.Id.ToString(), i.Name ?? i.Id.ToString())),
-            _ => [],
-        };
-        return choices
+        return AllChoices(kind)
             .Where(c =>
                 string.IsNullOrEmpty(search)
                 || c.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
@@ -163,6 +142,62 @@ public sealed class SeasonContentService(
             .OrderBy(c => c.Name)
             .Take(150)
             .ToList();
+    }
+
+    public string Name(string kind, string id)
+    {
+        return AllChoices(kind).FirstOrDefault(c => c.Id == id)?.Name
+            ?? (id.Length == 0 ? "None selected" : "Unresolved reference · " + id);
+    }
+
+    private IEnumerable<ContentChoice> AllChoices(string kind)
+    {
+        var locale = locales.GetLocaleDb("en");
+        string Name(string id, string fallback)
+        {
+            return ReferenceNames.Localized("items", id, fallback, key => locale.GetValueOrDefault(key));
+        }
+
+        string TraderName(string id)
+        {
+            var trader = traders.FirstOrDefault(t => t.Key.ToString() == id).Value;
+            return ReferenceNames.Localized(
+                "traders",
+                id,
+                trader?.Base.Nickname ?? trader?.Base.Name ?? id,
+                key => locale.GetValueOrDefault(key)
+            );
+        }
+
+        return kind switch
+        {
+            "items" => templates
+                .Items.Values.Where(i => i.Type == "Item")
+                .Select(i => new ContentChoice(i.Id.ToString(), Name(i.Id.ToString(), i.Name ?? i.Id.ToString()))),
+            "quests" => templates.Quests.Values.Select(q => new ContentChoice(q.Id.ToString(), Name(q.Id.ToString(), q.Id.ToString()))),
+            "traders" => traders.Keys.Select(t => new ContentChoice(t.ToString(), TraderName(t.ToString()))),
+            "customizations" => templates
+                .Customization.Values.Where(c => HubGameplay.CustomizationKind(c.Parent) != null)
+                .Select(c => new ContentChoice(c.Id.ToString(), Name(c.Id.ToString(), c.Name ?? c.Id.ToString()))),
+            "presets" => templates.Profiles.Keys.Select(p => new ContentChoice(p, p)),
+            "skills" => Enum.GetNames<SkillTypes>().Select(p => new ContentChoice(p, p)),
+            "crafts" => (hideout.Production.Recipes ?? []).Select(r => new ContentChoice(
+                r.Id.ToString(),
+                Name(r.EndProduct.ToString(), r.EndProduct.ToString()) + " — " + r.AreaType
+            )),
+            "offers" => traders.SelectMany(t =>
+                t.Value.Assort?.Items.Where(i => t.Value.Assort.BarterScheme.ContainsKey(i.Id))
+                    .Select(i => new ContentChoice(
+                        t.Key + "/" + i.Id,
+                        Name(i.Template.ToString(), i.Template.ToString()) + " — " + TraderName(t.Key.ToString())
+                    ))
+                ?? []
+            ),
+            "categories" => templates
+                .Items.Values.Where(i => i.Type != "Item")
+                .Select(i => new ContentChoice(i.Id.ToString(), Name(i.Id.ToString(), i.Name ?? i.Id.ToString()))),
+            _ => [],
+        };
     }
 
     public JObject Offer(string composite)
@@ -216,6 +251,7 @@ public sealed class SeasonContentService(
                     result.Add(path, "Missing item dependency: " + id, "dependency");
                 }
             }
+
             foreach (var item in definition.Items)
             {
                 Item(item.CloneFrom, "Items/" + item.Id);
@@ -227,6 +263,7 @@ public sealed class SeasonContentService(
                     result.Add("Items/" + item.Id, "Owned item collides with an installed template.");
                 }
             }
+
             TemplateItem? Source(string id)
             {
                 var seen = new HashSet<string>();
@@ -237,10 +274,13 @@ public sealed class SeasonContentService(
                     {
                         return templates.Items.GetValueOrDefault(new MongoId(id));
                     }
+
                     id = clone.CloneFrom;
                 }
+
                 return null;
             }
+
             foreach (var document in definition.Documents)
             {
                 Item(document.ItemId, "Documents");
@@ -257,6 +297,7 @@ public sealed class SeasonContentService(
                     result.Add("Documents", document.Name + " needs an ordinary inventory item without equipment slots or storage grids.");
                 }
             }
+
             foreach (var crate in definition.Crates)
             {
                 var source = Source(crate.ItemId);
@@ -270,6 +311,7 @@ public sealed class SeasonContentService(
                     result.Add("Exchanges", "Create a season-owned crate item before defining its contents.");
                 }
             }
+
             foreach (var crate in definition.Crates)
             {
                 Item(crate.ItemId, "Exchanges");
@@ -278,6 +320,7 @@ public sealed class SeasonContentService(
                     Item(id, "Exchanges");
                 }
             }
+
             if (definition.ExchangeCrate.Length > 0)
             {
                 Item(definition.ExchangeCrate, "Exchanges");
@@ -338,6 +381,7 @@ public sealed class SeasonContentService(
                         }
                     }
                 }
+
                 foreach (var condition in reward.Conditions.Where(c => (string?)c["conditionType"] == "Quest"))
                 {
                     if (!questIds.Contains((string)condition["target"]!))
@@ -346,6 +390,7 @@ public sealed class SeasonContentService(
                     }
                 }
             }
+
             foreach (var quest in definition.Quests.OfType<JObject>())
             {
                 if ((bool?)quest["_seasonalEnabled"] == false)
@@ -375,6 +420,7 @@ public sealed class SeasonContentService(
                         result.Add(path, "Quest does not match the installed SPT contract: " + e.Message);
                     }
                 }
+
                 if (!traders.ContainsKey(new MongoId((string)quest["traderId"]!)))
                 {
                     result.Add(path, "Quest trader is not installed.", "dependency");
@@ -411,6 +457,7 @@ public sealed class SeasonContentService(
                     }
                 }
             }
+
             if (definition.Starting.Preset.Length > 0 && !templates.Profiles.ContainsKey(definition.Starting.Preset))
             {
                 result.Add("Starting character", "Starter preset is not installed.", "dependency");
@@ -453,6 +500,7 @@ public sealed class SeasonContentService(
                         }
                     }
                 }
+
                 foreach (var skill in faction.Skills.Keys)
                 {
                     if (!Enum.TryParse<SkillTypes>(skill, out _))
@@ -461,6 +509,7 @@ public sealed class SeasonContentService(
                     }
                 }
             }
+
             foreach (var perk in definition.Perks.All.Where(p => p.Enabled))
             {
                 foreach (var effect in perk.Effects)
@@ -515,12 +564,14 @@ public sealed class SeasonContentService(
                     result.Add("Overview", "Required external dependency is unavailable: " + dependency, "dependency");
                 }
             }
+
             repository.CheckGameplay(definition);
         }
         catch (Exception e) when (e is InvalidOperationException or ArgumentException or FormatException or NullReferenceException)
         {
             result.Add("Overview", e.Message);
         }
+
         return result;
     }
 
@@ -536,6 +587,7 @@ public sealed class SeasonContentService(
                 _owners.TryAdd(pair.Name, definition.Id);
                 continue;
             }
+
             var item = (JObject)pair.Value.DeepClone();
             var bundle = (string)item["_props"]!["Prefab"]!["path"]!;
             if (!bundle.StartsWith("wtt-seasonal/", StringComparison.Ordinal))
@@ -556,6 +608,7 @@ public sealed class SeasonContentService(
 
             staged[id] = json.Deserialize<TemplateItem>(item.ToString())!;
         }
+
         var remaining = definition.Items.Where(i => !templates.Items.ContainsKey(new MongoId(i.Id))).ToList();
         while (remaining.Count > 0)
         {
@@ -568,8 +621,10 @@ public sealed class SeasonContentService(
                 {
                     throw new InvalidDataException("Missing or cyclic item-model dependency.");
                 }
+
                 break;
             }
+
             foreach (var item in ready)
             {
                 var original = staged.GetValueOrDefault(new MongoId(item.CloneFrom)) ?? templates.Items[new MongoId(item.CloneFrom)];
@@ -601,6 +656,7 @@ public sealed class SeasonContentService(
                 remaining.Remove(item);
             }
         }
+
         foreach (var item in staged)
         {
             templates.Items[item.Key] = item.Value;
@@ -617,6 +673,7 @@ public sealed class SeasonContentService(
                 );
             }
         }
+
         foreach (var language in localeTable.Global.Keys)
         {
             foreach (var text in SeasonCompiler.Texts(definition, language))

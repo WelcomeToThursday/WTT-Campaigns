@@ -1,0 +1,73 @@
+@using SeasonalPerks.Server.Web.Authoring
+@using SeasonalPerks.Shared.Story
+@using System.Globalization
+<div class="story-value">
+@if (ReferenceKind is { } kind)
+{
+    <ContentPicker Kind="@kind" Label="@Label" HelpText="@Help" Value="@(kind == "offers" && Owner is StoryNoteLink link && Text.Length > 0 ? link.TraderId + "/" + Text : Text)" ValueChanged="@(v => PickContent(kind, v))" Additional="@StoryAuthoring.Choices(Season, kind).Where(c => Compatible(c.Id)).Select(c => new ContentChoice(c.Id, c.Name))" />
+
+}
+else if (Owner is StoryChapter && Field is "Image" or "Icon")
+{
+    <AssetPicker Label="@Label" Value="@Text" ValueChanged="@(v => Set(v))" ArtAssets="@SeasonCompiler.Assets(Season)" />
+}
+else if (ValueType == typeof(bool))
+{
+    <label class="check"><input type="checkbox" checked="@(Value is true)" @onchange="@(e => Changed.InvokeAsync(e.Value!))" />@Label <HelpTip Text="@Help" /></label>
+}
+else if (Options is { } options)
+{
+    <label>@Label <HelpTip Text="@Help" /><select value="@Text" @onchange="@(e => Set(e.Value?.ToString() ?? ""))">
+    @if (!options.Contains(Text)) { <option value="@Text">@(Text.Length == 0 ? "Choose…" : "Unsupported: " + Text)</option> }
+    @foreach (var option in options) { <option value="@option">@StoryAuthoring.Friendly(option)</option> }
+    </select></label>
+}
+else if (ValueType == typeof(string))
+{
+    <label>@Label <HelpTip Text="@Help" />
+    @if (Field is "Text" or "Confirmation") { <textarea value="@Text" @onchange="@(e => Set(e.Value?.ToString() ?? ""))"></textarea> }
+    else { <input value="@Text" @onchange="@(e => Set(e.Value?.ToString() ?? ""))" /> }
+    </label>
+}
+else
+{
+    <label>@Label <HelpTip Text="@Help" /><input type="number" step="@(ValueType == typeof(int) || ValueType == typeof(long) ? "1" : "any")" value="@Text" @onchange="@(e => Set(e.Value?.ToString() ?? ""))" /></label>
+}
+@if (_error.Length > 0) { <p class="notice error" role="alert">@_error</p> }
+</div>
+@code {
+    [Parameter, EditorRequired] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter, EditorRequired] public object Owner { get; set; } = null!;
+    [Parameter] public string Field { get; set; } = "";
+    [Parameter] public string? Caption { get; set; }
+    [Parameter] public string? Kind { get; set; }
+    [Parameter] public object? Value { get; set; }
+    [Parameter] public Type ValueType { get; set; } = typeof(string);
+    [Parameter] public EventCallback<object> Changed { get; set; }
+    private string _error = "";
+    private string Text => Convert.ToString(Value, CultureInfo.InvariantCulture) ?? "";
+    private string Label => Caption ?? EditorFieldGuide.StoryLabel(Owner, Field);
+    private string Help => EditorFieldGuide.StoryHelp(Owner, Field, Season) ?? StoryAuthoring.Help(Owner, Field);
+    private string? ReferenceKind => Kind ?? StoryAuthoring.ReferenceKind(Owner, Field);
+    private bool Compatible(string id)
+    {
+        if (Owner is StoryAction action && Field == "ConditionId") return Season.Quests.OfType<JObject>().Where(q => (action.QuestId.Length == 0 || (string?)q["_id"] == action.QuestId) && Season.Story?.Quests.Any(m => m.QuestId == (string?)q["_id"]) == true).SelectMany(q => (q["conditions"]?["AvailableForFinish"] as JArray ?? new()).OfType<JObject>()).Any(c => (string?)c["id"] == id && (string?)c["conditionType"] == "HandoverItem");
+        return true;
+    }
+    private string[]? Options => ValueType.IsEnum ? Enum.GetNames(ValueType).Where(v => v != "PurchaseService").ToArray() : StoryAuthoring.Options(Owner, Field);
+    private async Task PickContent(string kind, string value)
+    {
+        if (kind == "offers" && Owner is StoryNoteLink link && value.Split('/') is { Length: 2 } parts) { link.TraderId = parts[0]; value = parts[1]; }
+        await Set(value);
+    }
+    private async Task Set(string text)
+    {
+        try
+        {
+            var value = ValueType.IsEnum ? Enum.Parse(ValueType, text) : Convert.ChangeType(text, ValueType, CultureInfo.InvariantCulture);
+            if (value is double d && !double.IsFinite(d) || value is float f && !float.IsFinite(f)) throw new FormatException();
+            await Changed.InvokeAsync(value); _error = "";
+        }
+        catch (Exception e) when (e is FormatException or OverflowException or ArgumentException) { _error = "Enter a valid " + (ValueType == typeof(int) ? "whole number." : "value."); }
+    }
+}

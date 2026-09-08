@@ -104,6 +104,7 @@ internal static class CreatorChecks
             first = store.Save(first);
             var key = store.Publish(first, SeasonValidator.Validate(first.Definition));
             var exported = store.Export(key);
+            DraftManagementChecks.Run(store, directory, first, check);
             var imported = store.Import(exported);
             check(
                 imported.Definition.Id == first.Definition.Id && imported.Definition.Revision == 1,

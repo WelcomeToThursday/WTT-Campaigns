@@ -1,0 +1,87 @@
+@inject SeasonContentService Content
+@using SeasonalPerks.Server.Web.Authoring
+@using SeasonalPerks.Shared.Story
+<div class="notice">Simulated state only. No player profile is opened or changed. Native rewards, media and navigation are recorded in the event log.</div>
+@if (_run != null && _run.Stale(Season)) { <div class="notice error">The draft changed. Restart rehearsal to use the current content.</div> }
+<div class="row"><label>Random seed<input type="number" @bind="_seed" /></label><button class="primary" @onclick="Restart">@(_run == null ? "Start rehearsal" : "Restart rehearsal")</button></div>
+@if (_error.Length > 0) { <div class="notice error" role="alert">@_error</div> }
+<div class="rehearsal-layout">
+<details class="editor-card" open="@(_run == null)"><summary>Simulated player facts and variables</summary>
+<RehearsalFacts Season="Season" Facts="_facts" />
+<h3>Story variables</h3>
+@foreach(var variable in Season.Story?.Variables ?? [])
+{ <label>@ReferenceNames.Label(Season, variable, Content.Name)<input type="number" value="@_variables.GetValueOrDefault(variable.Id, variable.InitialValue)" @onchange="@(e => { if (int.TryParse(e.Value?.ToString(), out var n)) _variables[variable.Id] = n; })" /></label> }
+<p>Dialogue values can be overridden after starting a conversation. Its phase otherwise initializes from the definition.</p>
+@if (_run != null) { <button disabled="@Disabled" @onclick="@(() => Act(() => _run.Configure(_facts, _variables)))">Apply simulated facts</button> }
+</details>
+@if (_run is { } run)
+{
+    <div class="rehearsal-content">
+    @if (run.Pending is { } pending)
+    { <div class="notice"><strong>Native outcome needed</strong><p>@pending.Message</p><p>The step is paused and has not committed changes.</p><button disabled="@run.Stale(Season)" @onclick="@(() => Act(() => run.Resume(true)))">Simulate success</button><button @onclick="@(() => Act(() => run.Resume(false)))">Simulate failure</button></div> }
+    @if (run.Error.Length > 0) { <p class="notice error" role="alert">@run.Error</p> }
+    <h3>Conversation entry points</h3>
+    @foreach(var entry in run.Definition.EntryPoints)
+    {
+        var eligible = run.Eligible(entry.Condition) && (entry.Kind == "InLobby" ? !run.Facts.InRaid : run.Facts.InRaid);
+        <div class="preview-reward"><button disabled="@(Disabled || !eligible)" @onclick="@(() => Act(() => run.Start(entry.Id)))">@StoryAuthoring.Label(entry) · @DialogName(run, entry.DialogId)</button><span>@(eligible ? "Available" : "Blocked by context or conditions")</span><small>@Trace(run, entry.Condition)</small></div>
+    }
+    @if (run.State.Conversation is { Closed: false } conversation)
+    {
+        <div class="story-presentation"><h3>Conversation</h3>
+        @foreach(var id in conversation.History.TakeLast(20))
+        { var line = run.Definition.Dialogs.SelectMany(d => d.Lines).FirstOrDefault(l => l.Id == id); if (line != null) { <div class="dialogue-line @line.Side.ToLowerInvariant()"><small>@line.Side</small><p>@line.Text</p></div> } }
+        @foreach(var reply in run.Replies)
+        { <button class="content-row" disabled="@Disabled" @onclick="@(() => Choose(reply))">@reply.Text</button> }
+        @if (_confirmation != null)
+        { <div class="notice"><p>@_confirmation.Confirmation</p><button disabled="@Disabled" @onclick="ConfirmReply">Confirm reply</button><button @onclick="@(() => _confirmation = null)">Cancel</button></div> }
+        <button disabled="@Disabled" @onclick="@(() => Act(run.Close))">Close conversation</button>
+        <details><summary>Why lines are available or blocked</summary>@foreach(var line in run.Definition.Dialogs.Single(d => d.Id == conversation.DialogId).Lines) { <p><strong>@line.Text</strong><br />@Trace(run, line.Trigger) · Random gate: @(StoryRules.RandomMatches(line.Random, conversation) ? "passed" : "blocked")</p> }</details>
+        </div>
+    }
+    <details class="editor-card"><summary>Raid events</summary><p>Set In raid and the exact location before triggering an event. World detection and cinematic playback are simulated.</p>
+    @foreach(var binding in run.Definition.RaidBindings) { <button class="content-row" disabled="@Disabled" @onclick="@(() => Act(() => run.Trigger(binding.Id)))">Trigger @StoryAuthoring.Label(binding)</button> }
+    <div class="row"><button disabled="@Disabled" @onclick="@(() => Act(() => run.FinishRaid(true)))">Survive raid</button><button disabled="@Disabled" @onclick="@(() => Act(() => run.FinishRaid(false)))">Die in raid</button></div></details>
+    <h3>Player journal</h3>
+    @foreach(var chapter in run.Definition.Chapters.OrderBy(c => c.Order).Where(c => run.Eligible(c.Visibility)))
+    {
+        <article class="story-presentation"><h3>@chapter.Name · @(StoryRules.ChapterComplete(chapter, run.Definition, run.Facts) ? "Complete" : "In progress")</h3>
+        @foreach(var quest in run.Definition.Quests.Where(q => q.ChapterId == chapter.Id && !q.Hidden && run.Eligible(q.Visibility)))
+        { <p>@(quest.Main ? "Required" : "Optional"): @QuestName(run, quest.QuestId) · @run.Facts.QuestStatuses.GetValueOrDefault(quest.QuestId, "Locked")</p> }
+        @foreach(var note in run.Definition.Notes.Where(n => n.ChapterId == chapter.Id && run.State.Notes.ContainsKey(n.Id))) { <blockquote>@note.Text</blockquote> }
+        </article>
+    }
+    <details class="editor-card" open><summary>Event log · @run.Log.Count</summary><ol class="rehearsal-log">@foreach(var line in run.Log) { <li>@LogText(run, line)<details class="reference-details"><summary>Technical event</summary><code>@line</code></details></li> }</ol></details>
+    </div>
+}
+</div>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    private StoryRehearsal? _run;
+    private StoryFacts _facts = new() { Level = 1 };
+    private Dictionary<string, int> _variables = new();
+    private int _seed = 1;
+    private string _error = "";
+    private StoryDialogLine? _confirmation;
+    private bool Disabled => _run == null || _run.Stale(Season) || _run.Pending != null;
+    private void Restart()
+    {
+        var validation = new SeasonValidationResult(); StoryValidator.Validate(Season, validation);
+        if (!validation.CanPublish) { _error = "Fix story errors before rehearsal: " + string.Join("; ", validation.Issues.Take(5).Select(i => i.Message)); return; }
+        _error = ""; _confirmation = null;
+        _run = new(Season, _facts, _seed); _run.Configure(_facts, _variables); Sync();
+    }
+    private void Act(Action action) { action(); _confirmation = null; Sync(); }
+    private void Sync() { if (_run == null) return; _facts = SeasonCompiler.Copy(_run.Facts); _variables = _run.Definition.Variables.ToDictionary(v => v.Id, v => StoryRules.Variable(_run.Definition, _run.State, _run.Facts, v.Id)); }
+    private void Choose(StoryDialogLine reply) { if (reply.Confirmation.Length > 0) _confirmation = reply; else Act(() => _run!.Select(reply.Id)); }
+    private void ConfirmReply() { if (_confirmation is { } reply) Act(() => _run!.Select(reply.Id)); }
+    private string LogText(StoryRehearsal run, string text) => System.Text.RegularExpressions.Regex.Replace(text, "[0-9a-f]{24}", match => {
+        var record = StoryAuthoring.Records(run.Definition).FirstOrDefault(r => StoryAuthoring.Id(r) == match.Value);
+        if (record != null) return ReferenceNames.Label(run.Season, record, Content.Name);
+        foreach (var kind in new[] { "quests", "objectives", "items", "traders", "crafts" }) { var name = ReferenceNames.Resolve(run.Season, kind, match.Value, Content.Name); if (!name.StartsWith("Unresolved reference", StringComparison.Ordinal)) return name; }
+        return match.Value;
+    });
+    private static string DialogName(StoryRehearsal run, string id) => run.Definition.Dialogs.Where(d => d.Id == id).Select(StoryAuthoring.Label).FirstOrDefault() ?? id;
+    private string QuestName(StoryRehearsal run, string id) => ReferenceNames.Resolve(run.Season, "quests", id, Content.Name);
+    private string Trace(StoryRehearsal run, StoryCondition c) => $"{c.Type}: {(run.Eligible(c) ? "met" : "blocked")}" + (c.Conditions.Count > 0 ? " [" + string.Join("; ", c.Conditions.Select(child => Trace(run, child))) + "]" : c.Type == "All" ? " (always)" : $" · {ReferenceNames.Resolve(run.Season, StoryAuthoring.ReferenceKind(c, "Target") ?? "", c.Target, Content.Name)} {c.Operator} {c.Value}");
+}

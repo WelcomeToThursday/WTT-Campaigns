@@ -1,5 +1,5 @@
 @inject SeasonContentService Content
-<div class="form-grid">
+<section class="editor-section"><header><h3>Presentation and availability</h3><p>Player-facing text, artwork and faction eligibility.</p></header><div class="form-grid">
     <label>Name<input @bind="Reward.Name" /></label>
     <label>Display kind <HelpTip Text="A presentation label for the tile, such as ITEM. The payload type determines what is actually granted." /><input @bind="Reward.Kind" /></label>
     <label>Description<textarea @bind="Reward.Description"></textarea></label>
@@ -7,18 +7,19 @@
     <label class="check"><input type="checkbox" @bind="Reward.Enabled" />Enabled</label>
     <AssetPicker Label="Thumbnail" @bind-Value="Reward.Image" ArtAssets="ArtAssets" />
     <AssetPicker Label="Full artwork" @bind-Value="Reward.BigImage" ArtAssets="ArtAssets" />
-    <label>Column (zero based) <HelpTip Text="Horizontal position, starting at zero on the left. You can also move the tile by dragging it." /><input type="number" min="0" @bind="Reward.X" /></label>
-    <label>Row (zero based) <HelpTip Text="Vertical position, starting at zero at the top." /><input type="number" min="0" @bind="Reward.Y" /></label>
-    <label>Width <HelpTip Text="Horizontal size in grid cells. Battle pass pages have two columns; seasonal rewards have five." /><input type="number" min="1" @bind="Reward.Width" /></label>
-    <label>Height <HelpTip Text="Vertical size in grid cells. Battle pass pages have three rows; seasonal rewards have two." /><input type="number" min="1" @bind="Reward.Height" /></label>
+</div></section><details class="editor-section"><summary>Tile placement · @Columns columns × @Rows rows</summary><div class="form-grid">
+    <label>Column (zero based) <HelpTip Text="@($"Horizontal position on this {Columns}-column grid: 0 through {Math.Max(0, Columns - Reward.Width)} for the selected width. You can also drag the tile.")" /><input type="number" min="0" @bind="Reward.X" /></label>
+    <label>Row (zero based) <HelpTip Text="@($"Vertical position on this {Rows}-row grid: 0 through {Math.Max(0, Rows - Reward.Height)} for the selected height.")" /><input type="number" min="0" @bind="Reward.Y" /></label>
+    <label>Width <HelpTip Text="@($"Width in cells on this {Columns}-column grid. At column {Reward.X}, at most {Math.Max(1, Columns - Reward.X)} cells fit.")" /><input type="number" min="1" @bind="Reward.Width" /></label>
+    <label>Height <HelpTip Text="@($"Height in cells on this {Rows}-row grid. At row {Reward.Y}, at most {Math.Max(1, Rows - Reward.Y)} cells fit.")" /><input type="number" min="1" @bind="Reward.Height" /></label>
 </div>
-<h3>Document costs <HelpTip Text="Documents are consumed when this reward is claimed. Classified documents can cover a shortage after player confirmation. No costs makes the reward free." /></h3>
+</details><section class="editor-section"><h3>Document costs <HelpTip Text="Documents are consumed when this reward is claimed. Classified documents can cover a shortage after player confirmation. No costs makes the reward free." /></h3>
 @foreach (var cost in Reward.Costs.ToArray())
 {
     <div class="inline-fields"><select aria-label="Cost document" @bind="cost.DocumentId"><option value="">Choose document</option>@foreach (var doc in Documents) { <option value="@doc.Id">@doc.Name</option> }</select><input aria-label="Cost quantity" type="number" min="1" @bind="cost.Count" /><button @onclick="@(() => Reward.Costs.Remove(cost))">Remove</button></div>
 }
 <button class="subtle" @onclick="@(() => Reward.Costs.Add(new() { DocumentId = Documents.FirstOrDefault()?.Id ?? string.Empty, Count = 1 }))">Add cost</button>
-<h3>Reward contents <HelpTip Text="Every payload is granted together in one claim. Tarcoins are local currency; trader unlocks make an offer available rather than granting its items." /></h3>
+</section><section class="editor-section"><h3>Reward contents <HelpTip Text="Every payload is granted together in one claim. Tarcoins are local currency; trader unlocks make an offer available rather than granting its items." /></h3>
 @foreach (var grant in Reward.Grants.OfType<JObject>().ToArray())
 {
     <div class="editor-card"><div class="row"><strong>@grant["type"]</strong><button @onclick="@(() => grant.Remove())">Remove payload</button></div>
@@ -36,7 +37,7 @@
     </div>
 }
 <div class="inline-fields"><select aria-label="Payload type" @bind="_grantKind"><option>Item</option><option>Tarcoin</option><option>CustomizationDirect</option><option>AssortmentUnlock</option></select><button @onclick="AddGrant">Add payload</button></div>
-<h3>Requirements <HelpTip Text="All listed requirements must be met, along with the page gate, faction restriction and document cost." /></h3>
+</section><section class="editor-section"><h3>Requirements <HelpTip Text="All listed requirements must be met, along with the page gate, faction restriction and document cost." /></h3>
 @foreach (var condition in Reward.Conditions.OfType<JObject>().ToArray())
 {
     <div class="editor-card">
@@ -46,10 +47,13 @@
     </div>
 }
 <div class="row"><button @onclick="AddLevel">Add level requirement</button><button @onclick="AddQuest">Add quest requirement</button></div>
+</section>
 @code {
     private void AddLevel() => Reward.Conditions.Add(new JObject { ["conditionType"] = "Level", ["value"] = 1, ["compareMethod"] = ">=" });
     private void AddQuest() => Reward.Conditions.Add(new JObject { ["conditionType"] = "Quest", ["target"] = "" });
     [Parameter, EditorRequired] public SeasonReward Reward { get; set; } = new();
+    [Parameter] public int Columns { get; set; } = 5;
+    [Parameter] public int Rows { get; set; } = 2;
     [Parameter] public List<SeasonDocument> Documents { get; set; } = [];
     [Parameter] public IEnumerable<string> ArtAssets { get; set; } = [];
     [Parameter] public IEnumerable<ContentChoice> OwnedItems { get; set; } = [];

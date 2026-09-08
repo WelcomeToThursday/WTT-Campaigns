@@ -1,0 +1,39 @@
+@using SeasonalPerks.Server.Web.Authoring
+@using SeasonalPerks.Shared.Story
+<div class="quest-story-flow">
+    <p>Build this quest's story here. Related records are shared with the chapter, journal and conversation editors; changes use the same draft save.</p>
+    <details class="editor-card" open>
+        <summary>Journal notes for this quest</summary>
+        <p>Create a note and link it to a quest status in one step. Use Status notes above to reassign or remove a link.</p>
+        @foreach (var note in LinkedNotes)
+        { <details class="editor-card" @key="note.Id"><summary>@note.Text</summary><StoryFields Season="Season" Value="note" Changed="Changed" /></details> }
+        <div class="inline-fields"><label>Publish when <HelpTip Text="The note is added to the journal when the quest reaches this status. Success means the quest has been handed in and completed." /><select @bind="_status">@foreach (var status in StoryRules.QuestStatuses) { <option>@status</option> }</select></label><button @onclick="AddNote">Create and link note</button></div>
+    </details>
+    <details class="editor-card" open>
+        <summary>Quest conversations</summary>
+        <p>Conversations shown here explicitly reference this quest in an action or condition. The optional template adds an accept-quest reply, phase variable and lobby entry point.</p>
+        @foreach (var dialog in LinkedDialogs)
+        {
+            <details class="editor-card" @key="dialog.Id"><summary>@StoryAuthoring.Label(dialog)</summary><StoryFields Season="Season" Value="dialog" Changed="Changed" /><ConversationSetup Season="Season" Dialog="dialog" Changed="Changed" /></details>
+        }
+        <ContentPicker Kind="traders" Label="Conversation trader" Value="@Trader" ValueChanged="@(v => _trader = v)" HelpText="Defaults to this quest's trader. The template uses this trader for the conversation and its lobby entry point." />
+        <label class="check"><input type="checkbox" @bind="_branching" />Include a decline reply <HelpTip Text="Adds a player reply that closes the conversation without accepting the quest." /></label>
+        <button disabled="@(!SeasonValidator.IsId(Trader))" @onclick="AddConversation">Create quest conversation</button>
+    </details>
+    <button @onclick="@(() => Navigate.InvokeAsync("Story rehearsal"))">Rehearse story</button>
+</div>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public JObject Quest { get; set; } = null!;
+    [Parameter] public StoryQuest Membership { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback<string> Navigate { get; set; }
+    private string _status = "Success";
+    private string? _trader;
+    private bool _branching = true;
+    private string Trader => _trader ?? (string?)Quest["traderId"] ?? "";
+    private IEnumerable<StoryNote> LinkedNotes => Season.Story!.Notes.Where(n => Membership.StatusNotes.Values.Any(ids => ids.Contains(n.Id)));
+    private IEnumerable<StoryDialog> LinkedDialogs => Season.Story!.Dialogs.Where(d => JObject.FromObject(d).Descendants().OfType<JProperty>().Any(p => p.Name == "QuestId" && p.Value.ToString() == Membership.QuestId));
+    private async Task AddNote() { QuestStoryFlow.AddNote(Season, Membership, _status); await Changed.InvokeAsync(); }
+    private async Task AddConversation() { StoryAuthoring.AddConversation(Season, Trader, _branching, Membership.QuestId); await Changed.InvokeAsync(); }
+}

@@ -1,6 +1,6 @@
 @inject SeasonRepository Repository
 <div class="asset-picker">
-    <label>@Label <HelpTip Text="Reuse artwork or upload a PNG up to 8 MB and 4096 × 4096 pixels. Badges and banners are optional; document and reward images are required for publication." /></label>
+    <label>@Label <HelpTip Text="@Help" /></label>
     <div class="asset-row">
         @if (SeasonValidator.IsId(Value)) { <img src="@($"/wtt-seasonal/creator/assets/{Value}.png")" alt="@Label" /> }
         <select aria-label="@Label" value="@Value" @onchange="@(e => ValueChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty))">
@@ -8,7 +8,7 @@
             @foreach (var id in Options) { <option value="@id">@Repository.ArtworkName(id)</option> }
         </select>
     </div>
-    <InputFile OnChange="Upload" accept="image/png" />
+    <InputFile OnChange="Upload" accept="image/png" aria-label="@($"Upload {Label}")" />
     @if (_error.Length > 0) { <span class="error">@_error</span> }
 </div>
 @code {
@@ -16,6 +16,8 @@
     [Parameter] public string Value { get; set; } = "";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public IEnumerable<string> ArtAssets { get; set; } = [];
+    [Parameter] public string? HelpText { get; set; }
+    private string Help => HelpText ?? $"Artwork for {Label.ToLowerInvariant()}. " + (Value.Length == 0 ? "No artwork is selected. " : "Existing artwork is selected; choose another image or upload a replacement. ") + "Use a PNG up to 8 MB and 4096 × 4096 pixels.";
     private string _error = "";
     private IEnumerable<string> Options => ArtAssets.Append(Value).Concat(Repository.Artwork()).Where(SeasonValidator.IsId).Distinct();
     private async Task Upload(InputFileChangeEventArgs args)

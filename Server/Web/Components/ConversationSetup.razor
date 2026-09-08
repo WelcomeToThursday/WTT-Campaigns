@@ -1,0 +1,16 @@
+@using SeasonalPerks.Shared.Story
+<details class="editor-card">
+    <summary>Conversation availability and phase</summary>
+    <p>Edit this conversation's entry points and phase variable here. Shared variables and entry points remain the same records in their dedicated editors.</p>
+    @if (Season.Story?.Variables.FirstOrDefault(v => v.Id == Dialog.MainVariable) is { } variable)
+    { <h4>Phase variable</h4><StoryFields Season="Season" Value="variable" Changed="Changed" /> }
+    @foreach (var entry in Season.Story!.EntryPoints.Where(e => e.DialogId == Dialog.Id))
+    { <h4>Entry point · @entry.Kind</h4><StoryFields Season="Season" Value="entry" Changed="Changed" /> }
+    <button @onclick="AddEntry">Add entry point for this conversation</button>
+</details>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public StoryDialog Dialog { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private async Task AddEntry() { Season.Story!.EntryPoints.Add(new() { Id = SeasonalPerks.Server.Web.Authoring.StoryAuthoring.NewId(), DialogId = Dialog.Id, TraderId = Dialog.TraderId, StartPoint = Dialog.StartPoints.Keys.FirstOrDefault() ?? "" }); await Changed.InvokeAsync(); }
+}

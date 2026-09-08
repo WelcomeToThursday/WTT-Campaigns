@@ -1,0 +1,28 @@
+@using SeasonalPerks.Server.Web.Authoring
+<section class="creator-tutorial" aria-labelledby="tutorial-title" @oninput:stopPropagation @onchange:stopPropagation>
+    <div class="guide-heading"><div><span class="eyebrow">@(Track == "story" ? "YOUR FIRST STORY QUEST" : "SEASON BASICS")</span><h2 id="tutorial-title" aria-live="polite">@Current.Title</h2></div><button class="subtle" @onclick="Pause">Pause tutorial</button></div>
+    <div class="tutorial-progress"><progress max="@Steps.Length" value="@(Index + 1)" aria-label="Tutorial step position"></progress><span>Step @(Index + 1) of @Steps.Length</span></div>
+    <ol>@foreach(var instruction in Current.Instructions) { <li>@instruction</li> }</ol>
+    <p class="tutorial-outcome"><strong>What to expect:</strong> @Current.Expected</p>
+    @if (!HasDraft) { <p class="guide-note">First create or open a practice draft using the library below. Your tutorial stays open as you edit.</p> }
+    <div class="tutorial-controls">
+        <button class="primary" disabled="@(!HasDraft)" @onclick="@(() => Navigate.InvokeAsync(Current.Section))">Open @CreatorGuidance.SectionTitle(Current.Section)</button>
+        <label>Jump to step<select aria-label="Tutorial step" value="@Index" @onchange="Jump">@for(var i = 0; i < Steps.Length; i++) { <option value="@i">@(i + 1). @Steps[i].Title</option> }</select></label>
+        <div class="row"><button disabled="@(Index == 0)" @onclick="@(() => IndexChanged.InvokeAsync(Index - 1))">Back</button>
+        @if (Index < Steps.Length - 1) { <button @onclick="@(() => IndexChanged.InvokeAsync(Index + 1))">Next step</button> }
+        else { <button @onclick="Finish">Finish walkthrough</button> }</div>
+    </div>
+    <small class="guide-note">Steps are self-paced. Next step does not save changes or check your work. Pause and resume during this editor session; reloading the page resets your tutorial position.</small>
+</section>
+@code {
+    [Parameter] public string Track { get; set; } = "basics";
+    [Parameter] public int Index { get; set; }
+    [Parameter] public bool HasDraft { get; set; }
+    [Parameter] public EventCallback<int> IndexChanged { get; set; }
+    [Parameter] public EventCallback<string> Navigate { get; set; }
+    [Parameter] public EventCallback Pause { get; set; }
+    [Parameter] public EventCallback Finish { get; set; }
+    private CreatorTutorialStep[] Steps => Track == "story" ? CreatorGuidance.Story : CreatorGuidance.Basics;
+    private CreatorTutorialStep Current => Steps[Math.Clamp(Index, 0, Steps.Length - 1)];
+    private Task Jump(ChangeEventArgs e) => int.TryParse(e.Value?.ToString(), out var index) ? IndexChanged.InvokeAsync(Math.Clamp(index, 0, Steps.Length - 1)) : Task.CompletedTask;
+}

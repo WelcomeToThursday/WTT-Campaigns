@@ -1,0 +1,118 @@
+@using SeasonalPerks.Server.Web.Authoring
+@using SeasonalPerks.Shared.Story
+<div class="@(InChapter ? "chapter-quest-editor" : "content-workspace")">
+@if (InChapter)
+{
+    <div class="chapter-quest-toolbar">
+        <ContentNavigator Label="Chapter quests" Choices="@Records.Select(q => new ContentChoice(Id(q), NativeQuestAuthoring.QuestName(q)))" Value="@_selected" ValueChanged="SelectQuest"><Actions><button class="primary" @onclick="Add">Create quest in this chapter</button></Actions></ContentNavigator>
+    </div>
+    @if (QuestStoryFlow.Quests(Season, "").Any())
+    {
+        <details class="editor-card"><summary>Add an existing non-story quest</summary>
+            <ContentNavigator Label="Non-story quests" Choices="@QuestStoryFlow.Quests(Season, "").Select(q => new ContentChoice(Id(q), NativeQuestAuthoring.QuestName(q)))" Value="@_existing" ValueChanged="@(v => _existing = v)"><Actions><button disabled="@(_existing.Length == 0)" @onclick="AttachExisting">Add to this chapter</button></Actions></ContentNavigator>
+        </details>
+    }
+}
+else
+{
+    <aside class="content-list"><label>Search non-story quests<input @bind="_search" @bind:event="oninput" placeholder="Name or ID…" /></label><button class="primary" @onclick="Add">Add non-story quest</button>
+    @foreach(var quest in Records.Where(q => _search.Length == 0 || NativeQuestAuthoring.QuestName(q).Contains(_search, StringComparison.OrdinalIgnoreCase) || Id(q).Contains(_search, StringComparison.OrdinalIgnoreCase)))
+    { <button class="content-row @(Selected == quest ? "selected" : "")" @onclick="@(() => SelectQuest(Id(quest)))">@NativeQuestAuthoring.QuestName(quest)<small>@(Season.Story?.Quests.Any(m => m.QuestId == Id(quest)) == true ? "Chapter needs repair" : "Non-story quest")</small></button> }
+    <p>Story quests are created and edited inside their chapter.</p><button @onclick="@(() => Go("Chapters"))">Open chapters and quests</button>
+    </aside>
+}
+<div class="content-detail">
+@if (Selected is { } selected)
+{
+    <div class="record-heading"><span class="eyebrow">@(InChapter ? "CHAPTER QUEST" : "NON-STORY QUEST")</span><h3>@NativeQuestAuthoring.QuestName(selected)</h3><details class="reference-details"><summary>Reference ID</summary><code>@Id(selected)</code></details><div class="row"><button @onclick="Duplicate">Duplicate</button><button class="danger" @onclick="Delete">Delete quest</button></div></div>
+    @if (!InChapter)
+    {
+        @if (Membership != null) { <p class="notice error">This imported story quest has no valid chapter. Assign a chapter below to repair its membership.</p> }
+        <details class="editor-card"><summary>Add to a story chapter</summary><p>Non-story quests do not need a chapter. Assigning one moves this quest into that chapter's editor.</p>
+            <StoryValue Season="Season" Owner="selected" Field="ChapterId" Caption="Chapter" Value="_chapter" Changed="@(v => _chapter = (string)v)" />
+            <button disabled="@(_chapter.Length == 0)" @onclick="Assign">Assign to chapter</button><button @onclick="CreateChapter">Create and assign a chapter</button>
+        </details>
+    }
+    <div class="row workspace-tabs" role="tablist">@foreach(var tab in (InChapter ? new[] { "Details", "Objectives", "Rewards", "Story", "Advanced" } : new[] { "Details", "Objectives", "Rewards", "Advanced" })) { <button role="tab" aria-selected="@(_tab == tab)" @onclick="@(() => _tab = tab)">@tab</button> }</div>
+    @switch (_tab)
+    {
+        case "Details":
+            <section class="editor-section"><header><h3>Quest identity</h3><p>What the player sees and which trader offers the quest.</p></header>
+            <label class="check"><input type="checkbox" checked="@((bool?)selected["_seasonalEnabled"] != false)" @onchange="@(e => Edit(() => selected["_seasonalEnabled"] = (bool)e.Value!))" />Enabled</label>
+            <label>Name <HelpTip Text="The quest title shown to the player. English is the fallback when a translation is missing." /><input value="@NativeQuestAuthoring.QuestName(selected)" @onchange="@(e => Edit(() => NativeQuestAuthoring.QuestText(selected, "name", Text(e))))" /></label>
+            <label>Description <HelpTip Text="Explain the goal and context shown in the quest log. Objective instructions are edited under Objectives." /><textarea value="@NativeQuestAuthoring.QuestLocale(selected, "description")" @onchange="@(e => Edit(() => NativeQuestAuthoring.QuestText(selected, "description", Text(e))))"></textarea></label>
+            <ContentPicker Kind="traders" Label="Quest trader" HelpText="The trader who offers this native quest and receives its hand-in. Conversations have their own trader setting." Value="@((string?)selected["traderId"] ?? "")" ValueChanged="@(v => Edit(() => selected["traderId"] = v))" />
+            </section><details class="editor-section"><summary>Quest messages</summary>@foreach(var field in new[] { "startedMessageText", "successMessageText", "failMessageText", "acceptPlayerMessage", "completePlayerMessage", "declinePlayerMessage" }) { <label>@StoryAuthoring.Friendly(field) <HelpTip Text="@MessageHelp(field)" /><textarea value="@NativeQuestAuthoring.QuestLocale(selected, field)" @onchange="@(e => Edit(() => NativeQuestAuthoring.QuestText(selected, field, Text(e))))"></textarea></label> }</details>
+            break;
+        case "Objectives":
+            @foreach(var stage in new[] { "AvailableForStart", "AvailableForFinish", "Fail" })
+            {
+                <details class="editor-section" open="@(stage != "Fail")" @key="stage"><summary>@(stage == "AvailableForStart" ? "Start requirements" : stage == "AvailableForFinish" ? "Completion objectives" : "Failure conditions") <span class="small-tag">@Conditions(selected, stage).Count</span></summary><p>@(stage == "AvailableForStart" ? "Requirements that make this quest available to accept." : stage == "AvailableForFinish" ? "Tasks the player completes before handing in this quest." : "Tests that cause this quest to fail. Leave empty if it has no failure conditions.")</p>
+                @foreach(var condition in Conditions(selected, stage).OfType<JObject>().ToArray())
+                { <div class="objective-entry" @key="condition"><NativeObjectiveFields Season="Season" Quest="selected" Value="condition" StoryQuest="@(Membership != null)" Changed="Changed" /><div class="record-actions"><button class="danger" @onclick="@(() => DeleteCondition(condition))">Remove objective</button></div></div> }
+                <select aria-label="@($"Add {stage} objective")" value="" @onchange="@(e => Edit(() => NativeQuestAuthoring.AddCondition(selected, stage, Text(e))))"><option value="">Add objective…</option>@foreach(var kind in NativeObjectiveFields.Kinds(Membership != null, false)) { <option>@kind</option> }</select></details>
+            }
+            break;
+        case "Rewards":
+            <QuestRewards Quest="selected" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Changed="Changed" />
+            break;
+        case "Story":
+            @if (Membership is { } membership)
+            { <StoryFields Season="Season" Value="membership" Changed="Changed" Excluded="@(new[] { "QuestId", "ChapterId" })" /><QuestStoryFlowEditor @key="_selected" Season="Season" Quest="selected" Membership="membership" Changed="Changed" Navigate="Go" /><details class="editor-card"><summary>Move or detach quest</summary><p>Moving changes its chapter membership. Existing notes keep their chapter association.</p><StoryValue Season="Season" Owner="membership" Field="ChapterId" Caption="Destination chapter" Value="_chapter" Changed="@(v => _chapter = (string)v)" /><button disabled="@(_chapter.Length == 0 || _chapter == membership.ChapterId)" @onclick="Assign">Move to chapter</button><button class="danger" @onclick="RemoveMembership">Make non-story quest</button></details> }
+            else
+            {
+                <p>Assign this native quest to a chapter to use story visibility, automation and journal notes.</p>
+                <StoryValue Season="Season" Owner="selected" Field="ChapterId" Caption="Chapter" Value="_chapter" Changed="@(v => _chapter = (string)v)" />
+                <button disabled="@(_chapter.Length == 0)" @onclick="Assign">Assign to chapter</button><button @onclick="CreateChapter">Create and assign a chapter</button>
+            }
+            break;
+        case "Advanced":
+            <p>Imported native fields are retained. Edit supported fields here; validation rejects behavior the current adapter cannot run.</p><StructuredFields Value="selected" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Changed="Changed" Excluded="@(new[] { "conditions", "rewards", "localization", "QuestName", "name", "description", "traderId", "_seasonalEnabled", "startedMessageText", "successMessageText", "failMessageText", "acceptPlayerMessage", "completePlayerMessage", "declinePlayerMessage" })" />
+            break;
+    }
+    @if (_tab is "Details" or "Objectives" or "Rewards") { <button class="primary" @onclick="@(() => _tab = _tab == "Details" ? "Objectives" : _tab == "Objectives" ? "Rewards" : InChapter ? "Story" : "Advanced")">Continue to @(_tab == "Details" ? "objectives" : _tab == "Objectives" ? "rewards" : InChapter ? "story" : "advanced fields") →</button> }
+}
+else { <div class="empty-selection"><strong>@(InChapter ? "This chapter has no selected quest" : "Select or create a non-story quest")</strong><p>@(InChapter ? "Create a quest above or add an existing non-story quest. Its editor stays here in the chapter." : "Story quests live in Chapters and quests. Non-story quests can be assigned to a chapter using Add to a story chapter.")</p></div> }
+@if (_message.Length > 0) { <div class="notice error" role="alert">@_message</div> }
+</div></div>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public string ChapterId { get; set; } = "";
+    [Parameter] public string FocusId { get; set; } = "";
+    [Parameter] public EventCallback<string> SelectionChanged { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback<string> Navigate { get; set; }
+    private string _search = "", _selected = "", _tab = "Details", _chapter = "", _message = "", _focus = "";
+    private string _existing = "";
+    private bool InChapter => ChapterId.Length > 0;
+    private IEnumerable<JObject> Records => QuestStoryFlow.Quests(Season, ChapterId);
+    private JObject? Selected => Records.FirstOrDefault(q => Id(q) == _selected);
+    private StoryQuest? Membership => Season.Story?.Quests.FirstOrDefault(q => q.QuestId == _selected);
+    private IEnumerable<ContentChoice> OwnedItems => StoryAuthoring.Choices(Season, "items").Select(c => new ContentChoice(c.Id, c.Name));
+    private IEnumerable<ContentChoice> OwnedQuests => StoryAuthoring.Choices(Season, "quests").Select(c => new ContentChoice(c.Id, c.Name));
+    private static string Id(JObject q) => (string?)q["_id"] ?? "";
+    private static string Text(ChangeEventArgs e) => e.Value?.ToString() ?? "";
+    private static JArray Conditions(JObject q, string stage) => (JArray?)q["conditions"]?[stage] ?? new();
+    protected override void OnParametersSet()
+    {
+        if (_focus != FocusId) { _focus = FocusId; if (Records.Any(q => Id(q) == FocusId)) { _selected = FocusId; _tab = "Details"; } _search = ""; }
+        if (!Records.Any(q => Id(q) == _selected)) { _selected = Records.Select(Id).FirstOrDefault() ?? ""; _tab = "Details"; }
+    }
+    private async Task SelectQuest(string id) { _selected = id; _focus = id; _message = ""; _tab = "Details"; await SelectionChanged.InvokeAsync(id); }
+    private async Task AttachExisting() { if (!QuestStoryFlow.Quests(Season, "").Any(q => Id(q) == _existing)) return; QuestStoryFlow.AssignQuest(Season, _existing, ChapterId); await SelectQuest(_existing); _existing = ""; await Changed.InvokeAsync(); }
+    private async Task Go(string path) { _focus = _selected; await SelectionChanged.InvokeAsync(_selected); await Navigate.InvokeAsync(path); }
+    private async Task Edit(Action edit) { edit(); await Changed.InvokeAsync(); }
+    private async Task Add() { var q = InChapter ? QuestStoryFlow.AddQuest(Season, ChapterId) : NativeQuestAuthoring.Create(); if (!InChapter) Season.Quests.Add(q); await SelectQuest(Id(q)); await Changed.InvokeAsync(); }
+    private async Task Duplicate() { if (Selected == null) return; var q = QuestStoryFlow.DuplicateQuest(Season, Selected); await SelectQuest(Id(q)); await Changed.InvokeAsync(); }
+    private async Task Delete() { if (Selected == null) return; var uses = QuestStoryFlow.DeleteQuest(Season, Selected); if (uses.Count > 0) { _message = "Remove or reassign references first: " + string.Join(", ", uses); return; } await SelectQuest(Records.Select(Id).FirstOrDefault() ?? ""); await Changed.InvokeAsync(); }
+    private async Task CreateChapter() { var chapter = QuestStoryFlow.CreateChapter(Season, _selected); await Changed.InvokeAsync(); await Go("Quests/" + _selected); }
+    private static string MessageHelp(string field) => field switch { "startedMessageText" => "Trader message sent when the quest starts.", "successMessageText" => "Trader message sent after successful completion.", "failMessageText" => "Trader message sent when the quest fails.", "acceptPlayerMessage" => "Player text for accepting the quest.", "completePlayerMessage" => "Player text for handing in the quest.", _ => "Player text for declining the quest." };
+    private async Task Assign() { QuestStoryFlow.AssignQuest(Season, _selected, _chapter); await Changed.InvokeAsync(); await Go("Quests/" + _selected); }
+    private async Task RemoveMembership()
+    {
+        var used = Season.Story!.Dialogs.SelectMany(d => d.Lines).SelectMany(l => l.Actions).Concat(Season.Story.RaidBindings.SelectMany(b => b.Actions)).Any(a => a.QuestId == _selected);
+        if (used) { _message = "Remove or reassign the story actions targeting this quest before removing its membership."; return; }
+        Season.Story.Quests.Remove(Membership!); await Changed.InvokeAsync(); await Go("Quests/" + _selected);
+    }
+    private async Task DeleteCondition(JObject condition) { var uses = StoryAuthoring.Uses(Season, condition); if (uses.Count > 0) { _message = "Reassign these references first: " + string.Join(", ", uses); return; } condition.Remove(); await Changed.InvokeAsync(); }
+}

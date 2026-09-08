@@ -1,0 +1,31 @@
+@typeparam TItem
+@using SeasonalPerks.Server.Web.Authoring
+<div class="content-workspace">
+<aside class="content-list"><label>Search @Label.ToLowerInvariant()<input @bind="_search" @bind:event="oninput" placeholder="Name or text…" /></label>
+@for (var i = 0; i < Items.Count; i++)
+{
+    var index = i;
+    @if (_search.Length == 0 || Name(Items[index]).Contains(_search, StringComparison.OrdinalIgnoreCase))
+    { <button class="content-row @(_index == index ? "selected" : "")" @onclick="@(() => _index = index)">@Name(Items[index])<small>@Label @(index + 1)</small></button> }
+}
+</aside>
+<div class="content-detail">
+@if (_index >= 0 && _index < Items.Count)
+{
+    <div class="row"><button @onclick="Duplicate">Duplicate</button><button disabled="@(_index == 0)" @onclick="@(() => Move(-1))">Move earlier</button><button disabled="@(_index == Items.Count - 1)" @onclick="@(() => Move(1))">Move later</button></div>
+    @ChildContent(Items[_index])
+}
+else { <p>No @Label.ToLowerInvariant() yet.</p> }
+</div></div>
+@code {
+    [Parameter] public IList<TItem> Items { get; set; } = null!;
+    [Parameter] public string Label { get; set; } = "Content";
+    [Parameter] public Func<TItem, string> Name { get; set; } = _ => "Entry";
+    [Parameter] public RenderFragment<TItem> ChildContent { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private int _index, _count;
+    private string _search = "";
+    protected override void OnParametersSet() { if (Items.Count > _count) _index = Items.Count - 1; _count = Items.Count; _index = Math.Min(_index, Items.Count - 1); }
+    private async Task Duplicate() { Items.Insert(_index + 1, (TItem)StoryAuthoring.Duplicate(Items[_index]!)); _index++; await Changed.InvokeAsync(); }
+    private async Task Move(int direction) { var item = Items[_index]; Items.RemoveAt(_index); _index += direction; Items.Insert(_index, item); await Changed.InvokeAsync(); }
+}

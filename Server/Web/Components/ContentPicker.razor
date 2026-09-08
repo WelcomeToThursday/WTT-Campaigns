@@ -1,12 +1,16 @@
 @inject SeasonContentService Content
 <div class="content-picker">
-    <label>@Label <HelpTip Text="@HelpText" /></label>
+    <div class="picker-heading"><label for="@_inputId">@Label <HelpTip Text="@EffectiveHelp" /></label>
+    @if (Value.Length > 0) { <details class="reference-details"><summary>Reference ID</summary><code>@Value</code></details> }
+    </div>
+    <div class="picker-inputs">
     <input aria-label="@($"Search {Label}")" placeholder="Search installed content…" @bind="_search" @bind:event="oninput" />
-    <select aria-label="@Label" value="@Value" @onchange="Pick">
+    <select id="@_inputId" aria-label="@Label" value="@Value" @onchange="Pick">
         <option value="">Choose…</option>
-        @if (!string.IsNullOrEmpty(Value) && !Options.Any(c => c.Id == Value)) { <option value="@Value">@Value</option> }
-        @foreach (var option in Options) { <option value="@option.Id">@option.Name</option> }
+        @if (!string.IsNullOrEmpty(Value) && !Options.Any(c => c.Id == Value)) { <option value="@Value">@SelectedName</option> }
+        @foreach (var option in Options) { <option value="@option.Id" title="@option.Id">@option.Name</option> }
     </select>
+    </div>
 </div>
 @code {
     [Parameter] public string Kind { get; set; } = "items";
@@ -14,15 +18,20 @@
     [Parameter] public string Value { get; set; } = "";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public IEnumerable<ContentChoice>? Additional { get; set; }
-    private string HelpText => Kind switch
+    [Parameter] public string? HelpText { get; set; }
+    private string SelectedName => Additional?.FirstOrDefault(c => c.Id == Value)?.Name ?? Content.Name(Kind, Value);
+    private string EffectiveHelp => !string.IsNullOrWhiteSpace(HelpText) ? HelpText : Kind switch
     {
         "presets" => "Leave blank to use each account’s starter edition. This chooses a clean preset, never an existing character’s inventory.",
         "offers" => "Choose an installed trader offer. An unlock grants access to purchase that offer.",
-        "quests" => "Search installed quests or quests authored in this season. Requirements use completed quests.",
-        "skills" => "Choose an installed skill. Starting skill levels range from 0 to 51.",
+        "quests" => "Search installed quests or quests authored in this season. The selected condition determines the required status.",
+        "skills" => "Choose an installed skill. Values are interpreted by the field using this selection.",
         _ => "Type a name to narrow the list, then select a result. Content authored in this season is included where available."
     };
+    private readonly string _inputId = "content-" + Guid.NewGuid().ToString("N");
     private string _search = "";
+    private string _previousKind = "";
+    protected override void OnParametersSet() { if (_previousKind != Kind) { _search = ""; _previousKind = Kind; } }
     private List<ContentChoice> Options => (Additional ?? []).Concat(Content.Choices(Kind, _search)).Where(c => _search.Length == 0 || c.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) || c.Id.Contains(_search, StringComparison.OrdinalIgnoreCase)).DistinctBy(c => c.Id).ToList();
     private Task Pick(ChangeEventArgs args) => ValueChanged.InvokeAsync(args.Value?.ToString() ?? "");
 }

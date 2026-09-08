@@ -52,6 +52,8 @@ void Check(bool value, string name)
 var rules = new Rules();
 SeasonalPerks.Tests.StoryChecks.Run(Check);
 SeasonalPerks.Tests.StoryEngineChecks.Run(Check);
+SeasonalPerks.Tests.AuthoringChecks.Run(Check);
+SeasonalPerks.Tests.EditorLayoutChecks.Run(Check);
 SeasonalPerks.Tests.ProgressionChecks.Run(Check);
 if (args.Length > 0 && File.Exists(args[0]))
 {

@@ -1,0 +1,9 @@
+<section class="editor-section">
+    <header><h3>@Title</h3>@if (!string.IsNullOrEmpty(Description)) { <p>@Description</p> }</header>
+    @ChildContent
+</section>
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

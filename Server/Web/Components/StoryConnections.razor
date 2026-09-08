@@ -1,0 +1,47 @@
+@inject SeasonContentService Content
+@using SeasonalPerks.Server.Web.Authoring
+@using SeasonalPerks.Shared.Story
+<div class="story-connections">
+<h3>Connected content</h3><p>Follow a reference to edit its target. IDs identify content; links do not change progression.</p>
+@foreach (var target in Targets)
+{ <div class="flow-edge"><span aria-hidden="true">→</span><button class="content-row" @onclick="@(() => Navigate.InvokeAsync("Story/" + StoryAuthoring.Id(target)))">@StoryAuthoring.Label(target)<small>@StoryAuthoring.Id(target)</small></button></div> }
+@if (!Targets.Any()) { <p>No outgoing story references.</p> }
+<h4>Used by</h4>
+@foreach (var use in StoryAuthoring.Uses(Season, Value)) { <p class="reference-path">@use</p> }
+@if (Value is StoryDialog dialog)
+{
+    <h3>Conversation flow</h3><p>Variable transitions below are inferred from matching phase assignments. Other conditions can still prevent a line from running.</p>
+    <div class="flow-map">
+    @foreach (var line in dialog.Lines)
+    {
+        <article class="flow-node"><strong>@StoryAuthoring.Label(line)</strong><small>@line.Id</small><p>@Predicate(line.Trigger)</p>
+        @foreach (var action in line.Actions)
+        {
+            <p>→ @StoryAuthoring.Friendly(action.Type.ToString()) @TargetName(action, action.Target.Length > 0 ? "Target" : "QuestId", action.Target.Length > 0 ? action.Target : action.QuestId)</p>
+            @if (action.Type == StoryActionType.SetVariable)
+            {
+                @foreach (var next in dialog.Lines.Where(l => l.Trigger.Type == "VariableValue" && l.Trigger.Target == action.Target && StoryRules.Compare(action.Value, l.Trigger.Operator, l.Trigger.Value)))
+                { <button class="content-row" @onclick="@(() => Navigate.InvokeAsync("Story/" + next.Id))">Inferred → @StoryAuthoring.Label(next)</button> }
+            }
+        }
+        </article>
+    }
+    </div>
+}
+</div>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public object Value { get; set; } = null!;
+    [Parameter] public EventCallback<string> Navigate { get; set; }
+    private IEnumerable<object> Targets
+    {
+        get
+        {
+            var token = JObject.FromObject(Value);
+            var ids = token.Descendants().OfType<JValue>().Where(v => v.Type == JTokenType.String && v.Parent is not JProperty { Name: "Id" }).Select(v => v.ToString()).ToHashSet();
+            return StoryAuthoring.Records(Season.Story).Where(r => !ReferenceEquals(r, Value) && ids.Contains(StoryAuthoring.Id(r)));
+        }
+    }
+    private string TargetName(object owner, string field, string id) => id.Length == 0 ? "" : ReferenceNames.Resolve(Season, StoryAuthoring.ReferenceKind(owner, field) ?? "", id, Content.Name);
+    private string Predicate(StoryCondition c) => c.Type is "All" or "Any" or "Not" ? $"{c.Type} ({string.Join("; ", c.Conditions.Select(Predicate))})" : $"{StoryAuthoring.Friendly(c.Type)}: {TargetName(c, "Target", c.Target)} {c.Operator} {(c.Type == "QuestStatus" ? string.Join(", ", c.Status) : c.Value)}";
+}

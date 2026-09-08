@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Components.Routing;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Seasons;
+using SeasonalPerks.Server.Web.Authoring;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Perks;
 using SeasonalPerks.Shared.Seasons;
+using SeasonalPerks.Shared.Story;
 
 namespace SeasonalPerks.Server.Web.Pages;
 
@@ -22,6 +24,14 @@ public partial class Creator
         "Rewards",
         "Items and crates",
         "Quests",
+        "Chapters",
+        "Journal notes",
+        "Conversations",
+        "Variables",
+        "Entry points",
+        "Raid events",
+        "Story media",
+        "Story rehearsal",
         "Localization",
         "Preview and publish",
     ];
@@ -35,9 +45,17 @@ public partial class Creator
             "Perks" => "Build modifiers, balance point costs and define conflicts.",
             "Documents" => "Set document types, collection limits and map-specific placement caps.",
             "Battle pass" => "Arrange reward pages and set the requirements to unlock them.",
-            "Rewards" => "Arrange the seasonal reward grid and edit selected tiles in the inspector.",
+            "Rewards" => "Arrange the seasonal reward grid and edit selected tiles below the grid.",
             "Items and crates" => "Reuse installed models and configure exchanges and weighted loot pools.",
-            "Quests" => "Create objectives, prerequisite chains and completion rewards.",
+            "Quests" => "Create and edit quests that do not belong to a story chapter.",
+            "Chapters" => "Select a chapter to create and edit its quests in one workspace.",
+            "Journal notes" => "Write the entries players discover, and connect related items, offers and crafts.",
+            "Conversations" => "Build conditional NPC lines and player replies with ordered actions.",
+            "Variables" => "Track story phases for a character, session or conversation.",
+            "Entry points" => "Choose where and when players can start a conversation.",
+            "Raid events" => "Connect exact world targets to story actions. Bindings do not spawn objects.",
+            "Story media" => "Register separately installed media and finalized bundle checksums.",
+            "Story rehearsal" => "Try dialogue and journal progression with isolated simulated state.",
             "Localization" => "Edit English text and translations with English fallback.",
             _ => "Simulate progress, review validation and prepare a shareable season pack.",
         };
@@ -85,7 +103,14 @@ public partial class Creator
         _newLanguage = "",
         _localeSearch = "";
     private int _pageIndex;
-    private string _questRewardKind = "Item";
+    private string _focusId = "",
+        _inspectorTab = "Help";
+    private string? _validationSnapshot;
+    private bool ValidationStale
+    {
+        get { return _validation != null && _validationSnapshot != JsonConvert.SerializeObject(S); }
+    }
+
     private SeasonReward? _reward,
         _dragged;
     private SeasonValidationResult? _validation;
@@ -146,6 +171,7 @@ public partial class Creator
             _reward = null;
         }
     }
+
     private int Columns
     {
         get { return _section == "Rewards" ? 5 : 2; }
@@ -209,13 +235,16 @@ public partial class Creator
 
     private void Dirty()
     {
-        _validation = null;
+        _published = null;
     }
 
     private void Open(DraftEnvelope draft)
     {
+        _draftMenu = null;
+        _draftView = DraftStatus.Active;
         _draft = draft;
         _baseline = JsonConvert.SerializeObject(S);
+        _workspaceHistory.Clear();
         _section = "Overview";
         _pageIndex = 0;
         _validation = null;
@@ -283,6 +312,7 @@ public partial class Creator
         Run(() =>
         {
             _validation = Content.Validate(S);
+            _validationSnapshot = JsonConvert.SerializeObject(S);
             _section = "Preview and publish";
             _message = "Validation complete.";
         });
@@ -293,6 +323,7 @@ public partial class Creator
         Run(() =>
         {
             _validation = Content.Validate(S);
+            _validationSnapshot = JsonConvert.SerializeObject(S);
             _section = "Preview and publish";
             if (DirtyState)
             {
@@ -300,23 +331,8 @@ public partial class Creator
             }
 
             _published = Repository.Publish(_draft!, _validation);
-            _message = "Pack published. Export it or select it for activation.";
+            _message = "Pack published. Export it to share, or restart SPT and choose the season when creating a seasonal character.";
         });
-    }
-
-    private void Queue(string key)
-    {
-        var definition = Repository.Pack(key);
-        var validation = Content.Validate(definition);
-        if (key != "legacy" && !validation.CanActivate)
-        {
-            throw new InvalidOperationException(
-                string.Join("; ", validation.Issues.Where(i => i.Severity != "warning").Select(i => i.Message).Take(5))
-            );
-        }
-
-        Repository.Queue(key);
-        _message = "Activation scheduled for the next server restart.";
     }
 
     private void EditPublished(string key)
@@ -411,6 +427,7 @@ public partial class Creator
         {
             _effectObjects[effect] = value = JObject.FromObject(effect);
         }
+
         return value;
     }
 
@@ -446,6 +463,7 @@ public partial class Creator
             _message = "Choose a source item first.";
             return;
         }
+
         var id = SeasonRepository.NewId();
         S.Items.Add(
             new()
@@ -472,6 +490,7 @@ public partial class Creator
             _message = "Keep at least one battle pass page.";
             return;
         }
+
         S.Pages.RemoveAt(PageIndex);
         _reward = null;
     }
@@ -483,6 +502,7 @@ public partial class Creator
         {
             return;
         }
+
         var page = S.Pages[PageIndex];
         S.Pages.RemoveAt(PageIndex);
         S.Pages.Insert(target, page);
@@ -508,6 +528,7 @@ public partial class Creator
         {
             return;
         }
+
         var page = S.Pages[PageIndex];
         S.Pages.Insert(
             PageIndex + 1,
@@ -540,6 +561,7 @@ public partial class Creator
             _message = "This grid is full. Add a page or remove a tile.";
             return;
         }
+
         _reward = new()
         {
             Id = SeasonRepository.NewId(),
@@ -559,6 +581,7 @@ public partial class Creator
         {
             return;
         }
+
         _reward = FreshReward(source);
         _reward.X = cell.Value.X;
         _reward.Y = cell.Value.Y;
@@ -572,6 +595,7 @@ public partial class Creator
         {
             Tiles.Remove(_reward);
         }
+
         _reward = null;
     }
 
@@ -593,6 +617,7 @@ public partial class Creator
             _message = "That position overlaps another tile or leaves the grid.";
             return;
         }
+
         _dragged.X = x;
         _dragged.Y = y;
         _reward = _dragged;
@@ -606,6 +631,7 @@ public partial class Creator
         {
             return;
         }
+
         var weight = crate.Pool[previous];
         crate.Pool.Remove(previous);
         crate.Pool[next] = weight;
@@ -642,6 +668,38 @@ public partial class Creator
             S.Description = value;
         }
 
+        if (S.Story is { } story)
+        {
+            foreach (var chapter in story.Chapters)
+            {
+                if (key == chapter.Id + " name")
+                {
+                    chapter.Name = value;
+                }
+            }
+
+            foreach (var note in story.Notes)
+            {
+                if (key == note.Id + " text")
+                {
+                    note.Text = value;
+                }
+            }
+
+            foreach (var line in story.Dialogs.SelectMany(d => d.Lines))
+            {
+                if (key == line.Id + " text")
+                {
+                    line.Text = value;
+                }
+
+                if (key == line.Id + " confirmation")
+                {
+                    line.Confirmation = value;
+                }
+            }
+        }
+
         foreach (var item in S.Items)
         {
             if (key == item.Id + " Name" || key == item.Id + " ShortName")
@@ -654,6 +712,7 @@ public partial class Creator
                 item.Description = value;
             }
         }
+
         foreach (var doc in S.Documents)
         {
             if (key == doc.Id + " name")
@@ -674,6 +733,7 @@ public partial class Creator
                 reward.Description = value;
             }
         }
+
         for (var i = 0; i < S.Slides.Count; i++)
         {
             if (key == S.Id + " slide " + i + " text")
@@ -681,6 +741,7 @@ public partial class Creator
                 S.Slides[i].Text = value;
             }
         }
+
         foreach (var quest in S.Quests.OfType<JObject>())
         {
             if (quest["localization"]?["en"] is JObject locale && locale.ContainsKey(key))
@@ -697,6 +758,7 @@ public partial class Creator
             _message = "Use a language code such as en, fr, or pt-BR.";
             return;
         }
+
         S.Locales.TryAdd(_newLanguage, new());
         _language = _newLanguage;
         _newLanguage = "";
@@ -749,6 +811,7 @@ public partial class Creator
                 return "Quest incomplete";
             }
         }
+
         if (reward.Costs.Sum(c => Math.Max(0, c.Count - _previewDocuments.GetValueOrDefault(c.DocumentId))) > _previewClassified)
         {
             return "Insufficient documents";
@@ -759,6 +822,56 @@ public partial class Creator
 
     private void GoToIssue(string path)
     {
+        if (path == "Story rehearsal")
+        {
+            _section = path;
+            return;
+        }
+
+        var identity = path.Split('/').Skip(1).FirstOrDefault() ?? "";
+        if (path.StartsWith("Quests/", StringComparison.Ordinal) || path.StartsWith("Story/", StringComparison.Ordinal))
+        {
+            var chapterId = QuestStoryFlow.ChapterForQuest(S, identity);
+            if (chapterId.Length > 0)
+            {
+                _section = "Chapters";
+                _focusId = chapterId;
+                _focusChildId = identity;
+                return;
+            }
+        }
+
+        if (path.StartsWith("Story/", StringComparison.Ordinal))
+        {
+            var record = StoryAuthoring
+                .Records(S.Story)
+                .FirstOrDefault(r =>
+                    StoryAuthoring.Id(r) == identity
+                    || JObject
+                        .FromObject(r)
+                        .Descendants()
+                        .OfType<JValue>()
+                        .Any(v => v.Parent is JProperty { Name: "Id" } && v.ToString() == identity)
+                );
+            _section = record switch
+            {
+                StoryChapter => "Chapters",
+                StoryNote => "Journal notes",
+                StoryDialog => "Conversations",
+                StoryVariable => "Variables",
+                StoryEntryPoint => "Entry points",
+                StoryRaidBinding => "Raid events",
+                StoryMedia => "Story media",
+                StoryQuest => "Quests",
+                _ => "Chapters",
+            };
+            _focusId = record == null ? "" : StoryAuthoring.Id(record);
+            _focusChildId = identity;
+            return;
+        }
+
+        _focusChildId = "";
+        _focusId = identity;
         var section = path.Split('/')[0];
         _section = section switch
         {
@@ -778,156 +891,8 @@ public partial class Creator
         }
     }
 
-    private void AddQuest()
-    {
-        var id = SeasonRepository.NewId();
-        var quest = new JObject
-        {
-            ["_id"] = id,
-            ["QuestName"] = "New quest",
-            ["name"] = id + " name",
-            ["description"] = id + " description",
-            ["traderId"] = "54cb50c76803fa8b248b4571",
-            ["location"] = "any",
-            ["image"] = "/files/quest/icon/596b36c586f77450d6045ad2.jpg",
-            ["type"] = "PickUp",
-            ["side"] = "Pmc",
-            ["canShowNotificationsInGame"] = true,
-            ["restartable"] = false,
-            ["instantComplete"] = false,
-            ["conditions"] = new JObject
-            {
-                ["AvailableForStart"] = new JArray(),
-                ["AvailableForFinish"] = new JArray(),
-                ["Fail"] = new JArray(),
-            },
-            ["rewards"] = new JObject
-            {
-                ["Started"] = new JArray(),
-                ["Success"] = new JArray(),
-                ["Fail"] = new JArray(),
-            },
-            ["localization"] = new JObject
-            {
-                ["en"] = new JObject { [id + " name"] = "New quest", [id + " description"] = "Complete the objectives." },
-            },
-        };
-        foreach (
-            var key in new[]
-            {
-                "startedMessageText",
-                "successMessageText",
-                "failMessageText",
-                "acceptPlayerMessage",
-                "completePlayerMessage",
-                "declinePlayerMessage",
-            }
-        )
-        {
-            quest[key] = id + " " + key;
-            quest["localization"]!["en"]![id + " " + key] = key == "successMessageText" ? "Well done." : "I have a task for you.";
-        }
-        AddCondition(quest, "AvailableForStart", "Level");
-        AddCondition(quest, "AvailableForFinish", "HandoverItem");
-        S.Quests.Add(quest);
-    }
-
-    private static string QuestLocale(JObject quest, string field)
-    {
-        return (string?)quest["localization"]?["en"]?[(string?)quest[field] ?? ""] ?? "";
-    }
-
     private static string QuestName(JObject quest)
     {
-        return QuestLocale(quest, "name") is { Length: > 0 } name ? name : (string?)quest["QuestName"] ?? (string)quest["_id"]!;
-    }
-
-    private static void QuestText(JObject quest, string field, string value)
-    {
-        var key = (string?)quest[field] ?? (string)quest["_id"]! + " " + field;
-        quest[field] = key;
-        quest["localization"] ??= new JObject();
-        quest["localization"]!["en"] ??= new JObject();
-        quest["localization"]!["en"]![key] = value;
-        if (field == "name")
-        {
-            quest["QuestName"] = value;
-        }
-    }
-
-    private static void AddCondition(JObject quest, string stage, string kind)
-    {
-        if (kind.Length == 0)
-        {
-            return;
-        }
-
-        var id = SeasonRepository.NewId();
-        var condition = new JObject
-        {
-            ["id"] = id,
-            ["conditionType"] = kind,
-            ["index"] = ((JArray)quest["conditions"]![stage]!).Count,
-            ["parentId"] = "",
-            ["dynamicLocale"] = false,
-            ["visibilityConditions"] = new JArray(),
-            ["value"] = 1,
-            ["compareMethod"] = ">=",
-        };
-        if (kind is "FindItem" or "HandoverItem")
-        {
-            condition["target"] = new JArray("");
-            condition["onlyFoundInRaid"] = false;
-            condition["minDurability"] = 0;
-            condition["maxDurability"] = 100;
-        }
-        if (kind == "Quest")
-        {
-            condition["target"] = "";
-            condition["status"] = new JArray(4);
-            condition["availableAfter"] = 0;
-        }
-        if (kind == "TraderLoyalty")
-        {
-            condition["target"] = "54cb50c76803fa8b248b4571";
-        }
-
-        ((JArray)quest["conditions"]![stage]!).Add(condition);
-        quest["localization"]!["en"]![id] = kind == "HandoverItem" ? "Hand over the required items" : "Complete the requirement";
-    }
-
-    private void AddQuestReward(JObject quest)
-    {
-        if (_questRewardKind != "Item")
-        {
-            ((JArray)quest["rewards"]!["Success"]!).Add(
-                new JObject
-                {
-                    ["id"] = SeasonRepository.NewId(),
-                    ["type"] = _questRewardKind,
-                    ["target"] = "",
-                    ["value"] = _questRewardKind == "Experience" ? 100 : 1,
-                }
-            );
-            return;
-        }
-        var id = SeasonRepository.NewId();
-        ((JArray)quest["rewards"]!["Success"]!).Add(
-            new JObject
-            {
-                ["id"] = SeasonRepository.NewId(),
-                ["type"] = "Item",
-                ["target"] = id,
-                ["value"] = 1,
-                ["items"] = new JArray(
-                    new JObject
-                    {
-                        ["_id"] = id,
-                        ["_tpl"] = "",
-                        ["upd"] = new JObject { ["StackObjectsCount"] = 1 },
-                    }
-                ),
-            }
-        );
+        return NativeQuestAuthoring.QuestName(quest);
     }
 }

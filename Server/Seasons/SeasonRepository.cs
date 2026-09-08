@@ -44,10 +44,19 @@ public sealed class SeasonSelection
     public string Error { get; set; } = "";
 }
 
+public enum DraftStatus
+{
+    Active,
+    Archived,
+    Trashed,
+}
+
 public sealed class DraftEnvelope
 {
     public string Id { get; set; } = "";
     public long Revision { get; set; }
+    public DraftStatus Status { get; set; }
+    public DateTimeOffset? LastEditedUtc { get; set; }
     public SeasonDefinition Definition { get; set; } = new();
 }
 
@@ -215,14 +224,23 @@ public sealed class SeasonRepository
         return Path.Combine(_root, "drafts", CheckId(id) + ".json");
     }
 
-    public List<DraftEnvelope> Drafts()
+    public List<DraftEnvelope> Drafts(DraftStatus? status = DraftStatus.Active)
     {
         lock (_gate)
         {
             return Directory
                 .GetFiles(Path.Combine(_root, "drafts"), "*.json")
-                .Select(TryRead<DraftEnvelope>)
+                .Select(path =>
+                {
+                    var draft = TryRead<DraftEnvelope>(path);
+                    if (draft != null)
+                    {
+                        draft.LastEditedUtc ??= File.GetLastWriteTimeUtc(path);
+                    }
+                    return draft;
+                })
                 .OfType<DraftEnvelope>()
+                .Where(d => status == null || d.Status == status)
                 .OrderBy(d => d.Definition.Name)
                 .ToList();
         }
@@ -247,7 +265,10 @@ public sealed class SeasonRepository
     {
         lock (_gate)
         {
-            return Read<DraftEnvelope>(DraftPath(id));
+            var path = DraftPath(id);
+            var draft = Read<DraftEnvelope>(path);
+            draft.LastEditedUtc ??= File.GetLastWriteTimeUtc(path);
+            return draft;
         }
     }
 
@@ -256,16 +277,66 @@ public sealed class SeasonRepository
         lock (_gate)
         {
             var path = DraftPath(draft.Id);
-            var revision = File.Exists(path) ? Read<DraftEnvelope>(path).Revision : 0;
+            var current = File.Exists(path) ? Load(draft.Id) : null;
+            var revision = current?.Revision ?? 0;
             if (revision != draft.Revision)
             {
                 throw new InvalidOperationException("This draft changed in another tab. Reload before saving.");
             }
 
+            if (draft.Status != DraftStatus.Active || current?.Status is DraftStatus.Archived or DraftStatus.Trashed)
+            {
+                throw new InvalidOperationException("Restore this draft to Drafts before editing it.");
+            }
+
             var next = SeasonCompiler.Copy(draft);
             next.Revision++;
+            next.LastEditedUtc = DateTimeOffset.UtcNow;
             Atomic(path, JsonConvert.SerializeObject(next, Formatting.Indented));
             return next;
+        }
+    }
+
+    public DraftEnvelope RenameDraft(string id, long revision, string name)
+    {
+        lock (_gate)
+        {
+            name = name.Trim();
+            if (name.Length is < 1 or > 120)
+            {
+                throw new InvalidOperationException("Enter a draft name between 1 and 120 characters.");
+            }
+            var draft = Load(id);
+            if (draft.Revision != revision)
+            {
+                throw new InvalidOperationException("This draft changed in another tab. Refresh the library before renaming it.");
+            }
+            draft.Definition.Name = name;
+            return Save(draft);
+        }
+    }
+
+    public DraftEnvelope SetDraftStatus(string id, long revision, DraftStatus status)
+    {
+        lock (_gate)
+        {
+            if (!Enum.IsDefined(status))
+            {
+                throw new InvalidOperationException("Unknown draft status.");
+            }
+            var draft = Load(id);
+            if (draft.Revision != revision)
+            {
+                throw new InvalidOperationException("This draft changed in another tab. Refresh the library before moving it.");
+            }
+            if (draft.Status == status)
+            {
+                return draft;
+            }
+            draft.Status = status;
+            draft.Revision++;
+            Atomic(DraftPath(id), JsonConvert.SerializeObject(draft, Formatting.Indented));
+            return draft;
         }
     }
 
@@ -443,6 +514,10 @@ public sealed class SeasonRepository
             }
 
             var saved = Load(draft.Id);
+            if (saved.Status != DraftStatus.Active)
+            {
+                throw new InvalidOperationException("Restore this draft to Drafts before publishing it.");
+            }
             if (
                 saved.Revision != draft.Revision
                 || JsonConvert.SerializeObject(saved.Definition) != JsonConvert.SerializeObject(draft.Definition)
