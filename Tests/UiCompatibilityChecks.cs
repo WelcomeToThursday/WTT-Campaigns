@@ -82,7 +82,8 @@ internal static class UiCompatibilityChecks
             var post = startup.Single(i => i.Operand is MethodReference m && m.Name == "PostJson");
             Check(
                 protocol.Previous.OpCode == Mono.Cecil.Cil.OpCodes.Ldc_I4_2
-                    && protocol.Offset < serialize.Offset && serialize.Offset < post.Offset
+                    && protocol.Offset < serialize.Offset
+                    && serialize.Offset < post.Offset
                     && !startup.Any(i => Equals(i.Operand, "{}")),
                 "Initial backend snapshot sends creator protocol 2 before any game session exists"
             );
