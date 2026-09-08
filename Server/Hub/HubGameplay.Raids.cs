@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Hub;
 using SPTarkov.Server.Core.Models.Common;
@@ -168,11 +167,11 @@ public sealed partial class HubGameplay
                     valid = false;
                     break;
                 }
-                var location = JObject.Parse(json.Serialize(child.Location)!);
-                var x = (int?)location["x"] ?? -1;
-                var y = (int?)location["y"] ?? -1;
+                var location = child.Location as ItemLocation ?? json.Deserialize<ItemLocation>(json.Serialize(child.Location)!)!;
+                var x = location.X ?? -1;
+                var y = location.Y ?? -1;
                 var childSize = inventory.GetItemSize(child.Template, child.Id, contents);
-                var rotated = location["r"]?.ToString() is "1" or "Vertical";
+                var rotated = location.R == ItemRotation.Vertical;
                 var w = rotated ? childSize.Item2 : childSize.Item1;
                 var h = rotated ? childSize.Item1 : childSize.Item2;
                 if (x < 0 || y < 0 || x + w > width || y + h > height)

@@ -36,11 +36,11 @@ internal static class AuthoringChecks
         var flow = new SeasonDefinition();
         var firstQuest = NativeQuestAuthoring.Create();
         flow.Quests.Add(firstQuest);
-        var firstChapter = QuestStoryFlow.CreateChapter(flow, (string)firstQuest["_id"]!);
+        var firstChapter = QuestStoryFlow.CreateChapter(flow, (string)firstQuest.Id!);
         check(flow.Story!.Quests.Single().ChapterId == firstChapter.Id, "Inline chapter creation assigns the current native quest");
         var secondQuest = QuestStoryFlow.AddQuest(flow, firstChapter.Id);
         check(
-            flow.Story.Quests.Count == 2 && flow.Story.Quests.Last().QuestId == (string)secondQuest["_id"]!,
+            flow.Story.Quests.Count == 2 && flow.Story.Quests.Last().QuestId == (string)secondQuest.Id!,
             "Chapter creation flow creates one linked native quest and membership"
         );
         var flowNote = QuestStoryFlow.AddNote(flow, flow.Story.Quests[0], "Success");
@@ -51,7 +51,7 @@ internal static class AuthoringChecks
         check(StoryAuthoring.Uses(flow, flowNote).Count == 1, "Inline linked notes retain deletion protection");
         NativeQuestAuthoring.QuestText(firstQuest, "name", "Supplies for the trader");
         check(
-            ReferenceNames.Resolve(flow, "quests", (string)firstQuest["_id"]!, (_, _) => "Installed old name") == "Supplies for the trader",
+            ReferenceNames.Resolve(flow, "quests", (string)firstQuest.Id!, (_, _) => "Installed old name") == "Supplies for the trader",
             "Unsaved authored names override installed content labels"
         );
         var flowBefore = JsonConvert.SerializeObject(flow);
@@ -84,16 +84,16 @@ internal static class AuthoringChecks
         var standalone = NativeQuestAuthoring.Create();
         scoped.Quests.Add(standalone);
         check(QuestStoryFlow.Quests(scoped, "").Single() == standalone, "Non-story editor excludes every valid chapter quest");
-        QuestStoryFlow.AssignQuest(scoped, (string)secondQuest["_id"]!, chapterTwo.Id);
+        QuestStoryFlow.AssignQuest(scoped, (string)secondQuest.Id!, chapterTwo.Id);
         check(
             QuestStoryFlow.Quests(scoped, firstChapter.Id).Count() == 1 && QuestStoryFlow.Quests(scoped, chapterTwo.Id).Count() == 1,
             "Each chapter editor includes only its assigned quests"
         );
         var scopedQuest = QuestStoryFlow.Quests(scoped, firstChapter.Id).Single();
-        scoped.Story.Quests.First(m => m.QuestId == (string)scopedQuest["_id"]!).Main = false;
+        scoped.Story.Quests.First(m => m.QuestId == (string)scopedQuest.Id!).Main = false;
         var scopedCopy = QuestStoryFlow.DuplicateQuest(scoped, scopedQuest);
         check(
-            QuestStoryFlow.ChapterForQuest(scoped, (string)scopedCopy["_id"]!) == firstChapter.Id && !scoped.Story.Quests.Last().Main,
+            QuestStoryFlow.ChapterForQuest(scoped, (string)scopedCopy.Id!) == firstChapter.Id && !scoped.Story.Quests.Last().Main,
             "Duplicating a chapter quest retains chapter and optional status"
         );
         check(
@@ -101,17 +101,16 @@ internal static class AuthoringChecks
             "Duplicated quest retains external journal references"
         );
         check(
-            QuestStoryFlow.DeleteQuest(scoped, scopedCopy).Count == 0
-                && !scoped.Story.Quests.Any(m => m.QuestId == (string)scopedCopy["_id"]!),
+            QuestStoryFlow.DeleteQuest(scoped, scopedCopy).Count == 0 && !scoped.Story.Quests.Any(m => m.QuestId == (string)scopedCopy.Id!),
             "Deleting an unreferenced chapter quest also removes its own membership"
         );
-        var scopedDialog = StoryAuthoring.AddConversation(scoped, "54cb50c76803fa8b248b4571", false, (string)scopedQuest["_id"]!);
+        var scopedDialog = StoryAuthoring.AddConversation(scoped, "54cb50c76803fa8b248b4571", false, (string)scopedQuest.Id!);
         var protectedSource = JsonConvert.SerializeObject(scoped);
         check(
             QuestStoryFlow.DeleteQuest(scoped, scopedQuest).Count > 0 && JsonConvert.SerializeObject(scoped) == protectedSource,
             "Referenced chapter quest deletion is blocked without changing any draft data"
         );
-        var orphan = scoped.Story.Quests.First(m => m.QuestId == (string)scopedQuest["_id"]!);
+        var orphan = scoped.Story.Quests.First(m => m.QuestId == (string)scopedQuest.Id!);
         orphan.ChapterId = "missing";
         check(QuestStoryFlow.Quests(scoped, "").Contains(scopedQuest), "Imported orphan story membership remains accessible for repair");
         QuestStoryFlow.AssignQuest(scoped, orphan.QuestId, firstChapter.Id);
@@ -123,7 +122,7 @@ internal static class AuthoringChecks
         var standaloneCopy = QuestStoryFlow.DuplicateQuest(scoped, standalone);
         check(
             QuestStoryFlow.Quests(scoped, "").Contains(standaloneCopy)
-                && !scoped.Story.Quests.Any(m => m.QuestId == (string)standaloneCopy["_id"]!),
+                && !scoped.Story.Quests.Any(m => m.QuestId == (string)standaloneCopy.Id!),
             "Non-story duplication never creates story membership"
         );
         var scopedRoundtrip = SeasonCompiler.Copy(scoped);
@@ -148,7 +147,7 @@ internal static class AuthoringChecks
         );
         removal = SeasonCompiler.Copy(flow);
         removalChapter = removal.Story!.Chapters.Single();
-        var retainedDialog = StoryAuthoring.AddConversation(removal, "54cb50c76803fa8b248b4571", false, (string)removal.Quests[0]["_id"]!);
+        var retainedDialog = StoryAuthoring.AddConversation(removal, "54cb50c76803fa8b248b4571", false, removal.Quests[0].Id);
         removalBefore = JsonConvert.SerializeObject(removal);
         var blockedChapter = ChapterDeletion.Delete(removal, removalChapter.Id, null);
         check(
@@ -205,7 +204,7 @@ internal static class AuthoringChecks
         season.Story.Chapters.Add(chapter);
         var quest = NativeQuestAuthoring.Create();
         season.Quests.Add(quest);
-        var questId = (string)quest["_id"]!;
+        var questId = (string)quest.Id!;
         var note = new StoryNote
         {
             Id = StoryAuthoring.NewId(),
@@ -239,18 +238,15 @@ internal static class AuthoringChecks
             duplicate.TraderId == dialog.TraderId && duplicate.MainVariable == dialog.MainVariable,
             "Duplication preserves references outside copied subtree"
         );
-        var duplicateQuest = (JObject)StoryAuthoring.Duplicate(quest);
+        var duplicateQuest = (NativeQuest)StoryAuthoring.Duplicate(quest);
         check(
-            NativeQuestAuthoring.QuestName(duplicateQuest) == "New quest" && (string)duplicateQuest["_id"]! != questId,
+            NativeQuestAuthoring.QuestName(duplicateQuest) == "New quest" && (string)duplicateQuest.Id! != questId,
             "Native quest duplication preserves remapped English names"
         );
-        check(
-            duplicateQuest["localization"]!["en"]![(string)duplicateQuest["_id"]! + " name"] != null,
-            "Native localization dictionary keys remap"
-        );
-        quest["customImportedField"] = new JObject { ["preserve"] = 12 };
+        check(duplicateQuest.English()[(string)duplicateQuest.Id! + " name"] != null, "Native localization dictionary keys remap");
+        JsonConvert.PopulateObject("{customImportedField:{preserve:12}}", quest);
         NativeQuestAuthoring.QuestText(quest, "name", "An authored quest");
-        check((int?)quest["customImportedField"]?["preserve"] == 12, "Simplified quest edits retain imported fields");
+        check((int?)JObject.FromObject(quest)["customImportedField"]?["preserve"] == 12, "Simplified quest edits retain imported fields");
         check(
             !StoryAuthoring.Visible(new StoryAction { Type = StoryActionType.QuitAction }, "QuestId"),
             "Actions expose only relevant fields"
@@ -269,16 +265,16 @@ internal static class AuthoringChecks
             "Counter filters are offered only within counters"
         );
         var counter = NativeQuestAuthoring.Condition("CounterCreator");
-        ((JArray)counter["counter"]!["conditions"]!).Add(NativeQuestAuthoring.Condition("Kills"));
+        counter.Counter!.Conditions.Add(NativeQuestAuthoring.Condition("Kills"));
         check(
-            StoryQuestCompatibility.Supports((JObject)counter["counter"]!["conditions"]![0]!),
+            StoryQuestCompatibility.Supports(counter.Counter!.Conditions[0], true),
             "Graphical counter filter has correct native nesting"
         );
-        var handover = (JObject)quest["conditions"]!["AvailableForFinish"]![0]!;
-        var objectiveId = (string)handover["id"]!;
+        var handover = quest.Conditions.AvailableForFinish[0];
+        var objectiveId = (string)handover.Id!;
         const string item = "5449016a4bdc2d6f028b456f";
-        handover["target"] = new JArray(item);
-        handover["value"] = 2;
+        handover.Target = new StringTargets(new[] { item });
+        handover.Value = 2;
         var source = JsonConvert.SerializeObject(season);
         var facts = new StoryFacts
         {
@@ -338,7 +334,7 @@ internal static class AuthoringChecks
             broken.Error.Contains("looping") && JsonConvert.SerializeObject(broken.State) == before,
             "Automatic loop rolls back entire rehearsal step"
         );
-        handover["onlyFoundInRaid"] = true;
+        handover.OnlyFoundInRaid = true;
         var manual = new StoryRehearsal(season, facts, 42);
         manual.Start(season.Story.EntryPoints[0].Id);
         manual.Select(dialog.Lines[1].Id);
@@ -384,7 +380,7 @@ internal static class AuthoringChecks
         var roundtrip = JsonConvert.DeserializeObject<SeasonDefinition>(JsonConvert.SerializeObject(season))!;
         check(SeasonCompiler.Texts(roundtrip)[note.Id + " text"] == note.Text, "Story text is available to localization after roundtrip");
         check(
-            JToken.DeepEquals(SeasonCompiler.GameplayIdentity(roundtrip), SeasonCompiler.GameplayIdentity(season)),
+            SeasonCompiler.GameplayIdentity(roundtrip) == SeasonCompiler.GameplayIdentity(season),
             "Editor-authored story roundtrip preserves gameplay identity"
         );
         check(

@@ -118,7 +118,7 @@ internal static class CreatorFixture
                         [objective] = "Hand over a research note",
                     },
                 },
-            }
+            }.ToObject<NativeQuest>()!
         );
         foreach (
             var field in new[]
@@ -132,12 +132,11 @@ internal static class CreatorFixture
             }
         )
         {
-            s.Quests[0][field] = quest + " " + field;
-            s.Quests[0]["localization"]!["en"]![quest + " " + field] = "Research delivery";
+            SeasonalPerks.Server.Web.Authoring.NativeQuestAuthoring.QuestText(s.Quests[0], field, "Research delivery");
         }
         var followup = SeasonRepository.NewId();
         var followupObjective = SeasonRepository.NewId();
-        var next = JObject.Parse(s.Quests[0].ToString().Replace(quest, followup).Replace(objective, followupObjective));
+        var next = JObject.Parse(JsonConvert.SerializeObject(s.Quests[0]).Replace(quest, followup).Replace(objective, followupObjective));
         next["conditions"]!["AvailableForStart"] = new JArray(
             new JObject
             {
@@ -152,7 +151,7 @@ internal static class CreatorFixture
         );
         next["QuestName"] = "Research follow-up";
         next["localization"]!["en"]![followup + " name"] = "Research follow-up";
-        s.Quests.Add(next);
+        s.Quests.Add(next.ToObject<NativeQuest>()!);
         s.Locales["fr"] = new() { [document.Id + " name"] = "Notes de recherche", [s.Id + " name"] = "Saison de recherche" };
         SeasonReward Reward(string name, string template, int x)
         {
@@ -179,11 +178,11 @@ internal static class CreatorFixture
                             }
                         ),
                     }
-                ),
+                ).ToObject<List<NativeReward>>()!,
             };
         }
         var gated = Reward("Research reward", "5449016a4bdc2d6f028b456f", 0);
-        gated.Conditions.Add(new JObject { ["conditionType"] = "Quest", ["target"] = followup });
+        gated.Conditions.Add(new NativeCondition { ConditionType = "Quest", Target = followup });
         gated.Costs.Add(new() { DocumentId = document.Id, Count = 1 });
         var supply = Reward("Supply crate", crate, 1);
         s.Pages[0].Rewards = [gated, supply];

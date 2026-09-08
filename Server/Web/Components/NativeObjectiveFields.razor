@@ -1,40 +1,39 @@
 @using SeasonalPerks.Server.Web.Authoring
 @using SeasonalPerks.Shared.Story
 <details class="editor-card objective-card" open @key="Value">
-<summary><span class="eyebrow">@(Nested ? "EVENT FILTER" : "OBJECTIVE")</span> @StoryAuthoring.Friendly((string?)Value["conditionType"] ?? "Imported objective")</summary>
-@if (StoryQuest && !StoryQuestCompatibility.Supports(Value)) { <p class="notice error">This objective is unsupported here. Counter filters must be inside a counter objective.</p> }
+<summary><span class="eyebrow">@(Nested ? "EVENT FILTER" : "OBJECTIVE")</span> @StoryAuthoring.Friendly(Value.ConditionType)</summary>
+@if (StoryQuest && !StoryQuestCompatibility.Supports(Value, Nested)) { <p class="notice error">This objective is unsupported here. Counter filters must be inside a counter objective.</p> }
 @if (!Nested)
 {
 <fieldset class="field-section"><legend>Player instruction</legend>
-<label>Objective text <HelpTip Text="Player-facing instruction, for example Find two medical kits. This text does not change what the objective checks." /><input value="@Quest["localization"]?["en"]?[Identity]" @onchange="@(e => ChangeText(e.Value?.ToString() ?? ""))" /></label>
-<label class="check"><input type="checkbox" checked="@((bool?)Value["isNecessary"] != false)" @onchange="@(async e => { Value["isNecessary"] = (bool)e.Value!; await Changed.InvokeAsync(); })" />Required objective <HelpTip Text="Required objectives block quest completion until satisfied. Optional objectives can remain unfinished." /></label>
+<label>Objective text <HelpTip Text="Player-facing instruction, for example Find two medical kits. This text does not change what the objective checks." /><input value="@Quest.Text(Value.Id)" @onchange="@(e => ChangeText(e.Value?.ToString() ?? ""))" /></label>
+<label class="check"><input type="checkbox" checked="@(Value.IsNecessary != false)" @onchange="@(async e => { Value.IsNecessary = (bool)e.Value!; await Changed.InvokeAsync(); })" />Required objective <HelpTip Text="Required objectives block quest completion until satisfied. Optional objectives can remain unfinished." /></label>
 </fieldset>
 }
-@if ((string?)Value["conditionType"] == "Quest")
-{ <fieldset class="field-section"><legend>Accepted prerequisite statuses</legend><p>Any selected status can satisfy the prerequisite.</p><div class="check-grid">@foreach(var status in NativeStatuses) { <label class="check"><input type="checkbox" checked="@(Value["status"] is JArray statuses && statuses.Values<int>().Contains(status.Value))" @onchange="@(e => ToggleStatus(status.Value, (bool)e.Value!))" />@status.Key <HelpTip Text="@($"The prerequisite may be {status.Key.ToLowerInvariant()}. {(status.Value == 4 ? "Success means completed and handed in." : "Select other statuses to allow alternatives.")}")" /></label> }</div></fieldset> }
+@if (Value.ConditionType == "Quest")
+{ <fieldset class="field-section"><legend>Accepted prerequisite statuses</legend><p>Any selected status can satisfy the prerequisite.</p><div class="check-grid">@foreach(var status in NativeStatuses) { <label class="check"><input type="checkbox" checked="@(Value.Status?.Contains(status.Value.ToString()) == true || Value.Status?.Contains(status.Key.Replace(" ", "")) == true)" @onchange="@(e => ToggleStatus(status.Value, (bool)e.Value!))" />@status.Key <HelpTip Text="@($"The prerequisite may be {status.Key.ToLowerInvariant()}. {(status.Value == 4 ? "Success means completed and handed in." : "Select other statuses to allow alternatives.")}")" /></label> }</div></fieldset> }
 <StructuredFields Value="Value" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Changed="Changed" Excluded="@(new[] { "counter", "isNecessary" })" />
-@if (Value["counter"] is JObject counter)
+@if (Value.Counter is { } counter)
 {
     <section class="editor-section"><header><h4>Qualifying raid events</h4><p>Filters belong to this counter. Combine event type, map and combat restrictions here.</p></header>
-    @foreach(var child in ((JArray?)counter["conditions"] ?? new()).OfType<JObject>().ToArray())
-    { <div class="objective-entry" @key="child"><NativeObjectiveFields Season="Season" Quest="Quest" Value="child" Nested="true" StoryQuest="StoryQuest" Changed="Changed" /><div class="record-actions"><button class="danger" @onclick="@(async () => { child.Remove(); await Changed.InvokeAsync(); })">Remove filter</button></div></div> }
+    @foreach(var child in counter.Conditions.ToArray())
+    { <div class="objective-entry" @key="child"><NativeObjectiveFields Season="Season" Quest="Quest" Value="child" Nested="true" StoryQuest="StoryQuest" Changed="Changed" /><div class="record-actions"><button class="danger" @onclick="@(async () => { counter.Conditions.Remove(child); await Changed.InvokeAsync(); })">Remove filter</button></div></div> }
     <select aria-label="Add counter filter" value="" @onchange="@(e => AddFilter(counter, e.Value?.ToString() ?? ""))"><option value="">Add filter…</option>@foreach(var kind in Kinds(true, true)) { <option>@kind</option> }</select>
     </section>
 }
 </details>
 @code {
     [Parameter] public SeasonDefinition Season { get; set; } = null!;
-    [Parameter] public JObject Quest { get; set; } = null!;
-    [Parameter] public JObject Value { get; set; } = null!;
+    [Parameter] public NativeQuest Quest { get; set; } = null!;
+    [Parameter] public NativeCondition Value { get; set; } = null!;
     [Parameter] public bool StoryQuest { get; set; }
     [Parameter] public bool Nested { get; set; }
     [Parameter] public EventCallback Changed { get; set; }
-    private string Identity => (string?)Value["id"] ?? "";
     private IEnumerable<ContentChoice> OwnedItems => StoryAuthoring.Choices(Season, "items").Select(c => new ContentChoice(c.Id, c.Name));
     private IEnumerable<ContentChoice> OwnedQuests => StoryAuthoring.Choices(Season, "quests").Select(c => new ContentChoice(c.Id, c.Name));
     private static readonly Dictionary<string, int> NativeStatuses = new() { ["Locked"] = 0, ["Available for start"] = 1, ["Started"] = 2, ["Available for finish"] = 3, ["Success"] = 4, ["Fail"] = 5, ["Fail restartable"] = 6, ["Marked as failed"] = 7, ["Expired"] = 8, ["Available after"] = 9 };
     public static IEnumerable<string> Kinds(bool story, bool nested) => NativeQuestAuthoring.ConditionKinds(story, nested);
-    private async Task ChangeText(string text) { Quest["localization"] ??= new JObject(); Quest["localization"]!["en"] ??= new JObject(); Quest["localization"]!["en"]![Identity] = text; await Changed.InvokeAsync(); }
-    private async Task ToggleStatus(int status, bool enabled) { var statuses = Value["status"] as JArray ?? new JArray(); Value["status"] = statuses; if (enabled && !statuses.Values<int>().Contains(status)) statuses.Add(status); else if (!enabled) foreach (var token in statuses.Where(t => (int)t == status).ToArray()) token.Remove(); await Changed.InvokeAsync(); }
-    private async Task AddFilter(JObject counter, string kind) { if (kind.Length == 0) return; ((JArray)counter["conditions"]!).Add(NativeQuestAuthoring.Condition(kind)); await Changed.InvokeAsync(); }
+    private async Task ChangeText(string text) { Quest.English()[Value.Id] = text; await Changed.InvokeAsync(); }
+    private async Task ToggleStatus(int status, bool enabled) { Value.Status ??= new(); var code = status.ToString(); if (enabled && !Value.Status.Contains(code)) Value.Status.Add(code); else if (!enabled) Value.Status.RemoveAll(s => s == code || s.Equals(NativeStatuses.First(p => p.Value == status).Key.Replace(" ", ""), StringComparison.OrdinalIgnoreCase)); await Changed.InvokeAsync(); }
+    private async Task AddFilter(NativeCounter counter, string kind) { if (kind.Length == 0) return; counter.Conditions.Add(NativeQuestAuthoring.Condition(kind)); await Changed.InvokeAsync(); }
 }

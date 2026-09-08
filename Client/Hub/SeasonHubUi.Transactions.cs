@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.UI.Models;
 using SPT.Common.Http;
 
@@ -32,9 +32,11 @@ public sealed partial class SeasonHubUi
         }
         else if (profile != null && File.Exists(PendingPath(profile)))
         {
-            var saved = JObject.Parse(File.ReadAllText(PendingPath(profile)));
-            _pendingBody = (string)saved["Body"]!;
-            _pendingAction = (string)saved["Action"]!;
+            var saved =
+                JsonConvert.DeserializeObject<PendingHubOperation>(File.ReadAllText(PendingPath(profile)))
+                ?? throw new InvalidDataException("Invalid pending hub operation.");
+            _pendingBody = saved.Body;
+            _pendingAction = saved.Action;
             if (_pendingAction is not ("claim" or "exchange"))
             {
                 throw new InvalidDataException("Invalid pending seasonal operation.");
@@ -54,7 +56,10 @@ public sealed partial class SeasonHubUi
     private void PersistPending()
     {
         var path = PendingPath(_pendingProfile!);
-        File.WriteAllText(path + ".tmp", new JObject { ["Body"] = _pendingBody, ["Action"] = _pendingAction }.ToString());
+        File.WriteAllText(
+            path + ".tmp",
+            JsonConvert.SerializeObject(new PendingHubOperation { Body = _pendingBody!, Action = _pendingAction! })
+        );
         if (File.Exists(path))
         {
             File.Replace(path + ".tmp", path, null);
@@ -84,13 +89,20 @@ public sealed partial class SeasonHubUi
             Plugin.Busy = true;
             _screen!.ShowMessage("Saving inventory...", false);
             await Plugin.FlushPendingOperations();
-            var body = JObject.FromObject(action);
-            body.Remove("Action");
-            body["ProtocolVersion"] = 2;
-            body["SeasonId"] = Plugin.Current?.SeasonId;
-            body["PackRevision"] = Plugin.Current?.PackRevision;
-            body["OperationId"] = Guid.NewGuid().ToString("N");
-            _pendingBody = body.ToString(Formatting.None);
+            var body = new HubMutation
+            {
+                ProtocolVersion = 2,
+                SeasonId = Plugin.Current!.SeasonId,
+                PackRevision = Plugin.Current.PackRevision,
+                OperationId = Guid.NewGuid().ToString("N"),
+                ExpectedRevision = action.ExpectedRevision,
+                RewardId = action.RewardId,
+                UseClassified = action.UseClassified,
+                DocumentId = action.DocumentId,
+                Crate = action.Crate,
+                Sources = new(action.Sources),
+            };
+            _pendingBody = JsonConvert.SerializeObject(body);
             _pendingAction = action.Action;
             _pendingProfile = Plugin.Current!.EffectiveProfileId;
             PersistPending();
@@ -130,8 +142,8 @@ public sealed partial class SeasonHubUi
                 _screen!.ShowMessage("Applying seasonal transaction...", false);
             }
             var raw = await RequestHandler.PostJsonAsync("/wtt-seasonal/hub/" + _pendingAction, _pendingBody);
-            var result = JObject.Parse(raw);
-            var error = (string?)result["Error"] ?? "";
+            var result = JsonConvert.DeserializeObject<HubResult>(raw) ?? throw new InvalidDataException("Invalid hub response.");
+            var error = result.Error;
             if (error.Length > 0)
             {
                 ClearPending();
@@ -143,7 +155,7 @@ public sealed partial class SeasonHubUi
                 }
                 return;
             }
-            if ((bool?)result["Committed"] != true)
+            if (result.Committed != true)
             {
                 throw new InvalidDataException("The server did not confirm the transaction.");
             }
@@ -155,7 +167,7 @@ public sealed partial class SeasonHubUi
             if (IsOpen)
             {
                 await LoadState();
-                _screen!.ShowResult((string?)result["Message"] ?? "Transaction complete.");
+                _screen!.ShowResult(result.Message);
             }
         }
         catch (Exception e)

@@ -1,5 +1,5 @@
 using System.Security.Cryptography;
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 using SeasonalPerks.Shared.Story;
 using UnityEngine;
 
@@ -47,9 +47,11 @@ internal static class StoryMediaStore
 
     internal static AssetBundle OpenTrader(string traderId)
     {
-        var manifest = JObject.Parse(File.ReadAllText(Path.Combine(Plugin.Folder, "StoryMedia", "traders.json")));
-        var room = ((JArray)manifest["rooms"]!).Single(r => (string?)r["trader"] == traderId);
-        return Open((string)room["bundle"]!, (string)room["sha256"]!);
+        var manifest =
+            JsonConvert.DeserializeObject<TraderMediaManifest>(File.ReadAllText(Path.Combine(Plugin.Folder, "StoryMedia", "traders.json")))
+            ?? throw new InvalidDataException("Invalid trader media manifest.");
+        var room = manifest.Rooms.Single(r => r.Trader == traderId);
+        return Open(room.Bundle, room.Sha256);
     }
 
     internal static bool HasTrader(string traderId)

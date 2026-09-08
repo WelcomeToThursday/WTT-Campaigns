@@ -20,37 +20,37 @@
 }
 <button class="subtle" @onclick="@(() => Reward.Costs.Add(new() { DocumentId = Documents.FirstOrDefault()?.Id ?? string.Empty, Count = 1 }))">Add cost</button>
 </section><section class="editor-section"><h3>Reward contents <HelpTip Text="Every payload is granted together in one claim. Tarcoins are local currency; trader unlocks make an offer available rather than granting its items." /></h3>
-@foreach (var grant in Reward.Grants.OfType<JObject>().ToArray())
+@foreach (var grant in Reward.Grants.ToArray())
 {
-    <div class="editor-card"><div class="row"><strong>@grant["type"]</strong><button @onclick="@(() => grant.Remove())">Remove payload</button></div>
-    @if ((string?)grant["type"] == "Tarcoin") { <label>Amount<input type="number" min="1" value="@grant["value"]" @onchange="@(e => grant["value"] = int.TryParse(e.Value?.ToString(), out var n) ? n : 1)" /></label> }
-    else if ((string?)grant["type"] == "CustomizationDirect") { <ContentPicker Kind="customizations" Label="Customization" Value="@((string?)grant["target"] ?? string.Empty)" ValueChanged="@(v => grant["target"] = v)" /> }
-    else if ((string?)grant["type"] == "AssortmentUnlock") { <ContentPicker Kind="offers" Label="Trader offer" Value="@((string?)grant["traderId"] + "/" + (string?)grant["target"])" ValueChanged="@(v => ReplaceOffer(grant, v))" /> }
-    else if (grant["items"] is JArray items)
+    <div class="editor-card"><div class="row"><strong>@grant.Type</strong><button @onclick="@(() => Reward.Grants.Remove(grant))">Remove payload</button></div>
+    @if ((string?)grant.Type == "Tarcoin") { <label>Amount<input type="number" min="1" value="@grant.Value" @onchange="@(e => grant.Value = int.TryParse(e.Value?.ToString(), out var n) ? n : 1)" /></label> }
+    else if ((string?)grant.Type == "CustomizationDirect") { <ContentPicker Kind="customizations" Label="Customization" Value="@((string?)grant.Target ?? string.Empty)" ValueChanged="@(v => grant.Target = v)" /> }
+    else if ((string?)grant.Type == "AssortmentUnlock") { <ContentPicker Kind="offers" Label="Trader offer" Value="@((string?)grant.TraderId + "/" + (string?)grant.Target)" ValueChanged="@(v => ReplaceOffer(grant, v))" /> }
+    else if (grant.Items is { } items)
     {
-        @foreach (var item in items.OfType<JObject>())
+        @foreach (var item in items)
         {
-            <ContentPicker Kind="items" Label="Reward item" Value="@((string?)item["_tpl"] ?? string.Empty)" ValueChanged="@(v => item["_tpl"] = v)" Additional="OwnedItems" />
-            <label>Quantity<input type="number" min="1" value="@item["upd"]?["StackObjectsCount"]" @onchange="@(e => item["upd"]!["StackObjectsCount"] = int.TryParse(e.Value?.ToString(), out var n) ? n : 1)" /></label>
+            <ContentPicker Kind="items" Label="Reward item" Value="@((string?)item.Template ?? string.Empty)" ValueChanged="@(v => item.Template = v)" Additional="OwnedItems" />
+            <label>Quantity<input type="number" min="1" value="@item.Upd?.StackObjectsCount" @onchange="@(e => (item.Upd ??= new()).StackObjectsCount = int.TryParse(e.Value?.ToString(), out var n) ? n : 1)" /></label>
         }
     }
     </div>
 }
 <div class="inline-fields"><select aria-label="Payload type" @bind="_grantKind"><option>Item</option><option>Tarcoin</option><option>CustomizationDirect</option><option>AssortmentUnlock</option></select><button @onclick="AddGrant">Add payload</button></div>
 </section><section class="editor-section"><h3>Requirements <HelpTip Text="All listed requirements must be met, along with the page gate, faction restriction and document cost." /></h3>
-@foreach (var condition in Reward.Conditions.OfType<JObject>().ToArray())
+@foreach (var condition in Reward.Conditions.ToArray())
 {
     <div class="editor-card">
-        @if ((string?)condition["conditionType"] == "Level") { <label>Minimum level<input type="number" min="1" value="@condition["value"]" @onchange="@(e => condition["value"] = int.TryParse(e.Value?.ToString(), out var n) ? n : 1)" /></label> }
-        else { <ContentPicker Kind="quests" Label="Completed quest" Value="@((string?)condition["target"] ?? string.Empty)" ValueChanged="@(v => condition["target"] = v)" Additional="OwnedQuests" /> }
-        <button @onclick="@(() => condition.Remove())">Remove requirement</button>
+        @if ((string?)condition.ConditionType == "Level") { <label>Minimum level<input type="number" min="1" value="@condition.Value" @onchange="@(e => condition.Value = int.TryParse(e.Value?.ToString(), out var n) ? n : 1)" /></label> }
+        else { <ContentPicker Kind="quests" Label="Completed quest" Value="@((string?)condition.Target ?? string.Empty)" ValueChanged="@(v => condition.Target = v)" Additional="OwnedQuests" /> }
+        <button @onclick="@(() => Reward.Conditions.Remove(condition))">Remove requirement</button>
     </div>
 }
 <div class="row"><button @onclick="AddLevel">Add level requirement</button><button @onclick="AddQuest">Add quest requirement</button></div>
 </section>
 @code {
-    private void AddLevel() => Reward.Conditions.Add(new JObject { ["conditionType"] = "Level", ["value"] = 1, ["compareMethod"] = ">=" });
-    private void AddQuest() => Reward.Conditions.Add(new JObject { ["conditionType"] = "Quest", ["target"] = "" });
+    private void AddLevel() => Reward.Conditions.Add(new NativeCondition { ConditionType = "Level", Value = 1, CompareMethod = ">=" });
+    private void AddQuest() => Reward.Conditions.Add(new NativeCondition { ConditionType = "Quest", Target = "" });
     [Parameter, EditorRequired] public SeasonReward Reward { get; set; } = new();
     [Parameter] public int Columns { get; set; } = 5;
     [Parameter] public int Rows { get; set; } = 2;
@@ -59,13 +59,11 @@
     [Parameter] public IEnumerable<ContentChoice> OwnedItems { get; set; } = [];
     [Parameter] public IEnumerable<ContentChoice> OwnedQuests { get; set; } = [];
     private string _grantKind = "Item";
-    private void ReplaceOffer(JObject grant, string value) { if (!string.IsNullOrEmpty(value)) grant.Replace(Content.Offer(value)); }
+    private void ReplaceOffer(NativeReward grant, string value) { if (!string.IsNullOrEmpty(value)) Reward.Grants[Reward.Grants.IndexOf(grant)] = Content.Offer(value); }
     private void AddGrant()
     {
-        var grant = new JObject { ["id"] = SeasonRepository.NewId(), ["type"] = _grantKind };
-        if (_grantKind == "Item") { var id = SeasonRepository.NewId(); grant["target"] = id; grant["items"] = new JArray(new JObject { ["_id"] = id, ["_tpl"] = "", ["upd"] = new JObject { ["StackObjectsCount"] = 1 } }); }
-        else if (_grantKind == "Tarcoin") grant["value"] = 50;
-        else grant["target"] = "";
+        var grant = SeasonalPerks.Server.Web.Authoring.NativeQuestAuthoring.Reward(_grantKind);
+        if (_grantKind == "Tarcoin") grant.Value = 50;
         Reward.Grants.Add(grant);
     }
 }

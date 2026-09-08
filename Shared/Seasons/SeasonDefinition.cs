@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Configuration;
 using SeasonalPerks.Shared.Contracts;
+using SeasonalPerks.Shared.Native;
 using SeasonalPerks.Shared.Perks;
 using SeasonalPerks.Shared.Serialization;
 using SeasonalPerks.Shared.Story;
@@ -36,12 +36,12 @@ public sealed class SeasonDefinition : ExtensibleJsonModel
     public int CrateCost { get; set; } = 10;
     public List<SeasonItem> Items { get; set; } = new();
     public List<SeasonCrate> Crates { get; set; } = new();
-    public JArray Quests { get; set; } = new();
+    public List<NativeQuest> Quests { get; set; } = new();
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public StoryDefinition? Story { get; set; }
-    public JArray Offers { get; set; } = new();
-    public JObject ImportedItems { get; set; } = new();
+    public List<NativeOffer> Offers { get; set; } = new();
+    public Dictionary<string, NativeItemTemplate> ImportedItems { get; set; } = new();
     public SeasonStartingSetup Starting { get; set; } = new();
     public List<string> Dependencies { get; set; } = new();
 
@@ -98,8 +98,8 @@ public sealed class SeasonReward : ExtensibleJsonModel
     public bool Enabled { get; set; } = true;
     public List<HubCost> Costs { get; set; } = new();
     public List<string> Requirements { get; set; } = new();
-    public JArray Grants { get; set; } = new();
-    public JArray Conditions { get; set; } = new();
+    public List<NativeReward> Grants { get; set; } = new();
+    public List<NativeCondition> Conditions { get; set; } = new();
 }
 
 public sealed class SeasonItem : ExtensibleJsonModel

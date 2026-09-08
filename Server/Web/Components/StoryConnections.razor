@@ -37,8 +37,8 @@
     {
         get
         {
-            var token = JObject.FromObject(Value);
-            var ids = token.Descendants().OfType<JValue>().Where(v => v.Type == JTokenType.String && v.Parent is not JProperty { Name: "Id" }).Select(v => v.ToString()).ToHashSet();
+            var token = ModelGraph.Texts(Value);
+            var ids = token.Where(v => !v.IsIdentity).Select(v => v.Value).ToHashSet();
             return StoryAuthoring.Records(Season.Story).Where(r => !ReferenceEquals(r, Value) && ids.Contains(StoryAuthoring.Id(r)));
         }
     }

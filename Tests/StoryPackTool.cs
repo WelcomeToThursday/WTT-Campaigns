@@ -33,11 +33,11 @@ internal static class StoryPackTool
         draft.Definition.Story = overlay["Story"]?.ToObject<StoryDefinition>() ?? throw new InvalidDataException("Story is required.");
         foreach (var quest in overlay["Quests"] as JArray ?? new JArray())
         {
-            if (draft.Definition.Quests.Any(q => (string?)q["_id"] == (string?)quest["_id"]))
+            if (draft.Definition.Quests.Any(q => q.Id == (string?)quest["_id"]))
             {
                 throw new InvalidDataException("An added story quest collides with a base-pack quest.");
             }
-            draft.Definition.Quests.Add(quest.DeepClone());
+            draft.Definition.Quests.Add(quest.ToObject<NativeQuest>()!);
         }
         foreach (var language in (overlay["Locales"] as JObject ?? new JObject()).Properties())
         {

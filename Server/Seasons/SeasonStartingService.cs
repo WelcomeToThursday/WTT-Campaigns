@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Hub;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Profile;
@@ -20,8 +19,7 @@ public sealed class SeasonStartingService(
     SaveServer saves,
     ICloner cloner,
     InventoryHelper inventory,
-    TemplateTable templates,
-    JsonUtil json
+    TemplateTable templates
 )
 {
     public async Task Apply(MongoId id, string side, string seasonId = "")
@@ -81,9 +79,9 @@ public sealed class SeasonStartingService(
             else
             {
                 var root = pmc.Inventory!.Items!.Single(i => i.Id == pmc.Inventory.Equipment);
-                var equipment = JObject.Parse(json.Serialize(templates.Items[root.Template])!);
-                var slot = equipment["_props"]?["Slots"]?.FirstOrDefault(s => (string?)s["_name"] == entry.Slot);
-                var allowed = slot?["_props"]?["filters"]?.SelectMany(f => f["Filter"] ?? new JArray()).Values<string>().ToHashSet() ?? [];
+                var equipment = templates.Items[root.Template];
+                var slot = equipment.Properties?.Slots?.FirstOrDefault(s => s.Name == entry.Slot);
+                var allowed = slot?.Properties?.Filters?.SelectMany(f => f.Filter ?? []).Select(id => id.ToString()).ToHashSet() ?? [];
                 var ancestors = new HashSet<string>();
                 var current = item.Template;
                 while (ancestors.Add(current.ToString()) && templates.Items.TryGetValue(current, out var template))

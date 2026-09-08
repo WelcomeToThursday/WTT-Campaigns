@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Seasons;
 
 namespace SeasonalPerks.Server.Web.Authoring;
@@ -28,114 +27,95 @@ public static class NativeQuestAuthoring
             : ["Level", "Quest", "TraderLoyalty", "FindItem", "HandoverItem"];
     }
 
-    public static JObject Condition(string kind)
+    public static NativeCondition Condition(string kind)
     {
-        var condition = new JObject
+        var condition = new NativeCondition
         {
-            ["id"] = SeasonRepository.NewId(),
-            ["conditionType"] = kind,
-            ["index"] = 0,
-            ["parentId"] = "",
-            ["dynamicLocale"] = false,
-            ["visibilityConditions"] = new JArray(),
-            ["value"] = 1,
-            ["compareMethod"] = ">=",
+            Id = SeasonRepository.NewId(),
+            ConditionType = kind,
+            Index = 0,
+            ParentId = "",
+            DynamicLocale = false,
+            Value = 1,
+            CompareMethod = ">=",
+            Target = kind == "Level" ? null : new StringTargets(""),
         };
-        if (kind != "Level")
-        {
-            condition["target"] = "";
-        }
-
         if (kind is "FindItem" or "HasItem" or "HandoverItem" or "LeaveItemAtLocation")
         {
-            condition["target"] = new JArray("");
-            condition["onlyFoundInRaid"] = false;
-            condition["minDurability"] = 0;
-            condition["maxDurability"] = 100;
+            condition.Target = new StringTargets(new[] { "" });
+            condition.OnlyFoundInRaid = false;
+            condition.MinDurability = 0;
+            condition.MaxDurability = 100;
         }
-
         if (kind == "Quest")
         {
-            condition["status"] = new JArray(4);
-            condition["availableAfter"] = 0;
+            condition.Status = ["4"];
+            condition.AvailableAfter = 0;
         }
-
         if (kind == "CounterCreator")
         {
-            condition.Remove("target");
-            condition["counter"] = new JObject { ["id"] = SeasonRepository.NewId(), ["conditions"] = new JArray() };
-            condition["oneSessionOnly"] = false;
+            condition.Target = null;
+            condition.Counter = new() { Id = SeasonRepository.NewId() };
+            condition.OneSessionOnly = false;
         }
-
         if (kind is "VisitPlace" or "LeaveItemAtLocation" or "InZone" or "LaunchFlare")
         {
-            condition["zoneId"] = "";
+            condition.ZoneId = "";
         }
 
         if (kind == "LeaveItemAtLocation")
         {
-            condition["plantTime"] = 10;
+            condition.PlantTime = 10;
         }
 
-        if (kind == "Kills")
+        if (kind is "Kills" or "Shots")
         {
-            condition["target"] = "Any";
-            condition["bodyPart"] = new JArray();
-            condition["weapon"] = new JArray();
-            condition["distance"] = new JObject { ["compareMethod"] = ">=", ["value"] = 0 };
+            condition.Target = "Any";
+            condition.BodyPart = [];
+            condition.Weapon = [];
+            if (kind == "Kills")
+            {
+                condition.Distance = new() { CompareMethod = ">=", Value = 0 };
+            }
         }
-
-        if (kind == "Shots")
-        {
-            condition["target"] = "Any";
-            condition["bodyPart"] = new JArray();
-            condition["weapon"] = new JArray();
-        }
-
         if (kind is "Location" or "ExitStatus" or "ExitName" or "Equipment" or "UseItem")
         {
-            condition["target"] = new JArray();
+            condition.Target = new StringTargets(Array.Empty<string>());
         }
 
         return condition;
     }
 
-    public static JObject Create()
+    public static NativeQuest Create()
     {
         var id = SeasonRepository.NewId();
-        var quest = new JObject
+        var quest = new NativeQuest
         {
-            ["_id"] = id,
-            ["QuestName"] = "New quest",
-            ["name"] = id + " name",
-            ["description"] = id + " description",
-            ["traderId"] = "54cb50c76803fa8b248b4571",
-            ["location"] = "any",
-            ["image"] = "/files/quest/icon/596b36c586f77450d6045ad2.jpg",
-            ["type"] = "PickUp",
-            ["side"] = "Pmc",
-            ["canShowNotificationsInGame"] = true,
-            ["restartable"] = false,
-            ["instantComplete"] = false,
-            ["conditions"] = new JObject
+            Id = id,
+            QuestName = "New quest",
+            Name = id + " name",
+            Description = id + " description",
+            TraderId = "54cb50c76803fa8b248b4571",
+            Location = "any",
+            Image = "/files/quest/icon/596b36c586f77450d6045ad2.jpg",
+            Type = "PickUp",
+            Side = "Pmc",
+            CanShowNotificationsInGame = true,
+            Restartable = false,
+            InstantComplete = false,
+            Rewards = new()
             {
-                ["AvailableForStart"] = new JArray(),
-                ["AvailableForFinish"] = new JArray(),
-                ["Fail"] = new JArray(),
+                ["Started"] = new(),
+                ["Success"] = new(),
+                ["Fail"] = new(),
             },
-            ["rewards"] = new JObject
+            Localization = new()
             {
-                ["Started"] = new JArray(),
-                ["Success"] = new JArray(),
-                ["Fail"] = new JArray(),
-            },
-            ["localization"] = new JObject
-            {
-                ["en"] = new JObject { [id + " name"] = "New quest", [id + " description"] = "Complete the objectives." },
+                ["en"] = new() { [id + " name"] = "New quest", [id + " description"] = "Complete the objectives." },
             },
         };
         foreach (
-            var key in new[]
+            var field in new[]
             {
                 "startedMessageText",
                 "successMessageText",
@@ -146,8 +126,7 @@ public static class NativeQuestAuthoring
             }
         )
         {
-            quest[key] = id + " " + key;
-            quest["localization"]!["en"]![id + " " + key] = key == "successMessageText" ? "Well done." : "I have a task for you.";
+            QuestText(quest, field, field == "successMessageText" ? "Well done." : "I have a task for you.");
         }
 
         AddCondition(quest, "AvailableForStart", "Level");
@@ -155,30 +134,67 @@ public static class NativeQuestAuthoring
         return quest;
     }
 
-    public static string QuestLocale(JObject quest, string field)
+    public static string? LocaleKey(NativeQuest quest, string field)
     {
-        return (string?)quest["localization"]?["en"]?[(string?)quest[field] ?? ""] ?? "";
-    }
-
-    public static string QuestName(JObject quest)
-    {
-        return QuestLocale(quest, "name") is { Length: > 0 } name ? name : (string?)quest["QuestName"] ?? (string)quest["_id"]!;
-    }
-
-    public static void QuestText(JObject quest, string field, string value)
-    {
-        var key = (string?)quest[field] ?? (string)quest["_id"]! + " " + field;
-        quest[field] = key;
-        quest["localization"] ??= new JObject();
-        quest["localization"]!["en"] ??= new JObject();
-        quest["localization"]!["en"]![key] = value;
-        if (field == "name")
+        return field switch
         {
-            quest["QuestName"] = value;
-        }
+            "name" => quest.Name,
+            "description" => quest.Description,
+            "startedMessageText" => quest.StartedMessageText,
+            "successMessageText" => quest.SuccessMessageText,
+            "failMessageText" => quest.FailMessageText,
+            "acceptPlayerMessage" => quest.AcceptPlayerMessage,
+            "completePlayerMessage" => quest.CompletePlayerMessage,
+            "declinePlayerMessage" => quest.DeclinePlayerMessage,
+            _ => throw new ArgumentException("Unknown quest text: " + field),
+        };
     }
 
-    public static void AddCondition(JObject quest, string stage, string kind)
+    public static string QuestLocale(NativeQuest quest, string field)
+    {
+        return quest.Text(LocaleKey(quest, field) ?? "");
+    }
+
+    public static string QuestName(NativeQuest quest)
+    {
+        return QuestLocale(quest, "name") is { Length: > 0 } name ? name : quest.QuestName ?? quest.Id;
+    }
+
+    public static void QuestText(NativeQuest quest, string field, string value)
+    {
+        var key = LocaleKey(quest, field) ?? quest.Id + " " + field;
+        switch (field)
+        {
+            case "name":
+                quest.Name = key;
+                quest.QuestName = value;
+                break;
+            case "description":
+                quest.Description = key;
+                break;
+            case "startedMessageText":
+                quest.StartedMessageText = key;
+                break;
+            case "successMessageText":
+                quest.SuccessMessageText = key;
+                break;
+            case "failMessageText":
+                quest.FailMessageText = key;
+                break;
+            case "acceptPlayerMessage":
+                quest.AcceptPlayerMessage = key;
+                break;
+            case "completePlayerMessage":
+                quest.CompletePlayerMessage = key;
+                break;
+            case "declinePlayerMessage":
+                quest.DeclinePlayerMessage = key;
+                break;
+        }
+        quest.English()[key] = value;
+    }
+
+    public static void AddCondition(NativeQuest quest, string stage, string kind)
     {
         if (kind.Length == 0)
         {
@@ -186,45 +202,42 @@ public static class NativeQuestAuthoring
         }
 
         var condition = Condition(kind);
-        var id = (string)condition["id"]!;
-        condition["index"] = ((JArray)quest["conditions"]![stage]!).Count;
-        ((JArray)quest["conditions"]![stage]!).Add(condition);
-        quest["localization"]!["en"]![id] = kind == "HandoverItem" ? "Hand over the required items" : "Complete the requirement";
+        condition.Index = quest.Conditions.Stage(stage).Count;
+        quest.Conditions.Stage(stage).Add(condition);
+        quest.English()[condition.Id] = kind == "HandoverItem" ? "Hand over the required items" : "Complete the requirement";
     }
 
-    public static void AddQuestReward(JObject quest, string rewardKind, string stage = "Success")
+    public static NativeReward Reward(string kind)
     {
-        if (rewardKind != "Item")
+        var reward = new NativeReward
         {
-            ((JArray)quest["rewards"]![stage]!).Add(
-                new JObject
+            Id = SeasonRepository.NewId(),
+            Type = kind,
+            Target = "",
+            Value = kind == "Experience" ? 100 : 1,
+        };
+        if (kind == "Item")
+        {
+            reward.Target = SeasonRepository.NewId();
+            reward.Items.Add(
+                new()
                 {
-                    ["id"] = SeasonRepository.NewId(),
-                    ["type"] = rewardKind,
-                    ["target"] = "",
-                    ["value"] = rewardKind == "Experience" ? 100 : 1,
+                    Id = reward.Target,
+                    Template = "",
+                    Upd = new() { StackObjectsCount = 1 },
                 }
             );
-            return;
+        }
+        return reward;
+    }
+
+    public static void AddQuestReward(NativeQuest quest, string rewardKind, string stage = "Success")
+    {
+        if (!quest.Rewards.TryGetValue(stage, out var rewards))
+        {
+            quest.Rewards[stage] = rewards = new();
         }
 
-        var id = SeasonRepository.NewId();
-        ((JArray)quest["rewards"]![stage]!).Add(
-            new JObject
-            {
-                ["id"] = SeasonRepository.NewId(),
-                ["type"] = "Item",
-                ["target"] = id,
-                ["value"] = 1,
-                ["items"] = new JArray(
-                    new JObject
-                    {
-                        ["_id"] = id,
-                        ["_tpl"] = "",
-                        ["upd"] = new JObject { ["StackObjectsCount"] = 1 },
-                    }
-                ),
-            }
-        );
+        rewards.Add(Reward(rewardKind));
     }
 }

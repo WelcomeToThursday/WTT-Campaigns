@@ -69,7 +69,9 @@ public sealed class ProgressionService(TemplateTable templates, TradersTable tra
             quest.TraderId = new MongoId(spec.TraderId);
             if (!spec.UseBetaStart)
             {
-                quest.Conditions.AvailableForStart = json.Deserialize<List<QuestCondition>>(spec.Start.ToString())!;
+                quest.Conditions.AvailableForStart = json.Deserialize<List<QuestCondition>>(
+                    Newtonsoft.Json.JsonConvert.SerializeObject(spec.Start)
+                )!;
             }
             foreach (var condition in quest.Conditions.AvailableForStart ?? [])
             {
@@ -85,7 +87,7 @@ public sealed class ProgressionService(TemplateTable templates, TradersTable tra
                 stageRewards.RemoveAll(r => r.Type == RewardType.TraderStanding);
                 if (spec.Reputation.TryGetValue(stage, out var captured))
                 {
-                    stageRewards.AddRange(json.Deserialize<List<Reward>>(captured.ToString())!);
+                    stageRewards.AddRange(json.Deserialize<List<Reward>>(Newtonsoft.Json.JsonConvert.SerializeObject(captured))!);
                 }
                 quest.Rewards[stage] = stageRewards;
             }

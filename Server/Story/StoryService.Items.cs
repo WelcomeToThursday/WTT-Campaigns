@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -13,7 +12,7 @@ public sealed partial class StoryService
             || templates.Items.GetValueOrDefault(item.Template)?.Properties?.QuestItem == true;
     }
 
-    private IEnumerable<Item> HandoverItems(PmcData pmc, JObject condition)
+    private IEnumerable<Item> HandoverItems(PmcData pmc, NativeCondition condition)
     {
         return (pmc.Inventory?.Items ?? []).Where(item =>
             MatchesItem(item, condition)
@@ -45,11 +44,9 @@ public sealed partial class StoryService
         return false;
     }
 
-    private bool MatchesItem(Item item, JObject condition)
+    private bool MatchesItem(Item item, NativeCondition condition)
     {
-        var targets = condition["target"] is JArray array
-            ? array.Values<string>().ToHashSet()
-            : new HashSet<string?> { (string?)condition["target"] };
+        var targets = (condition.Target?.Values ?? []).ToHashSet();
         var template = templates.Items.GetValueOrDefault(item.Template);
         if (template == null)
         {
@@ -69,16 +66,16 @@ public sealed partial class StoryService
         }
         if (
             !accepted
-            || (bool?)condition["onlyFoundInRaid"] == true && item.Upd?.SpawnedInSession != true
-            || item.Upd?.Dogtag != null && item.Upd.Dogtag.Level < ((int?)condition["dogtagLevel"] ?? 0)
+            || (bool?)condition.OnlyFoundInRaid == true && item.Upd?.SpawnedInSession != true
+            || item.Upd?.Dogtag != null && item.Upd.Dogtag.Level < ((int?)condition.DogtagLevel ?? 0)
             || item.Upd?.RecodableComponent != null
-                && (item.Upd.RecodableComponent.IsEncoded ?? false) != ((bool?)condition["isEncoded"] ?? false)
+                && (item.Upd.RecodableComponent.IsEncoded ?? false) != ((bool?)condition.IsEncoded ?? false)
         )
         {
             return false;
         }
-        var minimum = (double?)condition["minDurability"] ?? 0;
-        var maximum = (double?)condition["maxDurability"] ?? 0;
+        var minimum = (double?)condition.MinDurability ?? 0;
+        var maximum = (double?)condition.MaxDurability ?? 0;
         if (minimum == 0 && maximum == 0)
         {
             return true;

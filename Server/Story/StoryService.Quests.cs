@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Story;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
@@ -10,13 +9,13 @@ namespace SeasonalPerks.Server.Story;
 
 public sealed partial class StoryService
 {
-    private JObject QuestTemplate(StoryProgress state, StoryDefinition definition, string questId)
+    private NativeQuest QuestTemplate(StoryProgress state, StoryDefinition definition, string questId)
     {
         if (!definition.Quests.Any(q => q.QuestId == questId))
         {
             throw new InvalidOperationException("The quest does not belong to this story.");
         }
-        return repository.Runtime(state.SeasonId).Definition.Quests.OfType<JObject>().SingleOrDefault(q => (string?)q["_id"] == questId)
+        return repository.Runtime(state.SeasonId).Definition.Quests.SingleOrDefault(q => (string?)q.Id == questId)
             ?? throw new InvalidOperationException("External quests are read-only story dependencies.");
     }
 
@@ -35,9 +34,9 @@ public sealed partial class StoryService
         var quest = pmc.Quests?.FirstOrDefault(q => q.QId.ToString() == questId);
         bool Stage(string stage)
         {
-            return ((JArray)template["conditions"]![stage]!)
-                .OfType<JObject>()
-                .Where(c => (bool?)c["isNecessary"] != false)
+            return template
+                .Conditions.Stage(stage)
+                .Where(c => (bool?)c.IsNecessary != false)
                 .All(c => Condition(c, pmc, definition, state, facts));
         }
         switch (action.Type)
@@ -78,10 +77,10 @@ public sealed partial class StoryService
                 {
                     throw new InvalidOperationException("Quest items can only be handed over for an active quest outside a raid.");
                 }
-                var condition = ((JArray)template["conditions"]!["AvailableForFinish"]!)
-                    .OfType<JObject>()
-                    .Single(c => (string?)c["id"] == action.ConditionId && (string?)c["conditionType"] == "HandoverItem");
-                var remaining = (double)condition["value"]! - facts.ConditionCounters.GetValueOrDefault(action.ConditionId);
+                var condition = template.Conditions.AvailableForFinish.Single(c =>
+                    (string?)c.Id == action.ConditionId && (string?)c.ConditionType == "HandoverItem"
+                );
+                var remaining = (double)condition.Value! - facts.ConditionCounters.GetValueOrDefault(action.ConditionId);
                 var items = new List<IdWithCount>();
                 foreach (
                     var item in HandoverItems(pmc, condition)
@@ -119,31 +118,23 @@ public sealed partial class StoryService
     private void Reconcile(string id, PmcData pmc, StoryDefinition definition, StoryProgress state, StoryFacts facts)
     {
         // Bounded fixed point supports chapter chains while rejecting automatic cycles.
-        var limit =
-            definition.Quests.Count
-            + repository
-                .Runtime(state.SeasonId)
-                .Definition.Quests.OfType<JObject>()
-                .Sum(q => (q["conditions"] as JContainer)?.Descendants().OfType<JObject>().Count(c => c["conditionType"] != null) ?? 0);
+        var limit = definition.Quests.Count + repository.Runtime(state.SeasonId).Definition.Quests.Sum(q => q.AllConditions().Count());
         for (var pass = 0; pass <= limit; pass++)
         {
             var changed = false;
             foreach (var metadata in definition.Quests)
             {
                 var status = facts.QuestStatuses.GetValueOrDefault(metadata.QuestId) ?? "Locked";
-                var template = repository
-                    .Runtime(state.SeasonId)
-                    .Definition.Quests.OfType<JObject>()
-                    .SingleOrDefault(q => (string?)q["_id"] == metadata.QuestId);
+                var template = repository.Runtime(state.SeasonId).Definition.Quests.SingleOrDefault(q => (string?)q.Id == metadata.QuestId);
                 if (template == null)
                 {
                     continue;
                 }
                 bool Stage(string stage)
                 {
-                    return ((JArray)template["conditions"]![stage]!)
-                        .OfType<JObject>()
-                        .Where(c => (bool?)c["isNecessary"] != false)
+                    return template
+                        .Conditions.Stage(stage)
+                        .Where(c => (bool?)c.IsNecessary != false)
                         .All(c => Condition(c, pmc, definition, state, facts));
                 }
                 if (
@@ -168,9 +159,9 @@ public sealed partial class StoryService
                 {
                     var quest = pmc.Quests!.Single(q => q.QId.ToString() == metadata.QuestId);
                     quest.CompletedConditions ??= [];
-                    foreach (var condition in ((JArray)template["conditions"]!["AvailableForFinish"]!).OfType<JObject>())
+                    foreach (var condition in template.Conditions.AvailableForFinish)
                     {
-                        var conditionId = (string)condition["id"]!;
+                        var conditionId = (string)condition.Id!;
                         if (!quest.CompletedConditions.Contains(conditionId) && Condition(condition, pmc, definition, state, facts))
                         {
                             quest.CompletedConditions.Add(conditionId);
@@ -178,11 +169,7 @@ public sealed partial class StoryService
                             changed = true;
                         }
                     }
-                    if (
-                        ((JArray?)template["conditions"]!["Fail"] ?? [])
-                            .OfType<JObject>()
-                            .Any(c => Condition(c, pmc, definition, state, facts))
-                    )
+                    if (template.Conditions.Fail.Any(c => Condition(c, pmc, definition, state, facts)))
                     {
                         quests.FailQuest(
                             pmc,

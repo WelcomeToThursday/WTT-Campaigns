@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Seasons;
 using SeasonalPerks.Server.Web.Authoring;
 using SeasonalPerks.Shared.Effects;
@@ -114,7 +113,7 @@ public partial class Creator
     private SeasonReward? _reward,
         _dragged;
     private SeasonValidationResult? _validation;
-    private readonly Dictionary<PerkEffect, JObject> _effectObjects = new();
+
     private int _previewLevel = 1,
         _previewClassified;
     private string _previewFaction = "USEC";
@@ -153,13 +152,13 @@ public partial class Creator
         {
             return S
                 .Items.Select(i => new ContentChoice(i.Id, i.Name))
-                .Concat(S.ImportedItems.Properties().Select(p => new ContentChoice(p.Name, (string?)p.Value["_name"] ?? p.Name)));
+                .Concat(S.ImportedItems.Select(p => new ContentChoice(p.Key, p.Value.Name ?? p.Key)));
         }
     }
 
     private IEnumerable<ContentChoice> OwnedQuests
     {
-        get { return S.Quests.OfType<JObject>().Select(q => new ContentChoice((string)q["_id"]!, QuestName(q))); }
+        get { return S.Quests.Select(q => new ContentChoice((string)q.Id!, QuestName(q))); }
     }
 
     private int PageIndex
@@ -251,7 +250,6 @@ public partial class Creator
         _reward = null;
         _published = null;
         _language = "en";
-        _effectObjects.Clear();
         _message = "";
     }
 
@@ -301,7 +299,6 @@ public partial class Creator
         {
             _draft = Repository.Save(_draft!);
             _baseline = JsonConvert.SerializeObject(S);
-            _effectObjects.Clear();
             _reward = _reward == null ? null : S.AllRewards.FirstOrDefault(r => r.Id == _reward.Id);
             _message = "Draft saved.";
         });
@@ -421,23 +418,13 @@ public partial class Creator
         }
     }
 
-    private JObject EffectObject(PerkEffect effect)
+    private static PerkEffect EffectObject(PerkEffect effect)
     {
-        if (!_effectObjects.TryGetValue(effect, out var value))
-        {
-            _effectObjects[effect] = value = JObject.FromObject(effect);
-        }
-
-        return value;
+        return effect;
     }
 
     private void UpdateEffect(Perk perk, int index, PerkEffect previous)
     {
-        var value = _effectObjects[previous];
-        var next = value.ToObject<PerkEffect>()!;
-        perk.Effects[index] = next;
-        _effectObjects.Remove(previous);
-        _effectObjects[next] = value;
         Dirty();
     }
 
@@ -514,9 +501,9 @@ public partial class Creator
         var copy = SeasonCompiler.Copy(original);
         copy.Id = SeasonRepository.NewId();
         copy.Name += " copy";
-        foreach (var grant in copy.Grants.OfType<JObject>())
+        foreach (var grant in copy.Grants)
         {
-            grant["id"] = SeasonRepository.NewId();
+            grant.Id = SeasonRepository.NewId();
         }
 
         return copy;
@@ -742,9 +729,9 @@ public partial class Creator
             }
         }
 
-        foreach (var quest in S.Quests.OfType<JObject>())
+        foreach (var quest in S.Quests)
         {
-            if (quest["localization"]?["en"] is JObject locale && locale.ContainsKey(key))
+            if (quest.Localization.TryGetValue("en", out var locale) && locale.ContainsKey(key))
             {
                 locale[key] = value;
             }
@@ -801,12 +788,12 @@ public partial class Creator
 
         foreach (var c in reward.Conditions)
         {
-            if ((string?)c["conditionType"] == "Level" && _previewLevel < (int)c["value"]!)
+            if ((string?)c.ConditionType == "Level" && _previewLevel < (int)c.Value!)
             {
-                return "Requires level " + c["value"];
+                return "Requires level " + c.Value;
             }
 
-            if ((string?)c["conditionType"] == "Quest" && !_previewQuests.Contains((string)c["target"]!))
+            if ((string?)c.ConditionType == "Quest" && !_previewQuests.Contains((string)c.Target!))
             {
                 return "Quest incomplete";
             }
@@ -845,14 +832,7 @@ public partial class Creator
         {
             var record = StoryAuthoring
                 .Records(S.Story)
-                .FirstOrDefault(r =>
-                    StoryAuthoring.Id(r) == identity
-                    || JObject
-                        .FromObject(r)
-                        .Descendants()
-                        .OfType<JValue>()
-                        .Any(v => v.Parent is JProperty { Name: "Id" } && v.ToString() == identity)
-                );
+                .FirstOrDefault(r => StoryAuthoring.Id(r) == identity || ModelGraph.Texts(r).Any(v => v.IsIdentity && v.Value == identity));
             _section = record switch
             {
                 StoryChapter => "Chapters",
@@ -891,7 +871,7 @@ public partial class Creator
         }
     }
 
-    private static string QuestName(JObject quest)
+    private static string QuestName(NativeQuest quest)
     {
         return NativeQuestAuthoring.QuestName(quest);
     }

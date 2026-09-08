@@ -227,29 +227,32 @@ internal static class StoryFixture
                 },
             ],
         };
-        var next = season.Quests.OfType<JObject>().Single(q => (string?)q["_id"] == nextQuest);
-        var condition = (JObject)next["conditions"]!["AvailableForFinish"]![0]!;
-        condition["conditionType"] = "CompletableItem";
-        condition["target"] = item;
-        next["localization"]!["en"]![nextObjective] = "Record a synthetic collectible in a raid";
-        ((JArray)next["rewards"]!["Success"]!).Add(
-            new JObject
-            {
-                ["id"] = Id(),
-                ["type"] = "Experience",
-                ["value"] = 75,
-                ["index"] = 0,
-            }
-        );
-        var first = season.Quests.OfType<JObject>().Single(q => (string?)q["_id"] == questId);
-        ((JArray)first["rewards"]!["Success"]!).Add(
-            new JObject
-            {
-                ["id"] = Id(),
-                ["type"] = "Experience",
-                ["value"] = 100,
-                ["index"] = 0,
-            }
-        );
+        var next = season.Quests.Single(q => (string?)q.Id == nextQuest);
+        var condition = next.Conditions.AvailableForFinish[0];
+        condition.ConditionType = "CompletableItem";
+        condition.Target = item;
+        next.English()[nextObjective] = "Record a synthetic collectible in a raid";
+        next.Rewards["Success"]
+            .Add(
+                new NativeReward
+                {
+                    Id = Id(),
+                    Type = "Experience",
+                    Value = 75,
+                    Index = 0,
+                }
+            );
+        var first = season.Quests.Single(q => (string?)q.Id == questId);
+        first
+            .Rewards["Success"]
+            .Add(
+                new NativeReward
+                {
+                    Id = Id(),
+                    Type = "Experience",
+                    Value = 100,
+                    Index = 0,
+                }
+            );
     }
 }

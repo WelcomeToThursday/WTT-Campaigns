@@ -18,11 +18,13 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 {
     internal static SeasonHubUi Instance = null!;
     private readonly Dictionary<string, Task<Sprite>> _images = new(StringComparer.Ordinal);
-    private readonly SemaphoreSlim _imageSlots = new(6);
     private readonly HashSet<string> _allowedImages = new(StringComparer.Ordinal);
     private CancellationTokenSource? _loading;
     private GameObject? _canvas;
     private GameObject? _banner;
+    private MenuScreen? _menu;
+    private string? _bannerSeason;
+    private long _bannerRevision;
     private SeasonsHubScreen? _screen;
     private bool _opening;
     private bool _destroyed;
@@ -58,6 +60,10 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 
     private void Update()
     {
+        if (_menu && !Plugin.Busy && (_bannerSeason != Plugin.Current?.SeasonId || _bannerRevision != Plugin.Current?.PackRevision))
+        {
+            AttachMenu(_menu!);
+        }
         if (_banner)
         {
             _banner!.SetActive(Available && !SeasonUi.Instance.IsOpen && !IsOpen);
@@ -111,15 +117,24 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 
     internal void AttachMenu(MenuScreen menu)
     {
-        if (_banner && _banner!.transform.IsChildOf(menu.transform))
+        _menu = menu;
+        if (
+            _banner
+            && _banner!.transform.IsChildOf(menu.transform)
+            && _bannerSeason == Plugin.Current?.SeasonId
+            && _bannerRevision == Plugin.Current?.PackRevision
+        )
         {
             return;
         }
 
         if (_banner)
         {
+            _banner!.SetActive(false);
             Destroy(_banner);
         }
+        _bannerSeason = Plugin.Current?.SeasonId;
+        _bannerRevision = Plugin.Current?.PackRevision ?? 0;
 
         var source = menu._playerButton;
         var parent = source.transform.parent;
@@ -254,11 +269,33 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         _screen!.ShowMessage("Loading season...", false);
         try
         {
+            var snapshot = Plugin.Current ?? throw new InvalidOperationException("Select your character before opening the Battle Pass.");
+            var profileId = snapshot.EffectiveProfileId;
+            var seasonId = snapshot.SeasonId;
+            if (Plugin.App?.Session?.Profile?.Id != profileId)
+            {
+                throw new InvalidOperationException("The selected character has not finished loading. Select your character again.");
+            }
             var raw = await RequestHandler.PostJsonAsync(
                 "/wtt-seasonal/hub",
-                JsonConvert.SerializeObject(new { ProtocolVersion = 2, SeasonId = Plugin.Current?.SeasonId })
+                JsonConvert.SerializeObject(
+                    new
+                    {
+                        ProtocolVersion = 2,
+                        SeasonId = seasonId,
+                        CharacterId = profileId,
+                    }
+                )
             );
-            if (_destroyed || generation != _generation || !IsOpen || !Available)
+            if (
+                _destroyed
+                || generation != _generation
+                || !IsOpen
+                || !Available
+                || Plugin.Current?.EffectiveProfileId != profileId
+                || Plugin.Current.SeasonId != seasonId
+                || Plugin.App?.Session?.Profile?.Id != profileId
+            )
             {
                 return;
             }
@@ -267,6 +304,10 @@ public sealed partial class SeasonHubUi : MonoBehaviour
             if (data.Error.Length > 0)
             {
                 throw new InvalidOperationException(data.Error);
+            }
+            if (data.SeasonId != seasonId)
+            {
+                throw new InvalidDataException("The server returned a different season's Battle Pass. Select your character again.");
             }
             if (data.Pages.Length == 0)
             {
@@ -435,25 +476,13 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 
     private async Task<Sprite> FetchImage(string id, CancellationToken cancellation)
     {
-        await _imageSlots.WaitAsync(cancellation);
-        try
+        var texture = await SeasonImageLoader.LoadAsync(SeasonImageLoader.PathFor("hub-images", id), cancellation);
+        if (cancellation.IsCancellationRequested)
         {
-            var bytes = await RequestHandler.GetDataAsync(
-                "/wtt-seasonal/hub-images/" + id + ".png?season=" + Plugin.Current?.SeasonId + "&revision=" + Plugin.Current?.PackRevision
-            );
+            Destroy(texture);
             cancellation.ThrowIfCancellationRequested();
-            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            if (!ImageConversion.LoadImage(texture, bytes) || texture.width > 4096 || texture.height > 4096)
-            {
-                Destroy(texture);
-                throw new InvalidDataException("Invalid seasonal hub image.");
-            }
-            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f));
         }
-        finally
-        {
-            _imageSlots.Release();
-        }
+        return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(.5f, .5f));
     }
 
     internal void Close()

@@ -162,7 +162,7 @@ internal static class PlayableStorySeason
                     ? "The delivery is complete. Here is your payment."
                     : "Field dressing: deliver one aseptic bandage.";
         }
-        season.Quests.Add(native);
+        season.Quests.Add(native.ToObject<NativeQuest>()!);
         StoryCondition Phase(int value)
         {
             return new()

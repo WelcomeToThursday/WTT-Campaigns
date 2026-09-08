@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Contracts;
+using SeasonalPerks.Shared.Native;
+using SeasonalPerks.Shared.Serialization;
 
 namespace SeasonalPerks.Shared.Seasons;
 
@@ -37,23 +38,23 @@ public static class SeasonCompiler
         {
             texts[season.Id + " slide " + i + " text"] = season.Slides[i].Text;
         }
-        foreach (var quest in season.Quests.OfType<JObject>())
+        foreach (var quest in season.Quests)
         {
-            foreach (var pair in (quest["localization"]?["en"] as JObject)?.Properties() ?? Enumerable.Empty<JProperty>())
+            foreach (var pair in quest.Localization.GetValueOrDefault("en") ?? new())
             {
-                texts[pair.Name] = (string?)pair.Value ?? "";
+                texts[pair.Key] = (string?)pair.Value ?? "";
             }
         }
 
         if (language != "en")
         {
-            foreach (var quest in season.Quests.OfType<JObject>())
+            foreach (var quest in season.Quests)
             {
-                foreach (var pair in (quest["localization"]?[language] as JObject)?.Properties() ?? Enumerable.Empty<JProperty>())
+                foreach (var pair in quest.Localization.GetValueOrDefault(language) ?? new())
                 {
                     if (!string.IsNullOrEmpty((string?)pair.Value))
                     {
-                        texts[pair.Name] = (string)pair.Value!;
+                        texts[pair.Key] = (string)pair.Value!;
                     }
                 }
             }
@@ -71,7 +72,7 @@ public static class SeasonCompiler
 
     public static IEnumerable<string> Dependencies(SeasonDefinition season)
     {
-        var owned = season.Items.Select(i => i.Id).Concat(season.ImportedItems.Properties().Select(p => p.Name)).ToHashSet();
+        var owned = season.Items.Select(i => i.Id).Concat(season.ImportedItems.Keys).ToHashSet();
         var items = season
             .Items.Select(i => i.CloneFrom)
             .Concat(season.Documents.Select(d => d.ItemId))
@@ -80,11 +81,9 @@ public static class SeasonCompiler
             .Concat(
                 season
                     .AllRewards.SelectMany(r => r.Grants)
-                    .Concat(season.Quests)
-                    .OfType<JObject>()
-                    .SelectMany(o => o.Descendants().OfType<JProperty>())
-                    .Where(p => p.Name == "_tpl")
-                    .Select(p => (string)p.Value!)
+                    .SelectMany(g => g.Items)
+                    .Concat(season.Quests.SelectMany(q => q.AllItems()))
+                    .Select(i => i.Template)
             );
         return season
             .Dependencies.Concat(items.Where(i => !owned.Contains(i)).Select(i => "item:" + i))
@@ -134,24 +133,19 @@ public static class SeasonCompiler
         return JsonConvert.DeserializeObject<HubReward>(JsonConvert.SerializeObject(reward))!;
     }
 
-    public static JObject Gameplay(SeasonDefinition season)
+    public static HubGameplayDefinition Gameplay(SeasonDefinition season)
     {
         return new()
         {
-            ["Id"] = season.BattlePassId,
-            ["SeasonId"] = season.Id,
-            ["ExchangeRate"] = season.ExchangeRate,
-            ["ItemExchange"] = new JObject { ["itemId"] = season.ExchangeCrate, ["requiredDocuments"] = season.CrateCost },
-            ["Documents"] = new JArray(season.Documents.Select(d => new JObject { ["id"] = d.Id, ["itemId"] = d.ItemId })),
-            ["Rewards"] = new JObject(
-                season
-                    .AllRewards.Where(r => r.Enabled)
-                    .Select(r => new JProperty(
-                        r.Id,
-                        new JObject { ["Grants"] = r.Grants.DeepClone(), ["Conditions"] = r.Conditions.DeepClone() }
-                    ))
-            ),
-            ["Offers"] = season.Offers.DeepClone(),
+            Id = season.BattlePassId,
+            SeasonId = season.Id,
+            ExchangeRate = season.ExchangeRate,
+            ItemExchange = new() { ItemId = season.ExchangeCrate, RequiredDocuments = season.CrateCost },
+            Documents = season.Documents.Select(d => new HubGameplayDocument { Id = d.Id, ItemId = d.ItemId }).ToList(),
+            Rewards = season
+                .AllRewards.Where(r => r.Enabled)
+                .ToDictionary(r => r.Id, r => new HubGameplayReward { Grants = Copy(r.Grants), Conditions = Copy(r.Conditions) }),
+            Offers = Copy(season.Offers),
         };
     }
 
@@ -168,113 +162,8 @@ public static class SeasonCompiler
             .Distinct();
     }
 
-    public static JObject GameplayIdentity(SeasonDefinition season)
+    public static string GameplayIdentity(SeasonDefinition season)
     {
-        var value = JObject.FromObject(season);
-        if (season.Story == null)
-        {
-            value.Remove("Story");
-        }
-        else
-        {
-            foreach (var chapter in value["Story"]!["Chapters"]!.OfType<JObject>())
-            {
-                chapter.Remove("Name");
-                chapter.Remove("Image");
-                chapter.Remove("Icon");
-            }
-            foreach (var note in value["Story"]!["Notes"]!.OfType<JObject>())
-            {
-                note.Remove("Text");
-            }
-            foreach (var line in value["Story"]!["Dialogs"]!.SelectMany(d => d["Lines"]!).OfType<JObject>())
-            {
-                line.Remove("Text");
-                line.Remove("Icon");
-                line.Remove("Confirmation");
-                line.Remove("Playback");
-            }
-        }
-        foreach (
-            var key in new[]
-            {
-                "Name",
-                "Description",
-                "Author",
-                "Version",
-                "Revision",
-                "Branding",
-                "Locales",
-                "Slides",
-                "UniversalImage",
-                "UniversalUnavailableImage",
-            }
-        )
-        {
-            value.Remove(key);
-        }
-        // Remove only presentation fields at known paths. Never strip a nested grant's semantic name/value.
-        foreach (var perk in ((JObject)value["Perks"]!).Properties().SelectMany(p => p.Value.OfType<JObject>()))
-        {
-            perk.Remove("imageUrl");
-        }
-
-        foreach (var doc in value["Documents"]!.OfType<JObject>())
-        {
-            foreach (var key in new[] { "Name", "Image", "UnavailableImage" })
-            {
-                doc.Remove(key);
-            }
-        }
-
-        foreach (var reward in value["Pages"]!.SelectMany(p => p["Rewards"]!).Concat(value["SeasonalRewards"]!).OfType<JObject>())
-        {
-            foreach (var key in new[] { "Name", "Description", "Image", "BigImage", "Kind", "Requirements" })
-            {
-                reward.Remove(key);
-            }
-        }
-
-        foreach (var item in value["Items"]!.OfType<JObject>())
-        {
-            item.Remove("Name");
-            item.Remove("Description");
-        }
-        foreach (var quest in value["Quests"]!.OfType<JObject>())
-        {
-            foreach (
-                var key in new[]
-                {
-                    "localization",
-                    "QuestName",
-                    "name",
-                    "description",
-                    "image",
-                    "startedMessageText",
-                    "successMessageText",
-                    "failMessageText",
-                    "acceptPlayerMessage",
-                    "completePlayerMessage",
-                    "declinePlayerMessage",
-                }
-            )
-            {
-                quest.Remove(key);
-            }
-        }
-
-        return value;
-    }
-
-    public static JToken Canonical(JToken token)
-    {
-        return token switch
-        {
-            JObject obj => new JObject(
-                obj.Properties().OrderBy(p => p.Name, StringComparer.Ordinal).Select(p => new JProperty(p.Name, Canonical(p.Value)))
-            ),
-            JArray array => new JArray(array.Select(Canonical)),
-            _ => token.DeepClone(),
-        };
+        return GameplaySerialization.Identity(season);
     }
 }

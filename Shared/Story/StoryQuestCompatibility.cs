@@ -1,4 +1,5 @@
-using Newtonsoft.Json.Linq;
+using SeasonalPerks.Shared.Native;
+using SeasonalPerks.Shared.Serialization;
 
 namespace SeasonalPerks.Shared.Story;
 
@@ -53,26 +54,30 @@ public static class StoryQuestCompatibility
         "QuestTime",
     };
 
-    public static bool Supports(JObject condition)
+    public static bool Supports(NativeQuest quest, NativeCondition condition)
     {
-        var kind = (string?)condition["conditionType"] ?? "";
-        return ConditionTypes.Contains(kind)
-            && (
-                !CounterFilters.Contains(kind)
-                || condition.Ancestors().OfType<JObject>().Any(parent => (string?)parent["conditionType"] == "CounterCreator")
-            );
+        return Supports(
+            condition,
+            quest.AllConditions().Any(p => p.Counter?.Conditions.SelectMany(c => c.DescendantsAndSelf()).Contains(condition) == true)
+        );
     }
 
-    public static JObject NativeTemplate(JObject source)
+    public static bool Supports(NativeCondition condition, bool nested = false)
     {
-        var output = (JObject)source.DeepClone();
-        foreach (var condition in output.Descendants().OfType<JObject>())
+        var kind = (string?)condition.ConditionType ?? "";
+        return ConditionTypes.Contains(kind) && (!CounterFilters.Contains(kind) || nested);
+    }
+
+    public static NativeQuest NativeTemplate(NativeQuest source)
+    {
+        var output = Seasons.SeasonCompiler.Copy(source);
+        foreach (var condition in output.AllConditions())
         {
-            if ((string?)condition["conditionType"] is "CompletableItem" or "LocationTrigger")
+            if ((string?)condition.ConditionType is "CompletableItem" or "LocationTrigger")
             {
                 // Beta's native variable checker has identical boolean comparison behavior.
                 // Only the authoritative story snapshot supplies these variable values.
-                condition["conditionType"] = "GlobalVariableValue";
+                condition.ConditionType = "GlobalVariableValue";
             }
         }
         return output;

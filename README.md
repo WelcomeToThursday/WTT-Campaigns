@@ -18,6 +18,8 @@ Build **0.1.23** adds Allergic (three persistent random medication/provision tar
 
 For a fresh checkout, start with [development setup](CONTRIBUTING.md). This repository contains mod source, reviewed documentation and sanitized data. Game binaries, recovered assets, generated bundles, research output, test profiles and releases remain local. Original code is MIT-licensed; see [third-party notices](THIRD_PARTY_NOTICES.md) for captured data and external dependencies.
 
+Seasonal character files are stored separately from launcher accounts in `SPT_Runtime/user/seasonal/profiles`. Existing character files migrate automatically with verified backups. See [typed models and profile storage](docs/typed-models-and-profile-storage.md) for compatibility details and regression checks.
+
 ## Project layout
 
 UI build **0.1.7** includes the seasonal creation sequence and a native reconnect adapter for character switching. See [UI changes and validation limits](docs/ui.md).
@@ -36,6 +38,8 @@ Projects and built assemblies use the `WTT-Seasonal` prefix (for example, `WTT-S
 Client and server code use [folders with matching feature namespaces](docs/client-server-structure.md). Client registration lives in `Client/Patches/PatchRegistration.cs`; server patches are discovered through SPT dependency injection. See [patch organization and extension guide](docs/patches.md).
 
 Asset sources, all 39 PNGs, recovered layout data and the Unity editor builder are in `../CJ-SDK/Assets/Mods/SeasonalPerks.Assets`. The UI bundle contains layout prefabs, all 26 decorative artwork sprites, fonts and materials. **Perk icons remain outside the bundle.** Icons are fetched lazily by perk ID from `/wtt-seasonal/icons/{id}.png`. Installed operation does not use the live backend or CDN.
+
+Client image downloads share a session cache across the hub, banner, story journal and perk selector. Requests for the same server, image, season and pack revision share one download; reopening screens reuses the encoded bytes while each screen releases its own textures. The cache retains up to 64 MiB / 256 images, evicts least recently used entries, and limits downloads to six at a time. Failed, empty or undecodable responses can be retried. Pack revision changes use fresh entries; restarting the game clears the cache. No images are cached on disk.
 
 Formatting and shared Rider/Visual Studio defaults follow SP-Tushonka/server-csharp. See [editor setup](CONTRIBUTING.md#editor-and-ide-defaults). Restore the formatter from `.config/dotnet-tools.json` with `dotnet tool restore`, then run `dotnet csharpier format Client UI Server Shared Tests`. Text files use UTF-8 and LF line endings.
 

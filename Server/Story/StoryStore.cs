@@ -1,4 +1,5 @@
 using Newtonsoft.Json;
+using SeasonalPerks.Server.Profiles;
 using SeasonalPerks.Shared.Story;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
@@ -13,9 +14,9 @@ internal static class StoryStore
         {
             return new StoryProgress { SeasonId = seasonId };
         }
-        var text = raw is System.Text.Json.JsonElement element ? element.GetString() : raw.ToString();
         var state =
-            JsonConvert.DeserializeObject<StoryProgress>(text!) ?? throw new InvalidOperationException("The saved story state is invalid.");
+            ProfileStateSerialization.Read<StoryProgress>(pmc, "wttSeasonalStory:" + seasonId)
+            ?? throw new InvalidOperationException("The saved story state is invalid.");
         if (state.Version != 1 || state.SeasonId != seasonId)
         {
             throw new InvalidOperationException("This story save requires a compatible runtime.");

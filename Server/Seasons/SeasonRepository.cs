@@ -2,7 +2,6 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Configuration;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Effects;
@@ -31,7 +30,7 @@ public sealed class SeasonRuntimeSnapshot
         get { return SeasonCompiler.Hub(Definition); }
     }
 
-    public JObject Gameplay
+    public HubGameplayDefinition Gameplay
     {
         get { return SeasonCompiler.Gameplay(Definition); }
     }
@@ -132,9 +131,7 @@ public sealed class SeasonRepository
 
     public static string GameplayHash(SeasonDefinition definition)
     {
-        return Hash(
-            Encoding.UTF8.GetBytes(SeasonCompiler.Canonical(SeasonCompiler.GameplayIdentity(definition)).ToString(Formatting.None))
-        );
+        return Hash(Encoding.UTF8.GetBytes(SeasonCompiler.GameplayIdentity(definition)));
     }
 
     private static T Read<T>(string path)
@@ -387,50 +384,23 @@ public sealed class SeasonRepository
                 .Perks.All.Select(p => p.Id)
                 .Concat(source.Documents.Select(d => d.Id))
                 .Concat(source.Items.Select(i => i.Id))
-                .Concat(source.ImportedItems.Properties().Select(p => p.Name))
+                .Concat(source.ImportedItems.Keys)
                 .Concat(source.AllRewards.Select(r => r.Id))
-                .Concat(source.Quests.Select(q => (string)q["_id"]!))
+                .Concat(source.Quests.Select(q => q.Id))
         )
         {
             source.Id,
             source.BattlePassId,
         };
-        foreach (
-            var node in source
-                .Quests.Descendants()
-                .Concat(
-                    source.AllRewards.SelectMany(r =>
-                        r.Grants.OfType<JObject>().Where(g => (string?)g["type"] != "AssortmentUnlock").SelectMany(g => g.Descendants())
-                    )
-                )
-                .OfType<JObject>()
-        )
-        {
-            foreach (var field in new[] { "id", "_id" })
-            {
-                if ((string?)node[field] is { } id && SeasonValidator.IsId(id))
-                {
-                    owned.Add(id);
-                }
-            }
-        }
-
+        owned.UnionWith(ModelGraph.Texts(source.Quests).Where(t => t.IsIdentity && SeasonValidator.IsId(t.Value)).Select(t => t.Value));
+        owned.UnionWith(
+            ModelGraph
+                .Texts(source.AllRewards.SelectMany(r => r.Grants).Where(g => g.Type != "AssortmentUnlock").ToList())
+                .Where(t => t.IsIdentity && SeasonValidator.IsId(t.Value))
+                .Select(t => t.Value)
+        );
         owned.UnionWith(SeasonalPerks.Shared.Story.StoryContent.OwnedIds(source.Story));
         var replacements = owned.ToDictionary(id => id, _ => NewId());
-        JToken Rewrite(JToken token)
-        {
-            if (token is JObject obj)
-            {
-                return new JObject(obj.Properties().Select(p => new JProperty(Replace(p.Name), Rewrite(p.Value))));
-            }
-
-            if (token is JArray array)
-            {
-                return new JArray(array.Select(Rewrite));
-            }
-
-            return token.Type == JTokenType.String ? new JValue(Replace((string)token!)) : token.DeepClone();
-        }
         string Replace(string text)
         {
             if (replacements.TryGetValue(text, out var replacement))
@@ -443,7 +413,8 @@ public sealed class SeasonRepository
                 ? replacement + text.Substring(24)
                 : text;
         }
-        var copy = Rewrite(JObject.FromObject(source)).ToObject<SeasonDefinition>()!;
+        var copy = SeasonCompiler.Copy(source);
+        ModelGraph.Rewrite(copy, Replace);
         copy.Name = source.Name + " copy";
         copy.Revision = 0;
         copy.Version = "1.0.0";
@@ -453,24 +424,23 @@ public sealed class SeasonRepository
             perk.Enabled = false;
             copy.Rules.EnabledCommonIds.Remove(perk.Id);
         }
-        foreach (var quest in copy.Quests.OfType<JObject>())
+        foreach (var quest in copy.Quests)
         {
-            var storyQuest = copy.Story?.Quests.Any(q => q.QuestId == (string?)quest["_id"]) == true;
+            var storyQuest = copy.Story?.Quests.Any(q => q.QuestId == quest.Id) == true;
             if (
                 quest
-                    .Descendants()
-                    .OfType<JObject>()
+                    .AllConditions()
                     .Any(c =>
-                        c["conditionType"] != null
+                        c.ConditionType.Length > 0
                         && (
                             storyQuest
-                                ? !SeasonalPerks.Shared.Story.StoryQuestCompatibility.ConditionTypes.Contains((string)c["conditionType"]!)
-                                : (string?)c["conditionType"] is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem")
+                                ? !SeasonalPerks.Shared.Story.StoryQuestCompatibility.ConditionTypes.Contains(c.ConditionType)
+                                : c.ConditionType is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem")
                         )
                     )
             )
             {
-                quest["_seasonalEnabled"] = false;
+                quest.SeasonalEnabled = false;
             }
         }
 
@@ -485,7 +455,7 @@ public sealed class SeasonRepository
             var path = Path.Combine(_root, "used", CheckId(definition.Id) + ".json");
             if (!File.Exists(path))
             {
-                Atomic(path, JsonConvert.SerializeObject(new { Hash = GameplayHash(definition) }));
+                Atomic(path, JsonConvert.SerializeObject(new UsedSeason { Hash = GameplayHash(definition) }));
             }
         }
     }
@@ -493,7 +463,7 @@ public sealed class SeasonRepository
     public void CheckGameplay(SeasonDefinition definition)
     {
         var path = Path.Combine(_root, "used", CheckId(definition.Id) + ".json");
-        if (File.Exists(path) && (string?)JObject.Parse(File.ReadAllText(path))["Hash"] != GameplayHash(definition))
+        if (File.Exists(path) && Read<UsedSeason>(path).Hash != GameplayHash(definition))
         {
             throw new InvalidOperationException("This season has been used. Duplicate it as a new season to change gameplay.");
         }
@@ -908,7 +878,7 @@ public sealed class SeasonRepository
         }
 
         var hub = Data<HubState>("hub.json");
-        var gameplay = Data<JObject>("hub-gameplay.json");
+        var gameplay = Data<HubGameplayDefinition>("hub-gameplay.json");
         var perks = Data<Catalogue>("catalogue.json");
         foreach (var p in perks.All)
         {
@@ -917,15 +887,24 @@ public sealed class SeasonRepository
 
         SeasonReward Reward(HubReward tile)
         {
-            var node = JObject.FromObject(tile);
-            foreach (var field in new[] { "Claimed", "CanClaim", "Eligibility", "UnavailableReason", "UniversalNeeded" })
+            var reward = new SeasonReward
             {
-                node.Remove(field);
-            }
-
-            var reward = node.ToObject<SeasonReward>()!;
-            reward.Grants = (JArray)gameplay["Rewards"]![tile.Id]!["Grants"]!.DeepClone();
-            reward.Conditions = (JArray)gameplay["Rewards"]![tile.Id]!["Conditions"]!.DeepClone();
+                Id = tile.Id,
+                Name = tile.Name,
+                Description = tile.Description,
+                Kind = tile.Kind,
+                Side = tile.Side,
+                Image = tile.Image,
+                BigImage = tile.BigImage,
+                X = tile.X,
+                Y = tile.Y,
+                Width = tile.Width,
+                Height = tile.Height,
+                Costs = tile.Costs.ToList(),
+                Requirements = tile.Requirements.ToList(),
+                Grants = SeasonCompiler.Copy(gameplay.Rewards[tile.Id].Grants),
+                Conditions = SeasonCompiler.Copy(gameplay.Rewards[tile.Id].Conditions),
+            };
             return reward;
         }
         var definition = new SeasonDefinition
@@ -950,18 +929,18 @@ public sealed class SeasonRepository
                     Name = d.Name,
                     Image = d.Image,
                     UnavailableImage = d.UnavailableImage,
-                    ItemId = (string)gameplay["Documents"]!.First(x => (string?)x["id"] == d.Id)["itemId"]!,
+                    ItemId = gameplay.Documents.First(x => x.Id == d.Id).ItemId,
                 })
                 .ToList(),
             Slides = hub.Slides.ToList(),
             UniversalImage = hub.UniversalImage,
             UniversalUnavailableImage = hub.UniversalUnavailableImage,
-            ExchangeRate = (int)gameplay["ExchangeRate"]!,
-            ExchangeCrate = (string)gameplay["ItemExchange"]!["itemId"]!,
-            CrateCost = (int)gameplay["ItemExchange"]!["requiredDocuments"]!,
-            Quests = Data<JArray>("hub-quests.json"),
-            Offers = (JArray?)gameplay["Offers"]?.DeepClone() ?? new(),
-            ImportedItems = Data<JObject>("season-items.json"),
+            ExchangeRate = gameplay.ExchangeRate,
+            ExchangeCrate = gameplay.ItemExchange.ItemId,
+            CrateCost = gameplay.ItemExchange.RequiredDocuments,
+            Quests = Data<List<NativeQuest>>("hub-quests.json"),
+            Offers = SeasonCompiler.Copy(gameplay.Offers),
+            ImportedItems = Data<Dictionary<string, NativeItemTemplate>>("season-items.json"),
             Rules = File.Exists(Path.Combine(ModDirectory, "config.json"))
                 ? Read<Rules>(Path.Combine(ModDirectory, "config.json"))
                 : new Rules
@@ -977,9 +956,16 @@ public sealed class SeasonRepository
 
         if (File.Exists(Path.Combine(ModDirectory, "hub-config.json")))
         {
-            var config = Read<JObject>(Path.Combine(ModDirectory, "hub-config.json"));
-            JsonConvert.PopulateObject(config.ToString(), definition.Collection);
+            var config = Read<SeasonCollection>(Path.Combine(ModDirectory, "hub-config.json"));
+            definition.Collection.DocumentsPerRaid = config.DocumentsPerRaid;
+            definition.Collection.ClassifiedChancePercent = config.ClassifiedChancePercent;
+            definition.Collection.MapCounts = config.MapCounts;
         }
         return definition;
     }
+}
+
+public sealed class UsedSeason
+{
+    public string Hash { get; set; } = "";
 }

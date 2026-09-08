@@ -1,5 +1,4 @@
 using System.Collections;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Seasons;
 using SeasonalPerks.Shared.Story;
 
@@ -9,6 +8,8 @@ public sealed record ChapterDeletionUse(string Name, string Path, string Navigat
 
 public static class ChapterDeletion
 {
+    private sealed record RemovedIdentity(string Id);
+
     public static IReadOnlyList<ChapterDeletionUse> Check(SeasonDefinition season, string chapterId, string? destination)
     {
         var chapter =
@@ -18,32 +19,29 @@ public static class ChapterDeletion
             throw new ArgumentException("Choose another chapter for the quests and notes.");
         }
 
-        var removed = new JArray(JObject.FromObject(chapter));
+        var removed = new List<object> { chapter };
         if (destination == null)
         {
             var quests = season.Story!.Quests.Where(q => q.ChapterId == chapterId).Select(q => q.QuestId).ToHashSet();
             foreach (var id in quests)
             {
-                removed.Add(new JObject { ["Id"] = id });
+                removed.Add(new RemovedIdentity(id));
             }
 
-            foreach (var quest in season.Quests.OfType<JObject>().Where(q => quests.Contains((string?)q["_id"] ?? "")))
+            foreach (var quest in season.Quests.Where(q => quests.Contains((string?)q.Id ?? "")))
             {
-                removed.Add(quest.DeepClone());
+                removed.Add(quest);
             }
 
             foreach (var note in season.Story.Notes.Where(n => n.ChapterId == chapterId))
             {
-                removed.Add(JObject.FromObject(note));
+                removed.Add(note);
             }
         }
 
         var candidate = SeasonCompiler.Copy(season);
         Apply(candidate, chapterId, destination);
-        return StoryAuthoring
-            .Uses(candidate, new JObject { ["Records"] = removed })
-            .Select(path => Describe(candidate, season, path))
-            .ToArray();
+        return StoryAuthoring.Uses(candidate, removed).Select(path => Describe(candidate, season, path)).ToArray();
     }
 
     public static IReadOnlyList<ChapterDeletionUse> Delete(SeasonDefinition season, string chapterId, string? destination)
@@ -76,9 +74,9 @@ public static class ChapterDeletion
         {
             var quests = story.Quests.Where(q => q.ChapterId == chapterId).Select(q => q.QuestId).ToHashSet();
             story.Quests.RemoveAll(q => q.ChapterId == chapterId);
-            foreach (var quest in season.Quests.OfType<JObject>().Where(q => quests.Contains((string?)q["_id"] ?? "")).ToArray())
+            foreach (var quest in season.Quests.Where(q => quests.Contains((string?)q.Id ?? "")).ToArray())
             {
-                quest.Remove();
+                season.Quests.Remove(quest);
             }
 
             story.Notes.RemoveAll(n => n.ChapterId == chapterId);
@@ -105,11 +103,11 @@ public static class ChapterDeletion
         }
 
         match = System.Text.RegularExpressions.Regex.Match(path, @"^Quests\[(\d+)\]");
-        if (match.Success && int.TryParse(match.Groups[1].Value, out var questIndex) && season.Quests[questIndex] is JObject quest)
+        if (match.Success && int.TryParse(match.Groups[1].Value, out var questIndex) && season.Quests[questIndex] is NativeQuest quest)
         {
-            var originalIndex = original.Quests.OfType<JObject>().ToList().FindIndex(q => (string?)q["_id"] == (string?)quest["_id"]);
+            var originalIndex = original.Quests.ToList().FindIndex(q => (string?)q.Id == (string?)quest.Id);
             path = "Quests[" + originalIndex + "]" + path[match.Length..];
-            return new(NativeQuestAuthoring.QuestName(quest), path, "Quests/" + (string?)quest["_id"]);
+            return new(NativeQuestAuthoring.QuestName(quest), path, "Quests/" + (string?)quest.Id);
         }
 
         return new("Referenced by " + path, path, "");

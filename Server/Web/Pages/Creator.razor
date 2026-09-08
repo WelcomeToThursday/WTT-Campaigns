@@ -309,7 +309,7 @@
 
 </EditorSection>
 <EditorSection Title="Simulated quest progress" Description="Mark prerequisites complete to test reward eligibility.">
-@foreach(var quest in S.AllRewards.SelectMany(r => r.Conditions).Where(c => (string?)c["conditionType"] == "Quest").Select(c => (string)c["target"]!).Distinct()) { <label class="check"><input type="checkbox" checked="@_previewQuests.Contains(quest)" @onchange="@(e => Toggle(_previewQuests, quest, (bool)e.Value!))" />@(ReferenceNames.Resolve(S, "quests", quest, Content.Name))</label> }
+@foreach(var quest in S.AllRewards.SelectMany(r => r.Conditions).Where(c => (string?)c.ConditionType == "Quest").Select(c => (string)c.Target!).Distinct()) { <label class="check"><input type="checkbox" checked="@_previewQuests.Contains(quest)" @onchange="@(e => Toggle(_previewQuests, quest, (bool)e.Value!))" />@(ReferenceNames.Resolve(S, "quests", quest, Content.Name))</label> }
 
 </EditorSection>
 <EditorSection Title="Perk selection preview" Description="Try combinations and check the remaining selection budget.">

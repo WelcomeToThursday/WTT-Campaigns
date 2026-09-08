@@ -1,7 +1,6 @@
 using EFT;
 using HarmonyLib;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Story;
 using SPT.Common.Http;
 
@@ -90,9 +89,11 @@ internal static class StoryClient
             var pendingPath = Path.Combine(Plugin.Folder, "story-pending-" + request.CharacterId + ".json");
             if (File.Exists(pendingPath))
             {
-                var pending = JObject.Parse(File.ReadAllText(pendingPath));
-                var previous = pending["Request"]!.ToObject<StoryRequest>()!;
-                var previousOperation = (string)pending["Operation"]!;
+                var pending =
+                    JsonConvert.DeserializeObject<PendingStoryOperation>(File.ReadAllText(pendingPath))
+                    ?? throw new InvalidDataException("Invalid pending story operation.");
+                var previous = pending.Request;
+                var previousOperation = pending.Operation;
                 if (
                     previous.CharacterId != request.CharacterId
                     || previous.SeasonId != request.SeasonId
@@ -125,7 +126,7 @@ internal static class StoryClient
             request.ItemId = itemId;
             request.Kind = kind;
             request.RaidId = Current?.State?.Raid?.Id ?? "";
-            var payload = JObject.FromObject(new { Operation = operation, Request = request }).ToString();
+            var payload = JsonConvert.SerializeObject(new PendingStoryOperation { Operation = operation, Request = request });
             File.WriteAllText(pendingPath + ".tmp", payload);
             if (File.Exists(pendingPath))
             {

@@ -74,7 +74,7 @@ internal static class HubDocuments
     internal static void Pickup(Item item)
     {
         Send(
-            new
+            new HubMutation
             {
                 OperationId = Guid.NewGuid().ToString("N"),
                 ItemId = item.Id,
@@ -106,7 +106,7 @@ internal static class HubDocuments
         }
         Reported.Add(operation, new object());
         Send(
-            new
+            new HubMutation
             {
                 OperationId = Guid.NewGuid().ToString("N"),
                 ItemId = item.Id,
@@ -118,16 +118,15 @@ internal static class HubDocuments
         );
     }
 
-    private static void Send(object request)
+    private static void Send(HubMutation request)
     {
         try
         {
             LoadJournal();
-            var body = Newtonsoft.Json.Linq.JObject.FromObject(request);
-            body["ProtocolVersion"] = 2;
-            body["SeasonId"] = Plugin.Current?.SeasonId;
-            body["PackRevision"] = Plugin.Current?.PackRevision;
-            _pending.Add(body.ToString(Formatting.None));
+            request.ProtocolVersion = 2;
+            request.SeasonId = Plugin.Current!.SeasonId;
+            request.PackRevision = Plugin.Current.PackRevision;
+            _pending.Add(JsonConvert.SerializeObject(request));
             SaveJournal();
         }
         catch (Exception e)

@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Seasons;
 using SeasonalPerks.Shared.Story;
 
@@ -291,18 +290,18 @@ public sealed class StoryRehearsal
         throw new RehearsalPendingException(key, message);
     }
 
-    private bool NativeCondition(JObject condition)
+    private bool NativeCondition(NativeCondition condition)
     {
-        var id = (string?)condition["id"] ?? "";
+        var id = (string?)condition.Id ?? "";
         if (Facts.CompletedConditions.Contains(id))
         {
             return true;
         }
 
-        var kind = (string?)condition["conditionType"] ?? "";
-        var target = condition["target"] is JArray targets ? targets.First?.ToString() ?? "" : (string?)condition["target"] ?? "";
-        var required = (double?)condition["value"] ?? 1;
-        var op = (string?)condition["compareMethod"] ?? ">=";
+        var kind = (string?)condition.ConditionType ?? "";
+        var target = condition.Target?.Values.FirstOrDefault() ?? "";
+        var required = (double?)condition.Value ?? 1;
+        var op = (string?)condition.CompareMethod ?? ">=";
         double? actual = kind switch
         {
             "Level" => Facts.Level,
@@ -311,7 +310,7 @@ public sealed class StoryRehearsal
             "Skill" => Facts.Skills.GetValueOrDefault(target),
             "HideoutArea" => Facts.HideoutAreas.GetValueOrDefault(target),
             "HandoverItem" or "CounterCreator" => Facts.ConditionCounters.GetValueOrDefault(id),
-            "HasItem" when condition["target"] is not JArray { Count: > 1 } => Facts.Items.GetValueOrDefault(target),
+            "HasItem" when condition.Target?.Values.Count is not > 1 => Facts.Items.GetValueOrDefault(target),
             "CompleteCondition" => Facts.CompletedConditions.Contains(target) ? 1 : 0,
             "GlobalVariableValue" => StoryRules.Variable(Definition, State, Facts, target),
             "CompletableItem" => State.CompletedItems.Contains(target) ? 1 : 0,
@@ -334,12 +333,12 @@ public sealed class StoryRehearsal
                 "Expired",
                 "AvailableAfter",
             };
-            if ((double?)condition["availableAfter"] > 0)
+            if ((double?)condition.AvailableAfter > 0)
             {
                 return Manual(id, "Quest time delay requires a native result for " + id);
             }
 
-            return (condition["status"] as JArray ?? new JArray(4)).Any(v =>
+            return (condition.Status ?? new List<string> { "4" }).Any(v =>
                 int.TryParse(v.ToString(), out var n) && n >= 0 && n < names.Length && names[n] == status
             );
         }
@@ -349,23 +348,20 @@ public sealed class StoryRehearsal
             : Manual(id, "Choose whether native objective " + kind + " succeeds: " + id);
     }
 
-    private JObject Quest(string id)
+    private NativeQuest Quest(string id)
     {
         if (!Definition.Quests.Any(q => q.QuestId == id))
         {
             throw new InvalidOperationException("Only an owned story quest can be changed.");
         }
 
-        return Season.Quests.OfType<JObject>().SingleOrDefault(q => (string?)q["_id"] == id && (bool?)q["_seasonalEnabled"] != false)
+        return Season.Quests.SingleOrDefault(q => (string?)q.Id == id && (bool?)q.SeasonalEnabled != false)
             ?? throw new InvalidOperationException("External or disabled quests cannot be changed.");
     }
 
-    private bool Stage(JObject quest, string stage)
+    private bool Stage(NativeQuest quest, string stage)
     {
-        return (quest["conditions"]?[stage] as JArray ?? new())
-            .OfType<JObject>()
-            .Where(c => (bool?)c["isNecessary"] != false)
-            .All(NativeCondition);
+        return quest.Conditions.Stage(stage).Where(c => (bool?)c.IsNecessary != false).All(NativeCondition);
     }
 
     private void Native(StoryAction action)
@@ -401,7 +397,10 @@ public sealed class StoryRehearsal
                 }
 
                 Facts.QuestStatuses[id] = "Success";
-                Log.Add("Native rewards recorded, not granted: " + (quest["rewards"]?["Success"]?.ToString(Formatting.None) ?? "[]"));
+                Log.Add(
+                    "Native rewards recorded, not granted: "
+                        + JsonConvert.SerializeObject(quest.Rewards.GetValueOrDefault("Success") ?? new())
+                );
                 break;
             case StoryActionType.HandoverItem:
                 if (Facts.InRaid || status is not ("Started" or "AvailableForFinish"))
@@ -410,15 +409,14 @@ public sealed class StoryRehearsal
                 }
 
                 var condition =
-                    (quest["conditions"]?["AvailableForFinish"] as JArray ?? new())
-                        .OfType<JObject>()
-                        .SingleOrDefault(c => (string?)c["id"] == action.ConditionId && (string?)c["conditionType"] == "HandoverItem")
-                    ?? throw new InvalidOperationException("Choose a handover objective belonging to this quest.");
-                var targets = condition["target"] as JArray;
-                var target = targets?.First?.ToString() ?? "";
+                    quest.Conditions.AvailableForFinish.SingleOrDefault(c =>
+                        (string?)c.Id == action.ConditionId && (string?)c.ConditionType == "HandoverItem"
+                    ) ?? throw new InvalidOperationException("Choose a handover objective belonging to this quest.");
+                var targets = condition.Target?.Values;
+                var target = targets?.FirstOrDefault() ?? "";
                 var remaining = Math.Max(
                     0,
-                    ((double?)condition["value"] ?? 1) - Facts.ConditionCounters.GetValueOrDefault(action.ConditionId)
+                    ((double?)condition.Value ?? 1) - Facts.ConditionCounters.GetValueOrDefault(action.ConditionId)
                 );
                 if (remaining == 0)
                 {
@@ -427,16 +425,16 @@ public sealed class StoryRehearsal
 
                 var complex =
                     targets?.Count != 1
-                    || (bool?)condition["onlyFoundInRaid"] == true
-                    || (double?)condition["minDurability"] > 0
-                    || ((double?)condition["maxDurability"] ?? 100) < 100;
+                    || (bool?)condition.OnlyFoundInRaid == true
+                    || (double?)condition.MinDurability > 0
+                    || ((double?)condition.MaxDurability ?? 100) < 100;
                 if (complex)
                 {
                     Manual(
                         action.Id.Length > 0 ? action.Id : action.ConditionId,
                         "Filtered handover requires native item eligibility. Simulate completing this objective?"
                     );
-                    Facts.ConditionCounters[action.ConditionId] = (double?)condition["value"] ?? 1;
+                    Facts.ConditionCounters[action.ConditionId] = (double?)condition.Value ?? 1;
                     Facts.CompletedConditions.Add(action.ConditionId);
                 }
                 else
@@ -472,9 +470,7 @@ public sealed class StoryRehearsal
             var changed = false;
             foreach (var membership in Definition.Quests)
             {
-                var quest = Season
-                    .Quests.OfType<JObject>()
-                    .FirstOrDefault(q => (string?)q["_id"] == membership.QuestId && (bool?)q["_seasonalEnabled"] != false);
+                var quest = Season.Quests.FirstOrDefault(q => (string?)q.Id == membership.QuestId && (bool?)q.SeasonalEnabled != false);
                 if (quest == null)
                 {
                     continue;
@@ -495,16 +491,16 @@ public sealed class StoryRehearsal
                 status = Facts.QuestStatuses.GetValueOrDefault(membership.QuestId) ?? "Locked";
                 if (status is "Started" or "AvailableForFinish")
                 {
-                    foreach (var condition in (quest["conditions"]?["AvailableForFinish"] as JArray ?? new()).OfType<JObject>())
+                    foreach (var condition in quest.Conditions.AvailableForFinish)
                     {
-                        var conditionId = (string?)condition["id"] ?? "";
+                        var conditionId = (string?)condition.Id ?? "";
                         if (!Facts.CompletedConditions.Contains(conditionId) && NativeCondition(condition))
                         {
                             changed |= Facts.CompletedConditions.Add(conditionId);
                         }
                     }
 
-                    if ((quest["conditions"]?["Fail"] as JArray ?? new()).OfType<JObject>().Any(NativeCondition))
+                    if (quest.Conditions.Fail.Any(NativeCondition))
                     {
                         Facts.QuestStatuses[membership.QuestId] = "Fail";
                         changed = true;

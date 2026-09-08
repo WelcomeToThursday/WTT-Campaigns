@@ -42,22 +42,20 @@ internal static class ProgressionChecks
             check(quest.Tier is >= 0 and <= 4, id + " valid display tier");
             check(!quest.UseBetaStart || quest.Tier == 0, id + " only essential tasks fall back to beta start rules");
             check(
-                quest.Start.All(c => (string?)c["conditionType"] is "Level" or "Quest" or "TraderLoyalty" or "TraderStanding"),
+                quest.Start.All(c => (string?)c.ConditionType is "Level" or "Quest" or "TraderLoyalty" or "TraderStanding"),
                 id + " no unsupported global variables reach beta"
             );
             if (quest.Tier > 0)
             {
                 check(
                     quest.Start.Any(c =>
-                        (string?)c["conditionType"] == "TraderLoyalty"
-                        && (string?)c["target"] == quest.TraderId
-                        && (int?)c["value"] == quest.Tier
+                        (string?)c.ConditionType == "TraderLoyalty" && (string?)c.Target == quest.TraderId && (int?)c.Value == quest.Tier
                     ),
                     id + " explicit loyalty gate"
                 );
             }
             check(
-                quest.Reputation.Values.SelectMany(v => v).All(r => (string?)r["type"] == "TraderStanding"),
+                quest.Reputation.Values.SelectMany(v => v).All(r => (string?)r.Type == "TraderStanding"),
                 id + " only reputation rewards in overlay"
             );
         }

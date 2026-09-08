@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 using SeasonalPerks.Server.Hub;
 using SeasonalPerks.Server.Web.Authoring;
 using SeasonalPerks.Shared.Effects;
@@ -12,6 +12,7 @@ using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Services.Locales;
 using SPTarkov.Server.Core.Utils;
+using SPTarkov.Server.Core.Utils.Cloners;
 using Path = System.IO.Path;
 
 namespace SeasonalPerks.Server.Seasons;
@@ -27,7 +28,8 @@ public sealed class SeasonContentService(
     LocaleService locales,
     LocaleTable localeTable,
     HideoutTable hideout,
-    JsonUtil json
+    JsonUtil json,
+    ICloner cloner
 ) : IOnLoad
 {
     public bool Ready { get; private set; }
@@ -200,7 +202,7 @@ public sealed class SeasonContentService(
         };
     }
 
-    public JObject Offer(string composite)
+    public NativeReward Offer(string composite)
     {
         var parts = composite.Split('/');
         var trader = traders[new MongoId(parts[0])];
@@ -218,14 +220,16 @@ public sealed class SeasonContentService(
                 }
             }
         } while (changed);
-        return new JObject
+        return new NativeReward
         {
-            ["id"] = SeasonRepository.NewId(),
-            ["type"] = "AssortmentUnlock",
-            ["target"] = root.ToString(),
-            ["traderId"] = parts[0],
-            ["loyaltyLevel"] = trader.Assort.LoyalLevelItems[root],
-            ["items"] = JArray.Parse(json.Serialize(trader.Assort.Items.Where(i => keep.Contains(i.Id.ToString())))!),
+            Id = SeasonRepository.NewId(),
+            Type = "AssortmentUnlock",
+            Target = root.ToString(),
+            TraderId = parts[0],
+            LoyaltyLevel = trader.Assort.LoyalLevelItems[root],
+            Items = JsonConvert.DeserializeObject<List<NativeItem>>(
+                json.Serialize(trader.Assort.Items.Where(i => keep.Contains(i.Id.ToString())))!
+            )!,
         };
     }
 
@@ -242,7 +246,7 @@ public sealed class SeasonContentService(
             var available = templates
                 .Items.Keys.Select(i => i.ToString())
                 .Concat(definition.Items.Select(i => i.Id))
-                .Concat(definition.ImportedItems.Properties().Select(p => p.Name))
+                .Concat(definition.ImportedItems.Keys)
                 .ToHashSet();
             void Item(string? id, string path)
             {
@@ -328,22 +332,22 @@ public sealed class SeasonContentService(
 
             var questIds = templates
                 .Quests.Keys.Select(i => i.ToString())
-                .Concat(definition.Quests.Where(q => (bool?)q["_seasonalEnabled"] != false).Select(q => (string)q["_id"]!))
+                .Concat(definition.Quests.Where(q => (bool?)q.SeasonalEnabled != false).Select(q => (string)q.Id!))
                 .ToHashSet();
             foreach (var reward in definition.AllRewards.Where(r => r.Enabled))
             {
                 var path = "Rewards/" + reward.Id;
                 foreach (var grant in reward.Grants)
                 {
-                    foreach (var item in grant["items"] ?? new JArray())
+                    foreach (var item in grant.Items)
                     {
-                        Item((string?)item["_tpl"], path);
+                        Item((string?)item.Template, path);
                     }
 
                     if (
-                        (string?)grant["type"] == "CustomizationDirect"
+                        (string?)grant.Type == "CustomizationDirect"
                         && (
-                            !templates.Customization.TryGetValue(new MongoId((string)grant["target"]!), out var custom)
+                            !templates.Customization.TryGetValue(new MongoId((string)grant.Target!), out var custom)
                             || HubGameplay.CustomizationKind(custom.Parent) == null
                         )
                     )
@@ -351,16 +355,16 @@ public sealed class SeasonContentService(
                         result.Add(path, "Customization is not installed.", "dependency");
                     }
 
-                    if ((string?)grant["type"] == "AssortmentUnlock")
+                    if ((string?)grant.Type == "AssortmentUnlock")
                     {
-                        if (!traders.TryGetValue(new MongoId((string)grant["traderId"]!), out var trader) || trader.Assort == null)
+                        if (!traders.TryGetValue(new MongoId((string)grant.TraderId!), out var trader) || trader.Assort == null)
                         {
                             result.Add(path, "Trader is not installed.", "dependency");
                         }
                         else
                         {
-                            var items = json.Deserialize<List<Item>>(grant["items"]!.ToString())!;
-                            var target = (string)grant["target"]!;
+                            var items = json.Deserialize<List<Item>>(JsonConvert.SerializeObject(grant.Items))!;
+                            var target = (string)grant.Target!;
                             var root = items.FirstOrDefault(i => i.Id.ToString() == target);
                             if (root == null)
                             {
@@ -370,10 +374,10 @@ public sealed class SeasonContentService(
                                 trader.Assort.Items.Count(i =>
                                     i.Template == root.Template
                                     && trader.Assort.BarterScheme.ContainsKey(i.Id)
-                                    && trader.Assort.LoyalLevelItems.GetValueOrDefault(i.Id) == (int)grant["loyaltyLevel"]!
+                                    && trader.Assort.LoyalLevelItems.GetValueOrDefault(i.Id) == (int)grant.LoyaltyLevel!
                                     && HubGameplay.Signature(items, target) == HubGameplay.Signature(trader.Assort.Items, i.Id.ToString())
                                 ) != 1
-                                && !definition.Offers.Any(o => (string?)o["Target"] == target)
+                                && !definition.Offers.Any(o => (string?)o.Target == target)
                             )
                             {
                                 result.Add(path, "Trader offer is missing or ambiguous. Select an installed offer again.", "dependency");
@@ -382,28 +386,28 @@ public sealed class SeasonContentService(
                     }
                 }
 
-                foreach (var condition in reward.Conditions.Where(c => (string?)c["conditionType"] == "Quest"))
+                foreach (var condition in reward.Conditions.Where(c => (string?)c.ConditionType == "Quest"))
                 {
-                    if (!questIds.Contains((string)condition["target"]!))
+                    if (!questIds.Contains((string)condition.Target!))
                     {
                         result.Add(path, "Required quest is not installed.", "dependency");
                     }
                 }
             }
 
-            foreach (var quest in definition.Quests.OfType<JObject>())
+            foreach (var quest in definition.Quests)
             {
-                if ((bool?)quest["_seasonalEnabled"] == false)
+                if ((bool?)quest.SeasonalEnabled == false)
                 {
                     continue;
                 }
 
-                var path = "Quests/" + (string?)quest["_id"];
+                var path = "Quests/" + (string?)quest.Id;
                 if (!definition.Legacy)
                 {
                     foreach (var field in new[] { "startedMessageText", "successMessageText", "description", "name" })
                     {
-                        if (string.IsNullOrEmpty((string?)quest[field]))
+                        if (string.IsNullOrEmpty(NativeQuestAuthoring.LocaleKey(quest, field)))
                         {
                             result.Add(path, "Quest is missing its " + field + " localization reference.");
                         }
@@ -411,9 +415,7 @@ public sealed class SeasonContentService(
 
                     try
                     {
-                        var native = (JObject)quest.DeepClone();
-                        native.Remove("localization");
-                        _ = json.Deserialize<Quest>(native.ToString());
+                        _ = json.Deserialize<Quest>(JsonConvert.SerializeObject(quest));
                     }
                     catch (System.Text.Json.JsonException e)
                     {
@@ -421,20 +423,20 @@ public sealed class SeasonContentService(
                     }
                 }
 
-                if (!traders.ContainsKey(new MongoId((string)quest["traderId"]!)))
+                if (!traders.ContainsKey(new MongoId((string)quest.TraderId!)))
                 {
                     result.Add(path, "Quest trader is not installed.", "dependency");
                 }
 
-                foreach (var item in quest.Descendants().OfType<JObject>().Where(o => o["_tpl"] != null))
+                foreach (var item in quest.AllItems())
                 {
-                    Item((string?)item["_tpl"], path);
+                    Item((string?)item.Template, path);
                 }
 
-                foreach (var c in quest.Descendants().OfType<JObject>().Where(o => o["conditionType"] != null))
+                foreach (var c in quest.AllConditions())
                 {
-                    var kind = (string?)c["conditionType"];
-                    var targets = c["target"] is JArray a ? a.Values<string>() : new[] { (string?)c["target"] };
+                    var kind = (string?)c.ConditionType;
+                    var targets = c.Target ?? new StringTargets(Array.Empty<string>());
                     foreach (var target in targets.Where(t => t != null))
                     {
                         if (kind == "Quest" && !questIds.Contains(target!))
@@ -473,17 +475,15 @@ public sealed class SeasonContentService(
                         var edition = definition.Starting.Preset.Length > 0 ? definition.Starting.Preset : "Standard";
                         if (templates.Profiles.TryGetValue(edition, out var preset))
                         {
-                            var setup = JObject
-                                .Parse(json.Serialize(preset)!)[ReferenceEquals(faction, definition.Starting.Bear) ? "bear" : "usec"]
-                                ?["character"]?["Inventory"];
-                            var root = setup?["items"]?.FirstOrDefault(i => (string?)i["_id"] == (string?)setup["equipment"]);
-                            if (root != null && templates.Items.TryGetValue(new MongoId((string)root["_tpl"]!), out var equipment))
+                            var setup = (ReferenceEquals(faction, definition.Starting.Bear) ? preset.Bear : preset.Usec)
+                                ?.Character
+                                ?.Inventory;
+                            var root = setup?.Items?.FirstOrDefault(i => i.Id == setup.Equipment);
+                            if (root != null && templates.Items.TryGetValue(root.Template, out var equipment))
                             {
-                                var slot = JObject
-                                    .Parse(json.Serialize(equipment)!)["_props"]
-                                    ?["Slots"]?.FirstOrDefault(x => (string?)x["_name"] == item.Slot);
+                                var slot = equipment.Properties?.Slots?.FirstOrDefault(x => x.Name == item.Slot);
                                 var allowed =
-                                    slot?["_props"]?["filters"]?.SelectMany(f => f["Filter"] ?? new JArray()).Values<string>().ToHashSet()
+                                    slot?.Properties?.Filters?.SelectMany(f => f.Filter ?? []).Select(id => id.ToString()).ToHashSet()
                                     ?? [];
                                 var ancestors = new HashSet<string>();
                                 var source = Source(item.Template);
@@ -579,17 +579,17 @@ public sealed class SeasonContentService(
     {
         // Stage every template first; never leave half a season in the shared database on validation failure.
         var staged = new Dictionary<MongoId, TemplateItem>();
-        foreach (var pair in definition.ImportedItems.Properties())
+        foreach (var pair in definition.ImportedItems)
         {
-            var id = new MongoId(pair.Name);
+            var id = new MongoId(pair.Key);
             if (templates.Items.ContainsKey(id))
             {
-                _owners.TryAdd(pair.Name, definition.Id);
+                _owners.TryAdd(pair.Key, definition.Id);
                 continue;
             }
 
-            var item = (JObject)pair.Value.DeepClone();
-            var bundle = (string)item["_props"]!["Prefab"]!["path"]!;
+            var item = SeasonCompiler.Copy(pair.Value);
+            var bundle = item.Properties.Prefab!.Path!;
             if (!bundle.StartsWith("wtt-seasonal/", StringComparison.Ordinal))
             {
                 bundle = "wtt-seasonal/" + bundle;
@@ -600,13 +600,13 @@ public sealed class SeasonContentService(
                 continue;
             }
 
-            item["_props"]!["Prefab"]!["path"] = bundle;
-            if ((string?)item["_parent"] == "6a28212a0368f4438b0d0a45")
+            item.Properties.Prefab!.Path = bundle;
+            if ((string?)item.Parent == "6a28212a0368f4438b0d0a45")
             {
-                item["_parent"] = "5448ecbe4bdc2d60728b4568";
+                item.Parent = "5448ecbe4bdc2d60728b4568";
             }
 
-            staged[id] = json.Deserialize<TemplateItem>(item.ToString())!;
+            staged[id] = json.Deserialize<TemplateItem>(JsonConvert.SerializeObject(item))!;
         }
 
         var remaining = definition.Items.Where(i => !templates.Items.ContainsKey(new MongoId(i.Id))).ToList();
@@ -628,31 +628,51 @@ public sealed class SeasonContentService(
             foreach (var item in ready)
             {
                 var original = staged.GetValueOrDefault(new MongoId(item.CloneFrom)) ?? templates.Items[new MongoId(item.CloneFrom)];
-                var node = JObject.Parse(json.Serialize(original)!);
-                var ids = node.Descendants()
-                    .OfType<JProperty>()
-                    .Where(p => p.Name == "_id" && SeasonValidator.IsId((string?)p.Value))
-                    .Select(p => (string)p.Value!)
-                    .Distinct()
-                    .ToDictionary(
-                        id => id,
-                        id => SeasonRepository.Hash(System.Text.Encoding.UTF8.GetBytes(item.Id + ":" + id)).Substring(0, 24)
-                    );
-                ids[original.Id.ToString()] = item.Id;
-                foreach (var value in node.Descendants().OfType<JValue>().Where(v => v.Type == JTokenType.String).ToArray())
+                var node = cloner.Clone(original)!;
+                string NewIdentity(string old)
                 {
-                    if (ids.TryGetValue((string)value!, out var replacement))
-                    {
-                        value.Value = replacement;
-                    }
+                    return old == original.Id.ToString()
+                        ? item.Id
+                        : SeasonRepository.Hash(System.Text.Encoding.UTF8.GetBytes(item.Id + ":" + old)).Substring(0, 24);
                 }
 
-                node["_id"] = item.Id;
-                node["_name"] = item.Name;
-                node["_props"]!["Width"] = item.Width;
-                node["_props"]!["Height"] = item.Height;
-                node["_props"]!["StackMaxSize"] = item.StackMax;
-                staged[new MongoId(item.Id)] = json.Deserialize<TemplateItem>(node.ToString())!;
+                var slots = (node.Properties?.Slots ?? [])
+                    .Concat(node.Properties?.Chambers ?? [])
+                    .Concat(node.Properties?.Cartridges ?? [])
+                    .ToList();
+                var ids = slots
+                    .Where(s => s.Id.HasValue)
+                    .Select(s => s.Id!.Value)
+                    .Concat((node.Properties?.Grids ?? []).Select(g => new MongoId(g.Id)))
+                    .Append(original.Id)
+                    .Distinct()
+                    .ToDictionary(id => id, id => new MongoId(NewIdentity(id.ToString())));
+                foreach (var slot in slots)
+                {
+                    if (slot.Id is { } slotId)
+                    {
+                        slot.Id = ids[slotId];
+                    }
+
+                    if (slot.Parent is { } parent && ids.TryGetValue(parent, out var replacement))
+                    {
+                        slot.Parent = replacement;
+                    }
+                }
+                foreach (var grid in node.Properties?.Grids ?? [])
+                {
+                    grid.Id = ids[new MongoId(grid.Id)].ToString();
+                    if (ids.TryGetValue(new MongoId(grid.Parent), out var replacement))
+                    {
+                        grid.Parent = replacement.ToString();
+                    }
+                }
+                node.Id = new MongoId(item.Id);
+                node.Name = item.Name;
+                node.Properties!.Width = item.Width;
+                node.Properties.Height = item.Height;
+                node.Properties.StackMaxSize = item.StackMax;
+                staged[new MongoId(item.Id)] = node;
                 remaining.Remove(item);
             }
         }

@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Seasons;
 using SeasonalPerks.Shared.Story;
 using SPTarkov.DI.Annotations;
@@ -14,7 +13,7 @@ namespace SeasonalPerks.Server.Hub;
 [Injectable(InjectionType.Singleton)]
 public sealed class HubQuestService(TemplateTable templates, JsonUtil json, SeasonRepository repository)
 {
-    private Dictionary<string, JObject> _captured = new();
+    private Dictionary<string, NativeQuest> _captured = new();
     private readonly Dictionary<string, string> _unavailable = new();
     public HashSet<string> Imported { get; } = new();
     private readonly Dictionary<string, HashSet<string>> _seasonQuests = new();
@@ -32,15 +31,14 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
             var definition = runtime.Definition;
             _storyQuests.UnionWith(definition.Story?.Quests.Select(q => q.QuestId) ?? []);
             _seasonQuests[definition.Id] = definition
-                .Quests.OfType<JObject>()
-                .Where(q => (bool?)q["_seasonalEnabled"] != false)
-                .Select(q => (string)q["_id"]!)
+                .Quests.Where(q => (bool?)q.SeasonalEnabled != false)
+                .Select(q => (string)q.Id!)
                 .ToHashSet();
         }
         _captured = repository
-            .Playable.Values.SelectMany(r => r.Definition.Quests.OfType<JObject>())
-            .Where(q => (bool?)q["_seasonalEnabled"] != false)
-            .GroupBy(q => (string)q["_id"]!)
+            .Playable.Values.SelectMany(r => r.Definition.Quests)
+            .Where(q => (bool?)q.SeasonalEnabled != false)
+            .GroupBy(q => (string)q.Id!)
             .ToDictionary(g => g.Key, g => g.First());
         foreach (var id in _captured.Keys)
         {
@@ -57,9 +55,9 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
 
             var definition = _storyQuests.Contains(pair.Key)
                 ? StoryQuestCompatibility.NativeTemplate(pair.Value)
-                : (JObject)pair.Value.DeepClone();
-            definition.Remove("localization");
-            templates.Quests[id] = json.Deserialize<Quest>(definition.ToString())!;
+                : SeasonalPerks.Shared.Seasons.SeasonCompiler.Copy(pair.Value);
+            definition.Localization = new();
+            templates.Quests[id] = json.Deserialize<Quest>(Newtonsoft.Json.JsonConvert.SerializeObject(definition))!;
             Imported.Add(pair.Key);
         }
     }
@@ -96,14 +94,9 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
             return Fail("The quest has a cyclic dependency requiring a compatibility adapter.");
         }
 
-        foreach (
-            var condition in ((JContainer)quest["conditions"]!)
-                .DescendantsAndSelf()
-                .OfType<JObject>()
-                .Where(c => c["conditionType"] != null)
-        )
+        foreach (var condition in quest.AllConditions())
         {
-            var kind = (string)condition["conditionType"]!;
+            var kind = (string)condition.ConditionType!;
             // New story state, map triggers, and encounters cannot be inferred from objective text.
             if (
                 _storyQuests.Contains(id)
@@ -116,7 +109,7 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
 
             if (kind == "Quest")
             {
-                var targets = condition["target"] is JArray array ? array.Select(v => (string)v!) : new[] { (string)condition["target"]! };
+                var targets = condition.Target ?? new StringTargets(Array.Empty<string>());
                 foreach (var target in targets)
                 {
                     if (!Validate(target, new HashSet<string>(visiting)))
@@ -129,7 +122,7 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
             }
             if (kind is "FindItem" or "HandoverItem")
             {
-                foreach (var target in condition["target"]!)
+                foreach (var target in condition.Target!)
                 {
                     if (!templates.Items.TryGetValue(new MongoId((string)target!), out var item))
                     {
@@ -143,9 +136,9 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
                 }
             }
         }
-        foreach (var item in ((JContainer)quest["rewards"]!).DescendantsAndSelf().OfType<JObject>().Where(n => n["_tpl"] != null))
+        foreach (var item in quest.AllItems())
         {
-            if (!templates.Items.ContainsKey(new MongoId((string)item["_tpl"]!)))
+            if (!templates.Items.ContainsKey(new MongoId((string)item.Template!)))
             {
                 return Fail("A quest reward item is not installed.");
             }

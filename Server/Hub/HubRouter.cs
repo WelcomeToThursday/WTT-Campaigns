@@ -15,11 +15,11 @@ public sealed class HubRouter(JsonUtil json, HubGameplay hub) : StaticRouter(jso
         [
             new RouteAction<HubRequest>(
                 "/wtt-seasonal/hub",
-                (_, _, id, _, _) =>
+                (_, r, id, _, _) =>
                 {
                     try
                     {
-                        return ValueTask.FromResult(JsonConvert.SerializeObject(hub.Read(id.ToString())));
+                        return ValueTask.FromResult(JsonConvert.SerializeObject(hub.Read(id.ToString(), r.SeasonId, r.CharacterId)));
                     }
                     catch (InvalidOperationException e)
                     {

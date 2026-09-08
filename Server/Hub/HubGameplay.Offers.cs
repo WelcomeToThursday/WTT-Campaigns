@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
 using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -12,27 +12,22 @@ public sealed partial class HubGameplay
 
     private void ResolveOffers()
     {
-        foreach (
-            var grant in ((JObject)_catalogue["Rewards"]!)
-                .Properties()
-                .SelectMany(p => p.Value["Grants"]!)
-                .Where(g => (string?)g["type"] == "AssortmentUnlock")
-        )
+        foreach (var grant in _catalogue.Rewards.Values.SelectMany(r => r.Grants).Where(g => (string?)g.Type == "AssortmentUnlock"))
         {
-            var target = (string)grant["target"]!;
-            var traderId = new MongoId((string)grant["traderId"]!);
+            var target = (string)grant.Target!;
+            var traderId = new MongoId((string)grant.TraderId!);
             if (!traders.TryGetValue(traderId, out var trader) || trader.Assort == null)
             {
                 continue;
             }
 
-            var items = json.Deserialize<List<Item>>(grant["items"]!.ToString())!;
+            var items = json.Deserialize<List<Item>>(JsonConvert.SerializeObject(grant.Items))!;
             var sourceRoot = items.Single(i => i.Id.ToString() == target);
             var matches = trader
                 .Assort.Items.Where(i =>
                     i.Template == sourceRoot.Template
                     && trader.Assort.BarterScheme.ContainsKey(i.Id)
-                    && trader.Assort.LoyalLevelItems.GetValueOrDefault(i.Id) == (int)grant["loyaltyLevel"]!
+                    && trader.Assort.LoyalLevelItems.GetValueOrDefault(i.Id) == (int)grant.LoyaltyLevel!
                     && Signature(items, target) == Signature(trader.Assort.Items, i.Id.ToString())
                 )
                 .ToArray();
@@ -48,20 +43,21 @@ public sealed partial class HubGameplay
                 continue;
             }
 
-            var fallback = _catalogue["Offers"]!.FirstOrDefault(o => (string?)o["Target"] == target);
+            var fallback = _catalogue.Offers.FirstOrDefault(o => (string?)o.Target == target);
             if (fallback == null)
             {
                 continue;
             }
 
-            var assortment = json.Deserialize<TraderAssort>(
-                new JObject
+            var assortment = new TraderAssort
+            {
+                Items = items,
+                BarterScheme = new()
                 {
-                    ["items"] = grant["items"]!.DeepClone(),
-                    ["barter_scheme"] = new JObject { [target] = fallback["Barter"]!.DeepClone() },
-                    ["loyal_level_items"] = new JObject { [target] = fallback["Loyalty"]!.DeepClone() },
-                }.ToString()
-            )!;
+                    [new MongoId(target)] = json.Deserialize<List<List<BarterScheme>>>(JsonConvert.SerializeObject(fallback.Barter))!,
+                },
+                LoyalLevelItems = new() { [new MongoId(target)] = fallback.Loyalty },
+            };
             var root = assortment.Items.Single(i => i.Id.ToString() == target);
             root.ParentId = "hideout";
             root.SlotId = "hideout";
@@ -160,13 +156,12 @@ public sealed partial class HubGameplay
 
         var result = cloner.Clone(original)!;
         foreach (
-            var grant in ((JObject)_catalogue["Rewards"]!)
-                .Properties()
-                .SelectMany(p => p.Value["Grants"]!)
-                .Where(g => (string?)g["type"] == "AssortmentUnlock" && (string?)g["traderId"] == traderId)
+            var grant in _catalogue
+                .Rewards.Values.SelectMany(r => r.Grants)
+                .Where(g => (string?)g.Type == "AssortmentUnlock" && (string?)g.TraderId == traderId)
         )
         {
-            var target = (string)grant["target"]!;
+            var target = (string)grant.Target!;
             if (!_offerIds.TryGetValue(target, out var mapped) || (_manager ?? this).OfferAllowed(sessionId, mapped))
             {
                 continue;
@@ -237,12 +232,9 @@ public sealed partial class HubGameplay
         {
             foreach (var target in _fallbackOffers)
             {
-                var definition = ((JObject)_catalogue["Rewards"]!)
-                    .Properties()
-                    .SelectMany(p => p.Value["Grants"]!)
-                    .First(g => (string?)g["target"] == target);
+                var definition = _catalogue.Rewards.Values.SelectMany(r => r.Grants).First(g => (string?)g.Target == target);
                 var id = new MongoId(target);
-                if ((string?)definition["traderId"] != traderId || trader.Assort.Items.Any(i => i.Id == id))
+                if ((string?)definition.TraderId != traderId || trader.Assort.Items.Any(i => i.Id == id))
                 {
                     continue;
                 }

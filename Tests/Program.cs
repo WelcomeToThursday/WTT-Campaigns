@@ -50,6 +50,8 @@ void Check(bool value, string name)
     count++;
 }
 var rules = new Rules();
+SeasonalPerks.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
+SeasonalPerks.Tests.NativeModelChecks.Run(Check);
 SeasonalPerks.Tests.StoryChecks.Run(Check);
 SeasonalPerks.Tests.StoryEngineChecks.Run(Check);
 SeasonalPerks.Tests.AuthoringChecks.Run(Check);

@@ -20,25 +20,19 @@ internal static class StoryChecks
 
     internal static void Run(Action<bool, string> check)
     {
-        var kills = new JObject { ["conditionType"] = "Kills" };
+        var kills = new NativeCondition { ConditionType = "Kills" };
         check(!StoryQuestCompatibility.Supports(kills), "Native kill filters cannot be standalone story objectives");
-        var counter = new JObject
+        var counter = new NativeCondition
         {
-            ["conditionType"] = "CounterCreator",
-            ["counter"] = new JObject { ["conditions"] = new JArray(kills) },
+            ConditionType = "CounterCreator",
+            Counter = new() { Conditions = new() { kills } },
         };
-        check(
-            StoryQuestCompatibility.Supports((JObject)counter["counter"]!["conditions"]![0]!),
-            "Native kill filters are supported within counters"
-        );
+        check(StoryQuestCompatibility.Supports(counter.Counter!.Conditions[0], true), "Native kill filters are supported within counters");
         var season = new SeasonDefinition { Id = "100000000000000000000010", BattlePassId = "100000000000000000000011" };
-        var legacy = SeasonCompiler.GameplayIdentity(season).ToString(Formatting.None);
+        var legacy = SeasonCompiler.GameplayIdentity(season);
         check(!JObject.FromObject(season).ContainsKey("Story"), "Story extension is absent in existing pack serialization");
         var copy = JsonConvert.DeserializeObject<SeasonDefinition>(JsonConvert.SerializeObject(season))!;
-        check(
-            legacy == SeasonCompiler.GameplayIdentity(copy).ToString(Formatting.None),
-            "Absent story preserves existing gameplay identity"
-        );
+        check(legacy == SeasonCompiler.GameplayIdentity(copy), "Absent story preserves existing gameplay identity");
         season.Dependencies.Add("quest:" + Quest);
         season.Story = Definition();
         var report = new SeasonValidationResult();

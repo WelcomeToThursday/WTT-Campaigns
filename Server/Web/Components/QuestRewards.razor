@@ -2,17 +2,17 @@
 <div class="stage-stack">
 @foreach (var stage in new[] { "Success", "Started", "Fail" })
 {
-    var rewards = Quest["rewards"]?[stage] as JArray;
+    var rewards = Quest.Rewards.GetValueOrDefault(stage);
     <details class="editor-section" open="@(stage == "Success")" @key="stage">
         <summary>@(stage == "Success" ? "On completion" : stage == "Started" ? "On acceptance" : "On failure") <span class="small-tag">@(rewards?.Count ?? 0) rewards</span></summary>
         <p>@(stage == "Success" ? "Granted when the player successfully completes and hands in this quest." : stage == "Started" ? "Granted when the player accepts this quest." : "Applied if this quest fails. Negative reputation changes can be used as penalties.")</p>
         @if (rewards == null || rewards.Count == 0) { <p class="empty-hint">No rewards at this stage.</p> }
-        @foreach (var reward in (rewards ?? new JArray()).OfType<JObject>().ToArray())
+        @foreach (var reward in (rewards ?? new List<NativeReward>()).ToArray())
         {
             <article class="objective-entry" @key="reward">
-                <header class="panel-heading"><h4>@StoryAuthoring.Friendly((string?)reward["type"] ?? "Imported reward")</h4></header>
+                <header class="panel-heading"><h4>@StoryAuthoring.Friendly((string?)reward.Type ?? "Imported reward")</h4></header>
                 <StructuredFields Value="reward" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Changed="Changed" />
-                <div class="record-actions"><button class="danger" @onclick="@(async () => { reward.Remove(); await Changed.InvokeAsync(); })">Remove reward</button></div>
+                <div class="record-actions"><button class="danger" @onclick="@(async () => { rewards!.Remove(reward); await Changed.InvokeAsync(); })">Remove reward</button></div>
             </article>
         }
         <div class="add-entry-row"><label>Add reward at this stage<select value="" @onchange="@(e => Add(stage, e.Value?.ToString() ?? ""))"><option value="">Choose reward type…</option>@foreach (var kind in new[] { "Item", "Experience", "TraderStanding", "TraderUnlock", "Skill" }) { <option value="@kind">@StoryAuthoring.Friendly(kind)</option> }</select></label></div>
@@ -20,9 +20,9 @@
 }
 </div>
 @code {
-    [Parameter] public JObject Quest { get; set; } = null!;
+    [Parameter] public NativeQuest Quest { get; set; } = null!;
     [Parameter] public IEnumerable<ContentChoice> OwnedItems { get; set; } = [];
     [Parameter] public IEnumerable<ContentChoice> OwnedQuests { get; set; } = [];
     [Parameter] public EventCallback Changed { get; set; }
-    private async Task Add(string stage, string kind) { if (kind.Length == 0) return; Quest["rewards"] ??= new JObject(); Quest["rewards"]![stage] ??= new JArray(); NativeQuestAuthoring.AddQuestReward(Quest, kind, stage); await Changed.InvokeAsync(); }
+    private async Task Add(string stage, string kind) { if (kind.Length == 0) return; NativeQuestAuthoring.AddQuestReward(Quest, kind, stage); await Changed.InvokeAsync(); }
 }

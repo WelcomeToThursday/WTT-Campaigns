@@ -38,17 +38,17 @@ else
     {
         case "Details":
             <section class="editor-section"><header><h3>Quest identity</h3><p>What the player sees and which trader offers the quest.</p></header>
-            <label class="check"><input type="checkbox" checked="@((bool?)selected["_seasonalEnabled"] != false)" @onchange="@(e => Edit(() => selected["_seasonalEnabled"] = (bool)e.Value!))" />Enabled</label>
+            <label class="check"><input type="checkbox" checked="@((bool?)selected.SeasonalEnabled != false)" @onchange="@(e => Edit(() => selected.SeasonalEnabled = (bool)e.Value!))" />Enabled</label>
             <label>Name <HelpTip Text="The quest title shown to the player. English is the fallback when a translation is missing." /><input value="@NativeQuestAuthoring.QuestName(selected)" @onchange="@(e => Edit(() => NativeQuestAuthoring.QuestText(selected, "name", Text(e))))" /></label>
             <label>Description <HelpTip Text="Explain the goal and context shown in the quest log. Objective instructions are edited under Objectives." /><textarea value="@NativeQuestAuthoring.QuestLocale(selected, "description")" @onchange="@(e => Edit(() => NativeQuestAuthoring.QuestText(selected, "description", Text(e))))"></textarea></label>
-            <ContentPicker Kind="traders" Label="Quest trader" HelpText="The trader who offers this native quest and receives its hand-in. Conversations have their own trader setting." Value="@((string?)selected["traderId"] ?? "")" ValueChanged="@(v => Edit(() => selected["traderId"] = v))" />
+            <ContentPicker Kind="traders" Label="Quest trader" HelpText="The trader who offers this native quest and receives its hand-in. Conversations have their own trader setting." Value="@((string?)selected.TraderId ?? "")" ValueChanged="@(v => Edit(() => selected.TraderId = v))" />
             </section><details class="editor-section"><summary>Quest messages</summary>@foreach(var field in new[] { "startedMessageText", "successMessageText", "failMessageText", "acceptPlayerMessage", "completePlayerMessage", "declinePlayerMessage" }) { <label>@StoryAuthoring.Friendly(field) <HelpTip Text="@MessageHelp(field)" /><textarea value="@NativeQuestAuthoring.QuestLocale(selected, field)" @onchange="@(e => Edit(() => NativeQuestAuthoring.QuestText(selected, field, Text(e))))"></textarea></label> }</details>
             break;
         case "Objectives":
             @foreach(var stage in new[] { "AvailableForStart", "AvailableForFinish", "Fail" })
             {
                 <details class="editor-section" open="@(stage != "Fail")" @key="stage"><summary>@(stage == "AvailableForStart" ? "Start requirements" : stage == "AvailableForFinish" ? "Completion objectives" : "Failure conditions") <span class="small-tag">@Conditions(selected, stage).Count</span></summary><p>@(stage == "AvailableForStart" ? "Requirements that make this quest available to accept." : stage == "AvailableForFinish" ? "Tasks the player completes before handing in this quest." : "Tests that cause this quest to fail. Leave empty if it has no failure conditions.")</p>
-                @foreach(var condition in Conditions(selected, stage).OfType<JObject>().ToArray())
+                @foreach(var condition in Conditions(selected, stage).ToArray())
                 { <div class="objective-entry" @key="condition"><NativeObjectiveFields Season="Season" Quest="selected" Value="condition" StoryQuest="@(Membership != null)" Changed="Changed" /><div class="record-actions"><button class="danger" @onclick="@(() => DeleteCondition(condition))">Remove objective</button></div></div> }
                 <select aria-label="@($"Add {stage} objective")" value="" @onchange="@(e => Edit(() => NativeQuestAuthoring.AddCondition(selected, stage, Text(e))))"><option value="">Add objective…</option>@foreach(var kind in NativeObjectiveFields.Kinds(Membership != null, false)) { <option>@kind</option> }</select></details>
             }
@@ -85,14 +85,14 @@ else { <div class="empty-selection"><strong>@(InChapter ? "This chapter has no s
     private string _search = "", _selected = "", _tab = "Details", _chapter = "", _message = "", _focus = "";
     private string _existing = "";
     private bool InChapter => ChapterId.Length > 0;
-    private IEnumerable<JObject> Records => QuestStoryFlow.Quests(Season, ChapterId);
-    private JObject? Selected => Records.FirstOrDefault(q => Id(q) == _selected);
+    private IEnumerable<NativeQuest> Records => QuestStoryFlow.Quests(Season, ChapterId);
+    private NativeQuest? Selected => Records.FirstOrDefault(q => Id(q) == _selected);
     private StoryQuest? Membership => Season.Story?.Quests.FirstOrDefault(q => q.QuestId == _selected);
     private IEnumerable<ContentChoice> OwnedItems => StoryAuthoring.Choices(Season, "items").Select(c => new ContentChoice(c.Id, c.Name));
     private IEnumerable<ContentChoice> OwnedQuests => StoryAuthoring.Choices(Season, "quests").Select(c => new ContentChoice(c.Id, c.Name));
-    private static string Id(JObject q) => (string?)q["_id"] ?? "";
+    private static string Id(NativeQuest q) => (string?)q.Id ?? "";
     private static string Text(ChangeEventArgs e) => e.Value?.ToString() ?? "";
-    private static JArray Conditions(JObject q, string stage) => (JArray?)q["conditions"]?[stage] ?? new();
+    private static List<NativeCondition> Conditions(NativeQuest q, string stage) => q.Conditions.Stage(stage);
     protected override void OnParametersSet()
     {
         if (_focus != FocusId) { _focus = FocusId; if (Records.Any(q => Id(q) == FocusId)) { _selected = FocusId; _tab = "Details"; } _search = ""; }
@@ -114,5 +114,5 @@ else { <div class="empty-selection"><strong>@(InChapter ? "This chapter has no s
         if (used) { _message = "Remove or reassign the story actions targeting this quest before removing its membership."; return; }
         Season.Story.Quests.Remove(Membership!); await Changed.InvokeAsync(); await Go("Quests/" + _selected);
     }
-    private async Task DeleteCondition(JObject condition) { var uses = StoryAuthoring.Uses(Season, condition); if (uses.Count > 0) { _message = "Reassign these references first: " + string.Join(", ", uses); return; } condition.Remove(); await Changed.InvokeAsync(); }
+    private async Task DeleteCondition(NativeCondition condition) { var uses = StoryAuthoring.Uses(Season, condition); if (uses.Count > 0) { _message = "Reassign these references first: " + string.Join(", ", uses); return; } Selected!.RemoveCondition(condition); await Changed.InvokeAsync(); }
 }

@@ -1,5 +1,6 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Effects;
+using SeasonalPerks.Shared.Native;
+using SeasonalPerks.Shared.Serialization;
 
 namespace SeasonalPerks.Shared.Seasons;
 
@@ -88,9 +89,9 @@ public static class SeasonValidator
                 "Invalid dimensions or stack limit for " + item.Name
             );
         }
-        foreach (var item in s.ImportedItems.Properties())
+        foreach (var item in s.ImportedItems)
         {
-            Identity(item.Name, "Items");
+            Identity(item.Key, "Items");
         }
 
         foreach (var item in s.Items)
@@ -176,54 +177,54 @@ public static class SeasonValidator
             }
 
             Need(IsId(reward.Image) && IsId(reward.BigImage), path, "Choose thumbnail and full artwork.");
-            Need(reward.Grants.All(g => g is JObject) && reward.Conditions.All(c => c is JObject), path, "Malformed payload or condition.");
+            Need(reward.Grants.All(g => g != null) && reward.Conditions.All(c => c != null), path, "Malformed payload or condition.");
             Need(reward.Grants.Count > 0, path, "Add at least one reward payload.");
-            foreach (var grant in reward.Grants.OfType<JObject>())
+            foreach (var grant in reward.Grants)
             {
-                var kind = (string?)grant["type"];
+                var kind = (string?)grant.Type;
                 Need(kind is "Item" or "Tarcoin" or "CustomizationDirect" or "AssortmentUnlock", path, "Unsupported reward type: " + kind);
                 if (kind == "Tarcoin")
                 {
-                    Need((long?)grant["value"] is >= 1 and <= 1000000000, path, "Tarcoin amount must be positive and at most one billion.");
+                    Need((long?)grant.Value is >= 1 and <= 1000000000, path, "Tarcoin amount must be positive and at most one billion.");
                 }
 
                 if (kind is "CustomizationDirect" or "AssortmentUnlock")
                 {
-                    Need(IsId((string?)grant["target"]), path, "Select a reward target.");
+                    Need(IsId((string?)grant.Target), path, "Select a reward target.");
                 }
 
                 if (kind is "Item" or "AssortmentUnlock")
                 {
-                    ItemTree(grant["items"] as JArray, path, r);
+                    ItemTree(grant.Items, path, r);
                 }
 
                 if (kind == "AssortmentUnlock")
                 {
                     Need(
-                        IsId((string?)grant["traderId"]) && (int?)grant["loyaltyLevel"] is >= 1 and <= 4,
+                        IsId((string?)grant.TraderId) && (int?)grant.LoyaltyLevel is >= 1 and <= 4,
                         path,
                         "Select a trader and loyalty level 1–4."
                     );
                 }
             }
-            foreach (var condition in reward.Conditions.OfType<JObject>())
+            foreach (var condition in reward.Conditions)
             {
-                var kind = (string?)condition["conditionType"];
+                var kind = (string?)condition.ConditionType;
                 Need(kind is "Level" or "Quest", path, "Reward requirements support level and completed quests.");
                 if (kind == "Level")
                 {
-                    Need((int?)condition["value"] is >= 1 and <= 100, path, "Level requirement must be 1–100.");
+                    Need((int?)condition.Value is >= 1 and <= 100, path, "Level requirement must be 1–100.");
                 }
 
                 if (kind == "Quest")
                 {
-                    Need(IsId((string?)condition["target"]), path, "Select a required quest.");
+                    Need(IsId((string?)condition.Target), path, "Select a required quest.");
                 }
 
                 if (kind == "Level")
                 {
                     Need(
-                        condition["compareMethod"] == null || (string?)condition["compareMethod"] == ">=",
+                        condition.CompareMethod == null || (string?)condition.CompareMethod == ">=",
                         path,
                         "Level requirements use minimum levels."
                     );
@@ -247,23 +248,23 @@ public static class SeasonValidator
             );
         }
 
-        var quests = s.Quests.OfType<JObject>().ToDictionary(q => (string)q["_id"]!);
+        var quests = s.Quests.ToDictionary(q => q.Id);
         var visitedQuests = new HashSet<string>();
         foreach (var quest in quests)
         {
             var storyQuest = s.Story?.Quests.Any(q => q.QuestId == quest.Key) == true;
             Identity(quest.Key, "Quests/" + quest.Key);
-            if ((bool?)quest.Value["_seasonalEnabled"] == false)
+            if ((bool?)quest.Value.SeasonalEnabled == false)
             {
                 continue;
             }
 
-            foreach (var condition in quest.Value.Descendants().OfType<JObject>().Where(c => c["conditionType"] != null))
+            foreach (var condition in quest.Value.AllConditions())
             {
-                var kind = (string?)condition["conditionType"];
+                var kind = (string?)condition.ConditionType;
                 if (
                     storyQuest
-                        ? !Story.StoryQuestCompatibility.Supports(condition)
+                        ? !Story.StoryQuestCompatibility.Supports(quest.Value, condition)
                         : kind is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem")
                 )
                 {
@@ -274,33 +275,26 @@ public static class SeasonValidator
             {
                 var path = "Quests/" + quest.Key;
                 Need(
-                    quest.Value["conditions"] is JObject
-                        && quest.Value["rewards"] is JObject
-                        && quest.Value["localization"]?["en"] is JObject,
+                    quest.Value.Conditions != null && quest.Value.Rewards != null && quest.Value.Localization.ContainsKey("en"),
                     path,
                     "Quest requires conditions, rewards, and English text."
                 );
                 foreach (var stage in new[] { "AvailableForStart", "AvailableForFinish", "Fail" })
                 {
-                    Need(quest.Value["conditions"]?[stage] is JArray, path, "Missing quest stage: " + stage);
+                    Need(quest.Value.Conditions?.Stage(stage) != null, path, "Missing quest stage: " + stage);
                 }
 
-                foreach (
-                    var condition in ((JContainer)quest.Value["conditions"]!)
-                        .Descendants()
-                        .OfType<JObject>()
-                        .Where(c => c["conditionType"] != null)
-                )
+                foreach (var condition in quest.Value.AllConditions())
                 {
-                    var kind = (string?)condition["conditionType"];
-                    Need(IsId((string?)condition["id"]), path, "Objective requires an identity.");
+                    var kind = (string?)condition.ConditionType;
+                    Need(IsId((string?)condition.Id), path, "Objective requires an identity.");
                     if (!storyQuest)
                     {
-                        Need((double?)condition["value"] is >= 1 and <= 1000000, path, "Objective requires a positive quantity or level.");
+                        Need((double?)condition.Value is >= 1 and <= 1000000, path, "Objective requires a positive quantity or level.");
                     }
-                    else if (condition["value"] != null)
+                    else if (condition.Value != null)
                     {
-                        var value = (double)condition["value"]!;
+                        var value = (double)condition.Value!;
                         Need(
                             !double.IsNaN(value) && !double.IsInfinity(value) && Math.Abs(value) <= 1000000,
                             path,
@@ -310,7 +304,7 @@ public static class SeasonValidator
                     if (kind is "FindItem" or "HandoverItem")
                     {
                         Need(
-                            condition["target"] is JArray targets && targets.Count > 0 && targets.All(t => IsId((string?)t)),
+                            condition.Target is { IsList: true } targets && targets.Values.Count > 0 && targets.All(IsId),
                             path,
                             "Select objective items."
                         );
@@ -318,31 +312,31 @@ public static class SeasonValidator
 
                     if (kind is "Quest" or "TraderLoyalty")
                     {
-                        Need(IsId((string?)condition["target"]), path, "Select the prerequisite quest or trader.");
+                        Need(IsId((string?)condition.Target), path, "Select the prerequisite quest or trader.");
                     }
 
                     if (kind == "Level")
                     {
-                        Need((int?)condition["value"] is >= 1 and <= 100, path, "Quest level must be 1–100.");
+                        Need((int?)condition.Value is >= 1 and <= 100, path, "Quest level must be 1–100.");
                     }
 
                     if (kind == "TraderLoyalty")
                     {
-                        Need((int?)condition["value"] is >= 1 and <= 4, path, "Trader loyalty must be 1–4.");
+                        Need((int?)condition.Value is >= 1 and <= 4, path, "Trader loyalty must be 1–4.");
                     }
 
                     if (kind == "Quest" && !storyQuest)
                     {
                         Need(
-                            condition["status"] is JArray statuses && statuses.Count == 1 && (int?)statuses[0] == 4,
+                            condition.Status is { Count: 1 } statuses && statuses[0] is "4" or "Success",
                             path,
                             "Quest prerequisites require completed quests."
                         );
                     }
                 }
-                foreach (var grant in quest.Value["rewards"]!.Children<JProperty>().SelectMany(p => p.Value).OfType<JObject>())
+                foreach (var grant in quest.Value.AllRewards())
                 {
-                    var kind = (string?)grant["type"];
+                    var kind = (string?)grant.Type;
                     Need(
                         kind
                             is "Item"
@@ -358,7 +352,7 @@ public static class SeasonValidator
                     );
                     if (kind is "Item" or "AssortmentUnlock")
                     {
-                        ItemTree(grant["items"] as JArray, path, r);
+                        ItemTree(grant.Items, path, r);
                     }
                 }
             }
@@ -396,9 +390,9 @@ public static class SeasonValidator
                 r.Add("Quests/" + id, "Quest dependency cycle.", s.Legacy ? "warning" : "error");
                 return;
             }
-            foreach (var c in quest.Descendants().OfType<JObject>().Where(c => (string?)c["conditionType"] == "Quest"))
+            foreach (var c in quest.AllConditions().Where(c => c.ConditionType == "Quest"))
             {
-                foreach (var target in c["target"] is JArray a ? a.Values<string>() : new[] { (string?)c["target"] })
+                foreach (var target in c.Target ?? new StringTargets(Array.Empty<string>()))
                 {
                     if (target != null)
                     {
@@ -440,26 +434,26 @@ public static class SeasonValidator
         }
     }
 
-    public static void ItemTree(JArray? items, string path, SeasonValidationResult result)
+    public static void ItemTree(List<NativeItem>? items, string path, SeasonValidationResult result)
     {
         if (items == null || items.Count == 0)
         {
             result.Add(path, "An item payload needs an item tree.");
             return;
         }
-        var nodes = items.OfType<JObject>().ToList();
-        var ids = nodes.Select(i => (string?)i["_id"]).ToList();
+        var nodes = items.ToList();
+        var ids = nodes.Select(i => i.Id).ToList();
         if (
             nodes.Count != items.Count
             || ids.Any(id => !IsId(id))
             || ids.Distinct().Count() != ids.Count
-            || nodes.Any(i => !IsId((string?)i["_tpl"]))
+            || nodes.Any(i => !IsId((string?)i.Template))
         )
         {
             result.Add(path, "Invalid or duplicate item tree identities.");
             return;
         }
-        var roots = nodes.Where(i => !ids.Contains((string?)i["parentId"])).ToArray();
+        var roots = nodes.Where(i => i.ParentId == null || !ids.Contains(i.ParentId)).ToArray();
         if (roots.Length != 1)
         {
             result.Add(path, "Each item payload requires one root.");
@@ -471,19 +465,19 @@ public static class SeasonValidator
             var current = item;
             while (current != roots[0])
             {
-                if (!seen.Add((string)current["_id"]!))
+                if (!seen.Add(current.Id))
                 {
                     result.Add(path, "Cyclic item tree.");
                     break;
                 }
-                current = nodes.FirstOrDefault(n => (string?)n["_id"] == (string?)current["parentId"])!;
+                current = nodes.FirstOrDefault(n => n.Id == (string?)current.ParentId)!;
                 if (current == null)
                 {
                     result.Add(path, "Detached item tree.");
                     break;
                 }
             }
-            if ((long?)item["upd"]?["StackObjectsCount"] is < 1 or > 10000000)
+            if ((long?)item.Upd?.StackObjectsCount is < 1 or > 10000000)
             {
                 result.Add(path, "Invalid item stack quantity.");
             }

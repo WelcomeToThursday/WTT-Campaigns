@@ -7,7 +7,6 @@ using SeasonalPerks.Shared.Profiles;
 using SeasonalPerks.UI.Audio;
 using SeasonalPerks.UI.Models;
 using SeasonalPerks.UI.Screens;
-using SPT.Common.Http;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -572,11 +571,12 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     internal async void LoadIcon(string id, Image target)
     {
+        var path = SeasonImageLoader.PathFor("icons", id);
         try
         {
-            if (!_images.TryGetValue(id, out var task))
+            if (!_images.TryGetValue(path, out var task))
             {
-                _images[id] = task = FetchIcon(id);
+                _images[path] = task = FetchIcon(path);
             }
             var sprite = await task;
             if (!_destroyed && target)
@@ -589,23 +589,18 @@ public sealed partial class SeasonUi : MonoBehaviour
         }
         catch (Exception exception)
         {
-            _images.Remove(id);
+            _images.Remove(path);
             Plugin.Error(exception);
         }
     }
 
-    private async Task<Sprite> FetchIcon(string id)
+    private async Task<Sprite> FetchIcon(string path)
     {
-        var bytes = await RequestHandler.GetDataAsync("/wtt-seasonal/icons/" + id + ".png");
+        var texture = await SeasonImageLoader.LoadAsync(path);
         if (_destroyed)
         {
-            throw new OperationCanceledException("Seasonal UI closed.");
-        }
-        var texture = new Texture2D(2, 2);
-        if (!ImageConversion.LoadImage(texture, bytes) || texture.width > 4096 || texture.height > 4096)
-        {
             Destroy(texture);
-            throw new InvalidDataException("Invalid perk icon: " + id);
+            throw new OperationCanceledException("Seasonal UI closed.");
         }
         return Sprite.Create(texture, new Rect(0, 0, 272, 272), new Vector2(.5f, .5f));
     }

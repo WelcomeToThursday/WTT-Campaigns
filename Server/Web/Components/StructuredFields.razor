@@ -1,70 +1,126 @@
+@using System.Collections
+@using System.Reflection
+@using System.Globalization
 @using SeasonalPerks.Server.Web.Authoring
-@foreach (var group in Value.Properties().Where(p => !Hidden.Contains(p.Name) && !Excluded.Contains(p.Name) && !(p.Name == "target" && Value["items"] != null)).GroupBy(p => EditorFieldGuide.NativeGroup(p.Name)))
+@foreach (var group in Fields.GroupBy(p => EditorFieldGuide.NativeGroup(ModelGraph.Name(p))))
 {
 <fieldset class="field-section"><legend>@group.Key</legend><div class="structured-grid">
 @foreach (var property in group)
 {
     var field = property;
-    @if (Hidden.Contains(field.Name) || Excluded.Contains(field.Name) || field.Name == "target" && Value["items"] != null) { continue; }
-    <div class="structured-field @(field.Value is JObject or JArray ? "field-wide" : "")" @key="field.Name">
-        @if (field.Value is JObject child)
+    var name = ModelGraph.Name(field);
+    var value = field.GetValue(Value);
+    var list = value is StringTargets { IsList: true } targets ? targets.Values : value as IList;
+    <div class="structured-field @((list != null || !Scalar(value)) ? "field-wide" : "")" @key="name">
+    @if (list != null)
+    {
+        <label>@Friendly(name) <HelpTip Text="@Help(name)" /></label>
+        @for (var i = 0; i < list.Count; i++)
         {
-            <details class="nested-settings"><summary>@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /></summary><StructuredFields Value="child" Changed="Changed" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /></details>
+            var index = i;
+            var entry = list[index];
+            <div class="array-entry">
+            @if (entry is IList nested)
+            { <StructuredList Value="nested" Label="@Friendly(name)" Kind="@ChoiceKind(name)" Choices="Additional(ChoiceKind(name))" Changed="Changed" /> }
+            else if (!Scalar(entry))
+            { <details class="nested-settings" open><summary>@EditorFieldGuide.NativeTitle(EditorFieldGuide.NativeKind(entry!)) · entry @(index + 1)</summary><StructuredFields Value="entry!" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Changed="Changed" /></details> }
+            else if (ChoiceKind(name) is { } kind)
+            { <ContentPicker Kind="@kind" Label="@Friendly(name)" HelpText="@Help(name)" Value="@Text(entry)" ValueChanged="@(v => SetEntry(list, index, v))" Additional="Additional(kind)" /> }
+            else { <input aria-label="@Friendly(name)" value="@Text(entry)" @onchange="@(e => SetEntry(list, index, e.Value?.ToString() ?? ""))" /> }
+            <button type="button" class="subtle" @onclick="@(async () => { list.RemoveAt(index); await Changed.InvokeAsync(); })">Remove</button>
+            </div>
         }
-        else if (field.Value is JArray list)
+        <button type="button" class="subtle" @onclick="@(() => Add(list))">Add @Friendly(name)</button>
+    }
+    else if (value is IDictionary dictionary)
+    {
+        <details class="nested-settings"><summary>@Friendly(name) <HelpTip Text="@Help(name)" /></summary>
+        @foreach (var key in dictionary.Keys.Cast<object>().ToArray())
         {
-            <label>@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /></label>
-            @foreach (var token in list.ToArray())
-            {
-                var entry = token;
-                <div class="array-entry">
-                    @if (entry is JObject obj) { <details class="nested-settings" open><summary>@EditorFieldGuide.NativeTitle(EditorFieldGuide.NativeKind(obj)) · entry @(list.IndexOf(entry) + 1)</summary><StructuredFields Value="obj" Changed="Changed" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /></details> }
-                    else if (ChoiceKind(field.Name) is { } kind)
-                    { <ContentPicker Kind="@kind" Label="@Friendly(field.Name)" HelpText="@FieldHelp(field.Name)" Value="@entry.ToString()" ValueChanged="@(v => SetArray(entry, v))" Additional="Additional(kind)" /> }
-                    else { <input aria-label="@Friendly(field.Name)" value="@entry.ToString()" @onchange="@(e => SetArray(entry, e.Value?.ToString() ?? string.Empty))" /> }
-                    <button type="button" class="subtle" @onclick="@(() => Remove(entry))">Remove</button>
-                </div>
-            }
-            <button type="button" class="subtle" @onclick="@(() => Add(list, field.Name))">Add @Friendly(field.Name)</button>
+            if (dictionary[key] is { } child && !Scalar(child)) { <details open><summary>@key</summary><StructuredFields Value="child" Changed="Changed" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /></details> }
         }
-        else if (field.Name == "compareMethod") { <label>Comparison <HelpTip Text="@FieldHelp(field.Name)" /><select value="@field.Value.ToString()" @onchange="@(e => Set(field, e.Value?.ToString() ?? ">="))">@foreach (var op in SeasonalPerks.Shared.Story.StoryRules.Operators) { <option>@op</option> }</select></label> }
-        else if (field.Value.Type == JTokenType.Boolean)
-        { <label class="check"><input type="checkbox" checked="@((bool)field.Value)" @onchange="@(e => Set(field, (bool)e.Value!))" />@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /></label> }
-        else if (field.Value.Type is JTokenType.Integer or JTokenType.Float)
-        { <label>@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /><input type="number" step="any" value="@field.Value.ToString()" @onchange="@(e => Number(field, e.Value?.ToString()))" /></label> }
-        else if (ChoiceKind(field.Name) is { } kind)
-        { <ContentPicker Kind="@kind" Label="@Friendly(field.Name)" HelpText="@FieldHelp(field.Name)" Value="@field.Value.ToString()" ValueChanged="@(v => Set(field, v))" Additional="Additional(kind)" /> }
-        else if (field.Name == "field") { <label>Filter by <HelpTip Text="@FieldHelp(field.Name)" /><select value="@field.Value.ToString()" @onchange="@(e => Set(field, e.Value?.ToString() ?? string.Empty))"><option value="_tpl">Item</option><option value="ParentId">Category</option></select></label> }
-        else { <label>@Friendly(field.Name) <HelpTip Text="@FieldHelp(field.Name)" /><input value="@field.Value.ToString()" @onchange="@(e => Set(field, e.Value?.ToString() ?? string.Empty))" /></label> }
+        </details>
+    }
+    else if (value is NativeItemLocation location)
+    {
+        @if (location.Grid is { } grid)
+        { <StructuredFields Value="grid" Changed="Changed" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /> }
+        else
+        { <label>Cartridge position<input type="number" value="@location.Slot" @onchange="@(e => SetLocation(field, e.Value))" /></label> }
+    }
+    else if (!Scalar(value))
+    { <details class="nested-settings"><summary>@Friendly(name) <HelpTip Text="@Help(name)" /></summary><StructuredFields Value="value!" Changed="Changed" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /></details> }
+    else if (name == "compareMethod")
+    { <label>Comparison <HelpTip Text="@Help(name)" /><select value="@Text(value)" @onchange="@(e => Set(field, e.Value))">@foreach (var op in SeasonalPerks.Shared.Story.StoryRules.Operators) { <option>@op</option> }</select></label> }
+    else if (value is bool flag)
+    { <label class="check"><input type="checkbox" checked="flag" @onchange="@(e => Set(field, e.Value))" />@Friendly(name) <HelpTip Text="@Help(name)" /></label> }
+    else if (IsNumber(value))
+    { <label>@Friendly(name) <HelpTip Text="@Help(name)" /><input type="number" step="any" value="@Text(value)" @onchange="@(e => Set(field, e.Value))" /></label> }
+    else if (ChoiceKind(name) is { } kind)
+    { <ContentPicker Kind="@kind" Label="@Friendly(name)" HelpText="@Help(name)" Value="@Text(value)" ValueChanged="@(v => Set(field, v))" Additional="Additional(kind)" /> }
+    else if (name == "field")
+    { <label>Filter by <HelpTip Text="@Help(name)" /><select value="@Text(value)" @onchange="@(e => Set(field, e.Value))"><option value="_tpl">Item</option><option value="ParentId">Category</option></select></label> }
+    else { <label>@Friendly(name) <HelpTip Text="@Help(name)" /><input value="@Text(value)" @onchange="@(e => Set(field, e.Value))" /></label> }
     </div>
 }
 </div></fieldset>
 }
 @code {
-    [Parameter] public JObject Value { get; set; } = new();
+    [Parameter] public object Value { get; set; } = null!;
     [Parameter] public IEnumerable<string> Excluded { get; set; } = [];
     [Parameter] public EventCallback Changed { get; set; }
     [Parameter] public IEnumerable<ContentChoice> OwnedItems { get; set; } = [];
     [Parameter] public IEnumerable<ContentChoice> OwnedQuests { get; set; } = [];
-    private IEnumerable<ContentChoice> Additional(string kind) => kind == "items" ? OwnedItems : kind == "quests" ? OwnedQuests : [];
     private static readonly HashSet<string> Hidden = new() { "effectId", "id", "_id", "conditionType", "index", "parentId", "dynamicLocale", "visibilityConditions", "status", "type" };
-    private string FieldHelp(string name) => EditorFieldGuide.NativeHelp(Value, name);
+    private IEnumerable<PropertyInfo> Fields => ModelGraph.Properties(Value).Where(p => p.GetValue(Value) != null && !Hidden.Contains(ModelGraph.Name(p)) && !Excluded.Contains(ModelGraph.Name(p)) && !(ModelGraph.Name(p) == "target" && Value is NativeReward { Items.Count: > 0 }));
+    private IEnumerable<ContentChoice> Additional(string? kind) => kind == "items" ? OwnedItems : kind == "quests" ? OwnedQuests : [];
     private string Friendly(string name) => EditorFieldGuide.NativeLabel(Value, name);
+    private string Help(string name) => EditorFieldGuide.NativeHelp(Value, name);
+    private static string Text(object? value) => Convert.ToString(value, CultureInfo.InvariantCulture) ?? "";
+    private static bool IsNumber(object? value) => value is byte or short or int or long or float or double or decimal;
+    private static bool Scalar(object? value) => value == null || value is string or bool or StringTargets || IsNumber(value) || value.GetType().IsEnum;
     private string? ChoiceKind(string field) => field switch
     {
         "skillIds" => "skills", "traderIds" or "traderId" => "traders", "_tpl" => "items",
-        "target" when (string?)Value["type"] is "TraderStanding" or "TraderUnlock" => "traders",
-        "target" when (string?)Value["type"] == "Skill" => "skills",
-        "target" when (string?)Value["conditionType"] == "Quest" => "quests",
-        "target" when (string?)Value["conditionType"] is "TraderLoyalty" or "TraderStanding" => "traders",
-        "target" when (string?)Value["conditionType"] is "FindItem" or "HandoverItem" or "HasItem" or "LeaveItemAtLocation" or "UseItem" => "items",
-        "value" when (string?)Value["field"] == "_tpl" => "items",
-        "value" when (string?)Value["field"] == "ParentId" => "categories",
+        "target" when Value is NativeReward { Type: "TraderStanding" or "TraderUnlock" } => "traders",
+        "target" when Value is NativeReward { Type: "Skill" } => "skills",
+        "target" when Value is NativeCondition { ConditionType: "Quest" } => "quests",
+        "target" when Value is NativeCondition { ConditionType: "TraderLoyalty" or "TraderStanding" } => "traders",
+        "target" when Value is NativeCondition { ConditionType: "FindItem" or "HandoverItem" or "HasItem" or "LeaveItemAtLocation" or "UseItem" } => "items",
+        "value" when Value is SeasonalPerks.Shared.Effects.ItemFilterRule { Field: "_tpl" } => "items",
+        "value" when Value is SeasonalPerks.Shared.Effects.ItemFilterRule { Field: "ParentId" } => "categories",
         _ => null
     };
-    private async Task Set(JProperty property, object value) { property.Value = JToken.FromObject(value); await Changed.InvokeAsync(); }
-    private Task Number(JProperty property, string? value) => double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var number) && double.IsFinite(number) ? Set(property, property.Value.Type == JTokenType.Integer ? (object)(long)number : number) : Task.CompletedTask;
-    private async Task SetArray(JToken token, string value) { token.Replace(token.Type == JTokenType.Integer && long.TryParse(value, out var n) ? new JValue(n) : token.Type == JTokenType.Float && double.TryParse(value, out var d) ? new JValue(d) : new JValue(value)); await Changed.InvokeAsync(); }
-    private async Task Remove(JToken token) { token.Remove(); await Changed.InvokeAsync(); }
-    private async Task Add(JArray array, string name) { array.Add(array.Last?.DeepClone() ?? (name is "include" or "exclude" ? new JObject { ["field"] = "_tpl", ["value"] = "" } : new JValue(""))); await Changed.InvokeAsync(); }
+    private async Task Set(PropertyInfo property, object? value)
+    {
+        var type = Nullable.GetUnderlyingType(property.PropertyType) ?? property.PropertyType;
+        try
+        {
+            object? converted = type == typeof(StringTargets) ? new StringTargets(Text(value)) : type.IsEnum ? Enum.Parse(type, Text(value)) : Convert.ChangeType(value, type, CultureInfo.InvariantCulture);
+            if (converted is double d && !double.IsFinite(d) || converted is float f && !float.IsFinite(f)) return;
+            property.SetValue(Value, converted);
+            await Changed.InvokeAsync();
+        }
+        catch (Exception e) when (e is FormatException or OverflowException or ArgumentException) { }
+    }
+    private async Task SetEntry(IList list, int index, string value)
+    {
+        try { var type = list.GetType().GetGenericArguments()[0]; list[index] = type.IsEnum ? Enum.Parse(type, value) : Convert.ChangeType(value, type, CultureInfo.InvariantCulture); await Changed.InvokeAsync(); }
+        catch (Exception e) when (e is FormatException or OverflowException or ArgumentException) { }
+    }
+    private async Task SetLocation(PropertyInfo property, object? value)
+    {
+        if (int.TryParse(Text(value), NumberStyles.Integer, CultureInfo.InvariantCulture, out var slot))
+        {
+            property.SetValue(Value, new NativeItemLocation(slot));
+            await Changed.InvokeAsync();
+        }
+    }
+    private async Task Add(IList list)
+    {
+        var type = list.GetType().GetGenericArguments()[0];
+        var last = list.Count > 0 ? list[list.Count - 1] : null;
+        list.Add(last == null ? type == typeof(string) ? "" : Activator.CreateInstance(type) : Newtonsoft.Json.JsonConvert.DeserializeObject(Newtonsoft.Json.JsonConvert.SerializeObject(last), type));
+        await Changed.InvokeAsync();
+    }
 }

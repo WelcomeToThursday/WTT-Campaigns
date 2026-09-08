@@ -187,13 +187,7 @@ public sealed class SeasonService(
 
     public static PerkState State(PmcData pmc)
     {
-        if (!pmc.ExtensionData.TryGetValue(StateKey, out var raw))
-        {
-            return new PerkState();
-        }
-
-        var json = raw is System.Text.Json.JsonElement j ? j.GetString() : raw.ToString();
-        return string.IsNullOrWhiteSpace(json) ? new PerkState() : JsonConvert.DeserializeObject<PerkState>(json)!;
+        return ProfileStateSerialization.Read<PerkState>(pmc, StateKey) ?? new PerkState();
     }
 
     private static void SetState(PmcData pmc, PerkState state)
@@ -445,6 +439,7 @@ public sealed class SeasonService(
         }
         await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
         var id = new MongoId(entry.ProfileId);
+        SeasonProfileStorage.Register(entry.ProfileId);
         if (!saves.ProfileExists(id))
         {
             saves.CreateProfile(

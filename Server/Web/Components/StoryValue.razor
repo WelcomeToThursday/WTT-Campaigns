@@ -51,7 +51,7 @@ else
     private string? ReferenceKind => Kind ?? StoryAuthoring.ReferenceKind(Owner, Field);
     private bool Compatible(string id)
     {
-        if (Owner is StoryAction action && Field == "ConditionId") return Season.Quests.OfType<JObject>().Where(q => (action.QuestId.Length == 0 || (string?)q["_id"] == action.QuestId) && Season.Story?.Quests.Any(m => m.QuestId == (string?)q["_id"]) == true).SelectMany(q => (q["conditions"]?["AvailableForFinish"] as JArray ?? new()).OfType<JObject>()).Any(c => (string?)c["id"] == id && (string?)c["conditionType"] == "HandoverItem");
+        if (Owner is StoryAction action && Field == "ConditionId") return Season.Quests.Where(q => (action.QuestId.Length == 0 || (string?)q.Id == action.QuestId) && Season.Story?.Quests.Any(m => m.QuestId == (string?)q.Id) == true).SelectMany(q => q.Conditions.AvailableForFinish).Any(c => (string?)c.Id == id && (string?)c.ConditionType == "HandoverItem");
         return true;
     }
     private string[]? Options => ValueType.IsEnum ? Enum.GetNames(ValueType).Where(v => v != "PurchaseService").ToArray() : StoryAuthoring.Options(Owner, Field);

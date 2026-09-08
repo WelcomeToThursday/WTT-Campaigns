@@ -1,4 +1,6 @@
+using SeasonalPerks.Shared.Native;
 using SeasonalPerks.Shared.Seasons;
+using SeasonalPerks.Shared.Serialization;
 
 namespace SeasonalPerks.Shared.Story;
 
@@ -35,15 +37,14 @@ public static class StoryValidator
         var owned = new HashSet<string> { season.Id, season.BattlePassId };
         owned.UnionWith(season.Documents.Select(d => d.Id));
         owned.UnionWith(season.Items.Select(i => i.Id));
-        owned.UnionWith(season.ImportedItems.Properties().Select(p => p.Name));
+        owned.UnionWith(season.ImportedItems.Keys);
         owned.UnionWith(season.Perks.All.Select(p => p.Id));
         owned.UnionWith(season.AllRewards.Select(r => r.Id));
         owned.UnionWith(
             season
-                .Quests.Descendants()
-                .OfType<Newtonsoft.Json.Linq.JObject>()
-                .SelectMany(o => new[] { (string?)o["id"], (string?)o["_id"] })
-                .Where(id => id != null)!
+                .Quests.Select(q => q.Id)
+                .Concat(season.Quests.SelectMany(q => q.AllConditions()).Select(c => c.Id))
+                .Concat(season.Quests.SelectMany(q => q.AllItems()).Select(i => i.Id))
         );
         var ids = new HashSet<string>();
         void Identity(string id, string path)
@@ -60,15 +61,10 @@ public static class StoryValidator
         var entries = story.EntryPoints.Select(x => x.Id).ToHashSet();
         var bindings = story.RaidBindings.Select(x => x.Id).ToHashSet();
         var quests = season
-            .Quests.Select(x => (string?)x["_id"] ?? "")
+            .Quests.Select(x => x.Id ?? "")
             .Concat(season.Dependencies.Where(x => x.StartsWith("quest:", StringComparison.Ordinal)).Select(x => x.Substring(6)))
             .ToHashSet();
-        var conditions = season
-            .Quests.OfType<Newtonsoft.Json.Linq.JObject>()
-            .SelectMany(q => q.Descendants().OfType<Newtonsoft.Json.Linq.JObject>())
-            .Where(c => c["conditionType"] != null)
-            .Select(c => (string?)c["id"] ?? "")
-            .ToHashSet();
+        var conditions = season.Quests.SelectMany(q => q.AllConditions()).Select(c => (string?)c.Id ?? "").ToHashSet();
         void Condition(StoryCondition c, string path, int depth = 0)
         {
             if (depth > 32)
@@ -144,7 +140,7 @@ public static class StoryValidator
                 if (a.Type != StoryActionType.SelectQuest)
                 {
                     Need(
-                        story.Quests.Any(q => q.QuestId == a.QuestId) && season.Quests.Any(q => (string?)q["_id"] == a.QuestId),
+                        story.Quests.Any(q => q.QuestId == a.QuestId) && season.Quests.Any(q => q.Id == a.QuestId),
                         path,
                         "Native mutations require a quest owned by this story."
                     );

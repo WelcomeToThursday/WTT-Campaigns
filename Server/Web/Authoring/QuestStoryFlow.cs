@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Seasons;
 using SeasonalPerks.Shared.Story;
 
@@ -12,17 +11,14 @@ public static class QuestStoryFlow
         return membership != null && season.Story!.Chapters.Any(c => c.Id == membership.ChapterId) ? membership.ChapterId : "";
     }
 
-    public static IEnumerable<JObject> Quests(SeasonDefinition season, string chapterId)
+    public static IEnumerable<NativeQuest> Quests(SeasonDefinition season, string chapterId)
     {
-        return season.Quests.OfType<JObject>().Where(q => ChapterForQuest(season, (string?)q["_id"] ?? "") == chapterId);
+        return season.Quests.Where(q => ChapterForQuest(season, (string?)q.Id ?? "") == chapterId);
     }
 
     public static void AssignQuest(SeasonDefinition season, string questId, string chapterId)
     {
-        if (
-            season.Story?.Chapters.Any(c => c.Id == chapterId) != true
-            || !season.Quests.OfType<JObject>().Any(q => (string?)q["_id"] == questId)
-        )
+        if (season.Story?.Chapters.Any(c => c.Id == chapterId) != true || !season.Quests.Any(q => (string?)q.Id == questId))
         {
             throw new ArgumentException("Choose an existing quest and chapter.");
         }
@@ -38,40 +34,40 @@ public static class QuestStoryFlow
         }
     }
 
-    public static JObject DuplicateQuest(SeasonDefinition season, JObject quest)
+    public static NativeQuest DuplicateQuest(SeasonDefinition season, NativeQuest quest)
     {
-        var copy = (JObject)StoryAuthoring.Duplicate(quest);
-        var membership = season.Story?.Quests.FirstOrDefault(q => q.QuestId == (string?)quest["_id"]);
+        var copy = (NativeQuest)StoryAuthoring.Duplicate(quest);
+        var membership = season.Story?.Quests.FirstOrDefault(q => q.QuestId == (string?)quest.Id);
         season.Quests.Add(copy);
         if (membership != null)
         {
             var copyMembership = SeasonCompiler.Copy(membership);
-            copyMembership.QuestId = (string)copy["_id"]!;
+            copyMembership.QuestId = (string)copy.Id!;
             season.Story!.Quests.Add(copyMembership);
         }
 
         return copy;
     }
 
-    public static IReadOnlyList<string> DeleteQuest(SeasonDefinition season, JObject quest)
+    public static IReadOnlyList<string> DeleteQuest(SeasonDefinition season, NativeQuest quest)
     {
         // The quest's own chapter membership is removed with it. Every other reference still blocks deletion.
         var candidate = SeasonCompiler.Copy(season);
-        candidate.Story?.Quests.RemoveAll(q => q.QuestId == (string?)quest["_id"]);
+        candidate.Story?.Quests.RemoveAll(q => q.QuestId == (string?)quest.Id);
         var uses = StoryAuthoring.Uses(candidate, quest);
         if (uses.Count > 0)
         {
             return uses;
         }
 
-        season.Story?.Quests.RemoveAll(q => q.QuestId == (string?)quest["_id"]);
-        quest.Remove();
+        season.Story?.Quests.RemoveAll(q => q.QuestId == (string?)quest.Id);
+        season.Quests.Remove(quest);
         return [];
     }
 
     public static StoryChapter CreateChapter(SeasonDefinition season, string questId)
     {
-        if (!season.Quests.OfType<JObject>().Any(q => (string?)q["_id"] == questId))
+        if (!season.Quests.Any(q => (string?)q.Id == questId))
         {
             throw new ArgumentException("Select a native quest first.");
         }
@@ -97,7 +93,7 @@ public static class QuestStoryFlow
         return chapter;
     }
 
-    public static JObject AddQuest(SeasonDefinition season, string chapterId)
+    public static NativeQuest AddQuest(SeasonDefinition season, string chapterId)
     {
         if (season.Story?.Chapters.Any(c => c.Id == chapterId) != true)
         {
@@ -106,7 +102,7 @@ public static class QuestStoryFlow
 
         var quest = NativeQuestAuthoring.Create();
         season.Quests.Add(quest);
-        season.Story.Quests.Add(new() { QuestId = (string)quest["_id"]!, ChapterId = chapterId });
+        season.Story.Quests.Add(new() { QuestId = (string)quest.Id!, ChapterId = chapterId });
         return quest;
     }
 

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+using SeasonalPerks.Shared.Native;
 
 namespace SeasonalPerks.Shared.Progression;
 
@@ -16,13 +16,16 @@ public sealed class TraderProgression
         for (var i = 0; i < thresholds.Count; i++)
         {
             if (level >= thresholds[i].Level && standing >= thresholds[i].Standing)
+            {
                 result = i + 1;
+            }
         }
         return result;
     }
 
-    public static bool Compare(double current, double required, string? comparison) =>
-        comparison switch
+    public static bool Compare(double current, double required, string? comparison)
+    {
+        return comparison switch
         {
             ">=" => current >= required,
             ">" => current > required,
@@ -32,6 +35,7 @@ public sealed class TraderProgression
             "!=" => Math.Abs(current - required) >= 0.00000001,
             _ => false,
         };
+    }
 }
 
 public sealed class LoyaltyThreshold
@@ -45,8 +49,8 @@ public sealed class TaskProgression
     public string TraderId { get; set; } = "";
     public int Tier { get; set; }
     public bool UseBetaStart { get; set; }
-    public JArray Start { get; set; } = new();
-    public Dictionary<string, JArray> Reputation { get; set; } = new();
+    public List<NativeCondition> Start { get; set; } = new();
+    public Dictionary<string, List<NativeReward>> Reputation { get; set; } = new();
 }
 
 public sealed class ProgressionMetadata

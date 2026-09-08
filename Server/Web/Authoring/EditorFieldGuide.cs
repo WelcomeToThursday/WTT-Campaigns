@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Seasons;
 using SeasonalPerks.Shared.Story;
 
@@ -13,21 +12,23 @@ public static class EditorFieldGuide
         return title.Length == 0 ? "Settings" : char.ToUpperInvariant(title[0]) + title[1..];
     }
 
-    public static string NativeKind(JObject value)
+    public static string NativeKind(object value)
     {
-        return value
-                .AncestorsAndSelf()
-                .OfType<JObject>()
-                .Select(v => (string?)v["conditionType"] ?? (string?)v["effectId"] ?? (string?)v["type"])
-                .FirstOrDefault(v => !string.IsNullOrEmpty(v))
-            ?? "Imported settings";
+        return value switch
+        {
+            NativeCondition c => c.ConditionType,
+            NativeConditionDistance => "Kills",
+            NativeReward r => r.Type,
+            SeasonalPerks.Shared.Effects.PerkEffect e => e.EffectId ?? "",
+            _ => "Imported settings",
+        };
     }
 
-    public static string NativeLabel(JObject value, string field)
+    public static string NativeLabel(object value, string field)
     {
         return field switch
         {
-            "value" when value.Parent is JProperty { Name: "distance" } => "Distance (metres)",
+            "value" when value is NativeConditionDistance => "Distance (metres)",
             "value" => NativeKind(value) switch
             {
                 "Level" => "Player level",
@@ -85,10 +86,10 @@ public static class EditorFieldGuide
         };
     }
 
-    public static string NativeHelp(JObject value, string field)
+    public static string NativeHelp(object value, string field)
     {
         var kind = NativeKind(value);
-        var amount = value[field]?.ToString() ?? "";
+        var amount = ModelGraph.Properties(value).FirstOrDefault(p => ModelGraph.Name(p) == field)?.GetValue(value)?.ToString() ?? "";
         if (field is "multiplicator" or "multiplicatorPrimary" or "multiplicatorSecondary")
         {
             var behavior = kind switch
@@ -123,16 +124,16 @@ public static class EditorFieldGuide
                     $"Stamina capacity offset for the selected arms or legs pool: {amount}. This is a whole-number offset, not a multiplier.",
             };
         }
-        if (field == "value" && (string?)value["field"] is "_tpl" or "ParentId")
+        if (field == "value" && (value as SeasonalPerks.Shared.Effects.ItemFilterRule)?.Field is "_tpl" or "ParentId")
         {
-            return (string?)value["field"] == "_tpl"
+            return (value as SeasonalPerks.Shared.Effects.ItemFilterRule)?.Field == "_tpl"
                 ? "Select the individual item matched by this filter."
                 : "Select the item category matched by this filter. All items in that category are affected.";
         }
 
-        if (field == "value" && value.Parent is JProperty { Name: "distance" })
+        if (field == "value" && value is NativeConditionDistance)
         {
-            return $"Distance between shooter and target in metres. The current test is {value["compareMethod"] ?? new JValue(">=")} {amount} metres.";
+            return $"Distance between shooter and target in metres. The current test is {(value as NativeConditionDistance)?.CompareMethod ?? ">="} {amount} metres.";
         }
 
         if (field == "value")
@@ -150,7 +151,7 @@ public static class EditorFieldGuide
                 "LeaveItemAtLocation" => $"Number of accepted items to place at the configured zone. Current requirement: {amount}.",
                 "CounterCreator" => $"Number of qualifying events required: {amount}. The nested filters define which events count. "
                     + (
-                        (bool?)value["oneSessionOnly"] == true
+                        (value as NativeCondition)?.OneSessionOnly == true
                             ? "Progress must be made in one raid."
                             : "The counter can accumulate across raids."
                     ),
@@ -190,13 +191,15 @@ public static class EditorFieldGuide
 
         return field switch
         {
-            "onlyFoundInRaid" => (bool?)value[field] == true
+            "onlyFoundInRaid" => ModelGraph.Properties(value).FirstOrDefault(p => ModelGraph.Name(p) == field)?.GetValue(value) as bool?
+            == true
                 ? $"Only found-in-raid items qualify for this {StoryAuthoring.Friendly(kind)} objective."
                 : "Items can qualify without a found-in-raid mark. Enable to restrict accepted items to found in raid.",
             "minDurability" or "maxDurability" =>
-                $"Accept items with durability from {value["minDurability"] ?? new JValue(0)}% to {value["maxDurability"] ?? new JValue(100)}%. Minimum must not exceed maximum.",
+                $"Accept items with durability from {(value as NativeCondition)?.MinDurability ?? 0}% to {(value as NativeCondition)?.MaxDurability ?? 100}%. Minimum must not exceed maximum.",
             "availableAfter" => $"Wait {amount} seconds after the prerequisite reaches the selected status. Zero adds no delay.",
-            "oneSessionOnly" => (bool?)value[field] == true
+            "oneSessionOnly" => ModelGraph.Properties(value).FirstOrDefault(p => ModelGraph.Name(p) == field)?.GetValue(value) as bool?
+            == true
                 ? "All required counter progress must be earned in one raid."
                 : "Counter progress can accumulate across raids. Enable for a single-raid challenge.",
             "plantTime" => $"The player must spend {amount} seconds placing an item at this objective's zone.",

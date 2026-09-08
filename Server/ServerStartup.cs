@@ -1,4 +1,5 @@
 using SeasonalPerks.Server.Hub;
+using SeasonalPerks.Server.Patches.Session;
 using SeasonalPerks.Server.Profiles;
 using SeasonalPerks.Server.Seasons;
 using SPTarkov.DI.Annotations;
@@ -22,6 +23,14 @@ public sealed class ServerStartup(
     public Task OnLoadAsync(CancellationToken cancellationToken)
     {
         Seasons = seasons;
+        foreach (
+            var patch in patches.Where(p =>
+                p.GetType().Assembly == typeof(ServerStartup).Assembly && p is not SeasonProfilePathPatch and not SeasonProfileLoadedPatch
+            )
+        )
+        {
+            patch.Enable();
+        }
         seasons.Initialize();
         hub.Initialize(images);
         foreach (var perk in repository.Playable.Values.SelectMany(r => r.Definition.Perks.All).GroupBy(p => p.Id).Select(g => g.First()))
@@ -34,10 +43,6 @@ public sealed class ServerStartup(
 
             images.AddRoute("/wtt-seasonal/icons/" + perk.Id, file);
             perk.ImageUrl = "/wtt-seasonal/icons/" + perk.Id + ".png";
-        }
-        foreach (var patch in patches.Where(p => p.GetType().Assembly == typeof(ServerStartup).Assembly))
-        {
-            patch.Enable();
         }
         return Task.CompletedTask;
     }

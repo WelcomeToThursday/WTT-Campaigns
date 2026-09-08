@@ -1,5 +1,4 @@
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Profiles;
 using SeasonalPerks.Server.Seasons;
 using SeasonalPerks.Shared.Contracts;
@@ -34,7 +33,7 @@ public sealed partial class HubGameplay(
 )
 {
     private const string StateKey = "wttSeasonalHub";
-    private JObject _catalogue = new();
+    private HubGameplayDefinition _catalogue = new();
     private HubState _presentation = new();
     private readonly Dictionary<string, TraderAssort> _offers = new();
     private readonly Dictionary<string, string> _offerIds = new();
@@ -55,13 +54,12 @@ public sealed partial class HubGameplay(
     internal HubProgress Progress(PmcData pmc)
     {
         var key = StateKey + ":" + _presentation.SeasonId + ":" + _presentation.Id;
-        if (!pmc.ExtensionData.TryGetValue(key, out var raw))
+        if (!pmc.ExtensionData.ContainsKey(key))
         {
             return new HubProgress { BattlePassId = _presentation.Id, SeasonId = _presentation.SeasonId };
         }
-
-        var text = raw is System.Text.Json.JsonElement element ? element.GetString() : raw.ToString();
-        return JsonConvert.DeserializeObject<HubProgress>(text!) ?? throw new InvalidDataException("Invalid hub progress.");
+        return ProfileStateSerialization.Read<HubProgress>(pmc, key)
+            ?? throw new InvalidDataException("The saved battle pass state is invalid.");
     }
 
     internal void Store(PmcData pmc, HubProgress state)
@@ -128,17 +126,17 @@ public sealed partial class HubGameplay(
 
     private Dictionary<string, string> Documents
     {
-        get { return ((JArray)_catalogue["Documents"]!).ToDictionary(d => (string)d["id"]!, d => (string)d["itemId"]!); }
+        get { return _catalogue.Documents.ToDictionary(d => d.Id, d => d.ItemId); }
     }
 
     private string Crate
     {
-        get { return (string)_catalogue["ItemExchange"]!["itemId"]!; }
+        get { return (string)_catalogue.ItemExchange.ItemId; }
     }
 
-    private JObject Definition(string id)
+    private HubGameplayReward Definition(string id)
     {
-        return (JObject?)_catalogue["Rewards"]![id] ?? throw new InvalidOperationException("Unknown reward.");
+        return _catalogue.Rewards.GetValueOrDefault(id) ?? throw new InvalidOperationException("Unknown reward.");
     }
 
     private static long Now
@@ -146,16 +144,24 @@ public sealed partial class HubGameplay(
         get { return DateTimeOffset.UtcNow.ToUnixTimeSeconds(); }
     }
 
-    public HubState Read(string sessionId)
+    public HubState Read(string sessionId, string seasonId = "", string characterId = "")
     {
-        if (_runtimes != null)
-        {
-            return ForSession(sessionId).Read(sessionId);
-        }
-
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
-        return Snapshot(root);
+        var effectiveId = seasons.EffectiveId(root);
+        if ((characterId.Length > 0 && characterId != effectiveId) || (sessionId != root && sessionId != effectiveId))
+        {
+            throw new InvalidOperationException(
+                "The selected character changed. Select your character again before opening the Battle Pass."
+            );
+        }
+
+        var runtime = _runtimes != null ? ForSession(sessionId) : this;
+        if (seasonId.Length > 0 && seasonId != runtime._presentation.SeasonId)
+        {
+            throw new InvalidOperationException("The selected season changed. Select your character again before opening the Battle Pass.");
+        }
+        return runtime.Snapshot(root);
     }
 
     private HubState Snapshot(string root)
@@ -178,8 +184,8 @@ public sealed partial class HubGameplay(
             state.WindowStart > 0 && Now < state.WindowStart + _presentation.WindowSeconds
                 ? state.WindowStart + _presentation.WindowSeconds
                 : 0;
-        view.ExchangeRate = (int)_catalogue["ExchangeRate"]!;
-        view.CrateCost = (int)_catalogue["ItemExchange"]!["requiredDocuments"]!;
+        view.ExchangeRate = (int)_catalogue.ExchangeRate;
+        view.CrateCost = (int)_catalogue.ItemExchange.RequiredDocuments;
         var owned = Balances(pmc);
         foreach (var doc in view.Documents)
         {
@@ -202,12 +208,12 @@ public sealed partial class HubGameplay(
         foreach (var reward in view.Pages.SelectMany(p => p.Rewards).Concat(view.SeasonalRewards))
         {
             reward.Claimed = state.Claimed.Contains(reward.Id);
-            reward.Eligibility = Definition(reward.Id)["Conditions"]!
-                .Select(condition =>
+            reward.Eligibility = Definition(reward.Id)
+                .Conditions.Select(condition =>
                 {
-                    var kind = (string)condition["conditionType"]!;
-                    var target = (string?)condition["target"] ?? "";
-                    var required = kind == "Level" ? (int)condition["value"]! : 1;
+                    var kind = (string)condition.ConditionType!;
+                    var target = (string?)condition.Target ?? "";
+                    var required = kind == "Level" ? (int)condition.Value! : 1;
                     var current =
                         kind == "Level" ? pmc.Info!.Level ?? 0
                         : pmc.Quests!.Any(q => q.QId.ToString() == target && (int)q.Status == 4) ? 1
@@ -293,17 +299,17 @@ public sealed partial class HubGameplay(
             }
         }
 
-        foreach (var condition in Definition(reward.Id)["Conditions"]!)
+        foreach (var condition in Definition(reward.Id).Conditions)
         {
-            var kind = (string?)condition["conditionType"];
-            if (kind == "Level" && pmc.Info!.Level < (int)condition["value"]!)
+            var kind = (string?)condition.ConditionType;
+            if (kind == "Level" && pmc.Info!.Level < (int)condition.Value!)
             {
-                return "Reach level " + condition["value"] + ".";
+                return "Reach level " + condition.Value + ".";
             }
 
             if (kind == "Quest")
             {
-                var id = (string)condition["target"]!;
+                var id = (string)condition.Target!;
                 var unavailable = quests.UnavailableReason(id);
                 if (unavailable.Length > 0)
                 {
@@ -320,9 +326,9 @@ public sealed partial class HubGameplay(
                 return "This reward requires an unsupported condition.";
             }
         }
-        foreach (var grant in Definition(reward.Id)["Grants"]!)
+        foreach (var grant in Definition(reward.Id).Grants)
         {
-            var reason = GrantUnavailable((JObject)grant);
+            var reason = GrantUnavailable(grant);
             if (reason.Length > 0)
             {
                 return reason;
@@ -331,9 +337,9 @@ public sealed partial class HubGameplay(
         return "";
     }
 
-    private string GrantUnavailable(JObject grant)
+    private string GrantUnavailable(NativeReward grant)
     {
-        var kind = (string)grant["type"]!;
+        var kind = (string)grant.Type!;
         if (kind == "Tarcoin")
         {
             return "";
@@ -341,7 +347,7 @@ public sealed partial class HubGameplay(
 
         if (kind == "CustomizationDirect")
         {
-            var id = new MongoId((string)grant["target"]!);
+            var id = new MongoId((string)grant.Target!);
             if (!templates.Customization.TryGetValue(id, out var custom) || CustomizationKind(custom.Parent) == null)
             {
                 return "Required customization is not registered or supported: " + id;
@@ -354,16 +360,16 @@ public sealed partial class HubGameplay(
             return "Unsupported reward type: " + kind;
         }
 
-        foreach (var item in grant["items"]!)
+        foreach (var item in grant.Items!)
         {
-            var reason = ItemUnavailable((string)item["_tpl"]!);
+            var reason = ItemUnavailable((string)item.Template!);
             if (reason.Length > 0)
             {
                 return reason;
             }
         }
 
-        if (kind == "AssortmentUnlock" && !_offers.ContainsKey((string)grant["target"]!))
+        if (kind == "AssortmentUnlock" && !_offers.ContainsKey((string)grant.Target!))
         {
             return "The required trader offer is unavailable.";
         }
@@ -536,9 +542,9 @@ public sealed partial class HubGameplay(
         }
 
         state.Classified -= shortage;
-        foreach (var grant in Definition(reward.Id)["Grants"]!)
+        foreach (var grant in Definition(reward.Id).Grants)
         {
-            Grant(profile, state, (JObject)grant);
+            Grant(profile, state, grant);
         }
 
         state.Claimed.Add(reward.Id);
@@ -552,7 +558,7 @@ public sealed partial class HubGameplay(
             throw new InvalidOperationException("Select ordinary documents to exchange.");
         }
 
-        var cost = request.Crate ? (int)_catalogue["ItemExchange"]!["requiredDocuments"]! : (int)_catalogue["ExchangeRate"]!;
+        var cost = request.Crate ? (int)_catalogue.ItemExchange.RequiredDocuments : (int)_catalogue.ExchangeRate;
         if (request.Sources.Values.Sum(v => (long)v) != cost)
         {
             throw new InvalidOperationException("Incorrect document exchange quantity.");
@@ -613,13 +619,13 @@ public sealed partial class HubGameplay(
         }
     }
 
-    private void Grant(SptProfile profile, HubProgress state, JObject grant)
+    private void Grant(SptProfile profile, HubProgress state, NativeReward grant)
     {
-        var target = (string?)grant["target"] ?? "";
-        switch ((string)grant["type"]!)
+        var target = (string?)grant.Target ?? "";
+        switch ((string)grant.Type!)
         {
             case "Tarcoin":
-                state.Tarcoins = checked(state.Tarcoins + (long)grant["value"]!);
+                state.Tarcoins = checked(state.Tarcoins + (long)grant.Value!);
                 break;
             case "AssortmentUnlock":
                 state.UnlockedOffers.Add(target);
@@ -640,7 +646,7 @@ public sealed partial class HubGameplay(
 
                 break;
             case "Item":
-                var items = json.Deserialize<List<Item>>(grant["items"]!.ToString())!;
+                var items = json.Deserialize<List<Item>>(JsonConvert.SerializeObject(grant.Items))!;
                 AddItems(profile, items);
                 break;
             default:

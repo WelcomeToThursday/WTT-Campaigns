@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Story;
 using SPTarkov.Server.Core.Models.Eft.Common;
 
@@ -12,7 +11,7 @@ public sealed partial class StoryService
         var pack = repository.Runtime(state.SeasonId).Definition;
         foreach (var metadata in definition.Quests)
         {
-            var template = pack.Quests.OfType<JObject>().FirstOrDefault(q => (string?)q["_id"] == metadata.QuestId);
+            var template = pack.Quests.FirstOrDefault(q => (string?)q.Id == metadata.QuestId);
             if (template == null)
             {
                 continue;
@@ -22,20 +21,20 @@ public sealed partial class StoryService
                 status is not ("Locked" or "AvailableAfter")
                 && !metadata.Hidden
                 && StoryRules.Evaluate(metadata.Visibility, definition, state, facts);
-            foreach (var condition in ((JArray)template["conditions"]!["AvailableForFinish"]!).OfType<JObject>())
+            foreach (var condition in template.Conditions.AvailableForFinish)
             {
-                var id = (string)condition["id"]!;
+                var id = (string)condition.Id!;
                 var complete = status == "Success" || Condition(condition, pmc, definition, state, facts);
-                var required = (double?)condition["value"] ?? 1;
+                var required = (double?)condition.Value ?? 1;
                 var visible = available;
-                if (condition["visibilityConditions"] is JArray visibility)
+                if (condition.VisibilityConditions is { } visibility)
                 {
-                    visible &= visibility
-                        .OfType<JObject>()
-                        .All(v => facts.CompletedConditions.Contains((string?)v["target"] ?? (string?)v["conditionId"] ?? ""));
+                    visible &= visibility.All(v => facts.CompletedConditions.Contains((string?)v.Target ?? (string?)v.ConditionId ?? ""));
                 }
                 var text =
-                    (string?)template["localization"]?["en"]?[id] ?? pack.Locales.GetValueOrDefault("en")?.GetValueOrDefault(id) ?? id;
+                    template.Localization.GetValueOrDefault("en")?.GetValueOrDefault(id)
+                    ?? pack.Locales.GetValueOrDefault("en")?.GetValueOrDefault(id)
+                    ?? id;
                 output.Add(
                     new StoryObjective
                     {
@@ -43,10 +42,10 @@ public sealed partial class StoryService
                         QuestId = metadata.QuestId,
                         ChapterId = metadata.ChapterId,
                         Text = text,
-                        Hint = (string?)condition["hint"] ?? "",
+                        Hint = (string?)condition.Hint ?? "",
                         Required = required,
                         Current = complete ? required : facts.ConditionCounters.GetValueOrDefault(id),
-                        Main = metadata.Main && (bool?)condition["isNecessary"] != false,
+                        Main = metadata.Main && (bool?)condition.IsNecessary != false,
                         Complete = complete,
                         Failed = status is "Fail" or "FailRestartable" or "MarkedAsFailed" or "Expired",
                         Visible = visible,

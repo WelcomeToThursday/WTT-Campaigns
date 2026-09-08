@@ -24,16 +24,16 @@
 </div>
 @code {
     [Parameter] public SeasonDefinition Season { get; set; } = null!;
-    [Parameter] public JObject Quest { get; set; } = null!;
+    [Parameter] public NativeQuest Quest { get; set; } = null!;
     [Parameter] public StoryQuest Membership { get; set; } = null!;
     [Parameter] public EventCallback Changed { get; set; }
     [Parameter] public EventCallback<string> Navigate { get; set; }
     private string _status = "Success";
     private string? _trader;
     private bool _branching = true;
-    private string Trader => _trader ?? (string?)Quest["traderId"] ?? "";
+    private string Trader => _trader ?? (string?)Quest.TraderId ?? "";
     private IEnumerable<StoryNote> LinkedNotes => Season.Story!.Notes.Where(n => Membership.StatusNotes.Values.Any(ids => ids.Contains(n.Id)));
-    private IEnumerable<StoryDialog> LinkedDialogs => Season.Story!.Dialogs.Where(d => JObject.FromObject(d).Descendants().OfType<JProperty>().Any(p => p.Name == "QuestId" && p.Value.ToString() == Membership.QuestId));
+    private IEnumerable<StoryDialog> LinkedDialogs => Season.Story!.Dialogs.Where(d => ModelGraph.Texts(d).Any(p => p.Field == "QuestId" && p.Value == Membership.QuestId));
     private async Task AddNote() { QuestStoryFlow.AddNote(Season, Membership, _status); await Changed.InvokeAsync(); }
     private async Task AddConversation() { StoryAuthoring.AddConversation(Season, Trader, _branching, Membership.QuestId); await Changed.InvokeAsync(); }
 }

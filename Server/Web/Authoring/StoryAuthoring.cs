@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Reflection;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Seasons;
 using SeasonalPerks.Shared.Story;
 
@@ -72,20 +71,12 @@ public static class StoryAuthoring
                 .Media.Where(v => kind == "media" || (kind == "cinematic" ? v.Kind is "Cinematic" or "Video" : v.Kind == kind))
                 .Select(v => (v.Id, Label(v))),
             "ownedquests" => season
-                .Quests.OfType<JObject>()
-                .Where(q => story.Quests.Any(m => m.QuestId == (string?)q["_id"]))
-                .Select(q => ((string)q["_id"]!, NativeQuestAuthoring.QuestName(q))),
-            "quests" => season.Quests.OfType<JObject>().Select(q => ((string)q["_id"]!, NativeQuestAuthoring.QuestName(q))),
-            "objectives" => season
-                .Quests.OfType<JObject>()
-                .SelectMany(q =>
-                    q.Descendants()
-                        .OfType<JObject>()
-                        .Where(c => c["conditionType"] != null && c["id"] != null)
-                        .Select(c =>
-                            ((string)c["id"]!, $"{q["QuestName"]}: {q["localization"]?["en"]?[(string)c["id"]!] ?? c["conditionType"]}")
-                        )
-                ),
+                .Quests.Where(q => story.Quests.Any(m => m.QuestId == (string?)q.Id))
+                .Select(q => ((string)q.Id!, NativeQuestAuthoring.QuestName(q))),
+            "quests" => season.Quests.Select(q => ((string)q.Id!, NativeQuestAuthoring.QuestName(q))),
+            "objectives" => season.Quests.SelectMany(q =>
+                q.AllConditions().Select(c => ((string)c.Id!, $"{q.QuestName}: {q.Text(c.Id) ?? c.ConditionType}"))
+            ),
             "items" => season.Items.Select(i => (i.Id, i.Name)),
             _ => [],
         };
@@ -254,64 +245,40 @@ public static class StoryAuthoring
 
     public static IReadOnlyList<string> Uses(SeasonDefinition season, object removed)
     {
-        var token = JObject.FromObject(removed);
-        var ids = token
-            .DescendantsAndSelf()
-            .OfType<JObject>()
-            .Select(o => (string?)o["Id"] ?? (string?)o["_id"] ?? (string?)o["id"])
-            .Where(id => SeasonValidator.IsId(id ?? ""))
-            .ToHashSet();
-        var root = JObject.FromObject(season);
-        return root.Descendants()
-            .OfType<JValue>()
-            .Where(v =>
-                v.Type == JTokenType.String
-                && ids.Contains(v.ToString())
-                && v.Parent is not JProperty { Name: "Id" or "id" or "_id" }
-                && !v.Ancestors().OfType<JObject>().Any(o => ids.Contains((string?)o["Id"] ?? (string?)o["_id"] ?? (string?)o["id"]))
-            )
-            .Select(v => v.Path)
+        var ids = ModelGraph.Texts(removed).Where(t => t.IsIdentity && SeasonValidator.IsId(t.Value)).Select(t => t.Value).ToHashSet();
+        return ModelGraph
+            .Texts(season)
+            .Where(t => ids.Contains(t.Value) && !t.IsIdentity && !t.Ancestors.Any(a => ids.Contains(ModelGraph.Id(a) ?? "")))
+            .Select(t => t.Path)
             .Distinct()
             .ToArray();
     }
 
     public static object Duplicate(object source)
     {
-        var token = JObject.FromObject(source);
-        var ids = token
-            .DescendantsAndSelf()
-            .OfType<JProperty>()
-            .Where(p => p.Name is "Id" or "id" or "_id")
-            .Select(p => p.Value.ToString())
-            .Where(SeasonValidator.IsId)
+        var copy = Newtonsoft.Json.JsonConvert.DeserializeObject(Newtonsoft.Json.JsonConvert.SerializeObject(source), source.GetType())!;
+        var ids = ModelGraph
+            .Texts(copy)
+            .Where(t => t.IsIdentity && SeasonValidator.IsId(t.Value))
+            .Select(t => t.Value)
             .Distinct()
             .ToDictionary(id => id, _ => NewId());
-        foreach (var value in token.DescendantsAndSelf().OfType<JValue>().Where(v => v.Type == JTokenType.String).ToArray())
-        {
-            var text = value.ToString();
-            foreach (var pair in ids)
+        ModelGraph.Rewrite(
+            copy,
+            text =>
             {
-                if (text == pair.Key || text.StartsWith(pair.Key + " ", StringComparison.Ordinal))
+                foreach (var pair in ids)
                 {
-                    value.Value = pair.Value + text[pair.Key.Length..];
-                    break;
+                    if (text == pair.Key || text.StartsWith(pair.Key + " ", StringComparison.Ordinal))
+                    {
+                        return pair.Value + text[pair.Key.Length..];
+                    }
                 }
-            }
-        }
 
-        foreach (var property in token.DescendantsAndSelf().OfType<JProperty>().ToArray())
-        {
-            foreach (var pair in ids)
-            {
-                if (property.Name == pair.Key || property.Name.StartsWith(pair.Key + " ", StringComparison.Ordinal))
-                {
-                    property.Replace(new JProperty(pair.Value + property.Name[pair.Key.Length..], property.Value));
-                    break;
-                }
+                return text;
             }
-        }
-
-        return token.ToObject(source.GetType())!;
+        );
+        return copy;
     }
 
     public static StoryDialog AddConversation(SeasonDefinition season, string traderId, bool branching, string questId = "")

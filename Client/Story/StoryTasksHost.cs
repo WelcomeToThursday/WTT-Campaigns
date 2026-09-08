@@ -5,7 +5,6 @@ using SeasonalPerks.Shared.Story;
 using SeasonalPerks.UI.Controls;
 using SeasonalPerks.UI.Models;
 using SeasonalPerks.UI.Screens;
-using SPT.Common.Http;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -188,22 +187,8 @@ public sealed class StoryTasksHost : MonoBehaviour
     {
         try
         {
-            var bytes = await Task.Run(() =>
-                RequestHandler.GetData(
-                    "/wtt-seasonal/hub-images/"
-                        + id
-                        + ".png?season="
-                        + Plugin.Current!.SeasonId
-                        + "&revision="
-                        + Plugin.Current.PackRevision
-                )
-            );
+            var texture = await SeasonImageLoader.LoadAsync(SeasonImageLoader.PathFor("hub-images", id));
             if (!this || generation != _generation)
-            {
-                return;
-            }
-            var texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-            if (!ImageConversion.LoadImage(texture, bytes))
             {
                 Destroy(texture);
                 return;

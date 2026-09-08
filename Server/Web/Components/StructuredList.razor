@@ -1,0 +1,18 @@
+@using System.Collections
+@for (var i = 0; i < Value.Count; i++)
+{
+    var index = i;
+    if (Value[index] is IList nested) { <StructuredList Value="nested" Label="Label" Kind="Kind" Choices="Choices" Changed="Changed" /> }
+    else if (Kind != null) { <ContentPicker Kind="Kind" Label="Label" Value="@(Value[index]?.ToString() ?? "")" ValueChanged="@(async v => { Value[index] = v; await Changed.InvokeAsync(); })" Additional="Choices" /> }
+    else { <input aria-label="@Label" value="@Value[index]" @onchange="@(async e => { Value[index] = e.Value?.ToString() ?? ""; await Changed.InvokeAsync(); })" /> }
+    <button @onclick="@(async () => { Value.RemoveAt(index); await Changed.InvokeAsync(); })">Remove</button>
+}
+<button @onclick="Add">Add @Label</button>
+@code {
+    [Parameter] public IList Value { get; set; } = null!;
+    [Parameter] public string Label { get; set; } = "entry";
+    [Parameter] public string? Kind { get; set; }
+    [Parameter] public IEnumerable<ContentChoice> Choices { get; set; } = [];
+    [Parameter] public EventCallback Changed { get; set; }
+    private async Task Add() { var type = Value.GetType().GetGenericArguments()[0]; Value.Add(type == typeof(string) ? "" : Activator.CreateInstance(type)); await Changed.InvokeAsync(); }
+}

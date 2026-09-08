@@ -1,4 +1,3 @@
-using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Story;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Profile;
@@ -53,7 +52,10 @@ public sealed partial class StoryService
             {
                 if (condition.ConditionType == "HandoverItem")
                 {
-                    facts.HandoverItems[condition.Id.ToString()] = HandoverItems(pmc, JObject.Parse(json.Serialize(condition)!))
+                    facts.HandoverItems[condition.Id.ToString()] = HandoverItems(
+                            pmc,
+                            Newtonsoft.Json.JsonConvert.DeserializeObject<NativeCondition>(json.Serialize(condition)!)!
+                        )
                         .Sum(i => i.Upd?.StackObjectsCount ?? 1);
                 }
             }
@@ -66,29 +68,21 @@ public sealed partial class StoryService
             {
                 continue;
             }
-            var template = repository
-                .Runtime(state.SeasonId)
-                .Definition.Quests.OfType<JObject>()
-                .FirstOrDefault(q => (string?)q["_id"] == metadata.QuestId);
-            if (
-                template != null
-                && ((JArray)template["conditions"]!["AvailableForStart"]!)
-                    .OfType<JObject>()
-                    .All(c => Condition(c, pmc, definition, state, facts))
-            )
+            var template = repository.Runtime(state.SeasonId).Definition.Quests.FirstOrDefault(q => (string?)q.Id == metadata.QuestId);
+            if (template != null && template.Conditions.AvailableForStart.All(c => Condition(c, pmc, definition, state, facts)))
             {
-                facts.TradersWithNewQuests.Add((string)template["traderId"]!);
+                facts.TradersWithNewQuests.Add((string)template.TraderId!);
             }
         }
     }
 
-    private bool Condition(JObject c, PmcData pmc, StoryDefinition definition, StoryProgress state, StoryFacts facts)
+    private bool Condition(NativeCondition c, PmcData pmc, StoryDefinition definition, StoryProgress state, StoryFacts facts)
     {
-        var id = (string?)c["id"] ?? "";
-        var kind = (string?)c["conditionType"] ?? "";
-        var target = c["target"] is JArray targets ? (string?)targets.FirstOrDefault() ?? "" : (string?)c["target"] ?? "";
-        var value = (double?)c["value"] ?? 1;
-        var comparison = (string?)c["compareMethod"] ?? ">=";
+        var id = (string?)c.Id ?? "";
+        var kind = (string?)c.ConditionType ?? "";
+        var target = c.Target?.Values.FirstOrDefault() ?? "";
+        var value = (double?)c.Value ?? 1;
+        var comparison = (string?)c.CompareMethod ?? ">=";
         bool Compare(double actual)
         {
             return StoryRules.Compare(actual, comparison, value);
@@ -102,11 +96,8 @@ public sealed partial class StoryService
         {
             case "Quest":
                 var statuses =
-                    c["status"]
-                        ?.Select(s =>
-                            s.Type == JTokenType.Integer
-                                ? ((SPTarkov.Server.Core.Models.Enums.QuestStatusEnum)(int)s).ToString()
-                                : (string)s!
+                    c.Status?.Select(s =>
+                            int.TryParse(s, out var code) ? ((SPTarkov.Server.Core.Models.Enums.QuestStatusEnum)code).ToString() : s
                         )
                         .ToArray()
                     ?? ["Success"];
@@ -131,9 +122,6 @@ public sealed partial class StoryService
                 return Compare(facts.CompletedConditions.Contains(target) ? 1 : 0);
             case "FindItem":
             case "HasItem":
-                var itemTargets = c["target"] is JArray itemArray
-                    ? itemArray.Values<string>().ToHashSet()
-                    : new HashSet<string?> { target };
                 return Compare((pmc.Inventory?.Items ?? []).Where(i => MatchesItem(i, c)).Sum(i => i.Upd?.StackObjectsCount ?? 1));
             case "HandoverItem":
             case "CounterCreator":
