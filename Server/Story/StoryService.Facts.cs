@@ -1,0 +1,148 @@
+using Newtonsoft.Json.Linq;
+using SeasonalPerks.Shared.Story;
+using SPTarkov.Server.Core.Models.Eft.Common;
+using SPTarkov.Server.Core.Models.Eft.Profile;
+
+namespace SeasonalPerks.Server.Story;
+
+public sealed partial class StoryService
+{
+    private StoryFacts Facts(string id, SptProfile profile, StoryProgress state, StoryDefinition definition)
+    {
+        var facts = new StoryFacts
+        {
+            TraderId = state.Conversation?.TraderId ?? "",
+            SessionVariables = new(_sessions.GetOrAdd(id, _ => new())),
+            InRaid = state.Raid is { Finished: false },
+            Location = state.Raid is { Finished: false } ? state.Raid.Location : "",
+        };
+        RefreshFacts(profile.CharacterData!.PmcData!, facts, definition, state);
+        return facts;
+    }
+
+    private void RefreshFacts(PmcData pmc, StoryFacts facts, StoryDefinition definition, StoryProgress state)
+    {
+        facts.Level = pmc.Info?.Level ?? 0;
+        facts.QuestStatuses = (pmc.Quests ?? []).ToDictionary(q => q.QId.ToString(), q => q.Status.ToString());
+        facts.CompletedConditions = (pmc.Quests ?? []).SelectMany(q => q.CompletedConditions ?? []).ToHashSet();
+        facts.ConditionCounters = (pmc.TaskConditionCounters ?? []).ToDictionary(c => c.Key.ToString(), c => c.Value.Value ?? 0);
+        facts.TraderReputation = (pmc.TradersInfo ?? []).ToDictionary(t => t.Key.ToString(), t => t.Value.Standing ?? 0);
+        facts.TraderLoyalty = (pmc.TradersInfo ?? []).ToDictionary(t => t.Key.ToString(), t => (double)(t.Value.LoyaltyLevel ?? 0));
+        facts.Items = (pmc.Inventory?.Items ?? [])
+            .GroupBy(i => i.Template.ToString())
+            .ToDictionary(g => g.Key, g => g.Sum(i => i.Upd?.StackObjectsCount ?? 1));
+        facts.Skills = (pmc.Skills?.Common ?? []).ToDictionary(s => s.Id.ToString(), s => Math.Floor(s.Progress / 100));
+        facts.HideoutAreas = (pmc.Hideout?.Areas ?? []).ToDictionary(a => ((int)a.Type).ToString(), a => (double)(a.Level ?? 0));
+        var pockets = pmc.Inventory?.Items?.FirstOrDefault(i => i.SlotId == "Pockets" && i.ParentId == pmc.Inventory.Equipment.ToString());
+        var slots =
+            pockets == null
+                ? []
+                : templates
+                    .Items.GetValueOrDefault(pockets.Template)
+                    ?.Properties?.Slots?.Where(s => s.Name?.StartsWith("SpecialSlot", StringComparison.Ordinal) == true)
+                    .Select(s => s.Name!)
+                    .ToArray()
+                    ?? [];
+        facts.FreeSpecialSlots = slots.Count(slot =>
+            pmc.Inventory!.Items!.All(i => i.ParentId != pockets!.Id.ToString() || i.SlotId != slot)
+        );
+        facts.HandoverItems.Clear();
+        foreach (var quest in pmc.Quests ?? [])
+        {
+            foreach (var condition in templates.Quests.GetValueOrDefault(quest.QId)?.Conditions?.AvailableForFinish ?? [])
+            {
+                if (condition.ConditionType == "HandoverItem")
+                {
+                    facts.HandoverItems[condition.Id.ToString()] = HandoverItems(pmc, JObject.Parse(json.Serialize(condition)!))
+                        .Sum(i => i.Upd?.StackObjectsCount ?? 1);
+                }
+            }
+        }
+        facts.TradersWithNewQuests.Clear();
+        foreach (var metadata in definition.Quests)
+        {
+            var status = facts.QuestStatuses.GetValueOrDefault(metadata.QuestId) ?? "Locked";
+            if (status is not ("Locked" or "AvailableForStart"))
+            {
+                continue;
+            }
+            var template = repository
+                .Runtime(state.SeasonId)
+                .Definition.Quests.OfType<JObject>()
+                .FirstOrDefault(q => (string?)q["_id"] == metadata.QuestId);
+            if (
+                template != null
+                && ((JArray)template["conditions"]!["AvailableForStart"]!)
+                    .OfType<JObject>()
+                    .All(c => Condition(c, pmc, definition, state, facts))
+            )
+            {
+                facts.TradersWithNewQuests.Add((string)template["traderId"]!);
+            }
+        }
+    }
+
+    private bool Condition(JObject c, PmcData pmc, StoryDefinition definition, StoryProgress state, StoryFacts facts)
+    {
+        var id = (string?)c["id"] ?? "";
+        var kind = (string?)c["conditionType"] ?? "";
+        var target = c["target"] is JArray targets ? (string?)targets.FirstOrDefault() ?? "" : (string?)c["target"] ?? "";
+        var value = (double?)c["value"] ?? 1;
+        var comparison = (string?)c["compareMethod"] ?? ">=";
+        bool Compare(double actual)
+        {
+            return StoryRules.Compare(actual, comparison, value);
+        }
+        // Once completed, a native objective remains complete unless the native raid lifecycle resets it.
+        if (facts.CompletedConditions.Contains(id))
+        {
+            return true;
+        }
+        switch (kind)
+        {
+            case "Quest":
+                var statuses =
+                    c["status"]
+                        ?.Select(s =>
+                            s.Type == JTokenType.Integer
+                                ? ((SPTarkov.Server.Core.Models.Enums.QuestStatusEnum)(int)s).ToString()
+                                : (string)s!
+                        )
+                        .ToArray()
+                    ?? ["Success"];
+                return statuses.Contains(facts.QuestStatuses.GetValueOrDefault(target) ?? "Locked");
+            case "Level":
+                return Compare(facts.Level);
+            case "TraderLoyalty":
+                return Compare(facts.TraderLoyalty.GetValueOrDefault(target));
+            case "TraderStanding":
+                return Compare(facts.TraderReputation.GetValueOrDefault(target));
+            case "Skill":
+                return Compare(facts.Skills.GetValueOrDefault(target));
+            case "HideoutArea":
+                return Compare(facts.HideoutAreas.GetValueOrDefault(target));
+            case "GlobalVariableValue":
+                return Compare(StoryRules.Variable(definition, state, facts, target));
+            case "CompletableItem":
+                return Compare(state.CompletedItems.Contains(target) ? 1 : 0);
+            case "LocationTrigger":
+                return Compare(state.CompletedBindings.Contains(target) ? 1 : 0);
+            case "CompleteCondition":
+                return Compare(facts.CompletedConditions.Contains(target) ? 1 : 0);
+            case "FindItem":
+            case "HasItem":
+                var itemTargets = c["target"] is JArray itemArray
+                    ? itemArray.Values<string>().ToHashSet()
+                    : new HashSet<string?> { target };
+                return Compare((pmc.Inventory?.Items ?? []).Where(i => MatchesItem(i, c)).Sum(i => i.Upd?.StackObjectsCount ?? 1));
+            case "HandoverItem":
+            case "CounterCreator":
+            case "VisitPlace":
+            case "LeaveItemAtLocation":
+            case "LaunchFlare":
+                return Compare(facts.ConditionCounters.GetValueOrDefault(id));
+            default:
+                throw new InvalidOperationException("Unsupported story quest condition: " + kind);
+        }
+    }
+}

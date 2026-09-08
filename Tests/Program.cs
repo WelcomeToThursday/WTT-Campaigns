@@ -9,9 +9,21 @@ using SeasonalPerks.Shared.Effects.Trading;
 using SeasonalPerks.Shared.Perks;
 using SeasonalPerks.Shared.Profiles;
 
-if (args.Length == 2 && args[0] == "--creator-fixture")
+if (args.Length == 4 && args[0] == "--story-pack")
 {
-    SeasonalPerks.Tests.CreatorFixture.Prepare(args[1]);
+    SeasonalPerks.Tests.StoryPackTool.Compose(args[1], args[2], args[3]);
+    return;
+}
+
+if (args.Length == 3 && args[0] == "--test-story-season")
+{
+    SeasonalPerks.Tests.PlayableStorySeason.Build(args[1], args[2]);
+    return;
+}
+
+if (args.Length == 2 && args[0] is "--creator-fixture" or "--story-fixture")
+{
+    SeasonalPerks.Tests.CreatorFixture.Prepare(args[1], args[0] == "--story-fixture");
     return;
 }
 
@@ -38,6 +50,8 @@ void Check(bool value, string name)
     count++;
 }
 var rules = new Rules();
+SeasonalPerks.Tests.StoryChecks.Run(Check);
+SeasonalPerks.Tests.StoryEngineChecks.Run(Check);
 SeasonalPerks.Tests.ProgressionChecks.Run(Check);
 if (args.Length > 0 && File.Exists(args[0]))
 {

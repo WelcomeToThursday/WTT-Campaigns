@@ -2,6 +2,10 @@
 
 Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
 
+Build **0.5.1** exposes the Story tab and trader visits to Seasonal characters even when the season has no authored story content. Existing season content and progression stay unchanged.
+
+Build **0.5.0** is the [story-system implementation candidate](docs/story-system.md): Seasonal journals, dialogue/quest authority, eight trader visit rooms (including a custom Peacekeeper office), raid bindings, media and [pack authoring tools](docs/story-authoring.md). No live campaign is imported. Native beta gameplay/visual acceptance remains outstanding; see the support matrix and validation gates before authoring a season.
+
 Build **0.4.0** adds [live trader and task progression](docs/trader-progression.md) for normal and seasonal characters: captured loyalty requirements without spending gates, reputation changes for 381 existing tasks, and a grouped native task list. Missing live tasks are excluded. Existing reputation and task progress are preserved; loyalty may decrease under the new thresholds. Install both client and server. In-game visual acceptance remains a release gate.
 
 Build **0.3.0** adds the [Season Creator](docs/season-creator.md), hosted in SPT’s administrator web interface at `/wtt-seasonal/creator`. Create and duplicate drafts, configure supported content, validate and export packs, and select a default season for the next restart. The [character selector](docs/characters.md) supports several characters per season, simultaneous playable seasons, a wrapping carousel, and confirmed deletion or achievement-preserving wipes. Install the client and server together. Browser interaction and installed-game visual acceptance remain release gates.

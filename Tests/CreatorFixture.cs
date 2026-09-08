@@ -7,7 +7,7 @@ namespace SeasonalPerks.Tests;
 
 internal static class CreatorFixture
 {
-    public static void Prepare(string directory)
+    public static void Prepare(string directory, bool story = false)
     {
         var path = Path.GetFullPath(directory);
         if (!path.EndsWith(Path.Combine("Testing", "Server", "user", "mods", "SeasonalPerks"), StringComparison.OrdinalIgnoreCase))
@@ -187,6 +187,10 @@ internal static class CreatorFixture
         gated.Costs.Add(new() { DocumentId = document.Id, Count = 1 });
         var supply = Reward("Supply crate", crate, 1);
         s.Pages[0].Rewards = [gated, supply];
+        if (story)
+        {
+            StoryFixture.Add(s, quest, objective, followup, followupObjective);
+        }
         draft = store.Save(draft);
         var validation = SeasonValidator.Validate(s);
         if (!validation.CanPublish)
@@ -195,6 +199,10 @@ internal static class CreatorFixture
         }
 
         var key = store.Publish(draft, validation);
+        if (story)
+        {
+            File.WriteAllBytes(Path.Combine(path, "creator", "story-example.zip"), store.Export(key));
+        }
         store.Queue(key);
         var fixture = new
         {

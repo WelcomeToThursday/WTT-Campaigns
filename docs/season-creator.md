@@ -63,3 +63,7 @@ The implementation was exercised on synthetic profiles in `Testing/Server` only.
 Run the standard contract checks through `tools/package.ps1`. For custom-season integration, first run `tools/test_integration.py` on the isolated legacy season, then `dotnet run --project Tests -- --creator-fixture Testing/Server/user/mods/SeasonalPerks`. Restart the isolated server and run `tools/test_creator.py verify`, followed by `tools/test_hub_raids.py --creator`. These fixtures call the same repository/native gameplay services used by authoring; they do not substitute for browser acceptance.
 
 **Outstanding acceptance:** interactive browser saving, drag/drop, upload and simulation checks, and installed-game creation/branding/layout checks at supported resolutions. The local HTTPS certificate blocked the automated browser session. These gates must pass before treating 0.3.0 as a completed release.
+
+## Story extension
+
+Format-1 Story definitions survive draft, pack import/export and duplication. Use the [story composition tool and synthetic overlay](story-authoring.md) until a graphical dialogue editor is implemented. Unity media is installed separately from the Creator ZIP and verified against authored SHA-256 hashes. [Story compatibility and acceptance gates](story-system.md) apply.

@@ -10,13 +10,15 @@ using SPTarkov.Server.Core.Models.Common;
 namespace SeasonalPerks.Server.Patches.Session;
 
 [Injectable]
-public class NewClientSessionPatch(SeasonService seasons) : AbstractPatch
+public class NewClientSessionPatch(SeasonService seasons, SeasonalPerks.Server.Story.StoryService story) : AbstractPatch
 {
     private static SeasonService _seasons = null!;
+    private static SeasonalPerks.Server.Story.StoryService _story = null!;
 
     protected override MethodBase GetTargetMethod()
     {
         _seasons = seasons;
+        _story = story;
         return AccessTools.Method(typeof(GameController), nameof(GameController.GameStart));
     }
 
@@ -26,5 +28,6 @@ public class NewClientSessionPatch(SeasonService seasons) : AbstractPatch
     {
         // Solo SPT starts a new client session after a crash; the previous local raid cannot resume.
         _seasons.MarkRaid(sessionId.ToString(), false).GetAwaiter().GetResult();
+        _story.NewSession(sessionId.ToString()).GetAwaiter().GetResult();
     }
 }

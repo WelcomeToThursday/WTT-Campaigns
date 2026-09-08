@@ -14,6 +14,7 @@ public class Snapshot
     public long PackRevision { get; set; }
     public string BannerImage { get; set; } = "";
     public bool LegacyBranding { get; set; } = true;
+    public bool HasStory { get; set; }
     public List<string> DocumentTemplates { get; set; } = new();
     public string EffectiveProfileId { get; set; } = "";
     public Catalogue Catalogue { get; set; } = new();

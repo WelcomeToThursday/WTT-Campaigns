@@ -11,6 +11,7 @@ public sealed class CharacterSummary<TVisual>
     public bool Available { get; set; } = true;
     public string Name { get; set; } = "";
     public int Level { get; set; }
+    public string StoryChapters { get; set; } = "";
     public bool Exists { get; set; }
     public bool Wiped { get; set; }
     public string Side { get; set; } = "Usec";

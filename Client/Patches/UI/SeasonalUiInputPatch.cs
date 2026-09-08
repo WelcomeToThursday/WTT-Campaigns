@@ -16,9 +16,20 @@ internal sealed class SeasonalUiInputPatch : ModulePatch
     [PatchPrefix]
     private static bool Prefix(InputNode __instance, List<ECommand> commands, ref float[]? axes, ref ECursorResult shouldLockCursor)
     {
-        if (__instance is not UIInputRoot || !SeasonUi.Instance || !SeasonUi.Instance.InputBlocked)
+        var storyBlocked =
+            (Story.StoryVisitRuntime.Instance && Story.StoryVisitRuntime.Instance.InputBlocked)
+            || (Story.StoryCinematicRuntime.Instance && Story.StoryCinematicRuntime.Instance.InputBlocked);
+        if (!storyBlocked && (__instance is not UIInputRoot || !SeasonUi.Instance || !SeasonUi.Instance.InputBlocked))
         {
+            if (Story.StoryRaidRuntime.Instance)
+            {
+                Story.StoryRaidRuntime.Instance.ConsumeInteraction(commands);
+            }
             return true;
+        }
+        if (Story.StoryRaidRuntime.Instance)
+        {
+            Story.StoryRaidRuntime.Instance.ClearCapturedInteraction();
         }
         // Block the underlying EFT UI before input is dispatched to its children.
         // Unity's input fields and buttons continue receiving their own EventSystem input.

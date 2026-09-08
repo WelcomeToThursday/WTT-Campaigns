@@ -23,6 +23,8 @@ internal static class PatchRegistration
         EnableItems();
         EnableHideout();
         EnableUi();
+        new Story.StoryTraderPatch().Enable();
+        new Story.StoryCollectiblePatch().Enable();
     }
 
     private static void EnableSession()
@@ -96,6 +98,7 @@ internal static class PatchRegistration
 
     private static void EnableUi()
     {
+        new SeasonalPerks.Client.Story.StoryTasksPatch().Enable();
         new TaskGroupingShowPatch().Enable();
         new TaskGroupingRefreshPatch(nameof(QuestsListView.UpdateVisibility)).Enable();
         new TaskGroupingRefreshPatch(nameof(QuestsListView.QuestAddedHandler)).Enable();

@@ -14,6 +14,7 @@ public static class SeasonCompiler
     public static Dictionary<string, string> Texts(SeasonDefinition season, string language = "en")
     {
         var texts = new Dictionary<string, string>(season.Locales.GetValueOrDefault("en") ?? new());
+        Story.StoryContent.AddTexts(season.Story, texts);
         texts[season.Id + " name"] = season.Name;
         texts[season.Id + " description"] = season.Description;
         foreach (var item in season.Items)
@@ -162,6 +163,7 @@ public static class SeasonCompiler
             .Concat(season.AllRewards.SelectMany(r => new[] { r.Image, r.BigImage }))
             .Concat(new[] { season.UniversalImage, season.UniversalUnavailableImage, season.Branding.Badge, season.Branding.Banner })
             .Concat(season.Slides.Select(s => s.Image))
+            .Concat(season.Story?.Chapters.SelectMany(c => new[] { c.Image, c.Icon }) ?? Enumerable.Empty<string>())
             .Where(s => !string.IsNullOrEmpty(s))
             .Distinct();
     }
@@ -169,6 +171,30 @@ public static class SeasonCompiler
     public static JObject GameplayIdentity(SeasonDefinition season)
     {
         var value = JObject.FromObject(season);
+        if (season.Story == null)
+        {
+            value.Remove("Story");
+        }
+        else
+        {
+            foreach (var chapter in value["Story"]!["Chapters"]!.OfType<JObject>())
+            {
+                chapter.Remove("Name");
+                chapter.Remove("Image");
+                chapter.Remove("Icon");
+            }
+            foreach (var note in value["Story"]!["Notes"]!.OfType<JObject>())
+            {
+                note.Remove("Text");
+            }
+            foreach (var line in value["Story"]!["Dialogs"]!.SelectMany(d => d["Lines"]!).OfType<JObject>())
+            {
+                line.Remove("Text");
+                line.Remove("Icon");
+                line.Remove("Confirmation");
+                line.Remove("Playback");
+            }
+        }
         foreach (
             var key in new[]
             {

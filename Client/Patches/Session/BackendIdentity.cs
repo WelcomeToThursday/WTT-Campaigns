@@ -3,6 +3,7 @@ using EFT;
 using HarmonyLib;
 using Newtonsoft.Json;
 using SeasonalPerks.Client.Profiles;
+using SeasonalPerks.Shared.Contracts;
 using SPT.Common.Http;
 using SPT.Reflection.Patching;
 
@@ -27,7 +28,7 @@ internal class BackendIdentity : ModulePatch
         if (Plugin.SessionId == null)
         {
             var snapshot = JsonConvert.DeserializeObject<ClientSnapshot>(
-                RequestHandler.PostJson("/wtt-seasonal/snapshot", "{}"),
+                RequestHandler.PostJson("/wtt-seasonal/snapshot", JsonConvert.SerializeObject(new Mutation { ProtocolVersion = 2 })),
                 EftJsonConverters.Converters
             )!;
             Plugin.Accept(snapshot);

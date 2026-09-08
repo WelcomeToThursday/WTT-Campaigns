@@ -1,0 +1,44 @@
+[
+  {
+    "trader": "579dc571d53a0658a154fbec",
+    "source": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level638",
+    "sha256": "f78e8ee0c58bbcf2cf3ee6743f1d048b49fed8a130d417c07a7757cee398ae78",
+    "property": "RenderSettings.m_AmbientProbe"
+  },
+  {
+    "trader": "5c0647fdd443bc2504c2d371",
+    "source": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level639",
+    "sha256": "ffa5981c51b36d25753127436eccc8cd9d707bd6dd5af019c41fb69729dfe89c",
+    "property": "RenderSettings.m_AmbientProbe"
+  },
+  {
+    "trader": "5a7c2eca46aef81a7ca2145d",
+    "source": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level640",
+    "sha256": "fdb1048f8300f392e04a23c5e73c04fce5d2667b53b0291c80c5d43bd9f48a61",
+    "property": "RenderSettings.m_AmbientProbe"
+  },
+  {
+    "trader": "54cb50c76803fa8b248b4571",
+    "source": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level642",
+    "sha256": "bfa08da37155ba62566217fda54324051d9cab0e62bc79c83aa4dffd44348f7c",
+    "property": "RenderSettings.m_AmbientProbe"
+  },
+  {
+    "trader": "5ac3b934156ae10c4430e83c",
+    "source": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level643",
+    "sha256": "9d26719f8c546f025b8467172796d2a52d3e0510c5c74a95f834afe01ebf398e",
+    "property": "RenderSettings.m_AmbientProbe"
+  },
+  {
+    "trader": "58330581ace78e27b8b10cee",
+    "source": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level644",
+    "sha256": "ea0d0517b158ce45c03dee035df38d9dcf817176572394f7d48b11e3ce7940bc",
+    "property": "RenderSettings.m_AmbientProbe"
+  },
+  {
+    "trader": "54cb57776803fa99248b456e",
+    "source": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level645",
+    "sha256": "4a85c1a741e7a6a4f25a5312412cc249ba5d323f6b847f20510e0ec6dca5c672",
+    "property": "RenderSettings.m_AmbientProbe"
+  }
+]

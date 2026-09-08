@@ -1,0 +1,141 @@
+{
+  "Story": {
+    "FormatVersion": 1,
+    "Chapters": [
+      {
+        "Id": "770000000000000000000001",
+        "Name": "System demonstration"
+      }
+    ],
+    "Notes": [
+      {
+        "Id": "770000000000000000000002",
+        "ChapterId": "770000000000000000000001",
+        "Text": "This journal note was unlocked by a synthetic conversation. No live campaign content is included."
+      }
+    ],
+    "Variables": [
+      {
+        "Id": "770000000000000000000003",
+        "Scope": "Dialogue",
+        "InitialValue": 0
+      }
+    ],
+    "Dialogs": [
+      {
+        "Id": "770000000000000000000004",
+        "TraderId": "54cb50c76803fa8b248b4571",
+        "MainVariable": "770000000000000000000003",
+        "Lines": [
+          {
+            "Id": "770000000000000000000005",
+            "Side": "Npc",
+            "Text": "Welcome to the story-system demonstration.",
+            "Trigger": {
+              "Type": "VariableValue",
+              "Target": "770000000000000000000003",
+              "Operator": "==",
+              "Value": 0
+            },
+            "Actions": [
+              {
+                "Id": "770000000000000000000006",
+                "Type": "SetVariable",
+                "Target": "770000000000000000000003",
+                "Scope": "Dialogue",
+                "Value": 1
+              }
+            ]
+          },
+          {
+            "Id": "770000000000000000000007",
+            "Side": "Player",
+            "Text": "Add a note to my journal.",
+            "Trigger": {
+              "Type": "VariableValue",
+              "Target": "770000000000000000000003",
+              "Operator": "==",
+              "Value": 1
+            },
+            "Actions": [
+              {
+                "Id": "770000000000000000000008",
+                "Type": "DiaryNote",
+                "Target": "770000000000000000000002"
+              },
+              {
+                "Id": "770000000000000000000009",
+                "Type": "SetVariable",
+                "Target": "770000000000000000000003",
+                "Scope": "Dialogue",
+                "Value": 2
+              }
+            ]
+          },
+          {
+            "Id": "77000000000000000000000a",
+            "Side": "Npc",
+            "Text": "The note is now available under Character, Tasks, Story.",
+            "Trigger": {
+              "Type": "VariableValue",
+              "Target": "770000000000000000000003",
+              "Operator": "==",
+              "Value": 2
+            },
+            "Actions": [
+              {
+                "Id": "77000000000000000000000b",
+                "Type": "SetVariable",
+                "Target": "770000000000000000000003",
+                "Scope": "Dialogue",
+                "Value": 3
+              }
+            ]
+          },
+          {
+            "Id": "77000000000000000000000c",
+            "Side": "Player",
+            "Text": "Open your trading screen.",
+            "Trigger": {
+              "Type": "VariableValue",
+              "Target": "770000000000000000000003",
+              "Operator": "==",
+              "Value": 3
+            },
+            "Actions": [
+              {
+                "Id": "77000000000000000000000d",
+                "Type": "TradingScreenAction"
+              }
+            ]
+          },
+          {
+            "Id": "77000000000000000000000e",
+            "Side": "Player",
+            "Text": "Leave the visit.",
+            "Trigger": {
+              "Type": "VariableValue",
+              "Target": "770000000000000000000003",
+              "Operator": "==",
+              "Value": 3
+            },
+            "Actions": [
+              {
+                "Id": "77000000000000000000000f",
+                "Type": "QuitAction"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "EntryPoints": [
+      {
+        "Id": "770000000000000000000010",
+        "DialogId": "770000000000000000000004",
+        "TraderId": "54cb50c76803fa8b248b4571",
+        "Kind": "InLobby"
+      }
+    ]
+  }
+}

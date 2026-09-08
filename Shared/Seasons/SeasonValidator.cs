@@ -16,6 +16,7 @@ public static class SeasonValidator
         try
         {
             ValidateCore(season, result);
+            Story.StoryValidator.Validate(season, result);
         }
         catch (Exception e)
             when (e is NullReferenceException or InvalidCastException or ArgumentException or FormatException or OverflowException)
@@ -250,6 +251,7 @@ public static class SeasonValidator
         var visitedQuests = new HashSet<string>();
         foreach (var quest in quests)
         {
+            var storyQuest = s.Story?.Quests.Any(q => q.QuestId == quest.Key) == true;
             Identity(quest.Key, "Quests/" + quest.Key);
             if ((bool?)quest.Value["_seasonalEnabled"] == false)
             {
@@ -259,7 +261,11 @@ public static class SeasonValidator
             foreach (var condition in quest.Value.Descendants().OfType<JObject>().Where(c => c["conditionType"] != null))
             {
                 var kind = (string?)condition["conditionType"];
-                if (kind is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem"))
+                if (
+                    storyQuest
+                        ? !Story.StoryQuestCompatibility.Supports(condition)
+                        : kind is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem")
+                )
                 {
                     r.Add("Quests/" + quest.Key, "Unsupported objective: " + kind, s.Legacy ? "warning" : "error");
                 }
@@ -288,7 +294,19 @@ public static class SeasonValidator
                 {
                     var kind = (string?)condition["conditionType"];
                     Need(IsId((string?)condition["id"]), path, "Objective requires an identity.");
-                    Need((double?)condition["value"] is >= 1 and <= 1000000, path, "Objective requires a positive quantity or level.");
+                    if (!storyQuest)
+                    {
+                        Need((double?)condition["value"] is >= 1 and <= 1000000, path, "Objective requires a positive quantity or level.");
+                    }
+                    else if (condition["value"] != null)
+                    {
+                        var value = (double)condition["value"]!;
+                        Need(
+                            !double.IsNaN(value) && !double.IsInfinity(value) && Math.Abs(value) <= 1000000,
+                            path,
+                            "Story objective requires a finite value."
+                        );
+                    }
                     if (kind is "FindItem" or "HandoverItem")
                     {
                         Need(
@@ -313,7 +331,7 @@ public static class SeasonValidator
                         Need((int?)condition["value"] is >= 1 and <= 4, path, "Trader loyalty must be 1–4.");
                     }
 
-                    if (kind == "Quest")
+                    if (kind == "Quest" && !storyQuest)
                     {
                         Need(
                             condition["status"] is JArray statuses && statuses.Count == 1 && (int?)statuses[0] == 4,

@@ -12,7 +12,7 @@ using SPT.Common.Http;
 
 namespace SeasonalPerks.Client;
 
-[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.4.0")]
+[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.5.1")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 public sealed class Plugin : BaseUnityPlugin
 {
@@ -54,6 +54,9 @@ public sealed class Plugin : BaseUnityPlugin
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
         gameObject.AddComponent<SeasonHubUi>();
+        gameObject.AddComponent<Story.StoryRaidRuntime>();
+        gameObject.AddComponent<Story.StoryVisitRuntime>();
+        gameObject.AddComponent<Story.StoryCinematicRuntime>();
     }
 
     internal static string Localized(string key, string fallback)

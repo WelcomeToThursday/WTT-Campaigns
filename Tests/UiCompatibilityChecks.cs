@@ -73,6 +73,29 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            var startup = client
+                .MainModule.GetType("SeasonalPerks.Client.Patches.Session.BackendIdentity")
+                .Methods.Single(m => m.Name == "Prefix")
+                .Body.Instructions;
+            var protocol = startup.Single(i => i.Operand is MethodReference m && m.Name == "set_ProtocolVersion");
+            var serialize = startup.Single(i => i.Operand is MethodReference m && m.Name == "SerializeObject");
+            var post = startup.Single(i => i.Operand is MethodReference m && m.Name == "PostJson");
+            Check(
+                protocol.Previous.OpCode == Mono.Cecil.Cil.OpCodes.Ldc_I4_2
+                    && protocol.Offset < serialize.Offset && serialize.Offset < post.Offset
+                    && !startup.Any(i => Equals(i.Operand, "{}")),
+                "Initial backend snapshot sends creator protocol 2 before any game session exists"
+            );
+            var storyAvailability = client
+                .MainModule.GetType("SeasonalPerks.Client.Story.StoryClient")
+                .Methods.Single(m => m.Name == "get_Available")
+                .Body.Instructions;
+            Check(
+                storyAvailability.Any(i => Equals(i.Operand, "seasonal"))
+                    && storyAvailability.Any(i => i.Operand is MethodReference method && method.Name == "get_EffectiveProfileId")
+                    && !storyAvailability.Any(i => i.Operand is MethodReference method && method.Name == "get_HasStory"),
+                "Seasonal story interface requires the loaded character, not authored story content"
+            );
             var hub = client.MainModule.GetType("SeasonalPerks.Client.Hub.SeasonHubUi");
             Check(hub != null, "Season hub client adapter is packaged");
             var availability = hub!.Methods.Single(m => m.Name == "get_Available").Body.Instructions;

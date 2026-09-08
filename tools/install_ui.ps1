@@ -65,4 +65,11 @@ foreach ($file in $files)
     New-Item -ItemType Directory -Path (Split-Path $file.target -Parent) -Force | Out-Null
     Copy-Item -LiteralPath $file.source -Destination $file.target
 }
-Write-Output "Installed Seasonal Perks UI package. Previous mod files are backed up in $backup. Start the server, then the game."
+foreach ($file in $files)
+{
+    if ((Get-FileHash -LiteralPath $file.source -Algorithm SHA256).Hash -ne (Get-FileHash -LiteralPath $file.target -Algorithm SHA256).Hash)
+    {
+        throw "Installed checksum mismatch: $($file.relative). Previous files are backed up in $backup."
+    }
+}
+Write-Output "Installed and verified $($files.Count) Seasonal Perks files. Previous mod files are backed up in $backup. Start the server, then the game."

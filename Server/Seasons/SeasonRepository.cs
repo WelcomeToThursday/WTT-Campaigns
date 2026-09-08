@@ -284,6 +284,7 @@ public sealed class SeasonRepository
             definition.Pages = new() { new() };
             definition.SeasonalRewards.Clear();
             definition.Quests = new();
+            definition.Story = null;
             definition.Offers = new();
             definition.Crates.Clear();
             definition.ExchangeCrate = "";
@@ -343,6 +344,7 @@ public sealed class SeasonRepository
             }
         }
 
+        owned.UnionWith(SeasonalPerks.Shared.Story.StoryContent.OwnedIds(source.Story));
         var replacements = owned.ToDictionary(id => id, _ => NewId());
         JToken Rewrite(JToken token)
         {
@@ -382,13 +384,18 @@ public sealed class SeasonRepository
         }
         foreach (var quest in copy.Quests.OfType<JObject>())
         {
+            var storyQuest = copy.Story?.Quests.Any(q => q.QuestId == (string?)quest["_id"]) == true;
             if (
                 quest
                     .Descendants()
                     .OfType<JObject>()
                     .Any(c =>
                         c["conditionType"] != null
-                        && (string?)c["conditionType"] is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem")
+                        && (
+                            storyQuest
+                                ? !SeasonalPerks.Shared.Story.StoryQuestCompatibility.ConditionTypes.Contains((string)c["conditionType"]!)
+                                : (string?)c["conditionType"] is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem")
+                        )
                     )
             )
             {

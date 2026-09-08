@@ -12,15 +12,17 @@ using SPTarkov.Server.Core.Models.Eft.Match;
 namespace SeasonalPerks.Server.Patches.Session;
 
 [Injectable]
-public class RaidStartPatch(SeasonService seasons, HubGameplay hub) : AbstractPatch
+public class RaidStartPatch(SeasonService seasons, HubGameplay hub, SeasonalPerks.Server.Story.StoryService story) : AbstractPatch
 {
     private static SeasonService _seasons = null!;
     private static HubGameplay _hub = null!;
+    private static SeasonalPerks.Server.Story.StoryService _story = null!;
 
     protected override MethodBase GetTargetMethod()
     {
         _seasons = seasons;
         _hub = hub;
+        _story = story;
         return AccessTools.Method(typeof(MatchController), nameof(MatchController.StartLocalRaidAsync));
     }
 
@@ -48,6 +50,7 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub) : AbstractPa
         {
             var result = await original;
             await _hub.StartRaid(id, request, result);
+            await _story.StartRaid(id, request, result);
             return result;
         }
         catch

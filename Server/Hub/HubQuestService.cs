@@ -1,5 +1,6 @@
 using Newtonsoft.Json.Linq;
 using SeasonalPerks.Server.Seasons;
+using SeasonalPerks.Shared.Story;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
@@ -17,6 +18,7 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
     private readonly Dictionary<string, string> _unavailable = new();
     public HashSet<string> Imported { get; } = new();
     private readonly Dictionary<string, HashSet<string>> _seasonQuests = new();
+    private readonly HashSet<string> _storyQuests = new();
 
     public bool Allowed(string questId, string seasonId)
     {
@@ -28,6 +30,7 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
         foreach (var runtime in repository.Playable.Values)
         {
             var definition = runtime.Definition;
+            _storyQuests.UnionWith(definition.Story?.Quests.Select(q => q.QuestId) ?? []);
             _seasonQuests[definition.Id] = definition
                 .Quests.OfType<JObject>()
                 .Where(q => (bool?)q["_seasonalEnabled"] != false)
@@ -52,7 +55,9 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
                 continue;
             }
 
-            var definition = (JObject)pair.Value.DeepClone();
+            var definition = _storyQuests.Contains(pair.Key)
+                ? StoryQuestCompatibility.NativeTemplate(pair.Value)
+                : (JObject)pair.Value.DeepClone();
             definition.Remove("localization");
             templates.Quests[id] = json.Deserialize<Quest>(definition.ToString())!;
             Imported.Add(pair.Key);
@@ -100,7 +105,11 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
         {
             var kind = (string)condition["conditionType"]!;
             // New story state, map triggers, and encounters cannot be inferred from objective text.
-            if (kind is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem"))
+            if (
+                _storyQuests.Contains(id)
+                    ? !StoryQuestCompatibility.ConditionTypes.Contains(kind)
+                    : kind is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem")
+            )
             {
                 return Fail("This quest requires a raid or story condition not yet supported by the installed SPT version: " + kind + ".");
             }

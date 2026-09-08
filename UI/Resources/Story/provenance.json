@@ -1,0 +1,87 @@
+[
+  {
+    "file": "resources-4441.png",
+    "name": "Social_Trader-Screen_Chat_Button_1",
+    "source": "resources.assets",
+    "objectId": 4441,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "width": 187,
+    "height": 32,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "262adf738799d6c2545b13d7b021aa362b9412f546bbc7b9d8b499e662913b9e",
+    "resource": "visit-idle.png"
+  },
+  {
+    "file": "resources-6142.png",
+    "name": "Social_Trader-Screen_Chat_Button_0",
+    "source": "resources.assets",
+    "objectId": 6142,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "width": 187,
+    "height": 32,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "9f24a50e3331761dd6b61d2438e6bbb33e70a0eb6fca716824cf7f2ec8e2abb1",
+    "resource": "visit-hover.png"
+  },
+  {
+    "file": "resources-4436.png",
+    "name": "Social_Trader_Chat_Full-Call-Icon (2)_0",
+    "source": "resources.assets",
+    "objectId": 4436,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "width": 36,
+    "height": 36,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "fe285481ae6ac5ea24d6f82273841f7a1c5cd0baf75237d0709b404e6c798ad8",
+    "resource": "visit-icon.png"
+  },
+  {
+    "file": "resources-6146.png",
+    "name": "Social_Trader_Chat_Full-Call-Icon (2)_2",
+    "source": "resources.assets",
+    "objectId": 6146,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "width": 36,
+    "height": 36,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "c483042775f632704ca9715643ab98ee88fb89ef3526c182f45e5952899e58d9",
+    "resource": "visit-icon-hover.png"
+  },
+  {
+    "file": "resources-4440.png",
+    "name": "Icon_Pointer_0",
+    "source": "resources.assets",
+    "objectId": 4440,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "width": 16,
+    "height": 14,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "6b83a2b35d5db7cf1027afe8307f00dd169eba4b3766f98ab16f8aa66300ab93",
+    "resource": "reply.png"
+  }
+]

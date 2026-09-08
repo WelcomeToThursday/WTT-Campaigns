@@ -4,6 +4,7 @@ using SeasonalPerks.Shared.Configuration;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.Shared.Perks;
 using SeasonalPerks.Shared.Serialization;
+using SeasonalPerks.Shared.Story;
 
 namespace SeasonalPerks.Shared.Seasons;
 
@@ -36,6 +37,9 @@ public sealed class SeasonDefinition : ExtensibleJsonModel
     public List<SeasonItem> Items { get; set; } = new();
     public List<SeasonCrate> Crates { get; set; } = new();
     public JArray Quests { get; set; } = new();
+
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public StoryDefinition? Story { get; set; }
     public JArray Offers { get; set; } = new();
     public JObject ImportedItems { get; set; } = new();
     public SeasonStartingSetup Starting { get; set; } = new();

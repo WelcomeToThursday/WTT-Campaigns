@@ -33,6 +33,22 @@ public sealed class SeasonService(
 )
 {
     private const string StateKey = "cjSeasonalPerksState";
+
+    private static string StoryChapters(PmcData? pmc, SeasonalPerks.Shared.Story.StoryDefinition? story)
+    {
+        if (pmc == null || story == null)
+        {
+            return "";
+        }
+        var facts = new SeasonalPerks.Shared.Story.StoryFacts
+        {
+            QuestStatuses = (pmc.Quests ?? []).ToDictionary(q => q.QId.ToString(), q => q.Status.ToString()),
+        };
+        return story.Chapters.Count(c => SeasonalPerks.Shared.Story.StoryRules.ChapterComplete(c, story, facts))
+            + "/"
+            + story.Chapters.Count;
+    }
+
     private const string LinkKey = "cjSeasonalPerksAccount";
     private readonly ConcurrentDictionary<string, AccountLink> _links = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates = new();
@@ -240,6 +256,7 @@ public sealed class SeasonService(
             Locale = definition.Locales["en"],
             Unavailable = Unsupported(definition.Perks),
             Rules = definition.Rules,
+            HasStory = definition.Story != null,
             ActiveMode = link.Mode,
             EffectiveProfileId = EffectiveId(root),
             State = seasonal == null ? new PerkState() : State(seasonal),
@@ -261,6 +278,7 @@ public sealed class SeasonService(
                     Name = pmc?.Info?.Nickname ?? entry?.Name ?? "Wiped character",
                     Wiped = entry?.Wiped == true,
                     Level = pmc?.Info?.Level ?? 1,
+                    StoryChapters = StoryChapters(pmc, pack?.Definition.Story),
                     Exists = pmc?.Info != null,
                     Side = pmc?.Info?.Side ?? "Usec",
                     Visual = pmc?.Info == null ? null : Visual(pmc),

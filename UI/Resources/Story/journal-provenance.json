@@ -1,0 +1,556 @@
+[
+  {
+    "file": "sharedassets44-654.png",
+    "name": "ChaptersBackground",
+    "source": "sharedassets44.assets",
+    "objectId": 654,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 120,
+    "height": 808,
+    "border": [
+      0.0,
+      30.0,
+      0.0,
+      769.0
+    ],
+    "sha256": "a4103953aadb245e18856b388d3bb19d9a158b65d4bd1bf8a84b4f3d1154a1a9",
+    "resource": "journal-rail"
+  },
+  {
+    "file": "resources-5972.png",
+    "name": "Allscreens_Borders_Default",
+    "source": "resources.assets",
+    "objectId": 5972,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "width": 3,
+    "height": 3,
+    "border": [
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "sha256": "53bf243ddb778b08622b3793410b7b5848de3629fbc0f635dfa139c5cd14dde0",
+    "resource": "journal-border"
+  },
+  {
+    "file": "sharedassets44-895.png",
+    "name": "QuestTabChapterImageMask",
+    "source": "sharedassets44.assets",
+    "objectId": 895,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 1870,
+    "height": 300,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "a8b3f88eb7017714d50872501edb8008f48cb1c0080434616f8e295c2f31fd95",
+    "resource": "journal-title-mask"
+  },
+  {
+    "file": "sharedassets44-660.png",
+    "name": "TitleSeparator",
+    "source": "sharedassets44.assets",
+    "objectId": 660,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 2,
+    "height": 150,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "228c58da06e3de89faf69aaf8df1e7999699ec7f8a488278d8322059fe6f127d",
+    "resource": "journal-title-separator"
+  },
+  {
+    "file": "sharedassets44-509.png",
+    "name": "ChapterUnavailable",
+    "source": "sharedassets44.assets",
+    "objectId": 509,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 150,
+    "height": 150,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "04c0172c5d190eba06c0c367627250028f0c7fc13ca334bc4c6c85f840bf7dce",
+    "resource": "journal-active"
+  },
+  {
+    "file": "sharedassets44-510.png",
+    "name": "ChapterSucceeded",
+    "source": "sharedassets44.assets",
+    "objectId": 510,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 150,
+    "height": 150,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "409fc728eebee5a8a2ce987d7ab43b7c8a2be65dd12f46ba0616d2ab8f129a95",
+    "resource": "journal-complete"
+  },
+  {
+    "file": "sharedassets44-478.png",
+    "name": "ChapterFailed",
+    "source": "sharedassets44.assets",
+    "objectId": 478,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 150,
+    "height": 150,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "4d670fc52970c025381adb19a5c16537246b8c52c36ad41fb490fa3d8f2eeb68",
+    "resource": "journal-failed"
+  },
+  {
+    "file": "sharedassets44-750.png",
+    "name": "ChapterContentBackground",
+    "source": "sharedassets44.assets",
+    "objectId": 750,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 64,
+    "height": 64,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "a41d61e353396af5923f4ec3b47e36a64f78bba6f3396ee02e70a6fd6e4a8ec1",
+    "resource": "journal-content"
+  },
+  {
+    "file": "sharedassets44-820.png",
+    "name": "UnreadWarningIcon",
+    "source": "sharedassets44.assets",
+    "objectId": 820,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 34,
+    "height": 32,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "e409fdbe90b36d5099ab8afbfcb85481e885840f8f54e55a49ff1826577ea532",
+    "resource": "journal-unread"
+  },
+  {
+    "file": "sharedassets44-708.png",
+    "name": "ExpandIcon",
+    "source": "sharedassets44.assets",
+    "objectId": 708,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 28,
+    "height": 20,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "a1ab8630a83b29d3137d592f79980a0d698e9ce11e73cb973982b82427e713be",
+    "resource": "journal-expand"
+  },
+  {
+    "file": "sharedassets44-682.png",
+    "name": "ChapterTitleShadow",
+    "source": "sharedassets44.assets",
+    "objectId": 682,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 64,
+    "height": 70,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "022357166d1a39c237acc78fe2432a9324f22b473ccff8e7ba2950311b371aa0",
+    "resource": "journal-title-shadow"
+  },
+  {
+    "file": "sharedassets44-936.png",
+    "name": "ChapterTasksShadow",
+    "source": "sharedassets44.assets",
+    "objectId": 936,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "width": 32,
+    "height": 70,
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "sha256": "160006546268b08ae757494e6d37afd199118a77b7528e2199bb223861292447",
+    "resource": "journal-task-shadow"
+  },
+  {
+    "resource": "journal-chapterbackactivenormal",
+    "name": "ChapterBackActiveNormal",
+    "source": "sharedassets44.assets",
+    "objectId": 505,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "bb81652004de82522ca92a9830f4c319d2680979e6ed4d0d00709017abcbab9e",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-chapterbackfinishednormal",
+    "name": "ChapterBackFinishedNormal",
+    "source": "sharedassets44.assets",
+    "objectId": 477,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "89a517072482c2d0450a7ed5728ec7040a724910092186fede6e486568061132",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-chapterbackfailednormal",
+    "name": "ChapterBackFailedNormal",
+    "source": "sharedassets44.assets",
+    "objectId": 497,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "984bcc031a882213a12c63c6bba347165fcac652c06fa0bb75315c21af0868af",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-chapterbackactiveselected",
+    "name": "ChapterBackActiveSelected",
+    "source": "sharedassets44.assets",
+    "objectId": 473,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "cd0d46c187dd55395286c6fbd89ad10ea310a0aa471cbf319a876003835890e2",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-chapterbackfinishedselected",
+    "name": "ChapterBackFinishedSelected",
+    "source": "sharedassets44.assets",
+    "objectId": 982,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "1b2349078c2a488e51c61ad0c6bc0cda8187ab548e492c2439dfbabce875fb83",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-chapterbackfailedselected",
+    "name": "ChapterBackFailedSelected",
+    "source": "sharedassets44.assets",
+    "objectId": 488,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "c90d331916c725f4273bae17fa186342d3112159c53b5d53551a17934ca45bd8",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-chapterfinishedicon",
+    "name": "ChapterFinishedIcon",
+    "source": "sharedassets44.assets",
+    "objectId": 1003,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "f3c5d9e806e9483bdcec8e6fe073f19f43c89fb4b964a3635b23ba754e329bc5",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-chapterfailedicon",
+    "name": "ChapterFailedIcon",
+    "source": "sharedassets44.assets",
+    "objectId": 988,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "c427ed9d64d50d6598988666a2d5493ec6e0e260d1ff98786960cf1e50660333",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-unreadwarningicon",
+    "name": "UnreadWarningIcon",
+    "source": "sharedassets44.assets",
+    "objectId": 820,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "e409fdbe90b36d5099ab8afbfcb85481e885840f8f54e55a49ff1826577ea532",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-selectedchaptermarker",
+    "name": "SelectedChapterMarker",
+    "source": "sharedassets44.assets",
+    "objectId": 607,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "02cea2e660717785c923e65d51786ad8c74ac6cce5cf802eaabe1b94a8e22b3b",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-check",
+    "name": "Check",
+    "source": "sharedassets44.assets",
+    "objectId": 983,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "2494b4a77617b996f48de37115b6e73dcd867dc7fe53429815265af522362f65",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-cross",
+    "name": "Cross",
+    "source": "sharedassets44.assets",
+    "objectId": 998,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "b6f91c799e16a20149c0611f16d29a54feee843ed2a9315ce86472ad21ea76a2",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-skip",
+    "name": "Skip",
+    "source": "sharedassets44.assets",
+    "objectId": 1001,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "85828be2c7340286ba9654e515405356a66d19297cd5fe36651da3b463aab1d4",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-checkboxbackground",
+    "name": "CheckboxBackground",
+    "source": "sharedassets44.assets",
+    "objectId": 581,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "a63d4e4eb3147089886288d8892f3b2e8ba874bc2dc8209332d9ae2d2e75ed44",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-objectiveprogress",
+    "name": "ObjectiveProgress",
+    "source": "resources.assets",
+    "objectId": 5243,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "776df6ca3479d2b059de882b9d5c63f2bba9863729ba8e0a5b49848ed4671993",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-objectiveprogressback",
+    "name": "ObjectiveProgressBack",
+    "source": "resources.assets",
+    "objectId": 5684,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "71ef16abbcf1388c1e9258851b8e9351aeae542dcb5f08ee217387c68f09e1b8",
+    "border": [
+      4.0,
+      3.0,
+      4.0,
+      3.0
+    ]
+  },
+  {
+    "resource": "journal-icon_group_dialogue_0",
+    "name": "icon_group_dialogue_0",
+    "source": "resources.assets",
+    "objectId": 4982,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "659689eb45d280ee95f00444a42f9952c3773b5193bc301422e8b46a20e2c4a9",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-button_idle",
+    "name": "button_idle",
+    "source": "sharedassets44.assets",
+    "objectId": 610,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "5b3d53a4c0b9835a8613477905972c524c087fbf4b48b339dec29669da244546",
+    "border": [
+      60.0,
+      0.0,
+      60.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-social_trader_chat_call-icons-(2)_4",
+    "name": "Social_Trader_Chat_Call-Icons (2)_4",
+    "source": "resources.assets",
+    "objectId": 4449,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "c7a30983f1af2b77c9ec53829362a0d6f32b500f43c889d0f426c30846005833",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-social_trader_chat_call-icons-(2)_1",
+    "name": "Social_Trader_Chat_Call-Icons (2)_1",
+    "source": "resources.assets",
+    "objectId": 6131,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "7acd1eafcd1fc4dc284c62422bddb15bda110b40d14ab84829e54301c663a6da",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-social_trader_chat_call-icons-(2)_2",
+    "name": "Social_Trader_Chat_Call-Icons (2)_2",
+    "source": "resources.assets",
+    "objectId": 4453,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "d276fb0e81c4e46161423494bc768d6b9bcfe74d8c0aae0851928da4e64c3319",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-social_trader_chat_call-icons-(2)_5",
+    "name": "Social_Trader_Chat_Call-Icons (2)_5",
+    "source": "resources.assets",
+    "objectId": 6120,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "1cf4380a42c7263eda4c6e1636477eb20091576b406878251f728d2aed2b7092",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-social_trader_chat_call-icons-(2)_0",
+    "name": "Social_Trader_Chat_Call-Icons (2)_0",
+    "source": "resources.assets",
+    "objectId": 6124,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "ea50623cf2b3461790bfaccd50a8904772a8b4761cd47e185ad2a359a52c929d",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-social_trader_chat_call-icons-(2)_3",
+    "name": "Social_Trader_Chat_Call-Icons (2)_3",
+    "source": "resources.assets",
+    "objectId": 4432,
+    "sourceSha256": "f73a8c8d655d0112bad919016491278fc05f88ca8f610eba90638e5cbb3d206b",
+    "sha256": "ce5afde2770ed418d44e9a86fcd398c78473162f26049d1ec729aa94737e9478",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  },
+  {
+    "resource": "journal-craftquestlinkicon",
+    "name": "CraftQuestLinkIcon",
+    "source": "sharedassets44.assets",
+    "objectId": 810,
+    "sourceSha256": "e3f273b20f1e593e061676cc76ab44aaaa6297f9fc947fa9d5bface7806190bb",
+    "sha256": "c50b4649d2a0cd6ca0a19f9c64bffbe1bbca9165aa770f13373de556ded69548",
+    "border": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ]
+  }
+]

@@ -232,6 +232,7 @@ public sealed partial class SeasonUi : MonoBehaviour
                     Available = character.Available,
                     Name = character.Name,
                     Level = character.Level,
+                    StoryChapters = character.StoryChapters,
                     Exists = character.Exists,
                     Wiped = character.Wiped,
                     Side = character.Side,

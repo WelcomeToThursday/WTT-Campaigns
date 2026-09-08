@@ -21,6 +21,7 @@
     <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedDir)UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="UnityEngine.AnimationModule" HintPath="$(ManagedDir)UnityEngine.AnimationModule.dll" Private="false" />
     <Reference Include="UnityEngine.VideoModule" HintPath="$(ManagedDir)UnityEngine.VideoModule.dll" Private="false" />
+    <Reference Include="UnityEngine.DirectorModule" HintPath="$(ManagedDir)UnityEngine.DirectorModule.dll" Private="false" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedDir)UnityEngine.CoreModule.dll" Private="false" />
     <Reference Include="UnityEngine.UI" HintPath="$(ManagedDir)UnityEngine.UI.dll" Private="false" />
     <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedDir)UnityEngine.UIModule.dll" Private="false" />
@@ -37,6 +38,11 @@
     <Reference Include="spt-common" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-common.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
+    <None
+      Include="Resources\StoryMedia\**\*"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="StoryMedia\%(RecursiveDir)%(Filename)%(Extension)"
+    />
     <None
       Include="Resources\seasonalperks_ui.bundle"
       CopyToOutputDirectory="PreserveNewest"
