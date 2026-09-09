@@ -23,7 +23,7 @@ public sealed record Metadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMeta
     public bool HasPrepatcher { get; init; }
     public List<string>? Incompatibilities { get; init; }
 
-    public Dictionary<string, Range>? ModDependencies { get; init; }
+    public Dictionary<string, Range>? ModDependencies { get; init; } = new() { ["com.wtt.contentbackport"] = new(">=2.0.1") };
     public string? Url { get; init; }
     public string License { get; init; } = "MIT (code); game assets retain their original ownership";
 }

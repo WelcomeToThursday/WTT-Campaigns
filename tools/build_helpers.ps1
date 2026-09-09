@@ -22,20 +22,6 @@ function Copy-SeasonalServerOutput {
     foreach ($name in @('WTT-Seasonal.Server.dll', 'WTT-Seasonal.Shared.dll', 'Newtonsoft.Json.dll', 'WTT-Seasonal.Server.deps.json', 'data', 'icons', 'hub-images', 'wwwroot')) {
         Copy-Item -LiteralPath (Join-Path $Source $name) -Destination $Destination -Recurse -Force
     }
-    $itemManifest = Get-Content -LiteralPath (Join-Path $Source 'bundles.json') -Raw | ConvertFrom-Json
-    $itemAudit = Get-Content -LiteralPath (Join-Path $Source 'season-items-audit.json') -Raw | ConvertFrom-Json
-    if ($itemManifest.manifest.Count -ne 9 -or $itemAudit.bundles.Count -ne 9) { throw 'The season item asset set is incomplete.' }
-    foreach ($entry in $itemManifest.manifest) {
-        if ($entry.key -notmatch '^wtt-seasonal/assets/[a-z0-9_/.]+\.bundle$' -or $entry.key.Contains('..')) { throw 'Invalid season bundle path.' }
-        $sourceBundle = Join-Path $Source ('bundles/' + $entry.key)
-        $targetBundle = Join-Path $Destination ('bundles/' + $entry.key)
-        if (!(Test-Path -LiteralPath $sourceBundle -PathType Leaf)) { throw ('Missing season item bundle: ' + $entry.key) }
-        $record = @($itemAudit.bundles | Where-Object { $_.key -eq $entry.key })
-        if ($record.Count -ne 1 -or (Get-FileHash -LiteralPath $sourceBundle -Algorithm SHA256).Hash -ne $record[0].sha256) { throw ('Season item bundle has not passed its script/texture audit: ' + $entry.key) }
-        New-Item -ItemType Directory -Path (Split-Path $targetBundle -Parent) -Force | Out-Null
-        Copy-Item -LiteralPath $sourceBundle -Destination $targetBundle -Force
-    }
-    Copy-Item -LiteralPath (Join-Path $Source 'bundles.json') -Destination $Destination -Force
 }
 
 function Backup-LegacySeasonalAssemblies {

@@ -38,6 +38,7 @@ public sealed partial class HubGameplay(
     private readonly Dictionary<string, TraderAssort> _offers = new();
     private readonly Dictionary<string, string> _offerIds = new();
     private bool _ready;
+    private HubDocumentLoot _documentLoot = null!;
     private Dictionary<string, HubGameplay>? _runtimes;
     private HubGameplay? _manager;
     private SeasonRuntimeSnapshot _runtime = null!;
@@ -101,6 +102,7 @@ public sealed partial class HubGameplay(
         _runtime = runtime;
         _catalogue = runtime.Gameplay;
         _presentation = runtime.Hub;
+        _documentLoot = new HubDocumentLoot(File.ReadAllText(Path.Combine(repository.ModDirectory, "data", "hub-gameplay.json")));
         var settings = runtime.Definition.Collection;
         Configuration = new HubConfiguration
         {

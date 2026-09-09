@@ -8,9 +8,9 @@ from test_integration import PROJECT, SERVER, request, check, checks
 from test_hub_gameplay import read, save
 
 
-def main():
+def main(account=None):
     creator = '--creator' in sys.argv
-    account = read(PROJECT / ('Testing/creator-acceptance-state.json' if creator else 'Testing/restart-state.json'))
+    account = account or read(PROJECT / ('Testing/creator-acceptance-state.json' if creator else 'Testing/restart-state.json'))
     fixture = read(SERVER / 'user/mods/SeasonalPerks/creator/acceptance-fixture.json') if creator else None
     def call(path, data=None, session=None):
         if creator and path.startswith('/wtt-seasonal/'):
@@ -27,26 +27,27 @@ def main():
         before = call('/wtt-seasonal/hub', session=child)
         profile = call('/client/game/profile/list', session=child)[0]
         start = call('/client/match/local/start', {'location': 'bigmap', 'playerSide': 'pmc', 'mode': 'regular', 'timeVariant': 'CURR', 'transitionType': 0}, child)
-        containers = [(loot, item) for loot in start['locationLoot']['Loot'] for item in loot.get('Items', []) if item['_tpl'] in docs]
-        check(len(containers) == min(8, before['RemainingDocuments']), 'Raid spawn count respects remaining allowance')
-        check(len({loot['Root'] for loot, _ in containers}) == len(containers), 'Documents use distinct containers')
-        for loot, item in containers:
-            host = next(i for i in loot['Items'] if i['_id'] == item['parentId'])
-            name = templates[host['_tpl']]['_name'].lower()
-            check(any(n in name for n in ['jacket', 'drawer', 'safe', 'duffle', 'duffel', 'sportbag']), 'Document uses an eligible container')
-            check(item['upd']['StackObjectsCount'] == 1, 'One ordinary document per selected container')
+        spawns = [(loot, item) for loot in start['locationLoot']['Loot'] for item in loot.get('Items', []) if item['_tpl'] in docs]
+        check(len(spawns) == min(8, before['RemainingDocuments']), 'Raid spawn count respects remaining allowance')
+        check(len({loot['Root'] for loot, _ in spawns}) == len(spawns), 'Documents use distinct loose-loot points')
+        allowed = {cap['TemplateId'] for cap in read(PROJECT / 'data/hub-gameplay.json')['CapturedMapCaps']['bigmap']}
+        for loot, item in spawns:
+            check(loot.get('IsContainer') is False and len(loot['Items']) == 1, 'Document uses a standalone loose-loot point')
+            check(loot['Root'] == item['_id'] and not item.get('parentId'), 'Loose document is the spawn root without a container parent')
+            check(creator or item['_tpl'] in allowed, 'Document type is allowed on Customs')
+            check(item['upd']['StackObjectsCount'] == 1, 'One ordinary document per selected loose-loot point')
         check(call('/wtt-seasonal/hub/claim', {'OperationId': secrets.token_hex(16), 'ExpectedRevision': before['Revision'], 'RewardId': before['Pages'][0]['Rewards'][1]['Id']}, child).get('Error'), 'Transactions are blocked during raids')
-        for _, item in containers:
+        for _, item in spawns:
             event = {'OperationId': secrets.token_hex(16), 'ItemId': item['_id'], 'PickedUp': True}
             check(call('/wtt-seasonal/hub/raid-document', event, child).get('Committed'), 'First pickup acknowledged')
             picked = call('/wtt-seasonal/hub', session=child)
             call('/wtt-seasonal/hub/raid-document', event, child)
             check(call('/wtt-seasonal/hub', session=child) == picked, 'Reconnect retry cannot count a pickup twice')
         after_pickups = call('/wtt-seasonal/hub', session=child)
-        check(after_pickups['RemainingDocuments'] == before['RemainingDocuments'] - len(containers), 'Each new unit consumes one allowance')
+        check(after_pickups['RemainingDocuments'] == before['RemainingDocuments'] - len(spawns), 'Each new unit consumes one allowance')
         extracted = []
-        if containers:
-            item = copy.deepcopy(containers[0][1])
+        if spawns:
+            item = copy.deepcopy(spawns[0][1])
             target = secrets.token_hex(12)
             split = {'OperationId': secrets.token_hex(16), 'ItemId': item['_id'], 'TargetId': target, 'Count': 1, 'Split': True, 'PickedUp': True}
             check(call('/wtt-seasonal/hub/raid-document', split, child).get('Committed'), 'Split conserves a picked-up identity')

@@ -1407,7 +1407,7 @@
     }
   ],
   "adaptations": {
-    "documents": "Native information-item parent; original template IDs, models, dimensions and properties preserved. Prefab bundle keys use the wtt-seasonal/ prefix to avoid content-mod collisions.",
+    "documents": "Native information-item parent; original template IDs, models, dimensions and properties preserved. Original prefab bundle keys resolve through WTT-ContentBackport; Seasonal does not package duplicate item bundles.",
     "crates": "Original random-loot-container parent retained. Claim/exchange gated until a verified loot pool is available."
   }
 }

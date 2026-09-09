@@ -60,7 +60,7 @@ The package contains all icons and has no runtime CDN requests. Runtime offline 
 
 ## Battle Pass gameplay 0.2.0
 
-See [Battle Pass gameplay](battle-pass-gameplay.md) for capture changes, dependency gates, item recovery and tests. Documents/crates register during Preload, before the SPT database-integrity checkpoint. Nine bundles use unique `wtt-seasonal/` keys and SDK-generated PreviewPivot references mapped to the installed native type.
+See [Battle Pass gameplay](battle-pass-gameplay.md) for capture changes, dependency gates, item recovery and tests. Documents/crates register during Preload, before the SPT database-integrity checkpoint. WTT-ContentBackport 2.0.1 or later supplies the nine document/crate bundles under their original keys; Seasonal retains the item JSON and localization and does not ship duplicate item bundles.
 
 Native document hooks bind successful `ItemController.RaiseAddEvent` and `MergeResult`, `TransferResult`, and `SplitResult.RaiseEvents`. The profile commit adapter verifies the SPT 4.1 `SaveServer.profiles` concurrent dictionary because `GetProfiles()` returns a copy. Raid-end deduplication and native inventory operations share the account lock. These bindings must be rechecked when SPT changes. No CommonLib quest import dependency is added.
 

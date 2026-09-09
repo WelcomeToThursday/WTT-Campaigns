@@ -77,7 +77,7 @@ def main():
     save(ROOT / 'data/season-items.json', {t: items[t] for t in sorted(ids)})
     save(ROOT / 'data/locales/season-items-en.json', {k: v for k, v in locale.items() if k.split(' ')[0] in ids})
     save(ROOT / 'data/season-items-provenance.json', {'sources': sources, 'assets': list(assets.values()),
-         'adaptations': {'documents': 'Native information-item parent; original template IDs, models, dimensions and properties preserved. Prefab bundle keys use the wtt-seasonal/ prefix to avoid content-mod collisions.',
+         'adaptations': {'documents': 'Native information-item parent; original template IDs, models, dimensions and properties preserved. Original prefab bundle keys resolve through WTT-ContentBackport; Seasonal does not package duplicate item bundles.',
                          'crates': 'Original random-loot-container parent retained. Claim/exchange gated until a verified loot pool is available.'}})
     save(ASSETS / 'Recovered/season-items.json', {'liveWindows': str(windows), 'assets': list(assets.values()), 'textures': textures})
     print('Recovered', len(ids), 'season item definitions and', len(assets), 'unique models.')

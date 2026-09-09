@@ -63,50 +63,20 @@ public sealed partial class HubGameplay
             Configuration.MapCounts.GetValueOrDefault(request.Location ?? "", Configuration.DocumentsPerRaid),
             HubRules.Remaining(state, Now, _presentation.DocumentLimit, _presentation.WindowSeconds)
         );
-        // A complete dependency set keeps all eight types equally likely.
-        if (documents.All(t => templates.Items.ContainsKey(new MongoId(t))))
-        {
-            foreach (
-                var container in loot.Loot!.Where(l => l.IsContainer == true).OrderBy(_ => RandomNumberGenerator.GetInt32(int.MaxValue))
-            )
-            {
-                if (count <= 0)
-                {
-                    break;
-                }
-
-                var contents = container.Items?.ToList();
-                var host = contents?.FirstOrDefault(i => i.Id.ToString() == container.Root);
-                if (host == null || !templates.Items.TryGetValue(host.Template, out var template))
-                {
-                    continue;
-                }
-
-                var name = template.Name?.ToLowerInvariant() ?? "";
-                if (!new[] { "jacket", "drawer", "safe", "duffle", "duffel", "sportbag" }.Any(name.Contains))
-                {
-                    continue;
-                }
-
-                var tpl = documents[RandomNumberGenerator.GetInt32(documents.Length)];
-                var item = new SptLootItem
-                {
-                    Id = new MongoId(),
-                    Template = new MongoId(tpl),
-                    ParentId = host.Id.ToString(),
-                    Upd = new Upd { StackObjectsCount = 1, SpawnedInSession = true },
-                };
-                if (!PlaceDocument(host, item, contents!))
-                {
-                    continue;
-                }
-
-                contents!.Add(item);
-                container.Items = contents;
-                count--;
-            }
-        }
-        foreach (var item in loot.Loot!.SelectMany(l => l.Items ?? []))
+        var available = documents.Where(t => templates.Items.ContainsKey(new MongoId(t)));
+        var spawned = _documentLoot.Place(
+            loot.Loot!,
+            request.Location,
+            available,
+            count,
+            template =>
+                templates.Items.TryGetValue(template, out var item)
+                && item.Properties?.QuestItem != true
+                && SeasonalPerks
+                    .Server.Effects.TemplateFilters.Ancestors(templates, template)
+                    .Any(parent => parent is "5448eb774bdc2d0a728b4567" or "567849dd4bdc2d150f8b456e")
+        );
+        foreach (var item in spawned)
         {
             if (documents.Contains(item.Template.ToString()))
             {
@@ -125,103 +95,6 @@ public sealed partial class HubGameplay
         Store(pmc, state);
         await Commit(id, original, staged);
         response.LocationLoot = loot;
-    }
-
-    private bool PlaceDocument(Item host, Item document, List<SptLootItem> contents)
-    {
-        var grids = templates.Items[host.Template].Properties?.Grids;
-        var size = inventory.GetItemSize(document.Template, document.Id, [document]);
-        foreach (var grid in grids ?? [])
-        {
-            var ancestors = new HashSet<MongoId>();
-            var current = document.Template;
-            while (ancestors.Add(current) && templates.Items.TryGetValue(current, out var ancestor))
-            {
-                current = ancestor.Parent;
-            }
-            var filters = grid.Properties?.Filters?.ToArray() ?? [];
-            if (
-                filters.Length > 0
-                && !filters.Any(f =>
-                    f.Locked != true
-                    && (f.Filter?.Count is not > 0 || f.Filter.Overlaps(ancestors))
-                    && f.ExcludedFilter?.Overlaps(ancestors) != true
-                )
-            )
-            {
-                continue;
-            }
-            var width = grid.Properties?.CellsH ?? 0;
-            var height = grid.Properties?.CellsV ?? 0;
-            if (width <= 0 || height <= 0)
-            {
-                continue;
-            }
-
-            var occupied = new bool[width, height];
-            var valid = true;
-            foreach (var child in contents.Where(i => i.ParentId == host.Id.ToString() && i.SlotId == grid.Name))
-            {
-                if (child.Location == null)
-                {
-                    valid = false;
-                    break;
-                }
-                var location = child.Location as ItemLocation ?? json.Deserialize<ItemLocation>(json.Serialize(child.Location)!)!;
-                var x = location.X ?? -1;
-                var y = location.Y ?? -1;
-                var childSize = inventory.GetItemSize(child.Template, child.Id, contents);
-                var rotated = location.R == ItemRotation.Vertical;
-                var w = rotated ? childSize.Item2 : childSize.Item1;
-                var h = rotated ? childSize.Item1 : childSize.Item2;
-                if (x < 0 || y < 0 || x + w > width || y + h > height)
-                {
-                    valid = false;
-                    break;
-                }
-                for (var xx = x; xx < x + w; xx++)
-                {
-                    for (var yy = y; yy < y + h; yy++)
-                    {
-                        occupied[xx, yy] = true;
-                    }
-                }
-            }
-            if (!valid)
-            {
-                continue;
-            }
-
-            for (var y = 0; y <= height - size.Item2; y++)
-            {
-                for (var x = 0; x <= width - size.Item1; x++)
-                {
-                    var free = true;
-                    for (var xx = x; xx < x + size.Item1; xx++)
-                    {
-                        for (var yy = y; yy < y + size.Item2; yy++)
-                        {
-                            free &= !occupied[xx, yy];
-                        }
-                    }
-
-                    if (!free)
-                    {
-                        continue;
-                    }
-
-                    document.SlotId = grid.Name;
-                    document.Location = new ItemLocation
-                    {
-                        X = x,
-                        Y = y,
-                        IsSearched = false,
-                    };
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     public async Task<HubResult> Pickup(string sessionId, HubRequest request)

@@ -5,10 +5,12 @@ using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
+using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Config;
+using SPTarkov.Server.Core.Models.Spt.Mod;
 using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Services.Locales;
 using SPTarkov.Server.Core.Utils;
@@ -29,15 +31,29 @@ public sealed class SeasonContentService(
     LocaleTable localeTable,
     HideoutTable hideout,
     JsonUtil json,
-    ICloner cloner
+    ICloner cloner,
+    IReadOnlyList<SptMod> loadedMods
 ) : IOnLoad
 {
     public bool Ready { get; private set; }
 
     private readonly Dictionary<string, string> _owners = new();
+    private SeasonItemBundles _itemBundles = null!;
 
     public Task OnLoadAsync(CancellationToken cancellationToken)
     {
+        // SPT loads BundleLoader after Preload; inspect the loaded mods' manifests here.
+        _itemBundles = new SeasonItemBundles(loadedMods.Select(mod => mod.GetModPath()));
+        foreach (var item in repository.Legacy.ImportedItems.Values)
+        {
+            if (_itemBundles.Resolve(item.Properties.Prefab!.Path!) == null)
+            {
+                throw new InvalidDataException(
+                    "WTT-ContentBackport is missing a required seasonal item bundle: " + item.Properties.Prefab.Path
+                );
+            }
+        }
+
         // Keep legacy templates available to old profiles even when another season is active.
         Register(repository.Legacy, false);
         foreach (var pack in repository.Packs())
@@ -589,13 +605,8 @@ public sealed class SeasonContentService(
             }
 
             var item = SeasonCompiler.Copy(pair.Value);
-            var bundle = item.Properties.Prefab!.Path!;
-            if (!bundle.StartsWith("wtt-seasonal/", StringComparison.Ordinal))
-            {
-                bundle = "wtt-seasonal/" + bundle;
-            }
-
-            if (!File.Exists(Path.Combine(repository.ModDirectory, "bundles", bundle)))
+            var bundle = _itemBundles.Resolve(item.Properties.Prefab!.Path!);
+            if (bundle == null)
             {
                 continue;
             }

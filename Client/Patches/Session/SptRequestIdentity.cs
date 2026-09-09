@@ -15,17 +15,6 @@ internal class SptRequestIdentity : ModulePatch
     [PatchPostfix]
     private static void Postfix(SPT.Common.Http.Client __instance, string path, HttpRequestMessage __result)
     {
-        // Each request captures its identity at creation, including requests already in flight.
-        if (
-            !ReferenceEquals(__instance, RequestHandler.HttpClient)
-            || path.StartsWith("/wtt-seasonal/", StringComparison.Ordinal)
-            || string.IsNullOrEmpty(Plugin.SessionId)
-        )
-        {
-            return;
-        }
-
-        __result.Headers.Remove("Cookie");
-        __result.Headers.Add("Cookie", "PHPSESSID=" + Plugin.SessionId);
+        RequestIdentity.Apply(ReferenceEquals(__instance, RequestHandler.HttpClient), path, Plugin.SessionId, __result);
     }
 }

@@ -12,9 +12,11 @@ Trader rewards map captured offer IDs to installed offers using trader, root ite
 
 ## Documents and transactions
 
-The default is up to eight ordinary documents per Seasonal PMC raid, selected with equal type weights. Each occupies a different eligible jacket, filing drawer, safe or duffel. Container filters and free grid cells are checked; existing loot is retained. Normal and Scav raids receive no injection. Captured map-specific caps are retained as reference data, not treated as probabilities.
+The default is up to eight ordinary documents per Seasonal PMC raid. Original document types are restricted to the maps listed in `CapturedMapCaps` in `data/hub-gameplay.json`, matched without case sensitivity, and cannot exceed their captured per-type caps. Types are selected with equal weights among those still eligible on that map. Unlisted maps receive none of the original documents. Custom document templates retain their season-configured map limits. Normal and Scav raids receive no injection.
 
-Optional `hub-config.json` beside the server DLL accepts `DocumentsPerRaid` (0–8), `MapCounts` (map names to 0–8) and `ClassifiedChancePercent` (0–100, default 5). Missing configuration uses defaults. The catalogue and all installed image/model dependencies operate locally.
+Documents spawn only as standalone loose loot. Each replaces one ordinary loose barter/information item at its existing generated world position and rotation. Containers, mandatory spawns, quest items and attached item trees are excluded. If there are too few eligible loose points, fewer documents spawn; there is no container fallback. Only documents placed by this raid injector receive new pickup identities.
+
+Optional `hub-config.json` beside the server DLL accepts `DocumentsPerRaid` (0–8), `MapCounts` (map names to 0–8) and `ClassifiedChancePercent` (0–100, default 5). Overrides change the total raid cap without bypassing the original document map assignments or per-type caps. Missing configuration uses defaults. The catalogue and all installed image/model dependencies operate locally.
 
 The first pickup starts a server-timed 23-hour window with a 30-document allowance. Each spawned unit has a persistent identity, including units subsequently merged into another stack or split into a new stack. Brought-in units are tracked separately. Repeat pickups and operation retries do not consume the allowance again. The client journals pickup/stack operations before transmission and flushes them before native raid start/end. Unfinished server raid receipts permit reconciling those known operations after reconnecting. Spawn counts also respect remaining allowance.
 
@@ -34,20 +36,23 @@ Transactions and native inventory operations reuse the account lock. The commit 
 
 The client flushes native inventory operations before transactions. Pending claim/exchange operation IDs are saved locally before submission and reconciled after reopening or restarting. Successful transactions use the existing controlled profile reload and preserve the hub tab, page and selected tile. Closing cancels presentation loads; it does not cancel a committed transaction. Raid entry, character changes and teardown close the hub and release presentation resources.
 
-## Reproduce the item assets
+## Item data and bundle dependency
 
-1. Import amended presentation with `tools/import_hub.py --mode-dump "<Development>/1.0 Dump"`, then gameplay with `tools/import_hub_gameplay.py --dump "<Development>/1.0 Dump"`.
-2. Run `tools/import_season_items.py --dump "<Development>/1.0 Dump"`. It preserves original template IDs, source hashes, object IDs and preview settings, and exports original compressed texture bytes with every mip level into the ignored SDK workspace.
-3. Copy `tools/unity/SeasonalItemBuilder.cs` to the companion SDK's SeasonalPerks `Editor` folder and execute `SeasonalItemBuilder.Build` in Unity 2022.3.43f1. It rebuilds nine shared item prefabs using SDK components, meshes, materials and textures. Bundle keys use `wtt-seasonal/` to avoid collisions with the content backport.
-4. Run `tools/finalize_season_items.py`. It verifies compressed texture bytes, dimensions, mip counts and formats; restores original texture sampling metadata; and maps the SDK-generated PreviewPivot reference to the installed SPT native type. No live MonoScript implementation or generated preview component is bundled. The native reference is audited against `globalgamemanagers.assets` object 2768.
-5. Run `tools/sync_ui_preview.py`; copy the reviewed `tools/unity/SeasonalHubPreview.cs` into the SDK editor folder and render its fixtures. Gamma is used and the previous SDK setting is restored.
-6. Build and stage through `tools/package.ps1`. Packaging requires all nine audited bundles and all allowlisted catalogue images. Raw captures, media, binaries and generated assets remain local and ignored.
+Install WTT-ContentBackport 2.0.1 or later and its dependencies. Seasonal retains its ten captured item definitions (eight documents and two crates) and localization, while Backport supplies the nine shared models at their original bundle keys. Seasonal packages no document or crate bundles.
+
+During Preload, registration checks the manifests and files of loaded mods before SPT's bundle loader runs. Missing required models stop startup with an explicit error. Older season packs containing `wtt-seasonal/` prefab paths resolve to the original shared keys. Item IDs and profile data need no migration. Custom imported models must have a registered bundle and an existing file.
+
+When upgrading an existing installation, back up Seasonal's `bundles.json` and remove its nine private document/crate entries, retaining any independently installed custom entries. An empty `manifest` array is valid. The old files beneath `bundles/wtt-seasonal/assets` can remain unregistered on disk. Restart the server and game to refresh their item and bundle caches.
+
+The optional research pipeline (`import_season_items.py`, `SeasonalItemBuilder.cs`, `finalize_season_items.py`) retains the original recovery and audit workflow for reference. Its rebuilt outputs are no longer build or packaging dependencies. Regenerate item JSON and provenance with `tools/import_season_items.py --dump "<Development>/1.0 Dump"` only when updating the captured source data.
 
 The documents retain the captured 999-unit stack limit and dimensions, including 2×2 blueprints. Their unsupported live BattlePassItem parent is adapted to SPT's native information-item parent. Crates retain their native random-container parent, but the capture contains no verified contents pool. Their claims and exchange stay unavailable until one is supplied; no contents are invented.
 
 ## Validation and remaining limits
 
-Automated checks cover every tile's eligibility and all four reward adapters, amended costs, page gates, confirmed Classified shortages, mixed-source exchanges, dependency failures, full stash, duplicate/concurrent requests, forced save failure, restart and idempotency. Separate real raid-route checks cover distinct eligible containers, pickup limits, conserved split identities, survived/run-through extraction, duplicate raid-end handling, and Normal/Scav exclusion. Normal profiles, Scav data and unrelated PMC fields are compared separately from intentional Seasonal changes.
+Run `tools/test_item_bundles.py --port <server-port>` for read-only verification that all ten definitions retain their item properties, resolve to nine Backport models with dependencies, and have no duplicate Seasonal bundle registrations. The bundle resolver tests also cover older pack paths and missing or unregistered files.
+
+Automated checks cover every tile's eligibility and all four reward adapters, amended costs, page gates, confirmed Classified shortages, mixed-source exchanges, dependency failures, full stash, duplicate/concurrent requests, forced save failure, restart and idempotency. Separate real raid-route checks cover distinct loose-loot points, map-specific types and caps, pickup limits, conserved split identities, survived/run-through extraction, duplicate raid-end handling, and Normal/Scav exclusion. Normal profiles, Scav data and unrelated PMC fields are compared separately from intentional Seasonal changes.
 
 The tested installed content set leaves 22 tiles unavailable: eight crate tiles without a contents pool, nine unsupported/missing customization definitions, and five seasonal rewards gated by unavailable quest chains. Those are explicit dependency locks. The other 36 tiles exercise 41 payloads in isolated fixtures. Actual profile progress is never imported from the recording or captures.
 
@@ -72,3 +77,5 @@ The September 6, 2026 automated run passed:
 The SDK project-settings hash was unchanged after the Gamma preview runs. Native resource, bush and experience hook checks also passed. The versioned release is staged locally; it has not been installed or accepted in-game.
 
 To repeat server checks, start the isolated runtime and run `tools/test_integration.py` to create a fresh synthetic account, followed by `tools/test_hub.py`. Stop that runtime before `tools/test_hub_gameplay.py prepare`, then restart it for `tools/test_hub_gameplay.py verify`. Restart once more for `tools/test_hub_gameplay.py restart`. Run `tools/test_hub_raids.py` against the fresh integration account; its five-raid sequence intentionally exhausts that account's allowance. These tools use only `Testing/Server` and do not modify installed profiles. The reported dependency outcomes used the installed content backport and its own dependency copied into the isolated runtime.
+
+The September 9, 2026 document-spawn update passed 4,793 release assertions and 487 real-route checks across all 13 supported maps in the captured catalogue. Run `tools/test_hub_document_loot.py` against `Testing/BundleBackportServer` (default port 6987) to create a fresh synthetic account and check map placement, pickup, split/merge, extraction, allowance exhaustion and Normal/Scav exclusion. The test never accesses installed profiles. Icebreaker is covered by the map-policy assertions but is not present in this SPT runtime. Actual world rendering still needs an in-game check.
