@@ -13,10 +13,7 @@ public sealed class ZoneRuntime : MonoBehaviour
     private readonly Dictionary<string, GameObject> _zones = new();
     internal static string Location
     {
-        get
-        {
-            return Singleton<GameWorld>.Instantiated ? Singleton<GameWorld>.Instance.LocationId ?? "" : "";
-        }
+        get { return Singleton<GameWorld>.Instantiated ? Singleton<GameWorld>.Instance.LocationId ?? "" : ""; }
     }
 
     internal static Vector3 Vector(SpatialVector value)
@@ -26,7 +23,12 @@ public sealed class ZoneRuntime : MonoBehaviour
 
     internal static SpatialVector Vector(Vector3 value)
     {
-        return new() { X = value.x, Y = value.y, Z = value.z };
+        return new()
+        {
+            X = value.x,
+            Y = value.y,
+            Z = value.z,
+        };
     }
 
     internal GameObject? Find(string id)
@@ -47,7 +49,8 @@ public sealed class ZoneRuntime : MonoBehaviour
             return;
         }
 
-        Clear(); _player = player;
+        Clear();
+        _player = player;
         if (!player)
         {
             return;
@@ -55,35 +58,72 @@ public sealed class ZoneRuntime : MonoBehaviour
 
         try
         {
-            var existing = Resources.FindObjectsOfTypeAll<TriggerWithId>().Where(t => t.gameObject.scene.IsValid()).Select(t => t.Id).ToHashSet();
+            var existing = Resources
+                .FindObjectsOfTypeAll<TriggerWithId>()
+                .Where(t => t.gameObject.scene.IsValid())
+                .Select(t => t.Id)
+                .ToHashSet();
             foreach (var zone in Plugin.Current!.Zones.Where(z => z.Location == Location))
             {
-                if (existing.Contains(zone.Id)) { Plugin.LogInfo("Seasonal zone ID collides with a native zone: " + zone.Id); continue; }
+                if (existing.Contains(zone.Id))
+                {
+                    Plugin.LogInfo("Seasonal zone ID collides with a native zone: " + zone.Id);
+                    continue;
+                }
                 var scene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(zone.Scene);
-                if (!scene.IsValid() || !scene.isLoaded) { Plugin.LogInfo("Seasonal zone scene is unavailable: " + zone.Scene); continue; }
+                if (!scene.IsValid() || !scene.isLoaded)
+                {
+                    Plugin.LogInfo("Seasonal zone scene is unavailable: " + zone.Scene);
+                    continue;
+                }
                 var root = Volume(zone);
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, scene);
                 root.AddComponent<NativeZoneBridge>().Initialize(zone);
                 _zones.Add(zone.Id, root);
             }
         }
-        catch (Exception e) { Plugin.Error(e); Clear(); }
+        catch (Exception e)
+        {
+            Plugin.Error(e);
+            Clear();
+        }
     }
+
     internal static GameObject Volume(SeasonZone zone)
     {
         var root = new GameObject("Seasonal zone " + zone.Id);
         root.transform.SetPositionAndRotation(Vector(zone.Position), Quaternion.Euler(Vector(zone.Rotation)));
         root.layer = LayerMask.NameToLayer("Triggers");
-        if (zone.Shape == "Sphere") { var collider = root.AddComponent<SphereCollider>(); collider.isTrigger = true; collider.radius = zone.Radius; }
-        else { var collider = root.AddComponent<BoxCollider>(); collider.isTrigger = true; collider.size = Vector(zone.Size); }
+        if (zone.Shape == "Sphere")
+        {
+            var collider = root.AddComponent<SphereCollider>();
+            collider.isTrigger = true;
+            collider.radius = zone.Radius;
+        }
+        else
+        {
+            var collider = root.AddComponent<BoxCollider>();
+            collider.isTrigger = true;
+            collider.size = Vector(zone.Size);
+        }
         return root;
     }
+
     private void Clear()
     {
-        foreach (var zone in _zones.Values.Where(z => z)) { zone.GetComponent<NativeZoneBridge>()?.Clear(); Destroy(zone); }
-        _zones.Clear(); _player = null;
+        foreach (var zone in _zones.Values.Where(z => z))
+        {
+            zone.GetComponent<NativeZoneBridge>()?.Clear();
+            Destroy(zone);
+        }
+        _zones.Clear();
+        _player = null;
     }
-    private void OnDestroy() { Clear(); if (Instance == this)
+
+    private void OnDestroy()
+    {
+        Clear();
+        if (Instance == this)
         {
             Instance = null;
         }
@@ -95,22 +135,24 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
 {
     public string Description
     {
-        get
-        {
-            return "Seasonal quest zone";
-        }
+        get { return "Seasonal quest zone"; }
     }
 
     private static readonly List<NativeZoneBridge> Active = new();
     private readonly HashSet<Collider> _inside = new();
     private readonly List<TriggerWithId> _native = new();
     private Player? _owner;
+
     internal void Initialize(SeasonZone zone)
     {
-        void Add<T>() where T : TriggerWithId
+        void Add<T>()
+            where T : TriggerWithId
         {
-            var child = new GameObject(typeof(T).Name); child.transform.SetParent(transform, false);
-            var trigger = child.AddComponent<T>(); trigger.SetId(zone.Id); _native.Add(trigger);
+            var child = new GameObject(typeof(T).Name);
+            child.transform.SetParent(transform, false);
+            var trigger = child.AddComponent<T>();
+            trigger.SetId(zone.Id);
+            _native.Add(trigger);
         }
         if (zone.Uses.Contains("VisitPlace"))
         {
@@ -126,6 +168,7 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
             Add<PlaceItemTrigger>();
         }
     }
+
     public void OnTriggerEnter(Collider other)
     {
         if (!Singleton<GameWorld>.Instantiated)
@@ -154,12 +197,14 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
             return;
         }
 
-        _owner = player; Active.Add(this);
+        _owner = player;
+        Active.Add(this);
         foreach (var trigger in _native)
         {
             trigger.TriggerEnter(player);
         }
     }
+
     public void OnTriggerStay(Collider other, Collider trigger)
     {
         OnTriggerEnter(other);
@@ -177,6 +222,7 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
             Clear();
         }
     }
+
     internal void Clear()
     {
         Active.Remove(this);
@@ -193,7 +239,11 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
                 trigger.TriggerExit(_owner!);
                 if (trigger is PlaceItemTrigger)
                 {
-                    var remaining = Active.Where(b => b && b._owner == _owner).SelectMany(b => b._native).OfType<PlaceItemTrigger>().LastOrDefault();
+                    var remaining = Active
+                        .Where(b => b && b._owner == _owner)
+                        .SelectMany(b => b._native)
+                        .OfType<PlaceItemTrigger>()
+                        .LastOrDefault();
                     if (remaining)
                     {
                         remaining.TriggerEnter(_owner!);
@@ -201,8 +251,10 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
                 }
             }
         }
-        _inside.Clear(); _owner = null;
+        _inside.Clear();
+        _owner = null;
     }
+
     private void OnDestroy()
     {
         Clear();

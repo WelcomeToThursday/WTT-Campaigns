@@ -63,7 +63,11 @@ public static class NativeQuestAuthoring
             condition.ZoneId = "";
         }
 
-        if (kind == "InZone") { condition.ZoneId = null; condition.ZoneIds = []; }
+        if (kind == "InZone")
+        {
+            condition.ZoneId = null;
+            condition.ZoneIds = [];
+        }
         if (kind == "VisitPlace")
         {
             condition.ZoneId = null;

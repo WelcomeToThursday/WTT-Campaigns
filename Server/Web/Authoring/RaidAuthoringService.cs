@@ -11,21 +11,27 @@ namespace SeasonalPerks.Server.Web.Authoring;
 public sealed class RaidAuthoringService(SeasonRepository repository)
 {
     private readonly object _gate = new();
+
     private sealed class Connection
     {
         public AuthoringClient Client = new();
-        public string Owner = "", Grant = "";
-        public HashSet<string> NativeZoneIds = new(), Scenes = new();
+        public string Owner = "",
+            Grant = "";
+        public HashSet<string> NativeZoneIds = new(),
+            Scenes = new();
         public Dictionary<long, SeasonDefinition> Versions = new();
         public Dictionary<string, (string Hash, AuthoringResponse Response)> Receipts = new();
     }
+
     private readonly Dictionary<string, Connection> _clients = new();
+
     private static T Copy<T>(T value)
     {
         return SeasonCompiler.Copy(value);
     }
 
     internal Func<DateTimeOffset> UtcNow = () => DateTimeOffset.UtcNow;
+
     private void Expire()
     {
         foreach (var id in _clients.Where(p => UtcNow() - p.Value.Client.LastSeen > TimeSpan.FromSeconds(20)).Select(p => p.Key).ToArray())
@@ -33,10 +39,16 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             _clients.Remove(id);
         }
     }
+
     public List<AuthoringClient> Clients()
     {
-        lock (_gate) { Expire(); return _clients.Values.Select(c => Copy(c.Client)).ToList(); }
+        lock (_gate)
+        {
+            Expire();
+            return _clients.Values.Select(c => Copy(c.Client)).ToList();
+        }
     }
+
     public bool Connected(string draft)
     {
         return Clients().Any(c => c.DraftId == draft);
@@ -59,7 +71,9 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
 
             c.Client.DraftId = draft;
             c.Grant = Guid.NewGuid().ToString("N");
-            c.Versions.Clear(); c.Receipts.Clear(); c.Client.Tasks.Clear();
+            c.Versions.Clear();
+            c.Receipts.Clear();
+            c.Client.Tasks.Clear();
         }
     }
 
@@ -67,7 +81,13 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
     {
         lock (_gate)
         {
-            if (_clients.TryGetValue(client, out var c)) { c.Grant = ""; c.Client.DraftId = ""; c.Client.Tasks.Clear(); c.Versions.Clear(); }
+            if (_clients.TryGetValue(client, out var c))
+            {
+                c.Grant = "";
+                c.Client.DraftId = "";
+                c.Client.Tasks.Clear();
+                c.Versions.Clear();
+            }
         }
     }
 
@@ -99,7 +119,8 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             }
 
             c.Client.Tasks.RemoveAll(t => t.Status is "Completed" or "Cancelled");
-            task.Id = Guid.NewGuid().ToString("N"); task.Status = "Pending";
+            task.Id = Guid.NewGuid().ToString("N");
+            task.Status = "Pending";
             c.Client.Tasks.Add(Copy(task));
         }
     }
@@ -109,7 +130,12 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         lock (_gate)
         {
             Expire();
-            if (r.Version != 1 || !Guid.TryParseExact(r.ClientId, "N", out _) || !Guid.TryParseExact(r.RaidId, "N", out _) || r.Location.Length is 0 or > 120)
+            if (
+                r.Version != 1
+                || !Guid.TryParseExact(r.ClientId, "N", out _)
+                || !Guid.TryParseExact(r.RaidId, "N", out _)
+                || r.Location.Length is 0 or > 120
+            )
             {
                 throw new InvalidOperationException("Invalid authoring presence or protocol.");
             }
@@ -119,19 +145,40 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 throw new InvalidOperationException("This authoring client belongs to another account.");
             }
 
-            if (!r.Enabled) { _clients.Remove(r.ClientId); return new(); }
-            if (prior == null || prior.Client.RaidId != r.RaidId || prior.Client.CharacterId != character || prior.Client.Location != r.Location)
+            if (!r.Enabled)
+            {
+                _clients.Remove(r.ClientId);
+                return new();
+            }
+            if (
+                prior == null
+                || prior.Client.RaidId != r.RaidId
+                || prior.Client.CharacterId != character
+                || prior.Client.Location != r.Location
+            )
             {
                 if (_clients.Count >= 32)
                 {
                     throw new InvalidOperationException("Too many connected authoring clients.");
                 }
 
-                prior = new Connection { Owner = owner, Client = new() { Id = r.ClientId, CharacterId = character, RaidId = r.RaidId, Location = r.Location } };
+                prior = new Connection
+                {
+                    Owner = owner,
+                    Client = new()
+                    {
+                        Id = r.ClientId,
+                        CharacterId = character,
+                        RaidId = r.RaidId,
+                        Location = r.Location,
+                    },
+                };
                 _clients[r.ClientId] = prior;
             }
-            if (r.NativeZoneIds.Count > 10000 || r.Scenes.Count > 500) throw new InvalidOperationException("Scene catalog exceeds authoring limits.");
-            prior.NativeZoneIds = r.NativeZoneIds.ToHashSet(); prior.Scenes = r.Scenes.ToHashSet();
+            if (r.NativeZoneIds.Count > 10000 || r.Scenes.Count > 500)
+                throw new InvalidOperationException("Scene catalog exceeds authoring limits.");
+            prior.NativeZoneIds = r.NativeZoneIds.ToHashSet();
+            prior.Scenes = r.Scenes.ToHashSet();
             prior.Client.LastSeen = UtcNow();
             if (prior.Grant.Length == 0)
             {
@@ -139,8 +186,18 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             }
 
             var draft = repository.Load(prior.Client.DraftId);
-            if (draft.Status != DraftStatus.Active) { Disconnect(r.ClientId); return new(); }
-            var response = new AuthoringResponse { Grant = prior.Grant, DraftId = draft.Id, Revision = draft.Revision, Tasks = Copy(prior.Client.Tasks) };
+            if (draft.Status != DraftStatus.Active)
+            {
+                Disconnect(r.ClientId);
+                return new();
+            }
+            var response = new AuthoringResponse
+            {
+                Grant = prior.Grant,
+                DraftId = draft.Id,
+                Revision = draft.Revision,
+                Tasks = Copy(prior.Client.Tasks),
+            };
             if (r.Grant != prior.Grant || r.Revision != draft.Revision)
             {
                 response.Definition = draft.Definition;
@@ -159,7 +216,16 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         lock (_gate)
         {
             Expire();
-            if (r.Version != 1 || !_clients.TryGetValue(r.ClientId, out var c) || c.Owner != owner || c.Client.CharacterId != character || c.Client.RaidId != r.RaidId || c.Client.DraftId != r.DraftId || c.Grant.Length == 0 || c.Grant != r.Grant)
+            if (
+                r.Version != 1
+                || !_clients.TryGetValue(r.ClientId, out var c)
+                || c.Owner != owner
+                || c.Client.CharacterId != character
+                || c.Client.RaidId != r.RaidId
+                || c.Client.DraftId != r.DraftId
+                || c.Grant.Length == 0
+                || c.Grant != r.Grant
+            )
             {
                 throw new InvalidOperationException("Reconnect this raid and draft before submitting.");
             }
@@ -182,7 +248,9 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             CaptureTask? task = null;
             if (r.TaskId.Length > 0)
             {
-                task = c.Client.Tasks.SingleOrDefault(t => t.Id == r.TaskId) ?? throw new InvalidOperationException("This capture has expired.");
+                task =
+                    c.Client.Tasks.SingleOrDefault(t => t.Id == r.TaskId)
+                    ?? throw new InvalidOperationException("This capture has expired.");
                 if (task.Status is "Completed" or "Cancelled")
                 {
                     throw new InvalidOperationException("This capture is already finished.");
@@ -208,14 +276,23 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 }
                 // Client writes only spatial authoring records and bindings. Other season settings stay on the server.
                 var proposed = Copy(baseline);
-                proposed.Zones = Copy(r.Definition.Zones); proposed.Captures = Copy(r.Definition.Captures);
-                if (r.Definition.Story != null) { proposed.Story ??= new(); proposed.Story.RaidBindings = Copy(r.Definition.Story.RaidBindings); }
+                proposed.Zones = Copy(r.Definition.Zones);
+                proposed.Captures = Copy(r.Definition.Captures);
+                if (r.Definition.Story != null)
+                {
+                    proposed.Story ??= new();
+                    proposed.Story.RaidBindings = Copy(r.Definition.Story.RaidBindings);
+                }
                 if (proposed.Zones.Count > 0 || proposed.Captures.Count > 0)
                 {
                     proposed.FormatVersion = 2;
                 }
 
-                foreach (var zone in proposed.Zones.Where(z => !baseline.Zones.Any(b => b.Id == z.Id && JToken.DeepEquals(JObject.FromObject(b), JObject.FromObject(z)))))
+                foreach (
+                    var zone in proposed.Zones.Where(z =>
+                        !baseline.Zones.Any(b => b.Id == z.Id && JToken.DeepEquals(JObject.FromObject(b), JObject.FromObject(z)))
+                    )
+                )
                 {
                     if (zone.Location != c.Client.Location)
                     {
@@ -223,8 +300,10 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                     }
                 }
 
-                if (proposed.Zones.Any(z => z.Location == c.Client.Location && c.NativeZoneIds.Contains(z.Id))) throw new InvalidOperationException("An authored zone ID collides with a native scene zone.");
-                if (c.Scenes.Count > 0 && proposed.Zones.Any(z => z.Location == c.Client.Location && !c.Scenes.Contains(z.Scene))) throw new InvalidOperationException("The zone scene is not loaded in this raid.");
+                if (proposed.Zones.Any(z => z.Location == c.Client.Location && c.NativeZoneIds.Contains(z.Id)))
+                    throw new InvalidOperationException("An authored zone ID collides with a native scene zone.");
+                if (c.Scenes.Count > 0 && proposed.Zones.Any(z => z.Location == c.Client.Location && !c.Scenes.Contains(z.Scene)))
+                    throw new InvalidOperationException("The zone scene is not loaded in this raid.");
                 if (task != null && r.TaskStatus == "Completed")
                 {
                     Assign(proposed, task, r.ResultId, c.Client.Location);
@@ -234,7 +313,12 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             }
             else
             {
-                result = new() { DraftId = draft.Id, Revision = draft.Revision, Definition = draft.Definition };
+                result = new()
+                {
+                    DraftId = draft.Id,
+                    Revision = draft.Revision,
+                    Definition = draft.Definition,
+                };
             }
 
             result.Grant = c.Grant;
@@ -266,8 +350,12 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
 
         if (task.TargetKind == "Condition")
         {
-            var condition = SpatialRules.Conditions(s).SingleOrDefault(c => c.Id == task.TargetId) ?? throw new InvalidOperationException("The destination objective was deleted.");
-            var zone = s.Zones.SingleOrDefault(z => z.Id == id && z.Location == map) ?? throw new InvalidOperationException("Select a zone on this map.");
+            var condition =
+                SpatialRules.Conditions(s).SingleOrDefault(c => c.Id == task.TargetId)
+                ?? throw new InvalidOperationException("The destination objective was deleted.");
+            var zone =
+                s.Zones.SingleOrDefault(z => z.Id == id && z.Location == map)
+                ?? throw new InvalidOperationException("Select a zone on this map.");
             if (!zone.Uses.Contains(condition.ConditionType))
             {
                 zone.Uses.Add(condition.ConditionType);
@@ -277,10 +365,20 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         }
         else if (task.TargetKind == "Binding")
         {
-            var binding = s.Story?.RaidBindings.SingleOrDefault(b => b.Id == task.TargetId) ?? throw new InvalidOperationException("The destination raid event was deleted.");
+            var binding =
+                s.Story?.RaidBindings.SingleOrDefault(b => b.Id == task.TargetId)
+                ?? throw new InvalidOperationException("The destination raid event was deleted.");
             binding.Location = map;
-            if (task.Tool == "Zone") { binding.ZoneId = id; binding.ObjectPath = ""; }
-            else { binding.ObjectPath = s.Captures.Single(c => c.Id == id).ObjectPath; binding.ZoneId = ""; }
+            if (task.Tool == "Zone")
+            {
+                binding.ZoneId = id;
+                binding.ObjectPath = "";
+            }
+            else
+            {
+                binding.ObjectPath = s.Captures.Single(c => c.Id == id).ObjectPath;
+                binding.ZoneId = "";
+            }
         }
     }
 
@@ -292,9 +390,17 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             {
                 var draft = repository.Load(id);
                 var conflicts = new List<DraftConflict>();
-                var b = JObject.FromObject(baseline); var l = JObject.FromObject(local); var r = JObject.FromObject(draft.Definition);
+                var b = JObject.FromObject(baseline);
+                var l = JObject.FromObject(local);
+                var r = JObject.FromObject(draft.Definition);
                 var candidate = DraftMerge.Merge(b, l, r, conflicts)!.ToObject<SeasonDefinition>()!;
-                var result = new AuthoringResponse { DraftId = id, Revision = draft.Revision, Definition = draft.Definition, Conflicts = conflicts };
+                var result = new AuthoringResponse
+                {
+                    DraftId = id,
+                    Revision = draft.Revision,
+                    Definition = draft.Definition,
+                    Conflicts = conflicts,
+                };
                 if (conflicts.Count > 0)
                 {
                     result.Candidate = candidate;
@@ -321,9 +427,20 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 }
 
                 draft.Definition = candidate;
-                try { draft = repository.Save(draft); }
-                catch (InvalidOperationException) when (retry < 2 && repository.Load(id).Revision != draft.Revision) { continue; }
-                return new() { DraftId = id, Revision = draft.Revision, Definition = draft.Definition };
+                try
+                {
+                    draft = repository.Save(draft);
+                }
+                catch (InvalidOperationException) when (retry < 2 && repository.Load(id).Revision != draft.Revision)
+                {
+                    continue;
+                }
+                return new()
+                {
+                    DraftId = id,
+                    Revision = draft.Revision,
+                    Definition = draft.Definition,
+                };
             }
             throw new InvalidOperationException("The draft is changing rapidly. Retry synchronization.");
         }

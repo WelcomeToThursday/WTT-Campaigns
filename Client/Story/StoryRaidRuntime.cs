@@ -201,7 +201,14 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         {
             return;
         }
-        var owner = _bindings.FirstOrDefault(b => b && (binding.ZoneId.Length > 0 ? b.gameObject == Spatial.ZoneRuntime.Instance?.Find(binding.ZoneId) : ObjectPath(b.transform) == binding.ObjectPath));
+        var owner = _bindings.FirstOrDefault(b =>
+            b
+            && (
+                binding.ZoneId.Length > 0
+                    ? b.gameObject == Spatial.ZoneRuntime.Instance?.Find(binding.ZoneId)
+                    : ObjectPath(b.transform) == binding.ObjectPath
+            )
+        );
         var character = Plugin.Player!.Profile.Id;
         var raid = StoryClient.Current?.State?.Raid?.Id;
         bool CurrentContext()

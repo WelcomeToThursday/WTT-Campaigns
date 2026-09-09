@@ -17,19 +17,29 @@ public sealed class AuthoringRouter(JsonUtil json, SeasonService seasons, RaidAu
 {
     private static List<RouteAction> Routes(SeasonService seasons, RaidAuthoringService authoring)
     {
-        return new[] { "poll", "submit" }.Select(operation =>
-        (RouteAction)new RouteAction<AuthoringRouteRequest>("/wtt-seasonal/authoring/" + operation, (_, r, id, _, _) =>
-        {
-            try
-            {
-                var root = seasons.ResolveRoot(id.ToString());
-                using var lease = seasons.Enter(root);
-                var character = seasons.EffectiveId(root);
-                var result = operation == "poll" ? authoring.Poll(root, character, r) : authoring.Submit(root, character, r);
-                return ValueTask.FromResult(JsonConvert.SerializeObject(result));
-            }
-            catch (Exception e) when (e is InvalidOperationException or ArgumentException or IOException)
-            { return ValueTask.FromResult(JsonConvert.SerializeObject(new AuthoringResponse { Error = e.Message })); }
-        })).ToList();
+        return new[] { "poll", "submit" }
+            .Select(operation =>
+                (RouteAction)
+                    new RouteAction<AuthoringRouteRequest>(
+                        "/wtt-seasonal/authoring/" + operation,
+                        (_, r, id, _, _) =>
+                        {
+                            try
+                            {
+                                var root = seasons.ResolveRoot(id.ToString());
+                                using var lease = seasons.Enter(root);
+                                var character = seasons.EffectiveId(root);
+                                var result =
+                                    operation == "poll" ? authoring.Poll(root, character, r) : authoring.Submit(root, character, r);
+                                return ValueTask.FromResult(JsonConvert.SerializeObject(result));
+                            }
+                            catch (Exception e) when (e is InvalidOperationException or ArgumentException or IOException)
+                            {
+                                return ValueTask.FromResult(JsonConvert.SerializeObject(new AuthoringResponse { Error = e.Message }));
+                            }
+                        }
+                    )
+            )
+            .ToList();
     }
 }

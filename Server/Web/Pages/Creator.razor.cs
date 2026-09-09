@@ -244,7 +244,8 @@ public partial class Creator
         _draftMenu = null;
         _draftView = DraftStatus.Active;
         _draft = draft;
-        _raidConflict = null; _inputPending = false;
+        _raidConflict = null;
+        _inputPending = false;
         _baseline = JsonConvert.SerializeObject(S);
         _workspaceHistory.Clear();
         _section = "Overview";
@@ -300,7 +301,11 @@ public partial class Creator
     {
         Run(() =>
         {
-            if (_draft != null && RaidAuthoring.Connected(_draft.Id)) { SyncDraft(); return; }
+            if (_draft != null && RaidAuthoring.Connected(_draft.Id))
+            {
+                SyncDraft();
+                return;
+            }
             _draft = Repository.Save(_draft!);
             _baseline = JsonConvert.SerializeObject(S);
             _reward = _reward == null ? null : S.AllRewards.FirstOrDefault(r => r.Id == _reward.Id);

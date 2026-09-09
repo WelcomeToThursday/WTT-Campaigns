@@ -10,10 +10,15 @@ internal sealed class RaidEditorView : IDisposable
     internal readonly GameObject Root;
     private readonly Dictionary<string, Transform> _controls;
     private readonly AssetBundle _bundle;
+
     internal RaidEditorView()
     {
-        _bundle = AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonal_raid_editor.bundle")) ?? throw new InvalidOperationException("Install the CJ-SDK raid editor UI bundle.");
-        var prefab = _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/raideditor/seasonalraideditor.prefab") ?? throw new InvalidOperationException("The raid editor prefab is missing.");
+        _bundle =
+            AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonal_raid_editor.bundle"))
+            ?? throw new InvalidOperationException("Install the CJ-SDK raid editor UI bundle.");
+        var prefab =
+            _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/raideditor/seasonalraideditor.prefab")
+            ?? throw new InvalidOperationException("The raid editor prefab is missing.");
         Root = UnityEngine.Object.Instantiate(prefab);
         _controls = Root.GetComponentsInChildren<Transform>(true).GroupBy(t => t.name).ToDictionary(g => g.Key, g => g.First());
         var ui = new UiElements(Root.GetComponentInChildren<Text>().font, sound => SeasonUi.Instance.PlayInterfaceSound(sound));
@@ -24,7 +29,9 @@ internal sealed class RaidEditorView : IDisposable
 
         Root.SetActive(false);
     }
-    internal T Get<T>(string name) where T : Component
+
+    internal T Get<T>(string name)
+        where T : Component
     {
         return _controls[name].GetComponent<T>();
     }
@@ -49,17 +56,18 @@ internal sealed class RaidEditorView : IDisposable
         Get<InputField>(name).onEndEdit.AddListener(value => action(value));
     }
 
-    internal void Value(string name, string value) { var field = Get<InputField>(name); if (!field.isFocused)
+    internal void Value(string name, string value)
+    {
+        var field = Get<InputField>(name);
+        if (!field.isFocused)
         {
             field.SetTextWithoutNotify(value);
         }
     }
+
     internal bool Typing
     {
-        get
-        {
-            return Root.GetComponentsInChildren<InputField>().Any(f => f.isFocused);
-        }
+        get { return Root.GetComponentsInChildren<InputField>().Any(f => f.isFocused); }
     }
 
     internal void Conflict(RaidEditorSession session)
@@ -75,5 +83,10 @@ internal sealed class RaidEditorView : IDisposable
         Value("LocalConflict", string.Join("\n\n", conflict.Conflicts.Select(c => c.Local)));
         Value("RemoteConflict", string.Join("\n\n", conflict.Conflicts.Select(c => c.Remote)));
     }
-    public void Dispose() { UnityEngine.Object.Destroy(Root); _bundle.Unload(false); }
+
+    public void Dispose()
+    {
+        UnityEngine.Object.Destroy(Root);
+        _bundle.Unload(false);
+    }
 }

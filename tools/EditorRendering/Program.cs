@@ -121,14 +121,49 @@ Require(
     pages["reputation-condition"].Contains("Reputation threshold") && !pages["reputation-condition"].Contains("Variable threshold"),
     "Type changes replace the rendered label and help"
 );
-season.Zones.Add(new() { Id = "111111111111111111111111", Name = "Camp entrance", Location = "woods", Scene = "woods_main" });
+season.Zones.Add(
+    new()
+    {
+        Id = "111111111111111111111111",
+        Name = "Camp entrance",
+        Location = "woods",
+        Scene = "woods_main",
+    }
+);
 pages["zones"] = await Render<SpatialWorkspace>(new() { ["Season"] = season });
-Require(pages["zones"].Contains("Create in raid") && pages["zones"].Contains("Camp entrance"), "Spatial workspace renders capture and geometry controls");
+Require(
+    pages["zones"].Contains("Create in raid") && pages["zones"].Contains("Camp entrance"),
+    "Spatial workspace renders capture and geometry controls"
+);
 var visit = NativeQuestAuthoring.Condition("VisitPlace");
-pages["zone-objective"] = await Render<NativeObjectiveFields>(new() { ["Season"] = season, ["Quest"] = quest, ["Value"] = visit });
-Require(pages["zone-objective"].Contains("Camp entrance") && pages["zone-objective"].Contains("Create in raid"), "Native objectives expose compatible authored zones and capture requests");
-pages["zone-binding"] = await Render<StoryFields>(new() { ["Season"] = season, ["Value"] = new StoryRaidBinding { Id = "binding", Kind = "Trigger", Location = "woods" } });
-Require(pages["zone-binding"].Contains("Trigger zone") && pages["zone-binding"].Contains("Pick in raid"), "Story bindings expose both zone and scene-target capture");
+pages["zone-objective"] = await Render<NativeObjectiveFields>(
+    new()
+    {
+        ["Season"] = season,
+        ["Quest"] = quest,
+        ["Value"] = visit,
+    }
+);
+Require(
+    pages["zone-objective"].Contains("Camp entrance") && pages["zone-objective"].Contains("Create in raid"),
+    "Native objectives expose compatible authored zones and capture requests"
+);
+pages["zone-binding"] = await Render<StoryFields>(
+    new()
+    {
+        ["Season"] = season,
+        ["Value"] = new StoryRaidBinding
+        {
+            Id = "binding",
+            Kind = "Trigger",
+            Location = "woods",
+        },
+    }
+);
+Require(
+    pages["zone-binding"].Contains("Trigger zone") && pages["zone-binding"].Contains("Pick in raid"),
+    "Story bindings expose both zone and scene-target capture"
+);
 var theme = File.ReadAllText(
     Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),

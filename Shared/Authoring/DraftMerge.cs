@@ -44,12 +44,25 @@ public static class DraftMerge
             var order = !lo.SequenceEqual(old.Where(lo.Contains)) ? la.Concat(ra) : ra.Concat(la);
             if (!lo.SequenceEqual(old.Where(lo.Contains)) && !ro.SequenceEqual(old.Where(ro.Contains)) && !lo.SequenceEqual(ro))
             {
-                conflicts.Add(new() { Path = path + "/order", Local = la.ToString(), Remote = ra.ToString() });
+                conflicts.Add(
+                    new()
+                    {
+                        Path = path + "/order",
+                        Local = la.ToString(),
+                        Remote = ra.ToString(),
+                    }
+                );
             }
 
             foreach (var id in order.Concat(ba).Select(Key).Distinct())
             {
-                var merged = Merge(ba.FirstOrDefault(x => Key(x) == id), la.FirstOrDefault(x => Key(x) == id), ra.FirstOrDefault(x => Key(x) == id), conflicts, path + "/" + id);
+                var merged = Merge(
+                    ba.FirstOrDefault(x => Key(x) == id),
+                    la.FirstOrDefault(x => Key(x) == id),
+                    ra.FirstOrDefault(x => Key(x) == id),
+                    conflicts,
+                    path + "/" + id
+                );
                 if (merged != null)
                 {
                     result.Add(merged);
@@ -57,7 +70,14 @@ public static class DraftMerge
             }
             return result;
         }
-        conflicts.Add(new() { Path = path, Local = local?.ToString() ?? "(deleted)", Remote = remote?.ToString() ?? "(deleted)" });
+        conflicts.Add(
+            new()
+            {
+                Path = path,
+                Local = local?.ToString() ?? "(deleted)",
+                Remote = remote?.ToString() ?? "(deleted)",
+            }
+        );
         return local?.DeepClone();
     }
 

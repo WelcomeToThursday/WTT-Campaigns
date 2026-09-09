@@ -11,6 +11,7 @@ public sealed class StoryRaidBinding
     public string Id { get; set; } = "";
     public string Location { get; set; } = "";
     public string Kind { get; set; } = "Trigger";
+
     public bool ShouldSerializeZoneId()
     {
         return ZoneId.Length > 0;
