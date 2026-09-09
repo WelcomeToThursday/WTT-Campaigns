@@ -1,5 +1,6 @@
 using System;
 using SeasonalPerks.UI.Controls;
+using SeasonalPerks.UI.Media;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -37,9 +38,8 @@ public sealed class SeasonBanner : MonoBehaviour, IPointerEnterHandler, IPointer
         _bottom = Layer("BottomGlow", "sharedassets44-644", 440, 112);
         _sweep = Layer("Sweep", "sharedassets44-935", 400, 112, -250);
         Layer("Pattern", "sharedassets44-948", 256, 67, 92);
-        var logo = Layer("Logo", "sharedassets44-643", 360, 120);
-        logo.type = Image.Type.Simple;
-        logo.preserveAspect = true;
+        var logo = UiElements.Fill(UiElements.Rect("Logo", mask, 360, 120), Color.white);
+        logo.sprite = SeasonLogoArtwork.Load();
         if (video != null)
         {
             var raw = UiElements.Rect("AnimatedLogo", mask, 360, 120).gameObject.AddComponent<RawImage>();

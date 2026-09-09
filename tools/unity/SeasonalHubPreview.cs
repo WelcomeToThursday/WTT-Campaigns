@@ -115,6 +115,8 @@ public static class SeasonalHubPreview
                 image.sprite = Load(icons[id]);
                 image.color = Color.white;
             };
+            var videoRequests = 0;
+            view.VideoRequested = (name, image, loop, fallback) => videoRequests++;
             var events = new GameObject("HubPreviewEvents", typeof(EventSystem));
             var pointer = new PointerEventData(events.GetComponent<EventSystem>());
             void Capture(string name)
@@ -141,6 +143,7 @@ public static class SeasonalHubPreview
             }
             view.Open();
             view.SetState(data, perks.ToArray());
+            var battlePassTab = view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "BATTLE PASS");
             Capture("hub-first");
             view.SelectReward(1);
             Capture("hub-tarcoins");
@@ -171,11 +174,39 @@ public static class SeasonalHubPreview
                 view.ChangePage(1);
             }
             Check(view.PageIndex == 11, "Last page boundary");
+            Check(battlePassTab && battlePassTab.gameObject.activeInHierarchy, "Battle Pass selections and paging preserve navigation");
             view.ShowTab(HubTab.SeasonalRewards);
             Capture("hub-seasonal");
+            var seasonalVideos = view.Root.GetComponentsInChildren<RawImage>();
+            var seasonalTabs = view.Root.GetComponentsInChildren<Button>().Where(b => b.name == "SEASONAL REWARDS").ToArray();
+            var initialVideoRequests = videoRequests;
+            Check(
+                seasonalVideos.Length == 2 && seasonalTabs.Length == 2,
+                "Seasonal header contains logo, smoke and both navigation buttons"
+            );
             for (var i = 0; i < data.SeasonalRewards.Length; i++)
+            {
+                view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "Reward-" + data.SeasonalRewards[i].Id).onClick.Invoke();
+                Check(
+                    videoRequests == initialVideoRequests && seasonalVideos.All(v => v && v.gameObject.activeInHierarchy),
+                    "Selecting seasonal reward " + i + " preserves playing logo and smoke"
+                );
+                Check(
+                    seasonalTabs.All(b => b && b.gameObject.activeInHierarchy),
+                    "Selecting seasonal reward " + i + " preserves tab buttons"
+                );
+                Check(
+                    view.Root.GetComponentsInChildren<Text>()
+                        .Any(t => t.transform.parent.name == "SeasonalRewardName" && t.text == data.SeasonalRewards[i].Name),
+                    "Selecting seasonal reward " + i + " updates reward details"
+                );
+                var content = view.Root.GetComponentsInChildren<Transform>().Single(t => t.name == "HubContent");
                 view.SelectReward(i);
+                Check(content && content.gameObject.activeInHierarchy, "Reselecting seasonal reward " + i + " does not rebuild content");
+            }
             view.ShowTab(HubTab.AboutSeason);
+            var aboutVideos = view.Root.GetComponentsInChildren<RawImage>();
+            initialVideoRequests = videoRequests;
             Capture("hub-about");
             var modifier = view.Root.GetComponentsInChildren<HubPointer>().First(p => p.name.StartsWith("Modifier-"));
             modifier.OnPointerEnter(pointer);
@@ -189,6 +220,10 @@ public static class SeasonalHubPreview
                 Check(view.SlideIndex == i, "Carousel page " + i);
             }
             Capture("hub-carousel-last");
+            Check(
+                videoRequests == initialVideoRequests && aboutVideos.All(v => v && v.gameObject.activeInHierarchy),
+                "About carousel paging preserves playing logo and smoke"
+            );
             view.ChangePage(1);
             Check(view.SlideIndex == 4, "Carousel end boundary");
             view.ShowTab(HubTab.BattlePass);

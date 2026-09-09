@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 
 RUNTIME_SOURCES = {
+    'SeasonLogoArtwork.cs',
     'StoryTitleMask.cs',
     'StoryRoomAmbient.cs',
     'StoryRoomRenderState.cs',

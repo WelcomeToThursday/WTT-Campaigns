@@ -7,6 +7,7 @@
     <Version>0.2.0</Version>
   </PropertyGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Resources\Hub\*.png" LogicalName="SeasonalPerks.Hub.%(Filename)%(Extension)" />
     <EmbeddedResource Include="Resources\Story\*.png" LogicalName="SeasonalPerks.Story.%(Filename)%(Extension)" />
     <EmbeddedResource Include="Resources\Story\ambient-probes.txt" LogicalName="SeasonalPerks.Story.ambient-probes.txt" />
     <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(ManagedDir)UnityEngine.ImageConversionModule.dll" Private="false" />

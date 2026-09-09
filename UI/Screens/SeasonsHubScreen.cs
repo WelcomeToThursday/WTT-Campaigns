@@ -4,6 +4,7 @@ using System.Linq;
 using SeasonalPerks.UI.Audio;
 using SeasonalPerks.UI.BattlePass;
 using SeasonalPerks.UI.Controls;
+using SeasonalPerks.UI.Media;
 using SeasonalPerks.UI.Models;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +17,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
     private readonly RectTransform _stage;
     private readonly Func<string, Sprite?> _art;
     private RectTransform? _page;
+    private RectTransform? _content;
     private GameObject? _tooltip;
     private HubState _state = new HubState();
     private PerkEntry[] _perks = Array.Empty<PerkEntry>();
@@ -117,7 +119,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
             return;
         }
 
-        Render();
+        RenderContent();
     }
 
     public void SelectReward(int index)
@@ -128,10 +130,18 @@ public sealed partial class SeasonsHubScreen : IDisposable
         }
         if (Tab == HubTab.BattlePass && _state.Pages.Length > 0 && index >= 0 && index < _state.Pages[PageIndex].Rewards.Length)
         {
+            if (SelectedRewardIndex == index)
+            {
+                return;
+            }
             _selections[PageIndex] = index;
         }
         else if (Tab == HubTab.SeasonalRewards && index >= 0 && index < _state.SeasonalRewards.Length)
         {
+            if (_seasonalSelection == index)
+            {
+                return;
+            }
             _seasonalSelection = index;
         }
         else
@@ -139,7 +149,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
             return;
         }
 
-        Render();
+        RenderContent();
     }
 
     public void ShowMessage(string message, bool retry)
@@ -165,6 +175,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
             _page!.gameObject.SetActive(false);
             UiElements.Destroy(_page.gameObject);
         }
+        _content = null;
         _page = UiElements.Rect("HubPage", _stage, 1920, 1080);
         var bg = Art(_page, "HubBackground", "sharedassets48-496", 0, 0, 1920, 1080);
         bg.color = Color.white;
@@ -186,16 +197,12 @@ public sealed partial class SeasonsHubScreen : IDisposable
         leagues.color = new Color(.34f, .4f, .38f, .5f);
         Hint(leagues.gameObject, "Leagues and ratings are unavailable.", 1150, 100);
         Button(root, "BACK", 1655, 55, 155, 40, () => CloseRequested?.Invoke(), false);
-        if (Tab == HubTab.BattlePass)
-        {
-            RenderBattlePass(root);
-        }
-        else
+        if (Tab != HubTab.BattlePass)
         {
             if (_state.LegacyBranding)
             {
-                var logo = Art(root, "SeasonLogo", "sharedassets44-643", 650, 110, 620, 207);
-                logo.preserveAspect = true;
+                var logo = UiElements.Fill(Box(root, "SeasonLogo", 650, 110, 620, 207), Color.white);
+                logo.sprite = SeasonLogoArtwork.Load();
                 Video(root, "Season_1_logo_video_1380x460.webm", 650, 110, 620, 207, false, logo);
             }
             else if (_state.BannerImage.Length > 0)
@@ -210,14 +217,40 @@ public sealed partial class SeasonsHubScreen : IDisposable
             Video(root, "Smoke_1144x264.webm", 445, 135, 1030, 238, true);
             TabButton(root, "SEASONAL REWARDS", 108, 316, 290, Tab == HubTab.SeasonalRewards, () => ShowTab(HubTab.SeasonalRewards));
             TabButton(root, "ABOUT THE SEASON", 414, 316, 290, Tab == HubTab.AboutSeason, () => ShowTab(HubTab.AboutSeason));
-            if (Tab == HubTab.SeasonalRewards)
-            {
-                RenderSeasonal(root);
-            }
-            else
-            {
-                RenderAbout(root);
-            }
+        }
+        RenderContent();
+    }
+
+    private void RenderContent()
+    {
+        if (_disposed || !_page || !Root.activeSelf)
+        {
+            return;
+        }
+
+        _ready = false;
+        DismissTutorial();
+        DismissDialog();
+        HideTooltip();
+        if (_content)
+        {
+            _content!.gameObject.SetActive(false);
+            UiElements.Destroy(_content.gameObject);
+        }
+
+        // Reward selection and paging must not recreate navigation or restart the header videos.
+        _content = UiElements.Rect("HubContent", _page!, 1920, 1080);
+        if (Tab == HubTab.BattlePass)
+        {
+            RenderBattlePass(_content);
+        }
+        else if (Tab == HubTab.SeasonalRewards)
+        {
+            RenderSeasonal(_content);
+        }
+        else
+        {
+            RenderAbout(_content);
         }
         _ready = true;
     }
