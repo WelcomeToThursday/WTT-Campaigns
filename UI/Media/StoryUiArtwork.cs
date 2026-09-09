@@ -8,6 +8,7 @@ namespace SeasonalPerks.UI.Media;
 public static class StoryUiArtwork
 {
     private static readonly Dictionary<string, Sprite> Sprites = new();
+    public static Func<string, Sprite>? SharedStatusIcon;
 
     public static Sprite Load(string name) => Load(name, Vector4.zero);
 
@@ -15,6 +16,14 @@ public static class StoryUiArtwork
     {
         if (Sprites.TryGetValue(name, out var sprite) && sprite)
             return sprite;
+#if !UNITY_EDITOR
+        if (name == "journal-active" || name == "journal-complete" || name == "journal-failed")
+        {
+            sprite = SharedStatusIcon?.Invoke(name) ?? throw new InvalidDataException("Missing shared story status icon: " + name);
+            Sprites[name] = sprite;
+            return sprite;
+        }
+#endif
 #if UNITY_EDITOR
         var bytes = File.ReadAllBytes(
             Path.GetFullPath(Path.Combine(Application.dataPath, "../../SeasonalPerks/UI/Resources/Story", name + ".png"))

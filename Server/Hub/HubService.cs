@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using SeasonalPerks.Server.Seasons;
 using SeasonalPerks.Shared.Contracts;
+using SeasonalPerks.Shared.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Routers;
 
@@ -15,20 +16,8 @@ public sealed class HubService(SeasonRepository repository)
     {
         _state = repository.Current.Hub;
         var ids = repository
-            .Playable.Values.Select(r => r.Hub)
-            .SelectMany(state =>
-                state
-                    .Pages.SelectMany(p => p.Rewards)
-                    .Concat(state.SeasonalRewards)
-                    .SelectMany(r => new[] { r.Image, r.BigImage })
-                    .Concat(state.Documents.SelectMany(d => new[] { d.Image, d.UnavailableImage }))
-                    .Concat(state.Slides.Select(s => s.Image))
-                    .Append(state.BadgeImage)
-                    .Append(state.BannerImage)
-                    .Where(SeasonalPerks.Shared.Seasons.SeasonValidator.IsId)
-                    .Append(state.UniversalImage)
-                    .Append(state.UniversalUnavailableImage)
-            )
+            .Playable.Values.SelectMany(r => SeasonCompiler.Assets(r.Definition))
+            .Where(SeasonValidator.IsId)
             .Distinct(StringComparer.Ordinal);
         foreach (var id in ids)
         {

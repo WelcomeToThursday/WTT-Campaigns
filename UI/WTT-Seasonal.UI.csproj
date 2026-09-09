@@ -8,7 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources\Hub\*.png" LogicalName="SeasonalPerks.Hub.%(Filename)%(Extension)" />
-    <EmbeddedResource Include="Resources\Story\*.png" LogicalName="SeasonalPerks.Story.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="Resources\Story\*.png" Exclude="Resources\Story\journal-active.png;Resources\Story\journal-complete.png;Resources\Story\journal-failed.png" LogicalName="SeasonalPerks.Story.%(Filename)%(Extension)" />
     <EmbeddedResource Include="Resources\Story\ambient-probes.txt" LogicalName="SeasonalPerks.Story.ambient-probes.txt" />
     <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(ManagedDir)UnityEngine.ImageConversionModule.dll" Private="false" />
     <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />

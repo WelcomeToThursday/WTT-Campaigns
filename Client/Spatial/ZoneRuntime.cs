@@ -205,7 +205,13 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
         }
     }
 
-    public void OnTriggerStay(Collider other, Collider trigger)
+    // EFT's physics dispatcher supplies two colliders; Unity messages only accept one.
+    void IPhysicsTriggerWithStay.OnTriggerStay(Collider other, Collider trigger)
+    {
+        OnTriggerEnter(other);
+    }
+
+    private void OnTriggerStay(Collider other)
     {
         OnTriggerEnter(other);
     }

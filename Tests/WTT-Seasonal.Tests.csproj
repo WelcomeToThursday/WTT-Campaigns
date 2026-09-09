@@ -13,6 +13,8 @@
     <Compile Include="..\Server\Seasons\SeasonRepository.cs" Link="Storage\SeasonRepository.cs" />
     <Compile Include="..\Server\Seasons\SeasonItemBundles.cs" Link="Storage\SeasonItemBundles.cs" />
     <Compile Include="..\Client\UI\ImageRequestCache.cs" Link="Client\ImageRequestCache.cs" />
+    <Compile Include="..\Client\Story\StoryChapterChanges.cs" Link="Client\StoryChapterChanges.cs" />
+    <Compile Include="..\Server\Hub\HubService.cs" Link="Hub\HubService.cs" />
     <Compile Include="..\Client\Patches\Session\RequestIdentity.cs" Link="Client\RequestIdentity.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />
     <Compile Include="..\Server\Story\StoryPreparation.cs" Link="Story\StoryPreparation.cs" />

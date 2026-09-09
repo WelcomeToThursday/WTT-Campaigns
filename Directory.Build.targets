@@ -9,7 +9,7 @@
       <_SeasonalRuntimeFile Include="$(TargetPath)" />
     </ItemGroup>
     <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.Client'">
-      <_SeasonalRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Seasonal.UI.dll;$(TargetDir)WTT-Seasonal.Shared.dll;$(TargetDir)seasonalperks_ui.bundle;$(TargetDir)seasonal_raid_editor.bundle;$(TargetDir)StoryMedia\**\*" />
+      <_SeasonalRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Seasonal.UI.dll;$(TargetDir)WTT-Seasonal.Shared.dll;$(TargetDir)seasonalperks_ui.bundle;$(TargetDir)seasonal_raid_editor.bundle;$(TargetDir)seasonal_story_notifications.bundle;$(TargetDir)StoryMedia\**\*" />
     </ItemGroup>
     <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.Server'">
       <_SeasonalRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Seasonal.Shared.dll;$(TargetDir)Newtonsoft.Json.dll;$(TargetDir)WTT-Seasonal.Server.deps.json;$(TargetDir)data\**\*;$(TargetDir)icons\**\*;$(TargetDir)hub-images\**\*;$(TargetDir)wwwroot\**\*" />

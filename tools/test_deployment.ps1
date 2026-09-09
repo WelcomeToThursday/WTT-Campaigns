@@ -11,10 +11,12 @@ $backups = Join-Path $fixture 'backups'
 New-Item -ItemType Directory -Path $source,$client,$mod -Force | Out-Null
 $sourceUi = Join-Path $source 'WTT-Seasonal.UI.dll'
 $sourceServer = Join-Path $source 'WTT-Seasonal.Server.dll'
+$sourceNotification = Join-Path $source 'seasonal_story_notifications.bundle'
 $targetUi = Join-Path $client 'WTT-Seasonal.UI.dll'
 $targetServer = Join-Path $mod 'WTT-Seasonal.Server.dll'
 [IO.File]::WriteAllText($sourceUi, 'validated UI fixture')
 [IO.File]::WriteAllText($sourceServer, 'validated server fixture')
+[IO.File]::WriteAllText($sourceNotification, 'validated notification prefab fixture')
 [IO.File]::WriteAllText($targetUi, 'previous UI fixture')
 [IO.File]::WriteAllText((Join-Path $mod 'config.json'), 'preserve config')
 New-Item -ItemType Directory -Path (Join-Path $mod 'creator'),(Join-Path $server 'user/profiles') -Force | Out-Null
@@ -23,7 +25,7 @@ New-Item -ItemType Directory -Path (Join-Path $mod 'creator'),(Join-Path $server
 $manifest = Join-Path $fixture 'files.props'
 function Write-Manifest([string]$UiPath = 'client/WTT-Seasonal.UI.dll', [string]$ExpectedHash = '', [switch]$Duplicate) {
     $document = [xml]'<Project><ItemGroup /></Project>'
-    $items = @(@{ Source = $sourceUi; Path = $UiPath }, @{ Source = $sourceServer; Path = 'server/WTT-Seasonal.Server.dll' })
+    $items = @(@{ Source = $sourceUi; Path = $UiPath }, @{ Source = $sourceServer; Path = 'server/WTT-Seasonal.Server.dll' }, @{ Source = $sourceNotification; Path = 'client/seasonal_story_notifications.bundle' })
     if ($Duplicate) { $items += $items[0] }
     foreach ($file in $items) {
         $item = $document.CreateElement('SeasonalDeployFile')
@@ -49,6 +51,7 @@ Write-Manifest
 $oldHash = Hash $targetUi
 Deploy -Name first
 Check ((Hash $sourceUi) -eq (Hash $targetUi) -and (Hash $sourceServer) -eq (Hash $targetServer)) 'Install uses game and separate server paths with spaces'
+Check ((Hash $sourceNotification) -eq (Hash (Join-Path $client 'seasonal_story_notifications.bundle'))) 'Dedicated chapter prefab bundle deploys with matching components'
 $backup = Get-ChildItem -LiteralPath $backups -Filter 'WTT-Seasonal.UI.dll' -Recurse -File | Select-Object -First 1
 Check ((Hash $backup.FullName) -eq $oldHash) 'Previous file backed up byte for byte'
 Check ((Get-Content -LiteralPath (Join-Path $mod 'config.json') -Raw) -eq 'preserve config') 'Configuration preserved'

@@ -68,6 +68,7 @@ public sealed partial class StoryService
         }
 
         facts.TradersWithNewQuests.Clear();
+        facts.AvailableQuestIds.Clear();
         foreach (var metadata in definition.Quests)
         {
             var status = facts.QuestStatuses.GetValueOrDefault(metadata.QuestId) ?? "Locked";
@@ -76,8 +77,14 @@ public sealed partial class StoryService
                 continue;
             }
             var template = repository.Runtime(state.SeasonId).Definition.Quests.FirstOrDefault(q => (string?)q.Id == metadata.QuestId);
-            if (template != null && template.Conditions.AvailableForStart.All(c => Condition(c, pmc, definition, state, facts)))
+            if (
+                template != null
+                && template
+                    .Conditions.AvailableForStart.Where(c => c.IsNecessary != false)
+                    .All(c => Condition(c, pmc, definition, state, facts))
+            )
             {
+                facts.AvailableQuestIds.Add(metadata.QuestId);
                 facts.TradersWithNewQuests.Add((string)template.TraderId!);
             }
         }

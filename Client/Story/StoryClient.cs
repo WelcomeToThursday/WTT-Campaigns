@@ -14,6 +14,7 @@ internal static class StoryClient
     private static object? _session;
     private static readonly HashSet<string> ProjectedVariables = new();
     private static object? _projectedProfile;
+    private static readonly StoryChapterChanges ChapterChanges = new();
     internal static StoryResponse? Current { get; private set; }
     internal static event Action? Changed;
 
@@ -28,6 +29,7 @@ internal static class StoryClient
         _appliedRevision = -1;
         Current = null;
         _session = null;
+        ChapterChanges.Reset();
     }
 
     private static StoryRequest Request()
@@ -254,6 +256,18 @@ internal static class StoryClient
         }
         Current = response;
         _character = response.CharacterId;
+        try
+        {
+            foreach (var change in ChapterChanges.Accept(response))
+            {
+                EFT.Communications.NotificationManager.DisplayNotification(new StoryChapterNotification(change.Chapter, change.Status));
+            }
+        }
+        catch (Exception exception)
+        {
+            // Presentation must not turn an already committed story operation into a failed mutation.
+            Plugin.LogInfo("Story chapter notification unavailable: " + exception.Message);
+        }
         Changed?.Invoke();
     }
 }

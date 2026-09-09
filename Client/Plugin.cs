@@ -53,6 +53,8 @@ public sealed class Plugin : BaseUnityPlugin
         Instance = this;
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
+        SeasonalPerks.UI.Media.StoryUiArtwork.SharedStatusIcon = name =>
+            SeasonUi.Instance.UiBundle.LoadAsset<UnityEngine.Sprite>("assets/mods/seasonalperks.assets/storystatusicons/" + name + ".png");
         gameObject.AddComponent<SeasonHubUi>();
         gameObject.AddComponent<Spatial.ZoneRuntime>();
         gameObject.AddComponent<Authoring.RaidEditor>();

@@ -55,6 +55,7 @@ SeasonalPerks.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
 SeasonalPerks.Tests.NativeModelChecks.Run(Check);
 SeasonalPerks.Tests.SeasonItemBundleChecks.Run(Check);
 SeasonalPerks.Tests.StoryChecks.Run(Check);
+SeasonalPerks.Tests.StoryChapterNotificationChecks.Run(Check);
 SeasonalPerks.Tests.StoryEngineChecks.Run(Check);
 SeasonalPerks.Tests.StoryV2Checks.Run(Check);
 SeasonalPerks.Tests.AuthoringChecks.Run(Check);

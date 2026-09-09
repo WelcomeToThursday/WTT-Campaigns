@@ -11,6 +11,9 @@ public sealed class StoryFacts
     public StoryRaidObservation? Observation { get; set; }
     public int FreeSpecialSlots { get; set; }
     public Dictionary<string, string> QuestStatuses { get; set; } = new();
+
+    // Server-evaluated prerequisites, separate from the native accepted quest status.
+    public HashSet<string> AvailableQuestIds { get; set; } = new();
     public HashSet<string> CompletedConditions { get; set; } = new();
     public Dictionary<string, double> ConditionCounters { get; set; } = new();
     public Dictionary<string, double> TraderReputation { get; set; } = new();

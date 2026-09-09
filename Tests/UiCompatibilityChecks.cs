@@ -91,6 +91,63 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            var zoneBridge = client.MainModule.GetType("SeasonalPerks.Client.Spatial.NativeZoneBridge");
+            var unityStay = zoneBridge.Methods.Single(m => m.Name == "OnTriggerStay");
+            Check(
+                unityStay.Parameters.Count == 1 && unityStay.Parameters[0].ParameterType.FullName == "UnityEngine.Collider",
+                "Seasonal zone stay callback has a valid Unity message signature"
+            );
+            var eftStay = zoneBridge.Methods.Single(m => m.Overrides.Any(o => o.Name == "OnTriggerStay"));
+            Check(
+                eftStay.Name != "OnTriggerStay" && eftStay.Parameters.Count == 2,
+                "EFT two-collider dispatcher is implemented explicitly without colliding with Unity messages"
+            );
+            Check(
+                new[] { unityStay, eftStay }.All(m =>
+                    m.Body.Instructions.Any(i => i.Operand is MethodReference call && call.Name == "OnTriggerEnter")
+                ),
+                "Both physics paths recover occupancy for players already inside the zone"
+            );
+            var storyAccept = client.MainModule.GetType("SeasonalPerks.Client.Story.StoryClient").Methods.Single(m => m.Name == "Accept");
+            Check(
+                storyAccept.Body.Instructions.Any(i =>
+                    i.Operand is MethodReference call && call.DeclaringType.Name == "StoryChapterChanges" && call.Name == "Accept"
+                ),
+                "All accepted story snapshots feed chapter notifications, including passive raid refreshes"
+            );
+            Check(
+                types["EFT.Communications.NotificationManager"].Methods.Any(m => m.Name == "DisplayNotification" && m.IsStatic),
+                "Chapter notifications bind the installed native notification queue"
+            );
+            var chapterNotification = client.MainModule.GetType("SeasonalPerks.Client.Story.StoryChapterNotification");
+            Check(
+                chapterNotification
+                    .Methods.Single(m => m.Name == "CreateView")
+                    .Body.Instructions.Any(i =>
+                        i.Operand is MethodReference call
+                        && call.DeclaringType.Name == "StoryChapterNotificationView"
+                        && call.Name == "Create"
+                    ),
+                "Story chapters use a dedicated notification view rather than the generic toast"
+            );
+            var chapterView = client.MainModule.GetType("SeasonalPerks.Client.Story.StoryChapterNotificationView");
+            Check(
+                chapterView.BaseType.FullName == "EFT.UI.BaseNotificationView"
+                    && chapterView
+                        .Methods.Single(m => m.Name == "get_ReturnToPool")
+                        .Body.Instructions.Any(i => i.OpCode == Mono.Cecil.Cil.OpCodes.Ldc_I4_0),
+                "The dedicated banner participates in native dismissal without contaminating the generic notification pool"
+            );
+            Check(
+                chapterView
+                    .Methods.Single(m => m.Name == "Create")
+                    .Body.Instructions.Any(i => Equals(i.Operand, "seasonal_story_notifications.bundle")),
+                "Chapter notification GameObjects load from their dedicated bundle"
+            );
+            Check(
+                types["EFT.UI.BaseNotificationView"].Methods.Any(m => m.Name == "OnAnimationDone" && m.Parameters.Count == 0),
+                "Bundled notification animation completion binds the native dismissal callback"
+            );
             var startup = client
                 .MainModule.GetType("SeasonalPerks.Client.Patches.Session.BackendIdentity")
                 .Methods.Single(m => m.Name == "Prefix")
