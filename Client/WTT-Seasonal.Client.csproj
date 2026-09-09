@@ -39,8 +39,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\seasonal_raid_editor.bundle" CopyToOutputDirectory="PreserveNewest" TargetPath="seasonal_raid_editor.bundle" />
-    <None Include="Resources\seasonal_story_notifications.bundle" CopyToOutputDirectory="PreserveNewest" TargetPath="seasonal_story_notifications.bundle" />
-    <None Include="Resources\story-notification-validation.json" CopyToOutputDirectory="PreserveNewest" TargetPath="story-notification-validation.json" />
+    <None
+      Include="Resources\seasonal_story_notifications.bundle"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="seasonal_story_notifications.bundle"
+    />
+    <None
+      Include="Resources\story-notification-validation.json"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="story-notification-validation.json"
+    />
     <None
       Include="Resources\StoryMedia\**\*"
       CopyToOutputDirectory="PreserveNewest"
