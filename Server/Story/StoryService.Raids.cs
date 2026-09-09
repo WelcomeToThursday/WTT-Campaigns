@@ -156,7 +156,18 @@ public sealed partial class StoryService
         var binding =
             definition.RaidBindings.SingleOrDefault(b => b.Id == request.Target && b.Location == raid.Location)
             ?? throw new InvalidOperationException("This story interaction is not registered for this location.");
-        if (!StoryRules.Evaluate(binding.Condition, definition, state, facts))
+        if (binding.Kind != "Collectible")
+        {
+            var separator = binding.ObjectPath.IndexOf(":/", StringComparison.Ordinal);
+            var scene = separator < 0 ? "" : binding.ObjectPath[..separator];
+            if (request.Scene != scene)
+            {
+                throw new InvalidOperationException("The interaction belongs to another scene.");
+            }
+
+            facts.Scene = scene;
+        }
+        if ((binding.Kind != "Cinematic" || request.Kind == "begin") && !StoryRules.Evaluate(binding.Condition, definition, state, facts))
         {
             throw new InvalidOperationException("The story interaction is not available yet.");
         }
@@ -164,11 +175,15 @@ public sealed partial class StoryService
         {
             if (request.Kind == "begin")
             {
-                if (raid.Cinematic.Length > 0 || state.CompletedBindings.Contains(binding.Id) && binding.Once)
+                if (
+                    raid.Cinematic.Length > 0
+                    || binding.Once && (state.CompletedBindings.Contains(binding.Id) || raid.Seen.Contains(binding.Id))
+                )
                 {
                     return;
                 }
                 raid.Cinematic = binding.Id;
+                engine.CinematicBindingId = binding.Id;
                 engine.Presentation.Add(new StoryAction { Type = StoryActionType.StartCinematic, Target = binding.MediaId });
                 return;
             }
@@ -202,6 +217,11 @@ public sealed partial class StoryService
             return;
         }
         raid.Seen.Add(binding.Id);
+        if (binding.Kind != "Cinematic")
+        {
+            engine.EventMediaId = binding.MediaId;
+        }
+
         if (binding.PersistOnDeath)
         {
             CompleteBinding(binding, state, engine);

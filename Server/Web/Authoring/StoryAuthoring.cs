@@ -67,8 +67,15 @@ public static class StoryAuthoring
             "variables" => story.Variables.Select(v => (v.Id, ReferenceNames.Label(season, v, (_, id) => id))),
             "entries" => story.EntryPoints.Select(v => (v.Id, ReferenceNames.Label(season, v, (_, id) => id))),
             "bindings" => story.RaidBindings.Select(v => (v.Id, Label(v))),
-            "media" or "Image" or "Audio" or "cinematic" => story
-                .Media.Where(v => kind == "media" || (kind == "cinematic" ? v.Kind is "Cinematic" or "Video" : v.Kind == kind))
+            "media" or "eventmedia" or "Image" or "Audio" or "cinematic" => story
+                .Media.Where(v =>
+                    kind == "media"
+                    || (
+                        kind == "eventmedia" ? v.Kind != "TraderScene"
+                        : kind == "cinematic" ? v.Kind is "Cinematic" or "Video"
+                        : v.Kind == kind
+                    )
+                )
                 .Select(v => (v.Id, Label(v))),
             "ownedquests" => season
                 .Quests.Where(q => story.Quests.Any(m => m.QuestId == (string?)q.Id))
@@ -90,7 +97,7 @@ public static class StoryAuthoring
             "DialogId" => "dialogs",
             "MainVariable" => "variables",
             "EntryPointId" => "entries",
-            "MediaId" => owner is StoryRaidBinding { Kind: "Cinematic" } ? "cinematic" : "media",
+            "MediaId" => owner is StoryRaidBinding { Kind: "Cinematic" } ? "cinematic" : "eventmedia",
             "QuestId" => owner is StoryAction ? "ownedquests" : "quests",
             "ConditionId" or "ConditionIds" => "objectives",
             "TraderId" => "traders",
@@ -205,6 +212,11 @@ public static class StoryAuthoring
         if (owner is StoryRaidBinding b && field is "ItemId" or "ObjectPath")
         {
             return (field == "ItemId") == (b.Kind == "Collectible");
+        }
+
+        if (owner is StoryMedia resource && field == "TraderId")
+        {
+            return resource.Kind == "TraderScene";
         }
 
         if (owner is StoryNoteLink l && field == "TraderId")
@@ -405,6 +417,8 @@ public static class StoryAuthoring
             "Order" => "Chapter display order, lowest first. Move earlier and Move later also update this number.",
             "ChapterId" =>
                 "The chapter that groups this quest or note in the journal. Moving a quest does not automatically move its existing notes.",
+            "TraderId" when owner is StoryMedia =>
+                "Trader whose visit uses this room. One custom room per trader per season; the prefab needs an inactive root and exactly one StoryCamera.",
             "TraderId" => "The installed trader associated with this record. Select by name; the reference ID is retained for the game.",
             "DialogId" => "The conversation opened by this entry point. Its named start point determines the initial phase.",
             "StartPoint" =>
@@ -442,9 +456,10 @@ public static class StoryAuthoring
                 "The Unity asset's purpose. Browser previews show text and PNG artwork; Unity playback must be checked in game.",
             "Location" => "Exact runtime map key, for example woods. This limits which raid can activate the binding.",
             "Scene" =>
-                "Optional scene restriction for this entry point. Use the installed scene identifier expected by the game integration.",
+                "Exact Unity scene name required for entry; blank allows any scene. Raid entries use the bound object�s scene; lobby entries use the trader screen�s scene.",
             "EntryPointId" => "Optional conversation entry opened by this raid event when its conditions pass.",
-            "MediaId" => "Installed story media requested by this event. Unity bundles must be installed separately.",
+            "MediaId" =>
+                "Play installed image, audio, video or cinematic media when this event is accepted, before its conversation. Survival settings control progression separately.",
             "ItemId" => "The collectible's item template. This identifies an existing item; it does not spawn loot.",
             "Links" => "Optional item, offer or craft shortcuts attached to the journal note.",
             "ConditionId" => "The handover objective to complete. Choose a compatible objective belonging to the selected owned quest.",
@@ -476,7 +491,8 @@ public static class StoryAuthoring
             "Bundle" =>
                 "Path beneath StoryMedia, for example packs/my-season/visit.bundle. Install Unity bundles separately from the season ZIP.",
             "Sha256" => "64 hexadecimal characters from the finalized installed bundle's SHA-256 checksum.",
-            "Asset" => "Exact asset name inside the finalized bundle. TraderScene registration does not replace a built-in room.",
+            "Asset" =>
+                "Exact asset name inside the finalized bundle. Assign a TraderScene to a trader to replace its built-in visit room; unassigned rooms remain unused.",
             "Key" => "Exact room animation dictionary key, or localization key for a subtitle. Keys differ between traders.",
             "Start" or "End" when owner is StorySequence =>
                 "Time in seconds from the start of the line. End must be at or after Start, at most 3600 seconds.",

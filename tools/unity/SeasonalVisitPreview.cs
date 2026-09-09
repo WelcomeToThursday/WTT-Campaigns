@@ -18,6 +18,40 @@ public static class SeasonalVisitPreview
 {
     public static void Render()
     {
+        var custom = new GameObject("Custom room validation");
+        var camera = new GameObject("StoryCamera");
+        camera.transform.SetParent(custom.transform);
+        camera.AddComponent<Camera>();
+        bool Rejected()
+        {
+            try
+            {
+                Object.DestroyImmediate(StoryRoomCamera.InstantiateCustomRoom(custom));
+                return false;
+            }
+            catch (InvalidOperationException)
+            {
+                return true;
+            }
+        }
+        if (!Rejected())
+            throw new InvalidOperationException("Active custom rooms must be rejected before instantiation.");
+        custom.SetActive(false);
+        var instance = StoryRoomCamera.InstantiateCustomRoom(custom);
+        if (instance.activeSelf)
+            throw new InvalidOperationException("Custom room activated before preparation.");
+        StoryRoomCamera.Prepare(instance);
+        Object.DestroyImmediate(instance);
+        camera.name = "OtherCamera";
+        if (!Rejected())
+            throw new InvalidOperationException("Missing StoryCamera must be rejected.");
+        camera.name = "StoryCamera";
+        var duplicate = new GameObject("StoryCamera");
+        duplicate.transform.SetParent(custom.transform);
+        duplicate.AddComponent<Camera>();
+        if (!Rejected())
+            throw new InvalidOperationException("Ambiguous custom cameras must be rejected.");
+        Object.DestroyImmediate(custom);
         foreach (var size in new[] { new Vector2Int(1920, 1080), new Vector2Int(2560, 1440), new Vector2Int(1902, 992) })
             RenderAt(size);
     }
@@ -89,6 +123,25 @@ public static class SeasonalVisitPreview
             Object.DestroyImmediate(image);
             RenderTexture.active = null;
         }
+        panel.Set(
+            "Prapor",
+            "This closing line waits until you continue.",
+            "",
+            new[]
+            {
+                new StoryReplyView { Id = "continue", Text = "Continue" },
+            },
+            false
+        );
+        Layout();
+        Check(Find("Continue").interactable, "Text-only Continue is inaccessible");
+        Check(
+            canvas.GetComponentsInChildren<Text>().Any(t => t.text == "This closing line waits until you continue."),
+            "Closing text is not visible while awaiting acknowledgement"
+        );
+        Find("Continue").onClick.Invoke();
+        Check(selected == "continue", "Continue callback does not reach presentation");
+        Capture("continue");
         panel.Set("Prapor", "", "", replies, false);
         Layout();
         Check(!canvas.GetComponentsInChildren<Button>().Any(b => b.name == "Skip playback"), "Idle visit exposes Skip");
@@ -149,7 +202,7 @@ public static class SeasonalVisitPreview
         Capture("button-hover");
         File.WriteAllText(
             Path.Combine(folder, "visit-checks-" + size.y + ".txt"),
-            "Passed: compact idle, navigation, busy state, skip, confirmation, history, leave, long-text scrolling, screen bounds, Visit callback and hover.\n"
+            "Passed: text-only Continue, closing text acknowledgement, compact idle, navigation, busy state, skip, confirmation, history, leave, long-text scrolling, screen bounds, Visit callback and hover.\n"
         );
         camera.targetTexture = null;
         Object.DestroyImmediate(target);

@@ -15,6 +15,7 @@
     <Compile Include="..\Client\UI\ImageRequestCache.cs" Link="Client\ImageRequestCache.cs" />
     <Compile Include="..\Client\Patches\Session\RequestIdentity.cs" Link="Client\RequestIdentity.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />
+    <Compile Include="..\Server\Story\StoryPreparation.cs" Link="Story\StoryPreparation.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\data\**\*" Link="data\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />

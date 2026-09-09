@@ -9,7 +9,7 @@ def main():
     account = json.loads((PROJECT / 'Testing/story-state.json').read_text())
     fixture = json.loads((SERVER / 'user/mods/SeasonalPerks/creator/acceptance-fixture.json').read_text())
     child = account['child']
-    identity = {'Version': 1, 'SeasonId': account['season'], 'CharacterId': child}
+    identity = {'Version': 2, 'SeasonId': account['season'], 'CharacterId': child}
 
     def read():
         result = request('/wtt-seasonal/story', identity, child)
@@ -19,7 +19,7 @@ def main():
     def event(binding, kind, item='', raid_id=None, error=False):
         state = read()
         payload = {**identity, 'ExpectedRevision': state['Revision'], 'OperationId': secrets.token_hex(16),
-                   'Target': binding, 'Kind': kind, 'ItemId': item,
+                   'Target': binding, 'Kind': kind, 'ItemId': item, 'Scene': next(b for b in state['Definition']['RaidBindings'] if b['Id'] == binding)['ObjectPath'].split(':/')[0],
                    'RaidId': raid_id if raid_id is not None else state['State']['Raid']['Id']}
         result = request('/wtt-seasonal/story/raid', payload, child)
         check(bool(result.get('Error')) == error, kind + (' rejected' if error else ' committed'))

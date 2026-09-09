@@ -368,12 +368,30 @@ internal static class AuthoringChecks
             ],
         };
         season.Story.RaidBindings.Add(raid);
-        var raidRun = new StoryRehearsal(season, new() { InRaid = true, Location = "woods" }, 7);
+        var raidRun = new StoryRehearsal(
+            season,
+            new()
+            {
+                InRaid = true,
+                Location = "woods",
+                Scene = "scene",
+            },
+            7
+        );
         raidRun.Trigger(raid.Id);
         check(!raidRun.State.Notes.ContainsKey(note.Id), "Survival-dependent binding defers its actions");
         raidRun.FinishRaid(false);
         check(!raidRun.State.Notes.ContainsKey(note.Id), "Death discards deferred actions");
-        raidRun = new(season, new() { InRaid = true, Location = "woods" }, 7);
+        raidRun = new(
+            season,
+            new()
+            {
+                InRaid = true,
+                Location = "woods",
+                Scene = "scene",
+            },
+            7
+        );
         raidRun.Trigger(raid.Id);
         raidRun.FinishRaid(true);
         check(raidRun.State.Notes.ContainsKey(note.Id), "Survival commits deferred actions");

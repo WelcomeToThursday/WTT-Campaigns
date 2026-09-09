@@ -10,6 +10,7 @@ public sealed class StoryTraderHost : MonoBehaviour
 {
     private TraderScreensGroup? _native;
     private Button? _visit;
+    private bool _loading;
     internal TraderScreensGroup Native
     {
         get { return _native!; }
@@ -25,6 +26,27 @@ public sealed class StoryTraderHost : MonoBehaviour
             _visit = StoryVisitButton.Create(tab.parent.parent, font, Open, SeasonUi.Instance.PlayInterfaceSound);
         }
         _visit!.gameObject.SetActive(StoryClient.Available && StoryMediaStore.HasTrader(native.Trader.Id));
+        if (StoryClient.Available && !_loading)
+        {
+            LoadStory();
+        }
+    }
+
+    private async void LoadStory()
+    {
+        _loading = true;
+        try
+        {
+            await StoryClient.Load();
+        }
+        catch (Exception exception)
+        {
+            Plugin.LogInfo("Trader story could not load: " + exception.Message);
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private void Update()

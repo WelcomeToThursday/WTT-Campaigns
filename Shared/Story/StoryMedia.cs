@@ -7,4 +7,7 @@ public sealed class StoryMedia
     public string Bundle { get; set; } = "";
     public string Asset { get; set; } = "";
     public string Sha256 { get; set; } = "";
+    public string TraderId { get; set; } = "";
+
+    public bool ShouldSerializeTraderId() => TraderId.Length > 0;
 }

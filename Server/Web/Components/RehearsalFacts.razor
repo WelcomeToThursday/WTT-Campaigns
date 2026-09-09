@@ -3,7 +3,7 @@
 @using System.Globalization
 @using SeasonalPerks.Shared.Story
 @using SeasonalPerks.Server.Web.Authoring
-<div class="form-grid"><label>Player level<input type="number" min="1" @bind="Facts.Level" /></label><label>Location<input @bind="Facts.Location" placeholder="woods" /></label><label class="check"><input type="checkbox" @bind="Facts.InRaid" />In raid</label><label>Free special slots<input type="number" min="0" @bind="Facts.FreeSpecialSlots" /></label></div>
+<div class="form-grid"><label>Player level<input type="number" min="1" @bind="Facts.Level" /></label><label>Location<input @bind="Facts.Location" placeholder="woods" /></label><label>Unity scene<input @bind="Facts.Scene" placeholder="Exact scene name" /></label><label class="check"><input type="checkbox" @bind="Facts.InRaid" />In raid</label><label>Free special slots<input type="number" min="0" @bind="Facts.FreeSpecialSlots" /></label></div>
 <ContentPicker Kind="traders" Label="Current trader" @bind-Value="Facts.TraderId" />
 @foreach (var property in typeof(StoryFacts).GetProperties().Where(p => p.GetValue(Facts) is IDictionary))
 {

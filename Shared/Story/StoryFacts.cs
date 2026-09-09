@@ -1,12 +1,14 @@
 namespace SeasonalPerks.Shared.Story;
 
-// Constructed by the authority from the active profile; never accepted from a mutation request.
+// Constructed by the authority from the active profile plus validated, ephemeral raid observations.
 public sealed class StoryFacts
 {
     public bool InRaid { get; set; }
     public int Level { get; set; }
     public string Location { get; set; } = "";
     public string TraderId { get; set; } = "";
+    public string Scene { get; set; } = "";
+    public StoryRaidObservation? Observation { get; set; }
     public int FreeSpecialSlots { get; set; }
     public Dictionary<string, string> QuestStatuses { get; set; } = new();
     public HashSet<string> CompletedConditions { get; set; } = new();

@@ -6,11 +6,13 @@ namespace SeasonalPerks.Server.Story;
 
 public sealed partial class StoryService
 {
-    private StoryFacts Facts(string id, SptProfile profile, StoryProgress state, StoryDefinition definition)
+    private StoryFacts Facts(string id, SptProfile profile, StoryProgress state, StoryDefinition definition, StoryRequest? request = null)
     {
         var facts = new StoryFacts
         {
             TraderId = state.Conversation?.TraderId ?? "",
+            Scene = request?.Scene ?? "",
+            Observation = request?.Observation,
             SessionVariables = new(_sessions.GetOrAdd(id, _ => new())),
             InRaid = state.Raid is { Finished: false },
             Location = state.Raid is { Finished: false } ? state.Raid.Location : "",
@@ -60,6 +62,11 @@ public sealed partial class StoryService
                 }
             }
         }
+        if (facts.Observation is { } observation)
+        {
+            StoryObservationRules.Apply(facts, observation);
+        }
+
         facts.TradersWithNewQuests.Clear();
         foreach (var metadata in definition.Quests)
         {
@@ -122,7 +129,10 @@ public sealed partial class StoryService
                 return Compare(facts.CompletedConditions.Contains(target) ? 1 : 0);
             case "FindItem":
             case "HasItem":
-                return Compare((pmc.Inventory?.Items ?? []).Where(i => MatchesItem(i, c)).Sum(i => i.Upd?.StackObjectsCount ?? 1));
+                var observedItems = facts.Observation?.Items.Select(ObservedItem).ToList();
+                return Compare(
+                    (observedItems ?? pmc.Inventory?.Items ?? []).Where(i => MatchesItem(i, c)).Sum(i => i.Upd?.StackObjectsCount ?? 1)
+                );
             case "HandoverItem":
             case "CounterCreator":
             case "VisitPlace":

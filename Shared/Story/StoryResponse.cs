@@ -2,7 +2,7 @@ namespace SeasonalPerks.Shared.Story;
 
 public sealed class StoryResponse
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
     public string? Error { get; set; }
     public string SeasonId { get; set; } = "";
     public string CharacterId { get; set; } = "";
@@ -19,4 +19,9 @@ public sealed class StoryResponse
     public string NativeUpdate { get; set; } = "";
     public long NativeRevision { get; set; }
     public List<StoryObjective> Objectives { get; set; } = new();
+    public string PreparationId { get; set; } = "";
+    public StoryHandover? Handover { get; set; }
+    public string EventMediaId { get; set; } = "";
+    public string CinematicBindingId { get; set; } = "";
+    public List<string> RaidConditionIds { get; set; } = new();
 }

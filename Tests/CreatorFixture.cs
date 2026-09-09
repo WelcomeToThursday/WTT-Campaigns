@@ -189,6 +189,7 @@ internal static class CreatorFixture
         if (story)
         {
             StoryFixture.Add(s, quest, objective, followup, followupObjective);
+            StoryV2Fixture.Add(s);
         }
         draft = store.Save(draft);
         var validation = SeasonValidator.Validate(s);

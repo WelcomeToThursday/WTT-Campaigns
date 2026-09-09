@@ -98,6 +98,7 @@ else
         prop.SetValue(Value, value);
         if (Value is StoryCondition c && prop.Name == "Type")
         { c.Conditions.Clear(); c.Target = ""; c.Status.Clear(); }
+        if (Value is StoryMedia media && prop.Name == "Kind" && media.Kind != "TraderScene") media.TraderId = "";
         if (Value is StoryAction a)
         {
             if (prop.Name == "Type") { a.Target = ""; a.QuestId = ""; a.ConditionId = ""; }

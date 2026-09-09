@@ -31,7 +31,7 @@ def main():
     switched = request('/wtt-seasonal/switch', {**base, 'Mode': 'seasonal', 'CharacterId': character}, root)
     check(not switched.get('Error'), 'Switch to Story Sandbox')
     child = switched['EffectiveProfileId']
-    identity = {'Version': 1, 'SeasonId': fixture['SeasonId'], 'CharacterId': child}
+    identity = {'Version': 2, 'SeasonId': fixture['SeasonId'], 'CharacterId': child}
     def read():
         result = request('/wtt-seasonal/story', identity, child)
         assert not result.get('Error'), result.get('Error')

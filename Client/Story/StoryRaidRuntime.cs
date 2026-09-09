@@ -1,5 +1,6 @@
 using EFT;
 using EFT.InputSystem;
+using EFT.InventoryLogic;
 using SeasonalPerks.Shared.Story;
 using UnityEngine;
 
@@ -12,9 +13,15 @@ public sealed class StoryRaidRuntime : MonoBehaviour
     private bool _loading;
     private readonly List<StorySceneBinding> _bindings = new();
     private readonly HashSet<string> _pending = new();
+    private readonly SemaphoreSlim _reports = new(1);
+    private readonly Dictionary<string, string> _itemScenes = new();
     private readonly Dictionary<string, (Player Player, string Template)> _earlyPickups = new();
     private StoryInteractionPrompt? _prompt;
     private bool _interactionCaptured;
+    private float _nextObservation;
+    private bool _observing;
+    private string _observationKey = "";
+    private float _bindRetryAt;
 
     private void Awake()
     {
@@ -24,13 +31,33 @@ public sealed class StoryRaidRuntime : MonoBehaviour
     private void Update()
     {
         var player = StoryClient.Available && Plugin.SeasonalPlayer ? Plugin.Player : null;
+        if (
+            player
+            && Plugin.InRaid
+            && !_loading
+            && !_observing
+            && !Plugin.Busy
+            && UnityEngine.Time.realtimeSinceStartup >= _nextObservation
+        )
+        {
+            RefreshObservation();
+        }
+
         var focused = player ? FocusedInteraction() : null;
+        if (!_loading && !Plugin.Busy && !StoryPresentationDispatcher.Active && !StoryVisitRuntime.Instance.InputBlocked)
+        {
+            foreach (var pickup in _earlyPickups.Where(p => p.Value.Player == player).ToArray())
+            {
+                _earlyPickups.Remove(pickup.Key);
+                Collect(pickup.Key, pickup.Value.Template);
+            }
+        }
         if (focused)
         {
             _prompt ??= new StoryInteractionPrompt();
         }
         _prompt?.Show(focused);
-        if (player == _player || _loading)
+        if (player == _player || _loading || Time.realtimeSinceStartup < _bindRetryAt)
         {
             return;
         }
@@ -102,6 +129,30 @@ public sealed class StoryRaidRuntime : MonoBehaviour
                 .Where(t => t.gameObject.scene.IsValid())
                 .GroupBy(ObjectPath)
                 .ToDictionary(g => g.Key, g => g.ToArray());
+            foreach (var loot in Resources.FindObjectsOfTypeAll<EFT.Interactive.LootItem>().Where(l => l.gameObject.scene.IsValid()))
+            {
+                var items = loot.Item is EFT.InventoryLogic.ContainerCollection collection
+                    ? collection.GetAllItemsFromCollection()
+                    : new[] { loot.Item };
+                foreach (var item in items.Where(i => i != null))
+                {
+                    _itemScenes[item.Id] = loot.gameObject.scene.name;
+                }
+            }
+            foreach (
+                var container in Resources
+                    .FindObjectsOfTypeAll<EFT.Interactive.LootableContainer>()
+                    .Where(c => c.gameObject.scene.IsValid())
+            )
+            {
+                if (container.ItemOwner?.RootItem is ContainerCollection collection)
+                {
+                    foreach (var item in collection.GetAllItemsFromCollection())
+                    {
+                        _itemScenes[item.Id] = container.gameObject.scene.name;
+                    }
+                }
+            }
             foreach (var binding in snapshot.Definition!.RaidBindings.Where(b => b.Location == raid.Location && b.Kind != "Collectible"))
             {
                 if (!transforms.TryGetValue(binding.ObjectPath, out var matches) || matches.Length != 1)
@@ -122,6 +173,8 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         catch (Exception exception)
         {
             Plugin.Error(exception);
+            _player = null;
+            _bindRetryAt = Time.realtimeSinceStartup + 5;
         }
         finally
         {
@@ -146,27 +199,54 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         {
             return;
         }
+        var owner = _bindings.FirstOrDefault(b => b && ObjectPath(b.transform) == binding.ObjectPath);
+        var character = Plugin.Player!.Profile.Id;
+        var raid = StoryClient.Current?.State?.Raid?.Id;
+        bool CurrentContext()
+        {
+            return this
+                && Plugin.SeasonalPlayer
+                && Plugin.Player?.Profile.Id == character
+                && Plugin.Player.HealthController?.IsAlive == true
+                && StoryClient.Current?.State?.Raid is { Finished: false } current
+                && current.Id == raid;
+        }
+
+        await _reports.WaitAsync();
         try
         {
-            var response = await StoryClient.Mutate("raid", binding.Id, kind ?? binding.Kind, itemId: itemId);
-            if (binding.EntryPointId.Length > 0 && response.State?.Conversation is { Closed: false })
+            while (CurrentContext() && (Plugin.Busy || StoryPresentationDispatcher.Active || StoryVisitRuntime.Instance.InputBlocked))
             {
-                var owner = _bindings.FirstOrDefault(b => b && ObjectPath(b.transform) == binding.ObjectPath);
-                var reader = owner ? owner!.GetComponentInParent<EFT.AnimationSequencePlayer.SequenceReader>() : null;
-                StoryVisitRuntime.Instance.ShowConversation(response, reader);
+                await Task.Delay(100);
             }
-            foreach (var action in response.Presentation.Where(a => a.Type == StoryActionType.StartCinematic))
+            if (!CurrentContext())
             {
-                StoryCinematicRuntime.Instance.Play(action.Target, binding.Id);
+                return;
+            }
+
+            var scene = owner ? owner!.gameObject.scene.name : _itemScenes.GetValueOrDefault(itemId, "");
+            var response = await StoryClient.Mutate("raid", binding.Id, kind ?? binding.Kind, itemId: itemId, scene: scene);
+            var reader = owner ? owner!.GetComponentInParent<EFT.AnimationSequencePlayer.SequenceReader>() : null;
+            await StoryPresentationDispatcher.Dispatch(response, reader);
+            if (
+                binding.Kind == "Cinematic"
+                && StoryClient.Current?.State?.Raid?.Cinematic.Length == 0
+                && !StoryClient.Current.State.CompletedBindings.Contains(binding.Id)
+                && !StoryClient.Current.State.Raid.Seen.Contains(binding.Id)
+            )
+            {
+                owner?.RetryTrigger();
             }
         }
         catch (Exception exception)
         {
             Plugin.Error(exception);
+            owner?.RetryTrigger();
         }
         finally
         {
             _pending.Remove(pendingKey);
+            _reports.Release();
         }
     }
 
@@ -176,7 +256,14 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         {
             return;
         }
-        if (_loading || _player != Plugin.Player || StoryClient.Current?.State?.Raid is not { Finished: false })
+        if (
+            _loading
+            || _player != Plugin.Player
+            || Plugin.Busy
+            || StoryPresentationDispatcher.Active
+            || StoryVisitRuntime.Instance.InputBlocked
+            || StoryClient.Current?.State?.Raid is not { Finished: false }
+        )
         {
             _earlyPickups[itemId] = (Plugin.Player!, templateId);
             return;
@@ -210,10 +297,45 @@ public sealed class StoryRaidRuntime : MonoBehaviour
             Destroy(binding);
         }
         _bindings.Clear();
+        _itemScenes.Clear();
         _prompt?.Dispose();
         _prompt = null;
         _interactionCaptured = false;
         _player = null;
+        _observationKey = "";
+    }
+
+    private async void RefreshObservation()
+    {
+        _observing = true;
+        _nextObservation = Time.realtimeSinceStartup + .5f;
+        try
+        {
+            var observation = StoryRaidObserver.Capture();
+            if (observation == null)
+            {
+                return;
+            }
+
+            observation.Sequence = 0;
+            var key = Newtonsoft.Json.JsonConvert.SerializeObject(observation);
+            if (key == _observationKey)
+            {
+                return;
+            }
+
+            await StoryClient.Load();
+            _observationKey = key;
+        }
+        catch (Exception exception)
+        {
+            _nextObservation = Time.realtimeSinceStartup + 5;
+            Plugin.LogInfo("Story raid refresh will retry: " + exception.Message);
+        }
+        finally
+        {
+            _observing = false;
+        }
     }
 
     private void OnDestroy()

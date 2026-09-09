@@ -9,6 +9,9 @@ public sealed class StorySceneBinding : MonoBehaviour
 {
     private StoryRaidBinding? _binding;
     private BallisticCollider? _ballistic;
+    private float _nextTrigger;
+    private readonly HashSet<Collider> _overlaps = new();
+    private bool _reported;
 
     internal void Initialize(StoryRaidBinding binding)
     {
@@ -31,6 +34,9 @@ public sealed class StorySceneBinding : MonoBehaviour
     {
         var snapshot = StoryClient.Current;
         return _binding != null
+            && !Plugin.Busy
+            && !StoryPresentationDispatcher.Active
+            && !StoryVisitRuntime.Instance.InputBlocked
             && Plugin.SeasonalPlayer
             && Plugin.Player?.HealthController?.IsAlive == true
             && snapshot?.State?.Raid is { Finished: false }
@@ -42,9 +48,40 @@ public sealed class StorySceneBinding : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (_binding?.Kind is "Trigger" or "Cinematic" && Eligible() && other.GetComponentInParent<Player>() == Plugin.Player)
+        if (other.GetComponentInParent<Player>() != Plugin.Player)
         {
+            return;
+        }
+
+        _overlaps.Add(other);
+        if (!_reported && Time.realtimeSinceStartup >= _nextTrigger && _binding?.Kind is "Trigger" or "Cinematic" && Eligible())
+        {
+            _reported = true;
+            _nextTrigger = Time.realtimeSinceStartup + .5f;
             StoryRaidRuntime.Instance.Report(_binding, _binding.Kind == "Cinematic" ? "begin" : null);
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        _overlaps.Remove(other);
+        if (_overlaps.Count == 0)
+        {
+            _reported = false;
+        }
+    }
+
+    internal void RetryTrigger()
+    {
+        _reported = false;
+        _nextTrigger = Time.realtimeSinceStartup + 5;
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        if (Time.realtimeSinceStartup >= _nextTrigger)
+        {
+            OnTriggerEnter(other);
         }
     }
 

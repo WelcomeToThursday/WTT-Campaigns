@@ -59,6 +59,25 @@ internal static class StoryChecks
         unsupportedReport = new SeasonValidationResult();
         StoryValidator.Validate(unsupported, unsupportedReport);
         check(unsupportedReport.CanPublish, "Named local media with a SHA-256 checksum validates");
+        unsupported.Story.Media[0].Kind = "TraderScene";
+        unsupported.Story.Media[0].TraderId = Trader;
+        unsupportedReport = new SeasonValidationResult();
+        StoryValidator.Validate(unsupported, unsupportedReport);
+        check(unsupportedReport.CanPublish, "One assigned custom trader room validates");
+        var secondRoom = JsonConvert.DeserializeObject<StoryMedia>(JsonConvert.SerializeObject(unsupported.Story.Media[0]))!;
+        secondRoom.Id = "100000000000000000000098";
+        unsupported.Story.Media.Add(secondRoom);
+        unsupportedReport = new SeasonValidationResult();
+        StoryValidator.Validate(unsupported, unsupportedReport);
+        check(!unsupportedReport.CanPublish, "Two assigned rooms for one trader cannot publish");
+        unsupported.Story.Media.Remove(secondRoom);
+        unsupported.Story.Media[0].TraderId = "";
+        unsupportedReport = new SeasonValidationResult();
+        StoryValidator.Validate(unsupported, unsupportedReport);
+        check(
+            unsupportedReport.CanPublish && unsupportedReport.Issues.Any(i => i.Severity == "warning"),
+            "Legacy unassigned trader rooms remain publishable with a warning"
+        );
         var initialHash = SeasonRepository.GameplayHash(season);
         copy = SeasonCompiler.Copy(season);
         copy.Story!.Chapters[0].Name = "A translated chapter";

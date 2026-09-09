@@ -47,6 +47,12 @@ internal static class StoryMediaStore
 
     internal static AssetBundle OpenTrader(string traderId)
     {
+        var custom = Trader(traderId);
+        if (custom != null)
+        {
+            return Open(custom.Bundle, custom.Sha256);
+        }
+
         var manifest =
             JsonConvert.DeserializeObject<TraderMediaManifest>(File.ReadAllText(Path.Combine(Plugin.Folder, "StoryMedia", "traders.json")))
             ?? throw new InvalidDataException("Invalid trader media manifest.");
@@ -56,16 +62,20 @@ internal static class StoryMediaStore
 
     internal static bool HasTrader(string traderId)
     {
-        return traderId
-            is "579dc571d53a0658a154fbec"
-                or "5c0647fdd443bc2504c2d371"
-                or "5a7c2eca46aef81a7ca2145d"
-                or "5935c25fb3acc3127c3d8cd9"
-                or "54cb50c76803fa8b248b4571"
-                or "5ac3b934156ae10c4430e83c"
-                or "58330581ace78e27b8b10cee"
-                or "54cb57776803fa99248b456e";
+        return Trader(traderId) != null
+            || traderId
+                is "579dc571d53a0658a154fbec"
+                    or "5c0647fdd443bc2504c2d371"
+                    or "5a7c2eca46aef81a7ca2145d"
+                    or "5935c25fb3acc3127c3d8cd9"
+                    or "54cb50c76803fa8b248b4571"
+                    or "5ac3b934156ae10c4430e83c"
+                    or "58330581ace78e27b8b10cee"
+                    or "54cb57776803fa99248b456e";
     }
+
+    internal static StoryMedia? Trader(string traderId) =>
+        StoryClient.Current?.Definition?.Media.SingleOrDefault(m => m.Kind == "TraderScene" && m.TraderId == traderId);
 
     internal static void Close(AssetBundle bundle)
     {

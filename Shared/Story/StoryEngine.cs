@@ -12,6 +12,8 @@ public sealed class StoryEngine(
 {
     public List<StoryAction> Presentation { get; } = new();
     public List<StoryDialogLine> Lines { get; } = new();
+    public string EventMediaId { get; set; } = "";
+    public string CinematicBindingId { get; set; } = "";
 
     public void Start(string entryId, string conversationId)
     {
@@ -23,7 +25,7 @@ public sealed class StoryEngine(
             throw new InvalidOperationException("This conversation is not available here.");
         }
         facts.TraderId = entry.TraderId;
-        if (!StoryRules.Evaluate(entry.Condition, definition, state, facts))
+        if (!StoryProjection.EntryAvailable(entry, definition, state, facts))
         {
             throw new InvalidOperationException("This conversation is not available yet.");
         }

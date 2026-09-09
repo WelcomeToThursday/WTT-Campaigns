@@ -23,7 +23,7 @@
     <h3>Conversation entry points</h3>
     @foreach(var entry in run.Definition.EntryPoints)
     {
-        var eligible = run.Eligible(entry.Condition) && (entry.Kind == "InLobby" ? !run.Facts.InRaid : run.Facts.InRaid);
+        var eligible = StoryProjection.EntryAvailable(entry, run.Definition, run.State, run.Facts);
         <div class="preview-reward"><button disabled="@(Disabled || !eligible)" @onclick="@(() => Act(() => run.Start(entry.Id)))">@StoryAuthoring.Label(entry) · @DialogName(run, entry.DialogId)</button><span>@(eligible ? "Available" : "Blocked by context or conditions")</span><small>@Trace(run, entry.Condition)</small></div>
     }
     @if (run.State.Conversation is { Closed: false } conversation)
@@ -41,6 +41,7 @@
     }
     <details class="editor-card"><summary>Raid events</summary><p>Set In raid and the exact location before triggering an event. World detection and cinematic playback are simulated.</p>
     @foreach(var binding in run.Definition.RaidBindings) { <button class="content-row" disabled="@Disabled" @onclick="@(() => Act(() => run.Trigger(binding.Id)))">Trigger @StoryAuthoring.Label(binding)</button> }
+    @if (run.State.Raid?.Cinematic.Length > 0) { <div class="row"><button disabled="@Disabled" @onclick="@(() => Act(() => run.FinishCinematic("complete")))">Complete cinematic</button><button disabled="@Disabled" @onclick="@(() => Act(() => run.FinishCinematic("skip")))">Skip cinematic</button><button disabled="@Disabled" @onclick="@(() => Act(() => run.FinishCinematic("interrupt")))">Interrupt cinematic</button></div> }
     <div class="row"><button disabled="@Disabled" @onclick="@(() => Act(() => run.FinishRaid(true)))">Survive raid</button><button disabled="@Disabled" @onclick="@(() => Act(() => run.FinishRaid(false)))">Die in raid</button></div></details>
     <h3>Player journal</h3>
     @foreach(var chapter in run.Definition.Chapters.OrderBy(c => c.Order).Where(c => run.Eligible(c.Visibility)))

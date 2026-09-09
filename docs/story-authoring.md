@@ -2,6 +2,12 @@
 
 Story is an optional extension to the existing season definition. Use [the format-1 synthetic overlay](examples/story-introduction.json) as a small working example. It adds a chapter, a journal note and a Prapor conversation; it contains no live campaign content or inventory rewards. All eight visit rooms are available on the loaded Seasonal character, including seasons without authored conversations.
 
+## Edit and rehearse
+
+The Season Creator story editor supports chapters, dialogues, entries, raid bindings and media. Use its reference pickers and validation before publication. Rehearsal includes the candidate trader, exact Scene, raid facts, and explicit cinematic complete/skip/interrupt controls. Rehearsal simulates progression; it cannot validate Unity bundle contents or native inventory windows.
+
+Text-only automatic NPC lines use Continue between lines, and closing text stays until acknowledged. A final open NPC line shows the reply choices. Continue does not rerun story actions. Multiple automatic lobby handovers collect native item selections before any part of the transaction commits; cancelling a selection abandons the entire operation.
+
 ## Create and exchange a pack
 
 1. In the Season Creator, create or duplicate an unused season, configure its normal rules and publish/export a base ZIP. Gameplay changes to a used season require a new season identity.
@@ -43,7 +49,7 @@ Place reviewed bundles under `BepInEx/plugins/SeasonalPerks/StoryMedia/`. Use a 
 }
 ```
 
-Kinds are Image, Audio, Video, Cinematic and TraderScene. Standard visit rooms use the built-in traders manifest; a TraderScene entry alone does not replace a built-in visit. Hashes are checked before load, and conflicting hashes for a shared path are rejected. Media paths cannot escape StoryMedia. Bundles are locally installed trusted assets; the runtime does not download or execute arbitrary code from a Creator ZIP. Rebuilding a bundle requires updating its hash and publishing a compatible pack revision/new season.
+Kinds are Image, Audio, Video, Cinematic and TraderScene. Assign optional TraderId on a TraderScene reference to override that trader's built-in room. Only one assigned room per trader is allowed in a season. Its prefab root must be inactive and contain exactly one camera named StoryCamera. Dialogue native animation/lip-sync cues also require a compatible SequenceReader with the authored keys. Rooms reuse camera isolation, UI audio routing and cleanup. An unassigned legacy TraderScene stays in the pack with an editor warning and is not selected for a visit. Hashes are checked before load, and conflicting hashes for a shared path are rejected. Media paths cannot escape StoryMedia. Bundles are locally installed trusted assets; the runtime does not download or execute arbitrary code from a Creator ZIP. Rebuilding a bundle requires updating its hash and publishing a compatible pack revision/new season.
 
 `Playback.Image`, `Music` and `Sound` reference registered media IDs. Music loops for the line, Sound plays once, and timed subtitles display their localized Key between Start and End. Audio uses the UI mixer. Native animation/secondary/lip-sync sequences use exact dictionary keys from the corresponding room; each has Start, End, Speed and Volume. Do not reuse numeric live enum ordinals or assume all traders share keys. Peacekeeper has body gestures but no recovered lip-sync dictionary.
 
@@ -57,11 +63,17 @@ Build the example with `SeasonalPerks.Tools.SeasonalStoryExampleBuilder.Build` i
 
 The finalized hash and native script audit are written beside `examples/story-test.bundle` in `story-test.json`. Use that hash in authoring. This example is a playback fixture, not a raid placement.
 
+## Entry scenes
+
+Entry Scene is the exact Unity scene name, not an object path or location ID. Empty allows any scene. Lobby visits use the native trader screen scene; raid entries use the bound object's scene. For object bindings, Scene must match the prefix before `:/` in ObjectPath; publication validates the relationship. Collectible scene context comes from the generated loot object. Rehearsal must use the same scene name to exercise a restricted entry. CurrentTrader always uses the entry's trader, including the first visit and trader switching.
+
 ## Raid bindings
 
 `RaidBindings` declare Location, Kind, Condition, Once, PersistOnDeath and optional Actions/EntryPointId/MediaId. Kinds are Trigger, Interact, Shoot, Collectible and Cinematic. Match an existing target using the exact `scene:/Root/Child` path from the beta scene. Bind trigger callbacks to the actual trigger collider object, Interact to a raycastable object, and Shoot to an object with a BallisticCollider. Missing targets are logged rather than guessed by name.
 
 Collectibles use ItemId (template) and the server's generated loot instance IDs. Place loot with the existing season placement/loot-editor tools; a binding does not spawn it. Early pickups are buffered until story state loads. Trigger/radio/notebook/intercom content is authored separately; no live-world placement is imported.
+
+Ordinary Trigger, Interact, Shoot and Collectible bindings can reference Image, Audio, Video or Cinematic media in MediaId. Accepted events present that media immediately, then their conversation: images wait for Continue, audio plays once with Skip, and Video/Timeline use playback controls. This presentation never sends cinematic-binding completion messages.
 
 `PersistOnDeath: true` commits eligible actions immediately. Otherwise the server defers them until a surviving raid result. Cinematics send begin followed by complete, skip or interrupt; skip completes the binding and interruption leaves it unfinished. Scene callbacks and camera playback still require actual beta raid acceptance testing.
 

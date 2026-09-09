@@ -14,9 +14,12 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
     private GameObject? _media;
     private VideoPlayer? _video;
     private PlayableDirector? _director;
-    private string _binding = "";
+    private TaskCompletionSource<string>? _completion;
+    private StoryDialogueMedia? _dialogueMedia;
+    private bool _audioOnly;
     private string _character = "";
     private bool _inRaid;
+    private string? _raid;
     private bool _started;
     private bool _ending;
     private float _startedAt;
@@ -31,15 +34,17 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
         Instance = this;
     }
 
-    internal void Play(string mediaId, string binding)
+    internal Task<string> Play(string mediaId)
     {
         if (_surface != null || !StoryClient.Available)
         {
-            return;
+            return Task.FromResult("interrupt");
         }
-        _binding = binding;
+        var completion = new TaskCompletionSource<string>();
+        _completion = completion;
         _character = Plugin.Current!.EffectiveProfileId;
         _inRaid = Plugin.InRaid;
+        _raid = StoryClient.Current?.State?.Raid?.Id;
         _startedAt = Time.realtimeSinceStartup;
         try
         {
@@ -47,11 +52,32 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
             _bundle = StoryMediaStore.Open(media.Bundle, media.Sha256);
             _surface = new StoryPresentationSurface("Seasonal cinematic", 32010);
             var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf");
-            var skip = new UiElements(font).Button(_surface.Root.transform, "Skip", 150, 0, 0, () => End("skip"), 42);
+            var skip = new UiElements(font).Button(
+                _surface.Root.transform,
+                media.Kind == "Image" ? "Continue" : "Skip",
+                150,
+                0,
+                0,
+                () => End(media.Kind == "Image" ? "complete" : "skip"),
+                42
+            );
             var rect = (RectTransform)skip.transform;
             rect.anchorMin = rect.anchorMax = new Vector2(1, 0);
             rect.anchoredPosition = new Vector2(-105, 60);
-            if (media.Kind == "Video")
+            if (media.Kind is "Image" or "Audio")
+            {
+                _dialogueMedia = new StoryDialogueMedia(_surface.Root.transform, font);
+                _dialogueMedia.Set(
+                    new SeasonalPerks.Shared.Story.StoryPlayback
+                    {
+                        Image = media.Kind == "Image" ? media.Id : "",
+                        Sound = media.Kind == "Audio" ? media.Id : "",
+                    }
+                );
+                _audioOnly = media.Kind == "Audio";
+                _started = true;
+            }
+            else if (media.Kind == "Video")
             {
                 _media = new GameObject("Story video");
                 _video = _media.AddComponent<VideoPlayer>();
@@ -110,6 +136,7 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
             Plugin.Error(exception);
             End("interrupt");
         }
+        return completion.Task;
     }
 
     private void PreparedVideo(VideoPlayer player)
@@ -148,6 +175,7 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
             !StoryClient.Available
             || _character != Plugin.Current!.EffectiveProfileId
             || _inRaid != Plugin.InRaid
+            || _inRaid && _raid != StoryClient.Current?.State?.Raid?.Id
             || !_surface.Root
             || _inRaid && Plugin.Player?.HealthController?.IsAlive != true
         )
@@ -162,37 +190,29 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
         {
             End("complete");
         }
+        else if (_audioOnly && _started && _dialogueMedia?.IsPlaying == false)
+        {
+            End("complete");
+        }
         else if (!_started && Time.realtimeSinceStartup - _startedAt > 30)
         {
             End("interrupt");
         }
     }
 
-    private async void End(string result)
+    private void End(string result)
     {
-        if (_ending)
+        if (_ending || _completion == null)
         {
             return;
         }
+
         _ending = true;
-        var binding = _binding;
-        var character = _character;
+        var completion = _completion;
+        _completion = null;
         Clear();
-        try
-        {
-            if (binding.Length > 0 && StoryClient.Available && Plugin.Current!.EffectiveProfileId == character)
-            {
-                await StoryClient.Mutate("raid", binding, result);
-            }
-        }
-        catch (Exception exception)
-        {
-            Plugin.Error(exception);
-        }
-        finally
-        {
-            _ending = false;
-        }
+        _ending = false;
+        completion.TrySetResult(result);
     }
 
     private void Clear()
@@ -225,12 +245,15 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
             StoryMediaStore.Close(_bundle!);
         }
         _bundle = null;
-        _binding = "";
+        _dialogueMedia?.Dispose();
+        _dialogueMedia = null;
+        _audioOnly = false;
         _started = false;
     }
 
     private void OnDestroy()
     {
+        End("interrupt");
         Clear();
     }
 }

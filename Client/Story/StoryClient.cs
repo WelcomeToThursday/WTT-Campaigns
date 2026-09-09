@@ -12,6 +12,8 @@ internal static class StoryClient
     private static string _character = "";
     private static long _appliedRevision = -1;
     private static object? _session;
+    private static readonly HashSet<string> ProjectedVariables = new();
+    private static object? _projectedProfile;
     internal static StoryResponse? Current { get; private set; }
     internal static event Action? Changed;
 
@@ -41,6 +43,8 @@ internal static class StoryClient
             ExpectedRevision = Current?.Revision ?? 0,
             OperationId = Guid.NewGuid().ToString("N"),
             ConversationId = Current?.State?.Conversation?.Id ?? "",
+            RaidId = Current?.State?.Raid?.Id ?? "",
+            Observation = StoryRaidObserver.Capture(),
         };
     }
 
@@ -77,7 +81,9 @@ internal static class StoryClient
         string target = "",
         string kind = "",
         IEnumerable<string>? itemIds = null,
-        string itemId = ""
+        string itemId = "",
+        string scene = "",
+        Func<StoryHandover, Task<List<string>>>? chooseItems = null
     )
     {
         await Gate.WaitAsync();
@@ -125,7 +131,28 @@ internal static class StoryClient
             request.ItemIds = itemIds?.ToList() ?? new();
             request.ItemId = itemId;
             request.Kind = kind;
+            request.Scene = scene;
             request.RaidId = Current?.State?.Raid?.Id ?? "";
+            if (!Plugin.InRaid && operation is "start" or "select")
+            {
+                request.Operation = operation;
+                while (true)
+                {
+                    var prepared = await Send("prepare", request);
+                    request.PreparationId = prepared.PreparationId;
+                    if (prepared.Handover == null)
+                    {
+                        break;
+                    }
+
+                    if (chooseItems == null)
+                    {
+                        throw new InvalidOperationException("Open this conversation at its trader to choose handover items.");
+                    }
+
+                    request.Selections[prepared.Handover.ActionId] = await chooseItems(prepared.Handover);
+                }
+            }
             var payload = JsonConvert.SerializeObject(new PendingStoryOperation { Operation = operation, Request = request });
             File.WriteAllText(pendingPath + ".tmp", payload);
             if (File.Exists(pendingPath))
@@ -161,7 +188,7 @@ internal static class StoryClient
             throw new InvalidOperationException(response.Error);
         }
         if (
-            response.Version != 1
+            response.Version != 2
             || response.CharacterId != request.CharacterId
             || response.SeasonId != request.SeasonId
             || Plugin.App?.Session?.Profile?.Id != request.CharacterId
@@ -177,18 +204,22 @@ internal static class StoryClient
         var profile = Plugin.InRaid && Plugin.SeasonalPlayer ? Plugin.Player!.Profile : Plugin.App!.Session.Profile;
         var definition = response.Definition!;
         var state = response.State!;
-        foreach (var variable in definition.Variables.Where(v => v.Scope == StoryVariableScope.Profile))
+        var variables = StoryProjection.Variables(definition, state);
+        if (ReferenceEquals(profile, _projectedProfile))
         {
-            profile.ProfileVariables.SetVariableValue(variable.Id, state.Variables.GetValueOrDefault(variable.Id, variable.InitialValue));
+            foreach (var id in ProjectedVariables.Except(variables.Keys))
+            {
+                profile.ProfileVariables.SetVariableValue(id, 0);
+            }
         }
-        foreach (var binding in definition.RaidBindings)
+
+        ProjectedVariables.Clear();
+        foreach (var variable in variables)
         {
-            profile.ProfileVariables.SetVariableValue(binding.Id, state.CompletedBindings.Contains(binding.Id) ? 1 : 0);
+            profile.ProfileVariables.SetVariableValue(variable.Key, variable.Value);
+            ProjectedVariables.Add(variable.Key);
         }
-        foreach (var itemId in definition.RaidBindings.Where(b => b.ItemId.Length > 0).Select(b => b.ItemId).Distinct())
-        {
-            profile.ProfileVariables.SetVariableValue(itemId, state.CompletedItems.Contains(itemId) ? 1 : 0);
-        }
+        _projectedProfile = profile;
         if (response.NativeUpdate.Length > 0 && response.NativeRevision > _appliedRevision)
         {
             var changes = JsonConvert.DeserializeObject<ProfileChanges>(response.NativeUpdate, EftJsonConverters.Converters)!;

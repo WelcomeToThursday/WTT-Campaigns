@@ -20,6 +20,7 @@ public sealed partial class StoryService
             var available =
                 status is not ("Locked" or "AvailableAfter")
                 && !metadata.Hidden
+                && definition.Chapters.Any(c => c.Id == metadata.ChapterId && StoryRules.Evaluate(c.Visibility, definition, state, facts))
                 && StoryRules.Evaluate(metadata.Visibility, definition, state, facts);
             foreach (var condition in template.Conditions.AvailableForFinish)
             {

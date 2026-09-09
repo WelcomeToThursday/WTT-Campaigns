@@ -149,14 +149,27 @@ public sealed class StoryRehearsal
                 throw new InvalidOperationException("This event is already awaiting a surviving raid result.");
             }
 
-            if (!binding.PersistOnDeath)
+            if (binding.Kind != "Collectible")
             {
-                State.Raid.Pending.Add(bindingId);
-                Log.Add("Raid event queued until survival: " + StoryAuthoring.Label(binding));
+                var separator = binding.ObjectPath.IndexOf(":/", StringComparison.Ordinal);
+                var scene = separator < 0 ? "" : binding.ObjectPath[..separator];
+                if (Facts.Scene != scene)
+                {
+                    throw new InvalidOperationException("Enter the bound object's exact scene in the simulated facts.");
+                }
+            }
+            if (binding.Kind == "Cinematic")
+            {
+                if (State.Raid.Cinematic.Length > 0)
+                {
+                    throw new InvalidOperationException("Finish the active cinematic first.");
+                }
+
+                State.Raid.Cinematic = binding.Id;
+                Log.Add("Cinematic started; choose completion, skip or interruption.");
                 return;
             }
-
-            ApplyBinding(engine, binding);
+            ActivateBinding(engine, binding);
         });
     }
 
@@ -178,20 +191,58 @@ public sealed class StoryRehearsal
         });
     }
 
-    private void ApplyBinding(StoryEngine engine, StoryRaidBinding binding)
+    public void FinishCinematic(string result)
     {
-        State.CompletedBindings.Add(binding.Id);
-        engine.Apply(binding.Actions);
+        Execute(engine =>
+        {
+            if (State.Raid?.Cinematic.Length is not > 0 || result is not ("complete" or "skip" or "interrupt"))
+            {
+                throw new InvalidOperationException("No matching cinematic is active.");
+            }
+
+            var binding = Definition.RaidBindings.Single(b => b.Id == State.Raid.Cinematic);
+            State.Raid.Cinematic = "";
+            if (result != "interrupt")
+            {
+                ActivateBinding(engine, binding);
+            }
+
+            Log.Add("Cinematic " + result);
+        });
+    }
+
+    private void ActivateBinding(StoryEngine engine, StoryRaidBinding binding)
+    {
+        State.Raid!.Seen.Add(binding.Id);
+        if (binding.PersistOnDeath)
+        {
+            ApplyBinding(engine, binding);
+        }
+        else
+        {
+            State.Raid.Pending.Add(binding.Id);
+            Log.Add("Raid event queued until survival: " + StoryAuthoring.Label(binding));
+        }
+        if (binding.MediaId.Length > 0 && binding.Kind != "Cinematic")
+        {
+            Log.Add("Media played before conversation: " + binding.MediaId);
+        }
+
         if (binding.EntryPointId.Length > 0)
         {
             engine.Start(binding.EntryPointId, "rehearsal-raid-" + (_step + 1));
         }
+    }
 
-        if (binding.MediaId.Length > 0)
+    private void ApplyBinding(StoryEngine engine, StoryRaidBinding binding)
+    {
+        State.CompletedBindings.Add(binding.Id);
+        if (binding.Kind == "Collectible")
         {
-            Log.Add("Media request recorded (completion/skip simulated): " + binding.MediaId);
+            State.CompletedItems.Add(binding.ItemId);
         }
 
+        engine.Apply(binding.Actions);
         Log.Add("Simulated raid event: " + StoryAuthoring.Label(binding));
     }
 

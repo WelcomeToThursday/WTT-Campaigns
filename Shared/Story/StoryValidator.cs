@@ -123,6 +123,11 @@ public static class StoryValidator
             {
                 Need(notes.Contains(a.Target), path, "Unknown note: " + a.Target);
             }
+            if (a.Type == StoryActionType.CompleteItem)
+            {
+                Need(SeasonValidator.IsId(a.Target), path, "A valid 24-character completion target is required.");
+            }
+
             if (a.Type is StoryActionType.SwitchDialog or StoryActionType.EmbedQuestDialog)
             {
                 Need(dialogs.Contains(a.Target), path, "Unknown dialogue: " + a.Target);
@@ -136,11 +141,15 @@ public static class StoryValidator
                     or StoryActionType.PlayerReward
             )
             {
-                Need(quests.Contains(a.QuestId), path, "Unknown quest action target: " + a.QuestId);
+                Need(
+                    a.QuestId.Length == 0 && a.Type != StoryActionType.SelectQuest || quests.Contains(a.QuestId),
+                    path,
+                    "Unknown quest action target: " + a.QuestId
+                );
                 if (a.Type != StoryActionType.SelectQuest)
                 {
                     Need(
-                        story.Quests.Any(q => q.QuestId == a.QuestId) && season.Quests.Any(q => q.Id == a.QuestId),
+                        a.QuestId.Length == 0 || story.Quests.Any(q => q.QuestId == a.QuestId) && season.Quests.Any(q => q.Id == a.QuestId),
                         path,
                         "Native mutations require a quest owned by this story."
                     );
@@ -285,6 +294,11 @@ public static class StoryValidator
             );
             Need(entry.Kind is "InLobby" or "InRaid" or "ViaRadio" or "ViaNotebook" or "ViaIntercom", entry.Id, "Unsupported entry point.");
             Condition(entry.Condition, entry.Id);
+            Need(
+                entry.Scene.Length <= 256 && !entry.Scene.Contains(":/") && !entry.Scene.Contains("\\"),
+                entry.Id,
+                "Use the exact Unity scene name, not an object path."
+            );
         }
         foreach (var binding in story.RaidBindings)
         {
@@ -302,6 +316,22 @@ public static class StoryValidator
             );
             Need(binding.EntryPointId.Length == 0 || entries.Contains(binding.EntryPointId), binding.Id, "Unknown bound entry point.");
             Need(binding.MediaId.Length == 0 || media.Contains(binding.MediaId), binding.Id, "Unknown bound media.");
+            Need(
+                binding.MediaId.Length == 0 || story.Media.Any(m => m.Id == binding.MediaId && m.Kind != "TraderScene"),
+                binding.Id,
+                "A trader room cannot be played as event media."
+            );
+            var boundEntry = story.EntryPoints.FirstOrDefault(e => e.Id == binding.EntryPointId);
+            Need(boundEntry == null || boundEntry.Kind != "InLobby", binding.Id, "Raid events require a raid conversation entry.");
+            if (boundEntry?.Scene.Length > 0 && binding.Kind != "Collectible")
+            {
+                Need(
+                    binding.ObjectPath.StartsWith(boundEntry.Scene + ":/", StringComparison.Ordinal),
+                    binding.Id,
+                    "The bound entry's scene must match the object path."
+                );
+            }
+
             Need(
                 binding.Kind != "Cinematic" || story.Media.Any(m => m.Id == binding.MediaId && m.Kind is "Cinematic" or "Video"),
                 binding.Id,
@@ -322,6 +352,21 @@ public static class StoryValidator
                 "Media requires its bundle SHA-256 checksum."
             );
             Need(resource.Kind is "Image" or "Audio" or "Video" or "Cinematic" or "TraderScene", resource.Id, "Unsupported media kind.");
+            Need(
+                resource.TraderId.Length == 0 || resource.Kind == "TraderScene" && SeasonValidator.IsId(resource.TraderId),
+                resource.Id,
+                "Only trader rooms may be assigned to a valid trader."
+            );
+            Need(
+                resource.TraderId.Length == 0 || story.Media.Count(m => m.Kind == "TraderScene" && m.TraderId == resource.TraderId) == 1,
+                resource.Id,
+                "Assign only one custom room to each trader."
+            );
+            if (resource.Kind == "TraderScene" && resource.TraderId.Length == 0)
+            {
+                result.Add("Story/" + resource.Id, "This trader room is unassigned and will not replace a visit room.", "warning");
+            }
+
             Need(
                 resource.Asset.Length > 0
                     && resource.Bundle.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase)

@@ -3,6 +3,7 @@ using EFT.AnimationSequencePlayer;
 using EFT.InventoryLogic;
 using EFT.Quests;
 using EFT.UI;
+using Newtonsoft.Json;
 using SeasonalPerks.Client.UI;
 using SeasonalPerks.Shared.Story;
 using SeasonalPerks.UI.Media;
@@ -33,6 +34,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
     private Action? _cancelSelection;
     private int _generation;
     private int _blockedThrough;
+    private TaskCompletionSource<bool>? _continue;
     internal bool InputBlocked
     {
         get { return !_nativeWindow && (_surface != null || Time.frameCount <= _blockedThrough); }
@@ -41,6 +43,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        StoryClient.Changed += Render;
     }
 
     private void Update()
@@ -92,20 +95,29 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             {
                 return;
             }
+            response.Facts!.Scene = host.Native.gameObject.scene.name;
             var entries = response
                 .Definition!.EntryPoints.Where(e =>
                     e.TraderId == _trader
                     && e.Kind == "InLobby"
-                    && StoryRules.Evaluate(e.Condition, response.Definition, response.State!, response.Facts!)
+                    && StoryProjection.EntryAvailable(e, response.Definition, response.State!, response.Facts!)
                 )
                 .ToArray();
             if (entries.Length == 1)
             {
-                response = await StoryClient.Mutate("start", entries[0].Id);
+                response = await StoryClient.Mutate(
+                    "start",
+                    entries[0].Id,
+                    scene: host.Native.gameObject.scene.name,
+                    chooseItems: ChooseHandoverItems
+                );
                 if (generation != _generation || _surface == null)
+                {
                     return;
+                }
+
                 _entrySelection = false;
-                await Present(response);
+                await StoryPresentationDispatcher.Dispatch(response);
             }
             else
             {
@@ -155,15 +167,23 @@ public sealed class StoryVisitRuntime : MonoBehaviour
     private void LoadRoom(string traderId)
     {
         _bundle = StoryMediaStore.OpenTrader(traderId);
-        var prefab = _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/storytraders/" + traderId + ".prefab");
+        var custom = StoryMediaStore.Trader(traderId);
+        var prefab = _bundle.LoadAsset<GameObject>(
+            custom?.Asset ?? "assets/mods/seasonalperks.assets/storytraders/" + traderId + ".prefab"
+        );
         if (!prefab)
         {
             throw new InvalidDataException("The trader bundle does not contain its registered room.");
         }
-        _room = StoryRoomCamera.InstantiateRoom(prefab);
+        if (custom != null && prefab.activeSelf)
+        {
+            throw new InvalidDataException("A custom trader room must have an inactive prefab root.");
+        }
+
+        _room = custom == null ? StoryRoomCamera.InstantiateRoom(prefab) : StoryRoomCamera.InstantiateCustomRoom(prefab);
         _room.SetActive(false);
-        var camera = StoryRoomCamera.Prepare(_room, traderId);
-        _reader = _room.GetComponentsInChildren<SequenceReader>(true).Single();
+        var camera = StoryRoomCamera.Prepare(_room, custom == null ? traderId : "");
+        _reader = _room.GetComponentsInChildren<SequenceReader>(true).SingleOrDefault();
         foreach (var source in _room.GetComponentsInChildren<AudioSource>(true))
         {
             StoryAudio.Configure(source);
@@ -177,30 +197,49 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         Plugin.LogInfo("Story visit camera ready: " + traderId);
     }
 
-    internal async void ShowConversation(StoryResponse response, SequenceReader? reader = null)
+    internal async Task<bool> PresentResponse(StoryResponse response, SequenceReader? reader = null)
     {
         try
         {
             if (_surface == null)
             {
-                _trader = response.State!.Conversation!.TraderId;
+                _trader = response.State!.Conversation?.TraderId ?? "";
                 CreateSurface(response.CharacterId);
-                // In-raid NPCs retain the active game camera and their own scene object.
                 _surface!.SetBackgroundVisible(false);
                 _reader = reader;
             }
             _busy = true;
+            var generation = _generation;
             await Present(response);
+            return _surface != null && generation == _generation;
         }
-        catch (Exception exception)
+        catch (OperationCanceledException)
+        {
+            return false;
+        }
+        catch
         {
             Clear();
-            Plugin.Error(exception);
+            throw;
         }
         finally
         {
             _busy = false;
             Render();
+        }
+    }
+
+    internal async Task CloseForPresentation()
+    {
+        await EndConversation();
+        Clear();
+    }
+
+    internal void FinishPresentation(StoryResponse response)
+    {
+        if (response.State?.Conversation is { Closed: true })
+        {
+            Clear();
         }
     }
 
@@ -235,13 +274,18 @@ public sealed class StoryVisitRuntime : MonoBehaviour
 
     private async void Select(string id)
     {
+        if (id == "continue" && _continue != null)
+        {
+            _continue.TrySetResult(true);
+            return;
+        }
         if (_busy || _surface == null)
         {
             return;
         }
         if (id is "trade" or "tasks" or "services")
         {
-            Navigate(
+            await Navigate(
                 id == "trade" ? TraderScreensGroup.ETraderMode.Trade
                 : id == "tasks" ? TraderScreensGroup.ETraderMode.Tasks
                 : TraderScreensGroup.ETraderMode.Services
@@ -254,17 +298,23 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         try
         {
             Skip();
-            var items = await ChooseHandoverItems(id);
             if (generation != _generation || _surface == null)
+            {
                 return;
+            }
+
             var response = await StoryClient.Mutate(
                 id.StartsWith("entry:", StringComparison.Ordinal) ? "start" : "select",
                 id.StartsWith("entry:", StringComparison.Ordinal) ? id.Substring(6) : id,
-                itemIds: items
+                scene: _host ? _host!.Native.gameObject.scene.name : "",
+                chooseItems: ChooseHandoverItems
             );
             if (generation != _generation || _surface == null)
+            {
                 return;
-            await Present(response);
+            }
+
+            await StoryPresentationDispatcher.Dispatch(response);
         }
         catch (OperationCanceledException)
         {
@@ -293,78 +343,80 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         }
     }
 
-    private async Task<List<string>> ChooseHandoverItems(string lineId)
+    private async Task<List<string>> ChooseHandoverItems(StoryHandover handover)
     {
-        var selected = new List<string>();
-        var response = StoryClient.Current!;
-        var line = response.Choices.FirstOrDefault(l => l.Id == lineId);
-        foreach (var action in line?.Actions.Where(a => a.Type == StoryActionType.HandoverItem) ?? Enumerable.Empty<StoryAction>())
+        if (!_host || Plugin.InRaid)
         {
-            if (!_host || Plugin.InRaid)
+            throw new InvalidOperationException("Return to the trader to hand over quest items.");
+        }
+
+        var native = _host!.Native;
+        var condition =
+            JsonConvert.DeserializeObject<ConditionHandoverItem>(handover.ConditionJson, EftJsonConverters.Converters)
+            ?? throw new InvalidDataException("The handover objective is missing.");
+        var candidates = native.Profile.Inventory.AllRealPlayerItems.Where(i => handover.Candidates.Contains(i.Id)).ToArray();
+        if (candidates.Length == 0)
+        {
+            throw new InvalidOperationException("The selected quest items are no longer available.");
+        }
+
+        var completion = new TaskCompletionSource<Item[]>();
+        var window = ItemUiContext.Instance.HandoverQuestItemsWindow;
+        _nativeWindow = true;
+        _surface!.Root.SetActive(false);
+        var context = window.Show(
+            condition,
+            handover.Current,
+            candidates,
+            native.Profile,
+            native.InventoryController,
+            items => completion.TrySetResult(items),
+            canShowCloseButton: true
+        );
+        void Declined()
+        {
+            completion.TrySetCanceled();
+        }
+
+        context.OnDecline += Declined;
+        _cancelSelection = Declined;
+        try
+        {
+            return (await completion.Task).Select(item => item.Id).Distinct().ToList();
+        }
+        finally
+        {
+            context.OnDecline -= Declined;
+            _cancelSelection = null;
+            _nativeWindow = false;
+            if (_surface?.Root)
             {
-                throw new InvalidOperationException("Return to the trader to hand over quest items.");
-            }
-            var native = _host!.Native;
-            var quest = native.QuestController.Quests.Single(q => q.Id == action.QuestId);
-            var condition = quest
-                .Template.Conditions[EQuestStatus.AvailableForFinish]
-                .OfType<ConditionItem>()
-                .Single(c => c.id == action.ConditionId);
-            var candidates = ConditionalController<Quest>.GetItemsForCondition(native.Profile.Inventory, condition);
-            if (candidates.All(i => i.QuestItem || CurrencyUtil.IsCurrencyId(i.TemplateId)))
-            {
-                continue;
-            }
-            var completion = new TaskCompletionSource<Item[]>();
-            var window = ItemUiContext.Instance.HandoverQuestItemsWindow;
-            _nativeWindow = true;
-            _surface!.Root.SetActive(false);
-            var context = window.Show(
-                condition,
-                response.Facts!.ConditionCounters.GetValueOrDefault(action.ConditionId),
-                candidates,
-                native.Profile,
-                native.InventoryController,
-                items =>
-                {
-                    completion.TrySetResult(items);
-                },
-                canShowCloseButton: true
-            );
-            void Declined()
-            {
-                completion.TrySetCanceled();
-            }
-            context.OnDecline += Declined;
-            _cancelSelection = Declined;
-            try
-            {
-                selected.AddRange((await completion.Task).Select(item => item.Id));
-            }
-            finally
-            {
-                context.OnDecline -= Declined;
-                _cancelSelection = null;
-                _nativeWindow = false;
-                if (_surface?.Root)
-                {
-                    _surface!.Root.SetActive(true);
-                }
+                _surface!.Root.SetActive(true);
             }
         }
-        return selected.Distinct().ToList();
     }
 
     private async Task Present(StoryResponse response)
     {
         _entrySelection = false;
         var generation = _generation;
-        foreach (var line in response.Lines)
+        if (response.Lines.Count == 0 && response.Line != null)
+        {
+            _text = Plugin.Localized(response.Line.Id + " text", response.Line.Text);
+        }
+
+        for (var lineIndex = 0; lineIndex < response.Lines.Count; lineIndex++)
         {
             if (_surface == null || generation != _generation)
             {
                 return;
             }
+            var line = response.Lines[lineIndex];
+            if (!_reader && line.Playback.Animations.Count + line.Playback.SecondaryAnimations.Count + line.Playback.LipSyncs.Count > 0)
+            {
+                throw new InvalidDataException("This dialogue uses native animation cues but its room has no SequenceReader.");
+            }
+
             _text = Plugin.Localized(line.Id + " text", line.Text);
             _media?.Set(line.Playback);
             var mediaPlayback = _media?.Wait() ?? Task.CompletedTask;
@@ -398,35 +450,29 @@ public sealed class StoryVisitRuntime : MonoBehaviour
                 );
             }
             await mediaPlayback;
+            if (
+                StoryPlaybackRules.WaitForContinue(line, lineIndex < response.Lines.Count - 1, response.State?.Conversation?.Closed == true)
+            )
+            {
+                var continuation = new TaskCompletionSource<bool>();
+                _continue = continuation;
+                Render();
+                try
+                {
+                    await continuation.Task;
+                }
+                finally
+                {
+                    if (_continue == continuation)
+                    {
+                        _continue = null;
+                    }
+                }
+            }
         }
         if (generation != _generation || _surface == null)
         {
             return;
-        }
-        foreach (var action in response.Presentation)
-        {
-            if (
-                action.Type is StoryActionType.TradingScreenAction or StoryActionType.QuestsScreenAction or StoryActionType.SelectSubService
-            )
-            {
-                Navigate(
-                    action.Type == StoryActionType.TradingScreenAction ? TraderScreensGroup.ETraderMode.Trade
-                    : action.Type == StoryActionType.QuestsScreenAction ? TraderScreensGroup.ETraderMode.Tasks
-                    : TraderScreensGroup.ETraderMode.Services
-                );
-                return;
-            }
-            if (action.Type == StoryActionType.StartCinematic)
-            {
-                await EndConversation();
-                Clear();
-                StoryCinematicRuntime.Instance.Play(action.Target, "");
-                return;
-            }
-        }
-        if (response.State?.Conversation is { Closed: true })
-        {
-            Clear();
         }
     }
 
@@ -443,6 +489,11 @@ public sealed class StoryVisitRuntime : MonoBehaviour
 
     private async Task EnterRoom()
     {
+        if (!_reader)
+        {
+            return;
+        }
+
         var animation = _reader!
             .GetComponent<AnimationDictionary>()
             .GetKeysWithMinDurations()
@@ -479,6 +530,20 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             "\n\n",
             response.State.Conversation.History.Where(lines.ContainsKey).Select(id => Plugin.Localized(id + " text", lines[id].Text))
         );
+        if (_continue != null)
+        {
+            _panel.Set(
+                Plugin.Localized(_trader + " Nickname", _trader),
+                _text,
+                history,
+                new[]
+                {
+                    new StoryReplyView { Id = "continue", Text = "Continue" },
+                },
+                false
+            );
+            return;
+        }
         _panel.Set(
             Plugin.Localized(_trader + " Nickname", _trader),
             _text,
@@ -506,10 +571,13 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         }
     }
 
-    private async void Navigate(TraderScreensGroup.ETraderMode mode)
+    internal async Task Navigate(TraderScreensGroup.ETraderMode mode)
     {
         if (_closing)
+        {
             return;
+        }
+
         _closing = true;
         _busy = true;
         var generation = ++_generation;
@@ -517,7 +585,10 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         Skip();
         await EndConversation();
         if (generation != _generation)
+        {
             return;
+        }
+
         Clear();
         if (host && host!.Native.isActiveAndEnabled)
         {
@@ -537,7 +608,10 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         Skip();
         await EndConversation();
         if (generation != _generation)
+        {
             return;
+        }
+
         Clear();
     }
 
@@ -566,6 +640,8 @@ public sealed class StoryVisitRuntime : MonoBehaviour
 
     private void Clear()
     {
+        _continue?.TrySetCanceled();
+        _continue = null;
         _cancelSelection?.Invoke();
         _cancelSelection = null;
         ++_generation;
@@ -595,6 +671,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
 
     private void OnDestroy()
     {
+        StoryClient.Changed -= Render;
         Clear();
     }
 }

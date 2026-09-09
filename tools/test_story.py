@@ -9,6 +9,7 @@ from test_integration import PROJECT, SERVER, request, check, checks
 def main():
     fixture = json.loads((SERVER / "user/mods/SeasonalPerks/creator/acceptance-fixture.json").read_text())
     root = json.loads((PROJECT / "Testing/restart-state.json").read_text())["root"]
+    request("/client/game/start", session=root)
     season = fixture["SeasonId"]
     base = {"ProtocolVersion": 2, "SeasonId": season}
     snapshot = request("/wtt-seasonal/snapshot", base, root)
@@ -18,7 +19,7 @@ def main():
     character = created["SelectedCharacterId"]
     switched = request("/wtt-seasonal/switch", {**base, "Mode": "seasonal", "CharacterId": character}, root)
     child = switched["EffectiveProfileId"]
-    identity = {"Version": 1, "SeasonId": season, "CharacterId": child}
+    identity = {"Version": 2, "SeasonId": season, "CharacterId": child}
 
     def read():
         result = request("/wtt-seasonal/story", identity, child)
@@ -91,7 +92,7 @@ def main():
     legacy_bytes = legacy_pack.read_bytes()
     legacy_switch = request("/wtt-seasonal/switch", {"ProtocolVersion": 2, "SeasonId": legacy_season, "Mode": "seasonal", "CharacterId": legacy_child}, root)
     check(not legacy_switch.get("Error") and not legacy_switch.get("HasStory"), "An existing season without authored story can be selected")
-    legacy_identity = {"Version": 1, "SeasonId": legacy_season, "CharacterId": legacy_child}
+    legacy_identity = {"Version": 2, "SeasonId": legacy_season, "CharacterId": legacy_child}
     legacy_before = request("/client/game/profile/list", session=legacy_child)[0]
     empty_story = request("/wtt-seasonal/story", legacy_identity, legacy_child)
     check(not empty_story.get("Error"), "Story journal and visits can load without authored content")

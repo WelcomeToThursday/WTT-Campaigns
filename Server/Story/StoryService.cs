@@ -31,11 +31,13 @@ public sealed partial class StoryService(
 )
 {
     private readonly ConcurrentDictionary<string, Dictionary<string, int>> _sessions = new();
+    private readonly ConcurrentDictionary<string, StoryPreparation> _preparations = new();
+    private readonly ConcurrentDictionary<string, (string Raid, long Sequence)> _observations = new();
 
     private (string Id, SptProfile Profile, StoryDefinition Definition) Active(string sessionId, StoryRequest request)
     {
         var id = seasons.EffectiveId(seasons.ResolveRoot(sessionId));
-        if (request.Version != 1 || request.CharacterId != id || !seasons.IsSeasonal(id))
+        if (request.Version is not (1 or 2) || request.CharacterId != id || !seasons.IsSeasonal(id))
         {
             throw new InvalidOperationException("Refresh the active Seasonal character before using its story.");
         }
@@ -54,13 +56,19 @@ public sealed partial class StoryService(
     {
         using var lease = seasons.Enter(seasons.ResolveRoot(sessionId));
         var active = Active(sessionId, request);
-        return Snapshot(active.Id, active.Profile, active.Definition, request.SeasonId);
+        if (request.Version != 2)
+        {
+            throw new InvalidOperationException("Update both Seasonal client and server to story protocol 2.");
+        }
+
+        ValidateObservation(active.Id, active.Profile, request);
+        return Snapshot(active.Id, active.Profile, active.Definition, request.SeasonId, request);
     }
 
-    private StoryResponse Snapshot(string id, SptProfile profile, StoryDefinition definition, string seasonId)
+    private StoryResponse Snapshot(string id, SptProfile profile, StoryDefinition definition, string seasonId, StoryRequest? request = null)
     {
         var state = StoryStore.Read(profile.CharacterData!.PmcData!, seasonId);
-        var facts = Facts(id, profile, state, definition);
+        var facts = Facts(id, profile, state, definition, request);
         // Receipts remain durable on the authority; the client only needs the current projection.
         state.Receipts.Clear();
         return new StoryResponse
@@ -74,10 +82,16 @@ public sealed partial class StoryService(
             Choices = StoryRules.EligibleLines(definition, state, facts).Where(l => l.Side == "Player").ToList(),
             Line = definition.Dialogs.SelectMany(d => d.Lines).FirstOrDefault(l => l.Id == state.Conversation?.CurrentLineId),
             Objectives = Objectives(profile.CharacterData.PmcData!, definition, state, facts),
+            RaidConditionIds = repository
+                .Runtime(seasonId)
+                .Definition.Quests.SelectMany(q => q.AllConditions())
+                .Select(c => c.Id)
+                .Distinct()
+                .ToList(),
         };
     }
 
-    public async Task<StoryResponse> Transact(string sessionId, StoryRequest request, string operation)
+    public async Task<StoryResponse> Transact(string sessionId, StoryRequest request, string operation, bool prepare = false)
     {
         using var lease = seasons.Enter(seasons.ResolveRoot(sessionId));
         var active = Active(sessionId, request);
@@ -93,9 +107,7 @@ public sealed partial class StoryService(
         {
             throw new InvalidOperationException("A unique operation identifier is required.");
         }
-        var fingerprint = Convert.ToHexString(
-            SHA256.HashData(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new { operation, request })))
-        );
+        var fingerprint = RequestFingerprint(operation, request);
         var state = StoryStore.Read(active.Profile.CharacterData!.PmcData!, request.SeasonId);
         if (state.Receipts.TryGetValue(request.OperationId, out var receipt))
         {
@@ -111,6 +123,12 @@ public sealed partial class StoryService(
             // Presentation effects are not replayed: they may open screens or start cinematics.
             return replay;
         }
+        if (request.Version != 2)
+        {
+            throw new InvalidOperationException("This legacy operation was not committed. Refresh and retry with the updated client.");
+        }
+
+        ValidateObservation(active.Id, active.Profile, request);
         if (state.Revision != request.ExpectedRevision)
         {
             throw new InvalidOperationException("Story progress changed. Refresh and try again.");
@@ -120,7 +138,9 @@ public sealed partial class StoryService(
             state.Variables.TryAdd(variable.Id, variable.InitialValue);
         }
         var staged = cloner.Clone(active.Profile)!;
-        var facts = Facts(active.Id, staged, state, active.Definition);
+        var facts = Facts(active.Id, staged, state, active.Definition, request);
+        var preparation = GetPreparation(active.Id, active.Profile, request, operation, prepare, facts);
+        var drawIndex = 0;
         var sessionVariables = new Dictionary<string, int>(facts.SessionVariables);
         facts.SessionVariables = sessionVariables;
         var notifications = new List<Func<Task>>();
@@ -133,39 +153,71 @@ public sealed partial class StoryService(
             facts,
             action =>
             {
-                NativeAction(active.Id, staged.CharacterData!.PmcData!, active.Definition, state, facts, action, request.ItemIds);
+                var selected = request.Selections.GetValueOrDefault(action.Id) ?? (IReadOnlyCollection<string>)request.ItemIds;
+                if (action.Type == StoryActionType.HandoverItem && preparation != null)
+                {
+                    selected = PrepareHandover(
+                        preparation,
+                        prepare,
+                        request,
+                        staged.CharacterData!.PmcData!,
+                        state,
+                        active.Definition,
+                        facts,
+                        action
+                    );
+                }
+
+                NativeAction(active.Id, staged.CharacterData!.PmcData!, active.Definition, state, facts, action, selected);
                 nativeChanged = true;
                 RefreshFacts(staged.CharacterData.PmcData!, facts, active.Definition, state);
             },
-            RandomNumberGenerator.GetInt32,
+            maximum => preparation?.Draw(drawIndex++, maximum) ?? RandomNumberGenerator.GetInt32(maximum),
             DateTimeOffset.UtcNow.ToUnixTimeSeconds()
         );
         using (var scope = new StoryNativeScope(new MongoId(active.Id), staged, cloner))
         {
-            switch (operation)
+            try
             {
-                case "start":
-                    ValidateEntryLocation(active.Definition, facts, request);
-                    engine.Start(request.Target, Guid.NewGuid().ToString("N"));
-                    break;
-                case "select":
-                    engine.Select(request.ConversationId, request.Target);
-                    break;
-                case "close":
-                    engine.Close(request.ConversationId);
-                    break;
-                case "read":
-                    MarkRead(active.Definition, state, request);
-                    break;
-                case "reconcile":
-                    break;
-                case "raid":
-                    ApplyRaid(active.Definition, state, facts, engine, request);
-                    break;
-                default:
-                    throw new InvalidOperationException("Unknown story operation.");
+                switch (operation)
+                {
+                    case "start":
+                        ValidateEntryLocation(active.Definition, facts, request);
+                        engine.Start(request.Target, Guid.NewGuid().ToString("N"));
+                        break;
+                    case "select":
+                        engine.Select(request.ConversationId, request.Target);
+                        break;
+                    case "close":
+                        engine.Close(request.ConversationId);
+                        break;
+                    case "read":
+                        MarkRead(
+                            active.Definition,
+                            state,
+                            request,
+                            Objectives(staged.CharacterData!.PmcData!, active.Definition, state, facts)
+                        );
+                        break;
+                    case "reconcile":
+                        break;
+                    case "raid":
+                        ApplyRaid(active.Definition, state, facts, engine, request);
+                        break;
+                    default:
+                        throw new InvalidOperationException("Unknown story operation.");
+                }
+                Reconcile(active.Id, staged.CharacterData!.PmcData!, active.Definition, state, facts);
             }
-            Reconcile(active.Id, staged.CharacterData!.PmcData!, active.Definition, state, facts);
+            catch (StoryHandoverRequired required) when (prepare && preparation != null)
+            {
+                preparation.Pending = required.Handover;
+                preparation.Ready = false;
+                var selection = Snapshot(active.Id, active.Profile, active.Definition, request.SeasonId, request);
+                selection.PreparationId = preparation.Id;
+                selection.Handover = required.Handover;
+                return selection;
+            }
             if (scope.Output.Warnings?.Count > 0)
             {
                 throw new InvalidOperationException("The native quest operation was rejected; story progress was not changed.");
@@ -178,6 +230,14 @@ public sealed partial class StoryService(
             change.Skills = cloner.Clone(pmc.Skills);
             nativeChanged |= json.Serialize(pmc) != nativeBefore;
             nativeUpdate = nativeChanged ? json.Serialize(change)! : "";
+        }
+        if (prepare && preparation != null)
+        {
+            preparation.Ready = true;
+            preparation.Pending = null;
+            var ready = Snapshot(active.Id, active.Profile, active.Definition, request.SeasonId, request);
+            ready.PreparationId = preparation.Id;
+            return ready;
         }
         state.Revision++;
         if (state.Raid is { Finished: false } raid)
@@ -197,6 +257,11 @@ public sealed partial class StoryService(
         );
         StoryStore.Write(staged.CharacterData!.PmcData!, state);
         await commits.Commit(new MongoId(active.Id), active.Profile, staged);
+        if (preparation != null)
+        {
+            _preparations.TryRemove(preparation.Id, out _);
+        }
+
         _sessions[active.Id] = sessionVariables;
         foreach (var notification in notifications)
         {
@@ -207,16 +272,18 @@ public sealed partial class StoryService(
             }
             catch { }
         }
-        var result = Snapshot(active.Id, staged, active.Definition, request.SeasonId);
+        var result = Snapshot(active.Id, staged, active.Definition, request.SeasonId, request);
         result.Presentation = engine.Presentation;
         result.Lines = engine.Lines;
         result.NativeProfileChanged = nativeChanged;
         result.NativeUpdate = nativeUpdate;
         result.NativeRevision = state.Revision;
+        result.EventMediaId = engine.EventMediaId;
+        result.CinematicBindingId = engine.CinematicBindingId;
         return result;
     }
 
-    private static void MarkRead(StoryDefinition definition, StoryProgress state, StoryRequest request)
+    private static void MarkRead(StoryDefinition definition, StoryProgress state, StoryRequest request, List<StoryObjective> objectives)
     {
         switch (request.Kind)
         {
@@ -228,7 +295,8 @@ public sealed partial class StoryService(
                 state.ReadLinks.Add(request.Target);
                 break;
             case "condition"
-                when definition.Notes.Where(n => state.Notes.ContainsKey(n.Id)).Any(n => n.ConditionIds.Contains(request.Target)):
+                when objectives.Any(o => o.Id == request.Target && o.Visible)
+                    && definition.Chapters.Any(c => c.Id == objectives.Single(o => o.Id == request.Target).ChapterId):
                 state.ReadConditions.Add(request.Target);
                 break;
             default:

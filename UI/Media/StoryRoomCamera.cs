@@ -7,6 +7,15 @@ namespace SeasonalPerks.UI.Media;
 
 public static class StoryRoomCamera
 {
+    public static GameObject InstantiateCustomRoom(GameObject prefab)
+    {
+        if (prefab.activeSelf || prefab.GetComponentsInChildren<Camera>(true).Count(c => c.name == "StoryCamera") != 1)
+        {
+            throw new InvalidOperationException("A custom trader room requires an inactive root and exactly one StoryCamera.");
+        }
+        return InstantiateRoom(prefab);
+    }
+
     public static GameObject InstantiateRoom(GameObject prefab)
     {
         // Skinning and world-space shaders lose precision at the old 20km offset.
@@ -28,23 +37,36 @@ public static class StoryRoomCamera
     public static Camera Prepare(GameObject room, string traderId = "")
     {
         foreach (var node in room.GetComponentsInChildren<Transform>(true))
+        {
             node.gameObject.layer = 30;
+        }
+
         foreach (var light in room.GetComponentsInChildren<Light>(true))
+        {
             light.cullingMask = 1 << 30;
+        }
         // Scene LightProbeGroups are not part of these prefab bundles. Use the
         // recovered room ambient instead of sampling a lobby probe at this position.
         foreach (var renderer in room.GetComponentsInChildren<Renderer>(true))
+        {
             renderer.lightProbeUsage = LightProbeUsage.Off;
+        }
+
         var cameras = room.GetComponentsInChildren<Camera>(true);
         var camera =
             cameras.SingleOrDefault(c => c.name == "StoryCamera")
             ?? throw new InvalidOperationException("The trader room requires one StoryCamera.");
         foreach (var other in cameras)
+        {
             other.enabled = false;
+        }
         // Debug cameras in the recovered rooms are saved as inactive objects.
         // Activate only the camera's ancestors, retaining authored room visibility.
         for (var node = camera.transform; node != room.transform; node = node.parent)
+        {
             node.gameObject.SetActive(true);
+        }
+
         camera.cullingMask = 1 << 30;
         camera.renderingPath = RenderingPath.DeferredShading;
         camera.allowHDR = true;
@@ -58,7 +80,10 @@ public static class StoryRoomCamera
         camera.backgroundColor = clear;
         _ = room.GetComponent<StoryRoomIsolation>() ?? room.AddComponent<StoryRoomIsolation>();
         if (traderId.Length > 0)
+        {
             StoryRoomAmbient.Configure(room, camera, traderId);
+        }
+
         return camera;
     }
 }

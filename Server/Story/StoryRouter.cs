@@ -14,6 +14,10 @@ public sealed class StoryRouter(JsonUtil json, StoryService story) : StaticRoute
         var routes = new List<RouteAction>
         {
             new RouteAction<StoryRouteRequest>(
+                "/wtt-seasonal/story/prepare",
+                (_, r, id, _, _) => Respond(() => story.Transact(id.ToString(), r, r.Operation, true))
+            ),
+            new RouteAction<StoryRouteRequest>(
                 "/wtt-seasonal/story",
                 (_, r, id, _, _) => Respond(() => Task.FromResult(story.Read(id.ToString(), r)))
             ),
