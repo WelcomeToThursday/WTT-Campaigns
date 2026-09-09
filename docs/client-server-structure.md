@@ -32,4 +32,4 @@ Keep dependency-injection attributes, lifetimes and load orders on moved service
 
 Update explicit imports and reflection lookups when moving types, including the full names in `Tests/UiCompatibilityChecks.cs`. Namespace changes alter CLR type names, so external consumers must update their references and rebuild. Preserve patch targets, identifiers and registration order; see [patch organization](patches.md).
 
-Build the solution and run the contract, native compatibility and client hook checks in [CONTRIBUTING](../CONTRIBUTING.md). Use the isolated server for startup, routing and profile-serialization checks so installed player data is unaffected.
+Build the solution and run the contract, native compatibility and client hook checks in [CONTRIBUTING](../CONTRIBUTING.md). Use offline contract and assembly checks. Always install validated local updates through MSBuild, and never stop or start servers or clients. See [build and deployment](build-deployment.md).

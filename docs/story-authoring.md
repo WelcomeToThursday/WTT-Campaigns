@@ -20,7 +20,7 @@ dotnet run --project Tests -c Release -- --story-pack base-season.zip docs/examp
 
 The command uses the production repository's import, validation, publication and export logic in a separate temporary authoring directory. It re-imports the result to verify checksums and gameplay identity. It never opens installed profiles, queues a season or overwrites an existing output ZIP. The printed recovery workspace preserves the draft if validation fails. The host is the existing Tests console, consistent with the project's fixture tools; it is not a game runtime dependency.
 
-4. Import the resulting ZIP through the Creator, validate installed dependencies and publish. Queue activation only when ready, restart the server, and create/select a character for that season. Preserve the character's existing pack alongside profile backups.
+4. Import the resulting ZIP through the Creator, validate installed dependencies and publish. Queue activation only when ready; after the user manually restarts the server, create/select a character for that season. Preserve the character's existing pack alongside profile backups.
 5. Send the Creator ZIP and any separately built client media together. Creator ZIPs contain definitions/PNG artwork only; they do not carry Unity bundles or executable code.
 
 ## Identities and state
@@ -91,15 +91,6 @@ These steps need the locally supplied donor, beta game, AssetRipper, Python depe
 
 The local prepared/export directories are large. Preserve the manifests and exact donor version when rebuilding. A newer donor needs a fresh dependency/script/shader review.
 
-## Isolated acceptance fixture
+## Historical acceptance fixture
 
-Use only the existing disposable Testing/Server installation:
-
-```powershell
-dotnet run --project Tests -c Release -- --story-fixture Testing/Server/user/mods/SeasonalPerks
-# Restart only the isolated server with the existing test-server scripts.
-.\.tools\Scripts\python.exe tools/test_story.py
-.\.tools\Scripts\python.exe tools/test_story_raids.py
-```
-
-The fixture requires the finalized synthetic cinematic bundle and a previously initialized isolated test account (`Testing/restart-state.json`). It publishes/queues a synthetic season in Testing only and exports `creator/story-example.zip`. Never point a fixture at the installed server. The full fixture uses deliberate fake trigger/cinematic object paths for server protocol tests; replace them with verified beta targets before client raid testing.
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client. The old fixture used synthetic accounts and deliberate fake trigger/cinematic object paths. It is not a live-game acceptance check.

@@ -1,5 +1,7 @@
 # Story client support validation — 0.5.2
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 Validated on September 9, 2026 against the local SPT 4.1.x installation and its dumped game assembly. Story requests/responses use protocol 2; saves and creator packs remain format 1.
 
 | Check | Result |
@@ -17,7 +19,7 @@ Validated on September 9, 2026 against the local SPT 4.1.x installation and its 
 
 The protocol checks exercise automatic and multiple staged handovers, cancellation by abandoning preparation, invalid selections, inventory changes independent of story revision, revision changes, deterministic preparation retries, commit retries, arbitrary completion flags, objectives without notes, scene rejection, carried-item pickup/drop projection, changing objective completion, repeated/stale/wrong-character/wrong-raid observations, invalid targets and bounds, all four ordinary-event media references, cinematic interruption/skip follow-ups and survival-dependent progression. Unit checks also cover first visits, trader switching, optional room serialization and duplicate trader assignments.
 
-Unity checks execute the actual UI source in the matching SDK. HTTP checks use only synthetic accounts on the isolated server. They do not substitute for native game interactions.
+Unity checks execute the actual UI source in the matching SDK. Historical HTTP checks used synthetic accounts on the now-retired isolated server. They do not substitute for native game interactions.
 
 ## Remaining game acceptance
 
@@ -30,6 +32,6 @@ The game was closed during validation and installation. These interactions requi
 
 ## Installation
 
-`tools/package.ps1` produces the complete matching package, including checksummed unchanged media. `tools/install_matching.ps1 -Package <path>` installs the required matching assemblies and dependency manifest, skipping identical files and preserving configurations, creator content, profiles and unrelated media. It captures the installed server's actual arguments and working directory, backs up replaced files, verifies all eight required components, and restarts that same server with startup verification. The game must be closed and restarted to load the updated client/UI assemblies.
+Run `dotnet msbuild build.proj` to build, validate and install matching components with backups and SHA-256 verification. Configuration, creator content and profiles are preserved. Never stop or start servers or clients. If a required file is locked, report the blocked installation and let the user close the application. Installed assemblies take effect after the user manually restarts the affected application. See [build and deployment](build-deployment.md).
 
 Paid dialogue services, compound-item handovers, automatic world placement and automatic loot spawning remain outside this update.

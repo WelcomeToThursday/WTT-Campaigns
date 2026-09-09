@@ -1,5 +1,7 @@
 # Juice Time and Sailor's Nostalgia
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 Build 0.1.22 enables two more personal perks, bringing the implemented catalogue to 31/39. Each costs the captured two points and can be selected in the existing editor.
 
 ## Captured behavior
@@ -46,6 +48,6 @@ Native reports and disassembly remain under ignored `Research/native`; no game b
 - 55 isolated-server checks pass: selection/budget handling, fixed targets, unsupported Allergic rejection, use of all eight consumables by normal and seasonal PMCs, unchanged native resource use, no instant stash healing, Diet coexistence, character switching and unchanged shared templates.
 - Five restart checks pass for target parameters, selections, both inventories and the shared item database. The existing 66-check server integration suite also passes.
 
-Run `test_consumable_perks.py prepare` while the isolated test server is stopped, `verify` while running, then restart and run `restart`. The script only edits synthetic profiles from the standard integration fixture. Reports are written under ignored `Research/`.
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
 
 An in-game disposable-account session is still required to validate actual animations, pain suppression, timed HP totals, effect display and raid-end health persistence. These tests do not claim an executed raid or exact live UI parity. No new regeneration icon or native triggered-perk toast is backported in this build.

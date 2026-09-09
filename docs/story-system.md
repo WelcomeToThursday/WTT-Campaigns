@@ -112,7 +112,7 @@ Local evidence is under ignored `Research/Story`, `Research/story-route-checks.j
 
 ## Build, package and install
 
-Follow the local-source pipeline in [story authoring](story-authoring.md). Run `tools/package.ps1` for a matched client/UI/shared/server package and media. Run `tools/install_ui.ps1 -Package <absolute staged package>` to install that explicit package. The existing installer verifies source hashes, backs up replaced files, preserves creator/config/profile state and verifies installed hashes. It requires the game and installed SPT server to be closed; it does not terminate them. Restart the server and game after installation.
+Run `dotnet msbuild build.proj` to build, validate and install matching components with backups and SHA-256 verification. Configuration, creator content and profiles are preserved. Never stop or start servers or clients. If a required file is locked, report the blocked installation and let the user close the application. Installed assemblies take effect after the user manually restarts the affected application. See [build and deployment](build-deployment.md).
 
 The Story tab and supported trader VISIT buttons appear on the loaded Seasonal character. A season without Story returns an empty, transient definition; visiting and reading this empty system do not add content or change the season. Normal characters keep the original interface. Keep synthetic testing packs separate from production season selection.
 

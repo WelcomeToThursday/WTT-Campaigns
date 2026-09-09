@@ -1,0 +1,32 @@
+@using SeasonalPerks.Server.Web.Authoring
+@using SeasonalPerks.Shared.Authoring
+@implements IDisposable
+@inject RaidAuthoringService Authoring
+<section class="editor-card connected-raid" aria-label="Connected raid">
+    <header><h3>Connected raid</h3><p>Enable authoring in the game's Seasonal Perks settings, enter a raid, then connect it here. Draft edits synchronize; publishing remains explicit.</p></header>
+    <div class="row"><select aria-label="Available raids" @bind="_client"><option value="">Choose a raid…</option>@foreach (var c in _clients) { <option value="@c.Id">@c.Location · @c.CharacterId · @(c.DraftId == Draft.Id ? "Connected to this draft" : "Available")</option> }</select><button disabled="@(_client.Length == 0)" @onclick="Connect">Connect draft</button><button disabled="@(!_clients.Any(c => c.DraftId == Draft.Id))" @onclick="Disconnect">Disconnect</button></div>
+    <p role="status">@Status @_message</p>
+    @foreach (var c in _clients.Where(c => c.DraftId == Draft.Id))
+    {
+        <p>@Draft.Definition.Name · @c.Location · Revision @Draft.Revision · Last contact @c.LastSeen.ToLocalTime().ToString("T")</p>
+        @foreach (var task in c.Tasks) { <span class="small-tag">@task.Tool · @task.Status · @task.TargetId</span> }
+    }
+</section>
+@code {
+    [Parameter] public DraftEnvelope Draft { get; set; } = null!;
+    [Parameter] public string Status { get; set; } = "";
+    [Parameter] public EventCallback Synchronize { get; set; }
+    [Parameter] public EventCallback Flush { get; set; }
+    private List<AuthoringClient> _clients = new();
+    private string _client = "", _message = "";
+    private readonly CancellationTokenSource _stop = new();
+    protected override void OnInitialized() { _clients = Authoring.Clients(); _ = Refresh(); }
+    private async Task Refresh()
+    {
+        try { while (!_stop.IsCancellationRequested) { await Task.Delay(1000, _stop.Token); await InvokeAsync(async () => { _clients = Authoring.Clients(); await Synchronize.InvokeAsync(); StateHasChanged(); }); } }
+        catch (OperationCanceledException) { }
+    }
+    private async Task Connect() { try { await Flush.InvokeAsync(); Authoring.Connect(_client, Draft.Id); _message = "Connected. Use Ctrl+F8 in the raid."; } catch (Exception e) { _message = e.Message; } }
+    private void Disconnect() { foreach (var c in Authoring.Clients().Where(c => c.DraftId == Draft.Id)) Authoring.Disconnect(c.Id); }
+    public void Dispose() { _stop.Cancel(); _stop.Dispose(); }
+}

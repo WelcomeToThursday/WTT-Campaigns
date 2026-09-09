@@ -43,19 +43,17 @@ Client image downloads share a session cache across the hub, banner, story journ
 
 Formatting and shared Rider/Visual Studio defaults follow SP-Tushonka/server-csharp. See [editor setup](CONTRIBUTING.md#editor-and-ide-defaults). Restore the formatter from `.config/dotnet-tools.json` with `dotnet tool restore`, then run `dotnet csharpier format Client UI Server Shared Tests`. Text files use UTF-8 and LF line endings.
 
-## Build and stage
+## Build and install
 
-The projects use .NET SDK 10 and the local SPT references configured in `Directory.Build.props`. Restore/build with `dotnet build WTT-Seasonal.slnx`. Client references require the supplied dumped Assembly-CSharp and installed BepInEx/SPT assemblies.
+Run `dotnet msbuild build.proj` to build Release, validate and install the matching update. Paths resolve relative to this checkout: the game is two directories above it, and the companion Unity project is `../CJ-SDK`. Local MSBuild path overrides apply to both compilation and deployment. For an isolated UI assembly update, use `dotnet msbuild build.proj -p:DeploymentScope=UI`.
 
-Use Unity 2022.3.43f1 to open CJ-SDK and run **SDK / Seasonal Perks / Build recovered UI**. The builder writes `Client/Resources/seasonalperks_ui.bundle` and checks that no icon dependencies are present. It does not rebuild unrelated mod assets.
+Use Unity 2022.3.43f1 to open CJ-SDK and run **SDK / Seasonal Perks / Build recovered UI** when rebuilding the local UI bundle. The game-derived bundles, media and icons remain local dependencies.
 
-Run `tools/package.ps1` to build Release, run contract/assembly checks, and create a timestamped `release` directory. It stages files only; it does not install into the running SPT environment. The package uses this installation's `SPT_Runtime/user/mods/SeasonalPerks` server location and `BepInEx/plugins/SeasonalPerks` client location. Copy the server folder into the active server's `user/mods` if using another installation layout. Install both parts together.
+`tools/package.ps1` builds, validates, stages and installs a complete matching update. `tools/package_ui.ps1` is a compatibility alias for the matching package. Both return the timestamped release directory. Existing packages can be installed with `tools/install_matching.ps1 -Package <path>` through the same MSBuild deployment targets.
 
-Release folders are named `WTT-Seasonal-<version>-<timestamp>` and `WTT-Seasonal-UI-<version>-<timestamp>`. Both packaging scripts return only the package directory on the PowerShell success stream, so it can be captured with `$package = & ./tools/package_ui.ps1` and passed to `./tools/install_ui.ps1 -Package $package`. Build and check messages remain visible in the console.
+Always install validated local updates. Deployment backs up replaced files, verifies SHA-256 hashes, and preserves configuration, creator content and profiles. Never stop or start any server or client. If a required file is locked, retain the validated build and report that the user must close the locking application before installation can finish. Updated assemblies take effect after the user manually restarts the affected application.
 
-When upgrading an older installation manually, remove the old `SeasonalPerks.Client.dll`, `SeasonalPerks.UI.dll`, `SeasonalPerks.Shared.dll`, `SeasonalPerks.Server.dll` and corresponding PDB/deps files from the two mod directories before copying in the renamed assemblies. Preserve `config.json` and profile data. The UI installer and isolated-server staging script back up the old assemblies automatically. Existing mod directory names, asset paths and saved-state keys remain stable.
-
-For UI update 0.1.4, use `tools/package_ui.ps1`. It builds the client and the server's perk-icon/appearance adapter without adding gameplay behavior. Close the game and installed server, then run `tools/install_ui.ps1` to back up and install the update. See [UI usage, previews and validation](docs/ui.md).
+See [build and deployment](docs/build-deployment.md) for scopes, overrides, backups, packages and offline checks, and [CONTRIBUTING](CONTRIBUTING.md) for setup.
 
 ## Configuration and use
 
@@ -69,9 +67,7 @@ The linked seasonal profile has independent inventory, quests, traders, hideout,
 
 `dotnet run --project Tests -- "../../BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll"` checks contracts and the actual client hook shapes.
 
-`tools/start_test_server.ps1` starts a separate SPT runtime under `Testing/Server`, on port 6975. It copies runtime/database files, never installed user profiles. `tools/test_integration.py` creates synthetic test accounts and runs real routes. Use `tools/stop_test_server.ps1` to stop only that runtime.
-
-For restart coverage: run integration tests, stop the isolated server, run `tools/test_restart.py prepare`, start the isolated server, then run `tools/test_restart.py verify`. The preparation phase modifies only synthetic test profiles. It simulates an interrupted solo raid and previously consumed creation grants.
+The isolated test server is retired. Use the offline validation in `build.proj`. Historical server fixtures are retained for reference only; do not run them or redirect them to installed profiles. No workflow step stops or starts a server or client.
 
 Importer: `tools/import_captures.py --download-icons` uses the supplied packet-log location by default. Existing icons can be imported offline without that flag. `tools/recover_ui.py` uses the supplied live files and extracted metadata. Python dependencies are recorded in `tools/requirements.txt`; use a local virtual environment. Raw packet logs, account IDs and credentials are never included in the package.
 

@@ -14,6 +14,7 @@ public class Snapshot
     public long PackRevision { get; set; }
     public string BannerImage { get; set; } = "";
     public bool LegacyBranding { get; set; } = true;
+    public List<Spatial.SeasonZone> Zones { get; set; } = new();
     public bool HasStory { get; set; }
     public List<string> DocumentTemplates { get; set; } = new();
     public string EffectiveProfileId { get; set; } = "";

@@ -1,5 +1,7 @@
 # Item-resource perks — build 0.1.18
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 Well That Hurt! and Diet are selectable. The captured catalogue is unchanged.
 
 - **Well That Hurt!** uses the captured 1.25 multiplier for Grizzly, AFAK, Salewa, IFAK, Car and AI-2 medical kits. Both HP healing and injury-treatment costs consume additional resource. Other medical items are excluded.
@@ -31,8 +33,8 @@ SPT's stash healing rounds restored HP upward. This backport floors the resource
 - 33 real isolated-server checks cover selection, HP versus cost, affordable/unaﬀordable treatment, partial consumption, missing resource state, rounding, single-resource food, exhaustion, normal-profile isolation and perk removal.
 - Two restart checks confirm the resource fields and removed items survive SPT's normal game-logout save and server restart. Abrupt termination before a save is outside this test.
 
-Run `tools/test_integration.py` on the isolated server to create a fresh synthetic account pair. Stop it, run `tools/test_item_resources.py prepare`, restart it and run `verify`. Stop/restart once more and run `restart`. Fixture preparation checks both the isolated-server directory and synthetic usernames. Use the project Python environment under `.tools/Scripts`.
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
 
-`tools/package.ps1` builds Release and runs both the contract checks and the resource-hook transformations. No live installation or real player profiles are changed by packaging or the isolated tests.
+`tools/package.ps1` builds Release and runs both the contract checks and the resource-hook transformations. Packaging installs the validated update with backups and checksum verification; configuration and profiles are preserved. No servers or clients are stopped or started.
 
 An in-game test is still required: compare normal/seasonal medical HP and treatment use, partially consume provisions, interrupt each use, check item disappearance and UI refresh, then extract, reconnect and compare resources. Test stash fractional leftovers and the documented one-unit-food rounding separately.

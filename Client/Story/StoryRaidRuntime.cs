@@ -155,7 +155,9 @@ public sealed class StoryRaidRuntime : MonoBehaviour
             }
             foreach (var binding in snapshot.Definition!.RaidBindings.Where(b => b.Location == raid.Location && b.Kind != "Collectible"))
             {
-                if (!transforms.TryGetValue(binding.ObjectPath, out var matches) || matches.Length != 1)
+                var authoredZone = binding.ZoneId.Length > 0 ? Spatial.ZoneRuntime.Instance?.Find(binding.ZoneId) : null;
+                Transform[]? matches = authoredZone ? new[] { authoredZone!.transform } : null;
+                if (matches == null && (!transforms.TryGetValue(binding.ObjectPath, out matches) || matches.Length != 1))
                 {
                     Plugin.LogInfo("Story interaction requires one exact scene object: " + binding.ObjectPath);
                     continue;
@@ -199,7 +201,7 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         {
             return;
         }
-        var owner = _bindings.FirstOrDefault(b => b && ObjectPath(b.transform) == binding.ObjectPath);
+        var owner = _bindings.FirstOrDefault(b => b && (binding.ZoneId.Length > 0 ? b.gameObject == Spatial.ZoneRuntime.Instance?.Find(binding.ZoneId) : ObjectPath(b.transform) == binding.ObjectPath));
         var character = Plugin.Player!.Profile.Id;
         var raid = StoryClient.Current?.State?.Raid?.Id;
         bool CurrentContext()

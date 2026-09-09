@@ -1,5 +1,7 @@
 # Seasonal hub UI 0.2.0
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 The Seasonal character's main menu gains a KORD BREACH banner opening Battle Pass, Seasonal Rewards and About the Season. Normal characters have no banner. Back or Escape returns to the menu; Q/E and the page arrows browse rewards or the season carousel. Reward selection survives tab changes until the hub closes.
 
 The hub now includes local claim, Classified-shortage confirmation, exchange and result dialogs, plus the Battle Pass tutorial. Fresh Seasonal progress starts at zero, with no season countdown. Leagues, ratings and online purchases remain unavailable. See [gameplay, dependency locks and asset reproduction](battle-pass-gameplay.md) for transaction behavior and validation. Captured carousel text describes live season features; online synchronization and automatic resets are not implemented.

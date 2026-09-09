@@ -11,6 +11,18 @@ namespace SeasonalPerks.Shared.Seasons;
 // These are authoring contracts. Player state is constructed by the runtime compiler only.
 public sealed class SeasonDefinition : ExtensibleJsonModel
 {
+    public bool ShouldSerializeZones()
+    {
+        return Zones.Count > 0;
+    }
+
+    public bool ShouldSerializeCaptures()
+    {
+        return Captures.Count > 0;
+    }
+
+    public List<Spatial.SeasonZone> Zones { get; set; } = new();
+    public List<Spatial.SpatialCapture> Captures { get; set; } = new();
     public int FormatVersion { get; set; } = 1;
     public string Id { get; set; } = "";
     public string BattlePassId { get; set; } = "";

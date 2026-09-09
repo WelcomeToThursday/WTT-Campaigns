@@ -17,6 +17,11 @@ public static class SeasonValidator
         try
         {
             ValidateCore(season, result);
+            foreach (var error in Spatial.SpatialRules.Errors(season))
+            {
+                result.Add("Zones", error);
+            }
+
             Story.StoryValidator.Validate(season, result);
         }
         catch (Exception e)
@@ -36,7 +41,7 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion == 1, "Overview", "Unsupported season format version.");
+        Need(s.FormatVersion is 1 or 2, "Overview", "Unsupported season format version.");
         Need(IsId(s.Id) && IsId(s.BattlePassId), "Overview", "Season and battle pass require valid identities.");
         Need(!string.IsNullOrWhiteSpace(s.Name) && s.Name.Length <= 120, "Overview", "Name is required (up to 120 characters).");
         Need(s.Rules.StartingPoints is >= 0 and <= 100000, "Perks", "Starting budget must be 0–100000.");

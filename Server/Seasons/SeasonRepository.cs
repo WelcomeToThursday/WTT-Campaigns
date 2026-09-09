@@ -400,6 +400,8 @@ public sealed class SeasonRepository
                 .Select(t => t.Value)
         );
         owned.UnionWith(SeasonalPerks.Shared.Story.StoryContent.OwnedIds(source.Story));
+        owned.UnionWith(source.Zones.Select(z => z.Id));
+        owned.UnionWith(source.Captures.Select(c => c.Id));
         var replacements = owned.ToDictionary(id => id, _ => NewId());
         string Replace(string text)
         {
@@ -506,6 +508,7 @@ public sealed class SeasonRepository
             var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(definition, Formatting.Indented));
             var manifest = new SeasonManifest
             {
+                FormatVersion = definition.FormatVersion,
                 SeasonId = definition.Id,
                 BattlePassId = definition.BattlePassId,
                 Name = definition.Name,
@@ -539,7 +542,7 @@ public sealed class SeasonRepository
 
         var folder = Path.Combine(_root, "packs", CheckId(key));
         var manifest = Read<SeasonManifest>(Path.Combine(folder, "manifest.json"));
-        if (manifest.FormatVersion != 1 || manifest.ProtocolVersion != 2 || !manifest.Files.ContainsKey("definition.json"))
+        if (manifest.FormatVersion is not (1 or 2) || manifest.ProtocolVersion != 2 || !manifest.Files.ContainsKey("definition.json"))
         {
             throw new InvalidDataException("Incompatible pack manifest.");
         }
@@ -558,7 +561,8 @@ public sealed class SeasonRepository
         }
         var definition = Read<SeasonDefinition>(Path.Combine(folder, "definition.json"));
         if (
-            definition.Id != manifest.SeasonId
+            definition.FormatVersion != manifest.FormatVersion
+            || definition.Id != manifest.SeasonId
             || definition.BattlePassId != manifest.BattlePassId
             || definition.Revision != manifest.Revision
             || GameplayHash(definition) != manifest.GameplayHash
@@ -817,7 +821,7 @@ public sealed class SeasonRepository
         }
         var manifest = JsonConvert.DeserializeObject<SeasonManifest>(Encoding.UTF8.GetString(Entry("manifest.json")))!;
         if (
-            manifest.FormatVersion != 1
+            manifest.FormatVersion is not (1 or 2)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
             || manifest.Files.Count != zip.Entries.Count - 1
@@ -836,7 +840,8 @@ public sealed class SeasonRepository
 
         var definition = JsonConvert.DeserializeObject<SeasonDefinition>(Encoding.UTF8.GetString(Entry("definition.json")))!;
         if (
-            definition.Id != manifest.SeasonId
+            definition.FormatVersion != manifest.FormatVersion
+            || definition.Id != manifest.SeasonId
             || definition.BattlePassId != manifest.BattlePassId
             || definition.Revision != manifest.Revision
             || GameplayHash(definition) != manifest.GameplayHash

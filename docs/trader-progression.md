@@ -33,15 +33,8 @@ Under those optimistic assumptions the main traders reach maximum loyalty. Fence
 
 Contract tests cover every trader threshold, exact/below boundaries, fractional comparisons, maximum loyalty including Fence, imported condition types, and native client hook shapes. The importer audit checks all 381 tasks against the supplied captures.
 
-`tools/test_trader_progression.py` uses only synthetic profiles on the isolated server at port 6975. Its phases are:
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
 
-1. Start the isolated server; run `create`.
-2. Stop it; run `prepare`; start it; run `verify`. This waits for SPT's native autosave before returning.
-3. Stop it; run `prepare-loss`; start it; run `verify-loss`.
-4. Stop and start it; run `restart`.
-5. Stop it; run `prepare-inspect`; start it; run `inspect` for full wire-data comparisons and maximum loyalty.
-6. Stop it; run `prepare-restrictions`; start it; run `restrictions` for locked/disabled traders, Essential prerequisites, delayed tasks and character switching.
+The integration report is written locally to `Research/progression-results.json`. The historical isolated runtime included WTT-ContentBackport; wire comparisons permit that mod's appended weapon, equipment and dogtag IDs while requiring all original objective entries to remain intact. The five integration verification stages passed 3,224 checks, including 3,141 wire-data and maximum-loyalty checks.
 
-The integration report is written locally to `Research/progression-results.json`. The isolated runtime includes WTT-ContentBackport; wire comparisons permit that mod's appended weapon, equipment and dogtag IDs while requiring all original objective entries to remain intact. The five integration verification stages passed 3,224 checks, including 3,141 wire-data and maximum-loyalty checks.
-
-In-game visual acceptance at 1920×1080 and the reference aspect ratio remains required. Assembly checks and server tests do not verify actual prefab placement, font rendering, collapsing/scrolling, or live client events. No installed game or real user profile is modified by these tests. Packaging stages a client/server build without installing it.
+In-game visual acceptance at 1920×1080 and the reference aspect ratio remains required. Assembly checks and server tests do not verify actual prefab placement, font rendering, collapsing/scrolling, or live client events. No installed game or real user profile is modified by these tests. Packaging installs the validated client/server update. It never stops or starts applications.

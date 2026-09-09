@@ -1,5 +1,7 @@
 # Compatibility and remaining gates
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 This build is **not full parity**. Compilation, assembly inspection and backend tests do not prove a working game session. No claim of verified in-game switching, raid completion or native visual parity is made.
 
 ## Implemented catalogue entries

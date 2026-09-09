@@ -29,7 +29,7 @@ public static class StoryAuthoring
             StoryDialogLine l => l.Side + ": " + l.Text,
             StoryVariable v => $"{v.Scope} variable · initial {v.InitialValue}",
             StoryEntryPoint e => $"{e.Kind} · {e.StartPoint}",
-            StoryRaidBinding b => $"{b.Kind} · {b.Location} · {b.ObjectPath}",
+            StoryRaidBinding b => $"{b.Name} {b.Kind} · {b.Location} · {b.ObjectPath}",
             StoryMedia m => $"{m.Kind} · {m.Asset}",
             StoryAction a => Friendly(a.Type.ToString()),
             _ => value.GetType().Name.Replace("Story", ""),
@@ -157,6 +157,11 @@ public static class StoryAuthoring
 
     public static bool Visible(object owner, string field)
     {
+        if (owner is StoryRaidBinding zoneBinding && field == "ZoneId")
+        {
+            return zoneBinding.Kind is "Trigger" or "Cinematic";
+        }
+
         if (field == "Id")
         {
             return false;

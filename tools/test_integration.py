@@ -1,4 +1,4 @@
-"""Exercise real SPT routes against the isolated server made by start_test_server.ps1.
+"""Historical isolated-server route fixture; retired from the development workflow.
 
 Creates synthetic accounts only. Never connects to the installed server on 6969.
 """

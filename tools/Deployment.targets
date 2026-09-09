@@ -1,0 +1,129 @@
+<Project>
+  <UsingTask
+    TaskName="PrepareSeasonalDeployment"
+    TaskFactory="RoslynCodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll"
+  >
+    <ParameterGroup>
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+      <ClientDir Required="true" />
+      <ServerModDir Required="true" />
+      <BackupDir Required="true" />
+      <Planned ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Collections.Generic" />
+      <Using Namespace="System.Security.Cryptography" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        var planned = new List<Microsoft.Build.Framework.ITaskItem>();
+        var destinations = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var file in Files) {
+            var relative = file.GetMetadata("InstallPath").Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
+            var separator = relative.IndexOf(Path.DirectorySeparatorChar);
+            var component = separator < 0 ? "" : relative.Substring(0, separator);
+            if (component != "client" && component != "server") { Log.LogError("Invalid install component: " + relative); continue; }
+            var root = Path.GetFullPath(component == "client" ? ClientDir : ServerModDir).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var target = Path.GetFullPath(Path.Combine(root, relative.Substring(separator + 1)));
+            var backupRoot = Path.GetFullPath(BackupDir).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            var backup = Path.GetFullPath(Path.Combine(backupRoot, relative));
+            if (!target.StartsWith(root, StringComparison.OrdinalIgnoreCase) || !backup.StartsWith(backupRoot, StringComparison.OrdinalIgnoreCase)
+                || !destinations.Add(target) || string.Equals(target, Path.GetFullPath(file.ItemSpec), StringComparison.OrdinalIgnoreCase)) {
+                Log.LogError("Invalid or duplicate install destination: " + relative); continue;
+            }
+            var local = relative.Substring(separator + 1).Replace('\\', '/');
+            // Only shipped runtime files are eligible. Never deploy user configuration or saves.
+            var runtime = local.StartsWith("WTT-Seasonal.", StringComparison.Ordinal) && (local.EndsWith(".dll", StringComparison.Ordinal) || local == "WTT-Seasonal.Server.deps.json");
+            var allowed = runtime || (component == "client" && (local == "seasonalperks_ui.bundle" || local == "seasonal_raid_editor.bundle" || local.StartsWith("StoryMedia/", StringComparison.Ordinal)))
+                || (component == "server" && (local == "Newtonsoft.Json.dll" || local.StartsWith("data/", StringComparison.Ordinal) || local.StartsWith("icons/", StringComparison.Ordinal) || local.StartsWith("hub-images/", StringComparison.Ordinal) || local.StartsWith("wwwroot/", StringComparison.Ordinal)));
+            if (!allowed || local.Contains("../")) { Log.LogError("Not a shipped runtime file: " + relative); continue; }
+            var item = new Microsoft.Build.Utilities.TaskItem(file);
+            item.SetMetadata("Destination", target);
+            item.SetMetadata("Backup", backup);
+            item.SetMetadata("PackagePath", (component == "client" ? "BepInEx/plugins/SeasonalPerks/" : "SPT_Runtime/user/mods/SeasonalPerks/") + local.Replace('\\', '/'));
+            var previousHash = "";
+            try {
+                if (File.Exists(target)) {
+                    using (var input = File.OpenRead(target))
+                    using (var sha = SHA256.Create()) previousHash = BitConverter.ToString(sha.ComputeHash(input)).Replace("-", "");
+                }
+                item.SetMetadata("PreviousHash", previousHash);
+                var changed = !string.Equals(previousHash, file.GetMetadata("FileHash"), StringComparison.OrdinalIgnoreCase);
+                item.SetMetadata("Changed", changed.ToString());
+                if (changed && File.Exists(target)) {
+                    using (var probe = File.Open(target, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+                }
+                planned.Add(item);
+            } catch (Exception error) {
+                Log.LogError("Cannot install " + target + ": " + error.Message + " Close the application holding this file yourself, then rerun installation. No servers or clients are controlled by this build.");
+            }
+        }
+        Planned = planned.ToArray();
+        if (Log.HasLoggedErrors) return false;
+      ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+  <Target Name="PrepareSeasonalFiles">
+    <Error Condition="'@(SeasonalDeployFile)' == ''" Text="No runtime files were selected for deployment." />
+    <PropertyGroup>
+      <_BackupDir>$(SeasonalBackupDir)$([System.DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fffffff'))\</_BackupDir>
+    </PropertyGroup>
+    <GetFileHash Files="@(SeasonalDeployFile)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="_HashedFiles" />
+    </GetFileHash>
+    <VerifyFileHash File="%(_HashedFiles.Identity)" Hash="%(_HashedFiles.ExpectedHash)" Condition="'%(_HashedFiles.ExpectedHash)' != ''" />
+    <PrepareSeasonalDeployment
+      Files="@(_HashedFiles)"
+      ClientDir="$(SeasonalClientDir)"
+      ServerModDir="$(SeasonalServerDir)"
+      BackupDir="$(_BackupDir)"
+    >
+      <Output TaskParameter="Planned" ItemName="_PlannedFiles" />
+    </PrepareSeasonalDeployment>
+    <ItemGroup>
+      <_ChangedFiles Include="@(_PlannedFiles)" Condition="'%(Changed)' == 'True'" />
+      <_ExistingFiles Include="@(_ChangedFiles)" Condition="'%(PreviousHash)' != ''" />
+      <_NewFiles Include="@(_ChangedFiles)" Condition="'%(PreviousHash)' == ''" />
+    </ItemGroup>
+  </Target>
+  <Target Name="CheckSeasonalFiles" DependsOnTargets="PrepareSeasonalFiles">
+    <Message
+      Importance="high"
+      Text="Verified @(_PlannedFiles->Count()) source files and checked destination availability. No files installed."
+    />
+  </Target>
+  <Target Name="BackupSeasonalFiles" DependsOnTargets="PrepareSeasonalFiles">
+    <Copy SourceFiles="@(_ExistingFiles->'%(Destination)')" DestinationFiles="@(_ExistingFiles->'%(Backup)')" />
+    <VerifyFileHash File="%(_ExistingFiles.Backup)" Hash="%(_ExistingFiles.PreviousHash)" Condition="'%(_ExistingFiles.Identity)' != ''" />
+    <WriteLinesToFile
+      File="$(_BackupDir)installation.txt"
+      Lines="@(_PlannedFiles->'%(FileHash)  %(Destination)');@(_ExistingFiles->'Previous: %(PreviousHash)  %(Backup)')"
+      Overwrite="true"
+    />
+  </Target>
+  <Target Name="DeploySeasonalFiles" DependsOnTargets="BackupSeasonalFiles">
+    <Copy SourceFiles="@(_ChangedFiles)" DestinationFiles="@(_ChangedFiles->'%(Destination)')" Retries="0" />
+    <VerifyFileHash File="%(_PlannedFiles.Destination)" Hash="%(_PlannedFiles.FileHash)" />
+    <Message
+      Importance="high"
+      Text="Installed @(_ChangedFiles->Count()) changed files; SHA-256 verified @(_PlannedFiles->Count()). Backup: $(_BackupDir)"
+    />
+    <Message
+      Importance="high"
+      Text="No servers or clients were stopped or started. Updated assemblies take effect after you manually restart the affected application."
+    />
+    <OnError ExecuteTargets="RollbackSeasonalFiles" />
+  </Target>
+  <Target Name="RollbackSeasonalFiles">
+    <Copy SourceFiles="@(_ExistingFiles->'%(Backup)')" DestinationFiles="@(_ExistingFiles->'%(Destination)')" Retries="0" />
+    <Delete Files="@(_NewFiles->'%(Destination)')" />
+    <VerifyFileHash
+      File="%(_ExistingFiles.Destination)"
+      Hash="%(_ExistingFiles.PreviousHash)"
+      Condition="'%(_ExistingFiles.Identity)' != ''"
+    />
+    <Message Importance="high" Text="Installation failed; restored previous files. Backup: $(_BackupDir)" />
+  </Target>
+</Project>

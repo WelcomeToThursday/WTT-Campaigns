@@ -1,0 +1,23 @@
+<Project>
+  <!-- Evaluate after Build so output overrides and newly copied content are respected. -->
+  <Target Name="GetSeasonalDeployFiles" DependsOnTargets="Build" Returns="@(SeasonalDeployFile)">
+    <PropertyGroup>
+      <_SeasonalComponent Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.Server'">server</_SeasonalComponent>
+      <_SeasonalComponent Condition="'$(MSBuildProjectName)' != 'WTT-Seasonal.Server'">client</_SeasonalComponent>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.UI'">
+      <_SeasonalRuntimeFile Include="$(TargetPath)" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.Client'">
+      <_SeasonalRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Seasonal.UI.dll;$(TargetDir)WTT-Seasonal.Shared.dll;$(TargetDir)seasonalperks_ui.bundle;$(TargetDir)seasonal_raid_editor.bundle;$(TargetDir)StoryMedia\**\*" />
+    </ItemGroup>
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.Server'">
+      <_SeasonalRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Seasonal.Shared.dll;$(TargetDir)Newtonsoft.Json.dll;$(TargetDir)WTT-Seasonal.Server.deps.json;$(TargetDir)data\**\*;$(TargetDir)icons\**\*;$(TargetDir)hub-images\**\*;$(TargetDir)wwwroot\**\*" />
+    </ItemGroup>
+    <ItemGroup>
+      <SeasonalDeployFile Include="@(_SeasonalRuntimeFile)">
+        <InstallPath>$(_SeasonalComponent)\$([MSBuild]::MakeRelative('$(TargetDir)', '%(_SeasonalRuntimeFile.FullPath)'))</InstallPath>
+      </SeasonalDeployFile>
+    </ItemGroup>
+  </Target>
+</Project>

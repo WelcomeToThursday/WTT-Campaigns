@@ -22,8 +22,8 @@ Effects, starting grants, document loot, reward progress, exchanges and trader u
 
 ## Verification
 
-`tools/test_characters.py` creates synthetic accounts in `Testing/Server` and covers same-season siblings, different seasons, retry handling, ownership, native raids, quest isolation, reward claims, deletion and achievement-preserving wipes/recreation. It expects the published fixture from `Tests --creator-fixture` alongside the built-in season. `tools/test_character_restart.py prepare|verify` exercises the old account-link format across a restart. `tools/test_wipe_restart.py prepare|verify` verifies postponed recreation and achievement persistence across a restart. All fixture operations refuse installed player profiles.
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
 
 `tools/unity/SeasonalCharactersPreview.cs` runs against the synchronized UI sources in CJ-SDK. It renders the carousel, season picker, delete/wipe confirmations and wiped card at 1920×1080, 1280×720 and 2560×1080, with interaction checks for target identity, cancellation, wrapping and recreation. Editor equipment images are stand-ins; installed-game animation, model lighting and reconnect behavior still require an in-game check.
 
-Build client and server together. The carousel uses the existing artwork bundle; no new recovered media is required. `tools/package_ui.ps1` stages the update without installing it into the running game/server.
+Build client and server together. The carousel uses the existing artwork bundle; no new recovered media is required. `tools/package_ui.ps1` builds, validates and installs the matching update through MSBuild. It never stops or starts a server or client.

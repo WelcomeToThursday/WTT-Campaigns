@@ -2,7 +2,7 @@
 
 A separate playable season containing **Field dressing**, a short Prapor delivery. Existing characters keep their original season and progression.
 
-After installing the pack and restarting the SPT server and game:
+After installing the pack and the user manually restarting the affected applications:
 
 1. Create a new Seasonal character in **Story Sandbox**. Either faction works. The optional Enduring perk costs its one starting point.
 2. Visit Prapor and choose **I'll make the delivery.**
@@ -16,4 +16,4 @@ You can leave and return before or after handing over the bandage. Completion ca
 
 Run the Tests authoring command with `--test-story-season`, the installed SeasonalPerks server mod directory, and a new output directory. The output includes a validated ZIP, a published pack with checksums, and `test-story.json` containing the generated identifiers. The helper refuses to overwrite an existing output directory.
 
-`tools/test_playable_story.py` exercises this content on the dedicated `Testing/StoryQuestServerV2` runtime on port 6991. It creates synthetic profiles only and checks the native quest flow, journal notes, one-item consumption, reward persistence, retries, and normal-character isolation.
+The historical `tools/test_playable_story.py` fixture used a dedicated synthetic runtime. That workflow is retired. Use [offline validation and mandatory installation](../build-deployment.md); never stop or start servers or clients.

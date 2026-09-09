@@ -2,7 +2,12 @@
 @using SeasonalPerks.Shared.Story
 @using System.Globalization
 <div class="story-value">
-@if (ReferenceKind is { } kind)
+@if (Owner is StoryRaidBinding raidBinding && Field == "ZoneId")
+{
+    <label>Trigger zone<select value="@Text" @onchange="@(async e => { raidBinding.ObjectPath = ""; await Set(e.Value?.ToString() ?? ""); })"><option value="">Use a scene object</option>@foreach (var zone in Season.Zones.Where(z => raidBinding.Location.Length == 0 || z.Location == raidBinding.Location)) { <option value="@zone.Id">@zone.Name · @zone.Location</option> }</select></label>
+    <RaidCaptureButton TargetKind="Binding" TargetId="@raidBinding.Id" /><RaidCaptureButton TargetKind="Binding" TargetId="@raidBinding.Id" RecordId="@raidBinding.ZoneId" Label="Edit in raid" />
+}
+else if (ReferenceKind is { } kind)
 {
     <ContentPicker Kind="@kind" Label="@Label" HelpText="@Help" Value="@(kind == "offers" && Owner is StoryNoteLink link && Text.Length > 0 ? link.TraderId + "/" + Text : Text)" ValueChanged="@(v => PickContent(kind, v))" Additional="@StoryAuthoring.Choices(Season, kind).Where(c => Compatible(c.Id)).Select(c => new ContentChoice(c.Id, c.Name))" />
 
@@ -21,6 +26,10 @@ else if (Options is { } options)
     @if (!options.Contains(Text)) { <option value="@Text">@(Text.Length == 0 ? "Choose…" : "Unsupported: " + Text)</option> }
     @foreach (var option in options) { <option value="@option">@StoryAuthoring.Friendly(option)</option> }
     </select></label>
+}
+else if (Owner is StoryRaidBinding objectBinding && Field == "ObjectPath")
+{
+    <label>Scene object path<input value="@Text" @onchange="@(e => Set(e.Value?.ToString() ?? ""))" /></label><RaidCaptureButton Tool="Object" TargetKind="Binding" TargetId="@objectBinding.Id" Label="Pick in raid" />
 }
 else if (ValueType == typeof(string))
 {

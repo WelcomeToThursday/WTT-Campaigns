@@ -36,7 +36,9 @@ var content = new SeasonContentService(
     new LocaleService(null!, localeTable, null!),
     localeTable,
     null!,
-    null!
+    null!,
+    null!,
+    []
 );
 var services = new ServiceCollection().AddLogging();
 services.AddMudServices();
@@ -56,9 +58,9 @@ season.Story.Variables.Add(
 );
 var quest = NativeQuestAuthoring.Create();
 var counter = NativeQuestAuthoring.Condition("CounterCreator");
-counter["value"] = 5;
+counter.Value = 5;
 var kills = NativeQuestAuthoring.Condition("Kills");
-((JArray)counter["counter"]!["conditions"]!).Add(kills);
+counter.Counter!.Conditions.Add(kills);
 var pages = new Dictionary<string, string>();
 pages["counter"] = await Render<NativeObjectiveFields>(
     new()
@@ -119,6 +121,14 @@ Require(
     pages["reputation-condition"].Contains("Reputation threshold") && !pages["reputation-condition"].Contains("Variable threshold"),
     "Type changes replace the rendered label and help"
 );
+season.Zones.Add(new() { Id = "111111111111111111111111", Name = "Camp entrance", Location = "woods", Scene = "woods_main" });
+pages["zones"] = await Render<SpatialWorkspace>(new() { ["Season"] = season });
+Require(pages["zones"].Contains("Create in raid") && pages["zones"].Contains("Camp entrance"), "Spatial workspace renders capture and geometry controls");
+var visit = NativeQuestAuthoring.Condition("VisitPlace");
+pages["zone-objective"] = await Render<NativeObjectiveFields>(new() { ["Season"] = season, ["Quest"] = quest, ["Value"] = visit });
+Require(pages["zone-objective"].Contains("Camp entrance") && pages["zone-objective"].Contains("Create in raid"), "Native objectives expose compatible authored zones and capture requests");
+pages["zone-binding"] = await Render<StoryFields>(new() { ["Season"] = season, ["Value"] = new StoryRaidBinding { Id = "binding", Kind = "Trigger", Location = "woods" } });
+Require(pages["zone-binding"].Contains("Trigger zone") && pages["zone-binding"].Contains("Pick in raid"), "Story bindings expose both zone and scene-target capture");
 var theme = File.ReadAllText(
     Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),

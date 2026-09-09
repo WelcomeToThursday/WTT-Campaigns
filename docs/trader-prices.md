@@ -1,5 +1,7 @@
 # Trader-price perks — build 0.1.20
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 Personality Vacuum and Third Leg bring the implemented catalogue to 27 of 39. Install the updated client and server together. These personal perks need no configuration change; select and save one in the perk editor.
 
 ## Effects
@@ -38,6 +40,6 @@ Removing a perk and saving reconnects the client and restores the original assor
 - 98 trader integration checks pass: all eight affected traders, repeated requests without compounding, normal assortments, rouble/dollar/euro purchases, barters, Therapist discounts, invalid-payment rejection without inventory/stock changes, flea pricing/filtering/direct lookup/build requests, concurrent normal/seasonal searches and perk removal.
 - Four restart checks verify both test inventories, saved selection and a stable seasonal price after logout/save and restart.
 
-Reproduce with a fresh run of `tools/test_integration.py` on the isolated server. Stop it, run `tools/test_trader_prices.py prepare`, start it and run `verify`. Restart it and run `restart`. Preparation modifies only synthetic accounts from that fresh integration run; use a fresh pair when repeating the suite so native trader purchase limits are not already exhausted.
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
 
 Actual in-game shop/flea display, purchase confirmation, Charisma gain blocking and Third Leg sprint speed still need validation. Use a disposable account, compare each perk separately with the normal PMC, and confirm that removing the perk refreshes both purchase screens.

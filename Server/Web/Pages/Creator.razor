@@ -9,7 +9,8 @@
 <PageTitle>Season Creator</PageTitle>
 <HeadContent><link rel="stylesheet" href="/seasonal-creator-assets/creator.css" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
-<main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="Dirty" @oninput="Dirty">
+<CascadingValue Value="RaidContext">
+<main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
     <header class="creator-header">
         <div><h1><span class="app-mark" aria-hidden="true">S</span>Season Creator</h1><p>Create and publish seasons. Each seasonal character chooses its own season.</p></div>
         <div class="row"><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
@@ -20,6 +21,18 @@
     @foreach (var warning in Repository.StorageWarnings) { <div class="notice error">Storage needs attention: @warning</div> }
     @if (_message.Length > 0) { <div class="notice" role="status">@_message</div> }
     @if (Repository.Selection.Error.Length > 0) { <div class="notice error">Season loading issue: @Repository.Selection.Error</div> }
+
+    @if (_draft != null)
+    {
+        <RaidConnectionPanel @key="_draft.Id" Draft="_draft" Status="_raidStatus" Synchronize="SyncRaid" Flush="FlushRaid" />
+        @if (_raidConflict != null)
+        {
+            <section class="notice error"><h3>Conflicting draft edits</h3>
+            @foreach (var conflict in _raidConflict.Conflicts) { <details><summary>@conflict.Path</summary><p>This editor</p><pre>@conflict.Local</pre><p>Server</p><pre>@conflict.Remote</pre></details> }
+            <button @onclick="@(() => ResolveRaidConflict(true))">Keep this editor's conflicting values</button><button @onclick="@(() => ResolveRaidConflict(false))">Keep server's conflicting values</button>
+            </section>
+        }
+    }
 
     @if (_discard != null)
     {
@@ -277,6 +290,9 @@
 
 </EditorSection>
                     break;
+                case "Zones and captures":
+                    <SpatialWorkspace Season="S" Changed="Dirty" />
+                    break;
                 case "Quests":
                     <QuestWorkspace Season="S" FocusId="@_focusId" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
                     break;
@@ -341,3 +357,4 @@
         </div>
     }
 </main>
+</CascadingValue>

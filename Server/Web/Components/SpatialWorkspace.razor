@@ -1,0 +1,29 @@
+@using SeasonalPerks.Shared.Spatial
+<section class="editor-section"><h2>Zones and captures</h2><p>Create spatial records in the connected raid. Preview shapes do not execute quests or story actions.</p>
+<div class="row"><RaidCaptureButton /><RaidCaptureButton Tool="Transform" Label="Capture transform in raid" /><RaidCaptureButton Tool="Object" Label="Pick scene object in raid" /></div>
+<label>Find a record<input type="search" @bind="_search" @bind:event="oninput" /></label>
+@foreach (var record in Season.Zones.Cast<SpatialCapture>().Concat(Season.Captures).Where(r => r.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)))
+{
+    <details class="editor-card" @key="record.Id"><summary>@record.Name · @record.Location · @record.Scene</summary>
+    <label>Name<input maxlength="120" @bind="record.Name" /></label><small>@record.Id</small>
+    <SpatialVectorFields Value="record.Position" Changed="Changed" /><SpatialVectorFields Value="record.Rotation" Label="Rotation (degrees)" Changed="Changed" />
+    @if (record is SeasonZone zone)
+    {
+        <label>Shape<select @bind="zone.Shape"><option>Box</option><option>Sphere</option></select></label>
+        @if (zone.Shape == "Box") { <SpatialVectorFields Value="zone.Size" Label="Size (metres)" Changed="Changed" /> }
+        else { <label>Radius (metres)<input type="number" min="0.05" step="0.05" @bind="zone.Radius" /></label> }
+        @foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation" }) { <label class="check"><input type="checkbox" checked="@zone.Uses.Contains(use)" @onchange="@(e => Use(zone, use, (bool)e.Value!))" />@use</label> }
+        <p>Referenced by: @string.Join(", ", SpatialRules.Uses(Season, zone.Id))</p>
+    }
+    else { <p>@record.ObjectPath</p> }
+    <div class="row"><RaidCaptureButton Tool="@(record is SeasonZone ? "Zone" : record.ObjectPath.Length > 0 ? "Object" : "Transform")" RecordId="@record.Id" Label="Edit in raid" /><button class="danger" disabled="@SpatialRules.Uses(Season, record.Id).Any()" @onclick="@(() => Delete(record))">Delete</button></div>
+    </details>
+}
+</section>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private string _search = "";
+    private async Task Delete(SpatialCapture record) { if (SpatialRules.Uses(Season, record.Id).Any()) return; if (record is SeasonZone zone) Season.Zones.Remove(zone); else Season.Captures.Remove(record); await Changed.InvokeAsync(); }
+    private async Task Use(SeasonZone zone, string use, bool enabled) { if (enabled && !zone.Uses.Contains(use)) zone.Uses.Add(use); if (!enabled) zone.Uses.Remove(use); await Changed.InvokeAsync(); }
+}

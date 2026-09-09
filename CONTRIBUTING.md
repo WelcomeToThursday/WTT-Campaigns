@@ -34,20 +34,23 @@ These commands validate shared contracts and compile the backend. Without icons,
 
 The default layout is `<SPT>/Development/SeasonalPerks` with the companion Unity project in `<SPT>/Development/CJ-SDK`. You need the installed SPT 4.1.3 / EFT 0.16.9.40743 references, including `BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll`, BepInEx/SPT plugins, and Unity managed assemblies.
 
-The solution and projects are named `WTT-Seasonal`, with matching DLL names. The checkout directory can retain its existing name. Packaging scripts resolve build output directories through MSBuild, including local output-path overrides, and stage only the required runtime files. The isolated-server script builds only the server project.
+The solution and projects are named `WTT-Seasonal`, with matching DLL names. The checkout directory can retain its existing name. MSBuild collects each project's runtime outputs after building, including local output-path overrides, and deploys only the selected components.
 
-For a checkout elsewhere, copy `Directory.Build.local.props.example` to `Directory.Build.local.props` and edit the paths. This local file is ignored. `TarkovDir`, `ManagedDir`, `ServerDir` and `SeasonalAssetsDir` can also be passed as MSBuild properties. Keep trailing directory separators. The MSBuild overrides configure compilation; deployment, isolated-server and research scripts still expect the documented companion-directory layout unless they expose an explicit path argument.
+For a checkout elsewhere, copy `Directory.Build.local.props.example` to `Directory.Build.local.props` and edit the paths. This local file is ignored. `TarkovDir`, `ManagedDir`, `ServerDir` and `SeasonalAssetsDir` can also be passed as MSBuild properties. Keep trailing directory separators. The same settings drive compilation, validation and installation. Optional research scripts retain their separately documented input paths.
 
-The game-derived UI bundle and 39 icons are local dependencies. The UI builder and asset workspace live in the separate CJ-SDK project. A source checkout alone does not recreate those assets. See the README for the Unity build sequence.
+The game-derived UI bundles, story media and icons are local dependencies. The UI builder and asset workspace live in the separate CJ-SDK project. A source checkout alone does not recreate those assets. See the README for the Unity build sequence.
 
 ```powershell
-dotnet build WTT-Seasonal.slnx -c Release
-dotnet run --project Tests -c Release -- "<SPT>/BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll"
-dotnet run --project Tests -c Release -- --resource-hooks "<SPT>" "Client/bin/Release/netstandard2.1/WTT-Seasonal.Client.dll"
-dotnet run --project Tests -c Release -- --ui "<SPT>/BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll" "Client/bin/Release/netstandard2.1/WTT-Seasonal.Client.dll"
+# Build, validate and install all matching components
+dotnet msbuild build.proj
+
+# For changes confined to the UI assembly
+dotnet msbuild build.proj -p:DeploymentScope=UI
 ```
 
-Use the isolated-server scripts for backend integration tests. `Testing/` is disposable local state and must never contain an installed player's profile. Research scripts are optional, require separately supplied captures/game metadata, and write ignored local outputs.
+Always install the validated update, with backups and checksum verification. Never stop or start servers or clients, including test instances. If installation is blocked by a locked file, keep the validated build ready and report the file and the application the user needs to close. The user performs any restart needed to load installed assemblies. See [build and deployment](docs/build-deployment.md) for all targets and compatibility installers.
+
+The isolated test server is retired. Do not stage a runtime or run the historical server fixtures. Keep their synthetic-profile safeguards intact and never redirect them to installed profiles. Existing ignored `Testing/` state is left untouched. Offline contracts, native assembly checks and file-only deployment checks are the automated validation workflow; live acceptance remains user-controlled.
 
 ## Changes and review
 
@@ -55,4 +58,4 @@ Follow the [client/server](docs/client-server-structure.md), [patch](docs/patche
 
 Keep game binaries, generated bundles, recovered media, raw captures, profiles, credentials and machine-specific settings out of commits. The whole `Research/` tree is ignored; preserve useful conclusions in reviewed `docs/` files. Keep sanitized catalogue/localization data and fixtures in their existing directories.
 
-Before a commit, inspect `git status --short`, `git diff --check` and `git diff --cached`. Before publishing a repository, review `THIRD_PARTY_NOTICES.md`, including the captured data retained in source control. Packaging stages a local release and does not install or publish it.
+Before a commit, inspect `git status --short`, `git diff --check` and `git diff --cached`. Before publishing a repository, review `THIRD_PARTY_NOTICES.md`, including the captured data retained in source control. Packaging stages and installs the validated local update; it does not publish it. Never stop or start any server or client.

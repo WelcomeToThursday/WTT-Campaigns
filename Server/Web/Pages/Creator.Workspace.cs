@@ -91,7 +91,7 @@ public partial class Creator
         ("Rewards and economy", ["Documents", "Battle pass", "Rewards", "Items and crates"]),
         (
             "Quests and story",
-            ["Chapters", "Quests", "Journal notes", "Conversations", "Variables", "Entry points", "Raid events", "Story media"]
+            ["Chapters", "Quests", "Journal notes", "Conversations", "Variables", "Entry points", "Raid events", "Zones and captures", "Story media"]
         ),
         ("Review and publish", ["Localization", "Story rehearsal", "Preview and publish"]),
     ];

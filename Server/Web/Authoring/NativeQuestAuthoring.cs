@@ -24,7 +24,7 @@ public static class NativeQuestAuthoring
     {
         return nested ? CounterFilters
             : story ? SeasonalPerks.Shared.Story.StoryQuestCompatibility.ConditionTypes.Except(CounterFilters).Order()
-            : ["Level", "Quest", "TraderLoyalty", "FindItem", "HandoverItem"];
+            : ["Level", "Quest", "TraderLoyalty", "FindItem", "HandoverItem", "VisitPlace", "LeaveItemAtLocation", "CounterCreator"];
     }
 
     public static NativeCondition Condition(string kind)
@@ -61,6 +61,12 @@ public static class NativeQuestAuthoring
         if (kind is "VisitPlace" or "LeaveItemAtLocation" or "InZone" or "LaunchFlare")
         {
             condition.ZoneId = "";
+        }
+
+        if (kind == "InZone") { condition.ZoneId = null; condition.ZoneIds = []; }
+        if (kind == "VisitPlace")
+        {
+            condition.ZoneId = null;
         }
 
         if (kind == "LeaveItemAtLocation")

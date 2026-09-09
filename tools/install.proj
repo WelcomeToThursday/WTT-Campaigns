@@ -1,0 +1,5 @@
+<Project DefaultTargets="DeploySeasonalFiles">
+  <Import Project="..\Directory.Build.props" />
+  <Import Project="$(DeploymentManifest)" Condition="Exists('$(DeploymentManifest)')" />
+  <Import Project="Deployment.targets" />
+</Project>

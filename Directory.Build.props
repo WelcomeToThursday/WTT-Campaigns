@@ -14,5 +14,8 @@
     <ServerDir Condition="'$(ServerDir)' == ''">$(TarkovDir)SPT_Runtime\</ServerDir>
     <SeasonalAssetsDir Condition="'$(SeasonalAssetsDir)' == ''"
       >$(MSBuildThisFileDirectory)..\CJ-SDK\Assets\Mods\SeasonalPerks.Assets\</SeasonalAssetsDir>
+    <SeasonalClientDir>$(TarkovDir)BepInEx\plugins\SeasonalPerks\</SeasonalClientDir>
+    <SeasonalServerDir>$(ServerDir)user\mods\SeasonalPerks\</SeasonalServerDir>
+    <SeasonalBackupDir Condition="'$(SeasonalBackupDir)' == ''">$(MSBuildThisFileDirectory)artifacts\install-backups\</SeasonalBackupDir>
   </PropertyGroup>
 </Project>

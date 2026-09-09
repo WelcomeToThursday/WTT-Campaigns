@@ -10,7 +10,7 @@ coverage/
 *.nupkg
 *.snupkg
 
-# Local runtimes, isolated SPT servers/profiles, releases and reverse-engineering output
+# Historical local test state, releases and reverse-engineering output
 /.tools/
 /Testing/
 /Research/

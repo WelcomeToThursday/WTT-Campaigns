@@ -22,6 +22,7 @@ internal static class CreatorChecks
                 File.Copy(file, target);
             }
             var store = new SeasonRepository(directory);
+            RaidAuthoringChecks.Run(store, check);
             var first = store.Create(false);
             check(
                 first.Definition.Id != store.Legacy.Id && first.Definition.BattlePassId != store.Legacy.BattlePassId,

@@ -1,5 +1,7 @@
 # UI update 0.1.24
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 ## Multiple seasonal characters
 
 The current selector uses a wrapping horizontal card carousel, a season picker, and separate delete/wipe confirmations. Wipes preserve earned achievements and return to faction, appearance and modifier creation. See [character selection, persistence and verification](characters.md); this supersedes the historical two-card layout described below.
@@ -108,9 +110,7 @@ The snapshot adds an appearance-only descriptor for each character: nickname, le
 
 ## Install
 
-Run `tools/package_ui.ps1`, close the game and installed SPT server, then run `tools/install_ui.ps1`. The installer verifies package hashes, backs up existing mod files and installs both client and server support. Restart the server before launching the game. Existing server configuration and user profiles are not included in the package or overwritten.
-
-Both parts must be updated: 0.1.4 removes the decorative-art server routes and loads those sprites from the bundle. The installer moves the obsolete server selection-artwork folder into its backup. The installer refuses to overwrite a running server's locked assembly.
+Run `dotnet msbuild build.proj` to build, validate and install matching components with backups and SHA-256 verification. Configuration, creator content and profiles are preserved. Never stop or start servers or clients. If a required file is locked, report the blocked installation and let the user close the application. Installed assemblies take effect after the user manually restarts the affected application. See [build and deployment](build-deployment.md).
 
 ## Validation and limits
 

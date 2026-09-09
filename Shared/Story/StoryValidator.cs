@@ -310,7 +310,7 @@ public static class StoryValidator
                 "Unsupported raid binding."
             );
             Need(
-                binding.Kind == "Collectible" ? SeasonValidator.IsId(binding.ItemId) : binding.ObjectPath.Length > 0,
+                binding.Kind == "Collectible" ? SeasonValidator.IsId(binding.ItemId) : (binding.ObjectPath.Length > 0 || season.Zones.Any(z => z.Id == binding.ZoneId)),
                 binding.Id,
                 "A collectible item or exact scene object path is required."
             );
@@ -326,7 +326,7 @@ public static class StoryValidator
             if (boundEntry?.Scene.Length > 0 && binding.Kind != "Collectible")
             {
                 Need(
-                    binding.ObjectPath.StartsWith(boundEntry.Scene + ":/", StringComparison.Ordinal),
+                    (binding.ZoneId.Length > 0 ? season.Zones.Any(z => z.Id == binding.ZoneId && z.Scene == boundEntry.Scene) : binding.ObjectPath.StartsWith(boundEntry.Scene + ":/", StringComparison.Ordinal)),
                     binding.Id,
                     "The bound entry's scene must match the object path."
                 );

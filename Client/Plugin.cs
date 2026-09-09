@@ -54,6 +54,8 @@ public sealed class Plugin : BaseUnityPlugin
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
         gameObject.AddComponent<SeasonHubUi>();
+        gameObject.AddComponent<Spatial.ZoneRuntime>();
+        gameObject.AddComponent<Authoring.RaidEditor>();
         gameObject.AddComponent<Story.StoryRaidRuntime>();
         gameObject.AddComponent<Story.StoryVisitRuntime>();
         gameObject.AddComponent<Story.StoryCinematicRuntime>();

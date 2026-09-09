@@ -1,0 +1,12 @@
+@using SeasonalPerks.Server.Web.Authoring
+@using SeasonalPerks.Shared.Authoring
+<button type="button" disabled="@(Context?.Connected != true)" title="Connect an authoring-enabled raid above" @onclick="Request">@Label</button>
+@code {
+    [CascadingParameter] public RaidEditorContext? Context { get; set; }
+    [Parameter] public string Label { get; set; } = "Create in raid";
+    [Parameter] public string Tool { get; set; } = "Zone";
+    [Parameter] public string TargetKind { get; set; } = "";
+    [Parameter] public string TargetId { get; set; } = "";
+    [Parameter] public string RecordId { get; set; } = "";
+    private Task Request() => Context?.Request(new CaptureTask { Tool = Tool, TargetKind = TargetKind, TargetId = TargetId, RecordId = RecordId }) ?? Task.CompletedTask;
+}

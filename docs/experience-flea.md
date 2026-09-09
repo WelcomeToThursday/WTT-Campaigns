@@ -1,5 +1,7 @@
 # Seasoned PMCs and No Flea Market
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 Build 0.1.21 enables two more captured entries, bringing support to 29 of 39.
 
 ## Seasoned PMCs
@@ -32,4 +34,4 @@ Offer filtering shares the existing request-local trader-price scope. `GetOffers
 - Six restart checks cover both profiles' XP/inventories, both perk selections and trader-only searches.
 - The actual raid XP transpiler is checked against the installed client method: branch labels are preserved and a missing bonus store is rejected. Additional assembly checks cover examination/quest award routes, treatment argument bindings and reconciliation bypass.
 
-Use the existing isolated server fixture from `test_integration.py` and `test_restart.py`. With the test server stopped, run `test_experience_flea.py prepare`; start it and run `verify`; restart and run `restart`; stop it and run `restore-config`. Only synthetic accounts in `Testing/Server` are edited. The report is written under ignored `Research/`. Run the client check with `dotnet run --project Tests -c Release -- --experience-hooks <SPT> <client-dll>`; packaging includes it automatically.
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.

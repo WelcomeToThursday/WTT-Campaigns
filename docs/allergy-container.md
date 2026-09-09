@@ -1,5 +1,7 @@
 # Allergic and Broken Secure Container
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 Build 0.1.23 enables two more captured personal perks, bringing the implemented catalogue to 33/39.
 
 ## Allergic
@@ -47,4 +49,4 @@ Native evidence uses the supplied GameAssembly SHA-256 `94ae9b20597624e9ee737ab2
 
 Shared and game-assembly checks cover target stability, eligible pools, distinct symptom sampling, all six durations/rates, overlap order, unavailable shape rejection, allow-list behavior, once-per-use receipts and native hook bindings. The isolated server suite passes 55 checks plus five restart checks. The previous consumable suite also passes 55 checks plus five restart checks, and core integration passes 66 checks. The core comparison now uses the same narrowly verified hideout housekeeping exceptions as the existing restart suite; all other normal PMC/Scav changes fail.
 
-Compilation and isolated-server tests do not prove actual raid behavior. In-game symptom timing, medication cancellation, visual effects, nested inventory UI feedback and raid-end health persistence still need validation with a disposable account. No live installed profile was used, and the package is staged without installation.
+Compilation and isolated-server tests do not prove actual raid behavior. In-game symptom timing, medication cancellation, visual effects, nested inventory UI feedback and raid-end health persistence still need validation with a disposable account. No live installed profile was used, and the historical package was staged without installation. Current updates must be installed through MSBuild without stopping or starting applications.

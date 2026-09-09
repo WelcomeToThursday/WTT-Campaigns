@@ -1,6 +1,8 @@
 # Season Creator
 
-The creator runs inside the installed SPT 4.1.3 Blazor host at `/wtt-seasonal/creator`. It uses the host’s interactive server rendering, MudBlazor layout, and `Administrator` policy. Install the full client/server package together; authored seasons require protocol 2. The isolated test installation uses https://127.0.0.1:6975/wtt-seasonal/creator.
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
+The creator runs inside the installed SPT 4.1.3 Blazor host at `/wtt-seasonal/creator`. It uses the host’s interactive server rendering, MudBlazor layout, and `Administrator` policy. Install the full client/server package together; authored seasons require protocol 2. The isolated test installation is retired; use the installed server address when the user has it running.
 
 ## Workspace and help
 
@@ -72,7 +74,7 @@ The implementation was exercised on synthetic profiles in `Testing/Server` only.
 - HTTP checks confirm the creator page, local stylesheet and pack download are served by the SPT host. With authentication enabled, the editor, artwork and download endpoints require login.
 - A corrupted pending pack fails checksum preflight and preserves the active pack and character state.
 
-Run the standard contract checks through `tools/package.ps1`. For custom-season integration, first run `tools/test_integration.py` on the isolated legacy season, then `dotnet run --project Tests -- --creator-fixture Testing/Server/user/mods/SeasonalPerks`. Restart the isolated server and run `tools/test_creator.py verify`, followed by `tools/test_hub_raids.py --creator`. These fixtures call the same repository/native gameplay services used by authoring; they do not substitute for browser acceptance.
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
 
 **Outstanding acceptance:** interactive browser saving, drag/drop, upload and simulation checks, and installed-game creation/branding/layout checks at supported resolutions. The local HTTPS certificate blocked the automated browser session. These gates must pass before treating 0.3.0 as a completed release.
 

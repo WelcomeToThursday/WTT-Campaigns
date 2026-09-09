@@ -46,6 +46,16 @@ public sealed class StorySceneBinding : MonoBehaviour
             && StoryRules.Evaluate(_binding.Condition, snapshot.Definition!, snapshot.State, snapshot.Facts!);
     }
 
+    internal void ZoneEnter(Collider other)
+    {
+        OnTriggerEnter(other);
+    }
+
+    internal void ZoneExit(Collider other)
+    {
+        OnTriggerExit(other);
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.GetComponentInParent<Player>() != Plugin.Player)

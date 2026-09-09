@@ -1,5 +1,7 @@
 # Bushborne and No FiR for Hideout — build 0.1.19
 
+Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
+
 These two entries bring the implemented catalogue to 25 of 39. Both require the updated client and server. Automated checks pass; actual movement, audio and hideout interaction still need an in-game session.
 
 ## Bushborne
@@ -18,7 +20,7 @@ The captured common rule is `hideout_fir` with `mode = not_require`. The client 
 
 SPT 4.1.3's native `HideoutController.StartUpgrade` already accepts owned non-FiR materials. It removes submitted items and starts construction without a FiR check; no additional server bypass or global database edit is required. This existing server behavior also applies to direct requests from normal accounts; normal client requirement checks remain unchanged by this mod.
 
-Fresh configurations enable supported common rules automatically. For an existing configuration, add `69ce5eb3e4b79de94a0d78c8` to `EnabledCommonIds`, restart the server, and save the seasonal perk selection again. Removing a common rule likewise takes effect on the next successful selection save. Existing configuration choices are preserved on upgrade.
+Fresh configurations enable supported common rules automatically. For an existing configuration, add `69ce5eb3e4b79de94a0d78c8` to `EnabledCommonIds`, let the user manually restart the server, and save the seasonal perk selection again. Removing a common rule likewise takes effect on the next successful selection save. Existing configuration choices are preserved on upgrade.
 
 ## Validation
 
@@ -28,6 +30,6 @@ Fresh configurations enable supported common rules automatically. For an existin
 - Ten new isolated server checks cover perk selection, non-FiR materials consumed by a real water-collector upgrade, construction timing, unchanged normal PMC/Scav inventories, unchanged remaining FiR flags and an unchanged shared hideout database.
 - Three checks after logout/save and server restart confirm consumed materials, construction state and both saved perk selections persist.
 
-To reproduce backend coverage, first run `tools/test_integration.py` against the isolated test server. Stop it, run `tools/test_hideout_fir.py prepare`, start it and run `verify`. Restart it and run `restart`, then stop it and run `restore-config`. Preparation modifies only the synthetic seasonal profile and the isolated server's common-rule configuration. Use the project's Python environment.
+The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
 
 For in-game validation, compare bush walking speed and sound with Bushborne selected and removed, enter overlapping bushes, exit in either order, and confirm a swamp outside a tree trigger stays unchanged. Switch to the normal PMC and repeat. With No FiR enabled, confirm a non-FiR hideout material counts in the requirement panel, complete an upgrade, and verify that normal-character, barter and quest FiR requirements remain unchanged.

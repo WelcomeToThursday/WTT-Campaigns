@@ -38,6 +38,7 @@
     <Reference Include="spt-common" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-common.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Resources\seasonal_raid_editor.bundle" CopyToOutputDirectory="PreserveNewest" TargetPath="seasonal_raid_editor.bundle" />
     <None
       Include="Resources\StoryMedia\**\*"
       CopyToOutputDirectory="PreserveNewest"

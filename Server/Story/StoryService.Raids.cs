@@ -140,7 +140,7 @@ public sealed partial class StoryService
         await commits.Commit(id, original, staged);
     }
 
-    private static void ApplyRaid(
+    private void ApplyRaid(
         StoryDefinition definition,
         StoryProgress state,
         StoryFacts facts,
@@ -159,7 +159,9 @@ public sealed partial class StoryService
         if (binding.Kind != "Collectible")
         {
             var separator = binding.ObjectPath.IndexOf(":/", StringComparison.Ordinal);
-            var scene = separator < 0 ? "" : binding.ObjectPath[..separator];
+            var scene = binding.ZoneId.Length > 0
+                ? repository.Runtime(request.SeasonId).Definition.Zones.Single(z => z.Id == binding.ZoneId).Scene
+                : separator < 0 ? "" : binding.ObjectPath[..separator];
             if (request.Scene != scene)
             {
                 throw new InvalidOperationException("The interaction belongs to another scene.");

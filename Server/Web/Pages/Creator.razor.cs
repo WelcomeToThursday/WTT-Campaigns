@@ -29,6 +29,7 @@ public partial class Creator
         "Variables",
         "Entry points",
         "Raid events",
+        "Zones and captures",
         "Story media",
         "Story rehearsal",
         "Localization",
@@ -52,7 +53,8 @@ public partial class Creator
             "Conversations" => "Build conditional NPC lines and player replies with ordered actions.",
             "Variables" => "Track story phases for a character, session or conversation.",
             "Entry points" => "Choose where and when players can start a conversation.",
-            "Raid events" => "Connect exact world targets to story actions. Bindings do not spawn objects.",
+            "Raid events" => "Connect scene objects and authored zones to story actions.",
+            "Zones and captures" => "Create zones and capture scene targets using a connected raid.",
             "Story media" => "Register separately installed media and finalized bundle checksums.",
             "Story rehearsal" => "Try dialogue and journal progression with isolated simulated state.",
             "Localization" => "Edit English text and translations with English fallback.",
@@ -242,6 +244,7 @@ public partial class Creator
         _draftMenu = null;
         _draftView = DraftStatus.Active;
         _draft = draft;
+        _raidConflict = null; _inputPending = false;
         _baseline = JsonConvert.SerializeObject(S);
         _workspaceHistory.Clear();
         _section = "Overview";
@@ -297,6 +300,7 @@ public partial class Creator
     {
         Run(() =>
         {
+            if (_draft != null && RaidAuthoring.Connected(_draft.Id)) { SyncDraft(); return; }
             _draft = Repository.Save(_draft!);
             _baseline = JsonConvert.SerializeObject(S);
             _reward = _reward == null ? null : S.AllRewards.FirstOrDefault(r => r.Id == _reward.Id);
