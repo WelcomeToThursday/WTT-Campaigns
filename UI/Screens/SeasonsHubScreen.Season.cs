@@ -54,7 +54,7 @@ public sealed partial class SeasonsHubScreen
             )
         );
         Caption(root, "SeasonalRequirements", text, 16, 1336, 850, 456, 112);
-        ClaimAction(root, selected, 1336, 982, 456);
+        ClaimAction(selected, 1336, 982, 456);
         var info = Caption(root, "RewardInfo", "ⓘ", 22, 1757, 810, 35, 32);
         Hint(info.gameObject, selected.Description.Length > 0 ? selected.Description : selected.Name, 1340, 700);
     }

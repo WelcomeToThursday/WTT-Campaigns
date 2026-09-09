@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using SeasonalPerks.UI.BattlePass;
 using SeasonalPerks.UI.Controls;
 using SeasonalPerks.UI.Models;
 using UnityEngine;
@@ -10,6 +11,8 @@ namespace SeasonalPerks.UI.Screens;
 public sealed partial class SeasonsHubScreen
 {
     private GameObject? _dialog;
+    private Button? _claimButton;
+    private HubReward? _claimReward;
     public Action<HubAction>? TransactionRequested;
     public bool HasDialog
     {
@@ -81,10 +84,58 @@ public sealed partial class SeasonsHubScreen
         Button(panel, "OK", 720, 544, 208, 42, DismissDialog);
     }
 
-    private void ClaimAction(Transform parent, HubReward reward, float x, float y, float width)
+    private void ClaimAction(HubReward reward, float x, float y, float width)
     {
-        var button = Button(parent, reward.Claimed ? "CLAIMED" : "CLAIM REWARD", x, y, width, 36, () => ConfirmClaim(reward));
+        _claimReward = reward;
+        var caption = reward.Claimed ? "CLAIMED" : "CLAIM REWARD";
+        var created = !_claimButton;
+        if (created)
+        {
+            _claimButton = Button(
+                _page!,
+                caption,
+                x,
+                y,
+                width,
+                36,
+                () =>
+                {
+                    if (_claimReward != null)
+                    {
+                        ConfirmClaim(_claimReward);
+                    }
+                }
+            );
+        }
+
+        var button = _claimButton!;
+        var host = (RectTransform)button.transform.parent;
+        host.name = button.name = caption;
+        host.anchoredPosition = new Vector2(x + width / 2, -y - 18);
+        host.sizeDelta = button.GetComponent<RectTransform>().sizeDelta = new Vector2(width, 36);
+        var label = button.GetComponentInChildren<Text>(true);
+        label.text = caption;
+        label.rectTransform.sizeDelta = new Vector2(width - 20, 32);
+
+        // Start a newly created locked button at its final tint rather than fading from enabled.
+        var colors = button.colors;
+        if (created)
+        {
+            var instant = colors;
+            instant.fadeDuration = 0;
+            button.colors = instant;
+        }
         button.interactable = reward.CanClaim && !_state.PreviewOnly;
+        if (created)
+        {
+            button.colors = colors;
+        }
+
+        var pointer = button.GetComponent<HubPointer>();
+        if (pointer)
+        {
+            pointer.Hover = null;
+        }
         if (!button.interactable)
         {
             Hint(
@@ -94,5 +145,7 @@ public sealed partial class SeasonsHubScreen
                 y - 95
             );
         }
+        host.gameObject.SetActive(true);
+        host.SetAsLastSibling();
     }
 }

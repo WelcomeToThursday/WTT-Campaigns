@@ -13,6 +13,24 @@ internal static class UiCompatibilityChecks
         {
             count += value ? 1 : throw new InvalidOperationException(description);
         }
+        var appearance = types["EFT.UI.HeadSelectionState"];
+        Check(
+            appearance.Fields.Any(field => field.Name == "_faceCards" && field.IsPublic && field.IsNotSerialized),
+            "Native appearance card tracking is runtime-only and is not inherited by screen clones"
+        );
+        foreach (var fieldName in new[] { "_faceCardsViewPort", "_faceCardPrefab" })
+        {
+            Check(
+                appearance.Fields.Any(field => field.Name == fieldName && field.IsPublic && !field.IsNotSerialized),
+                "Native appearance clone retains its serialized " + fieldName
+            );
+        }
+        Check(
+            appearance
+                .Methods.Single(method => method.Name == "PrepareFaceSelector")
+                .Body.Instructions.Any(instruction => instruction.Operand is MethodReference method && method.Name == "Instantiate"),
+            "Native appearance builds fresh faction head cards from its prefab"
+        );
         foreach (var name in new[] { "EFT.UI.MenuScreen", "EFT.UI.SkillsAndMasteringScreen" })
         {
             var method = types[name]

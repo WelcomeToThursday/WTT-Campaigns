@@ -1,3 +1,4 @@
+using Arena.UI;
 using EFT;
 using EFT.UI;
 using PlayerIcons;
@@ -69,6 +70,7 @@ internal sealed class CreationIdentity : ICreationIdentity
             _screen.gameObject.SetActive(false);
             _screen.enabled = false;
             RemoveInheritedPreviewModels(_screen);
+            RemoveInheritedFaceCards(_screen._headSelectionState);
             UiElements.Stretch((RectTransform)_screen.transform);
             _screen.gameObject.SetActive(true);
             _screen._canvasGroup.alpha = 1;
@@ -137,6 +139,23 @@ internal sealed class CreationIdentity : ICreationIdentity
             _busy = false;
             Refresh();
         }
+    }
+
+    private static void RemoveInheritedFaceCards(HeadSelectionState head)
+    {
+        // A previously used native screen keeps its face-card children. Instantiate copies
+        // those children, but not the NonSerialized list that PrepareFaceSelector reuses.
+        foreach (var card in head._faceCardsViewPort.GetComponentsInChildren<FaceCardView>(true))
+        {
+            if (card == head._faceCardPrefab)
+            {
+                continue;
+            }
+
+            card.gameObject.SetActive(false);
+            UnityEngine.Object.Destroy(card.gameObject);
+        }
+        head._faceCards.Clear();
     }
 
     private static void RemoveInheritedPreviewModels(EftAccountSideSelectionScreen screen)

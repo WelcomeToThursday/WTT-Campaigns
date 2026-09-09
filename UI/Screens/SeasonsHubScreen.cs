@@ -176,6 +176,8 @@ public sealed partial class SeasonsHubScreen : IDisposable
             UiElements.Destroy(_page.gameObject);
         }
         _content = null;
+        _claimButton = null;
+        _claimReward = null;
         _page = UiElements.Rect("HubPage", _stage, 1920, 1080);
         var bg = Art(_page, "HubBackground", "sharedassets48-496", 0, 0, 1920, 1080);
         bg.color = Color.white;
@@ -239,6 +241,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
         }
 
         // Reward selection and paging must not recreate navigation or restart the header videos.
+        _claimReward = null;
         _content = UiElements.Rect("HubContent", _page!, 1920, 1080);
         if (Tab == HubTab.BattlePass)
         {
@@ -251,6 +254,10 @@ public sealed partial class SeasonsHubScreen : IDisposable
         else
         {
             RenderAbout(_content);
+        }
+        if (_claimButton && _claimReward == null)
+        {
+            _claimButton!.transform.parent.gameObject.SetActive(false);
         }
         _ready = true;
     }

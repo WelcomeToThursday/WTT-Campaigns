@@ -116,7 +116,7 @@ public sealed partial class SeasonsHubScreen
                     TextAnchor.MiddleRight;
             }
             top += Math.Max(1, (selected.Costs.Length + 4) / 5) * 78;
-            ClaimAction(root, selected, 1412, top, 380);
+            ClaimAction(selected, 1412, top, 380);
             Caption(
                 root,
                 "ClaimHelp",

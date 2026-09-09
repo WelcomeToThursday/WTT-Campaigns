@@ -144,6 +144,7 @@ public static class SeasonalHubPreview
             view.Open();
             view.SetState(data, perks.ToArray());
             var battlePassTab = view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "BATTLE PASS");
+            var battlePassClaim = view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CLAIM REWARD");
             Capture("hub-first");
             view.SelectReward(1);
             Capture("hub-tarcoins");
@@ -175,7 +176,17 @@ public static class SeasonalHubPreview
             }
             Check(view.PageIndex == 11, "Last page boundary");
             Check(battlePassTab && battlePassTab.gameObject.activeInHierarchy, "Battle Pass selections and paging preserve navigation");
+            Check(
+                battlePassClaim && battlePassClaim.gameObject.activeInHierarchy,
+                "Battle Pass selections and paging preserve claim button"
+            );
             view.ShowTab(HubTab.SeasonalRewards);
+            var seasonalClaim = view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CLAIM REWARD");
+            Check(
+                seasonalClaim.targetGraphic.canvasRenderer.GetColor()
+                    == seasonalClaim.colors.disabledColor * seasonalClaim.colors.colorMultiplier,
+                "New locked claim button starts at its disabled tint without flashing"
+            );
             Capture("hub-seasonal");
             var seasonalVideos = view.Root.GetComponentsInChildren<RawImage>();
             var seasonalTabs = view.Root.GetComponentsInChildren<Button>().Where(b => b.name == "SEASONAL REWARDS").ToArray();
@@ -196,6 +207,10 @@ public static class SeasonalHubPreview
                     "Selecting seasonal reward " + i + " preserves tab buttons"
                 );
                 Check(
+                    seasonalClaim && seasonalClaim.gameObject.activeInHierarchy && !seasonalClaim.interactable,
+                    "Selecting locked seasonal reward " + i + " preserves disabled claim button"
+                );
+                Check(
                     view.Root.GetComponentsInChildren<Text>()
                         .Any(t => t.transform.parent.name == "SeasonalRewardName" && t.text == data.SeasonalRewards[i].Name),
                     "Selecting seasonal reward " + i + " updates reward details"
@@ -204,7 +219,59 @@ public static class SeasonalHubPreview
                 view.SelectReward(i);
                 Check(content && content.gameObject.activeInHierarchy, "Reselecting seasonal reward " + i + " does not rebuild content");
             }
+            var claimFixture = JsonUtility.FromJson<HubState>(raw);
+            claimFixture.PreviewOnly = false;
+            claimFixture.SeasonalRewards[0].CanClaim = claimFixture.SeasonalRewards[1].CanClaim = true;
+            claimFixture.SeasonalRewards[2].CanClaim = false;
+            claimFixture.SeasonalRewards[2].UnavailableReason = "Complete the selected reward's task.";
+            claimFixture.SeasonalRewards[3].CanClaim = false;
+            claimFixture.SeasonalRewards[3].Claimed = true;
+            view.SetState(claimFixture, perks.ToArray());
+            var sharedClaim = view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CLAIM REWARD");
+            HubAction selectedClaim = null;
+            var submittedClaims = 0;
+            view.TransactionRequested = action =>
+            {
+                selectedClaim = action;
+                submittedClaims++;
+            };
+            for (var i = 0; i < 2; i++)
+            {
+                view.SelectReward(i);
+                Check(sharedClaim && sharedClaim.interactable, "Shared claim button enables for reward " + i);
+                sharedClaim.onClick.Invoke();
+                Check(view.HasDialog, "Shared claim button opens confirmation for reward " + i);
+                view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "CONFIRM").onClick.Invoke();
+                Check(
+                    selectedClaim.RewardId == claimFixture.SeasonalRewards[i].Id && submittedClaims == i + 1,
+                    "Shared claim button submits only the current reward " + i
+                );
+            }
+            view.SelectReward(2);
+            Check(sharedClaim && !sharedClaim.interactable, "Shared claim button disables for locked reward");
+            sharedClaim.GetComponent<HubPointer>().OnPointerEnter(pointer);
+            Check(
+                view.Root.GetComponentsInChildren<Text>().Any(t => t.text == claimFixture.SeasonalRewards[2].UnavailableReason),
+                "Shared claim button refreshes the locked reward explanation"
+            );
+            view.SelectReward(1);
+            sharedClaim.GetComponent<HubPointer>().OnPointerEnter(pointer);
+            Check(
+                !view.Root.GetComponentsInChildren<Transform>().Any(t => t.name == "HubTooltip"),
+                "Enabled claim button clears stale locked explanation"
+            );
+            view.SelectReward(3);
+            Check(
+                sharedClaim && !sharedClaim.interactable && sharedClaim.GetComponentInChildren<Text>().text == "CLAIMED",
+                "Shared claim button updates claimed label without recreation"
+            );
+            view.TransactionRequested = null;
+            view.SetState(data, perks.ToArray());
             view.ShowTab(HubTab.AboutSeason);
+            Check(
+                !view.Root.GetComponentsInChildren<Button>().Any(b => b.name == "CLAIM REWARD" || b.name == "CLAIMED"),
+                "About tab has no stale claim button"
+            );
             var aboutVideos = view.Root.GetComponentsInChildren<RawImage>();
             initialVideoRequests = videoRequests;
             Capture("hub-about");
