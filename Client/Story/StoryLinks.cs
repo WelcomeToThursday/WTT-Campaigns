@@ -1,4 +1,5 @@
 using Comfort.Common;
+using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.Hideout;
 using EFT.InventoryLogic;
@@ -49,7 +50,7 @@ internal static class StoryLinks
         }
     }
 
-    private static async Task Offer(StoryNoteLink link)
+    private static async UniTask Offer(StoryNoteLink link)
     {
         var trader =
             Plugin.App!.Session.Traders.AsValueEnumerable().SingleOrDefault(t => t.Id == link.TraderId)
@@ -85,7 +86,7 @@ internal static class StoryLinks
         trader.CurrentAssortment.SelectItem(item);
     }
 
-    private static async Task Craft(StoryNoteLink link)
+    private static async UniTask Craft(StoryNoteLink link)
     {
         var character = Plugin.Current!.EffectiveProfileId;
         var recipes = await Plugin.App!.Session.GetProductionRecipes();
@@ -113,7 +114,7 @@ internal static class StoryLinks
         panel.Search(recipe.endProduct.LocalizedName());
     }
 
-    private static async Task<T> WaitFor<T>(Func<T?> find, string character, float seconds = 10)
+    private static async UniTask<T> WaitFor<T>(Func<T?> find, string character, float seconds = 10)
         where T : Behaviour
     {
         var deadline = Time.realtimeSinceStartup + seconds;
@@ -129,7 +130,7 @@ internal static class StoryLinks
             {
                 return target;
             }
-            await Task.Delay(50);
+            await UniTask.Delay(50, delayType: DelayType.Realtime);
         }
         throw new InvalidOperationException("The requested screen could not be opened for this character.");
     }

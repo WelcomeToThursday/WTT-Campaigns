@@ -1,4 +1,4 @@
-using System.Collections;
+using Cysharp.Threading.Tasks;
 using EFT.Hideout;
 using EFT.UI;
 using SeasonalPerks.Client.Profiles;
@@ -14,9 +14,9 @@ public sealed partial class SeasonUi
     private PveGameModeLoadingScreen? _switchLoader;
     private Text? _switchLoadingName;
     private Text? _switchLoadingMode;
-    private TaskCompletionSource<bool>? _switchLoadingFrame;
+    private CancellationTokenSource? _switchLoadingCancellation;
 
-    private Task ShowSwitchLoader(CharacterSummary<CharacterVisual> character)
+    private async UniTask ShowSwitchLoader(CharacterSummary<CharacterVisual> character)
     {
         if (!_switchLoader)
         {
@@ -63,25 +63,26 @@ public sealed partial class SeasonUi
         _switchLoader._screenAnimator.Play("LoadingState", 0, 0);
         _switchLoader._screenAnimator.Update(0);
 
-        var frame = new TaskCompletionSource<bool>();
-        _switchLoadingFrame = frame;
-        StartCoroutine(RenderSwitchLoader(frame));
-        return frame.Task;
-    }
-
-    private static IEnumerator RenderSwitchLoader(TaskCompletionSource<bool> frame)
-    {
-        // Cross a full rendered frame even if the click arrived before coroutine
-        // processing. Saving and reconnecting may do synchronous main-thread work.
-        yield return null;
-        yield return null;
-        frame.TrySetResult(true);
+        using var frame = new CancellationTokenSource();
+        _switchLoadingCancellation = frame;
+        try
+        {
+            // Two distinct frames preserve the loading screen's chance to render before
+            // saving/reconnecting performs synchronous main-thread work.
+            await UniTask.NextFrame(frame.Token);
+            await UniTask.NextFrame(frame.Token);
+        }
+        finally
+        {
+            if (ReferenceEquals(_switchLoadingCancellation, frame))
+                _switchLoadingCancellation = null;
+        }
     }
 
     private void HideSwitchLoader()
     {
-        _switchLoadingFrame?.TrySetCanceled();
-        _switchLoadingFrame = null;
+        _switchLoadingCancellation?.Cancel();
+        _switchLoadingCancellation = null;
         if (_switchLoader)
         {
             _switchLoader!.Close();

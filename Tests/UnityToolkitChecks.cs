@@ -25,7 +25,7 @@ internal static class UnityToolkitChecks
                 >= Version.Parse((string)dependency.ConstructorArguments[1].Value),
             "Installed Toolkit meets the client minimum"
         );
-        foreach (var name in new[] { "ZLinq", "ZString" })
+        foreach (var name in new[] { "ZLinq", "ZString", "UniTask" })
         {
             using var library = AssemblyDefinition.ReadAssembly(Path.Combine(toolkitDir, name + ".dll"));
             Check(client.MainModule.AssemblyReferences.Single(r => r.Name == name).FullName == library.Name.FullName, name + " identity");
@@ -48,6 +48,7 @@ internal static class UnityToolkitChecks
         var installedLinq = context.LoadFromAssemblyName(new AssemblyName("ZLinq"));
         Check(Path.GetDirectoryName(installedLinq.Location) == toolkitDir, "Runtime checks use the installed Unity ZLinq build");
         var assembly = context.LoadFromAssemblyPath(clientPath);
+        UniTaskChecks.Run(client, assembly, Check);
         var changesType = assembly.GetType("SeasonalPerks.Client.Story.StoryChapterChanges")!;
         var changes = Activator.CreateInstance(changesType, nonPublic: true)!;
         StoryChapterNotificationChecks.Run(

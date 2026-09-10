@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.AnimationSequencePlayer;
 using EFT.InventoryLogic;
@@ -35,7 +36,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
     private Action? _cancelSelection;
     private int _generation;
     private int _blockedThrough;
-    private TaskCompletionSource<bool>? _continue;
+    private UniTaskCompletionSource<bool>? _continue;
     internal bool InputBlocked
     {
         get { return !_nativeWindow && (_surface != null || Time.frameCount <= _blockedThrough); }
@@ -199,7 +200,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         Plugin.LogInfo("Story visit camera ready: " + traderId);
     }
 
-    internal async Task<bool> PresentResponse(StoryResponse response, SequenceReader? reader = null)
+    internal async UniTask<bool> PresentResponse(StoryResponse response, SequenceReader? reader = null)
     {
         try
         {
@@ -231,7 +232,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         }
     }
 
-    internal async Task CloseForPresentation()
+    internal async UniTask CloseForPresentation()
     {
         await EndConversation();
         Clear();
@@ -366,7 +367,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             throw new InvalidOperationException("The selected quest items are no longer available.");
         }
 
-        var completion = new TaskCompletionSource<Item[]>();
+        var completion = new UniTaskCompletionSource<Item[]>();
         var window = ItemUiContext.Instance.HandoverQuestItemsWindow;
         _nativeWindow = true;
         _surface!.Root.SetActive(false);
@@ -402,7 +403,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         }
     }
 
-    private async Task Present(StoryResponse response)
+    private async UniTask Present(StoryResponse response)
     {
         _entrySelection = false;
         var generation = _generation;
@@ -424,44 +425,58 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             }
 
             _text = Plugin.Localized(line.Id + " text", line.Text);
-            _media?.Set(line.Playback);
-            var mediaPlayback = _media?.Wait() ?? Task.CompletedTask;
-            Render();
-            if (
-                _reader
-                && line.Playback.Animations.Count
-                    + line.Playback.SecondaryAnimations.Count
-                    + line.Playback.LipSyncs.Count
-                    + line.Playback.Subtitles.Count
-                    > 0
-            )
+            var media = _media;
+            media?.Set(line.Playback);
+            var mediaPlayback = media?.Wait() ?? UniTask.CompletedTask;
+            try
             {
-                var playback = line.Playback;
-                await _reader!.Play(
-                    new CombinedAnimationData(
-                        playback.Animations.AsValueEnumerable().Select(Animation).ToList(),
-                        playback.SecondaryAnimations.AsValueEnumerable().Select(Animation).ToList(),
-                        playback
-                            .LipSyncs.AsValueEnumerable()
-                            .Select(s => new LipSyncParams
-                            {
-                                Key = s.Key,
-                                Start = s.Start,
-                                End = s.End,
-                                Volume = s.Volume,
-                            })
-                            .ToList(),
-                        new List<SubtitleParams>(),
-                        new MediaData()
-                    )
-                );
+                Render();
+                if (
+                    _reader
+                    && line.Playback.Animations.Count
+                        + line.Playback.SecondaryAnimations.Count
+                        + line.Playback.LipSyncs.Count
+                        + line.Playback.Subtitles.Count
+                        > 0
+                )
+                {
+                    var playback = line.Playback;
+                    await _reader!.Play(
+                        new CombinedAnimationData(
+                            playback.Animations.AsValueEnumerable().Select(Animation).ToList(),
+                            playback.SecondaryAnimations.AsValueEnumerable().Select(Animation).ToList(),
+                            playback
+                                .LipSyncs.AsValueEnumerable()
+                                .Select(s => new LipSyncParams
+                                {
+                                    Key = s.Key,
+                                    Start = s.Start,
+                                    End = s.End,
+                                    Volume = s.Volume,
+                                })
+                                .ToList(),
+                            new List<SubtitleParams>(),
+                            new MediaData()
+                        )
+                    );
+                }
             }
-            await mediaPlayback;
+            catch
+            {
+                media?.Stop();
+                throw;
+            }
+            finally
+            {
+                // Consume the single-use operation even if native animation setup or playback fails.
+                await mediaPlayback;
+            }
+
             if (
                 StoryPlaybackRules.WaitForContinue(line, lineIndex < response.Lines.Count - 1, response.State?.Conversation?.Closed == true)
             )
             {
-                var continuation = new TaskCompletionSource<bool>();
+                var continuation = new UniTaskCompletionSource<bool>();
                 _continue = continuation;
                 Render();
                 try
@@ -494,7 +509,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         };
     }
 
-    private async Task EnterRoom()
+    private async UniTask EnterRoom()
     {
         if (!_reader)
         {
@@ -581,7 +596,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         }
     }
 
-    internal async Task Navigate(TraderScreensGroup.ETraderMode mode)
+    internal async UniTask Navigate(TraderScreensGroup.ETraderMode mode)
     {
         if (_closing)
         {
@@ -625,7 +640,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         Clear();
     }
 
-    private static async Task EndConversation()
+    private static async UniTask EndConversation()
     {
         try
         {

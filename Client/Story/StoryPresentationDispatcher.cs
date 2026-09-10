@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using EFT.AnimationSequencePlayer;
 using EFT.UI;
 using SeasonalPerks.Shared.Story;
@@ -10,7 +11,7 @@ internal static class StoryPresentationDispatcher
     private static readonly SemaphoreSlim Gate = new(1);
     internal static bool Active => Gate.CurrentCount == 0;
 
-    internal static async Task Dispatch(StoryResponse response, SequenceReader? reader = null)
+    internal static async UniTask Dispatch(StoryResponse response, SequenceReader? reader = null)
     {
         var inRaid = Plugin.InRaid;
         var raid = response.State?.Raid?.Id;

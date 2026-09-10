@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using SeasonalPerks.Client.UI;
 using SeasonalPerks.UI.Controls;
 using UnityEngine;
@@ -15,7 +16,7 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
     private GameObject? _media;
     private VideoPlayer? _video;
     private PlayableDirector? _director;
-    private TaskCompletionSource<string>? _completion;
+    private UniTaskCompletionSource<string>? _completion;
     private StoryDialogueMedia? _dialogueMedia;
     private bool _audioOnly;
     private string _character = "";
@@ -35,13 +36,13 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
         Instance = this;
     }
 
-    internal Task<string> Play(string mediaId)
+    internal UniTask<string> Play(string mediaId)
     {
         if (_surface != null || !StoryClient.Available)
         {
-            return Task.FromResult("interrupt");
+            return UniTask.FromResult("interrupt");
         }
-        var completion = new TaskCompletionSource<string>();
+        var completion = new UniTaskCompletionSource<string>();
         _completion = completion;
         _character = Plugin.Current!.EffectiveProfileId;
         _inRaid = Plugin.InRaid;

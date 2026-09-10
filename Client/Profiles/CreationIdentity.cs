@@ -1,4 +1,5 @@
 using Arena.UI;
+using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.UI;
 using PlayerIcons;
@@ -198,7 +199,7 @@ internal sealed class CreationIdentity : ICreationIdentity
     {
         _data.Nickname = value;
         // Native submission disables the input after raising its event.
-        await Task.Yield();
+        await UniTask.NextFrame();
         if (!_disposed && _screen)
         {
             var head = _screen!._headSelectionState;

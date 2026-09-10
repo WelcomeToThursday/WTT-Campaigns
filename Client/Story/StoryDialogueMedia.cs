@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using SeasonalPerks.Shared.Story;
 using SeasonalPerks.UI.Controls;
 using UnityEngine;
@@ -66,14 +67,16 @@ internal sealed class StoryDialogueMedia : IDisposable
         }
     }
 
-    internal async Task Wait()
+    internal async UniTask Wait()
     {
         var generation = _generation;
+        var cancellation = _root.GetCancellationTokenOnDestroy();
         while (_subtitle && generation == _generation && Time.realtimeSinceStartup - _start < _duration)
         {
             var time = Time.realtimeSinceStartup - _start;
             _subtitle.text = StorySubtitleText.Build(_subtitles, time, static key => Plugin.Localized(key, key), _subtitle.text);
-            await Task.Delay(16);
+            if (await UniTask.NextFrame(cancellation).SuppressCancellationThrow())
+                return;
         }
         if (_subtitle && generation == _generation)
         {

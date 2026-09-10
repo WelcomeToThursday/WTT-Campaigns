@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.InputSystem;
 using EFT.InventoryLogic;
@@ -240,7 +241,7 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         {
             while (CurrentContext() && (Plugin.Busy || StoryPresentationDispatcher.Active || StoryVisitRuntime.Instance.InputBlocked))
             {
-                await Task.Delay(100);
+                await UniTask.Delay(100, delayType: DelayType.Realtime);
             }
             if (!CurrentContext())
             {

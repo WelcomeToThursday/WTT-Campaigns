@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Using Remove="System.Linq" />
+    <Reference Include="UniTask" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\UniTask.dll" Private="false" />
     <Reference Include="ZLinq" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll" Private="false" />
     <Reference Include="ZString" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\ZString.dll" Private="false" />
     <Reference Include="spt-reflection" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-reflection.dll" Private="false" />
@@ -66,7 +67,7 @@
   </ItemGroup>
   <Target Name="CheckUnityToolkit" BeforeTargets="ResolveAssemblyReferences">
     <Error
-      Condition="!Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\UnityToolkit.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\ZString.dll')"
+      Condition="!Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\UnityToolkit.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\UniTask.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\ZString.dll')"
       Text="Install UnityToolkit 2.0.2 or later in the target SPT installation before building the Seasonal client."
     />
   </Target>
