@@ -1,9 +1,9 @@
 using EFT;
 using EFT.Ballistics;
-using SeasonalPerks.Shared.Story;
 using UnityEngine;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 public sealed class StorySceneBinding : MonoBehaviour
 {

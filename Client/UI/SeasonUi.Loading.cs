@@ -1,13 +1,13 @@
 using Cysharp.Threading.Tasks;
 using EFT.Hideout;
 using EFT.UI;
-using SeasonalPerks.Client.Profiles;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.Profiles;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.Client.UI;
+namespace WTT.Campaigns.Client.UI;
 
 public sealed partial class SeasonUi
 {

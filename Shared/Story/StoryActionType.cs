@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 // These values are our protocol, never live or beta enum ordinals. JSON always uses names.
 [JsonConverter(typeof(StoryEnumConverter))]

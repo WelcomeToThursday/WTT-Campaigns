@@ -1,4 +1,4 @@
-@using SeasonalPerks.Shared.Spatial
+@using WTT.Campaigns.Shared.Spatial
 <fieldset class="field-section"><legend>@Label</legend><div class="row"><label>X<input type="number" step="0.05" @bind="Value.X" @bind:after="Change" /></label><label>Y<input type="number" step="0.05" @bind="Value.Y" @bind:after="Change" /></label><label>Z<input type="number" step="0.05" @bind="Value.Z" @bind:after="Change" /></label></div></fieldset>
 @code {
     [Parameter] public SpatialVector Value { get; set; } = null!;

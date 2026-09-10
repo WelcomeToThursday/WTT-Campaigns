@@ -1,11 +1,11 @@
 using System;
-using SeasonalPerks.UI.Audio;
-using SeasonalPerks.UI.Controls;
-using SeasonalPerks.UI.Models;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Audio;
+using WTT.Campaigns.UI.Controls;
+using WTT.Campaigns.UI.Models;
 
-namespace SeasonalPerks.UI.Screens;
+namespace WTT.Campaigns.UI.Screens;
 
 public sealed class StoryConversationPanel
 {

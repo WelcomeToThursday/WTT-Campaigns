@@ -1,15 +1,6 @@
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Effects;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Configuration;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Consumables;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Profiles;
-using SeasonalPerks.Shared.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
@@ -19,8 +10,17 @@ using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Services.Modding;
 using SPTarkov.Server.Core.Services.Profile;
+using WTT.Campaigns.Server.Effects;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Configuration;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Consumables;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Profiles;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Server.Profiles;
+namespace WTT.Campaigns.Server.Profiles;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class SeasonService(
@@ -32,24 +32,24 @@ public sealed class SeasonService(
     SeasonStartingService starting
 )
 {
-    private const string StateKey = "cjSeasonalPerksState";
+    private const string StateKey = "wttCampaignsState";
 
-    private static string StoryChapters(PmcData? pmc, SeasonalPerks.Shared.Story.StoryDefinition? story)
+    private static string StoryChapters(PmcData? pmc, WTT.Campaigns.Shared.Story.StoryDefinition? story)
     {
         if (pmc == null || story == null)
         {
             return "";
         }
-        var facts = new SeasonalPerks.Shared.Story.StoryFacts
+        var facts = new WTT.Campaigns.Shared.Story.StoryFacts
         {
             QuestStatuses = (pmc.Quests ?? []).ToDictionary(q => q.QId.ToString(), q => q.Status.ToString()),
         };
-        return story.Chapters.Count(c => SeasonalPerks.Shared.Story.StoryRules.ChapterComplete(c, story, facts))
+        return story.Chapters.Count(c => WTT.Campaigns.Shared.Story.StoryRules.ChapterComplete(c, story, facts))
             + "/"
             + story.Chapters.Count;
     }
 
-    private const string LinkKey = "cjSeasonalPerksAccount";
+    private const string LinkKey = "wttCampaignsAccount";
     private readonly ConcurrentDictionary<string, AccountLink> _links = new();
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates = new();
     private readonly Dictionary<string, Catalogue> _catalogues = new();
@@ -288,7 +288,7 @@ public sealed class SeasonService(
 
         foreach (var perk in snapshot.Catalogue.All)
         {
-            perk.ImageUrl = "/wtt-seasonal/icons/" + perk.Id + ".png";
+            perk.ImageUrl = "/wtt-campaigns/icons/" + perk.Id + ".png";
         }
 
         return snapshot;

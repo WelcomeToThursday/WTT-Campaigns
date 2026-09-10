@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Native;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Shared.Seasons;
+namespace WTT.Campaigns.Shared.Seasons;
 
 public static class SeasonCompiler
 {

@@ -6,14 +6,14 @@ using Microsoft.Extensions.Logging;
 using Microsoft.JSInterop;
 using MudBlazor.Services;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Server.Web.Authoring;
-using SeasonalPerks.Server.Web.Components;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
 using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Services.Locales;
 using SPTarkov.Server.Core.Utils.Json;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Server.Web.Authoring;
+using WTT.Campaigns.Server.Web.Components;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
 // Offline rendering of the real editor components; no game/server process or profiles.
 var root = Path.GetFullPath(args.Length > 0 ? args[0] : ".");

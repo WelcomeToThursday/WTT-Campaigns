@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace SeasonalPerks.Shared.Serialization;
+namespace WTT.Campaigns.Shared.Serialization;
 
 /// <summary>Retains unrecognized fields at the serialization boundary for forward compatibility.</summary>
 public abstract class ExtensibleJsonModel

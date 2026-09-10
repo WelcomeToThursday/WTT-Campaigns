@@ -1,10 +1,10 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Story;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Story;
+namespace WTT.Campaigns.Server.Story;
 
 [Injectable]
 public sealed class StoryRouter(JsonUtil json, StoryService story) : StaticRouter(json, Routes(story))
@@ -14,11 +14,11 @@ public sealed class StoryRouter(JsonUtil json, StoryService story) : StaticRoute
         var routes = new List<RouteAction>
         {
             new RouteAction<StoryRouteRequest>(
-                "/wtt-seasonal/story/prepare",
+                "/wtt-campaigns/story/prepare",
                 (_, r, id, _, _) => Respond(() => story.Transact(id.ToString(), r, r.Operation, true))
             ),
             new RouteAction<StoryRouteRequest>(
-                "/wtt-seasonal/story",
+                "/wtt-campaigns/story",
                 (_, r, id, _, _) => Respond(() => Task.FromResult(story.Read(id.ToString(), r)))
             ),
         };
@@ -27,7 +27,7 @@ public sealed class StoryRouter(JsonUtil json, StoryService story) : StaticRoute
             var name = operation;
             routes.Add(
                 new RouteAction<StoryRouteRequest>(
-                    "/wtt-seasonal/story/" + name,
+                    "/wtt-campaigns/story/" + name,
                     (_, r, id, _, _) => Respond(() => story.Transact(id.ToString(), r, name))
                 )
             );

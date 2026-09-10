@@ -1,6 +1,6 @@
 using EFT;
 
-namespace SeasonalPerks.Client.Profiles;
+namespace WTT.Campaigns.Client.Profiles;
 
 public sealed class CharacterEquipment
 {

@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Shared.Native;
+namespace WTT.Campaigns.Shared.Native;
 
 public sealed class NativeItemUpdate : NativeModel
 {

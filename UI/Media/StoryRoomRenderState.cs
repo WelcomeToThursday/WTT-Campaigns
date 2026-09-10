@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SeasonalPerks.UI.Media;
+namespace WTT.Campaigns.UI.Media;
 
 public sealed class StoryRoomRenderState : MonoBehaviour
 {

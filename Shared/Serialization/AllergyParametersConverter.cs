@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Profiles;
+using WTT.Campaigns.Shared.Profiles;
 
-namespace SeasonalPerks.Shared.Serialization;
+namespace WTT.Campaigns.Shared.Serialization;
 
 /// <summary>Older captures encode an empty allergy map as an array.</summary>
 internal sealed class AllergyParametersConverter : JsonConverter<Dictionary<string, AllergyTargets>>

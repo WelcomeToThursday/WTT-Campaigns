@@ -9,17 +9,17 @@
     <_NativeAssembly>$(TarkovDir)BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll</_NativeAssembly>
   </PropertyGroup>
   <ItemGroup>
-    <_DeployProject Include="Client\WTT-Seasonal.Client.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Client'" />
-    <_DeployProject Include="Server\WTT-Seasonal.Server.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" />
-    <_DeployProject Include="UI\WTT-Seasonal.UI.csproj" Condition="'$(DeploymentScope)' == 'UI'" />
-    <_TestProject Include="Tests\WTT-Seasonal.Tests.csproj" />
+    <_DeployProject Include="Client\WTT-Campaigns.Client.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Client'" />
+    <_DeployProject Include="Server\WTT-Campaigns.Server.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" />
+    <_DeployProject Include="UI\WTT-Campaigns.UI.csproj" Condition="'$(DeploymentScope)' == 'UI'" />
+    <_TestProject Include="Tests\WTT-Campaigns.Tests.csproj" />
   </ItemGroup>
   <Import Project="tools\Deployment.targets" />
   <Target Name="Build">
     <Error Condition="'@(_DeployProject)' == ''" Text="DeploymentScope must be All, Client, Server or UI." />
     <MSBuild Projects="@(_DeployProject);@(_TestProject)" Targets="Restore" Properties="$(_BuildProperties)" />
-    <MSBuild Projects="@(_DeployProject)" Targets="GetSeasonalDeployFiles" Properties="$(_BuildProperties)">
-      <Output TaskParameter="TargetOutputs" ItemName="SeasonalDeployFile" />
+    <MSBuild Projects="@(_DeployProject)" Targets="GetCampaignsDeployFiles" Properties="$(_BuildProperties)">
+      <Output TaskParameter="TargetOutputs" ItemName="CampaignsDeployFile" />
     </MSBuild>
     <MSBuild Projects="@(_TestProject)" Targets="Build" Properties="$(_BuildProperties)">
       <Output TaskParameter="TargetOutputs" ItemName="_TestAssembly" />
@@ -29,10 +29,11 @@
     <Error Condition="!Exists('$(_NativeAssembly)')" Text="Missing game reference: $(_NativeAssembly)" />
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; &quot;$(_NativeAssembly)&quot;" />
     <ItemGroup>
-      <_ClientAssembly Include="@(SeasonalDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Seasonal.Client.dll'" />
-      <_ServerAssembly Include="@(SeasonalDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Seasonal.Server.dll'" />
-      <_SharedAssembly Include="@(SeasonalDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Seasonal.Shared.dll'" />
+      <_ClientAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Client.dll'" />
+      <_ServerAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Server.dll'" />
+      <_SharedAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Shared.dll'" />
     </ItemGroup>
+    <Exec Condition="'@(_ClientAssembly)' != '' and '@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --mod-identity &quot;@(_ClientAssembly)&quot; &quot;@(_ServerAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --ui &quot;$(_NativeAssembly)&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --resource-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --bush-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
@@ -41,13 +42,13 @@
     <GetFileHash Files="@(_SharedAssembly)" Condition="'$(DeploymentScope)' == 'Client' or '$(DeploymentScope)' == 'Server'">
       <Output TaskParameter="Hash" PropertyName="_SharedHash" />
     </GetFileHash>
-    <VerifyFileHash File="$(SeasonalServerDir)WTT-Seasonal.Shared.dll" Hash="$(_SharedHash)" Condition="'$(DeploymentScope)' == 'Client'" />
-    <VerifyFileHash File="$(SeasonalClientDir)WTT-Seasonal.Shared.dll" Hash="$(_SharedHash)" Condition="'$(DeploymentScope)' == 'Server'" />
+    <VerifyFileHash File="$(CampaignsServerDir)WTT-Campaigns.Shared.dll" Hash="$(_SharedHash)" Condition="'$(DeploymentScope)' == 'Client'" />
+    <VerifyFileHash File="$(CampaignsClientDir)WTT-Campaigns.Shared.dll" Hash="$(_SharedHash)" Condition="'$(DeploymentScope)' == 'Server'" />
     <Exec Command="&quot;$(AssetValidationPowerShell)&quot; -NoProfile -NonInteractive -File &quot;$(MSBuildThisFileDirectory)tools\validate_assets.ps1&quot; -ClientAssembly &quot;@(_ClientAssembly)&quot; -ServerAssembly &quot;@(_ServerAssembly)&quot;" Condition="'$(DeploymentScope)' != 'UI'" />
   </Target>
-  <Target Name="Install" DependsOnTargets="Validate;DeploySeasonalFiles" />
-  <Target Name="Package" DependsOnTargets="Validate;StagePackage;DeploySeasonalFiles" />
-  <Target Name="StagePackage" DependsOnTargets="PrepareSeasonalFiles">
+  <Target Name="Install" DependsOnTargets="Validate;DeployCampaignsFiles" />
+  <Target Name="Package" DependsOnTargets="Validate;StagePackage;DeployCampaignsFiles" />
+  <Target Name="StagePackage" DependsOnTargets="PrepareCampaignsFiles">
     <Error Condition="'$(PackageDir)' == ''" Text="PackageDir is required. Use tools/package.ps1 to choose a timestamped release directory." />
     <Copy SourceFiles="@(_PlannedFiles)" DestinationFiles="@(_PlannedFiles->'$(PackageDir)\%(PackagePath)')" />
     <ItemGroup>

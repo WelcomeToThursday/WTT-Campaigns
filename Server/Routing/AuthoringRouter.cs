@@ -1,13 +1,13 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Server.Web.Authoring;
-using SeasonalPerks.Shared.Authoring;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Server.Web.Authoring;
+using WTT.Campaigns.Shared.Authoring;
 
-namespace SeasonalPerks.Server.Routing;
+namespace WTT.Campaigns.Server.Routing;
 
 public sealed class AuthoringRouteRequest : AuthoringRequest, IRequestData;
 
@@ -21,7 +21,7 @@ public sealed class AuthoringRouter(JsonUtil json, SeasonService seasons, RaidAu
             .Select(operation =>
                 (RouteAction)
                     new RouteAction<AuthoringRouteRequest>(
-                        "/wtt-seasonal/authoring/" + operation,
+                        "/wtt-campaigns/authoring/" + operation,
                         (_, r, id, _, _) =>
                         {
                             try

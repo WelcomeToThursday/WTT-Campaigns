@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SeasonalPerks.Client.UI;
+namespace WTT.Campaigns.Client.UI;
 
 public sealed class LoadingTextAnimation : MonoBehaviour
 {

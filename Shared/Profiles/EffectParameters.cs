@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Shared.Profiles;
+namespace WTT.Campaigns.Shared.Profiles;
 
 public sealed class EffectParameters : ExtensibleJsonModel
 {

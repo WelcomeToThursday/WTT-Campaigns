@@ -1,11 +1,11 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Server.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Server.Seasons;
 
-namespace SeasonalPerks.Server.Routing;
+namespace WTT.Campaigns.Server.Routing;
 
 [Injectable]
 public sealed class SeasonRouter(JsonUtil json, SeasonService seasons, SeasonRepository repository)
@@ -16,7 +16,7 @@ public sealed class SeasonRouter(JsonUtil json, SeasonService seasons, SeasonRep
         return
         [
             new RouteAction<SeasonRequest>(
-                "/wtt-seasonal/snapshot",
+                "/wtt-campaigns/snapshot",
                 async (_, r, id, _, _) =>
                     await Respond(
                         json,
@@ -28,24 +28,24 @@ public sealed class SeasonRouter(JsonUtil json, SeasonService seasons, SeasonRep
                     )
             ),
             new RouteAction<SeasonRequest>(
-                "/wtt-seasonal/create",
+                "/wtt-campaigns/create",
                 async (_, r, id, _, _) => await Respond(json, s, id.ToString(), r, repository, root => s.Create(root, r.ToMutation()))
             ),
             new RouteAction<SeasonRequest>(
-                "/wtt-seasonal/edit",
+                "/wtt-campaigns/edit",
                 async (_, r, id, _, _) => await Respond(json, s, id.ToString(), r, repository, root => s.Edit(root, r.ToMutation()))
             ),
             new RouteAction<SeasonRequest>(
-                "/wtt-seasonal/switch",
+                "/wtt-campaigns/switch",
                 async (_, r, id, _, _) =>
                     await Respond(json, s, id.ToString(), r, repository, root => s.Switch(root, r.Mode, r.CharacterId))
             ),
             new RouteAction<SeasonRequest>(
-                "/wtt-seasonal/delete",
+                "/wtt-campaigns/delete",
                 async (_, r, id, _, _) => await Respond(json, s, id.ToString(), r, repository, root => s.Delete(root, r.ToMutation()))
             ),
             new RouteAction<SeasonRequest>(
-                "/wtt-seasonal/wipe",
+                "/wtt-campaigns/wipe",
                 async (_, r, id, _, _) => await Respond(json, s, id.ToString(), r, repository, root => s.Wipe(root, r.ToMutation()))
             ),
         ];
@@ -64,7 +64,7 @@ public sealed class SeasonRouter(JsonUtil json, SeasonService seasons, SeasonRep
         {
             if (!repository.Current.Definition.Legacy && request.ProtocolVersion != 2)
             {
-                throw new InvalidOperationException("Update the Seasonal client and server together (creator protocol 2 required).");
+                throw new InvalidOperationException("Update the WTT-Campaigns client and server together (creator protocol 2 required).");
             }
 
             root = seasons.ResolveRoot(root);

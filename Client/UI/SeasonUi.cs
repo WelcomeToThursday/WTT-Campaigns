@@ -1,17 +1,17 @@
 using Comfort.Common;
 using EFT.UI;
-using SeasonalPerks.Client.Hub;
-using SeasonalPerks.Client.Profiles;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Profiles;
-using SeasonalPerks.UI.Audio;
-using SeasonalPerks.UI.Models;
-using SeasonalPerks.UI.Screens;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.Hub;
+using WTT.Campaigns.Client.Profiles;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Profiles;
+using WTT.Campaigns.UI.Audio;
+using WTT.Campaigns.UI.Models;
+using WTT.Campaigns.UI.Screens;
 using ZLinq;
 
-namespace SeasonalPerks.Client.UI;
+namespace WTT.Campaigns.Client.UI;
 
 public sealed partial class SeasonUi : MonoBehaviour
 {
@@ -21,7 +21,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         get
         {
             return _bundle ??=
-                AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonalperks_ui.bundle"))
+                AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_ui.bundle"))
                 ?? throw new InvalidDataException("Missing seasonal UI bundle.");
         }
     }
@@ -29,7 +29,7 @@ public sealed partial class SeasonUi : MonoBehaviour
     private AssetBundle? _bundle;
     private GameObject? _canvas;
     private GameObject? _creationLoader;
-    private SeasonalScreen? _screen;
+    private CampaignScreen? _screen;
     private bool _opening;
     private bool _destroyed;
     private int _inputBlockedThrough = -1;
@@ -149,13 +149,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         {
             return;
         }
-        _canvas = new GameObject(
-            "SeasonalPerksCanvas",
-            typeof(RectTransform),
-            typeof(Canvas),
-            typeof(CanvasScaler),
-            typeof(GraphicRaycaster)
-        );
+        _canvas = new GameObject("CampaignsCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         DontDestroyOnLoad(_canvas);
         var canvas = _canvas.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -174,22 +168,22 @@ public sealed partial class SeasonUi : MonoBehaviour
         _screen.CharacterManagementRequested = ManageCharacter;
     }
 
-    internal SeasonalScreen CreateView(Transform parent, bool embedded = false)
+    internal CampaignScreen CreateView(Transform parent, bool embedded = false)
     {
         _bundle ??=
-            AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonalperks_ui.bundle"))
+            AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_ui.bundle"))
             ?? throw new InvalidDataException("Missing seasonal UI bundle.");
         var font =
-            _bundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf")
+            _bundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf")
             ?? Resources
                 .FindObjectsOfTypeAll<Font>()
                 .AsValueEnumerable()
                 .FirstOrDefault(value => value.name.Equals("Jovanny Lemonad - Bender", StringComparison.OrdinalIgnoreCase))
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
-        var view = new SeasonalScreen(
+        var view = new CampaignScreen(
             parent,
             layoutName =>
-                _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/ui/" + layoutName + ".prefab")
+                _bundle.LoadAsset<GameObject>("assets/mods/wtt-campaigns.assets/ui/" + layoutName + ".prefab")
                 ?? throw new InvalidDataException("Missing seasonal UI layout: " + layoutName),
             font,
             embedded
@@ -197,7 +191,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         view.IconRequested = LoadIcon;
         view.SoundRequested = PlayInterfaceSound;
         view.ProfileHoverSound = PlayProfileHover;
-        view.GlowMaterial = _bundle.LoadAsset<Material>("assets/mods/seasonalperks.assets/ui/selection-additive.mat");
+        view.GlowMaterial = _bundle.LoadAsset<Material>("assets/mods/wtt-campaigns.assets/ui/selection-additive.mat");
         view.ArtworkRequested = LoadArtwork;
         view.CharacterRequested = LoadCharacter;
         view.IdentityRequested = (host, draft, complete, back) => new CreationIdentity(host, draft, font, complete, back);
@@ -479,14 +473,14 @@ public sealed partial class SeasonUi : MonoBehaviour
             return;
         }
 
-        var camera = _bundle!.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/ui/selection-camera.prefab");
+        var camera = _bundle!.LoadAsset<GameObject>("assets/mods/wtt-campaigns.assets/ui/selection-camera.prefab");
         if (!camera)
         {
             return;
         }
 
         var font =
-            _bundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf")
+            _bundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf")
             ?? Resources.FindObjectsOfTypeAll<Font>().AsValueEnumerable().FirstOrDefault(value => value.name == "Jovanny Lemonad - Bender")
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
         target.gameObject.AddComponent<CharacterPreview>().Show(visual, camera, font);
@@ -540,7 +534,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         }
         try
         {
-            var clip = _bundle!.LoadAsset<AudioClip>("assets/mods/seasonalperks.assets/audio/" + clipName + ".wav");
+            var clip = _bundle!.LoadAsset<AudioClip>("assets/mods/wtt-campaigns.assets/audio/" + clipName + ".wav");
             if (!clip)
             {
                 throw new InvalidDataException("Missing bundled interface sound: " + clipName);
@@ -558,12 +552,12 @@ public sealed partial class SeasonUi : MonoBehaviour
         try
         {
             _bundle ??=
-                AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonalperks_ui.bundle"))
+                AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_ui.bundle"))
                 ?? throw new InvalidDataException("Missing seasonal UI bundle.");
             var assetPath = artworkName.StartsWith("hub:", StringComparison.Ordinal)
                 ? "hubartwork/" + artworkName.Substring(4)
                 : "selectionartwork/" + artworkName;
-            var sprite = _bundle.LoadAsset<Sprite>("assets/mods/seasonalperks.assets/" + assetPath + ".png");
+            var sprite = _bundle.LoadAsset<Sprite>("assets/mods/wtt-campaigns.assets/" + assetPath + ".png");
             if (!sprite)
             {
                 throw new InvalidDataException("Missing bundled selection artwork: " + artworkName);

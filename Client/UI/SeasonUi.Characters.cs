@@ -1,8 +1,8 @@
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.UI.Screens;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.UI.Screens;
 using ZLinq;
 
-namespace SeasonalPerks.Client.UI;
+namespace WTT.Campaigns.Client.UI;
 
 public sealed partial class SeasonUi
 {

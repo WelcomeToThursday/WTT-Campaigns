@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Story;
 using SPTarkov.Server.Core.Models.Eft.Common;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Story;
+namespace WTT.Campaigns.Server.Story;
 
 public sealed partial class StoryService
 {

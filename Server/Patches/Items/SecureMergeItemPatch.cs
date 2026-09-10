@@ -1,15 +1,15 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.ItemEvent;
+using WTT.Campaigns.Server.Effects;
 
-namespace SeasonalPerks.Server.Patches.Items;
+namespace WTT.Campaigns.Server.Patches.Items;
 
 [Injectable]
 public class SecureMergeItemPatch(SecureContainerRestrictions restrictions) : AbstractPatch

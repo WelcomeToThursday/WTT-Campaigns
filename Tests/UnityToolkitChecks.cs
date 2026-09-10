@@ -1,8 +1,8 @@
 using System.Reflection;
 using Mono.Cecil;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class UnityToolkitChecks
 {
@@ -49,7 +49,7 @@ internal static class UnityToolkitChecks
         Check(Path.GetDirectoryName(installedLinq.Location) == toolkitDir, "Runtime checks use the installed Unity ZLinq build");
         var assembly = context.LoadFromAssemblyPath(clientPath);
         UniTaskChecks.Run(client, assembly, Check);
-        var changesType = assembly.GetType("SeasonalPerks.Client.Story.StoryChapterChanges")!;
+        var changesType = assembly.GetType("WTT.Campaigns.Client.Story.StoryChapterChanges")!;
         var changes = Activator.CreateInstance(changesType, nonPublic: true)!;
         StoryChapterNotificationChecks.Run(
             Check,
@@ -59,7 +59,7 @@ internal static class UnityToolkitChecks
             changesType.GetMethod("Reset", BindingFlags.Instance | BindingFlags.NonPublic)!.CreateDelegate<Action>(changes)
         );
         var build = assembly
-            .GetType("SeasonalPerks.Client.Story.StorySubtitleText")!
+            .GetType("WTT.Campaigns.Client.Story.StorySubtitleText")!
             .GetMethod("Build", BindingFlags.Static | BindingFlags.NonPublic)!
             .CreateDelegate<Func<StorySequence[], float, Func<string, string>, string, string>>();
         StorySequence[] subtitles =

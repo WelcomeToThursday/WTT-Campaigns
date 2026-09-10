@@ -10,7 +10,7 @@ from UnityPy.helpers.TypeTreeNode import TypeTreeNode
 
 DEV=Path(__file__).resolve().parents[2]
 LIVE=Path(r'E:\EscapeFromTarkov')
-OUT=DEV/'CJ-SDK/Assets/Mods/SeasonalPerks.Assets/Recovered'
+OUT=DEV/'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets/Recovered'
 class Generator(TypeTreeGenerator):
     def get_nodes_up(self,assembly,fullname):
         key=(assembly,fullname)

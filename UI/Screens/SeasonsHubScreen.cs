@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SeasonalPerks.UI.Audio;
-using SeasonalPerks.UI.BattlePass;
-using SeasonalPerks.UI.Controls;
-using SeasonalPerks.UI.Media;
-using SeasonalPerks.UI.Models;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Audio;
+using WTT.Campaigns.UI.BattlePass;
+using WTT.Campaigns.UI.Controls;
+using WTT.Campaigns.UI.Media;
+using WTT.Campaigns.UI.Models;
 
-namespace SeasonalPerks.UI.Screens;
+namespace WTT.Campaigns.UI.Screens;
 
 public sealed partial class SeasonsHubScreen : IDisposable
 {

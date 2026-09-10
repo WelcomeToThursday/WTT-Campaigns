@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SeasonalPerks.UI.BattlePass;
+namespace WTT.Campaigns.UI.BattlePass;
 
 public sealed class HubPointer : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IScrollHandler
 {

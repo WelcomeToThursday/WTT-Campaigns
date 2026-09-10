@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace SeasonalPerks.UI.Media;
+namespace WTT.Campaigns.UI.Media;
 
 public static class StoryRoomAmbient
 {
@@ -20,7 +20,7 @@ public static class StoryRoomAmbient
         );
 #else
         using var stream =
-            typeof(StoryRoomAmbient).Assembly.GetManifestResourceStream("SeasonalPerks.Story.ambient-probes.txt")
+            typeof(StoryRoomAmbient).Assembly.GetManifestResourceStream("WTT.Campaigns.Story.ambient-probes.txt")
             ?? throw new InvalidDataException("Missing trader ambient probes.");
         using var reader = new StreamReader(stream);
         var text = reader.ReadToEnd();

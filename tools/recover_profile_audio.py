@@ -8,7 +8,7 @@ from recover_ui import Generator
 
 DEV = Path(__file__).resolve().parents[2]
 LIVE = Path('E:/EscapeFromTarkov')
-OUT = DEV / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets/Audio'
+OUT = DEV / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets/Audio'
 
 
 def main():

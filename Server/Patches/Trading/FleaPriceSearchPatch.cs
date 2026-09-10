@@ -1,14 +1,14 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Effects;
-using SeasonalPerks.Server.Hub;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
 using SPTarkov.Server.Core.Models.Common;
+using WTT.Campaigns.Server.Effects;
+using WTT.Campaigns.Server.Hub;
 
-namespace SeasonalPerks.Server.Patches.Trading;
+namespace WTT.Campaigns.Server.Patches.Trading;
 
 [Injectable]
 public class FleaPriceSearchPatch(HubGameplay hub) : AbstractPatch

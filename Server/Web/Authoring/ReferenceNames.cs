@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Web.Authoring;
+namespace WTT.Campaigns.Server.Web.Authoring;
 
 // Presentation only: identities in drafts and published content are never rewritten.
 public static class ReferenceNames

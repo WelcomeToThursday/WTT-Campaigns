@@ -1,12 +1,12 @@
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Server.Web.Authoring;
-using SeasonalPerks.Shared.Authoring;
-using SeasonalPerks.Shared.Native;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Spatial;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Server.Web.Authoring;
+using WTT.Campaigns.Shared.Authoring;
+using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Spatial;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class RaidAuthoringChecks
 {

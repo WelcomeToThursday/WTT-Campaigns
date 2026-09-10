@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Effects.Items;
+namespace WTT.Campaigns.Shared.Effects.Items;
 
 public static class KeyUsage
 {

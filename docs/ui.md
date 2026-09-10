@@ -104,7 +104,7 @@ The information background preserves its native 27/27/27/75 sprite borders and e
 
 ## Assets and server data
 
-The bundle contains all 26 recovered UI artwork sprites, 11 recovered layout prefabs, one camera/light prefab, the recovered Bender font, and an additive UI material/shader. UI sprites load synchronously from the bundle with their original borders and alpha. Only the 39 perk icons are requested by perk ID from the local server; they are excluded from the bundle. Assets and provenance remain under CJ-SDK's `Assets/Mods/SeasonalPerks.Assets`.
+The bundle contains all 26 recovered UI artwork sprites, 11 recovered layout prefabs, one camera/light prefab, the recovered Bender font, and an additive UI material/shader. UI sprites load synchronously from the bundle with their original borders and alpha. Only the 39 perk icons are requested by perk ID from the local server; they are excluded from the bundle. Assets and provenance remain under CJ-SDK's `Assets/Mods/WTT-Campaigns.Assets`.
 
 The snapshot adds an appearance-only descriptor for each character: nickname, level, faction, customization and the equipped item tree. It excludes stash roots, quests and other progression data. This is read-only UI data; no gameplay effects or selection rules were added in this update.
 
@@ -130,4 +130,4 @@ Run `dotnet msbuild build.proj` to build, validate and install matching componen
 
 Intentional SPT differences: two cards instead of three; Normal/Seasonal labels; no online-PvP or Arena claims, countdown, automatic resets or online battle-pass statistics. Local Battle Pass progression is covered in [Battle Pass gameplay](battle-pass-gameplay.md). Personal-perk editing remains available through the seasonal details. Live's specialized character hover animation is not backported; SPT's existing menu-character animation is used.
 
-Reproduce artwork with `tools/recover_selection_art.py`; build in Unity with **SDK / Seasonal Perks / Build recovered UI**. Run `tools/sync_ui_preview.py` then **Render UI previews** for 27 Gamma layout renders and interactions. `tools/test_selection_ui.py` uses only the isolated runtime and its existing synthetic account; `tools/test_creation_ui.py` creates fresh synthetic accounts there. Raw packet captures and user account data are not packaged.
+Reproduce artwork with `tools/recover_selection_art.py`; build in Unity with **SDK / WTT-Campaigns / Build recovered UI**. Run `tools/sync_ui_preview.py` then **Render UI previews** for 27 Gamma layout renders and interactions. `tools/test_selection_ui.py` uses only the isolated runtime and its existing synthetic account; `tools/test_creation_ui.py` creates fresh synthetic accounts there. Raw packet captures and user account data are not packaged.

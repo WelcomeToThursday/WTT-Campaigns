@@ -9,7 +9,7 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-TARGET = ROOT.parent / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets/StoryLiveShaders'
+TARGET = ROOT.parent / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets/StoryLiveShaders'
 NAMES = ['ANGRYMESH/PBR Rocks/PBR BlendTopDetail (Legacy)', 'Characters/TraiderHair',
          'Cloth/ClothShader', 'Custom/Billboard_FogSheet_Simple', 'Particles/VolumetricSmoke']
 
@@ -32,7 +32,7 @@ def main():
         links = re.findall(r'<a href="(/Assets/View\?[^\"]+)"[^>]*>([^<]+)</a>', page)
         url = next(html.unescape(u) for u, n in links if html.unescape(n) == 'shadow')
         beta_collection = json.loads(urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)['Path'][0])['C']
-        assets = ROOT.parent / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets/StoryRecovered'
+        assets = ROOT.parent / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets/StoryRecovered'
         used = set()
         for extension in ('*.mat', '*.unity'):
             for path in assets.rglob(extension):

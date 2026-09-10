@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
-using SeasonalPerks.Server.Seasons;
+using WTT.Campaigns.Server.Seasons;
 
-namespace SeasonalPerks.Server.Web.Pages;
+namespace WTT.Campaigns.Server.Web.Pages;
 
 public partial class Creator
 {

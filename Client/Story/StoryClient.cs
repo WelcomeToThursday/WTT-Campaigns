@@ -1,11 +1,11 @@
 using EFT;
 using HarmonyLib;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Story;
 using SPT.Common.Http;
+using WTT.Campaigns.Shared.Story;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal static class StoryClient
 {
@@ -181,7 +181,7 @@ internal static class StoryClient
     private static async Task<StoryResponse> Send(string operation, StoryRequest request, Action? rejected = null)
     {
         var body = await RequestHandler.PostJsonAsync(
-            "/wtt-seasonal/story" + (operation.Length > 0 ? "/" + operation : ""),
+            "/wtt-campaigns/story" + (operation.Length > 0 ? "/" + operation : ""),
             JsonConvert.SerializeObject(request)
         );
         var response = JsonConvert.DeserializeObject<StoryResponse>(body) ?? throw new InvalidDataException("Empty story response.");

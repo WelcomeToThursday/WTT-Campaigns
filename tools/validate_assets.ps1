@@ -7,15 +7,15 @@ $server = $ServerAssembly
 if ($server) {
     $output = Split-Path $server -Parent
     . (Join-Path $PSScriptRoot 'build_helpers.ps1')
-    Test-SeasonalServerAssets $output
+    Test-CampaignsServerAssets $output
 }
 if ($client) {
     $notificationRoot = Split-Path $client -Parent
     $notificationCheck = Get-Content -LiteralPath (Join-Path $notificationRoot 'story-notification-validation.json') -Raw | ConvertFrom-Json
-    if (@($notificationCheck.prefabs).Count -ne 3 -or @($notificationCheck.dependencies) -notcontains 'seasonalperks_ui.bundle') {
+    if (@($notificationCheck.prefabs).Count -ne 3 -or @($notificationCheck.dependencies) -notcontains 'wtt_campaigns_ui.bundle') {
         throw 'The chapter notification prefabs have not passed bundle dependency and layout validation.'
     }
-    if (@($notificationCheck.bundles.file | Sort-Object) -join ',' -ne 'seasonal_story_notifications.bundle,seasonalperks_ui.bundle') {
+    if (@($notificationCheck.bundles.file | Sort-Object) -join ',' -ne 'wtt_campaigns_story_notifications.bundle,wtt_campaigns_ui.bundle') {
         throw 'Chapter notification validation must cover the matching main UI and notification bundles.'
     }
     foreach ($bundle in $notificationCheck.bundles) {

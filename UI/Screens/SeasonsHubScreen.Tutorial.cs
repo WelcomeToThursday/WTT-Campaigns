@@ -1,10 +1,10 @@
 using System;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.UI.Screens;
+namespace WTT.Campaigns.UI.Screens;
 
 public sealed partial class SeasonsHubScreen
 {

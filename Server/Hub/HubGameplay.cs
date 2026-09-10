@@ -1,8 +1,4 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Hub;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Profile;
 using SPTarkov.Server.Core.Models.Common;
@@ -15,9 +11,13 @@ using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Hub;
 using Path = System.IO.Path;
 
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 [Injectable(InjectionType.Singleton)]
 public sealed partial class HubGameplay(
@@ -32,7 +32,7 @@ public sealed partial class HubGameplay(
     SeasonRepository repository
 )
 {
-    private const string StateKey = "wttSeasonalHub";
+    private const string StateKey = "wttCampaignsHub";
     private HubGameplayDefinition _catalogue = new();
     private HubState _presentation = new();
     private readonly Dictionary<string, TraderAssort> _offers = new();
@@ -507,7 +507,7 @@ public sealed partial class HubGameplay(
     {
         if (!_runtime.Definition.Legacy && request.ProtocolVersion != 2)
         {
-            throw new InvalidOperationException("Update the Seasonal client and server together.");
+            throw new InvalidOperationException("Update the WTT-Campaigns client and server together.");
         }
 
         if (request.SeasonId.Length > 0 && request.SeasonId != _presentation.SeasonId)

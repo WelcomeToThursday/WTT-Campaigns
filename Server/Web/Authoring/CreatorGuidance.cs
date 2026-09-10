@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Server.Web.Authoring;
+namespace WTT.Campaigns.Server.Web.Authoring;
 
 public static class CreatorGuidance
 {

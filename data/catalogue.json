@@ -3,7 +3,7 @@
     {
       "id": "69c41a19cd28c936320a7523",
       "type": "common",
-      "imageUrl": "/wtt-seasonal/icons/6a60d391ad4b72034b029c61.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d391ad4b72034b029c61.png",
       "effects": [
         {
           "effectId": "insurance_disabled"
@@ -15,7 +15,7 @@
     {
       "id": "69c41a86383fc5c9ad03f3d5",
       "type": "common",
-      "imageUrl": "/wtt-seasonal/icons/6a60d38cdbd6b04ab5082d64.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d38cdbd6b04ab5082d64.png",
       "effects": [
         {
           "skillIds": [
@@ -35,7 +35,7 @@
     {
       "id": "69c41adf883efd5e3b09ccae",
       "type": "common",
-      "imageUrl": "/wtt-seasonal/icons/6a60d395a51799c4240d7af6.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d395a51799c4240d7af6.png",
       "effects": [
         {
           "multiplicator": 1.25,
@@ -48,7 +48,7 @@
     {
       "id": "69ce5d9296f3b267fa08f137",
       "type": "common",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3718f05da0353066306.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3718f05da0353066306.png",
       "effects": [],
       "points": null,
       "mutuallyExclusiveSeasonalPerkIds": []
@@ -56,7 +56,7 @@
     {
       "id": "69ce5e104e0a1c7ca20781c9",
       "type": "common",
-      "imageUrl": "/wtt-seasonal/icons/6a60d37b9e94cffce502d320.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d37b9e94cffce502d320.png",
       "effects": [],
       "points": null,
       "mutuallyExclusiveSeasonalPerkIds": []
@@ -64,7 +64,7 @@
     {
       "id": "69ce5eb3e4b79de94a0d78c8",
       "type": "common",
-      "imageUrl": "/wtt-seasonal/icons/6a60d36ba51799c4240d7af5.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d36ba51799c4240d7af5.png",
       "effects": [
         {
           "mode": "not_require",
@@ -79,7 +79,7 @@
     {
       "id": "69c3cd003ffdba4e68086bd7",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3fcf23eae53e50f3456.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3fcf23eae53e50f3456.png",
       "effects": [
         {
           "multiplicator": 1.25,
@@ -94,7 +94,7 @@
     {
       "id": "69c3cddcfb79911cf20022d6",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d411dbd6b04ab5082d68.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d411dbd6b04ab5082d68.png",
       "effects": [
         {
           "multiplicator": 1.25,
@@ -113,7 +113,7 @@
     {
       "id": "69c3d036042c81ad9209eeae",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3a8f9e99c65c201ce72.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3a8f9e99c65c201ce72.png",
       "effects": [
         {
           "itemFilter": {
@@ -155,7 +155,7 @@
     {
       "id": "69c3d21749d7d7c520026425",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d40c8f05da035306632b.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d40c8f05da035306632b.png",
       "effects": [
         {
           "skillIds": [
@@ -247,7 +247,7 @@
     {
       "id": "69c3d2acfe3c5632e4045fe8",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d4153d109aeba509fbc4.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d4153d109aeba509fbc4.png",
       "effects": [
         {
           "multiplicator": 1.2,
@@ -262,7 +262,7 @@
     {
       "id": "69c3d35feaf97663fb0bb367",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3b417dbbfbaa50a145f.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3b417dbbfbaa50a145f.png",
       "effects": [
         {
           "multiplicator": 1.2,
@@ -278,7 +278,7 @@
     {
       "id": "69c3d43030f896ebef0ed357",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3daf9e99c65c201ce74.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3daf9e99c65c201ce74.png",
       "effects": [
         {
           "skillIds": [
@@ -310,7 +310,7 @@
     {
       "id": "69c3d4e949d7d7c52002642a",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3d6f23eae53e50f3455.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3d6f23eae53e50f3455.png",
       "effects": [
         {
           "effectId": "fresh_wounds_until_raid_end"
@@ -322,7 +322,7 @@
     {
       "id": "69c3d6a9af28f094100fe128",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3acb39f93e78f0c894c.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3acb39f93e78f0c894c.png",
       "effects": [
         {
           "itemFilter": {
@@ -386,7 +386,7 @@
     {
       "id": "69c3da8fc0e4deb02605f3c9",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3e80ee20df6890d022b.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3e80ee20df6890d022b.png",
       "effects": [
         {
           "effectId": "flea_market_npc_only"
@@ -398,7 +398,7 @@
     {
       "id": "69c3e8d8af28f094100fe130",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d773a51799c4240d7b65.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d773a51799c4240d7b65.png",
       "effects": [
         {
           "bodyPartTypes": [
@@ -418,7 +418,7 @@
     {
       "id": "69c405a9d7a7b2ca660e0c56",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d755dbd6b04ab5082d90.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d755dbd6b04ab5082d90.png",
       "effects": [
         {
           "multiplicatorPrimary": 0.25,
@@ -432,7 +432,7 @@
     {
       "id": "69c406731d8aec4a2b0551bd",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d790f9e99c65c201cec1.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d790f9e99c65c201cec1.png",
       "effects": [
         {
           "itemFilter": {
@@ -500,7 +500,7 @@
     {
       "id": "69c40cb782362c4aff041510",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d75917dbbfbaa50a14ac.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d75917dbbfbaa50a14ac.png",
       "effects": [
         {
           "periodUnixSeconds": 604800,
@@ -514,7 +514,7 @@
     {
       "id": "69c40e131f8903ce7a06984c",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d78b0ee20df6890d0258.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d78b0ee20df6890d0258.png",
       "effects": [
         {
           "skillIds": [
@@ -539,7 +539,7 @@
     {
       "id": "69c40f9f9b5263783d0fe51d",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d75d9e94cffce502d34b.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d75d9e94cffce502d34b.png",
       "effects": [
         {
           "itemFilter": {
@@ -561,7 +561,7 @@
     {
       "id": "69c4116a383fc5c9ad03f3d1",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d7932fa684a5ee01c7c7.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d7932fa684a5ee01c7c7.png",
       "effects": [
         {
           "multiplicator": 0.75,
@@ -576,7 +576,7 @@
     {
       "id": "69c411d8883efd5e3b09ccab",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d768f9e99c65c201cec0.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d768f9e99c65c201cec0.png",
       "effects": [
         {
           "multiplicator": 0.8,
@@ -591,7 +591,7 @@
     {
       "id": "69c412519b5263783d0fe520",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d77cdbd6b04ab5082d91.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d77cdbd6b04ab5082d91.png",
       "effects": [
         {
           "multiplicator": 0.8,
@@ -607,7 +607,7 @@
     {
       "id": "69c41632d7a7b2ca660e0c59",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d7874b0691f8c10498ba.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d7874b0691f8c10498ba.png",
       "effects": [
         {
           "multiplicator": 0.75,
@@ -626,7 +626,7 @@
     {
       "id": "69ce62886e199f4bbe0ab19b",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3f22fa684a5ee01c7c0.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3f22fa684a5ee01c7c0.png",
       "effects": [
         {
           "multiplicator": 0.99,
@@ -650,7 +650,7 @@
     {
       "id": "69ce64fe6e199f4bbe0ab1a1",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d76d2fa684a5ee01c7c6.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d76d2fa684a5ee01c7c6.png",
       "effects": [
         {
           "periodUnixSeconds": 31556926,
@@ -664,7 +664,7 @@
     {
       "id": "6a578102e7737aa469066518",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d48b17dbbfbaa50a1486.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d48b17dbbfbaa50a1486.png",
       "effects": [
         {
           "skillIds": [
@@ -717,7 +717,7 @@
     {
       "id": "6a5789f713792e2c7c0d2a5b",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d4232fa684a5ee01c7c1.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d4232fa684a5ee01c7c1.png",
       "effects": [
         {
           "effectId": "lucky"
@@ -731,7 +731,7 @@
     {
       "id": "6a578ac032cea863f505beed",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3a2e46631bbe50437c4.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3a2e46631bbe50437c4.png",
       "effects": [
         {
           "effectId": "unlucky"
@@ -745,7 +745,7 @@
     {
       "id": "69c3ce913ffdba4e68086bdb",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d3dfb39f93e78f0c894e.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d3dfb39f93e78f0c894e.png",
       "effects": [
         {
           "bodyPartTypes": [
@@ -773,7 +773,7 @@
     {
       "id": "69c405332f253132020be099",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d750a51799c4240d7b64.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d750a51799c4240d7b64.png",
       "effects": [
         {
           "keyTypes": [
@@ -789,7 +789,7 @@
     {
       "id": "69c40ae21d8aec4a2b0551c2",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d495f23eae53e50f347b.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d495f23eae53e50f347b.png",
       "effects": [
         {
           "itemFilter": {
@@ -857,7 +857,7 @@
     {
       "id": "69c40c0f5e9ce5a8970f6be9",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d48fdbd6b04ab5082d69.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d48fdbd6b04ab5082d69.png",
       "effects": [
         {
           "bodyPartTypes": [
@@ -882,7 +882,7 @@
     {
       "id": "69c410831f8903ce7a06984f",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d7630ee20df6890d0257.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d7630ee20df6890d0257.png",
       "effects": [
         {
           "skillIds": [
@@ -901,7 +901,7 @@
     {
       "id": "69c41111cd28c936320a7520",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d783f23eae53e50f34a5.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d783f23eae53e50f34a5.png",
       "effects": [
         {
           "multiplicator": 1.05,
@@ -917,7 +917,7 @@
     {
       "id": "69ce64064e0a1c7ca20781d3",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d74c2fa684a5ee01c7c5.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d74c2fa684a5ee01c7c5.png",
       "effects": [
         {
           "skillIds": [
@@ -1011,7 +1011,7 @@
     {
       "id": "69c3da13eaf97663fb0bb36d",
       "type": "personal",
-      "imageUrl": "/wtt-seasonal/icons/6a60d4194b0691f8c104986f.png",
+      "imageUrl": "/wtt-campaigns/icons/6a60d4194b0691f8c104986f.png",
       "effects": [
         {
           "itemFilter": {

@@ -1,6 +1,6 @@
 using Newtonsoft.Json.Linq;
 
-namespace SeasonalPerks.Shared.Authoring;
+namespace WTT.Campaigns.Shared.Authoring;
 
 // Three-way merge: identity-bearing arrays merge by identity; ordered scalar arrays remain atomic.
 public static class DraftMerge

@@ -1,10 +1,10 @@
 using System;
-using SeasonalPerks.UI.Audio;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Audio;
 
-namespace SeasonalPerks.UI.Controls;
+namespace WTT.Campaigns.UI.Controls;
 
 public sealed class UiButtonFeedback : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {

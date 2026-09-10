@@ -43,12 +43,12 @@ The HTTP dump supplies 12 pages/53 rewards, eight document schemes and five seas
 
 ## Reproduction
 
-1. Run `tools/recover_hub.py` and `tools/recover_profile_audio.py` using the existing Python environment. Source/object IDs and hashes are recorded in CJ-SDK's SeasonalPerks asset workspace.
+1. Run `tools/recover_hub.py` and `tools/recover_profile_audio.py` using the existing Python environment. Source/object IDs and hashes are recorded in CJ-SDK's WTT-Campaigns asset workspace.
 2. Run `tools/import_hub.py --download-images` with the supplied captures; omit the download flag when all images are local. It writes sanitized presentation data and a 102-image allowlist. Downloads occur only during development.
-3. Run `tools/sync_ui_preview.py`. In Unity 2022.3.43f1 use **SDK / Seasonal Perks / Build recovered UI**, **Render season hub previews**, and the existing **Render UI previews**.
+3. Run `tools/sync_ui_preview.py`. In Unity 2022.3.43f1 use **SDK / WTT-Campaigns / Build recovered UI**, **Render season hub previews**, and the existing **Render UI previews**.
 4. Run Release builds, contract/native UI checks and `tools/test_hub.py` against the isolated server. Stage with the existing packaging scripts.
 
-Decorative sprites, fonts, audio and videos are bundled. Catalogue images use `/wtt-seasonal/hub-images/{id}.png`; perk icons retain their original route and stay outside the bundle. `/wtt-seasonal/hub` is a separate read-only route without profile mutation. Both client and server must be updated together.
+Decorative sprites, fonts, audio and videos are bundled. Catalogue images use `/wtt-campaigns/hub-images/{id}.png`; perk icons retain their original route and stay outside the bundle. `/wtt-campaigns/hub` is a separate read-only route without profile mutation. Both client and server must be updated together.
 
 Shared contracts and UI models are separate, keeping presentation free of EFT/SPT dependencies. Client adapters own menu availability, bounded image requests, audio and video lifecycle. Closing cancels queued work, discards stale responses, releases image textures and stops video decoders. Catalogue failures offer Retry; individual images show an unavailable label and retry on a fresh opening.
 

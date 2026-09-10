@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 // The protocol uses CLR names understood by both serializers. Native item JSON stays
 // inside Data so SPT's request serializer cannot discard _id/_tpl or resource fields.

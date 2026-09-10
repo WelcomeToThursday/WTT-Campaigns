@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class ClientHookChecks
 {
@@ -24,9 +24,9 @@ internal static class ClientHookChecks
             .ToDictionary(o => o.Value);
         using var assembly = AssemblyDefinition.ReadAssembly(game.Location);
         var patch = client.GetType(
-            experience ? "SeasonalPerks.Client.Patches.Skills.RaidExperiencePatch"
-            : bush ? "SeasonalPerks.Client.Patches.Movement.BushSoundPatch"
-            : "SeasonalPerks.Client.Patches.Items.ItemResourcePatch"
+            experience ? "WTT.Campaigns.Client.Patches.Skills.RaidExperiencePatch"
+            : bush ? "WTT.Campaigns.Client.Patches.Movement.BushSoundPatch"
+            : "WTT.Campaigns.Client.Patches.Items.ItemResourcePatch"
         )!;
         var transpiler = patch.GetMethod("Transpiler", BindingFlags.Static | BindingFlags.NonPublic)!;
         foreach (

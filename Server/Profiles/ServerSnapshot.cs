@@ -1,5 +1,5 @@
-using SeasonalPerks.Shared.Contracts;
+using WTT.Campaigns.Shared.Contracts;
 
-namespace SeasonalPerks.Server.Profiles;
+namespace WTT.Campaigns.Server.Profiles;
 
 public sealed class ServerSnapshot : Snapshot<CharacterVisual>;

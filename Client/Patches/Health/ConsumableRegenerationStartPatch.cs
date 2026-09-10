@@ -3,7 +3,7 @@ using EFT.HealthSystem;
 using HarmonyLib;
 using SPT.Reflection.Patching;
 
-namespace SeasonalPerks.Client.Patches.Health;
+namespace WTT.Campaigns.Client.Patches.Health;
 
 internal class ConsumableRegenerationStartPatch : ModulePatch
 {

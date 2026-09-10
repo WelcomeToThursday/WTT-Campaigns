@@ -1,6 +1,6 @@
-using SeasonalPerks.Client.UI;
+using WTT.Campaigns.Client.UI;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class ImageRequestCacheChecks
 {

@@ -2,7 +2,7 @@ using System.Text.Json;
 using Newtonsoft.Json;
 using SPTarkov.Server.Core.Models.Eft.Common;
 
-namespace SeasonalPerks.Server.Profiles;
+namespace WTT.Campaigns.Server.Profiles;
 
 /// <summary>SPT owns the untyped extension-data interface; seasonal callers always read concrete state contracts.</summary>
 internal static class ProfileStateSerialization

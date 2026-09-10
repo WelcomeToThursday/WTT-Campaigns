@@ -1,11 +1,11 @@
 using System.Runtime.CompilerServices;
 using EFT.InventoryLogic;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Contracts;
 using SPT.Common.Http;
+using WTT.Campaigns.Shared.Contracts;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Hub;
+namespace WTT.Campaigns.Client.Hub;
 
 internal static class HubDocuments
 {
@@ -53,7 +53,7 @@ internal static class HubDocuments
         LoadJournal();
         while (_pending.Count > 0)
         {
-            var result = JsonConvert.DeserializeObject<HubResult>(RequestHandler.PostJson("/wtt-seasonal/hub/raid-document", _pending[0]));
+            var result = JsonConvert.DeserializeObject<HubResult>(RequestHandler.PostJson("/wtt-campaigns/hub/raid-document", _pending[0]));
             if (result == null || !string.IsNullOrEmpty(result.Error))
             {
                 throw new InvalidOperationException(result?.Error ?? "The document operation was not acknowledged.");

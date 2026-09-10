@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Effects.Consumables;
+namespace WTT.Campaigns.Shared.Effects.Consumables;
 
 // One receipt per use operation, not per inventory item. A later use of the same
 // bottle may refresh a buff, but later ticks of one use must not refresh it.

@@ -4,7 +4,7 @@ using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Profile;
 using SPTarkov.Server.Core.Servers;
 
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 internal static class HubProfileStore
 {

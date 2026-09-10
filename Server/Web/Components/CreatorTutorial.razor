@@ -1,4 +1,4 @@
-@using SeasonalPerks.Server.Web.Authoring
+@using WTT.Campaigns.Server.Web.Authoring
 <section class="creator-tutorial" aria-labelledby="tutorial-title" @oninput:stopPropagation @onchange:stopPropagation>
     <div class="guide-heading"><div><span class="eyebrow">@(Track == "story" ? "YOUR FIRST STORY QUEST" : "SEASON BASICS")</span><h2 id="tutorial-title" aria-live="polite">@Current.Title</h2></div><button class="subtle" @onclick="Pause">Pause tutorial</button></div>
     <div class="tutorial-progress"><progress max="@Steps.Length" value="@(Index + 1)" aria-label="Tutorial step position"></progress><span>Step @(Index + 1) of @Steps.Length</span></div>

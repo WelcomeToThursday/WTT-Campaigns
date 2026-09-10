@@ -60,7 +60,7 @@ def main():
 
     state = read(STATE); root, child = state['root'], state['child']
     if phase == 'restart':
-        snapshot = request('/wtt-seasonal/snapshot', session=root)
+        snapshot = request('/wtt-campaigns/snapshot', session=root)
         check(snapshot['State']['SeasonalPerkEffectParameters'] == state['parameters'], 'Random target roll survives restart')
         check({ALLERGIC, BROKEN, JUICE, SAILOR, DIET} <= set(snapshot['State']['SeasonalPerks']), 'All five selected perks survive restart')
         for session in [root, child]: check([p['Inventory'] for p in profiles(session)] == state['inventories'][session], 'PMC and Scav inventory survive restart '+session)
@@ -69,8 +69,8 @@ def main():
         print('Passed', len(checks), 'restart checks'); return
 
     def select(ids, success=True):
-        snapshot = request('/wtt-seasonal/snapshot', session=root)
-        result = request('/wtt-seasonal/edit', {'PerkIds':ids, 'ExpectedRevision':snapshot['State']['Revision']}, root)
+        snapshot = request('/wtt-campaigns/snapshot', session=root)
+        result = request('/wtt-campaigns/edit', {'PerkIds':ids, 'ExpectedRevision':snapshot['State']['Revision']}, root)
         check(bool(result.get('Error')) != success, 'Selection '+str(ids)); return result
     def event(session, action, success=True):
         before = [p['Inventory'] for p in profiles(session)]
@@ -86,7 +86,7 @@ def main():
     def move(session, item, parent, success=True, x=0, y=1):
         return event(session, {'Action':'Move','item':item,'to':pos(parent,x,y)}, success)
 
-    snapshot = request('/wtt-seasonal/snapshot', session=root)
+    snapshot = request('/wtt-campaigns/snapshot', session=root)
     check(ALLERGIC not in snapshot['Unavailable'] and BROKEN not in snapshot['Unavailable'], 'Both new perks are selectable')
     normal_before = profiles(root)
     selected = select([ALLERGIC, BROKEN, JUICE, SAILOR, DIET])
@@ -101,9 +101,9 @@ def main():
     check(select([ALLERGIC,BROKEN,JUICE,SAILOR,DIET])['State']['SeasonalPerkEffectParameters'] == parameters, 'Repeated edits preserve target roll')
     select([BROKEN]); check(select([ALLERGIC,BROKEN,JUICE,SAILOR,DIET])['State']['SeasonalPerkEffectParameters'] == parameters, 'Deselect/reselect preserves random targets and fixed targets')
     select([ALLERGIC,BROKEN,'6a5789f713792e2c7c0d2a5b'], False)
-    check(request('/wtt-seasonal/snapshot',session=root)['State']['SeasonalPerkEffectParameters'] == parameters, 'Rejected edit preserves roll')
+    check(request('/wtt-campaigns/snapshot',session=root)['State']['SeasonalPerkEffectParameters'] == parameters, 'Rejected edit preserves roll')
     check(profiles(root) == normal_before, 'Selections leave complete normal characters unchanged')
-    request('/wtt-seasonal/switch', {'Mode':'seasonal'}, root)
+    request('/wtt-campaigns/switch', {'Mode':'seasonal'}, root)
     f = state['fixtures'][child]; r = state['fixtures'][root]
     move(child, f['medicine'], f['box'], False)
     move(child, f['case'], f['box'], False)
@@ -129,9 +129,9 @@ def main():
     check(next(i for i in profiles(child)[0]['Inventory']['items'] if i['_id']==f['medicine'])['parentId']==f['box'], 'Selecting restriction preserves existing contents')
     pmc = profiles(child)[0]; location = free_space(pmc, templates, '5755356824597772cb798962')
     event(child, {'Action':'Move','item':f['medicine'],'to':{'id':stash,'container':'main','location':location}})
-    request('/wtt-seasonal/switch', {'Mode':'normal'}, root)
-    request('/wtt-seasonal/switch', {'Mode':'seasonal'}, root)
-    check(request('/wtt-seasonal/snapshot', session=root)['State']['SeasonalPerkEffectParameters'] == parameters, 'Switching preserves saved targets')
+    request('/wtt-campaigns/switch', {'Mode':'normal'}, root)
+    request('/wtt-campaigns/switch', {'Mode':'seasonal'}, root)
+    check(request('/wtt-campaigns/snapshot', session=root)['State']['SeasonalPerkEffectParameters'] == parameters, 'Switching preserves saved targets')
     check(digest(db) == state['databaseHash'], 'Shared templates untouched')
     state['parameters'] = parameters; state['inventories'] = {s:[p['Inventory'] for p in profiles(s)] for s in [root,child]}
     for s in [root,child]: request('/client/game/logout',session=s)

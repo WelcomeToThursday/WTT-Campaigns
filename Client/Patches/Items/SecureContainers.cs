@@ -1,9 +1,9 @@
 using EFT;
 using EFT.InventoryLogic;
-using SeasonalPerks.Shared.Effects.Items;
+using WTT.Campaigns.Shared.Effects.Items;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Patches.Items;
+namespace WTT.Campaigns.Client.Patches.Items;
 
 internal static class SecureContainers
 {

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SeasonalPerks.Shared.Hub;
+namespace WTT.Campaigns.Shared.Hub;
 
 public static class HubRules
 {

@@ -3,14 +3,14 @@ using System.Reflection.Emit;
 using EFT;
 using EFT.InventoryLogic;
 using HarmonyLib;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Items;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Items;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Patches.Items;
+namespace WTT.Campaigns.Client.Patches.Items;
 
-internal class KeyUsagePatch(Type doorType) : ModulePatch("SeasonalPerks.KeyUsage." + doorType.Name)
+internal class KeyUsagePatch(Type doorType) : ModulePatch("WTT.Campaigns.KeyUsage." + doorType.Name)
 {
     protected override MethodBase GetTargetMethod()
     {

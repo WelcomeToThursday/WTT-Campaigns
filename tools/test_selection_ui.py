@@ -12,7 +12,7 @@ def main():
     profile = json.loads(profile_path.read_text(encoding='utf-8-sig'))
     assert profile['info']['username'].startswith('season-test-')
     before = profile_path.read_bytes()
-    snapshot = request('/wtt-seasonal/snapshot', session=state['root'])
+    snapshot = request('/wtt-campaigns/snapshot', session=state['root'])
     assert not snapshot.get('Error'), snapshot.get('Error')
     results = []
     for character in snapshot['Characters']:
@@ -27,11 +27,11 @@ def main():
         assert all(item['_id'] == equipment or item.get('parentId') in ids for item in items)
         assert 'Inventory' not in visual and 'Quests' not in visual
         results.append(character['Mode'] + ': appearance-only contract and equipment tree')
-    icons = PROJECT.parent / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets/Icons'
+    icons = PROJECT.parent / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets/Icons'
     catalogue = json.loads((PROJECT / 'data/catalogue.json').read_text())
     for perk in catalogue['common'] + catalogue['personal']:
         file = icons / Path(perk['imageUrl']).name
-        content = request('/wtt-seasonal/icons/' + perk['id'] + '.png', raw=True)
+        content = request('/wtt-campaigns/icons/' + perk['id'] + '.png', raw=True)
         assert hashlib.sha256(content).digest() == hashlib.sha256(file.read_bytes()).digest(), file.name
         results.append('Perk icon served unchanged: ' + perk['id'])
     assert profile_path.read_bytes() == before, 'Read-only UI request modified the profile file'

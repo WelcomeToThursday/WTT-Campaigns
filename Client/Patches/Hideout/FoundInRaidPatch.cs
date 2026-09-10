@@ -1,10 +1,10 @@
 using System.Reflection;
 using EFT.Hideout;
 using HarmonyLib;
-using SeasonalPerks.Shared.Profiles;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Shared.Profiles;
 
-namespace SeasonalPerks.Client.Patches.Hideout;
+namespace WTT.Campaigns.Client.Patches.Hideout;
 
 internal class FoundInRaidPatch : ModulePatch
 {

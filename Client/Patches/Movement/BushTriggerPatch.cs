@@ -4,10 +4,10 @@ using HarmonyLib;
 using SPT.Reflection.Patching;
 using UnityEngine;
 
-namespace SeasonalPerks.Client.Patches.Movement;
+namespace WTT.Campaigns.Client.Patches.Movement;
 
 // Track physical occupancy independently of audio distance, audio-source availability and AI.
-internal class BushTriggerPatch(string methodName) : ModulePatch("SeasonalPerks.Bush." + methodName)
+internal class BushTriggerPatch(string methodName) : ModulePatch("WTT.Campaigns.Bush." + methodName)
 {
     protected override MethodBase GetTargetMethod()
     {

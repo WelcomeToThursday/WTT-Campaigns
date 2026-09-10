@@ -17,13 +17,13 @@ def main():
                 for value in profiles]
 
     for mode, expected in [('normal', root), ('seasonal', child)]:
-        snapshot = request('/wtt-seasonal/switch', {'Mode': mode}, root)
+        snapshot = request('/wtt-campaigns/switch', {'Mode': mode}, root)
         assert not snapshot.get('Error'), snapshot.get('Error')
         assert snapshot['EffectiveProfileId'] == expected
         baselines[mode] = progression(request('/client/game/profile/list', session=expected))
     for caller in [child, root, child]:
         for mode, expected in [('normal', root), ('seasonal', child), ('normal', root)]:
-            snapshot = request('/wtt-seasonal/switch', {'Mode': mode}, caller)
+            snapshot = request('/wtt-campaigns/switch', {'Mode': mode}, caller)
             assert not snapshot.get('Error'), snapshot.get('Error')
             assert snapshot['ActiveMode'] == mode and snapshot['EffectiveProfileId'] == expected
             profiles = request('/client/game/profile/list', session=expected)

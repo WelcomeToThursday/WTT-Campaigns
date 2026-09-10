@@ -2,12 +2,12 @@ using System.Reflection;
 using EFT;
 using HarmonyLib;
 using Newtonsoft.Json;
-using SeasonalPerks.Client.Profiles;
-using SeasonalPerks.Shared.Contracts;
 using SPT.Common.Http;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Client.Profiles;
+using WTT.Campaigns.Shared.Contracts;
 
-namespace SeasonalPerks.Client.Patches.Session;
+namespace WTT.Campaigns.Client.Patches.Session;
 
 internal class BackendIdentity : ModulePatch
 {
@@ -19,16 +19,16 @@ internal class BackendIdentity : ModulePatch
     [PatchPrefix]
     private static void Prefix(TarkovApplication __instance)
     {
-        SeasonalPerks.Client.Progression.ProgressionClient.Reset();
+        WTT.Campaigns.Client.Progression.ProgressionClient.Reset();
         if (Plugin.PendingSessionId != null)
         {
             Plugin.SessionId = Plugin.PendingSessionId;
-            Plugin.LogInfo("Seasonal switch/save: opening the requested backend session.");
+            Plugin.LogInfo("WTT-Campaigns switch/save: opening the requested backend session.");
         }
         if (Plugin.SessionId == null)
         {
             var snapshot = JsonConvert.DeserializeObject<ClientSnapshot>(
-                RequestHandler.PostJson("/wtt-seasonal/snapshot", JsonConvert.SerializeObject(new Mutation { ProtocolVersion = 2 })),
+                RequestHandler.PostJson("/wtt-campaigns/snapshot", JsonConvert.SerializeObject(new Mutation { ProtocolVersion = 2 })),
                 EftJsonConverters.Converters
             )!;
             Plugin.Accept(snapshot);

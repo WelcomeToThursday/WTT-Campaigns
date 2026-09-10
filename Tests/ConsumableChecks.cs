@@ -1,11 +1,11 @@
 using System.Text.Json.Nodes;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Consumables;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Profiles;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Consumables;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Profiles;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class ConsumableChecks
 {

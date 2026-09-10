@@ -4,7 +4,7 @@ using SPTarkov.Server.Core.Models.Eft.ItemEvent;
 using SPTarkov.Server.Core.Models.Eft.Profile;
 using SPTarkov.Server.Core.Utils.Cloners;
 
-namespace SeasonalPerks.Server.Story;
+namespace WTT.Campaigns.Server.Story;
 
 // Native helpers must see the staged full profile, including mail and reward state.
 // AsyncLocal keeps autosaves and unrelated requests outside this transaction.

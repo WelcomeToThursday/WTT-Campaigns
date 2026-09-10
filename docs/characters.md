@@ -24,6 +24,6 @@ Effects, starting grants, document loot, reward progress, exchanges and trader u
 
 The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
 
-`tools/unity/SeasonalCharactersPreview.cs` runs against the synchronized UI sources in CJ-SDK. It renders the carousel, season picker, delete/wipe confirmations and wiped card at 1920×1080, 1280×720 and 2560×1080, with interaction checks for target identity, cancellation, wrapping and recreation. Editor equipment images are stand-ins; installed-game animation, model lighting and reconnect behavior still require an in-game check.
+`tools/unity/CampaignsCharactersPreview.cs` runs against the synchronized UI sources in CJ-SDK. It renders the carousel, season picker, delete/wipe confirmations and wiped card at 1920×1080, 1280×720 and 2560×1080, with interaction checks for target identity, cancellation, wrapping and recreation. Editor equipment images are stand-ins; installed-game animation, model lighting and reconnect behavior still require an in-game check.
 
 Build client and server together. The carousel uses the existing artwork bundle; no new recovered media is required. `tools/package_ui.ps1` builds, validates and installs the matching update through MSBuild. It never stops or starts a server or client.

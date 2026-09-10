@@ -8,7 +8,7 @@ from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LOGS = Path(r"F:\Git Repos\PacketSniffer\SPTarkov.PacketSniffer\bin\Debug\net9.0\logs")
-ASSETS = ROOT.parent / "CJ-SDK/Assets/Mods/SeasonalPerks.Assets"
+ASSETS = ROOT.parent / "CJ-SDK/Assets/Mods/WTT-Campaigns.Assets"
 
 def read(path):
     return json.loads(path.read_text(encoding="utf-8-sig"))
@@ -57,7 +57,7 @@ def main():
         url = "https://s3-prod.escapefromtarkov.com/pvp-season" + image
         path = ASSETS / "Icons" / Path(image).name
         if args.download_icons and not path.exists():
-            with urlopen(Request(url, headers={"User-Agent": "SeasonalPerks-AssetImport/1.0"}), timeout=30) as response:
+            with urlopen(Request(url, headers={"User-Agent": "Campaigns-AssetImport/1.0"}), timeout=30) as response:
                 raw = response.read()
             assert raw[:8] == b"\x89PNG\r\n\x1a\n", f"Not a PNG: {url}"
             assert struct.unpack(">II", raw[16:24]) == (272, 272), f"Unexpected icon size: {url}"
@@ -68,7 +68,7 @@ def main():
             assert raw[:8] == b"\x89PNG\r\n\x1a\n"
             assert struct.unpack('>II', raw[16:24]) == (272, 272), f'Unexpected existing icon size: {path}'
             manifest.append({"perkId": perk["id"], "asset": "Icons/" + path.name, "sourceUrl": url, "sha256": hashlib.sha256(raw).hexdigest(), "size": len(raw)})
-        perk["imageUrl"] = "/wtt-seasonal/icons/" + perk["id"] + ".png"
+        perk["imageUrl"] = "/wtt-campaigns/icons/" + perk["id"] + ".png"
     save(ROOT / "data/catalogue.json", catalogue)
     save(ASSETS / "provenance.json", {"icons": manifest})
     print(f"Imported {len(perks)} perks, {len(keys)} locale entries, {len(manifest)} icons, {len(fixtures)} sanitized profile fixtures.")

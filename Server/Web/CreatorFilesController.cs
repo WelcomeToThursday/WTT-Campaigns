@@ -1,13 +1,13 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Seasons;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Server.Web;
+namespace WTT.Campaigns.Server.Web;
 
 [ApiController]
 [Authorize(Policy = "Administrator")]
-[Route("wtt-seasonal/creator")]
+[Route("wtt-campaigns/creator")]
 public sealed class CreatorFilesController(SeasonRepository repository) : ControllerBase
 {
     [HttpGet("packs/{key}/download")]

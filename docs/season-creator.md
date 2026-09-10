@@ -2,7 +2,7 @@
 
 Current workflow: [build, validate and always install](build-deployment.md). Never stop or start servers or clients. Any isolated-server results below are historical; those fixtures are retired.
 
-The creator runs inside the installed SPT 4.1.3 Blazor host at `/wtt-seasonal/creator`. It uses the host’s interactive server rendering, MudBlazor layout, and `Administrator` policy. Install the full client/server package together; authored seasons require protocol 2. The isolated test installation is retired; use the installed server address when the user has it running.
+The creator runs inside the installed SPT 4.1.3 Blazor host at `/wtt-campaigns/creator`. It uses the host’s interactive server rendering, MudBlazor layout, and `Administrator` policy. Install the full client/server package together; authored seasons require protocol 2. The isolated test installation is retired; use the installed server address when the user has it running.
 
 ## Workspace and help
 

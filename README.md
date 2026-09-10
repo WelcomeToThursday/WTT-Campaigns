@@ -1,8 +1,8 @@
-# WTT-Seasonal
+# WTT-Campaigns
 
 Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
 
-The client requires **UnityToolkit 2.0.2 or later**, installed with its plugin libraries and prepatcher. Seasonal uses UniTask for presentation timing and callbacks, ZLinq queries and ZString text buffers; install UnityToolkit separately before loading Seasonal. Its assemblies are not bundled in Seasonal packages.
+The client requires **UnityToolkit 2.0.2 or later**, installed with its plugin libraries and prepatcher. WTT-Campaigns uses UniTask for presentation timing and callbacks, ZLinq queries and ZString text buffers; install UnityToolkit separately before loading WTT-Campaigns. Its assemblies are not bundled in WTT-Campaigns packages.
 
 Build **0.5.1** exposes the Story tab and trader visits to Seasonal characters even when the season has no authored story content. Existing season content and progression stay unchanged.
 
@@ -10,9 +10,9 @@ Build **0.5.0** is the [story-system implementation candidate](docs/story-system
 
 Build **0.4.0** adds [live trader and task progression](docs/trader-progression.md) for normal and seasonal characters: captured loyalty requirements without spending gates, reputation changes for 381 existing tasks, and a grouped native task list. Missing live tasks are excluded. Existing reputation and task progress are preserved; loyalty may decrease under the new thresholds. Install both client and server. In-game visual acceptance remains a release gate.
 
-Build **0.3.0** adds the [Season Creator](docs/season-creator.md), hosted in SPT’s administrator web interface at `/wtt-seasonal/creator`. Create and duplicate drafts, configure supported content, validate and export packs, and select a default season for the next restart. The [character selector](docs/characters.md) supports several characters per season, simultaneous playable seasons, a wrapping carousel, and confirmed deletion or achievement-preserving wipes. Install the client and server together. Browser interaction and installed-game visual acceptance remain release gates.
+Build **0.3.0** adds the [Season Creator](docs/season-creator.md), hosted in SPT’s administrator web interface at `/wtt-campaigns/creator`. Create and duplicate drafts, configure supported content, validate and export packs, and select a default season for the next restart. The [character selector](docs/characters.md) supports several characters per season, simultaneous playable seasons, a wrapping carousel, and confirmed deletion or achievement-preserving wipes. Install the client and server together. Browser interaction and installed-game visual acceptance remain release gates.
 
-Build **0.2.0** adds [Battle Pass gameplay](docs/battle-pass-gameplay.md) to the Seasonal hub: document acquisition, local claims, exchanges and persistent progress, using the amended capture. WTT-Seasonal includes the eight document items and two season crate definitions. Missing quest, customization and crate-content dependencies remain explicitly locked; online purchases stay disabled. Install both client and server, plus **WTT-ContentBackport 2.0.1 or later** and its dependencies. Seasonal supplies the item JSON and localization; Backport supplies the document and crate bundles.
+Build **0.2.0** adds [Battle Pass gameplay](docs/battle-pass-gameplay.md) to the Seasonal hub: document acquisition, local claims, exchanges and persistent progress, using the amended capture. WTT-Campaigns includes the eight document items and two season crate definitions. Missing quest, customization and crate-content dependencies remain explicitly locked; online purchases stay disabled. Install both client and server, plus **WTT-ContentBackport 2.0.1 or later** and its dependencies. Seasonal supplies the item JSON and localization; Backport supplies the document and crate bundles.
 
 The project imports the captured 39-entry catalogue and English localization, serves all perk icons from the local SPT server, creates an independent seasonal PMC/Scav profile, persists selections and grant receipts, and supplies a client selection screen with recovered perk cards and a confirmation window. Thirty-three catalogue entries currently have implementations; six remain unavailable in selection. Actual in-game switching and gameplay still need validation.
 
@@ -26,9 +26,9 @@ Seasonal character files are stored separately from launcher accounts in `SPT_Ru
 
 UI build **0.1.7** includes the seasonal creation sequence and a native reconnect adapter for character switching. See [UI changes and validation limits](docs/ui.md).
 
-Open `WTT-Seasonal.slnx` in this directory. Each C# project has its own directory:
+Open `WTT-Campaigns.slnx` in this directory. Each C# project has its own directory:
 
-Projects and built assemblies use the `WTT-Seasonal` prefix (for example, `WTT-Seasonal.Client.csproj` produces `WTT-Seasonal.Client.dll`). C# namespaces remain under `SeasonalPerks` for compatibility with the companion Unity preview sources.
+Projects and built assemblies use the `WTT-Campaigns` prefix (for example, `WTT-Campaigns.Client.csproj` produces `WTT-Campaigns.Client.dll`). C# and Unity preview namespaces use `WTT.Campaigns`. Both components identify the mod as `WTT-Campaigns` with GUID `com.wtt.campaigns`; routes use `/wtt-campaigns`.
 
 - `Client`: BepInEx plugin, SPT `ModulePatch` hooks and UI controllers.
 - `UI`: Unity views shared by the client and CJ-SDK preview, organized into [screens, models, creation, profiles, modifiers, controls and audio](docs/ui-structure.md).
@@ -39,7 +39,7 @@ Projects and built assemblies use the `WTT-Seasonal` prefix (for example, `WTT-S
 
 Client and server code use [folders with matching feature namespaces](docs/client-server-structure.md). Client registration lives in `Client/Patches/PatchRegistration.cs`; server patches are discovered through SPT dependency injection. See [patch organization and extension guide](docs/patches.md).
 
-Asset sources, all 39 PNGs, recovered layout data and the Unity editor builder are in `../CJ-SDK/Assets/Mods/SeasonalPerks.Assets`. The UI bundle contains layout prefabs, all 26 decorative artwork sprites, fonts and materials. **Perk icons remain outside the bundle.** Icons are fetched lazily by perk ID from `/wtt-seasonal/icons/{id}.png`. Installed operation does not use the live backend or CDN.
+Asset sources, all 39 PNGs, recovered layout data and the Unity editor builder are in `../CJ-SDK/Assets/Mods/WTT-Campaigns.Assets`. The UI bundle contains layout prefabs, all 26 decorative artwork sprites, fonts and materials. **Perk icons remain outside the bundle.** Icons are fetched lazily by perk ID from `/wtt-campaigns/icons/{id}.png`. Installed operation does not use the live backend or CDN.
 
 Client image downloads share a session cache across the hub, banner, story journal and perk selector. Requests for the same server, image, season and pack revision share one download; reopening screens reuses the encoded bytes while each screen releases its own textures. The cache retains up to 64 MiB / 256 images, evicts least recently used entries, and limits downloads to six at a time. Failed, empty or undecodable responses can be retried. Pack revision changes use fresh entries; restarting the game clears the cache. No images are cached on disk.
 
@@ -49,7 +49,7 @@ Formatting and shared Rider/Visual Studio defaults follow SP-Tushonka/server-csh
 
 Run `dotnet msbuild build.proj` to build Release, validate and install the matching update. Paths resolve relative to this checkout: the game is two directories above it, and the companion Unity project is `../CJ-SDK`. Local MSBuild path overrides apply to both compilation and deployment. For an isolated UI assembly update, use `dotnet msbuild build.proj -p:DeploymentScope=UI`.
 
-Use Unity 2022.3.43f1 to open CJ-SDK and run **SDK / Seasonal Perks / Build recovered UI** when rebuilding the local UI bundle. The game-derived bundles, media and icons remain local dependencies.
+Use Unity 2022.3.43f1 to open CJ-SDK and run **SDK / WTT-Campaigns / Build recovered UI** when rebuilding the local UI bundle. The game-derived bundles, media and icons remain local dependencies.
 
 `tools/package.ps1` builds, validates, stages and installs a complete matching update. `tools/package_ui.ps1` is a compatibility alias for the matching package. Both return the timestamped release directory. Existing packages can be installed with `tools/install_matching.ps1 -Package <path>` through the same MSBuild deployment targets.
 

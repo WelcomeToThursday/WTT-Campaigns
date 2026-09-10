@@ -1,4 +1,4 @@
-namespace SeasonalPerks.UI.Creation;
+namespace WTT.Campaigns.UI.Creation;
 
 public sealed class CreationDraft
 {

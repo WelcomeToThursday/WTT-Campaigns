@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace SeasonalPerks.UI.Modifiers;
+namespace WTT.Campaigns.UI.Modifiers;
 
 public sealed class PerkCardHover : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler
 {

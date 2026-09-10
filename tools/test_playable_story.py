@@ -25,21 +25,21 @@ def main():
     request('/client/game/profile/create', {'side': 'Usec', 'nickname': 'StoryNormal', 'headId': cosmetic('5cc085e214c02e000c6bea67'), 'voiceId': cosmetic('5fc100cf95572123ae738483')}, root)
     normal = request('/client/game/profile/list', session=root)[0]
     base = {'ProtocolVersion': 2, 'SeasonId': fixture['SeasonId']}
-    created = request('/wtt-seasonal/create', {**base, 'OperationId': secrets.token_hex(16), 'Nickname': 'FieldTest', 'Side': 'Usec', 'PerkIds': [fixture['PerkId']]}, root)
+    created = request('/wtt-campaigns/create', {**base, 'OperationId': secrets.token_hex(16), 'Nickname': 'FieldTest', 'Side': 'Usec', 'PerkIds': [fixture['PerkId']]}, root)
     check(not created.get('Error'), 'Create separate test character: ' + str(created.get('Error')))
     character = created['SelectedCharacterId']
-    switched = request('/wtt-seasonal/switch', {**base, 'Mode': 'seasonal', 'CharacterId': character}, root)
+    switched = request('/wtt-campaigns/switch', {**base, 'Mode': 'seasonal', 'CharacterId': character}, root)
     check(not switched.get('Error'), 'Switch to Story Sandbox')
     child = switched['EffectiveProfileId']
     identity = {'Version': 2, 'SeasonId': fixture['SeasonId'], 'CharacterId': child}
     def read():
-        result = request('/wtt-seasonal/story', identity, child)
+        result = request('/wtt-campaigns/story', identity, child)
         assert not result.get('Error'), result.get('Error')
         return result
     def mutate(operation, target, item_ids=()):
         state = read()
         payload = {**identity, 'ExpectedRevision': state['Revision'], 'OperationId': secrets.token_hex(16), 'ConversationId': (state['State'].get('Conversation') or {}).get('Id', ''), 'Target': target, 'ItemIds': list(item_ids)}
-        result = request('/wtt-seasonal/story/' + operation, payload, child)
+        result = request('/wtt-campaigns/story/' + operation, payload, child)
         check(not result.get('Error'), operation + ' succeeds: ' + str(result.get('Error')))
         return result, payload
     def profile():
@@ -72,12 +72,12 @@ def main():
     check(state['Facts']['QuestStatuses'][fixture['QuestId']] == 'Success', 'Native quest completed')
     check(after['Info']['Experience'] - pre_reward['Info']['Experience'] == 250, 'Exactly 250 XP awarded')
     check(len(state['State']['Notes']) == 3, 'Completion note appears in journal')
-    replay = request('/wtt-seasonal/story/select', completed, child)
+    replay = request('/wtt-campaigns/story/select', completed, child)
     check(replay.get('Replayed') and profile()['Info']['Experience'] == after['Info']['Experience'], 'Reward retry cannot duplicate XP')
     mutate('select', fixture['LeaveId'])
     state, _ = mutate('start', fixture['EntryId'])
     check(all(not choice(state, key) for key in ['AcceptId', 'HandoverId', 'FinishId']), 'Completed visit cannot repeat quest or rewards')
-    request('/wtt-seasonal/switch', {**base, 'Mode': 'normal'}, root)
+    request('/wtt-campaigns/switch', {**base, 'Mode': 'normal'}, root)
     normal_after = request('/client/game/profile/list', session=root)[0]
     check(normal_after['Inventory'] == normal['Inventory'] and normal_after['Info']['Experience'] == normal['Info']['Experience'] and normal_after['Quests'] == normal['Quests'], 'Normal character inventory, XP and quests preserved')
     saved = json.loads((server / 'user/profiles' / (child + '.json')).read_text())

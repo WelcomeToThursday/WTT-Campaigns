@@ -9,7 +9,7 @@ def main():
     root = state['root']
     profile = json.loads((SERVER / 'user/profiles' / (root + '.json')).read_text(encoding='utf-8-sig'))
     assert profile['info']['username'].startswith('carousel-test-')
-    link_path = SERVER / 'user/profileData' / root / 'cjSeasonalPerksAccount.json'
+    link_path = SERVER / 'user/profileData' / root / 'wttCampaignsAccount.json'
     if sys.argv[1] == 'prepare':
         assert not (SERVER / 'test-server.pid').exists(), 'Stop the isolated server first'
         link = json.loads(link_path.read_text())
@@ -25,15 +25,15 @@ def main():
         print('Prepared synthetic legacy account link')
         return
     for _ in range(2):
-        snapshot = request('/wtt-seasonal/snapshot', {'ProtocolVersion': 2}, root)
+        snapshot = request('/wtt-campaigns/snapshot', {'ProtocolVersion': 2}, root)
         check(not snapshot.get('Error'), 'Migrated snapshot loads')
         check({c['Id'] for c in snapshot['Characters']} == {root, *state['remaining']}, 'Current and archived season characters migrate once')
         for child in state['remaining']:
-            selected = request('/wtt-seasonal/switch', {'ProtocolVersion': 2, 'Mode': 'seasonal', 'CharacterId': child}, root)
+            selected = request('/wtt-campaigns/switch', {'ProtocolVersion': 2, 'Mode': 'seasonal', 'CharacterId': child}, root)
             check(selected.get('EffectiveProfileId') == child, 'Migrated character remains selectable by ID')
-            hub = request('/wtt-seasonal/hub', {'ProtocolVersion': 2}, child)
+            hub = request('/wtt-campaigns/hub', {'ProtocolVersion': 2}, child)
             check(hub.get('SeasonId') == selected.get('SeasonId'), 'Migrated character retains its season rewards')
-        request('/wtt-seasonal/switch', {'ProtocolVersion': 2, 'Mode': 'normal'}, root)
+        request('/wtt-campaigns/switch', {'ProtocolVersion': 2, 'Mode': 'normal'}, root)
     saved = json.loads(link_path.read_text())
     check(len(saved['Characters']) == 2, 'Migrated character list is persisted without duplicates')
     print('PASS', len(checks), 'legacy migration/restart checks')

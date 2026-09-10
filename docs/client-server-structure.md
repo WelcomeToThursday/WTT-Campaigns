@@ -1,6 +1,6 @@
 # Client and server organization
 
-Namespaces match folders beneath each project, such as `SeasonalPerks.Client.Profiles` and `SeasonalPerks.Server.Hub`. Keep each top-level type in its own named file and keep partial class files together. The plugin and server entry points remain in their project root namespaces.
+Namespaces match folders beneath each project, such as `WTT.Campaigns.Client.Profiles` and `WTT.Campaigns.Server.Hub`. Keep each top-level type in its own named file and keep partial class files together. The plugin and server entry points remain in their project root namespaces.
 
 ## Client
 

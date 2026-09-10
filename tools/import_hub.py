@@ -108,7 +108,7 @@ def main():
             if copies:
                 dest.write_bytes(copies[-1].read_bytes())
             elif args.download_images:
-                with urlopen(Request(url, headers={'User-Agent': 'SeasonalPerks-AssetImport/1.0'}), timeout=40) as response:
+                with urlopen(Request(url, headers={'User-Agent': 'Campaigns-AssetImport/1.0'}), timeout=40) as response:
                     raw = response.read()
                 assert raw.startswith(b'\x89PNG\r\n\x1a\n'), path
                 dest.write_bytes(raw)

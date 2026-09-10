@@ -1,10 +1,10 @@
 using System.Reflection;
 using EFT.UI;
 using HarmonyLib;
-using SeasonalPerks.Client.UI;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Client.UI;
 
-namespace SeasonalPerks.Client.Patches.UI;
+namespace WTT.Campaigns.Client.Patches.UI;
 
 internal sealed class SkillsTabPatch : ModulePatch
 {
@@ -19,7 +19,7 @@ internal sealed class SkillsTabPatch : ModulePatch
         // Show activates the screen, allowing Awake to create the native tab group.
         try
         {
-            var component = __instance.GetComponent<SeasonalSkillsTab>() ?? __instance.gameObject.AddComponent<SeasonalSkillsTab>();
+            var component = __instance.GetComponent<CampaignSkillsTab>() ?? __instance.gameObject.AddComponent<CampaignSkillsTab>();
             component.Initialize(__instance, profile.Side == EFT.EPlayerSide.Savage);
         }
         catch (Exception exception)

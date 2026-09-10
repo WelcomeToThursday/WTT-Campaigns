@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Client.Hub;
+namespace WTT.Campaigns.Client.Hub;
 
 internal sealed class PendingHubOperation
 {

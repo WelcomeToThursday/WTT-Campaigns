@@ -1,7 +1,4 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Shared.Progression;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Helpers.Commerce;
@@ -13,9 +10,12 @@ using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Shared.Progression;
 using Path = System.IO.Path;
 
-namespace SeasonalPerks.Server.Progression;
+namespace WTT.Campaigns.Server.Progression;
 
 [Injectable(InjectionType.Singleton, OnLoadOrder.PostLoad + 700)]
 public sealed class ProgressionService(TemplateTable templates, TradersTable traders, JsonUtil json, ICloner cloner, RewardHelper rewards)

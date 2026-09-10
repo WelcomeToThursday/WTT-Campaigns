@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
-using SeasonalPerks.UI.BattlePass;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.BattlePass;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.UI.Screens;
+namespace WTT.Campaigns.UI.Screens;
 
 public sealed partial class SeasonsHubScreen
 {

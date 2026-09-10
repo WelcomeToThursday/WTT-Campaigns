@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 
-namespace SeasonalPerks.UI.Media;
+namespace WTT.Campaigns.UI.Media;
 
 public sealed class StoryRoomLighting : MonoBehaviour
 {

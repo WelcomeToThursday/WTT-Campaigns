@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Shared.Effects;
+namespace WTT.Campaigns.Shared.Effects;
 
 /// <summary>The captured catalogue contract. Optional fields belong to different effect families.</summary>
 public sealed class PerkEffect : ExtensibleJsonModel

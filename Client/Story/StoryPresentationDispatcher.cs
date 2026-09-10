@@ -1,10 +1,10 @@
 using Cysharp.Threading.Tasks;
 using EFT.AnimationSequencePlayer;
 using EFT.UI;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Story;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal static class StoryPresentationDispatcher
 {

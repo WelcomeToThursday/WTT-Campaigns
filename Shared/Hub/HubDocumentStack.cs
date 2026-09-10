@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SeasonalPerks.Shared.Hub;
+namespace WTT.Campaigns.Shared.Hub;
 
 public sealed class HubDocumentStack
 {

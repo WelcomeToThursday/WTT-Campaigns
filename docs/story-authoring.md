@@ -37,7 +37,7 @@ See `Shared/Story/StoryDefinition.cs` and its adjacent typed contracts for the c
 
 ## Media and animation
 
-Place reviewed bundles under `BepInEx/plugins/SeasonalPerks/StoryMedia/`. Use a unique path such as `packs/<season-id>/visit-media.bundle` for each authored media set. Register each asset in `Story.Media`:
+Place reviewed bundles under `BepInEx/plugins/WTT-Campaigns/StoryMedia/`. Use a unique path such as `packs/<season-id>/visit-media.bundle` for each authored media set. Register each asset in `Story.Media`:
 
 ```json
 {
@@ -55,7 +55,7 @@ Kinds are Image, Audio, Video, Cinematic and TraderScene. Assign optional Trader
 
 A cinematic prefab must have an **inactive root**, a single named `StoryCamera`, a finite PlayableDirector with Play On Awake disabled, and all explicit bindings inside its dependency closure. Use a reviewed camera layer/mask and no gameplay registration scripts. A Video resource references a VideoClip. The supplied synthetic Timeline moves a marker for five seconds and contains only native Timeline scripts.
 
-Build the example with `SeasonalPerks.Tools.SeasonalStoryExampleBuilder.Build` in the matching SDK, then run:
+Build the example with `WTT.Campaigns.Tools.CampaignsStoryExampleBuilder.Build` in the matching SDK, then run:
 
 ```powershell
 .\.tools\Scripts\python.exe tools/finalize_story_example.py
@@ -84,9 +84,9 @@ These steps need the locally supplied donor, beta game, AssetRipper, Python depe
 1. `recover_story.py` inventories UI hierarchies/sprites and the eight scenes.
 2. `prepare_story_scene.py` and `prepare_story_dependencies.py` repair donor type trees and generic dictionaries for export. Export the prepared dependency set with AssetRipper into `Research/Story/CompleteTradersExport`.
 3. `recover_story_shaders.py` supplies SDK material/shader inputs. `import_story_traders.py` imports only the reviewed closure and strips unsupported gameplay scripts; `recover_story_fence.py` adapts the whitelisted Fence voice clips. `import_story_peacekeeper.py` imports the bounded beta actor/accessory assets needed for the custom room.
-4. Sync UI preview sources with `tools/sync_ui_preview.py`. Copy `tools/unity/SeasonalStoryBuilder.cs`, `SeasonalPeacekeeperBuilder.cs`, `SeasonalStoryPreview.cs` and related builders into the SDK Editor assembly, converting file-scoped namespaces for Unity C# 9.
-5. Execute `SeasonalPerks.Tools.SeasonalStoryBuilder.Build`, then `tools/finalize_story_traders.py`. Selective rebuild/finalization is supported for Peacekeeper and Fence. Finalization restores compiled shaders and remaps scripts to beta assemblies; skipping it produces unusable intermediate bundles.
-6. Execute `SeasonalPerks.Tools.SeasonalStoryPreview.Render` for all room previews. `SeasonalStoryUiPreview.Render` checks journal visibility/scroll at three sizes and builds the synthetic cinematic; finalize that example afterward.
+4. Sync UI preview sources with `tools/sync_ui_preview.py`. Copy `tools/unity/CampaignsStoryBuilder.cs`, `CampaignsPeacekeeperBuilder.cs`, `CampaignsStoryPreview.cs` and related builders into the SDK Editor assembly, converting file-scoped namespaces for Unity C# 9.
+5. Execute `WTT.Campaigns.Tools.CampaignsStoryBuilder.Build`, then `tools/finalize_story_traders.py`. Selective rebuild/finalization is supported for Peacekeeper and Fence. Finalization restores compiled shaders and remaps scripts to beta assemblies; skipping it produces unusable intermediate bundles.
+6. Execute `WTT.Campaigns.Tools.CampaignsStoryPreview.Render` for all room previews. `CampaignsStoryUiPreview.Render` checks journal visibility/scroll at three sizes and builds the synthetic cinematic; finalize that example afterward.
 7. Run `tools/package.ps1`. Keep all game assets and generated bundles out of Git.
 
 The local prepared/export directories are large. Preserve the manifests and exact donor version when rebuilding. A newer donor needs a fresh dependency/script/shader review.

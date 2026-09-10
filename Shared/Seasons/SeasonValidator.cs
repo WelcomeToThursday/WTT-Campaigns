@@ -1,8 +1,8 @@
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Native;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Shared.Seasons;
+namespace WTT.Campaigns.Shared.Seasons;
 
 public static class SeasonValidator
 {

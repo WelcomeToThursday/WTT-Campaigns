@@ -14,6 +14,6 @@ You can leave and return before or after handing over the bandage. Completion ca
 
 ## Rebuilding the content
 
-Run the Tests authoring command with `--test-story-season`, the installed SeasonalPerks server mod directory, and a new output directory. The output includes a validated ZIP, a published pack with checksums, and `test-story.json` containing the generated identifiers. The helper refuses to overwrite an existing output directory.
+Run the Tests authoring command with `--test-story-season`, the installed WTT-Campaigns server mod directory, and a new output directory. The output includes a validated ZIP, a published pack with checksums, and `test-story.json` containing the generated identifiers. The helper refuses to overwrite an existing output directory.
 
 The historical `tools/test_playable_story.py` fixture used a dedicated synthetic runtime. That workflow is retired. Use [offline validation and mandatory installation](../build-deployment.md); never stop or start servers or clients.

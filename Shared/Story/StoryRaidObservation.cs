@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 // Ephemeral local raid facts. Never merge this projection into the saved PMC.
 public sealed class StoryRaidObservation

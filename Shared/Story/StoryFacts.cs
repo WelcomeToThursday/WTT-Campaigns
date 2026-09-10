@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 // Constructed by the authority from the active profile plus validated, ephemeral raid observations.
 public sealed class StoryFacts

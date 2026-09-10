@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
 using SPTarkov.Server.Core.Utils;
 
-namespace SeasonalPerks.Server.Profiles;
+namespace WTT.Campaigns.Server.Profiles;
 
 // SPT's item and customization contracts use its System.Text.Json converters.
 // Keep those converters when embedding an appearance in our Newtonsoft response.

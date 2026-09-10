@@ -2,11 +2,11 @@ using System.Reflection;
 using EFT.InventoryLogic;
 using HarmonyLib;
 using Newtonsoft.Json;
-using SeasonalPerks.Client.Hub;
 using SPT.Common.Http;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Client.Hub;
 
-namespace SeasonalPerks.Client.Patches.Items;
+namespace WTT.Campaigns.Client.Patches.Items;
 
 internal class HubDocumentPickupPatch : ModulePatch
 {

@@ -1,12 +1,12 @@
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Trading;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Ragfair;
 using SPTarkov.Server.Core.Utils.Cloners;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Trading;
 
-namespace SeasonalPerks.Server.Effects;
+namespace WTT.Campaigns.Server.Effects;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class TraderPriceEffects(ICloner cloner)

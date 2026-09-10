@@ -12,7 +12,7 @@ def main():
     profile_path = SERVER/'user/profiles'/f'{child}.json'
     profile = json.loads(profile_path.read_text(encoding="utf-8"))
     assert profile['info']['username'].startswith('season-test-'), 'Synthetic accounts only'
-    link_path = SERVER/'user/profileData'/root/'cjSeasonalPerksAccount.json'
+    link_path = SERVER/'user/profileData'/root/'wttCampaignsAccount.json'
     if args.phase == 'prepare':
         assert not (SERVER/'test-server.pid').exists(), 'Stop the isolated server before preparing fixtures'
         # Simulate a saved raid marker after the game was interrupted.
@@ -26,21 +26,21 @@ def main():
         profile_path.write_text(json.dumps(profile))
         print('Prepared isolated restart fixtures.')
         return
-    snapshot = request('/wtt-seasonal/snapshot', session=root)
+    snapshot = request('/wtt-campaigns/snapshot', session=root)
     check(snapshot['ActiveMode']=='seasonal' and snapshot['EffectiveProfileId']==child, 'Active character survives server restart')
     check(snapshot['State']['Revision']==state['revision'], 'Selection revision survives restart')
-    child_snapshot = request('/wtt-seasonal/snapshot', session=child)
+    child_snapshot = request('/wtt-campaigns/snapshot', session=child)
     check(child_snapshot==snapshot, 'Launching seasonal profile resolves its original account')
-    check(bool(request('/wtt-seasonal/switch', {'Mode':'normal'}, root).get('Error')), 'Raid marker blocks account switching after restart')
+    check(bool(request('/wtt-campaigns/switch', {'Mode':'normal'}, root).get('Error')), 'Raid marker blocks account switching after restart')
     mutation = {'PerkIds':state['selected'], 'ExpectedRevision':state['revision']}
-    check(bool(request('/wtt-seasonal/edit', mutation, child).get('Error')), 'Raid marker blocks perk editing through seasonal identity')
+    check(bool(request('/wtt-campaigns/edit', mutation, child).get('Error')), 'Raid marker blocks perk editing through seasonal identity')
     request('/client/game/start', session=child)
-    edited = request('/wtt-seasonal/edit', mutation, child)
+    edited = request('/wtt-campaigns/edit', mutation, child)
     check(not edited.get('Error'), 'Fresh solo client session clears interrupted raid marker')
     check(edited['State']['AppliedGrants']==snapshot['State']['AppliedGrants'], 'Restart and edit preserve grant receipts')
     seasonal = request('/client/game/profile/list', session=child)
     check(next(s['Progress'] for s in seasonal[0]['Skills']['Common'] if s['Id']=='Strength')==500, 'Reopening and editing never refill a previously granted preset')
-    normal = request('/wtt-seasonal/switch', {'Mode':'normal'}, child)
+    normal = request('/wtt-campaigns/switch', {'Mode':'normal'}, child)
     check(normal['EffectiveProfileId']==root, 'Seasonal identity switches back to the true normal profile')
     profile_after = request('/client/game/profile/list', session=root)
     baseline=json.loads((PROJECT/'Testing/normal-baseline.json').read_text(encoding='utf-8'))

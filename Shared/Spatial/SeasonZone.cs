@@ -1,8 +1,8 @@
-using SeasonalPerks.Shared.Native;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Shared.Spatial;
+namespace WTT.Campaigns.Shared.Spatial;
 
 public sealed class SpatialVector
 {

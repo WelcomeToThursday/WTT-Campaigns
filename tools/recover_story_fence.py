@@ -7,7 +7,7 @@ import UnityPy
 
 ROOT = Path(__file__).resolve().parents[1]
 SDK = ROOT.parent / 'CJ-SDK'
-TARGET = SDK / 'Assets/Mods/SeasonalPerks.Assets/StoryRecovered'
+TARGET = SDK / 'Assets/Mods/WTT-Campaigns.Assets/StoryRecovered'
 
 
 def recover():

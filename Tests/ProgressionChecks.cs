@@ -1,8 +1,8 @@
 using Mono.Cecil;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Progression;
+using WTT.Campaigns.Shared.Progression;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class ProgressionChecks
 {

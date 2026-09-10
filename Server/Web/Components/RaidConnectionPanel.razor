@@ -1,9 +1,9 @@
-@using SeasonalPerks.Server.Web.Authoring
-@using SeasonalPerks.Shared.Authoring
+@using WTT.Campaigns.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Authoring
 @implements IDisposable
 @inject RaidAuthoringService Authoring
 <section class="editor-card connected-raid" aria-label="Connected raid">
-    <header><h3>Connected raid</h3><p>Enable authoring in the game's Seasonal Perks settings, enter a raid, then connect it here. Draft edits synchronize; publishing remains explicit.</p></header>
+    <header><h3>Connected raid</h3><p>Enable authoring in the game's WTT-Campaigns settings, enter a raid, then connect it here. Draft edits synchronize; publishing remains explicit.</p></header>
     <div class="row"><select aria-label="Available raids" @bind="_client"><option value="">Choose a raid…</option>@foreach (var c in _clients) { <option value="@c.Id">@c.Location · @c.CharacterId · @(c.DraftId == Draft.Id ? "Connected to this draft" : "Available")</option> }</select><button disabled="@(_client.Length == 0)" @onclick="Connect">Connect draft</button><button disabled="@(!_clients.Any(c => c.DraftId == Draft.Id))" @onclick="Disconnect">Disconnect</button></div>
     <p role="status">@Status @_message</p>
     @foreach (var c in _clients.Where(c => c.DraftId == Draft.Id))

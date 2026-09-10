@@ -1,10 +1,10 @@
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring;
 
 internal sealed class RaidEditorView : IDisposable
 {
@@ -15,10 +15,10 @@ internal sealed class RaidEditorView : IDisposable
     internal RaidEditorView()
     {
         _bundle =
-            AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonal_raid_editor.bundle"))
+            AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_raid_editor.bundle"))
             ?? throw new InvalidOperationException("Install the CJ-SDK raid editor UI bundle.");
         var prefab =
-            _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/raideditor/seasonalraideditor.prefab")
+            _bundle.LoadAsset<GameObject>("assets/mods/wtt-campaigns.assets/raideditor/seasonalraideditor.prefab")
             ?? throw new InvalidOperationException("The raid editor prefab is missing.");
         Root = UnityEngine.Object.Instantiate(prefab);
         _controls = Root.GetComponentsInChildren<Transform>(true)

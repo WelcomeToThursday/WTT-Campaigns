@@ -16,7 +16,7 @@ def main():
     asset = next(f for f in env.files.values() if hasattr(f, 'objects'))
     fields = next(c['fields'] for c in reference['components'] if c.get('type') == 'EFT.UI.Quests.MainQuestNotificationView')
     fields['_frameSprite'] = {'m_FileID': 2, 'm_PathID': 311}
-    sdk = DEV / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets'
+    sdk = DEV / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets'
     output = sdk / 'StoryNotifications/Artwork'
     shared = sdk / 'StoryStatusIcons'
     output.mkdir(parents=True, exist_ok=True)

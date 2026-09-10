@@ -1,11 +1,11 @@
 using Cysharp.Threading.Tasks;
-using SeasonalPerks.Shared.Story;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Shared.Story;
+using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal sealed class StoryDialogueMedia : IDisposable
 {

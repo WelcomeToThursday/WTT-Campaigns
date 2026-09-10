@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Story;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 // Compare accepted server snapshots, including observation-only refreshes whose revision may be unchanged.
 internal sealed class StoryChapterChanges

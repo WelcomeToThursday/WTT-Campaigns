@@ -1,6 +1,6 @@
 using Mono.Cecil;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class UiCompatibilityChecks
 {
@@ -91,7 +91,7 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
-            var zoneBridge = client.MainModule.GetType("SeasonalPerks.Client.Spatial.NativeZoneBridge");
+            var zoneBridge = client.MainModule.GetType("WTT.Campaigns.Client.Spatial.NativeZoneBridge");
             var unityStay = zoneBridge.Methods.Single(m => m.Name == "OnTriggerStay");
             Check(
                 unityStay.Parameters.Count == 1 && unityStay.Parameters[0].ParameterType.FullName == "UnityEngine.Collider",
@@ -108,7 +108,7 @@ internal static class UiCompatibilityChecks
                 ),
                 "Both physics paths recover occupancy for players already inside the zone"
             );
-            var storyAccept = client.MainModule.GetType("SeasonalPerks.Client.Story.StoryClient").Methods.Single(m => m.Name == "Accept");
+            var storyAccept = client.MainModule.GetType("WTT.Campaigns.Client.Story.StoryClient").Methods.Single(m => m.Name == "Accept");
             Check(
                 storyAccept.Body.Instructions.Any(i =>
                     i.Operand is MethodReference call && call.DeclaringType.Name == "StoryChapterChanges" && call.Name == "Accept"
@@ -119,7 +119,7 @@ internal static class UiCompatibilityChecks
                 types["EFT.Communications.NotificationManager"].Methods.Any(m => m.Name == "DisplayNotification" && m.IsStatic),
                 "Chapter notifications bind the installed native notification queue"
             );
-            var chapterNotification = client.MainModule.GetType("SeasonalPerks.Client.Story.StoryChapterNotification");
+            var chapterNotification = client.MainModule.GetType("WTT.Campaigns.Client.Story.StoryChapterNotification");
             Check(
                 chapterNotification
                     .Methods.Single(m => m.Name == "CreateView")
@@ -130,7 +130,7 @@ internal static class UiCompatibilityChecks
                     ),
                 "Story chapters use a dedicated notification view rather than the generic toast"
             );
-            var chapterView = client.MainModule.GetType("SeasonalPerks.Client.Story.StoryChapterNotificationView");
+            var chapterView = client.MainModule.GetType("WTT.Campaigns.Client.Story.StoryChapterNotificationView");
             Check(
                 chapterView.BaseType.FullName == "EFT.UI.BaseNotificationView"
                     && chapterView
@@ -141,7 +141,7 @@ internal static class UiCompatibilityChecks
             Check(
                 chapterView
                     .Methods.Single(m => m.Name == "Create")
-                    .Body.Instructions.Any(i => Equals(i.Operand, "seasonal_story_notifications.bundle")),
+                    .Body.Instructions.Any(i => Equals(i.Operand, "wtt_campaigns_story_notifications.bundle")),
                 "Chapter notification GameObjects load from their dedicated bundle"
             );
             Check(
@@ -149,7 +149,7 @@ internal static class UiCompatibilityChecks
                 "Bundled notification animation completion binds the native dismissal callback"
             );
             var startup = client
-                .MainModule.GetType("SeasonalPerks.Client.Patches.Session.BackendIdentity")
+                .MainModule.GetType("WTT.Campaigns.Client.Patches.Session.BackendIdentity")
                 .Methods.Single(m => m.Name == "Prefix")
                 .Body.Instructions;
             var protocol = startup.Single(i => i.Operand is MethodReference m && m.Name == "set_ProtocolVersion");
@@ -163,7 +163,7 @@ internal static class UiCompatibilityChecks
                 "Initial backend snapshot sends creator protocol 2 before any game session exists"
             );
             var storyAvailability = client
-                .MainModule.GetType("SeasonalPerks.Client.Story.StoryClient")
+                .MainModule.GetType("WTT.Campaigns.Client.Story.StoryClient")
                 .Methods.Single(m => m.Name == "get_Available")
                 .Body.Instructions;
             Check(
@@ -172,7 +172,7 @@ internal static class UiCompatibilityChecks
                     && !storyAvailability.Any(i => i.Operand is MethodReference method && method.Name == "get_HasStory"),
                 "Seasonal story interface requires the loaded character, not authored story content"
             );
-            var hub = client.MainModule.GetType("SeasonalPerks.Client.Hub.SeasonHubUi");
+            var hub = client.MainModule.GetType("WTT.Campaigns.Client.Hub.SeasonHubUi");
             Check(hub != null, "Season hub client adapter is packaged");
             var availability = hub!.Methods.Single(m => m.Name == "get_Available").Body.Instructions;
             Check(
@@ -181,28 +181,28 @@ internal static class UiCompatibilityChecks
                     && availability.Any(i => i.Operand is FieldReference field && field.Name == "Busy"),
                 "Hub visibility checks Seasonal, raid and busy state"
             );
-            var menu = client.MainModule.GetType("SeasonalPerks.Client.Patches.UI.MenuEntry").Methods.Single(m => m.Name == "Postfix");
+            var menu = client.MainModule.GetType("WTT.Campaigns.Client.Patches.UI.MenuEntry").Methods.Single(m => m.Name == "Postfix");
             Check(
                 menu.Body.Instructions.Any(i => i.Operand is MethodReference method && method.Name == "AttachMenu")
                     && menu.Body.ExceptionHandlers.Any(h => h.CatchType?.FullName == "System.Exception"),
                 "Optional hub entry cannot throw through native menu initialization"
             );
-            var input = client.MainModule.GetType("SeasonalPerks.Client.UI.SeasonUi").Methods.Single(m => m.Name == "get_InputBlocked");
+            var input = client.MainModule.GetType("WTT.Campaigns.Client.UI.SeasonUi").Methods.Single(m => m.Name == "get_InputBlocked");
             Check(
                 input.Body.Instructions.Any(i => i.Operand is MethodReference method && method.DeclaringType.Name == "SeasonHubUi"),
                 "Native input guard includes hub visibility"
             );
-            var video = client.MainModule.GetType("SeasonalPerks.Client.Hub.HubVideo").Methods.Single(m => m.Name == "OnDisable");
+            var video = client.MainModule.GetType("WTT.Campaigns.Client.Hub.HubVideo").Methods.Single(m => m.Name == "OnDisable");
             Check(
                 video.Body.Instructions.Any(i => i.Operand is MethodReference method && method.Name == "Stop"),
                 "Hidden hub videos stop their decoder"
             );
-            var patch = client.MainModule.GetType("SeasonalPerks.Client.Patches.UI.SkillsTabPatch");
+            var patch = client.MainModule.GetType("WTT.Campaigns.Client.Patches.UI.SkillsTabPatch");
             var initialization = patch.Methods.Single(method =>
                 method.HasBody
                 && method.Body.Instructions.Any(instruction =>
                     instruction.Operand is MethodReference called
-                    && called.DeclaringType.FullName == "SeasonalPerks.Client.UI.SeasonalSkillsTab"
+                    && called.DeclaringType.FullName == "WTT.Campaigns.Client.UI.CampaignSkillsTab"
                     && called.Name == "Initialize"
                 )
             );

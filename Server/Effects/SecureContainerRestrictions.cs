@@ -1,6 +1,3 @@
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Items;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Profile;
 using SPTarkov.Server.Core.Models.Common;
@@ -10,8 +7,11 @@ using SPTarkov.Server.Core.Models.Eft.Inventory;
 using SPTarkov.Server.Core.Models.Eft.ItemEvent;
 using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Routers;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Items;
 
-namespace SeasonalPerks.Server.Effects;
+namespace WTT.Campaigns.Server.Effects;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class SecureContainerRestrictions(TemplateTable templates, InventoryHelper inventory, EventOutputHolder outputs)

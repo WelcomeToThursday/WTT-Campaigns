@@ -3,7 +3,7 @@ using EFT.HealthSystem;
 using HarmonyLib;
 using SPT.Reflection.Patching;
 
-namespace SeasonalPerks.Client.Patches.Items;
+namespace WTT.Campaigns.Client.Patches.Items;
 
 internal class MedicineCompletionPatch : ModulePatch
 {

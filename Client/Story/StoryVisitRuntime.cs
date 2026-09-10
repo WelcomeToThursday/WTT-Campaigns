@@ -5,15 +5,15 @@ using EFT.InventoryLogic;
 using EFT.Quests;
 using EFT.UI;
 using Newtonsoft.Json;
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.Shared.Story;
-using SeasonalPerks.UI.Media;
-using SeasonalPerks.UI.Models;
-using SeasonalPerks.UI.Screens;
 using UnityEngine;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.Shared.Story;
+using WTT.Campaigns.UI.Media;
+using WTT.Campaigns.UI.Models;
+using WTT.Campaigns.UI.Screens;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 public sealed class StoryVisitRuntime : MonoBehaviour
 {
@@ -154,7 +154,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         _character = character;
         _startedInRaid = Plugin.InRaid;
         _surface = new StoryPresentationSurface("Seasonal trader visit", 32000);
-        var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf");
+        var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
         _media = new StoryDialogueMedia(_surface.Root.transform, font);
         _panel = new StoryConversationPanel(
             _surface.Root.transform,
@@ -172,7 +172,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         _bundle = StoryMediaStore.OpenTrader(traderId);
         var custom = StoryMediaStore.Trader(traderId);
         var prefab = _bundle.LoadAsset<GameObject>(
-            custom?.Asset ?? "assets/mods/seasonalperks.assets/storytraders/" + traderId + ".prefab"
+            custom?.Asset ?? "assets/mods/wtt-campaigns.assets/storytraders/" + traderId + ".prefab"
         );
         if (!prefab)
         {

@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Server.Profiles;
+namespace WTT.Campaigns.Server.Profiles;
 
 public sealed class AccountLink
 {

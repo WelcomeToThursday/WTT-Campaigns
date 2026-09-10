@@ -1,47 +1,53 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Configuration;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Items;
-using SeasonalPerks.Shared.Effects.Movement;
-using SeasonalPerks.Shared.Effects.Skills;
-using SeasonalPerks.Shared.Effects.Trading;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Profiles;
+using WTT.Campaigns.Shared.Configuration;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Items;
+using WTT.Campaigns.Shared.Effects.Movement;
+using WTT.Campaigns.Shared.Effects.Skills;
+using WTT.Campaigns.Shared.Effects.Trading;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Profiles;
+
+if (args.Length == 3 && args[0] == "--mod-identity")
+{
+    WTT.Campaigns.Tests.ModIdentityChecks.Run(args[1], args[2]);
+    return;
+}
 
 if (args.Length == 4 && args[0] == "--story-pack")
 {
-    SeasonalPerks.Tests.StoryPackTool.Compose(args[1], args[2], args[3]);
+    WTT.Campaigns.Tests.StoryPackTool.Compose(args[1], args[2], args[3]);
     return;
 }
 
 if (args.Length == 3 && args[0] == "--test-story-season")
 {
-    SeasonalPerks.Tests.PlayableStorySeason.Build(args[1], args[2]);
+    WTT.Campaigns.Tests.PlayableStorySeason.Build(args[1], args[2]);
     return;
 }
 
 if (args.Length == 2 && args[0] is "--creator-fixture" or "--story-fixture")
 {
-    SeasonalPerks.Tests.CreatorFixture.Prepare(args[1], args[0] == "--story-fixture");
+    WTT.Campaigns.Tests.CreatorFixture.Prepare(args[1], args[0] == "--story-fixture");
     return;
 }
 
 if (args.Length == 3 && (args[0] == "--resource-hooks" || args[0] == "--bush-hooks" || args[0] == "--experience-hooks"))
 {
-    SeasonalPerks.Tests.ClientHookChecks.Run(args[1], args[2], args[0] == "--bush-hooks", args[0] == "--experience-hooks");
+    WTT.Campaigns.Tests.ClientHookChecks.Run(args[1], args[2], args[0] == "--bush-hooks", args[0] == "--experience-hooks");
     return;
 }
 
 if (args.Length == 3 && args[0] == "--unity-toolkit")
 {
-    SeasonalPerks.Tests.UnityToolkitChecks.Run(args[1], args[2]);
+    WTT.Campaigns.Tests.UnityToolkitChecks.Run(args[1], args[2]);
     return;
 }
 
 if (args.Length >= 2 && args[0] == "--ui")
 {
-    SeasonalPerks.Tests.UiCompatibilityChecks.Run(args[1], args.Length > 2 ? args[2] : null);
+    WTT.Campaigns.Tests.UiCompatibilityChecks.Run(args[1], args.Length > 2 ? args[2] : null);
     return;
 }
 
@@ -56,24 +62,24 @@ void Check(bool value, string name)
     count++;
 }
 var rules = new Rules();
-SeasonalPerks.Tests.RequestIdentityChecks.Run(Check);
-SeasonalPerks.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
-SeasonalPerks.Tests.NativeModelChecks.Run(Check);
-SeasonalPerks.Tests.SeasonItemBundleChecks.Run(Check);
-SeasonalPerks.Tests.StoryChecks.Run(Check);
-SeasonalPerks.Tests.StoryChapterNotificationChecks.Run(Check);
-SeasonalPerks.Tests.StoryEngineChecks.Run(Check);
-SeasonalPerks.Tests.StoryV2Checks.Run(Check);
-SeasonalPerks.Tests.AuthoringChecks.Run(Check);
-SeasonalPerks.Tests.EditorLayoutChecks.Run(Check);
-SeasonalPerks.Tests.ProgressionChecks.Run(Check);
+WTT.Campaigns.Tests.RequestIdentityChecks.Run(Check);
+WTT.Campaigns.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
+WTT.Campaigns.Tests.NativeModelChecks.Run(Check);
+WTT.Campaigns.Tests.SeasonItemBundleChecks.Run(Check);
+WTT.Campaigns.Tests.StoryChecks.Run(Check);
+WTT.Campaigns.Tests.StoryChapterNotificationChecks.Run(Check);
+WTT.Campaigns.Tests.StoryEngineChecks.Run(Check);
+WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
+WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.EditorLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.ProgressionChecks.Run(Check);
 if (args.Length > 0 && File.Exists(args[0]))
 {
-    SeasonalPerks.Tests.ProgressionChecks.Hooks(args[0], Check);
+    WTT.Campaigns.Tests.ProgressionChecks.Hooks(args[0], Check);
 }
-SeasonalPerks.Tests.CreatorChecks.Run(Check);
-SeasonalPerks.Tests.HubGameplayChecks.Run(Check);
-SeasonalPerks.Tests.HubDocumentLootChecks.Run(Check);
+WTT.Campaigns.Tests.CreatorChecks.Run(Check);
+WTT.Campaigns.Tests.HubGameplayChecks.Run(Check);
+WTT.Campaigns.Tests.HubDocumentLootChecks.Run(Check);
 var seasoned = new RuntimeEffects(c, new[] { "69c41adf883efd5e3b09ccae" });
 Check(seasoned.Multiplier("pmc_experience_multiplicator").Equals(1.25f), "Captured PMC experience bonus");
 Check(ExperienceScaling.Award(1700, 1.25f) == 2125, "Quest XP gains 25 percent");
@@ -202,12 +208,12 @@ Check(
     CharacterSession.IsLoaded(selectedSeasonal, "seasonal", "seasonal-profile"),
     "Hideout effect enabled only after seasonal identity finishes loading"
 );
-SeasonalPerks.Tests.ConsumableChecks.Run(c, Check);
-SeasonalPerks.Tests.AllergyContainerChecks.Run(c, Check);
-SeasonalPerks.Tests.SerializationChecks.Run(c, Check);
-SeasonalPerks.Tests.HubChecks.Run(Check);
+WTT.Campaigns.Tests.ConsumableChecks.Run(c, Check);
+WTT.Campaigns.Tests.AllergyContainerChecks.Run(c, Check);
+WTT.Campaigns.Tests.SerializationChecks.Run(c, Check);
+WTT.Campaigns.Tests.HubChecks.Run(Check);
 if (args.Length > 0)
 {
-    SeasonalPerks.Tests.CompatibilityChecks.Run(args[0], Check);
+    WTT.Campaigns.Tests.CompatibilityChecks.Run(args[0], Check);
 }
 Console.WriteLine($"PASS {count} assertions");

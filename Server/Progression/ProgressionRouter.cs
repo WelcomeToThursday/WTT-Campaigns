@@ -4,7 +4,7 @@ using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Utils;
 
-namespace SeasonalPerks.Server.Progression;
+namespace WTT.Campaigns.Server.Progression;
 
 [Injectable]
 public sealed class ProgressionRouter(JsonUtil json, ProgressionService progression)
@@ -12,7 +12,7 @@ public sealed class ProgressionRouter(JsonUtil json, ProgressionService progress
         json,
         [
             new RouteAction<ProgressionRequest>(
-                "/wtt-seasonal/progression",
+                "/wtt-campaigns/progression",
                 (_, _, _, _, _) => new ValueTask<string>(JsonConvert.SerializeObject(progression.Metadata))
             ),
         ]

@@ -6,7 +6,7 @@ from test_integration import PROJECT, SERVER, request, check, checks
 
 
 def main():
-    fixture = json.loads((SERVER / 'user/mods/SeasonalPerks/creator/acceptance-fixture.json').read_text())
+    fixture = json.loads((SERVER / 'user/mods/WTT-Campaigns/creator/acceptance-fixture.json').read_text())
     username = 'story-v2-' + secrets.token_hex(6)
     registered = request('/launcher/v2/register', {'username': username, 'edition': 'Standard'})
     root = next(p['profileId'] for p in registered['Profiles'] if p['username'] == username)
@@ -15,14 +15,14 @@ def main():
         return next(k for k, v in cosmetics.items() if v.get('_parent') == parent and v['_props'].get('AvailableAsDefault') and 'Usec' in v['_props'].get('Side', []))
     request('/client/game/profile/create', {'side': 'Usec', 'nickname': 'StoryV2Test', 'headId': cosmetic('5cc085e214c02e000c6bea67'), 'voiceId': cosmetic('5fc100cf95572123ae738483')}, root)
     base = {'ProtocolVersion': 2, 'SeasonId': fixture['SeasonId']}
-    created = request('/wtt-seasonal/create', {**base, 'OperationId': secrets.token_hex(16), 'Nickname': 'StoryV2', 'Side': 'Usec', 'PerkIds': [fixture['PerkId']]}, root)
+    created = request('/wtt-campaigns/create', {**base, 'OperationId': secrets.token_hex(16), 'Nickname': 'StoryV2', 'Side': 'Usec', 'PerkIds': [fixture['PerkId']]}, root)
     check(not created.get('Error'), 'Create synthetic protocol-2 character: ' + str(created.get('Error')))
-    switched = request('/wtt-seasonal/switch', {**base, 'Mode': 'seasonal', 'CharacterId': created['SelectedCharacterId']}, root)
+    switched = request('/wtt-campaigns/switch', {**base, 'Mode': 'seasonal', 'CharacterId': created['SelectedCharacterId']}, root)
     child = switched['EffectiveProfileId']
     identity = {'Version': 2, 'SeasonId': fixture['SeasonId'], 'CharacterId': child}
 
     def read(extra=None):
-        result = request('/wtt-seasonal/story', {**identity, **(extra or {})}, child)
+        result = request('/wtt-campaigns/story', {**identity, **(extra or {})}, child)
         assert not result.get('Error'), result
         return result
 
@@ -36,7 +36,7 @@ def main():
                 'Target': target, 'Scene': scene, 'Operation': operation, **extra}
 
     def send(operation, body, error=False):
-        result = request('/wtt-seasonal/story/' + operation, body, child)
+        result = request('/wtt-campaigns/story/' + operation, body, child)
         check(bool(result.get('Error')) == error, operation + (' rejected' if error else ' accepted') + ': ' + str(result.get('Error')))
         return result
 
@@ -161,7 +161,7 @@ def main():
     event(binding, 'Interact', old, error=True)
     repeated = observation(True, True)
     read({'Observation': repeated})
-    check(bool(request('/wtt-seasonal/story', {**identity, 'Observation': repeated}, child).get('Error')), 'Repeated observation sequences are rejected')
+    check(bool(request('/wtt-campaigns/story', {**identity, 'Observation': repeated}, child).get('Error')), 'Repeated observation sequences are rejected')
     for binding in [b for b in state['Definition']['RaidBindings'] if b['Kind'] == 'Interact']:
         result = event(binding, 'Interact', observation(True, True))
         check(result['EventMediaId'] == binding['MediaId'] and not result['CinematicBindingId'], 'Ordinary event returns media without cinematic completion authority')

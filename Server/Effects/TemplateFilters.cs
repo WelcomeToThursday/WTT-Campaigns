@@ -1,8 +1,8 @@
-using SeasonalPerks.Shared.Effects;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Spt.Tables;
+using WTT.Campaigns.Shared.Effects;
 
-namespace SeasonalPerks.Server.Effects;
+namespace WTT.Campaigns.Server.Effects;
 
 internal static class TemplateFilters
 {

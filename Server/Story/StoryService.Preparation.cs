@@ -2,11 +2,11 @@ using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Shared.Story;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Profile;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Story;
+namespace WTT.Campaigns.Server.Story;
 
 public sealed partial class StoryService
 {

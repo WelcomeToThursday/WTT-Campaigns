@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Profiles;
+namespace WTT.Campaigns.Shared.Profiles;
 
 public sealed class PerkState
 {

@@ -14,7 +14,7 @@ from UnityPy.classes import PPtr
 from recover_ui import DEV, LIVE, Generator
 
 DATA = LIVE / "EscapeFromTarkov_Data"
-OUTPUT = DEV / "CJ-SDK/Assets/Mods/SeasonalPerks.Assets/StoryArtwork"
+OUTPUT = DEV / "CJ-SDK/Assets/Mods/WTT-Campaigns.Assets/StoryArtwork"
 AUDIT = DEV / "SeasonalPerks/Research/Story"
 ROOTS = {
     44: [3857, 7225, 6704, 4478, 6048, 502, 6551, 3663, 2044, 5810, 6025],

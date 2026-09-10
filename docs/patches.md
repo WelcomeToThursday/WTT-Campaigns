@@ -14,7 +14,7 @@ Group patches by the game feature they modify. A patch can support several perks
 | `Hideout` | Seasonal found-in-raid requirement checks and display |
 | `UI` | Menu entry, native perks tab and seasonal input handling |
 
-Namespaces follow the folders, for example `SeasonalPerks.Client.Patches.Items`.
+Namespaces follow the folders, for example `WTT.Campaigns.Client.Patches.Items`.
 
 `PatchRegistration.EnableAll()` is the client entry point, called from `Plugin.Awake`. Its feature methods list every patch instance explicitly, including separate targets for parameterized patches. Session hooks register first, the damage-context hook precedes injury probability, and UI hooks register last. Add new client patches to the relevant method here.
 

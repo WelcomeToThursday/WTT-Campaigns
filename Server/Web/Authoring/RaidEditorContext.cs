@@ -1,6 +1,6 @@
-using SeasonalPerks.Shared.Authoring;
+using WTT.Campaigns.Shared.Authoring;
 
-namespace SeasonalPerks.Server.Web.Authoring;
+namespace WTT.Campaigns.Server.Web.Authoring;
 
 public sealed class RaidEditorContext
 {

@@ -1,6 +1,6 @@
-using SeasonalPerks.Client.Patches.Session;
+using WTT.Campaigns.Client.Patches.Session;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class RequestIdentityChecks
 {
@@ -9,7 +9,7 @@ internal static class RequestIdentityChecks
         const string root = "111111111111111111111111";
         const string character = "222222222222222222222222";
         const string otherCharacter = "333333333333333333333333";
-        const string documents = "/wtt-seasonal/hub/raid-document";
+        const string documents = "/wtt-campaigns/hub/raid-document";
         HttpRequestMessage Create(string path, string? sessionId = character, bool shared = true)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost" + path);
@@ -34,11 +34,11 @@ internal static class RequestIdentityChecks
         foreach (
             var path in new[]
             {
-                "/wtt-seasonal/snapshot",
-                "/wtt-seasonal/switch",
-                "/wtt-seasonal/hub",
-                "/wtt-seasonal/hub/claim",
-                "/wtt-seasonal/hub/exchange",
+                "/wtt-campaigns/snapshot",
+                "/wtt-campaigns/switch",
+                "/wtt-campaigns/hub",
+                "/wtt-campaigns/hub/claim",
+                "/wtt-campaigns/hub/exchange",
             }
         )
         {

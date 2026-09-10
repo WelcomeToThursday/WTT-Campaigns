@@ -3,7 +3,7 @@ using EFT.UI;
 using UnityEngine;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Hub;
+namespace WTT.Campaigns.Client.Hub;
 
 public sealed class HubBannerSound : MonoBehaviour
 {

@@ -1,6 +1,6 @@
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Story;
+namespace WTT.Campaigns.Server.Story;
 
 internal sealed class StoryPreparation
 {

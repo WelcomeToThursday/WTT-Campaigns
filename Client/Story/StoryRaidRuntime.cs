@@ -2,11 +2,11 @@ using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.InputSystem;
 using EFT.InventoryLogic;
-using SeasonalPerks.Shared.Story;
 using UnityEngine;
+using WTT.Campaigns.Shared.Story;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 public sealed class StoryRaidRuntime : MonoBehaviour
 {

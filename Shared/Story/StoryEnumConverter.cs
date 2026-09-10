@@ -1,6 +1,6 @@
 using Newtonsoft.Json.Converters;
 
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 public sealed class StoryEnumConverter : StringEnumConverter
 {

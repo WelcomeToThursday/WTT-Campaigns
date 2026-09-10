@@ -1,8 +1,4 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Web.Authoring;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Extensions;
@@ -15,9 +11,13 @@ using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Services.Locales;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Web.Authoring;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Seasons;
 using Path = System.IO.Path;
 
-namespace SeasonalPerks.Server.Seasons;
+namespace WTT.Campaigns.Server.Seasons;
 
 public sealed record ContentChoice(string Id, string Name);
 

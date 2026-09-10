@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Contracts;
 using SPTarkov.Server.Core.Models.Utils;
+using WTT.Campaigns.Shared.Contracts;
 
-namespace SeasonalPerks.Server.Routing;
+namespace WTT.Campaigns.Server.Routing;
 
 public record SeasonRequest : IRequestData
 {

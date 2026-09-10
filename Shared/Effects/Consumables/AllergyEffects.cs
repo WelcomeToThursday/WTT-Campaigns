@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Profiles;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Profiles;
 
-namespace SeasonalPerks.Shared.Effects.Consumables;
+namespace WTT.Campaigns.Shared.Effects.Consumables;
 
 public static class AllergyEffects
 {

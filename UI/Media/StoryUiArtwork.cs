@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace SeasonalPerks.UI.Media;
+namespace WTT.Campaigns.UI.Media;
 
 public static class StoryUiArtwork
 {
@@ -30,7 +30,7 @@ public static class StoryUiArtwork
         );
 #else
         using var stream =
-            typeof(StoryUiArtwork).Assembly.GetManifestResourceStream("SeasonalPerks.Story." + name + ".png")
+            typeof(StoryUiArtwork).Assembly.GetManifestResourceStream("WTT.Campaigns.Story." + name + ".png")
             ?? throw new InvalidDataException("Missing story artwork: " + name);
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);

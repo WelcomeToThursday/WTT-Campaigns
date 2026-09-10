@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 [JsonConverter(typeof(StoryEnumConverter))]
 public enum StoryVariableScope

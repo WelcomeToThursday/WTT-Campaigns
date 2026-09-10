@@ -57,8 +57,8 @@ def main():
                         raise ValueError('Unexpected assembly for ' + str(key) + ': ' + tree['m_AssemblyName'])
                     tree['m_AssemblyName'] = target['m_AssemblyName']
                     tree['m_PropertiesHash'] = target['m_PropertiesHash']
-                elif key == ('SeasonalPerks.UI.Media', 'StoryRoomLighting'):
-                    tree['m_AssemblyName'] = 'WTT-Seasonal.UI.dll'
+                elif key == ('WTT.Campaigns.UI.Media', 'StoryRoomLighting'):
+                    tree['m_AssemblyName'] = 'WTT-Campaigns.UI.dll'
                 else:
                     raise ValueError('Unreviewed room script: ' + str(key))
                 obj.save_typetree(tree)

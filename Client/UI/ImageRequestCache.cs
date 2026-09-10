@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Client.UI;
+namespace WTT.Campaigns.Client.UI;
 
 // Cache encoded bytes, not Unity objects: each screen still owns and releases its textures.
 internal sealed class ImageRequestCache

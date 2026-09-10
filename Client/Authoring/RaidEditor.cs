@@ -1,15 +1,15 @@
 using BepInEx.Configuration;
 using Comfort.Common;
 using EFT;
-using SeasonalPerks.Client.Spatial;
-using SeasonalPerks.Client.Story;
-using SeasonalPerks.Shared.Authoring;
-using SeasonalPerks.Shared.Spatial;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using WTT.Campaigns.Client.Spatial;
+using WTT.Campaigns.Client.Story;
+using WTT.Campaigns.Shared.Authoring;
+using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring;
 
 [DefaultExecutionOrder(32000)]
 public sealed partial class RaidEditor : MonoBehaviour

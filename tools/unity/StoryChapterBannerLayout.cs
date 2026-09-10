@@ -1,10 +1,10 @@
-using SeasonalPerks.UI.Controls;
 using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.Tools
+namespace WTT.Campaigns.Tools
 {
     // Recovered level49 MainQuestNotification: 500px banner, chapter art, separate title,
     // status line and trailing state icon. Kept independent of EFT for offline rendering.
@@ -100,7 +100,7 @@ namespace SeasonalPerks.Tools
         {
             var image = UiElements.Fill(root, Color.white);
             image.sprite = AssetDatabase.LoadAssetAtPath<Sprite>(
-                "Assets/Mods/SeasonalPerks.Assets/"
+                "Assets/Mods/WTT-Campaigns.Assets/"
                     + (
                         resource == "notification-chapter" || resource == "notification-frame"
                             ? "StoryNotifications/Artwork/"

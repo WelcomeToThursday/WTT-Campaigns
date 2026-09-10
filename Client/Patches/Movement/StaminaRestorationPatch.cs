@@ -2,9 +2,9 @@ using System.Reflection;
 using HarmonyLib;
 using SPT.Reflection.Patching;
 
-namespace SeasonalPerks.Client.Patches.Movement;
+namespace WTT.Campaigns.Client.Patches.Movement;
 
-internal class StaminaRestorationPatch(string methodName) : ModulePatch("SeasonalPerks." + methodName)
+internal class StaminaRestorationPatch(string methodName) : ModulePatch("WTT.Campaigns." + methodName)
 {
     protected override MethodBase GetTargetMethod()
     {

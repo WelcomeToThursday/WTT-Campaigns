@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 // The runtime uses normalized lines and predicates, like the captured TraderDialogTemplate format.
 public sealed class StoryDialog

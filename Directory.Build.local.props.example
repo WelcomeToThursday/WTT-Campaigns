@@ -2,7 +2,7 @@
     <!-- Copy to Directory.Build.local.props and edit paths; keep trailing separators. -->
     <PropertyGroup>
         <TarkovDir>C:\Games\SPT\</TarkovDir>
-        <SeasonalAssetsDir>C:\Development\CJ-SDK\Assets\Mods\SeasonalPerks.Assets\</SeasonalAssetsDir>
+        <CampaignsAssetsDir>C:\Development\CJ-SDK\Assets\Mods\WTT-Campaigns.Assets\</CampaignsAssetsDir>
         <!-- These paths control both compilation and MSBuild deployment. -->
         <!-- <ServerDir>C:\Games\SPT-Server\</ServerDir> -->
     </PropertyGroup>

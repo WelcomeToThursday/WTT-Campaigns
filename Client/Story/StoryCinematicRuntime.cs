@@ -1,12 +1,12 @@
 using Cysharp.Threading.Tasks;
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Video;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 public sealed class StoryCinematicRuntime : MonoBehaviour
 {
@@ -53,7 +53,7 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
             var media = StoryMediaStore.Find(mediaId);
             _bundle = StoryMediaStore.Open(media.Bundle, media.Sha256);
             _surface = new StoryPresentationSurface("Seasonal cinematic", 32010);
-            var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf");
+            var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
             var skip = new UiElements(font).Button(
                 _surface.Root.transform,
                 media.Kind == "Image" ? "Continue" : "Skip",
@@ -70,7 +70,7 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
             {
                 _dialogueMedia = new StoryDialogueMedia(_surface.Root.transform, font);
                 _dialogueMedia.Set(
-                    new SeasonalPerks.Shared.Story.StoryPlayback
+                    new WTT.Campaigns.Shared.Story.StoryPlayback
                     {
                         Image = media.Kind == "Image" ? media.Id : "",
                         Sound = media.Kind == "Audio" ? media.Id : "",

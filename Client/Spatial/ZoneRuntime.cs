@@ -1,11 +1,11 @@
 using Comfort.Common;
 using EFT;
 using EFT.Interactive;
-using SeasonalPerks.Shared.Spatial;
 using UnityEngine;
+using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Spatial;
+namespace WTT.Campaigns.Client.Spatial;
 
 public sealed class ZoneRuntime : MonoBehaviour
 {

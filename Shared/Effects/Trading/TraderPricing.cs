@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Effects.Trading;
+namespace WTT.Campaigns.Shared.Effects.Trading;
 
 public static class TraderPricing
 {

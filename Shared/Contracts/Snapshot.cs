@@ -1,8 +1,8 @@
-using SeasonalPerks.Shared.Configuration;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Profiles;
+using WTT.Campaigns.Shared.Configuration;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Profiles;
 
-namespace SeasonalPerks.Shared.Contracts;
+namespace WTT.Campaigns.Shared.Contracts;
 
 public class Snapshot
 {

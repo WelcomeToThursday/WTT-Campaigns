@@ -1,10 +1,10 @@
 using Newtonsoft.Json.Linq;
 
-namespace SeasonalPerks.Server.Seasons;
+namespace WTT.Campaigns.Server.Seasons;
 
 public sealed class SeasonItemBundles
 {
-    private const string LegacyPrefix = "wtt-seasonal/";
+    private const string LegacyPrefix = "wtt-campaigns/";
     private readonly HashSet<string> _keys = new(StringComparer.Ordinal);
 
     public SeasonItemBundles(IEnumerable<string> modDirectories)

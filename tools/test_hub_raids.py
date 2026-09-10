@@ -11,20 +11,20 @@ from test_hub_gameplay import read, save
 def main(account=None):
     creator = '--creator' in sys.argv
     account = account or read(PROJECT / ('Testing/creator-acceptance-state.json' if creator else 'Testing/restart-state.json'))
-    fixture = read(SERVER / 'user/mods/SeasonalPerks/creator/acceptance-fixture.json') if creator else None
+    fixture = read(SERVER / 'user/mods/WTT-Campaigns/creator/acceptance-fixture.json') if creator else None
     def call(path, data=None, session=None):
-        if creator and path.startswith('/wtt-seasonal/'):
+        if creator and path.startswith('/wtt-campaigns/'):
             data = {**(data or {}), 'ProtocolVersion': 2, 'SeasonId': fixture['SeasonId']}
         return request(path, data, session)
     child, root = account['child'], account['root']
     docs = {fixture['DocumentTemplate']} if creator else {d['itemId'] for d in read(PROJECT / 'data/hub-gameplay.json')['Documents']}
     call('/client/game/start', session=child)
-    call('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
+    call('/wtt-campaigns/switch', {'Mode': 'seasonal'}, root)
     templates = call('/client/items', session=child)
     if isinstance(templates, list):
         templates = {t['_id']: t for t in templates}
     for number in range(5):
-        before = call('/wtt-seasonal/hub', session=child)
+        before = call('/wtt-campaigns/hub', session=child)
         profile = call('/client/game/profile/list', session=child)[0]
         start = call('/client/match/local/start', {'location': 'bigmap', 'playerSide': 'pmc', 'mode': 'regular', 'timeVariant': 'CURR', 'transitionType': 0}, child)
         spawns = [(loot, item) for loot in start['locationLoot']['Loot'] for item in loot.get('Items', []) if item['_tpl'] in docs]
@@ -36,27 +36,27 @@ def main(account=None):
             check(loot['Root'] == item['_id'] and not item.get('parentId'), 'Loose document is the spawn root without a container parent')
             check(creator or item['_tpl'] in allowed, 'Document type is allowed on Customs')
             check(item['upd']['StackObjectsCount'] == 1, 'One ordinary document per selected loose-loot point')
-        check(call('/wtt-seasonal/hub/claim', {'OperationId': secrets.token_hex(16), 'ExpectedRevision': before['Revision'], 'RewardId': before['Pages'][0]['Rewards'][1]['Id']}, child).get('Error'), 'Transactions are blocked during raids')
+        check(call('/wtt-campaigns/hub/claim', {'OperationId': secrets.token_hex(16), 'ExpectedRevision': before['Revision'], 'RewardId': before['Pages'][0]['Rewards'][1]['Id']}, child).get('Error'), 'Transactions are blocked during raids')
         for _, item in spawns:
             event = {'OperationId': secrets.token_hex(16), 'ItemId': item['_id'], 'PickedUp': True}
-            check(call('/wtt-seasonal/hub/raid-document', event, child).get('Committed'), 'First pickup acknowledged')
-            picked = call('/wtt-seasonal/hub', session=child)
-            call('/wtt-seasonal/hub/raid-document', event, child)
-            check(call('/wtt-seasonal/hub', session=child) == picked, 'Reconnect retry cannot count a pickup twice')
-        after_pickups = call('/wtt-seasonal/hub', session=child)
+            check(call('/wtt-campaigns/hub/raid-document', event, child).get('Committed'), 'First pickup acknowledged')
+            picked = call('/wtt-campaigns/hub', session=child)
+            call('/wtt-campaigns/hub/raid-document', event, child)
+            check(call('/wtt-campaigns/hub', session=child) == picked, 'Reconnect retry cannot count a pickup twice')
+        after_pickups = call('/wtt-campaigns/hub', session=child)
         check(after_pickups['RemainingDocuments'] == before['RemainingDocuments'] - len(spawns), 'Each new unit consumes one allowance')
         extracted = []
         if spawns:
             item = copy.deepcopy(spawns[0][1])
             target = secrets.token_hex(12)
             split = {'OperationId': secrets.token_hex(16), 'ItemId': item['_id'], 'TargetId': target, 'Count': 1, 'Split': True, 'PickedUp': True}
-            check(call('/wtt-seasonal/hub/raid-document', split, child).get('Committed'), 'Split conserves a picked-up identity')
-            call('/wtt-seasonal/hub/raid-document', split, child)
-            check(call('/wtt-seasonal/hub', session=child)['RemainingDocuments'] == after_pickups['RemainingDocuments'], 'Duplicate split cannot consume another allowance')
+            check(call('/wtt-campaigns/hub/raid-document', split, child).get('Committed'), 'Split conserves a picked-up identity')
+            call('/wtt-campaigns/hub/raid-document', split, child)
+            check(call('/wtt-campaigns/hub', session=child)['RemainingDocuments'] == after_pickups['RemainingDocuments'], 'Duplicate split cannot consume another allowance')
             merge = {'OperationId': secrets.token_hex(16), 'ItemId': target, 'TargetId': item['_id'], 'Count': 1, 'Split': False, 'PickedUp': True}
-            check(call('/wtt-seasonal/hub/raid-document', merge, child).get('Committed'), 'Merge preserves picked-up identity')
-            call('/wtt-seasonal/hub/raid-document', merge, child)
-            check(call('/wtt-seasonal/hub', session=child)['RemainingDocuments'] == after_pickups['RemainingDocuments'], 'Repeated merge cannot consume allowance')
+            check(call('/wtt-campaigns/hub/raid-document', merge, child).get('Committed'), 'Merge preserves picked-up identity')
+            call('/wtt-campaigns/hub/raid-document', merge, child)
+            check(call('/wtt-campaigns/hub', session=child)['RemainingDocuments'] == after_pickups['RemainingDocuments'], 'Repeated merge cannot consume allowance')
             target = item['_id']
             host = next(i for i in profile['Inventory']['items'] if i.get('slotId') == 'Backpack')
             host_grid = templates[host['_tpl']]['_props']['Grids'][0]
@@ -74,16 +74,16 @@ def main(account=None):
         outcome = 'Survived' if number % 2 == 0 else 'Runner'
         end = {'serverId': start['serverId'], 'results': {'profile': profile, 'result': outcome, 'exitName': 'Crossroads', 'inSession': False, 'favorite': False, 'playTime': 600}, 'lostInsuredItems': [], 'transferItems': {}}
         call('/client/match/local/end', end, child)
-        after = call('/wtt-seasonal/hub', session=child)
+        after = call('/wtt-campaigns/hub', session=child)
         check(after['RemainingDocuments'] == after_pickups['RemainingDocuments'], 'Extraction does not recount pickups')
         check(0 <= after['UniversalCount'] - before['UniversalCount'] <= len(extracted), 'Server awards at most one bonus per new extracted document')
         inventory = call('/client/game/profile/list', session=child)[0]['Inventory']
         check(all(any(i['_id'] == identity for i in inventory['items']) for identity in extracted), 'Ordinary documents remain after extraction')
         call('/client/match/local/end', end, child)
-        check(call('/wtt-seasonal/hub', session=child) == after, 'Repeated raid-end response cannot reroll or restore rejected documents')
+        check(call('/wtt-campaigns/hub', session=child) == after, 'Repeated raid-end response cannot reroll or restore rejected documents')
     check(after['RemainingDocuments'] == 0, 'Thirty first pickups exhaust the rolling window')
     for mode, side in [('seasonal', 'savage'), ('normal', 'pmc')]:
-        call('/wtt-seasonal/switch', {'Mode': mode}, root)
+        call('/wtt-campaigns/switch', {'Mode': mode}, root)
         session = child if mode == 'seasonal' else root
         start = call('/client/match/local/start', {'location': 'bigmap', 'playerSide': side, 'mode': 'regular', 'timeVariant': 'CURR', 'transitionType': 0}, session)
         items = [i for loot in start['locationLoot']['Loot'] for i in loot.get('Items', []) if i['_tpl'] in docs]

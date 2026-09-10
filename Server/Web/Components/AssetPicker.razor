@@ -2,7 +2,7 @@
 <div class="asset-picker">
     <label>@Label <HelpTip Text="@Help" /></label>
     <div class="asset-row">
-        @if (SeasonValidator.IsId(Value)) { <img src="@($"/wtt-seasonal/creator/assets/{Value}.png")" alt="@Label" /> }
+        @if (SeasonValidator.IsId(Value)) { <img src="@($"/wtt-campaigns/creator/assets/{Value}.png")" alt="@Label" /> }
         <select aria-label="@Label" value="@Value" @onchange="@(e => ValueChanged.InvokeAsync(e.Value?.ToString() ?? string.Empty))">
             <option value="">Default / none</option>
             @foreach (var id in Options) { <option value="@id">@Repository.ArtworkName(id)</option> }

@@ -1,6 +1,6 @@
 using System;
 
-namespace SeasonalPerks.UI.Models;
+namespace WTT.Campaigns.UI.Models;
 
 [Serializable]
 public sealed class HubState

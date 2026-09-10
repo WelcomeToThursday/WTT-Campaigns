@@ -26,9 +26,9 @@ def main():
         return next(k for k, v in customization.items() if v.get('_parent') == parent and v['_props'].get('AvailableAsDefault') and 'Usec' in v['_props'].get('Side', []))
 
     call('/client/game/profile/create', {'side': 'Usec', 'nickname': 'LootTest', 'headId': cosmetic('5cc085e214c02e000c6bea67'), 'voiceId': cosmetic('5fc100cf95572123ae738483')}, root)
-    created = call('/wtt-seasonal/create', {'PerkIds': [], 'Nickname': 'LooseLootTest', 'Side': 'Usec', 'ExpectedRevision': 0}, root)
+    created = call('/wtt-campaigns/create', {'PerkIds': [], 'Nickname': 'LooseLootTest', 'Side': 'Usec', 'ExpectedRevision': 0}, root)
     check(not created.get('Error'), 'Create fresh synthetic seasonal character')
-    switched = call('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
+    switched = call('/wtt-campaigns/switch', {'Mode': 'seasonal'}, root)
     child = switched['EffectiveProfileId']
     call('/client/game/start', session=child)
     catalogue = json.loads((api.PROJECT / 'data/hub-gameplay.json').read_text())
@@ -49,7 +49,7 @@ def main():
             check(point.get('IsAlwaysSpawn') is not True, location + ': mandatory spawn excluded')
         profile = call('/client/game/profile/list', session=child)[0]
         call('/client/match/local/end', {'serverId': raid['serverId'], 'results': {'profile': profile, 'result': 'Runner', 'exitName': '', 'inSession': False, 'favorite': False, 'playTime': 60}, 'lostInsuredItems': [], 'transferItems': {}}, child)
-        check(call('/wtt-seasonal/hub', session=child)['RemainingDocuments'] == 30, location + ': uncollected spawns do not consume allowance')
+        check(call('/wtt-campaigns/hub', session=child)['RemainingDocuments'] == 30, location + ': uncollected spawns do not consume allowance')
         report.append({'map': location, 'documents': dict(counts)})
         print(location, dict(counts), flush=True)
     # Exercise conserved pickup identities, split/merge, extraction, exhausted allowance,

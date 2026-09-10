@@ -1,5 +1,5 @@
-@using SeasonalPerks.Server.Web.Authoring
-@page "/wtt-seasonal/creator"
+@using WTT.Campaigns.Server.Web.Authoring
+@page "/wtt-campaigns/creator"
 @attribute [Authorize(Policy = "Administrator")]
 @rendermode InteractiveServer
 @layout SPTarkov.Server.Web.Layout.BaseMudBlazorLayout
@@ -7,7 +7,7 @@
 @inject SeasonContentService Content
 
 <PageTitle>Season Creator</PageTitle>
-<HeadContent><link rel="stylesheet" href="/seasonal-creator-assets/creator.css" /></HeadContent>
+<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
 <main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
@@ -125,7 +125,7 @@
                             {
                                 <article class="library-pack" @key="pack.Key">
                                     <div class="library-pack-info"><span class="library-status published">PUBLISHED · REVISION @pack.Manifest.Revision</span><h4>@pack.Manifest.Name</h4><p>Version @pack.Manifest.Version</p></div>
-                                    <div class="row"><button @onclick="@(() => EditPublished(pack.Key))">Edit revision</button><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Pack(pack.Key)))))">Duplicate as new season</button><a class="button subtle" href="@($"/wtt-seasonal/creator/packs/{pack.Key}/download")" download>Export pack <span aria-hidden="true">↓</span></a></div>
+                                    <div class="row"><button @onclick="@(() => EditPublished(pack.Key))">Edit revision</button><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Pack(pack.Key)))))">Duplicate as new season</button><a class="button subtle" href="@($"/wtt-campaigns/creator/packs/{pack.Key}/download")" download>Export pack <span aria-hidden="true">↓</span></a></div>
                                 </article>
                             }
                         </div>
@@ -171,7 +171,7 @@
                 }
             </nav>
             <section class="editor-body">@if (_workspaceHistory.Count > 0) { <button class="workspace-back" @onclick="BackWorkspace">← Back to @SectionTitle(_workspaceHistory.Peek().Section)</button> }<div class="section-heading"><div><h2>@SectionTitle(_section)</h2><p>@SectionDescription(_section)</p></div><span class="section-counter">@(Array.IndexOf(Sections, _section) + 1) / @Sections.Length</span></div>
-            @if (SeasonalPerks.Server.Web.Authoring.CreatorGuidance.Topics.FirstOrDefault(t => t.Section == _section) is { } instructions)
+            @if (WTT.Campaigns.Server.Web.Authoring.CreatorGuidance.Topics.FirstOrDefault(t => t.Section == _section) is { } instructions)
             {
                 <details class="section-instructions" @key="_section"><summary>How to use this section</summary><p>@instructions.Purpose</p><ol>@foreach(var instruction in instructions.Instructions) { <li>@instruction</li> }</ol><p class="guide-tip">@instructions.Tip</p><button @onclick="@(() => _showHelp = true)">Browse all instructions</button></details>
             }
@@ -329,7 +329,7 @@
 
 </EditorSection>
 <EditorSection Title="Perk selection preview" Description="Try combinations and check the remaining selection budget.">
-@foreach(var perk in S.Perks.Personal) { <label class="check"><input type="checkbox" checked="@_previewPerks.Contains(perk.Id)" @onchange="@(e => Toggle(_previewPerks, perk.Id, (bool)e.Value!))" />@PerkName(perk) (@perk.Points)</label> }<p>Remaining points: <strong>@SeasonalPerks.Shared.Perks.Selection.Balance(S.Perks, _previewPerks, S.Rules.StartingPoints)</strong></p><p>@SeasonalPerks.Shared.Perks.Selection.Validate(S.Perks, _previewPerks, S.Rules, S.Perks.All.Where(p => EffectSupport.UnavailableReason(p) != null).ToDictionary(p => p.Id, p => EffectSupport.UnavailableReason(p)!))</p>
+@foreach(var perk in S.Perks.Personal) { <label class="check"><input type="checkbox" checked="@_previewPerks.Contains(perk.Id)" @onchange="@(e => Toggle(_previewPerks, perk.Id, (bool)e.Value!))" />@PerkName(perk) (@perk.Points)</label> }<p>Remaining points: <strong>@WTT.Campaigns.Shared.Perks.Selection.Balance(S.Perks, _previewPerks, S.Rules.StartingPoints)</strong></p><p>@WTT.Campaigns.Shared.Perks.Selection.Validate(S.Perks, _previewPerks, S.Rules, S.Perks.All.Where(p => EffectSupport.UnavailableReason(p) != null).ToDictionary(p => p.Id, p => EffectSupport.UnavailableReason(p)!))</p>
 
 </EditorSection>
 <EditorSection Title="Reward eligibility preview" Description="Check why each reward can or cannot be claimed.">
@@ -339,7 +339,7 @@
 <EditorSection Title="Validation and publication" Description="Review the pack and resolve validation issues before publishing.">
 <h3>Pack contents</h3><p>Manifest, season definition, and @SeasonCompiler.Assets(S).Count(SeasonValidator.IsId) PNG files.</p><details><summary>Installed dependencies</summary>@foreach (var dependency in SeasonCompiler.Dependencies(S)) { <p>@dependency</p> }</details><h3>Validation report</h3><button @onclick="Validate">Run validation</button>
                     @if (_validation != null) { @if (ValidationStale) { <p class="notice">Draft changed since validation. Run validation again before publishing.</p> } <p>@(_validation.CanActivate ? "Ready to publish. Restart SPT to load the pack for play." : _validation.CanPublish ? "Exportable; install required dependencies before playing." : "Fix errors before publishing.")</p>@foreach(var issue in _validation.Issues) { <button class="issue @issue.Severity" @onclick="@(() => GoToIssue(issue.Path))">@issue.Severity · @issue.Path — @issue.Message</button> } }
-                    @if (_published != null) { <div class="notice"><strong>Published successfully.</strong><a class="button" href="@($"/wtt-seasonal/creator/packs/{_published}/download")" download>Download season pack</a><p>Restart SPT to load new packs, then choose a season when creating a seasonal character.</p></div> }
+                    @if (_published != null) { <div class="notice"><strong>Published successfully.</strong><a class="button" href="@($"/wtt-campaigns/creator/packs/{_published}/download")" download>Download season pack</a><p>Restart SPT to load new packs, then choose a season when creating a seasonal character.</p></div> }
 
 </EditorSection>
                     break;

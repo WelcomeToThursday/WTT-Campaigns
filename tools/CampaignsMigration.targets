@@ -1,0 +1,137 @@
+<Project>
+  <UsingTask
+    TaskName="MigrateCampaignsInstallation"
+    TaskFactory="RoslynCodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll"
+  >
+    <ParameterGroup>
+      <Phase Required="true" />
+      <ClientDir Required="true" />
+      <ServerModDir Required="true" />
+      <ConfigDir Required="true" />
+      <BackupDir Required="true" />
+      <Scope />
+      <Files ParameterType="Microsoft.Build.Framework.ITaskItem[]" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System.IO" />
+      <Using Namespace="System.Linq" />
+      <Using Namespace="System.Collections.Generic" />
+      <Using Namespace="System.Security.Cryptography" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+        var roots = new[] { ClientDir, ServerModDir };
+        var archives = new List<Tuple<string, string, string>>();
+        var backupRoot = Path.GetFullPath(BackupDir).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        for (var i = 0; i < roots.Length; i++) {
+            var destination = Path.GetFullPath(roots[i]).TrimEnd(Path.DirectorySeparatorChar);
+            var parent = Path.GetDirectoryName(destination);
+            foreach (var legacyName in new[] { "SeasonalPerks", "WTT-Seasonal" }) {
+                var legacy = Path.GetFullPath(Path.Combine(parent, legacyName));
+                var archive = Path.GetFullPath(Path.Combine(backupRoot, "legacy", i == 0 ? "client" : "server", legacyName));
+                if (Path.GetDirectoryName(legacy) != parent || legacy == destination || !archive.StartsWith(backupRoot, StringComparison.OrdinalIgnoreCase)) {
+                    Log.LogError("Invalid legacy installation path."); return false;
+                }
+                archives.Add(Tuple.Create(legacy, archive, destination));
+            }
+        }
+        Func<string, string> hash = path => {
+            using (var stream = File.OpenRead(path))
+            using (var sha = SHA256.Create()) return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "");
+        };
+        Action<string, string> preserveFile = (source, target) => {
+            if (File.Exists(target)) return; // Existing Campaigns configuration wins; legacy data remains in the backup.
+            Directory.CreateDirectory(Path.GetDirectoryName(target));
+            File.Copy(source, target);
+            if (hash(source) != hash(target)) throw new IOException("Preserved data checksum mismatch: " + target);
+        };
+        Action<string, string> preserveTree = (source, target) => {
+            if (!Directory.Exists(source)) return;
+            foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+                preserveFile(file, Path.Combine(target, file.Substring(source.TrimEnd(Path.DirectorySeparatorChar).Length + 1)));
+        };
+        Action restore = () => {
+            foreach (var item in archives) {
+                if (!Directory.Exists(item.Item2)) continue;
+                foreach (var file in Directory.GetFiles(item.Item2, "*", SearchOption.AllDirectories)) {
+                    var target = Path.Combine(item.Item1, file.Substring(item.Item2.Length + 1));
+                    Directory.CreateDirectory(Path.GetDirectoryName(target));
+                    File.Copy(file, target, true);
+                    if (hash(file) != hash(target)) throw new IOException("Legacy restoration checksum mismatch: " + target);
+                }
+            }
+        };
+        try {
+            if (Phase == "Restore") { restore(); return true; }
+            if (Phase != "Check" && Phase != "Migrate") throw new ArgumentException("Unknown migration phase: " + Phase);
+            var active = archives.Where(item => Directory.Exists(item.Item1) && Directory.GetFiles(item.Item1, "*.dll").Length != 0).ToArray();
+            var legacyExists = active.Length != 0;
+            if (legacyExists && !string.Equals(Scope, "All", StringComparison.OrdinalIgnoreCase))
+                throw new IOException("The WTT-Campaigns rename requires DeploymentScope=All so client, server, UI and shared assemblies are replaced together.");
+            if (legacyExists) {
+                var selected = new HashSet<string>((Files ?? new Microsoft.Build.Framework.ITaskItem[0]).Select(file => file.GetMetadata("InstallPath").Replace('\\', '/')), StringComparer.OrdinalIgnoreCase);
+                foreach (var required in new[] { "client/WTT-Campaigns.Client.dll", "client/WTT-Campaigns.UI.dll", "client/WTT-Campaigns.Shared.dll", "server/WTT-Campaigns.Server.dll", "server/WTT-Campaigns.Shared.dll", "server/WTT-Campaigns.Server.deps.json", "client/wtt_campaigns_ui.bundle", "client/wtt_campaigns_raid_editor.bundle", "client/wtt_campaigns_story_notifications.bundle" })
+                    if (!selected.Contains(required)) throw new IOException("Incomplete matching rename update; missing " + required);
+            }
+            // Check every legacy file before moving either component or installing new files.
+            foreach (var item in active) {
+                foreach (var entry in new[] { item.Item1 }.Concat(Directory.GetFileSystemEntries(item.Item1, "*", SearchOption.AllDirectories))) {
+                    if ((File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0)
+                        throw new IOException("Legacy installation contains a reparse point: " + entry);
+                    if (!File.Exists(entry)) continue;
+                    try { using (var probe = File.Open(entry, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { } }
+                    catch (IOException error) { throw new IOException("Cannot retire " + entry + ". Close the SPT server or game holding this file, then rerun dotnet msbuild build.proj. " + error.Message); }
+                }
+            }
+            if (Phase == "Check") return true;
+            foreach (var item in active) {
+                var hashes = Directory.GetFiles(item.Item1, "*", SearchOption.AllDirectories)
+                    .ToDictionary(file => file.Substring(item.Item1.Length + 1), file => hash(file));
+                foreach (var entry in hashes) {
+                    var backup = Path.Combine(item.Item2, entry.Key);
+                    Directory.CreateDirectory(Path.GetDirectoryName(backup));
+                    File.Copy(Path.Combine(item.Item1, entry.Key), backup);
+                    if (hash(backup) != entry.Value)
+                        throw new IOException("Legacy backup checksum mismatch: " + entry.Key);
+                }
+                File.WriteAllLines(item.Item2 + ".sha256", hashes.Select(entry => entry.Value + "  " + entry.Key));
+                foreach (var file in Directory.GetFiles(item.Item2)) {
+                    var name = Path.GetFileName(file);
+                    if (name.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".pdb", StringComparison.OrdinalIgnoreCase)
+                        || name.EndsWith(".deps.json", StringComparison.OrdinalIgnoreCase) || name.EndsWith(".bundle", StringComparison.OrdinalIgnoreCase)
+                        || name.EndsWith(".manifest", StringComparison.OrdinalIgnoreCase)) continue;
+                    preserveFile(file, Path.Combine(item.Item3, name));
+                }
+                foreach (var directory in Directory.GetDirectories(item.Item2)) {
+                    var name = Path.GetFileName(directory);
+                    if (new[] { "data", "icons", "hub-images", "wwwroot", "StoryMedia" }.Contains(name, StringComparer.OrdinalIgnoreCase)) continue;
+                    preserveTree(directory, Path.Combine(item.Item3, name));
+                }
+                // Retire files only after the complete archive has been verified.
+                // Empty directories may be held open by an editor or file watcher.
+                foreach (var entry in hashes) File.Delete(Path.Combine(item.Item1, entry.Key));
+                foreach (var directory in Directory.GetDirectories(item.Item1, "*", SearchOption.AllDirectories).OrderByDescending(path => path.Length).Concat(new[] { item.Item1 })) {
+                    try { Directory.Delete(directory, false); }
+                    catch (IOException) { }
+                    catch (UnauthorizedAccessException) { }
+                }
+                Log.LogMessage(Microsoft.Build.Framework.MessageImportance.High, "Archived legacy installation with verified hashes: " + item.Item2);
+            }
+            if (legacyExists) {
+                var config = Path.GetFullPath(ConfigDir);
+                var oldConfig = Path.Combine(config, "com.cj.seasonalperks.cfg");
+                if (File.Exists(oldConfig)) preserveFile(oldConfig, Path.Combine(config, "com.wtt.campaigns.cfg"));
+                preserveTree(Path.Combine(config, "SeasonalPerks"), Path.Combine(config, "WTT-Campaigns"));
+            }
+        } catch (Exception error) {
+            Log.LogError(error.Message);
+            if (Phase == "Migrate") {
+                try { restore(); } catch (Exception rollbackError) { Log.LogError("Legacy rollback requires attention: " + rollbackError.Message); }
+            }
+            return false;
+        }
+      ]]>
+      </Code>
+    </Task>
+  </UsingTask>
+</Project>

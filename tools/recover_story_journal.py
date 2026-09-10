@@ -14,7 +14,7 @@ def main():
     data = LIVE / 'EscapeFromTarkov_Data'
     output = DEV / 'SeasonalPerks/UI/Resources/Story'
     audit = DEV / 'SeasonalPerks/Research/Story'
-    recovered = DEV / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets/StoryArtwork'
+    recovered = DEV / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets/StoryArtwork'
     inventory = json.loads((recovered / 'provenance.json').read_text())
     names = {
         'ChaptersBackground': 'journal-rail', 'Allscreens_Borders_Default': 'journal-border',

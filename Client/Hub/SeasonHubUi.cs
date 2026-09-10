@@ -1,19 +1,19 @@
 using EFT.UI;
 using Newtonsoft.Json;
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.UI.Audio;
-using SeasonalPerks.UI.BattlePass;
-using SeasonalPerks.UI.Controls;
-using SeasonalPerks.UI.Models;
-using SeasonalPerks.UI.Profiles;
-using SeasonalPerks.UI.Screens;
 using SPT.Common.Http;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.UI.Audio;
+using WTT.Campaigns.UI.BattlePass;
+using WTT.Campaigns.UI.Controls;
+using WTT.Campaigns.UI.Models;
+using WTT.Campaigns.UI.Profiles;
+using WTT.Campaigns.UI.Screens;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Hub;
+namespace WTT.Campaigns.Client.Hub;
 
 public sealed partial class SeasonHubUi : MonoBehaviour
 {
@@ -51,7 +51,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
     }
     private Font Font
     {
-        get { return Bundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf"); }
+        get { return Bundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf"); }
     }
 
     private void Awake()
@@ -159,7 +159,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         }
         var banner = _banner.AddComponent<SeasonBanner>();
         var sound = _banner.AddComponent<HubBannerSound>();
-        sound.Initialize(Bundle.LoadAsset<AudioClip>("assets/mods/seasonalperks.assets/audio/hub-hover-loop.wav"));
+        sound.Initialize(Bundle.LoadAsset<AudioClip>("assets/mods/wtt-campaigns.assets/audio/hub-hover-loop.wav"));
         if (Plugin.Current?.LegacyBranding != false)
         {
             banner.Initialize(Font, Artwork, PlayVideo);
@@ -278,7 +278,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
                 throw new InvalidOperationException("The selected character has not finished loading. Select your character again.");
             }
             var raw = await RequestHandler.PostJsonAsync(
-                "/wtt-seasonal/hub",
+                "/wtt-campaigns/hub",
                 JsonConvert.SerializeObject(
                     new
                     {
@@ -375,12 +375,12 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 
     private Sprite? Artwork(string name)
     {
-        return Bundle.LoadAsset<Sprite>("assets/mods/seasonalperks.assets/hubartwork/" + name + ".png");
+        return Bundle.LoadAsset<Sprite>("assets/mods/wtt-campaigns.assets/hubartwork/" + name + ".png");
     }
 
     private void PlayVideo(string name, RawImage target, bool loop, Image? fallback)
     {
-        var clip = Bundle.LoadAsset<VideoClip>("assets/mods/seasonalperks.assets/hubmedia/" + name.ToLowerInvariant());
+        var clip = Bundle.LoadAsset<VideoClip>("assets/mods/wtt-campaigns.assets/hubmedia/" + name.ToLowerInvariant());
         if (clip)
         {
             target.gameObject.AddComponent<HubVideo>().Initialize(clip, target, loop, fallback);
@@ -393,7 +393,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 
     private void PlaySound(string name)
     {
-        var clip = Bundle.LoadAsset<AudioClip>("assets/mods/seasonalperks.assets/audio/" + name + ".wav");
+        var clip = Bundle.LoadAsset<AudioClip>("assets/mods/wtt-campaigns.assets/audio/" + name + ".wav");
         if (clip && Comfort.Common.Singleton<GUISounds>.Instantiated)
         {
             Comfort.Common.Singleton<GUISounds>.Instance.PlaySound(clip);

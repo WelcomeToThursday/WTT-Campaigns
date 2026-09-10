@@ -3,7 +3,7 @@ using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.ItemEvent;
 using SPTarkov.Server.Core.Routers;
 
-namespace SeasonalPerks.Server.Effects;
+namespace WTT.Campaigns.Server.Effects;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class FleaRestrictions(EventOutputHolder output)

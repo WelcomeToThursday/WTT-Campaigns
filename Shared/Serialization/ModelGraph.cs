@@ -2,7 +2,7 @@ using System.Collections;
 using System.Reflection;
 using Newtonsoft.Json;
 
-namespace SeasonalPerks.Shared.Serialization;
+namespace WTT.Campaigns.Shared.Serialization;
 
 /// <summary>Walks declared model properties for authoring references without converting models to JSON trees.</summary>
 public static class ModelGraph

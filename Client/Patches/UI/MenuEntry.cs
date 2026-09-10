@@ -1,15 +1,15 @@
 using System.Reflection;
 using EFT.UI;
-using SeasonalPerks.Client.Hub;
-using SeasonalPerks.Client.UI;
 using SPT.Reflection.Patching;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.Hub;
+using WTT.Campaigns.Client.UI;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Patches.UI;
+namespace WTT.Campaigns.Client.Patches.UI;
 
-internal sealed class MenuEntry(Type screenType) : ModulePatch("SeasonalPerks.MenuEntry." + screenType.Name)
+internal sealed class MenuEntry(Type screenType) : ModulePatch("WTT.Campaigns.MenuEntry." + screenType.Name)
 {
     protected override MethodBase GetTargetMethod()
     {
@@ -36,7 +36,7 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("SeasonalPerks.Me
         var existing = __instance
             .GetComponentsInChildren<DefaultUIButton>(true)
             .AsValueEnumerable()
-            .FirstOrDefault(button => button.name == "SeasonalPerksEntry");
+            .FirstOrDefault(button => button.name == "CampaignsEntry");
         if (existing != null)
         {
             existing.gameObject.SetActive(!Plugin.InRaid);
@@ -46,7 +46,7 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("SeasonalPerks.Me
         var parent = source.transform.parent;
         var inMenuList = parent.GetComponent<VerticalLayoutGroup>() != null;
         var entry = UnityEngine.Object.Instantiate(source, inMenuList ? parent : __instance.transform, false);
-        entry.name = "SeasonalPerksEntry";
+        entry.name = "CampaignsEntry";
         entry.OnClick.RemoveAllListeners();
         entry.OnClick.AddListener(() => SeasonUi.Instance.Open());
         entry.SetRawText("CHARACTERS", inMenuList ? (int)source._headerLabel.fontSize : 24);

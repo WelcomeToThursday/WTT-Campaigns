@@ -1,7 +1,7 @@
 using Cysharp.Text;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal static class StorySubtitleText
 {

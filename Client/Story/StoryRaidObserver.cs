@@ -1,11 +1,11 @@
 using EFT;
 using EFT.InventoryLogic;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Native;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Story;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal static class StoryRaidObserver
 {

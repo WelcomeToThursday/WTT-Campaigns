@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace SeasonalPerks.Client.Hub;
+namespace WTT.Campaigns.Client.Hub;
 
 public sealed partial class SeasonHubUi
 {

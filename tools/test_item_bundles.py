@@ -30,7 +30,7 @@ def main():
         assert len(matches) == 1, identity + ': one bundle registration'
         assert matches[0]['ModPath'].endswith('/WTT-ContentBackport'), identity + ': Backport owns the bundle'
         assert matches[0]['Size'] > 0 and matches[0]['Dependencies'], identity + ': bundle and dependencies loaded'
-    assert not any(b['FileName'] == 'wtt-seasonal/' + key for key in keys for b in bundles), 'Duplicate Seasonal bundles'
+    assert not any(b['FileName'] == 'wtt-campaigns/' + key for key in keys for b in bundles), 'Duplicate Seasonal bundles'
     print(f'PASS: {len(expected)} item definitions retain their data and use {len(keys)} Backport models; no duplicate bundles.')
 
 

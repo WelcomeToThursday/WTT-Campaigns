@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Web.Authoring;
+namespace WTT.Campaigns.Server.Web.Authoring;
 
 // Presentation metadata only: never normalize or discard imported authoring data.
 public static class EditorFieldGuide
@@ -19,7 +19,7 @@ public static class EditorFieldGuide
             NativeCondition c => c.ConditionType,
             NativeConditionDistance => "Kills",
             NativeReward r => r.Type,
-            SeasonalPerks.Shared.Effects.PerkEffect e => e.EffectId ?? "",
+            WTT.Campaigns.Shared.Effects.PerkEffect e => e.EffectId ?? "",
             _ => "Imported settings",
         };
     }
@@ -124,9 +124,9 @@ public static class EditorFieldGuide
                     $"Stamina capacity offset for the selected arms or legs pool: {amount}. This is a whole-number offset, not a multiplier.",
             };
         }
-        if (field == "value" && (value as SeasonalPerks.Shared.Effects.ItemFilterRule)?.Field is "_tpl" or "ParentId")
+        if (field == "value" && (value as WTT.Campaigns.Shared.Effects.ItemFilterRule)?.Field is "_tpl" or "ParentId")
         {
-            return (value as SeasonalPerks.Shared.Effects.ItemFilterRule)?.Field == "_tpl"
+            return (value as WTT.Campaigns.Shared.Effects.ItemFilterRule)?.Field == "_tpl"
                 ? "Select the individual item matched by this filter."
                 : "Select the item category matched by this filter. All items in that category are affected.";
         }

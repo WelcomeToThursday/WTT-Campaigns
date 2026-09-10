@@ -7,12 +7,12 @@ using SPT.Reflection.Patching;
 using UnityEngine;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Patches.Items;
+namespace WTT.Campaigns.Client.Patches.Items;
 
 // Keep native healing, interruption, refresh, synchronization and disposal code. Change only
 // resource arithmetic and the resource-limited healing/treatment checks at validated IL sites.
 internal class ItemResourcePatch(Type effectType, string methodName)
-    : ModulePatch("SeasonalPerks.ItemResource." + effectType.DeclaringType!.Name + "." + methodName)
+    : ModulePatch("WTT.Campaigns.ItemResource." + effectType.DeclaringType!.Name + "." + methodName)
 {
     protected override MethodBase GetTargetMethod()
     {

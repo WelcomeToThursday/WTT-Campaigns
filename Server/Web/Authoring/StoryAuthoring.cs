@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Reflection;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Web.Authoring;
+namespace WTT.Campaigns.Server.Web.Authoring;
 
 // Editor-only operations. Authoring metadata and selection never enter the pack format.
 public static class StoryAuthoring

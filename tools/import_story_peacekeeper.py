@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     sdk = ROOT.parent / 'CJ-SDK'
-    destination = sdk / 'Assets/Mods/SeasonalPerks.Assets/StoryPeacekeeper'
+    destination = sdk / 'Assets/Mods/WTT-Campaigns.Assets/StoryPeacekeeper'
     shaders = json.loads((ROOT / 'Research/Story/sdk-assets.json').read_text())['shaders']
     shader = shaders['p0/Reflective/Bumped Specular SMap']
     audit = []

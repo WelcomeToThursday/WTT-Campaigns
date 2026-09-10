@@ -1,10 +1,10 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Web.Authoring;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Server.Web.Authoring;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class EditorLayoutChecks
 {
@@ -42,11 +42,11 @@ internal static class EditorLayoutChecks
             EditorFieldGuide.NativeHelp(distance, "value").Contains("75 metres"),
             "Nested distance uses metres rather than objective count"
         );
-        var filter = new SeasonalPerks.Shared.Effects.ItemFilterRule { Field = "_tpl", Value = "abc" };
+        var filter = new WTT.Campaigns.Shared.Effects.ItemFilterRule { Field = "_tpl", Value = "abc" };
         check(EditorFieldGuide.NativeHelp(filter, "value").Contains("individual item"), "Item filter explains an item target");
         filter.Field = "ParentId";
         check(EditorFieldGuide.NativeHelp(filter, "value").Contains("category"), "Filter help follows item-to-category changes");
-        var effect = new SeasonalPerks.Shared.Effects.PerkEffect { EffectId = "energy_drain_multiplicator", Multiplier = 0.8 };
+        var effect = new WTT.Campaigns.Shared.Effects.PerkEffect { EffectId = "energy_drain_multiplicator", Multiplier = 0.8 };
         check(
             EditorFieldGuide.NativeHelp(effect, "multiplicator").Contains("energy last longer"),
             "Energy effect help explains why a lower multiplier helps"

@@ -7,12 +7,12 @@ from test_integration import PROJECT, SERVER, request, check, checks
 
 def main():
     account = json.loads((PROJECT / 'Testing/story-state.json').read_text())
-    fixture = json.loads((SERVER / 'user/mods/SeasonalPerks/creator/acceptance-fixture.json').read_text())
+    fixture = json.loads((SERVER / 'user/mods/WTT-Campaigns/creator/acceptance-fixture.json').read_text())
     child = account['child']
     identity = {'Version': 2, 'SeasonId': account['season'], 'CharacterId': child}
 
     def read():
-        result = request('/wtt-seasonal/story', identity, child)
+        result = request('/wtt-campaigns/story', identity, child)
         assert not result.get('Error'), result
         return result
 
@@ -21,7 +21,7 @@ def main():
         payload = {**identity, 'ExpectedRevision': state['Revision'], 'OperationId': secrets.token_hex(16),
                    'Target': binding, 'Kind': kind, 'ItemId': item, 'Scene': next(b for b in state['Definition']['RaidBindings'] if b['Id'] == binding)['ObjectPath'].split(':/')[0],
                    'RaidId': raid_id if raid_id is not None else state['State']['Raid']['Id']}
-        result = request('/wtt-seasonal/story/raid', payload, child)
+        result = request('/wtt-campaigns/story/raid', payload, child)
         check(bool(result.get('Error')) == error, kind + (' rejected' if error else ' committed'))
         return result, payload
 
@@ -69,7 +69,7 @@ def main():
     check(collected['Facts']['QuestStatuses'][fixture['FollowupQuest']] == 'Success', 'Collectible completes native story quest in raid')
     check(collected['State']['Raid']['Experience'] == 75, 'Native raid reward recorded for merge')
     before_retry = request('/client/game/profile/list', session=child)[0]
-    replay = request('/wtt-seasonal/story/raid', payload, child)
+    replay = request('/wtt-campaigns/story/raid', payload, child)
     check(replay.get('Replayed') and not replay['Presentation'] and not replay['Lines'], 'Raid retry has no repeated presentation')
     check(request('/client/game/profile/list', session=child)[0] == before_retry, 'Collectible retry cannot grant rewards twice')
     profile['Info']['Experience'] += 30

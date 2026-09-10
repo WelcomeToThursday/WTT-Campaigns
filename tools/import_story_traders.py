@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 SDK = ROOT.parent / 'CJ-SDK'
-TARGET = SDK / 'Assets/Mods/SeasonalPerks.Assets/StoryRecovered'
+TARGET = SDK / 'Assets/Mods/WTT-Campaigns.Assets/StoryRecovered'
 TRADERS = {
     'Fence': '579dc571d53a0658a154fbec', 'Jaeger': '5c0647fdd443bc2504c2d371',
     'Mechanic': '5a7c2eca46aef81a7ca2145d', 'Peacekeeper': '5935c25fb3acc3127c3d8cd9',

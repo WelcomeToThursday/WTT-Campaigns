@@ -1,6 +1,6 @@
-using SeasonalPerks.Shared.Seasons;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 public static class StoryObservationRules
 {

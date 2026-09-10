@@ -1,4 +1,4 @@
-namespace SeasonalPerks.UI.Screens;
+namespace WTT.Campaigns.UI.Screens;
 
 public enum ScreenPage
 {

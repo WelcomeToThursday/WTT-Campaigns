@@ -1,8 +1,4 @@
 using HarmonyLib;
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Trading;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Commerce;
 using SPTarkov.Server.Core.Helpers.Traders;
@@ -12,8 +8,12 @@ using SPTarkov.Server.Core.Models.Eft.ItemEvent;
 using SPTarkov.Server.Core.Models.Eft.Trade;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Trading;
 
-namespace SeasonalPerks.Server.Effects;
+namespace WTT.Campaigns.Server.Effects;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class TraderPaymentValidation(TraderAssortHelper assorts, PaymentHelper payment, HttpResponseUtil responses, HubGameplay hub)

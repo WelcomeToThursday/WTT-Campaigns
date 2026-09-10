@@ -2,21 +2,21 @@ using System.Reflection;
 using SPTarkov.Server.Core.Models.Spt.Mod;
 using Range = SemanticVersioning.Range;
 
-namespace SeasonalPerks.Server;
+namespace WTT.Campaigns.Server;
 
 public sealed record Metadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMetadata
 {
-    public string? WWWRootUrl { get; init; } = "seasonal-creator-assets";
-    public string? HomePage { get; init; } = "/wtt-seasonal/creator";
+    public string? WWWRootUrl { get; init; } = "wtt-campaigns-creator-assets";
+    public string? HomePage { get; init; } = "/wtt-campaigns/creator";
     public string? HomePageDescription { get; init; } = "Create, preview, and publish playable seasons.";
     public static string DirectoryPath
     {
         get { return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!; }
     }
 
-    public string ModGuid { get; init; } = "com.cj.seasonalperks";
-    public string Name { get; init; } = "Seasonal Perks";
-    public string Author { get; init; } = "CJ-SPT";
+    public string ModGuid { get; init; } = "com.wtt.campaigns";
+    public string Name { get; init; } = "WTT-Campaigns";
+    public string Author { get; init; } = "CJ, WTT";
     public List<string>? Contributors { get; init; }
     public SemanticVersioning.Version Version { get; init; } = new("0.5.2");
     public Range SptVersion { get; init; } = new("~4.1.3");

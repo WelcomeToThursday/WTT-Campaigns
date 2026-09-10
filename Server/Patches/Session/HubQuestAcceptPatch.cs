@@ -1,8 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Profiles;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
@@ -11,8 +9,10 @@ using SPTarkov.Server.Core.Models.Eft.ItemEvent;
 using SPTarkov.Server.Core.Models.Eft.Quests;
 using SPTarkov.Server.Core.Routers;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Profiles;
 
-namespace SeasonalPerks.Server.Patches.Session;
+namespace WTT.Campaigns.Server.Patches.Session;
 
 [Injectable]
 public class HubQuestAcceptPatch(SeasonService seasons, HubQuestService quests, EventOutputHolder output, HttpResponseUtil responses)

@@ -5,7 +5,7 @@ using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Servers;
 
-namespace SeasonalPerks.Server.Story;
+namespace WTT.Campaigns.Server.Story;
 
 [Injectable]
 public sealed class StorySavePatch : AbstractPatch

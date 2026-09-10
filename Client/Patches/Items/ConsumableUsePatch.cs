@@ -2,11 +2,11 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using EFT.HealthSystem;
 using HarmonyLib;
-using SeasonalPerks.Client.Patches.Health;
-using SeasonalPerks.Shared.Effects.Consumables;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Client.Patches.Health;
+using WTT.Campaigns.Shared.Effects.Consumables;
 
-namespace SeasonalPerks.Client.Patches.Items;
+namespace WTT.Campaigns.Client.Patches.Items;
 
 internal class ConsumableUsePatch : ModulePatch
 {

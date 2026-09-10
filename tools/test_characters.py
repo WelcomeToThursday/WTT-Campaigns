@@ -24,7 +24,7 @@ def main():
     root = account()
 
     def call(action, **data):
-        result = request('/wtt-seasonal/' + action, {'ProtocolVersion': 2, **data}, root)
+        result = request('/wtt-campaigns/' + action, {'ProtocolVersion': 2, **data}, root)
         check(not result.get('Error'), action + ': ' + str(result.get('Error')))
         return result
 
@@ -34,7 +34,7 @@ def main():
         return [{k: p.get(k) for k in ['_id', 'Info', 'Inventory', 'Skills', 'Quests', 'Customization', 'TradersInfo']}
                 for p in request('/client/game/profile/list', session=root)]
     normal = progression()
-    fixture = json.loads((SERVER / 'user/mods/SeasonalPerks/creator/acceptance-fixture.json').read_text())
+    fixture = json.loads((SERVER / 'user/mods/WTT-Campaigns/creator/acceptance-fixture.json').read_text())
     characters = []
     authored = next(s for s in initial['Seasons'] if s['Id'] == fixture['SeasonId'])
     legacy = next(s for s in initial['Seasons'] if s['Id'] == '69e232a764dfe95549003f0f')
@@ -48,7 +48,7 @@ def main():
         again = call('create', **payload)
         check(again['SelectedCharacterId'] == child, 'Creation retry returns the same character')
         check(len(again['Characters']) == index + 2, 'Creation retry does not add another card')
-        conflict = request('/wtt-seasonal/create', {'ProtocolVersion': 2, **payload, 'Nickname': 'Different'}, root)
+        conflict = request('/wtt-campaigns/create', {'ProtocolVersion': 2, **payload, 'Nickname': 'Different'}, root)
         check(bool(conflict.get('Error')), 'Reusing a creation ID with different choices is rejected')
 
     baselines = {}
@@ -58,7 +58,7 @@ def main():
         check(switched['EffectiveProfileId'] == child, 'Switch selects exact character ID')
         summary = next(c for c in switched['Characters'] if c['Id'] == child)
         check(switched['SeasonId'] == summary['SeasonId'], 'Snapshot uses the selected character season')
-        hub = request('/wtt-seasonal/hub', {'ProtocolVersion': 2}, child)
+        hub = request('/wtt-campaigns/hub', {'ProtocolVersion': 2}, child)
         check(not hub.get('Error') and hub['SeasonId'] == summary['SeasonId'], 'Rewards use the selected character season')
         quests = request('/client/quest/list', session=child)
         check(any(q['_id'] == fixture['QuestId'] for q in quests) == (child != characters[2]), 'Only the character own season quests are listed')
@@ -72,7 +72,7 @@ def main():
         baselines[child] = stable
         hubs[child] = hub['Id']
     check(hubs[characters[0]] != hubs[characters[2]], 'Different seasons have distinct battle passes')
-    active_delete = request('/wtt-seasonal/delete', {'ProtocolVersion': 2, 'CharacterId': characters[2]}, root)
+    active_delete = request('/wtt-campaigns/delete', {'ProtocolVersion': 2, 'CharacterId': characters[2]}, root)
     check(bool(active_delete.get('Error')), 'Server rejects deletion while the target session is active')
     call('switch', Mode='normal')
     check(progression() == normal, 'Normal PMC and Scav are unchanged')
@@ -84,7 +84,7 @@ def main():
         raid = request('/client/match/local/start', {'location': 'bigmap', 'playerSide': 'pmc', 'mode': 'regular', 'timeVariant': 'CURR', 'transitionType': 0}, child)
         check(bool(raid.get('serverId')), 'Native raid starts for ' + season['Name'])
         for action in ['create', 'delete', 'wipe', 'switch']:
-            rejected = request('/wtt-seasonal/' + action, {'ProtocolVersion': 2, 'CharacterId': characters[1], 'Mode': 'normal', 'OperationId': secrets.token_hex(16), 'SeasonId': season['Id']}, root)
+            rejected = request('/wtt-campaigns/' + action, {'ProtocolVersion': 2, 'CharacterId': characters[1], 'Mode': 'normal', 'OperationId': secrets.token_hex(16), 'SeasonId': season['Id']}, root)
             check(bool(rejected.get('Error')), 'Cannot ' + action + ' characters during a raid')
         if child == characters[0]:
             achievements = json.loads((SERVER / 'SPT_Data/database/templates/achievements.json').read_text())
@@ -93,19 +93,19 @@ def main():
         request('/client/match/local/end', {'serverId': raid['serverId'], 'results': {'profile': profile, 'result': 'Survived', 'exitName': 'Crossroads', 'inSession': False, 'favorite': False, 'playTime': 600}, 'lostInsuredItems': [], 'transferItems': {}}, child)
         check(call('snapshot')['EffectiveProfileId'] == child, 'Raid finishes without changing the selected profile')
     call('switch', Mode='seasonal', CharacterId=characters[0])
-    hub = request('/wtt-seasonal/hub', {'ProtocolVersion': 2}, characters[0])
-    claimed = request('/wtt-seasonal/hub/claim', {'ProtocolVersion': 2, 'SeasonId': authored['Id'], 'OperationId': secrets.token_hex(16), 'ExpectedRevision': hub['Revision'], 'RewardId': fixture['CrateReward']}, characters[0])
+    hub = request('/wtt-campaigns/hub', {'ProtocolVersion': 2}, characters[0])
+    claimed = request('/wtt-campaigns/hub/claim', {'ProtocolVersion': 2, 'SeasonId': authored['Id'], 'OperationId': secrets.token_hex(16), 'ExpectedRevision': hub['Revision'], 'RewardId': fixture['CrateReward']}, characters[0])
     check(claimed.get('Committed'), 'Authored season reward can be claimed')
     call('switch', Mode='seasonal', CharacterId=characters[1])
-    sibling_hub = request('/wtt-seasonal/hub', {'ProtocolVersion': 2}, characters[1])
+    sibling_hub = request('/wtt-campaigns/hub', {'ProtocolVersion': 2}, characters[1])
     check(sibling_hub['ClaimedRewards'] == 0, 'Claiming a reward does not claim it for another character in the same season')
     call('switch', Mode='normal')
     outsider = account()
     for action in ['delete', 'wipe', 'switch', 'edit']:
-        rejected = request('/wtt-seasonal/' + action,
+        rejected = request('/wtt-campaigns/' + action,
                            {'ProtocolVersion': 2, 'CharacterId': characters[0], 'Mode': 'seasonal', 'OperationId': secrets.token_hex(16)}, outsider)
         check(bool(rejected.get('Error')), 'Another account cannot ' + action + ' this character')
-    root_delete = request('/wtt-seasonal/delete', {'ProtocolVersion': 2, 'CharacterId': root}, root)
+    root_delete = request('/wtt-campaigns/delete', {'ProtocolVersion': 2, 'CharacterId': root}, root)
     check(bool(root_delete.get('Error')), 'Root account cannot be deleted through a seasonal card')
     earned = request('/client/game/profile/list', session=characters[0])[0]['Achievements']
     check(bool(earned), 'Fixture has earned achievements before wiping')
@@ -117,7 +117,7 @@ def main():
     check(not (SERVER / 'user/profiles' / (characters[0] + '.json')).exists(), 'Wipe removes the old progression file')
     replay = call('wipe', CharacterId=characters[0], OperationId=wipe_operation)
     check(next(c for c in replay['Characters'] if c['Id'] == characters[0])['Wiped'], 'Wipe retry keeps the same empty slot')
-    denied = request('/wtt-seasonal/switch', {'ProtocolVersion': 2, 'Mode': 'seasonal', 'CharacterId': characters[0]}, root)
+    denied = request('/wtt-campaigns/switch', {'ProtocolVersion': 2, 'Mode': 'seasonal', 'CharacterId': characters[0]}, root)
     check(bool(denied.get('Error')), 'A wiped character must be recreated before playing')
     recreation = dict(CharacterId=characters[0], SeasonId=authored['Id'], OperationId=secrets.token_hex(16), Nickname='Reborn', Side='Bear', PerkIds=[])
     recreated = call('create', **recreation)
@@ -129,7 +129,7 @@ def main():
     check(reset_profile['Achievements'] == earned, 'Wipe preserves all earned achievements')
     selected = call('switch', Mode='seasonal', CharacterId=replacement)
     check(fixture['PerkId'] not in selected['State']['SeasonalPerks'], 'Old personal modifiers are replaced by the new selection')
-    reset_hub = request('/wtt-seasonal/hub', {'ProtocolVersion': 2}, replacement)
+    reset_hub = request('/wtt-campaigns/hub', {'ProtocolVersion': 2}, replacement)
     check(reset_hub['Revision'] == 0 and reset_hub['ClaimedRewards'] == 0, 'Wipe clears existing raid and reward progress')
     check(not any(i['_tpl'] == fixture['Crate'] for i in reset_profile['Inventory']['items']), 'Wipe removes previously claimed reward items')
     check(reset_profile['Inventory']['equipment'] != baselines[characters[0]][0]['Inventory']['equipment'], 'Recreation receives fresh equipment')

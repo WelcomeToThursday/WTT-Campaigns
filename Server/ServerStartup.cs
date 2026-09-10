@@ -1,13 +1,13 @@
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Patches.Session;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Server.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Routers;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Patches.Session;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Server.Seasons;
 
-namespace SeasonalPerks.Server;
+namespace WTT.Campaigns.Server;
 
 [Injectable(InjectionType.Singleton, OnLoadOrder.PostLoad + 800)]
 public sealed class ServerStartup(
@@ -41,8 +41,8 @@ public sealed class ServerStartup(
                 throw new FileNotFoundException("Missing local seasonal perk icon", file);
             }
 
-            images.AddRoute("/wtt-seasonal/icons/" + perk.Id, file);
-            perk.ImageUrl = "/wtt-seasonal/icons/" + perk.Id + ".png";
+            images.AddRoute("/wtt-campaigns/icons/" + perk.Id, file);
+            perk.ImageUrl = "/wtt-campaigns/icons/" + perk.Id + ".png";
         }
         return Task.CompletedTask;
     }

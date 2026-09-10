@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SeasonalPerks.UI.Controls;
+namespace WTT.Campaigns.UI.Controls;
 
 public static class StoryTaskLayout
 {

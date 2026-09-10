@@ -1,9 +1,9 @@
 using System.Runtime.CompilerServices;
 using EFT;
 using EFT.HealthSystem;
-using SeasonalPerks.Shared.Effects.Consumables;
+using WTT.Campaigns.Shared.Effects.Consumables;
 
-namespace SeasonalPerks.Client.Patches.Health;
+namespace WTT.Campaigns.Client.Patches.Health;
 
 internal static class ConsumableHealthEffects
 {

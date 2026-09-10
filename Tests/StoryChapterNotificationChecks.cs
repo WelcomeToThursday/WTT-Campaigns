@@ -1,7 +1,7 @@
-using SeasonalPerks.Client.Story;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Client.Story;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class StoryChapterNotificationChecks
 {

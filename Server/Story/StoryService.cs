@@ -2,10 +2,6 @@ using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Story;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Controllers;
 using SPTarkov.Server.Core.Models.Common;
@@ -15,8 +11,12 @@ using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Story;
+namespace WTT.Campaigns.Server.Story;
 
 [Injectable(InjectionType.Singleton)]
 public sealed partial class StoryService(
@@ -58,7 +58,7 @@ public sealed partial class StoryService(
         var active = Active(sessionId, request);
         if (request.Version != 2)
         {
-            throw new InvalidOperationException("Update both Seasonal client and server to story protocol 2.");
+            throw new InvalidOperationException("Update both WTT-Campaigns client and server to story protocol 2.");
         }
 
         ValidateObservation(active.Id, active.Profile, request);

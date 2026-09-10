@@ -1,4 +1,4 @@
-namespace SeasonalPerks.UI.Models;
+namespace WTT.Campaigns.UI.Models;
 
 public sealed class StoryNoteView
 {

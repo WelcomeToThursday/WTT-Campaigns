@@ -2,7 +2,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
 
-namespace SeasonalPerks.Shared.Serialization;
+namespace WTT.Campaigns.Shared.Serialization;
 
 /// <summary>Typed imported contracts preserve their original wire shape, including absent fields and numeric strings.</summary>
 [JsonConverter(typeof(NativeModelConverter))]

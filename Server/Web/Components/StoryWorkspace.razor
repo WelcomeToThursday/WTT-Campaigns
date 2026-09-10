@@ -1,7 +1,7 @@
 @inject SeasonContentService Content
 @using System.Collections
-@using SeasonalPerks.Shared.Story
-@using SeasonalPerks.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Story
+@using WTT.Campaigns.Server.Web.Authoring
 @if (Season.Story == null)
 {
     <div class="empty-selection"><strong>Build a story for this season</strong><p>Start with a chapter, add native quests, then connect journal notes and trader conversations. Existing season content stays available.</p><button class="primary" @onclick="Enable">Add story chapter</button></div>

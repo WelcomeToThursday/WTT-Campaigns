@@ -1,6 +1,6 @@
-using SeasonalPerks.Shared.Contracts;
+using WTT.Campaigns.Shared.Contracts;
 
-namespace SeasonalPerks.Shared.Profiles;
+namespace WTT.Campaigns.Shared.Profiles;
 
 public static class CharacterSession
 {

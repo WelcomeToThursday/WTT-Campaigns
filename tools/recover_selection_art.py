@@ -11,7 +11,7 @@ from PIL import Image
 
 DEV = Path(__file__).resolve().parents[2]
 DATA = Path('E:/EscapeFromTarkov/EscapeFromTarkov_Data')
-OUT = DEV / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets/SelectionArtwork'
+OUT = DEV / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets/SelectionArtwork'
 SPRITES = {
     'sharedassets47.assets': {
         44: 'background', 40: 'normal-glow', 69: 'normal-hover',

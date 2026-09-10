@@ -1,9 +1,9 @@
 using System;
-using SeasonalPerks.UI.Media;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Media;
 
-namespace SeasonalPerks.UI.Controls;
+namespace WTT.Campaigns.UI.Controls;
 
 public static class StoryJournalStyle
 {

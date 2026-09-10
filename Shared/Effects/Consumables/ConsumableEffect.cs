@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Effects.Consumables;
+namespace WTT.Campaigns.Shared.Effects.Consumables;
 
 public sealed class ConsumableEffect
 {

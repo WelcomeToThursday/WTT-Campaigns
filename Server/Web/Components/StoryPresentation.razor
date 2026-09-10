@@ -1,10 +1,10 @@
 @inject SeasonContentService Content
-@using SeasonalPerks.Shared.Story
-@using SeasonalPerks.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Story
+@using WTT.Campaigns.Server.Web.Authoring
 <div class="story-presentation"><span class="eyebrow">TEXT AND ARTWORK PREVIEW</span>
 @if (Value is StoryChapter chapter)
 {
-    @if (SeasonValidator.IsId(chapter.Image)) { <img class="chapter-art" src="@($"/wtt-seasonal/creator/assets/{chapter.Image}.png")" alt="Chapter artwork" /> }
+    @if (SeasonValidator.IsId(chapter.Image)) { <img class="chapter-art" src="@($"/wtt-campaigns/creator/assets/{chapter.Image}.png")" alt="Chapter artwork" /> }
     <h2>@chapter.Name</h2>
     @foreach (var quest in Season.Story!.Quests.Where(q => q.ChapterId == chapter.Id && !q.Hidden))
     { <p>□ @QuestName(quest.QuestId) · @(quest.Main ? "Required" : "Optional")</p> }

@@ -3,7 +3,7 @@ using EFT;
 using HarmonyLib;
 using SPT.Reflection.Patching;
 
-namespace SeasonalPerks.Client.Patches.Movement;
+namespace WTT.Campaigns.Client.Patches.Movement;
 
 // Disabled/destroyed triggers may never send OnTriggerExit. Restore the native limit
 // on the next movement tick, also covering a collider disabled during a raid.

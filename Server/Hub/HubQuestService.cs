@@ -1,14 +1,14 @@
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Story;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Services.Locales;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Story;
 using Path = System.IO.Path;
 
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class HubQuestService(TemplateTable templates, JsonUtil json, SeasonRepository repository)
@@ -55,7 +55,7 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
 
             var definition = _storyQuests.Contains(pair.Key)
                 ? StoryQuestCompatibility.NativeTemplate(pair.Value)
-                : SeasonalPerks.Shared.Seasons.SeasonCompiler.Copy(pair.Value);
+                : WTT.Campaigns.Shared.Seasons.SeasonCompiler.Copy(pair.Value);
             definition.Localization = new();
             templates.Quests[id] = json.Deserialize<Quest>(Newtonsoft.Json.JsonConvert.SerializeObject(definition))!;
             Imported.Add(pair.Key);

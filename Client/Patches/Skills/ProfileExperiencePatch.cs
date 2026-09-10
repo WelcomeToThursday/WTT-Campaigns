@@ -1,10 +1,10 @@
 using System.Reflection;
 using EFT;
 using HarmonyLib;
-using SeasonalPerks.Shared.Effects.Skills;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Shared.Effects.Skills;
 
-namespace SeasonalPerks.Client.Patches.Skills;
+namespace WTT.Campaigns.Client.Patches.Skills;
 
 // ExamineOperation and ItemManipulator.FinishConditional award through this wrapper.
 // Backend reconciliation and deserialization write ProfileInfo directly instead.

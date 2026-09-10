@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Profiles;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Profiles;
 
-namespace SeasonalPerks.Shared.Effects;
+namespace WTT.Campaigns.Shared.Effects;
 
 /// <summary>Immutable aggregate rebuilt from templates, never from already modified player values.</summary>
 public sealed class RuntimeEffects

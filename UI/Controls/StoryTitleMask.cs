@@ -1,8 +1,8 @@
-using SeasonalPerks.UI.Media;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Media;
 
-namespace SeasonalPerks.UI.Controls;
+namespace WTT.Campaigns.UI.Controls;
 
 // Apply the recovered soft title mask without depending on live-only UI shaders.
 public sealed class StoryTitleMask : BaseMeshEffect

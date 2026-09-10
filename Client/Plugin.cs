@@ -1,18 +1,18 @@
 using BepInEx;
 using EFT;
 using Newtonsoft.Json;
-using SeasonalPerks.Client.Hub;
-using SeasonalPerks.Client.Profiles;
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Profiles;
 using SPT.Common.Http;
+using WTT.Campaigns.Client.Hub;
+using WTT.Campaigns.Client.Profiles;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Profiles;
 
-namespace SeasonalPerks.Client;
+namespace WTT.Campaigns.Client;
 
-[BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.5.2")]
+[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.5.2")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 public sealed class Plugin : BaseUnityPlugin
@@ -54,8 +54,8 @@ public sealed class Plugin : BaseUnityPlugin
         Instance = this;
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
-        SeasonalPerks.UI.Media.StoryUiArtwork.SharedStatusIcon = name =>
-            SeasonUi.Instance.UiBundle.LoadAsset<UnityEngine.Sprite>("assets/mods/seasonalperks.assets/storystatusicons/" + name + ".png");
+        WTT.Campaigns.UI.Media.StoryUiArtwork.SharedStatusIcon = name =>
+            SeasonUi.Instance.UiBundle.LoadAsset<UnityEngine.Sprite>("assets/mods/wtt-campaigns.assets/storystatusicons/" + name + ".png");
         gameObject.AddComponent<SeasonHubUi>();
         gameObject.AddComponent<Spatial.ZoneRuntime>();
         gameObject.AddComponent<Authoring.RaidEditor>();
@@ -79,7 +79,7 @@ public sealed class Plugin : BaseUnityPlugin
 
         if (snapshot.ProtocolVersion != 2)
         {
-            throw new InvalidOperationException("Update both Seasonal client and server to the same version.");
+            throw new InvalidOperationException("Update both WTT-Campaigns client and server to the same version.");
         }
 
         snapshot.SeasonName = Localized(snapshot.SeasonId + " name", snapshot.SeasonName);
@@ -100,10 +100,10 @@ public sealed class Plugin : BaseUnityPlugin
             mutation.SeasonId = Current?.SeasonId ?? "";
         }
 
-        var json = await RequestHandler.PostJsonAsync("/wtt-seasonal/" + operation, JsonConvert.SerializeObject(mutation));
+        var json = await RequestHandler.PostJsonAsync("/wtt-campaigns/" + operation, JsonConvert.SerializeObject(mutation));
         var snapshot =
             JsonConvert.DeserializeObject<ClientSnapshot>(json, EftJsonConverters.Converters)
-            ?? throw new InvalidDataException("Seasonal server returned an empty response.");
+            ?? throw new InvalidDataException("WTT-Campaigns server returned an empty response.");
         if (snapshot.Error != null)
         {
             throw new InvalidOperationException(snapshot.Error);
@@ -115,13 +115,13 @@ public sealed class Plugin : BaseUnityPlugin
     internal static async Task FlushPendingOperations()
     {
         var app = App ?? throw new InvalidOperationException("The game menu is not ready.");
-        LogInfo("Seasonal switch/save: flushing pending operations.");
+        LogInfo("WTT-Campaigns switch/save: flushing pending operations.");
         var result = await app.Session.FlushOperationQueue();
         if (!result.Succeed)
         {
             throw new InvalidOperationException("Pending profile operations could not be saved: " + result.Error);
         }
-        LogInfo("Seasonal switch/save: pending operations saved.");
+        LogInfo("WTT-Campaigns switch/save: pending operations saved.");
     }
 
     // Callers flush once before the server mutation; never flush again after switching its identity.
@@ -137,7 +137,7 @@ public sealed class Plugin : BaseUnityPlugin
         PendingSessionId = snapshot.EffectiveProfileId;
         try
         {
-            LogInfo("Seasonal switch/save: reconnecting to " + snapshot.ActiveMode + ".");
+            LogInfo("WTT-Campaigns switch/save: reconnecting to " + snapshot.ActiveMode + ".");
             // EFT deliberately starts old-session shutdown without awaiting the websocket close.
             // The CreateBackend patch applies the target identity at the new connection boundary.
             await app.RecreateBackend(mode, force: true);
@@ -146,7 +146,7 @@ public sealed class Plugin : BaseUnityPlugin
                 throw new InvalidOperationException("The requested character did not finish loading. Select it again to retry.");
             }
             Accept(snapshot);
-            LogInfo("Seasonal switch/save: " + snapshot.ActiveMode + " character loaded and verified.");
+            LogInfo("WTT-Campaigns switch/save: " + snapshot.ActiveMode + " character loaded and verified.");
         }
         finally
         {

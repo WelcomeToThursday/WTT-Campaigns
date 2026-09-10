@@ -1,7 +1,7 @@
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Seasons;
+using WTT.Campaigns.Server.Seasons;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class SeasonItemBundleChecks
 {
@@ -31,12 +31,12 @@ internal static class SeasonItemBundleChecks
             }
 
             WriteMod(backport, keys);
-            WriteMod(seasonal, keys.Select(k => "wtt-seasonal/" + k).Append("custom/model.bundle"));
+            WriteMod(seasonal, keys.Select(k => "wtt-campaigns/" + k).Append("custom/model.bundle"));
             var bundles = new SeasonItemBundles([seasonal, backport]);
             foreach (var key in keys)
             {
                 check(bundles.Resolve(key) == key, "Imported item uses the shared bundle: " + key);
-                check(bundles.Resolve("wtt-seasonal/" + key) == key, "Older packs prefer Backport over duplicate assets: " + key);
+                check(bundles.Resolve("wtt-campaigns/" + key) == key, "Older packs prefer Backport over duplicate assets: " + key);
             }
 
             check(bundles.Resolve("custom/model.bundle") == "custom/model.bundle", "Authored bundles retain their registered keys");

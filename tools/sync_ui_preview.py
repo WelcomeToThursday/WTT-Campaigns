@@ -37,7 +37,7 @@ def sync_sources(source_root: Path, target: Path, runtime: Path) -> int:
             continue
         text = source.read_text(encoding='utf-8-sig')
         text, count = re.subn(
-            r'^namespace (SeasonalPerks\.UI(?:\.\w+)*);$',
+            r'^namespace (WTT\.Campaigns\.UI(?:\.\w+)*);$',
             r'namespace \1\n{',
             text,
             flags=re.MULTILINE,
@@ -73,6 +73,6 @@ def sync_sources(source_root: Path, target: Path, runtime: Path) -> int:
 
 if __name__ == '__main__':
     project = Path(__file__).resolve().parents[1]
-    assets = project.parent / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets'
+    assets = project.parent / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets'
     count = sync_sources(project / 'UI', assets / 'Editor/Generated', assets / 'PreviewRuntime')
     print(f'Synchronized {count} UI view sources for the Unity editor preview.')

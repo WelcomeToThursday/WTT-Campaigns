@@ -4,7 +4,7 @@ using EFT;
 using EFT.Interactive;
 using UnityEngine;
 
-namespace SeasonalPerks.Client.Patches.Movement;
+namespace WTT.Campaigns.Client.Patches.Movement;
 
 internal static class BushOccupancy
 {

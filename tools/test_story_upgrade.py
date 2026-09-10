@@ -18,7 +18,7 @@ def main():
         'Version': 1, 'SeasonId': '', 'CharacterId': '', 'OperationId': '', 'ExpectedRevision': 0,
         'ConversationId': '', 'Target': '', 'Kind': '', 'RaidId': '', 'ItemIds': [], 'ItemId': ''}.items()}
     legacy['Version'] = 1
-    key = 'wttSeasonalStory:' + context['season']
+    key = 'wttCampaignsStory:' + context['season']
     pmc = saved['characters']['pmc']
     story = json.loads(pmc[key]) if isinstance(pmc[key], str) else pmc[key]
     if phase == 'prepare':
@@ -30,7 +30,7 @@ def main():
         print('Prepared committed legacy receipt in synthetic profile.')
         return
     before = request('/client/game/profile/list', session=context['child'])[0]
-    result = request('/wtt-seasonal/story/start', legacy, context['child'])
+    result = request('/wtt-campaigns/story/start', legacy, context['child'])
     check(not result.get('Error') and result['Replayed'], 'A committed protocol-1 request replays after upgrade')
     check(result['NativeRevision'] == story['Receipts'][legacy['OperationId']]['Revision'], 'Legacy replay retains original native update revision')
     check(not result['Lines'] and not result['Presentation'], 'Legacy replay never repeats presentation')

@@ -1,7 +1,7 @@
 @using System.Collections
 @using System.Reflection
 @using System.Globalization
-@using SeasonalPerks.Server.Web.Authoring
+@using WTT.Campaigns.Server.Web.Authoring
 @foreach (var group in Fields.GroupBy(p => EditorFieldGuide.NativeGroup(ModelGraph.Name(p))))
 {
 <fieldset class="field-section"><legend>@group.Key</legend><div class="structured-grid">
@@ -51,7 +51,7 @@
     else if (!Scalar(value))
     { <details class="nested-settings"><summary>@Friendly(name) <HelpTip Text="@Help(name)" /></summary><StructuredFields Value="value!" Changed="Changed" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /></details> }
     else if (name == "compareMethod")
-    { <label>Comparison <HelpTip Text="@Help(name)" /><select value="@Text(value)" @onchange="@(e => Set(field, e.Value))">@foreach (var op in SeasonalPerks.Shared.Story.StoryRules.Operators) { <option>@op</option> }</select></label> }
+    { <label>Comparison <HelpTip Text="@Help(name)" /><select value="@Text(value)" @onchange="@(e => Set(field, e.Value))">@foreach (var op in WTT.Campaigns.Shared.Story.StoryRules.Operators) { <option>@op</option> }</select></label> }
     else if (value is bool flag)
     { <label class="check"><input type="checkbox" checked="flag" @onchange="@(e => Set(field, e.Value))" />@Friendly(name) <HelpTip Text="@Help(name)" /></label> }
     else if (IsNumber(value))
@@ -87,8 +87,8 @@
         "target" when Value is NativeCondition { ConditionType: "Quest" } => "quests",
         "target" when Value is NativeCondition { ConditionType: "TraderLoyalty" or "TraderStanding" } => "traders",
         "target" when Value is NativeCondition { ConditionType: "FindItem" or "HandoverItem" or "HasItem" or "LeaveItemAtLocation" or "UseItem" } => "items",
-        "value" when Value is SeasonalPerks.Shared.Effects.ItemFilterRule { Field: "_tpl" } => "items",
-        "value" when Value is SeasonalPerks.Shared.Effects.ItemFilterRule { Field: "ParentId" } => "categories",
+        "value" when Value is WTT.Campaigns.Shared.Effects.ItemFilterRule { Field: "_tpl" } => "items",
+        "value" when Value is WTT.Campaigns.Shared.Effects.ItemFilterRule { Field: "ParentId" } => "categories",
         _ => null
     };
     private async Task Set(PropertyInfo property, object? value)

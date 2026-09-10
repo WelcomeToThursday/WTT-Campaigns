@@ -1,6 +1,6 @@
 using System;
 
-namespace SeasonalPerks.UI.Creation;
+namespace WTT.Campaigns.UI.Creation;
 
 public interface ICreationIdentity : IDisposable
 {

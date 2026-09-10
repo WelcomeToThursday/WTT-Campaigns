@@ -1,6 +1,6 @@
-using SeasonalPerks.Shared.Seasons;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Shared.Authoring;
+namespace WTT.Campaigns.Shared.Authoring;
 
 public sealed class CaptureTask
 {

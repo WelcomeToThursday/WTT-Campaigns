@@ -1,14 +1,14 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Shared.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Helpers.Profile;
 using SPTarkov.Server.Core.Models.Eft.Common;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Shared.Effects;
 
-namespace SeasonalPerks.Server.Patches.Hideout;
+namespace WTT.Campaigns.Server.Patches.Hideout;
 
 [Injectable]
 public class CraftTimePatch : AbstractPatch

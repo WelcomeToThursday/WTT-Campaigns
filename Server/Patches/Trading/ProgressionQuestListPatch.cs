@@ -1,9 +1,5 @@
 using System.Reflection;
 using HarmonyLib;
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Server.Progression;
-using SeasonalPerks.Shared.Progression;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
@@ -19,8 +15,12 @@ using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Routers;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Server.Progression;
+using WTT.Campaigns.Shared.Progression;
 
-namespace SeasonalPerks.Server.Patches.Trading;
+namespace WTT.Campaigns.Server.Patches.Trading;
 
 [Injectable]
 public sealed class ProgressionQuestListPatch(

@@ -13,7 +13,7 @@ def main():
     receipt = PROJECT / 'Testing/wipe-restart.json'
 
     def call(action, **data):
-        result = request('/wtt-seasonal/' + action, {'ProtocolVersion': 2, **data}, root)
+        result = request('/wtt-campaigns/' + action, {'ProtocolVersion': 2, **data}, root)
         check(not result.get('Error'), action + ': ' + str(result.get('Error')))
         return result
 
@@ -35,7 +35,7 @@ def main():
         stored = json.loads((SERVER / 'user/profiles' / (child + '.json')).read_text(encoding='utf-8-sig'))
         check(stored['info']['edition'] == normal['info']['edition'], 'Recreation uses the current root account edition')
         call('switch', Mode='seasonal', CharacterId=child)
-        hub = request('/wtt-seasonal/hub', {'ProtocolVersion': 2}, child)
+        hub = request('/wtt-campaigns/hub', {'ProtocolVersion': 2}, child)
         check(hub['ClaimedRewards'] == 0 and hub['Revision'] == 0, 'Delayed recreation has fresh seasonal rewards')
         call('switch', Mode='normal')
     print('PASS', len(checks), 'wipe restart checks (' + sys.argv[1] + ')')

@@ -2,14 +2,14 @@ using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Configuration;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Seasons;
 using SPTarkov.DI.Annotations;
+using WTT.Campaigns.Shared.Configuration;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Server.Seasons;
+namespace WTT.Campaigns.Server.Seasons;
 
 public sealed class SeasonRuntimeSnapshot
 {
@@ -399,7 +399,7 @@ public sealed class SeasonRepository
                 .Where(t => t.IsIdentity && SeasonValidator.IsId(t.Value))
                 .Select(t => t.Value)
         );
-        owned.UnionWith(SeasonalPerks.Shared.Story.StoryContent.OwnedIds(source.Story));
+        owned.UnionWith(WTT.Campaigns.Shared.Story.StoryContent.OwnedIds(source.Story));
         owned.UnionWith(source.Zones.Select(z => z.Id));
         owned.UnionWith(source.Captures.Select(c => c.Id));
         var replacements = owned.ToDictionary(id => id, _ => NewId());
@@ -436,7 +436,7 @@ public sealed class SeasonRepository
                         c.ConditionType.Length > 0
                         && (
                             storyQuest
-                                ? !SeasonalPerks.Shared.Story.StoryQuestCompatibility.ConditionTypes.Contains(c.ConditionType)
+                                ? !WTT.Campaigns.Shared.Story.StoryQuestCompatibility.ConditionTypes.Contains(c.ConditionType)
                                 : c.ConditionType is not ("Quest" or "Level" or "TraderLoyalty" or "FindItem" or "HandoverItem")
                         )
                     )

@@ -4,9 +4,9 @@ using HarmonyLib;
 using SPT.Reflection.Patching;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Patches.Movement;
+namespace WTT.Campaigns.Client.Patches.Movement;
 
-internal class StaminaConsumptionPatch(string methodName) : ModulePatch("SeasonalPerks." + methodName)
+internal class StaminaConsumptionPatch(string methodName) : ModulePatch("WTT.Campaigns." + methodName)
 {
     protected override MethodBase GetTargetMethod()
     {

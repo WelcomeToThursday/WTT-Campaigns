@@ -1,5 +1,5 @@
-@using SeasonalPerks.Server.Web.Authoring
-@using SeasonalPerks.Shared.Story
+@using WTT.Campaigns.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Story
 <details class="editor-card objective-card" open @key="Value">
 <summary><span class="eyebrow">@(Nested ? "EVENT FILTER" : "OBJECTIVE")</span> @StoryAuthoring.Friendly(Value.ConditionType)</summary>
 @if (StoryQuest && !StoryQuestCompatibility.Supports(Value, Nested)) { <p class="notice error">This objective is unsupported here. Counter filters must be inside a counter objective.</p> }
@@ -14,8 +14,8 @@
 { <fieldset class="field-section"><legend>Accepted prerequisite statuses</legend><p>Any selected status can satisfy the prerequisite.</p><div class="check-grid">@foreach(var status in NativeStatuses) { <label class="check"><input type="checkbox" checked="@(Value.Status?.Contains(status.Value.ToString()) == true || Value.Status?.Contains(status.Key.Replace(" ", "")) == true)" @onchange="@(e => ToggleStatus(status.Value, (bool)e.Value!))" />@status.Key <HelpTip Text="@($"The prerequisite may be {status.Key.ToLowerInvariant()}. {(status.Value == 4 ? "Success means completed and handed in." : "Select other statuses to allow alternatives.")}")" /></label> }</div></fieldset> }
 @if (Value.ConditionType is "InZone" or "VisitPlace" or "LeaveItemAtLocation")
 {
-    <label>Authored zone<select value="@SeasonalPerks.Shared.Spatial.SpatialRules.References(Value).FirstOrDefault()" @onchange="PickZone"><option value="">Choose a zone or keep native reference</option>@foreach(var zone in Season.Zones.Where(z => z.Uses.Contains(Value.ConditionType))) { <option value="@zone.Id">@zone.Name · @zone.Location</option> }</select></label>
-    <RaidCaptureButton TargetKind="Condition" TargetId="@Value.Id" /><RaidCaptureButton TargetKind="Condition" TargetId="@Value.Id" RecordId="@(SeasonalPerks.Shared.Spatial.SpatialRules.References(Value).FirstOrDefault() ?? "")" Label="Edit in raid" />
+    <label>Authored zone<select value="@WTT.Campaigns.Shared.Spatial.SpatialRules.References(Value).FirstOrDefault()" @onchange="PickZone"><option value="">Choose a zone or keep native reference</option>@foreach(var zone in Season.Zones.Where(z => z.Uses.Contains(Value.ConditionType))) { <option value="@zone.Id">@zone.Name · @zone.Location</option> }</select></label>
+    <RaidCaptureButton TargetKind="Condition" TargetId="@Value.Id" /><RaidCaptureButton TargetKind="Condition" TargetId="@Value.Id" RecordId="@(WTT.Campaigns.Shared.Spatial.SpatialRules.References(Value).FirstOrDefault() ?? "")" Label="Edit in raid" />
 }
 <StructuredFields Value="Value" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" Changed="Changed" Excluded="@(new[] { "counter", "isNecessary" })" />
 @if (Value.Counter is { } counter)
@@ -40,6 +40,6 @@
     public static IEnumerable<string> Kinds(bool story, bool nested) => NativeQuestAuthoring.ConditionKinds(story, nested);
     private async Task ChangeText(string text) { Quest.English()[Value.Id] = text; await Changed.InvokeAsync(); }
     private async Task ToggleStatus(int status, bool enabled) { Value.Status ??= new(); var code = status.ToString(); if (enabled && !Value.Status.Contains(code)) Value.Status.Add(code); else if (!enabled) Value.Status.RemoveAll(s => s == code || s.Equals(NativeStatuses.First(p => p.Value == status).Key.Replace(" ", ""), StringComparison.OrdinalIgnoreCase)); await Changed.InvokeAsync(); }
-    private async Task PickZone(ChangeEventArgs e) { if (e.Value?.ToString() is { Length: > 0 } id) { SeasonalPerks.Shared.Spatial.SpatialRules.Assign(Value, id); await Changed.InvokeAsync(); } }
+    private async Task PickZone(ChangeEventArgs e) { if (e.Value?.ToString() is { Length: > 0 } id) { WTT.Campaigns.Shared.Spatial.SpatialRules.Assign(Value, id); await Changed.InvokeAsync(); } }
     private async Task AddFilter(NativeCounter counter, string kind) { if (kind.Length == 0) return; counter.Conditions.Add(NativeQuestAuthoring.Condition(kind)); await Changed.InvokeAsync(); }
 }

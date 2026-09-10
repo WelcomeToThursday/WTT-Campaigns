@@ -1,6 +1,6 @@
 @inject SeasonContentService Content
-@using SeasonalPerks.Server.Web.Authoring
-@using SeasonalPerks.Shared.Story
+@using WTT.Campaigns.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Story
 <div class="notice">Simulated state only. No player profile is opened or changed. Native rewards, media and navigation are recorded in the event log.</div>
 @if (_run != null && _run.Stale(Season)) { <div class="notice error">The draft changed. Restart rehearsal to use the current content.</div> }
 <div class="row"><label>Random seed<input type="number" @bind="_seed" /></label><button class="primary" @onclick="Restart">@(_run == null ? "Start rehearsal" : "Restart rehearsal")</button></div>

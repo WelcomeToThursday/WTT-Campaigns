@@ -4,7 +4,7 @@ using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 internal sealed class HubDocumentLoot
 {

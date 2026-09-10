@@ -10,7 +10,7 @@ import UnityPy
 from PIL import Image
 from recover_ui import DEV, LIVE, Generator
 
-ROOT = DEV / 'CJ-SDK/Assets/Mods/SeasonalPerks.Assets'
+ROOT = DEV / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets'
 DATA = LIVE / 'EscapeFromTarkov_Data'
 
 

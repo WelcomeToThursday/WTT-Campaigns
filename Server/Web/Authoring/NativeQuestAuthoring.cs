@@ -1,6 +1,6 @@
-using SeasonalPerks.Server.Seasons;
+using WTT.Campaigns.Server.Seasons;
 
-namespace SeasonalPerks.Server.Web.Authoring;
+namespace WTT.Campaigns.Server.Web.Authoring;
 
 public static class NativeQuestAuthoring
 {
@@ -23,7 +23,7 @@ public static class NativeQuestAuthoring
     public static IEnumerable<string> ConditionKinds(bool story, bool nested)
     {
         return nested ? CounterFilters
-            : story ? SeasonalPerks.Shared.Story.StoryQuestCompatibility.ConditionTypes.Except(CounterFilters).Order()
+            : story ? WTT.Campaigns.Shared.Story.StoryQuestCompatibility.ConditionTypes.Except(CounterFilters).Order()
             : ["Level", "Quest", "TraderLoyalty", "FindItem", "HandoverItem", "VisitPlace", "LeaveItemAtLocation", "CounterCreator"];
     }
 

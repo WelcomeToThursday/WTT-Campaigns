@@ -3,7 +3,7 @@ using EFT;
 using HarmonyLib;
 using SPT.Reflection.Patching;
 
-namespace SeasonalPerks.Client.Patches.Skills;
+namespace WTT.Campaigns.Client.Patches.Skills;
 
 internal class SkillProgressPatch : ModulePatch
 {

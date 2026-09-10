@@ -1,4 +1,3 @@
-using SeasonalPerks.Server.Hub;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Helpers.Profile;
 using SPTarkov.Server.Core.Models.Common;
@@ -10,8 +9,9 @@ using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
+using WTT.Campaigns.Server.Hub;
 
-namespace SeasonalPerks.Server.Seasons;
+namespace WTT.Campaigns.Server.Seasons;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class SeasonStartingService(
@@ -26,7 +26,7 @@ public sealed class SeasonStartingService(
     {
         var original = saves.GetProfile(id);
         var season = repository.Runtime(seasonId).Definition;
-        var key = "wttSeasonalStarting:" + season.Id;
+        var key = "wttCampaignsStarting:" + season.Id;
         if (original.CharacterData!.PmcData!.ExtensionData.ContainsKey(key))
         {
             return;

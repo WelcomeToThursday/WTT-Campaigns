@@ -1,9 +1,9 @@
 using System;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.UI.Profiles;
+namespace WTT.Campaigns.UI.Profiles;
 
 public sealed class ProfileCardPreview : MonoBehaviour
 {

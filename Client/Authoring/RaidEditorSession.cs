@@ -1,11 +1,11 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Shared.Authoring;
-using SeasonalPerks.Shared.Seasons;
 using SPT.Common.Http;
+using WTT.Campaigns.Shared.Authoring;
+using WTT.Campaigns.Shared.Seasons;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring;
 
 internal sealed class RaidEditorSession
 {
@@ -38,7 +38,7 @@ internal sealed class RaidEditorSession
     private AuthoringRequest? _pending;
     private readonly Stack<SeasonDefinition> _undo = new(),
         _redo = new();
-    private readonly string _recoveryRoot = Path.Combine(BepInEx.Paths.ConfigPath, "SeasonalPerks", "raid-authoring");
+    private readonly string _recoveryRoot = Path.Combine(BepInEx.Paths.ConfigPath, "WTT-Campaigns", "raid-authoring");
     internal bool Dirty
     {
         get
@@ -153,7 +153,7 @@ internal sealed class RaidEditorSession
 
     private static async Task<AuthoringResponse> Send(string route, AuthoringRequest request)
     {
-        var json = await RequestHandler.PostJsonAsync("/wtt-seasonal/authoring/" + route, JsonConvert.SerializeObject(request));
+        var json = await RequestHandler.PostJsonAsync("/wtt-campaigns/authoring/" + route, JsonConvert.SerializeObject(request));
         var response =
             JsonConvert.DeserializeObject<AuthoringResponse>(json) ?? throw new InvalidOperationException("Empty authoring response.");
         if (response.Version != 1)

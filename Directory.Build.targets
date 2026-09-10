@@ -1,23 +1,23 @@
 <Project>
   <!-- Evaluate after Build so output overrides and newly copied content are respected. -->
-  <Target Name="GetSeasonalDeployFiles" DependsOnTargets="Build" Returns="@(SeasonalDeployFile)">
+  <Target Name="GetCampaignsDeployFiles" DependsOnTargets="Build" Returns="@(CampaignsDeployFile)">
     <PropertyGroup>
-      <_SeasonalComponent Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.Server'">server</_SeasonalComponent>
-      <_SeasonalComponent Condition="'$(MSBuildProjectName)' != 'WTT-Seasonal.Server'">client</_SeasonalComponent>
+      <_CampaignsComponent Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Server'">server</_CampaignsComponent>
+      <_CampaignsComponent Condition="'$(MSBuildProjectName)' != 'WTT-Campaigns.Server'">client</_CampaignsComponent>
     </PropertyGroup>
-    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.UI'">
-      <_SeasonalRuntimeFile Include="$(TargetPath)" />
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.UI'">
+      <_CampaignsRuntimeFile Include="$(TargetPath)" />
     </ItemGroup>
-    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.Client'">
-      <_SeasonalRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Seasonal.UI.dll;$(TargetDir)WTT-Seasonal.Shared.dll;$(TargetDir)seasonalperks_ui.bundle;$(TargetDir)seasonal_raid_editor.bundle;$(TargetDir)seasonal_story_notifications.bundle;$(TargetDir)StoryMedia\**\*" />
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Client'">
+      <_CampaignsRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Campaigns.UI.dll;$(TargetDir)WTT-Campaigns.Shared.dll;$(TargetDir)wtt_campaigns_ui.bundle;$(TargetDir)wtt_campaigns_raid_editor.bundle;$(TargetDir)wtt_campaigns_story_notifications.bundle;$(TargetDir)StoryMedia\**\*" />
     </ItemGroup>
-    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Seasonal.Server'">
-      <_SeasonalRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Seasonal.Shared.dll;$(TargetDir)Newtonsoft.Json.dll;$(TargetDir)WTT-Seasonal.Server.deps.json;$(TargetDir)data\**\*;$(TargetDir)icons\**\*;$(TargetDir)hub-images\**\*;$(TargetDir)wwwroot\**\*" />
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Server'">
+      <_CampaignsRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Campaigns.Shared.dll;$(TargetDir)Newtonsoft.Json.dll;$(TargetDir)WTT-Campaigns.Server.deps.json;$(TargetDir)data\**\*;$(TargetDir)icons\**\*;$(TargetDir)hub-images\**\*;$(TargetDir)wwwroot\**\*" />
     </ItemGroup>
     <ItemGroup>
-      <SeasonalDeployFile Include="@(_SeasonalRuntimeFile)">
-        <InstallPath>$(_SeasonalComponent)\$([MSBuild]::MakeRelative('$(TargetDir)', '%(_SeasonalRuntimeFile.FullPath)'))</InstallPath>
-      </SeasonalDeployFile>
+      <CampaignsDeployFile Include="@(_CampaignsRuntimeFile)">
+        <InstallPath>$(_CampaignsComponent)\$([MSBuild]::MakeRelative('$(TargetDir)', '%(_CampaignsRuntimeFile.FullPath)'))</InstallPath>
+      </CampaignsDeployFile>
     </ItemGroup>
   </Target>
 </Project>

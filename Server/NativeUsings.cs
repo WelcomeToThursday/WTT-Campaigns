@@ -1,2 +1,2 @@
-global using SeasonalPerks.Shared.Native;
-global using SeasonalPerks.Shared.Serialization;
+global using WTT.Campaigns.Shared.Native;
+global using WTT.Campaigns.Shared.Serialization;

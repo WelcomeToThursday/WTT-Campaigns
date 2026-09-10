@@ -6,7 +6,7 @@ import secrets
 from pathlib import Path
 from test_integration import PROJECT, SERVER, request, check, checks
 
-MOD = SERVER / 'user/mods/SeasonalPerks'
+MOD = SERVER / 'user/mods/WTT-Campaigns'
 FIXTURE = MOD / 'creator/acceptance-fixture.json'
 STATE = PROJECT / 'Testing/creator-acceptance-state.json'
 
@@ -21,12 +21,12 @@ def main():
     body = {'ProtocolVersion': 2, 'SeasonId': fixture['SeasonId']}
 
     def seasonal(path, value=None, session=None):
-        return request('/wtt-seasonal/' + path, {**body, **(value or {})}, session or root)
+        return request('/wtt-campaigns/' + path, {**body, **(value or {})}, session or root)
 
     if phase == 'legacy':
-        snapshot = request('/wtt-seasonal/snapshot', {'ProtocolVersion': 2}, root)
+        snapshot = request('/wtt-campaigns/snapshot', {'ProtocolVersion': 2}, root)
         check(snapshot['SeasonId'] == '69e232a764dfe95549003f0f', 'Legacy season reactivated')
-        switched = request('/wtt-seasonal/switch', {'ProtocolVersion': 2, 'Mode': 'seasonal'}, root)
+        switched = request('/wtt-campaigns/switch', {'ProtocolVersion': 2, 'Mode': 'seasonal'}, root)
         check(switched.get('EffectiveProfileId') == previous['child'], 'Original seasonal character preserved')
         check(set(previous['selected']).issubset(switched['State']['SeasonalPerks']) and switched['State']['Revision'] == previous['revision'], 'Original selected perks preserved')
         baseline = json.loads((PROJECT / 'Testing/normal-baseline.json').read_text(encoding='utf-8'))
@@ -35,8 +35,8 @@ def main():
             for field in ['Inventory', 'Quests', 'Skills']:
                 check(normal[index].get(field) == baseline[index].get(field), 'Normal character ' + str(index) + ' preserves ' + field)
         archived = json.loads(STATE.read_text())['child']
-        check(request('/wtt-seasonal/hub/claim', {'ProtocolVersion': 2, 'SeasonId': fixture['SeasonId'], 'OperationId': secrets.token_hex(16), 'RewardId': fixture['GatedReward']}, archived).get('Error'), 'Archived season cannot claim rewards')
-        check(request('/wtt-seasonal/snapshot', {'ProtocolVersion': 2}, archived).get('Error'), 'Archived seasonal session is rejected')
+        check(request('/wtt-campaigns/hub/claim', {'ProtocolVersion': 2, 'SeasonId': fixture['SeasonId'], 'OperationId': secrets.token_hex(16), 'RewardId': fixture['GatedReward']}, archived).get('Error'), 'Archived season cannot claim rewards')
+        check(request('/wtt-campaigns/snapshot', {'ProtocolVersion': 2}, archived).get('Error'), 'Archived seasonal session is rejected')
     elif phase == 'resume':
         saved = json.loads(STATE.read_text())
         snapshot = seasonal('switch', {'Mode': 'seasonal'})
@@ -50,7 +50,7 @@ def main():
         check(snapshot.get('SeasonId') == fixture['SeasonId'], 'Published pack activated: ' + str(snapshot.get('Error')))
         check(snapshot['ActiveMode'] == 'normal', 'Season switch resets active character to Normal')
         check(snapshot['DocumentTemplates'] == [fixture['DocumentTemplate']], 'Client document mappings come from active pack')
-        check(request('/wtt-seasonal/snapshot', session=root).get('Error'), 'Old client protocol rejected for authored seasons')
+        check(request('/wtt-campaigns/snapshot', session=root).get('Error'), 'Old client protocol rejected for authored seasons')
         check(seasonal('snapshot', {'SeasonId': '0' * 24}).get('Error'), 'Wrong-season request rejected')
         created = seasonal('create', {'PerkIds': [fixture['PerkId']], 'Nickname': 'CreatorTest', 'Side': 'Usec'})
         check(not created.get('Error'), 'Create custom seasonal character: ' + str(created.get('Error')))

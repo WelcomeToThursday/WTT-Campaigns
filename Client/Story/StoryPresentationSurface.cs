@@ -1,10 +1,10 @@
-using SeasonalPerks.UI.Controls;
-using SeasonalPerks.UI.Media;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Controls;
+using WTT.Campaigns.UI.Media;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal sealed class StoryPresentationSurface : IDisposable
 {

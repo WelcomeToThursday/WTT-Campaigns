@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using SeasonalPerks.Shared.Native;
+using WTT.Campaigns.Shared.Native;
 
-namespace SeasonalPerks.Shared.Progression;
+namespace WTT.Campaigns.Shared.Progression;
 
 public sealed class TraderProgression
 {

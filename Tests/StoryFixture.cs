@@ -1,10 +1,10 @@
 using System.Security.Cryptography;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class StoryFixture
 {

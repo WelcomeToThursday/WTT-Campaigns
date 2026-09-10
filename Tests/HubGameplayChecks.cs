@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Hub;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Hub;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class HubGameplayChecks
 {

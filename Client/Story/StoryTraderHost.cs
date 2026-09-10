@@ -1,10 +1,10 @@
 using EFT.UI;
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 public sealed class StoryTraderHost : MonoBehaviour
 {
@@ -22,7 +22,7 @@ public sealed class StoryTraderHost : MonoBehaviour
         if (!_visit)
         {
             var tab = (RectTransform)native._servicesTab.transform;
-            var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf");
+            var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
             _visit = StoryVisitButton.Create(tab.parent.parent, font, Open, SeasonUi.Instance.PlayInterfaceSound);
         }
         _visit!.gameObject.SetActive(StoryClient.Available && StoryMediaStore.HasTrader(native.Trader.Id));

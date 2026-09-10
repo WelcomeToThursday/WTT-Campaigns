@@ -1,16 +1,16 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Seasons;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class CreatorFixture
 {
     public static void Prepare(string directory, bool story = false)
     {
         var path = Path.GetFullPath(directory);
-        if (!path.EndsWith(Path.Combine("Testing", "Server", "user", "mods", "SeasonalPerks"), StringComparison.OrdinalIgnoreCase))
+        if (!path.EndsWith(Path.Combine("Testing", "Server", "user", "mods", "WTT-Campaigns"), StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Creator fixtures require the isolated Testing/Server mod directory.");
         }
@@ -132,7 +132,7 @@ internal static class CreatorFixture
             }
         )
         {
-            SeasonalPerks.Server.Web.Authoring.NativeQuestAuthoring.QuestText(s.Quests[0], field, "Research delivery");
+            WTT.Campaigns.Server.Web.Authoring.NativeQuestAuthoring.QuestText(s.Quests[0], field, "Research delivery");
         }
         var followup = SeasonRepository.NewId();
         var followupObjective = SeasonRepository.NewId();

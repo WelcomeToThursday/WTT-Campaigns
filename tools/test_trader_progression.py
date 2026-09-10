@@ -39,11 +39,11 @@ def fixture():
             and v['_props'].get('AvailableAsDefault') and 'Usec' in v['_props'].get('Side', []))[0]
     request('/client/game/profile/create', {'side': 'Usec', 'nickname': 'Progression',
         'headId': cosmetic('5cc085e214c02e000c6bea67'), 'voiceId': cosmetic('5fc100cf95572123ae738483')}, root)
-    snapshot = request('/wtt-seasonal/snapshot', {'ProtocolVersion': 2}, root)
-    created = request('/wtt-seasonal/create', {'ProtocolVersion': 2, 'PerkIds': [], 'Nickname': 'ProgressionSeason',
+    snapshot = request('/wtt-campaigns/snapshot', {'ProtocolVersion': 2}, root)
+    created = request('/wtt-campaigns/create', {'ProtocolVersion': 2, 'PerkIds': [], 'Nickname': 'ProgressionSeason',
         'Side': 'Usec', 'ExpectedRevision': 0, 'SeasonId': snapshot['SeasonId']}, root)
     assert not created.get('Error'), created.get('Error')
-    switched = request('/wtt-seasonal/switch', {'ProtocolVersion': 2, 'Mode': 'seasonal'}, root)
+    switched = request('/wtt-campaigns/switch', {'ProtocolVersion': 2, 'Mode': 'seasonal'}, root)
     assert not switched.get('Error'), switched.get('Error')
     child = switched['EffectiveProfileId']
     candidates = {i:q for i,q in DATA['Quests'].items() if q['TraderId'] == PRAPOR}
@@ -100,9 +100,9 @@ def prepare(phase):
 def verify(phase):
     state = json.loads(STATE.read_text(encoding="utf-8-sig"))
     root, child, target = state['root'], state['child'], state['target']
-    metadata = request('/wtt-seasonal/progression', session=root)
+    metadata = request('/wtt-campaigns/progression', session=root)
     check(metadata['Version'] == 1 and set(metadata['Quests']) == set(DATA['Quests']), 'All 381 existing quest mappings served')
-    check(request('/wtt-seasonal/progression', session=child) == metadata, 'Normal and seasonal use the same metadata')
+    check(request('/wtt-campaigns/progression', session=child) == metadata, 'Normal and seasonal use the same metadata')
     for session in [root, child]:
         pmc = profile(session)
         check(pmc['TradersInfo'][PRAPOR]['salesSum'] == 0, 'Zero spending preserved ' + session)
@@ -225,7 +225,7 @@ def restrictions():
     check(next(q for q in profile(child)['Quests'] if q['qid']==target)['status']==2, 'Expired delayed task becomes Started')
     before = {s: profile(s)['Quests'] for s in [root,child]}
     for mode, session in [('normal',root),('seasonal',child),('normal',root)]:
-        switched = request('/wtt-seasonal/switch', {'ProtocolVersion':2, 'Mode':mode}, root)
+        switched = request('/wtt-campaigns/switch', {'ProtocolVersion':2, 'Mode':mode}, root)
         check(switched['EffectiveProfileId']==session, 'Switch to ' + mode + ' resolves correct profile')
         check(profile(session)['Quests']==before[session], 'Switch to ' + mode + ' preserves independent tasks')
     report = json.loads(REPORT.read_text(encoding='utf-8-sig'))

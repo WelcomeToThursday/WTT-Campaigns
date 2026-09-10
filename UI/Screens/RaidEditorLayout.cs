@@ -1,9 +1,9 @@
 using System;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.UI.Screens;
+namespace WTT.Campaigns.UI.Screens;
 
 // Shared by the CJ-SDK prefab builder and visual previews. The bundle contains only native uGUI components.
 public static class RaidEditorLayout

@@ -1,6 +1,6 @@
-using SeasonalPerks.Shared.Configuration;
+using WTT.Campaigns.Shared.Configuration;
 
-namespace SeasonalPerks.Shared.Perks;
+namespace WTT.Campaigns.Shared.Perks;
 
 public static class Selection
 {

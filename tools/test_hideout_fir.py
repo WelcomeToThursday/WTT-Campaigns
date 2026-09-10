@@ -7,7 +7,7 @@ import argparse, hashlib, json, secrets
 from test_integration import PROJECT, SERVER, request, check, checks
 
 STATE = PROJECT/'Testing/hideout-fir-state.json'
-CONFIG = SERVER/'user/mods/SeasonalPerks/config.json'
+CONFIG = SERVER/'user/mods/WTT-Campaigns/config.json'
 FIR = '69ce5eb3e4b79de94a0d78c8'
 BUSH = '69c405a9d7a7b2ca660e0c56'
 
@@ -63,12 +63,12 @@ def main():
     state = json.loads(STATE.read_text(encoding='utf-8'))
     root, child = state['root'], state['child']
     if phase == 'verify':
-        snapshot = request('/wtt-seasonal/snapshot', session=root)
+        snapshot = request('/wtt-campaigns/snapshot', session=root)
         check(FIR not in snapshot['Unavailable'] and BUSH not in snapshot['Unavailable'], 'Both new perks advertised as supported')
-        edited = request('/wtt-seasonal/edit', {'PerkIds': [BUSH, '69c3ce913ffdba4e68086bdb'], 'ExpectedRevision': snapshot['State']['Revision']}, root)
+        edited = request('/wtt-campaigns/edit', {'PerkIds': [BUSH, '69c3ce913ffdba4e68086bdb'], 'ExpectedRevision': snapshot['State']['Revision']}, root)
         check(not edited.get('Error'), 'Bushborne selectable with five-point budget')
         check(FIR in edited['State']['SeasonalPerks'], 'Configured common No-FiR perk included on save')
-        request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
+        request('/wtt-campaigns/switch', {'Mode': 'seasonal'}, root)
         before = profile(child)[0]
         check(all(not i.get('upd', {}).get('SpawnedInSession', False) for i in before['Inventory']['items'] if i['_id'] in state['items']), 'All submitted upgrade materials are non-FiR')
         normal = profile(root)
@@ -93,7 +93,7 @@ def main():
         pmc = profile(child)[0]
         check(not set(state['items']).intersection(i['_id'] for i in pmc['Inventory']['items']), 'Non-FiR material consumption survives restart')
         check(next(a for a in pmc['Hideout']['Areas'] if a['type'] == 6) == state['expectedArea'], 'Construction state survives restart')
-        snapshot = request('/wtt-seasonal/snapshot', session=child)
+        snapshot = request('/wtt-campaigns/snapshot', session=child)
         check({FIR, BUSH} <= set(snapshot['State']['SeasonalPerks']), 'Both new perk selections survive restart')
         report_path = PROJECT/'Research/hideout-fir-results.json'
         report = json.loads(report_path.read_text(encoding='utf-8'))

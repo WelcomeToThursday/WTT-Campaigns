@@ -1,10 +1,10 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Contracts;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Shared.Contracts;
 
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 [Injectable]
 public sealed class HubRouter(JsonUtil json, HubGameplay hub) : StaticRouter(json, Routes(hub))
@@ -14,7 +14,7 @@ public sealed class HubRouter(JsonUtil json, HubGameplay hub) : StaticRouter(jso
         return
         [
             new RouteAction<HubRequest>(
-                "/wtt-seasonal/hub",
+                "/wtt-campaigns/hub",
                 (_, r, id, _, _) =>
                 {
                     try
@@ -28,15 +28,15 @@ public sealed class HubRouter(JsonUtil json, HubGameplay hub) : StaticRouter(jso
                 }
             ),
             new RouteAction<HubRequest>(
-                "/wtt-seasonal/hub/claim",
+                "/wtt-campaigns/hub/claim",
                 async (_, r, id, _, _) => await Respond(() => hub.Transact(id.ToString(), r, "claim"))
             ),
             new RouteAction<HubRequest>(
-                "/wtt-seasonal/hub/exchange",
+                "/wtt-campaigns/hub/exchange",
                 async (_, r, id, _, _) => await Respond(() => hub.Transact(id.ToString(), r, "exchange"))
             ),
             new RouteAction<HubRequest>(
-                "/wtt-seasonal/hub/raid-document",
+                "/wtt-campaigns/hub/raid-document",
                 async (_, r, id, _, _) => await Respond(() => hub.Pickup(id.ToString(), r))
             ),
         ];

@@ -1,7 +1,7 @@
 using System.IO;
 using UnityEngine;
 
-namespace SeasonalPerks.UI.Media;
+namespace WTT.Campaigns.UI.Media;
 
 public static class SeasonLogoArtwork
 {
@@ -19,7 +19,7 @@ public static class SeasonLogoArtwork
         );
 #else
         using var stream =
-            typeof(SeasonLogoArtwork).Assembly.GetManifestResourceStream("SeasonalPerks.Hub.season-1-logo.png")
+            typeof(SeasonLogoArtwork).Assembly.GetManifestResourceStream("WTT.Campaigns.Hub.season-1-logo.png")
             ?? throw new InvalidDataException("Missing season logo artwork.");
         using var buffer = new MemoryStream();
         stream.CopyTo(buffer);

@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>WTT.Campaigns.UI</RootNamespace>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <!-- These sources also compile in Unity previews without SDK-generated global usings. -->
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Version>0.5.2</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\Hub\*.png" LogicalName="WTT.Campaigns.Hub.%(Filename)%(Extension)" />
+    <EmbeddedResource
+      Include="Resources\Story\*.png"
+      Exclude="Resources\Story\journal-active.png;Resources\Story\journal-complete.png;Resources\Story\journal-failed.png"
+      LogicalName="WTT.Campaigns.Story.%(Filename)%(Extension)"
+    />
+    <EmbeddedResource Include="Resources\Story\ambient-probes.txt" LogicalName="WTT.Campaigns.Story.ambient-probes.txt" />
+    <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(ManagedDir)UnityEngine.ImageConversionModule.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedDir)UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(ManagedDir)UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedDir)UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedDir)UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedDir)UnityEngine.InputLegacyModule.dll" Private="false" />
+  </ItemGroup>
+</Project>

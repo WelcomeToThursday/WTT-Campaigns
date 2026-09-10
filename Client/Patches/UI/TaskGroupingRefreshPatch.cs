@@ -5,14 +5,14 @@ using EFT.Quests;
 using EFT.Trading;
 using EFT.UI;
 using HarmonyLib;
-using SeasonalPerks.Client.Progression;
 using SPT.Reflection.Patching;
 using TMPro;
 using UnityEngine;
+using WTT.Campaigns.Client.Progression;
 
-namespace SeasonalPerks.Client.Patches.UI;
+namespace WTT.Campaigns.Client.Patches.UI;
 
-internal sealed class TaskGroupingRefreshPatch(string method) : ModulePatch("SeasonalPerks.TaskGrouping." + method)
+internal sealed class TaskGroupingRefreshPatch(string method) : ModulePatch("WTT.Campaigns.TaskGrouping." + method)
 {
     protected override MethodBase GetTargetMethod()
     {

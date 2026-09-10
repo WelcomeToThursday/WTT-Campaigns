@@ -35,14 +35,14 @@ def main():
     presentation = read(PROJECT / 'data/hub.json')
     catalogue = read(PROJECT / 'data/hub-gameplay.json')
     rewards = [r for p in presentation['Pages'] for r in p['Rewards']] + presentation['SeasonalRewards']
-    key = 'wttSeasonalHub:' + presentation['SeasonId'] + ':' + presentation['Id']
+    key = 'wttCampaignsHub:' + presentation['SeasonId'] + ':' + presentation['Id']
     documents = {d['id']: d['itemId'] for d in catalogue['Documents']}
     if phase == 'prepare':
         assert not (SERVER / 'test-server.pid').exists(), 'Stop the isolated server first'
         previous = read(PROJECT / 'Testing/restart-state.json')
         base = {mode: read(SERVER / 'user/profiles' / (previous[mode] + '.json')) for mode in ['root', 'child']}
         assert all(p['info']['username'].startswith('season-test-') for p in base.values())
-        link = read(SERVER / 'user/profileData' / previous['root'] / 'cjSeasonalPerksAccount.json')
+        link = read(SERVER / 'user/profileData' / previous['root'] / 'wttCampaignsAccount.json')
         fixtures = []
         previous_cases = read(STATE) if STATE.exists() else []
         for index, reward in enumerate(rewards + [None] * 5):
@@ -101,7 +101,7 @@ def main():
                         'Revision': 0, 'Classified': 100 if case['kind'] == 'classified' else 0})
                 save(SERVER / 'user/profiles' / (ids[mode] + '.json'), profile)
             fixture_link = {**link, 'SeasonalId': ids['child'], 'Mode': 'seasonal', 'ActiveRaidProfiles': []}
-            save(SERVER / 'user/profileData' / ids['root'] / 'cjSeasonalPerksAccount.json', fixture_link)
+            save(SERVER / 'user/profileData' / ids['root'] / 'wttCampaignsAccount.json', fixture_link)
             fixtures.append(case)
         save(STATE, fixtures)
         print('Prepared', len(fixtures), 'independent synthetic hub cases.')
@@ -110,10 +110,10 @@ def main():
     fixtures = read(STATE)
     if phase == 'restart':
         for case in fixtures:
-            actual = request('/wtt-seasonal/hub', session=case['child'])
+            actual = request('/wtt-campaigns/hub', session=case['child'])
             check(actual == case['expected'], 'Hub progress survives restart: ' + (case['reward'] or case['kind']))
             if case.get('replay'):
-                result = request('/wtt-seasonal/hub/' + case['replay']['action'], case['replay']['body'], case['child'])
+                result = request('/wtt-campaigns/hub/' + case['replay']['action'], case['replay']['body'], case['child'])
                 check(result.get('Committed') and result['State'] == actual, 'Operation receipt survives restart')
         report = read(REPORT)
         report.update({'restartPassed': len(checks), 'restartChecks': checks})
@@ -132,14 +132,14 @@ def main():
         child_path = SERVER / 'user/profiles' / (child + '.json')
         before_profile = read(child_path)
         before_hash = digest(child_path)
-        view = request('/wtt-seasonal/hub', session=child)
+        view = request('/wtt-campaigns/hub', session=child)
         reward = next((r for p in view['Pages'] for r in p['Rewards'] if r['Id'] == case['reward']), None)
         reward = reward or next((r for r in view['SeasonalRewards'] if r['Id'] == case['reward']), None)
         body = {'OperationId': secrets.token_hex(16), 'ExpectedRevision': view['Revision']}
         action = 'claim'
         if case['kind'] == 'claim':
             body['RewardId'] = reward['Id']
-            result = request('/wtt-seasonal/hub/claim', body, child)
+            result = request('/wtt-campaigns/hub/claim', body, child)
             if reward['CanClaim']:
                 check(result.get('Committed'), 'Claim eligible reward ' + reward['Id'] + ': ' + str(result.get('Error')))
                 after = read(child_path)
@@ -166,15 +166,15 @@ def main():
                 outcomes['Unavailable'] += 1
         elif case['kind'] == 'page-gate':
             body['RewardId'] = view['Pages'][1]['Rewards'][-1]['Id']
-            result = request('/wtt-seasonal/hub/claim', body, child)
+            result = request('/wtt-campaigns/hub/claim', body, child)
             check('previous page' in result.get('Error', '') and digest(child_path) == before_hash, 'Previous-page requirement cannot be bypassed')
         elif case['kind'] == 'classified':
             reward = next(r for r in view['Pages'][0]['Rewards'] if r['Name'].startswith('Tarcoins'))
             body['RewardId'] = reward['Id']
-            result = request('/wtt-seasonal/hub/claim', body, child)
+            result = request('/wtt-campaigns/hub/claim', body, child)
             check(result.get('Error') and digest(child_path) == before_hash, 'Classified use requires explicit confirmation')
             body['UseClassified'] = True
-            result = request('/wtt-seasonal/hub/claim', body, child)
+            result = request('/wtt-campaigns/hub/claim', body, child)
             check(result.get('Committed') and result['State']['UniversalCount'] == 100 - reward['UniversalNeeded'], 'Classified covers only the exact shortage')
         else:
             action = 'exchange'
@@ -189,7 +189,7 @@ def main():
                 assert handle != ctypes.c_void_p(-1).value
                 try:
                     try:
-                        failed = request('/wtt-seasonal/hub/exchange', body, child)
+                        failed = request('/wtt-campaigns/hub/exchange', body, child)
                         check(not failed.get('Committed'), 'Failed save never acknowledges a commit')
                     except (urllib.error.URLError, TimeoutError):
                         check(True, 'Failed save returns an uncertain response')
@@ -197,16 +197,16 @@ def main():
                         assert str(error).startswith('Empty server response:'), str(error)
                         check(True, 'Failed save returns an empty, uncertain response')
                     check(digest(child_path) == before_hash, 'Save failure leaves durable inventory and progress unchanged')
-                    check(request('/wtt-seasonal/hub', session=child) == view, 'Save failure restores cached balances and revision')
+                    check(request('/wtt-campaigns/hub', session=child) == view, 'Save failure restores cached balances and revision')
                 finally:
                     kernel.CloseHandle(handle)
             if case['kind'] == 'exchange':
                 with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-                    results = list(pool.map(lambda _: request('/wtt-seasonal/hub/exchange', body, child), range(2)))
+                    results = list(pool.map(lambda _: request('/wtt-campaigns/hub/exchange', body, child), range(2)))
                 check(all(r.get('Committed') for r in results) and results[0]['State'] == results[1]['State'], 'Concurrent duplicate exchange commits once')
                 result = results[0]
             else:
-                result = request('/wtt-seasonal/hub/exchange', body, child)
+                result = request('/wtt-campaigns/hub/exchange', body, child)
             if case['kind'] == 'full':
                 check('room' in result.get('Error', '') and digest(child_path) == before_hash, 'Full stash rejects costs and reward atomically')
             else:
@@ -214,22 +214,22 @@ def main():
                 balances = {d['Id']: d['Count'] for d in result['State']['Documents']}
                 check(balances[doc_ids[0]] == 497 and balances[doc_ids[1]] == 498 and balances[doc_ids[2]] == 501, 'Exchange consumes five ordinary documents and grants one selected type')
         if result.get('Committed'):
-            replay = request('/wtt-seasonal/hub/' + action, body, child)
+            replay = request('/wtt-campaigns/hub/' + action, body, child)
             check(replay['State'] == result['State'], 'Retry returns the committed result without a second charge')
             invalid = {**body, 'Crate': not body.get('Crate', False)}
-            check(request('/wtt-seasonal/hub/' + action, invalid, child).get('Error'), 'Operation identifiers cannot be reused for different inputs')
+            check(request('/wtt-campaigns/hub/' + action, invalid, child).get('Error'), 'Operation identifiers cannot be reused for different inputs')
             stale = {**body, 'OperationId': secrets.token_hex(16)}
-            check(request('/wtt-seasonal/hub/' + action, stale, child).get('Error'), 'Stale revision rejects a second operation')
+            check(request('/wtt-campaigns/hub/' + action, stale, child).get('Error'), 'Stale revision rejects a second operation')
             case['replay'] = {'action': action, 'body': body}
         if case['kind'] == 'exchange':
-            fresh = request('/wtt-seasonal/hub', session=child)
+            fresh = request('/wtt-campaigns/hub', session=child)
             baseline = digest(child_path)
             for extra in [{'Sources': {doc_ids[0]: 4}}, {'Sources': {'Classified': 5}}, {'DocumentId': 'unknown'}, {'Crate': True, 'Sources': {doc_ids[0]: 10}}]:
                 invalid = {**body, 'OperationId': secrets.token_hex(16), 'ExpectedRevision': fresh['Revision'], **extra}
-                check(request('/wtt-seasonal/hub/exchange', invalid, child).get('Error') and digest(child_path) == baseline, 'Invalid or unavailable exchange is atomic')
+                check(request('/wtt-campaigns/hub/exchange', invalid, child).get('Error') and digest(child_path) == baseline, 'Invalid or unavailable exchange is atomic')
             competing = [{**body, 'OperationId': secrets.token_hex(16), 'ExpectedRevision': fresh['Revision']} for _ in range(2)]
             with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-                responses = list(pool.map(lambda b: request('/wtt-seasonal/hub/exchange', b, child), competing))
+                responses = list(pool.map(lambda b: request('/wtt-campaigns/hub/exchange', b, child), competing))
             check(sum(bool(r.get('Committed')) for r in responses) == 1 and sum(bool(r.get('Error')) for r in responses) == 1, 'Different concurrent operations cannot spend the same revision')
         check(digest(normal_path) == normal_hash, 'Normal profile remains byte-for-byte unchanged')
         after_profile = read(child_path)
@@ -237,7 +237,7 @@ def main():
         before_pmc = {k: v for k, v in before_profile['characters']['pmc'].items() if k not in ('Inventory', key)}
         after_pmc = {k: v for k, v in after_profile['characters']['pmc'].items() if k not in ('Inventory', key)}
         check(before_pmc == after_pmc, 'Unrelated PMC data remains unchanged')
-        case['expected'] = request('/wtt-seasonal/hub', session=child)
+        case['expected'] = request('/wtt-campaigns/hub', session=child)
     save(STATE, fixtures)
     save(REPORT, {'passed': len(checks), 'checks': checks, 'payloadOutcomes': outcomes})
     print('Hub gameplay:', len(checks), 'checks passed;', dict(outcomes))

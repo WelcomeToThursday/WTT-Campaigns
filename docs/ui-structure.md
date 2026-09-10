@@ -1,10 +1,10 @@
 # UI project organization
 
-`WTT-Seasonal.UI` contains Unity presentation code without EFT or SPT dependencies. Namespaces match folders beneath `UI`, for example `SeasonalPerks.UI.Screens`.
+`WTT-Campaigns.UI` contains Unity presentation code without EFT or SPT dependencies. Namespaces match folders beneath `UI`, for example `WTT.Campaigns.UI.Screens`.
 
 | Folder / namespace suffix | Responsibility |
 | --- | --- |
-| `Screens` | `SeasonalScreen`, its page/dialog/creation partial files, and `ScreenPage` navigation |
+| `Screens` | `CampaignScreen`, its page/dialog/creation partial files, and `ScreenPage` navigation |
 | `Models` | Presentation data: `ScreenState`, `CharacterEntry`, and `PerkEntry` |
 | `Creation` | The character draft and `ICreationIdentity` adapter contract |
 | `Profiles` | Profile selection layout and profile-card hover behavior |
@@ -17,9 +17,9 @@
 
 `SeasonsHubScreen.Tutorial` owns the eight-step Battle Pass overlay and input isolation. `SeasonHubUi.Tutorial` supplies keyboard routing, first-visit presentation and the local completion preference; the tutorial does not mutate server progress.
 
-`SeasonalScreen.Introduction` owns the separate five-page season introduction opened from the seasonal profile card. See [reference and validation](season-introduction.md).
+`CampaignScreen.Introduction` owns the separate five-page season introduction opened from the seasonal profile card. See [reference and validation](season-introduction.md).
 
-Keep each type in its own named file, and keep all `SeasonalScreen` partial files together. Native character creation, model previews, asset loading, and game sound playback remain in `Client`; the UI requests those services through callbacks and `ICreationIdentity`.
+Keep each type in its own named file, and keep all `CampaignScreen` partial files together. Native character creation, model previews, asset loading, and game sound playback remain in `Client`; the UI requests those services through callbacks and `ICreationIdentity`.
 
 ## Unity previews
 
@@ -27,8 +27,8 @@ Run `python tools/sync_ui_preview.py` after editing UI sources. It searches subf
 
 Attachable components, their sound enum and the shared `UiElements` helper compile under `PreviewRuntime`; other sources compile under `Editor/Generated`. When adding a runtime component, update `RUNTIME_SOURCES` and keep its dependencies in that assembly. The sync script preserves metadata GUIDs when moving generated sources between these directories. Generated sources are not bundle dependencies.
 
-Update the client and the companion SDK's editor preview/check imports when moving types. Build the solution, run the UI assembly compatibility checks described in [CONTRIBUTING](../CONTRIBUTING.md), and use **SDK / Seasonal Perks / Render UI previews** for Unity interaction checks. These namespace changes preserve UI behavior and layouts, but consumers must rebuild against the new CLR type names.
+Update the client and the companion SDK's editor preview/check imports when moving types. Build the solution, run the UI assembly compatibility checks described in [CONTRIBUTING](../CONTRIBUTING.md), and use **SDK / WTT-Campaigns / Render UI previews** for Unity interaction checks. These namespace changes preserve UI behavior and layouts, but consumers must rebuild against the new CLR type names.
 
 ## Battle Pass transactions
 
-`SeasonsHubScreen.Transactions` presents claim/shortage and result dialogs; `SeasonsHubScreen.Exchange` presents the recovered exchange layout. Both use `HubAction` callbacks. `HubRequirement` carries structured eligibility without EFT types. Client adapters save pending operation IDs, flush native inventory operations, reconcile responses and reload the profile. Copy the reviewed `tools/unity/SeasonalHubPreview.cs` into the SDK editor folder after syncing UI sources to exercise the transaction fixtures.
+`SeasonsHubScreen.Transactions` presents claim/shortage and result dialogs; `SeasonsHubScreen.Exchange` presents the recovered exchange layout. Both use `HubAction` callbacks. `HubRequirement` carries structured eligibility without EFT types. Client adapters save pending operation IDs, flush native inventory operations, reconcile responses and reload the profile. Copy the reviewed `tools/unity/CampaignsHubPreview.cs` into the SDK editor folder after syncing UI sources to exercise the transaction fixtures.

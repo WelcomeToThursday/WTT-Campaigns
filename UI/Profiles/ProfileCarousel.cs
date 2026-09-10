@@ -5,7 +5,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace SeasonalPerks.UI.Profiles;
+namespace WTT.Campaigns.UI.Profiles;
 
 public sealed class ProfileCarousel : MonoBehaviour, IScrollHandler, IBeginDragHandler, IDragHandler, IEndDragHandler
 {

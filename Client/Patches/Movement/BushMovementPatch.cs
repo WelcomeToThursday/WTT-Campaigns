@@ -1,10 +1,10 @@
 using System.Reflection;
 using EFT;
 using HarmonyLib;
-using SeasonalPerks.Shared.Effects.Movement;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Shared.Effects.Movement;
 
-namespace SeasonalPerks.Client.Patches.Movement;
+namespace WTT.Campaigns.Client.Patches.Movement;
 
 internal class BushMovementPatch : ModulePatch
 {

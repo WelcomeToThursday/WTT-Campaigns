@@ -2,12 +2,12 @@ using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
-using SeasonalPerks.Shared.Native;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Shared.Serialization;
+namespace WTT.Campaigns.Shared.Serialization;
 
 // Presentation exclusions use concrete contracts. JSON tokens only canonicalize the wire format.
 internal static class GameplaySerialization

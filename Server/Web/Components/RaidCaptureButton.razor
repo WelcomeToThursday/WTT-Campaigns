@@ -1,5 +1,5 @@
-@using SeasonalPerks.Server.Web.Authoring
-@using SeasonalPerks.Shared.Authoring
+@using WTT.Campaigns.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Authoring
 <button type="button" disabled="@(Context?.Connected != true)" title="Connect an authoring-enabled raid above" @onclick="Request">@Label</button>
 @code {
     [CascadingParameter] public RaidEditorContext? Context { get; set; }

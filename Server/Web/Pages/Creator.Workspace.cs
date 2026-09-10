@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Server.Web.Pages;
+namespace WTT.Campaigns.Server.Web.Pages;
 
 public partial class Creator
 {
@@ -60,7 +60,7 @@ public partial class Creator
 
     private readonly Dictionary<string, string> _contentSelection = new();
 
-    private string SelectedContent(string key, IEnumerable<SeasonalPerks.Server.Seasons.ContentChoice> choices)
+    private string SelectedContent(string key, IEnumerable<WTT.Campaigns.Server.Seasons.ContentChoice> choices)
     {
         var records = choices.ToArray();
         var selected = _contentSelection.GetValueOrDefault(key, "");
@@ -74,7 +74,7 @@ public partial class Creator
 
     private void RemoveContent(object content, Action remove)
     {
-        var uses = SeasonalPerks.Server.Web.Authoring.StoryAuthoring.Uses(S, content);
+        var uses = WTT.Campaigns.Server.Web.Authoring.StoryAuthoring.Uses(S, content);
         if (uses.Count > 0)
         {
             _message = "Remove or reassign these references first: " + string.Join(", ", uses);
@@ -108,7 +108,7 @@ public partial class Creator
 
     private static string SectionTitle(string section)
     {
-        return SeasonalPerks.Server.Web.Authoring.CreatorGuidance.SectionTitle(section);
+        return WTT.Campaigns.Server.Web.Authoring.CreatorGuidance.SectionTitle(section);
     }
 
     private static string SectionGuidance(string section)

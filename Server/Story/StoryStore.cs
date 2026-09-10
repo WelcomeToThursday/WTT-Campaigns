@@ -1,21 +1,21 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Shared.Story;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Story;
+namespace WTT.Campaigns.Server.Story;
 
 internal static class StoryStore
 {
     internal static StoryProgress Read(PmcData pmc, string seasonId)
     {
-        if (!pmc.ExtensionData.TryGetValue("wttSeasonalStory:" + seasonId, out var raw))
+        if (!pmc.ExtensionData.TryGetValue("wttCampaignsStory:" + seasonId, out var raw))
         {
             return new StoryProgress { SeasonId = seasonId };
         }
         var state =
-            ProfileStateSerialization.Read<StoryProgress>(pmc, "wttSeasonalStory:" + seasonId)
+            ProfileStateSerialization.Read<StoryProgress>(pmc, "wttCampaignsStory:" + seasonId)
             ?? throw new InvalidOperationException("The saved story state is invalid.");
         if (state.Version != 1 || state.SeasonId != seasonId)
         {
@@ -26,7 +26,7 @@ internal static class StoryStore
 
     internal static void Write(PmcData pmc, StoryProgress state)
     {
-        pmc.ExtensionData["wttSeasonalStory:" + state.SeasonId] = JsonConvert.SerializeObject(state);
+        pmc.ExtensionData["wttCampaignsStory:" + state.SeasonId] = JsonConvert.SerializeObject(state);
         pmc.Variables ??= new();
         foreach (var variable in state.Variables)
         {

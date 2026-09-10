@@ -1,12 +1,12 @@
 using System.Security.Cryptography;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Hub;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Match;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Hub;
 
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 public sealed partial class HubGameplay
 {
@@ -72,8 +72,7 @@ public sealed partial class HubGameplay
             template =>
                 templates.Items.TryGetValue(template, out var item)
                 && item.Properties?.QuestItem != true
-                && SeasonalPerks
-                    .Server.Effects.TemplateFilters.Ancestors(templates, template)
+                && WTT.Campaigns.Server.Effects.TemplateFilters.Ancestors(templates, template)
                     .Any(parent => parent is "5448eb774bdc2d0a728b4567" or "567849dd4bdc2d150f8b456e")
         );
         foreach (var item in spawned)

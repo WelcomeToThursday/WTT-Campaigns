@@ -1,7 +1,7 @@
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 [Injectable(InjectionType.Singleton, OnLoadOrder.PostLoad + 1000)]
 public sealed class HubStartup(HubQuestService quests, HubGameplay gameplay) : IOnLoad

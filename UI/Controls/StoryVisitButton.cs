@@ -1,10 +1,10 @@
 using System;
-using SeasonalPerks.UI.Audio;
-using SeasonalPerks.UI.Media;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Audio;
+using WTT.Campaigns.UI.Media;
 
-namespace SeasonalPerks.UI.Controls;
+namespace WTT.Campaigns.UI.Controls;
 
 public sealed class StoryVisitButton : Button
 {

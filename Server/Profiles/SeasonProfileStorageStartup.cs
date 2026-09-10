@@ -1,8 +1,8 @@
-using SeasonalPerks.Server.Patches.Session;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
+using WTT.Campaigns.Server.Patches.Session;
 
-namespace SeasonalPerks.Server.Profiles;
+namespace WTT.Campaigns.Server.Profiles;
 
 [Injectable(InjectionType.Singleton, OnLoadOrder.SaveCallbacks - 1)]
 public sealed class SeasonProfileStorageStartup(

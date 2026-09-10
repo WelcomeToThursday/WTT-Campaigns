@@ -3,7 +3,7 @@ using HarmonyLib;
 using SPT.Common.Http;
 using SPT.Reflection.Patching;
 
-namespace SeasonalPerks.Client.Patches.Session;
+namespace WTT.Campaigns.Client.Patches.Session;
 
 internal class SptRequestIdentity : ModulePatch
 {

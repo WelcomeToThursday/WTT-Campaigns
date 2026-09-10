@@ -5,11 +5,11 @@ using EFT.Hideout;
 using EFT.InventoryLogic;
 using EFT.UI;
 using HarmonyLib;
-using SeasonalPerks.Shared.Story;
 using UnityEngine;
+using WTT.Campaigns.Shared.Story;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal static class StoryLinks
 {

@@ -62,7 +62,7 @@
     private void ReplaceOffer(NativeReward grant, string value) { if (!string.IsNullOrEmpty(value)) Reward.Grants[Reward.Grants.IndexOf(grant)] = Content.Offer(value); }
     private void AddGrant()
     {
-        var grant = SeasonalPerks.Server.Web.Authoring.NativeQuestAuthoring.Reward(_grantKind);
+        var grant = WTT.Campaigns.Server.Web.Authoring.NativeQuestAuthoring.Reward(_grantKind);
         if (_grantKind == "Tarcoin") grant.Value = 50;
         Reward.Grants.Add(grant);
     }

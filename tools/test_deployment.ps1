@@ -5,15 +5,15 @@ $fixture = Join-Path $projectRoot ('artifacts/deployment-tests/' + [guid]::NewGu
 $source = Join-Path $fixture 'source'
 $game = Join-Path $fixture 'game with spaces'
 $server = Join-Path $fixture 'separate server'
-$client = Join-Path $game 'BepInEx/plugins/SeasonalPerks'
-$mod = Join-Path $server 'user/mods/SeasonalPerks'
+$client = Join-Path $game 'BepInEx/plugins/WTT-Campaigns'
+$mod = Join-Path $server 'user/mods/WTT-Campaigns'
 $backups = Join-Path $fixture 'backups'
 New-Item -ItemType Directory -Path $source,$client,$mod -Force | Out-Null
-$sourceUi = Join-Path $source 'WTT-Seasonal.UI.dll'
-$sourceServer = Join-Path $source 'WTT-Seasonal.Server.dll'
-$sourceNotification = Join-Path $source 'seasonal_story_notifications.bundle'
-$targetUi = Join-Path $client 'WTT-Seasonal.UI.dll'
-$targetServer = Join-Path $mod 'WTT-Seasonal.Server.dll'
+$sourceUi = Join-Path $source 'WTT-Campaigns.UI.dll'
+$sourceServer = Join-Path $source 'WTT-Campaigns.Server.dll'
+$sourceNotification = Join-Path $source 'wtt_campaigns_story_notifications.bundle'
+$targetUi = Join-Path $client 'WTT-Campaigns.UI.dll'
+$targetServer = Join-Path $mod 'WTT-Campaigns.Server.dll'
 [IO.File]::WriteAllText($sourceUi, 'validated UI fixture')
 [IO.File]::WriteAllText($sourceServer, 'validated server fixture')
 [IO.File]::WriteAllText($sourceNotification, 'validated notification prefab fixture')
@@ -23,12 +23,12 @@ New-Item -ItemType Directory -Path (Join-Path $mod 'creator'),(Join-Path $server
 [IO.File]::WriteAllText((Join-Path $mod 'creator/legacy.json'), 'preserve creator')
 [IO.File]::WriteAllText((Join-Path $server 'user/profiles/fixture.json'), 'preserve profile')
 $manifest = Join-Path $fixture 'files.props'
-function Write-Manifest([string]$UiPath = 'client/WTT-Seasonal.UI.dll', [string]$ExpectedHash = '', [switch]$Duplicate) {
+function Write-Manifest([string]$UiPath = 'client/WTT-Campaigns.UI.dll', [string]$ExpectedHash = '', [switch]$Duplicate) {
     $document = [xml]'<Project><ItemGroup /></Project>'
-    $items = @(@{ Source = $sourceUi; Path = $UiPath }, @{ Source = $sourceServer; Path = 'server/WTT-Seasonal.Server.dll' }, @{ Source = $sourceNotification; Path = 'client/seasonal_story_notifications.bundle' })
+    $items = @(@{ Source = $sourceUi; Path = $UiPath }, @{ Source = $sourceServer; Path = 'server/WTT-Campaigns.Server.dll' }, @{ Source = $sourceNotification; Path = 'client/wtt_campaigns_story_notifications.bundle' })
     if ($Duplicate) { $items += $items[0] }
     foreach ($file in $items) {
-        $item = $document.CreateElement('SeasonalDeployFile')
+        $item = $document.CreateElement('CampaignsDeployFile')
         $item.SetAttribute('Include', $file.Source)
         $item.SetAttribute('InstallPath', $file.Path)
         if ($ExpectedHash) { $item.SetAttribute('ExpectedHash', $ExpectedHash) }
@@ -37,7 +37,7 @@ function Write-Manifest([string]$UiPath = 'client/WTT-Seasonal.UI.dll', [string]
     $document.Save($manifest)
 }
 function Deploy([bool]$ShouldPass = $true, [string]$Name = 'deploy', [string]$Project = (Join-Path $PSScriptRoot 'install.proj')) {
-    $output = & dotnet msbuild $Project -nologo -v:minimal "-p:DeploymentManifest=$manifest" "-p:TarkovDir=$game/" "-p:ServerDir=$server/" "-p:SeasonalBackupDir=$backups/" 2>&1
+    $output = & dotnet msbuild $Project -nologo -v:minimal "-p:DeploymentManifest=$manifest" "-p:TarkovDir=$game/" "-p:ServerDir=$server/" "-p:CampaignsBackupDir=$backups/" 2>&1
     $code = $LASTEXITCODE
     $output | Set-Content -LiteralPath (Join-Path $fixture ($Name + '.log'))
     if (($code -eq 0) -ne $ShouldPass) { throw "$Name returned $code. $($output -join "`n")" }
@@ -51,8 +51,8 @@ Write-Manifest
 $oldHash = Hash $targetUi
 Deploy -Name first
 Check ((Hash $sourceUi) -eq (Hash $targetUi) -and (Hash $sourceServer) -eq (Hash $targetServer)) 'Install uses game and separate server paths with spaces'
-Check ((Hash $sourceNotification) -eq (Hash (Join-Path $client 'seasonal_story_notifications.bundle'))) 'Dedicated chapter prefab bundle deploys with matching components'
-$backup = Get-ChildItem -LiteralPath $backups -Filter 'WTT-Seasonal.UI.dll' -Recurse -File | Select-Object -First 1
+Check ((Hash $sourceNotification) -eq (Hash (Join-Path $client 'wtt_campaigns_story_notifications.bundle'))) 'Dedicated chapter prefab bundle deploys with matching components'
+$backup = Get-ChildItem -LiteralPath $backups -Filter 'WTT-Campaigns.UI.dll' -Recurse -File | Select-Object -First 1
 Check ((Hash $backup.FullName) -eq $oldHash) 'Previous file backed up byte for byte'
 Check ((Get-Content -LiteralPath (Join-Path $mod 'config.json') -Raw) -eq 'preserve config') 'Configuration preserved'
 Check ((Get-Content -LiteralPath (Join-Path $mod 'creator/legacy.json') -Raw) -eq 'preserve creator') 'Creator content preserved'
@@ -82,11 +82,11 @@ Check ((Get-Content -LiteralPath (Join-Path $mod 'config.json') -Raw) -eq 'prese
 Write-Manifest
 # Force a source change after backup, exercising the real verification/rollback targets.
 $rollbackProject = Join-Path $fixture 'rollback.proj'
-$document = [xml]'<Project DefaultTargets="DeploySeasonalFiles" />'
+$document = [xml]'<Project DefaultTargets="DeployCampaignsFiles" />'
 foreach ($import in @((Join-Path $projectRoot 'Directory.Build.props'),$manifest,(Join-Path $PSScriptRoot 'Deployment.targets'))) {
     $element = $document.CreateElement('Import'); $element.SetAttribute('Project',$import); $document.DocumentElement.AppendChild($element) | Out-Null
 }
-$target = $document.CreateElement('Target'); $target.SetAttribute('Name','ChangeFixtureSource'); $target.SetAttribute('AfterTargets','BackupSeasonalFiles')
+$target = $document.CreateElement('Target'); $target.SetAttribute('Name','ChangeFixtureSource'); $target.SetAttribute('AfterTargets','BackupCampaignsFiles')
 $write = $document.CreateElement('WriteLinesToFile'); $write.SetAttribute('File',$sourceUi); $write.SetAttribute('Lines','source changed during copy'); $write.SetAttribute('Overwrite','true')
 $target.AppendChild($write) | Out-Null; $document.DocumentElement.AppendChild($target) | Out-Null; $document.Save($rollbackProject)
 $beforeUi = Hash $targetUi

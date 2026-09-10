@@ -1,4 +1,4 @@
-namespace SeasonalPerks.UI.Audio;
+namespace WTT.Campaigns.UI.Audio;
 
 public enum InterfaceSound
 {

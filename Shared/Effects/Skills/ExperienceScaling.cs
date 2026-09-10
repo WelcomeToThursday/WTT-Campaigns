@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Effects.Skills;
+namespace WTT.Campaigns.Shared.Effects.Skills;
 
 public static class ExperienceScaling
 {

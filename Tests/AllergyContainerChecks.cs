@@ -1,11 +1,11 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Consumables;
-using SeasonalPerks.Shared.Effects.Items;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Profiles;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Consumables;
+using WTT.Campaigns.Shared.Effects.Items;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Profiles;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class AllergyContainerChecks
 {

@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal sealed class TraderMediaManifest
 {

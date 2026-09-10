@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Components;
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Server.Web.Authoring;
-using SeasonalPerks.Shared.Authoring;
-using SeasonalPerks.Shared.Seasons;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Server.Web.Authoring;
+using WTT.Campaigns.Shared.Authoring;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Server.Web.Pages;
+namespace WTT.Campaigns.Server.Web.Pages;
 
 public partial class Creator
 {

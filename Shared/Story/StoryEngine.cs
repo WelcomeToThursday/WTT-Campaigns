@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 // Runs on the authority. The host supplies native quest/service effects and refreshed facts.
 public sealed class StoryEngine(

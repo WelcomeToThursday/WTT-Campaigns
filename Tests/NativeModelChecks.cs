@@ -1,10 +1,10 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Shared.Progression;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Progression;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class NativeModelChecks
 {

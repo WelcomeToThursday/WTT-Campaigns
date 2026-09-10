@@ -1,6 +1,6 @@
 using System;
 
-namespace SeasonalPerks.Shared.Contracts;
+namespace WTT.Campaigns.Shared.Contracts;
 
 public sealed class HubReward
 {

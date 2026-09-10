@@ -58,7 +58,7 @@ def main():
     state = read(STATE)
     root, child = state['root'], state['child']
     if phase == 'restart':
-        snapshot = request('/wtt-seasonal/snapshot', session=child)
+        snapshot = request('/wtt-campaigns/snapshot', session=child)
         check(snapshot['State']['SeasonalPerkEffectParameters'] == state['parameters'], 'Fixed target parameters survive restart')
         check({JUICE, SAILOR, DIET} <= set(snapshot['State']['SeasonalPerks']), 'Consumable selections survive restart')
         for session in [root, child]:
@@ -70,12 +70,12 @@ def main():
         return
 
     def select(ids, should_succeed=True):
-        snapshot = request('/wtt-seasonal/snapshot', session=root)
-        result = request('/wtt-seasonal/edit', {'PerkIds': ids, 'ExpectedRevision': snapshot['State']['Revision']}, root)
+        snapshot = request('/wtt-campaigns/snapshot', session=root)
+        result = request('/wtt-campaigns/edit', {'PerkIds': ids, 'ExpectedRevision': snapshot['State']['Revision']}, root)
         check(bool(result.get('Error')) != should_succeed, 'Selection outcome '+str(ids))
         return result
 
-    snapshot = request('/wtt-seasonal/snapshot', session=root)
+    snapshot = request('/wtt-campaigns/snapshot', session=root)
     check(JUICE not in snapshot['Unavailable'] and SAILOR not in snapshot['Unavailable'], 'Both fixed consumable perks are available')
     check(ALLERGIC not in snapshot['Unavailable'], 'Random Allergic is available with its own implementation')
     select([JUICE], False)
@@ -98,9 +98,9 @@ def main():
     restored = select(funding + [JUICE, SAILOR])
     check(restored['State']['SeasonalPerkEffectParameters'] == parameters, 'Reselection restores the same targets')
     select(funding + ['6a5789f713792e2c7c0d2a5b'], False)
-    after_rejected = request('/wtt-seasonal/snapshot', session=root)
+    after_rejected = request('/wtt-campaigns/snapshot', session=root)
     check(after_rejected['State'] == restored['State'], 'Unsupported selection leaves saved targets/state unchanged')
-    request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
+    request('/wtt-campaigns/switch', {'Mode': 'seasonal'}, root)
     for session in [root, child]:
         before = profiles(session)
         for item in state['items'][session]:
@@ -115,10 +115,10 @@ def main():
         check(after[0]['Health']['BodyParts'] == before[0]['Health']['BodyParts'], 'Timed raid buffs are not converted into instant stash healing '+session)
     selected = select(funding + [JUICE, SAILOR, DIET])
     check({JUICE, SAILOR, DIET} <= set(selected['State']['SeasonalPerks']), 'Both perks coexist with Diet')
-    request('/wtt-seasonal/switch', {'Mode': 'normal'}, root)
-    check(request('/wtt-seasonal/snapshot', session=root)['ActiveMode'] == 'normal', 'Switching back to normal succeeds')
-    request('/wtt-seasonal/switch', {'Mode': 'seasonal'}, root)
-    check(request('/wtt-seasonal/snapshot', session=root)['State']['SeasonalPerkEffectParameters'] == parameters, 'Switching preserves deterministic target data')
+    request('/wtt-campaigns/switch', {'Mode': 'normal'}, root)
+    check(request('/wtt-campaigns/snapshot', session=root)['ActiveMode'] == 'normal', 'Switching back to normal succeeds')
+    request('/wtt-campaigns/switch', {'Mode': 'seasonal'}, root)
+    check(request('/wtt-campaigns/snapshot', session=root)['State']['SeasonalPerkEffectParameters'] == parameters, 'Switching preserves deterministic target data')
     check(digest(SERVER/'SPT_Data/database/templates/items.json') == state['databaseHash'], 'Shared item templates remain unchanged')
     state['parameters'] = parameters
     state['inventories'] = {s: [p['Inventory'] for p in profiles(s)] for s in [root, child]}

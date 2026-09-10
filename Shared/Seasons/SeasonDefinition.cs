@@ -1,12 +1,12 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Configuration;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Native;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Serialization;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Configuration;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Serialization;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Shared.Seasons;
+namespace WTT.Campaigns.Shared.Seasons;
 
 // These are authoring contracts. Player state is constructed by the runtime compiler only.
 public sealed class SeasonDefinition : ExtensibleJsonModel

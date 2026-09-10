@@ -1,8 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Shared.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
@@ -10,8 +8,10 @@ using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.ItemEvent;
 using SPTarkov.Server.Core.Routers;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Shared.Effects;
 
-namespace SeasonalPerks.Server.Patches.Trading;
+namespace WTT.Campaigns.Server.Patches.Trading;
 
 [Injectable]
 public class InsurancePatch(EventOutputHolder output) : AbstractPatch

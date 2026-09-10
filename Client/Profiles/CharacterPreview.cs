@@ -1,10 +1,10 @@
 using EFT;
 using EFT.UI;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.Client.Profiles;
+namespace WTT.Campaigns.Client.Profiles;
 
 public sealed class CharacterPreview : MonoBehaviour
 {

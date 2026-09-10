@@ -1,11 +1,11 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.Shared.Seasons;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.Routers;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class HubService(SeasonRepository repository)
@@ -30,7 +30,7 @@ public sealed class HubService(SeasonRepository repository)
             {
                 throw new FileNotFoundException("Missing local seasonal hub image", path);
             }
-            images.AddRoute("/wtt-seasonal/hub-images/" + id, path);
+            images.AddRoute("/wtt-campaigns/hub-images/" + id, path);
         }
     }
 

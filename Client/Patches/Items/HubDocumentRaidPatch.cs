@@ -1,10 +1,10 @@
 using System.Reflection;
 using EFT;
 using HarmonyLib;
-using SeasonalPerks.Client.Hub;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Client.Hub;
 
-namespace SeasonalPerks.Client.Patches.Items;
+namespace WTT.Campaigns.Client.Patches.Items;
 
 internal class HubDocumentRaidPatch(string method) : ModulePatch
 {

@@ -1,9 +1,9 @@
 using EFT.Communications;
 using EFT.UI;
-using SeasonalPerks.Shared.Story;
 using UnityEngine;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 // Backport live's dedicated chapter view into 4.1's notification manager.
 internal sealed class StoryChapterNotification : Notification

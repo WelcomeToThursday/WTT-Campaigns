@@ -1,7 +1,7 @@
 using System.Reflection;
 using Mono.Cecil;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class UniTaskChecks
 {
@@ -16,7 +16,7 @@ internal static class UniTaskChecks
             calls.Any(m => m.DeclaringType.FullName == "Cysharp.Threading.Tasks.UniTask" && m.Name == "NextFrame"),
             "Loader and subtitle waits cross Unity frames"
         );
-        var skills = client.MainModule.Types.Single(t => t.Name == "SeasonalSkillsTab");
+        var skills = client.MainModule.Types.Single(t => t.Name == "CampaignSkillsTab");
         check(
             skills.Methods.Single(m => m.Name == "TryHide").ReturnType.FullName == "System.Threading.Tasks.Task`1<System.Boolean>",
             "Native skills interface keeps its Task contract"
@@ -28,7 +28,7 @@ internal static class UniTaskChecks
         );
 
         // Exercise the actual client without creating textures, making HTTP requests, or running a Unity loop.
-        var loader = runtime.GetType("SeasonalPerks.Client.UI.SeasonImageLoader")!;
+        var loader = runtime.GetType("WTT.Campaigns.Client.UI.SeasonImageLoader")!;
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
         var operation = loader

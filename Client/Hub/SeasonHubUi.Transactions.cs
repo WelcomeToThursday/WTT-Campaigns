@@ -1,10 +1,10 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Contracts;
-using SeasonalPerks.UI.Models;
 using SPT.Common.Http;
+using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.UI.Models;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Hub;
+namespace WTT.Campaigns.Client.Hub;
 
 public sealed partial class SeasonHubUi
 {
@@ -142,7 +142,7 @@ public sealed partial class SeasonHubUi
             {
                 _screen!.ShowMessage("Applying seasonal transaction...", false);
             }
-            var raw = await RequestHandler.PostJsonAsync("/wtt-seasonal/hub/" + _pendingAction, _pendingBody);
+            var raw = await RequestHandler.PostJsonAsync("/wtt-campaigns/hub/" + _pendingAction, _pendingBody);
             var result = JsonConvert.DeserializeObject<HubResult>(raw) ?? throw new InvalidDataException("Invalid hub response.");
             var error = result.Error;
             if (error.Length > 0)

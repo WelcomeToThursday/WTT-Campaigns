@@ -4,7 +4,7 @@ The season creator and the in-raid editor share a recoverable draft. Publishing 
 
 ## Connect a raid
 
-1. In the game's BepInEx configuration, enable **Seasonal Perks → Raid authoring → Enable authoring**. Enter a raid on the map you want to edit. Any character can capture a draft, including a normal character.
+1. In the game's BepInEx configuration, enable **WTT-Campaigns → Raid authoring → Enable authoring**. Enter a raid on the map you want to edit. Any character can capture a draft, including a normal character.
 2. Open a draft in the administrator's season creator. In **Connected raid**, choose the advertised map/client and select **Connect draft**.
 3. Press **Ctrl+F8**, or use **Create in raid**, **Pick in raid**, or **Edit in raid** beside a compatible web field. A web request opens its focused task when no other screen or unfinished capture owns input.
 
@@ -26,7 +26,7 @@ Only the nearest 100 zone outlines are drawn, with the selected zone always incl
 
 Both editors synchronize completed edits while connected. An unfinished text field or drag stays local until committed. Independent changes merge; conflicts show both versions and require a choice. The conflicting choices preserve independent edits.
 
-Unsent client edits are saved under `BepInEx/config/SeasonalPerks/raid-authoring/<draft-id>.json`. Reconnecting the same draft reconciles them with the current server revision. Capture requests themselves expire with their raid and are never replayed into a new raid. A server restart revokes existing connections; reconnect from the administrator's editor.
+Unsent client edits are saved under `BepInEx/config/WTT-Campaigns/raid-authoring/<draft-id>.json`. Reconnecting the same draft reconciles them with the current server revision. Capture requests themselves expire with their raid and are never replayed into a new raid. A server restart revokes existing connections; reconnect from the administrator's editor.
 
 The editor restores its camera, cursor, input, and temporary rendering state when closed, interrupted by another screen, disconnected, or ended by death/extraction.
 
@@ -51,6 +51,6 @@ NPC/item spawning, cinematic camera paths, and specialized native triggers beyon
 
 ## Development checks
 
-Build the dedicated UI through **CJ-SDK → SDK → Seasonal Perks → Build raid editor**. Its source builder lives in `tools/unity/SeasonalRaidEditorBuilder.cs`; layout sources follow the existing `tools/sync_ui_preview.py` workflow. The builder produces `seasonal_raid_editor.bundle` and 1080p, 1440p, and ultrawide previews.
+Build the dedicated UI through **CJ-SDK → SDK → WTT-Campaigns → Build raid editor**. Its source builder lives in `tools/unity/CampaignsRaidEditorBuilder.cs`; layout sources follow the existing `tools/sync_ui_preview.py` workflow. The builder produces `wtt_campaigns_raid_editor.bundle` and 1080p, 1440p, and ultrawide previews.
 
 The regression suite covers merging, conflicting and repeated requests, grant ownership, raid expiry, native objective field assignment, validation, duplication, and pack round trips. `tools/EditorRendering` renders the actual web components. `tools/package.ps1` uses MSBuild to validate, stage and install matching assemblies and both UI bundles with backups and checksum verification. Existing packages can be installed with `tools/install_matching.ps1`. Neither path stops or starts servers or clients.

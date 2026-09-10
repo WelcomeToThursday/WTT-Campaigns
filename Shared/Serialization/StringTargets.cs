@@ -1,7 +1,7 @@
 using System.Collections;
 using Newtonsoft.Json;
 
-namespace SeasonalPerks.Shared.Serialization;
+namespace WTT.Campaigns.Shared.Serialization;
 
 /// <summary>Native target fields accept one identifier or a list of identifiers.</summary>
 [JsonConverter(typeof(StringTargetsConverter))]

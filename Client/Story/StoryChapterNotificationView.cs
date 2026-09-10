@@ -1,9 +1,9 @@
 using EFT.UI;
-using SeasonalPerks.Client.UI;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.UI;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 public sealed class StoryChapterNotificationView : BaseNotificationView
 {
@@ -17,10 +17,10 @@ public sealed class StoryChapterNotificationView : BaseNotificationView
         // Unity resolves the prefab's shared sprites through the already loaded main UI bundle.
         _ = SeasonUi.Instance.UiBundle;
         _bundle ??=
-            AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "seasonal_story_notifications.bundle"))
+            AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_story_notifications.bundle"))
             ?? throw new InvalidDataException("Missing Seasonal story notification bundle.");
         var asset =
-            "assets/mods/seasonalperks.assets/storynotifications/seasonalchapter" + notification.Status.ToLowerInvariant() + ".prefab";
+            "assets/mods/wtt-campaigns.assets/storynotifications/seasonalchapter" + notification.Status.ToLowerInvariant() + ".prefab";
         var prefab =
             _bundle.LoadAsset<GameObject>(asset) ?? throw new InvalidDataException("Missing chapter notification prefab: " + asset);
         var root = Instantiate(prefab, notifier._container, false);

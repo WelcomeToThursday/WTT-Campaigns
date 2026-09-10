@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Client.Patches.Session;
+namespace WTT.Campaigns.Client.Patches.Session;
 
 internal static class RequestIdentity
 {
@@ -8,7 +8,7 @@ internal static class RequestIdentity
         // active backend character, just like the native raid start/end requests.
         if (
             !sharedClient
-            || (path.StartsWith("/wtt-seasonal/", StringComparison.Ordinal) && path != "/wtt-seasonal/hub/raid-document")
+            || (path.StartsWith("/wtt-campaigns/", StringComparison.Ordinal) && path != "/wtt-campaigns/hub/raid-document")
             || string.IsNullOrEmpty(sessionId)
         )
         {

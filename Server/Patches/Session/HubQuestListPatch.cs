@@ -1,15 +1,15 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Profiles;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Profiles;
 
-namespace SeasonalPerks.Server.Patches.Session;
+namespace WTT.Campaigns.Server.Patches.Session;
 
 [Injectable]
 public class HubQuestListPatch(SeasonService seasons, HubQuestService quests) : AbstractPatch

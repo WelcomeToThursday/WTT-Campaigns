@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 // Native quest definitions remain in SeasonDefinition.Quests; this adds story membership and lifecycle.
 public sealed class StoryQuest

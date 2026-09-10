@@ -1,6 +1,6 @@
 using EFT;
 
-namespace SeasonalPerks.Client.Patches.Skills;
+namespace WTT.Campaigns.Client.Patches.Skills;
 
 internal static class PmcExperience
 {

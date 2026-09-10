@@ -2,14 +2,14 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Routing;
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Server.Web.Authoring;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Perks;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Server.Web.Authoring;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Perks;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Server.Web.Pages;
+namespace WTT.Campaigns.Server.Web.Pages;
 
 public partial class Creator
 {
@@ -231,7 +231,7 @@ public partial class Creator
 
     private static string AssetUrl(string id)
     {
-        return "/wtt-seasonal/creator/assets/" + id + ".png";
+        return "/wtt-campaigns/creator/assets/" + id + ".png";
     }
 
     private void Dirty()

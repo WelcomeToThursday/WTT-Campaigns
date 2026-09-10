@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Configuration;
+namespace WTT.Campaigns.Shared.Configuration;
 
 public sealed class Rules
 {

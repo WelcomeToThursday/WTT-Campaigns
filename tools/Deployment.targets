@@ -1,6 +1,7 @@
 <Project>
+  <Import Project="CampaignsMigration.targets" />
   <UsingTask
-    TaskName="PrepareSeasonalDeployment"
+    TaskName="PrepareCampaignsDeployment"
     TaskFactory="RoslynCodeTaskFactory"
     AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll"
   >
@@ -34,14 +35,14 @@
             }
             var local = relative.Substring(separator + 1).Replace('\\', '/');
             // Only shipped runtime files are eligible. Never deploy user configuration or saves.
-            var runtime = local.StartsWith("WTT-Seasonal.", StringComparison.Ordinal) && (local.EndsWith(".dll", StringComparison.Ordinal) || local == "WTT-Seasonal.Server.deps.json");
-            var allowed = runtime || (component == "client" && (local == "seasonalperks_ui.bundle" || local == "seasonal_raid_editor.bundle" || local == "seasonal_story_notifications.bundle" || local.StartsWith("StoryMedia/", StringComparison.Ordinal)))
+            var runtime = local.StartsWith("WTT-Campaigns.", StringComparison.Ordinal) && (local.EndsWith(".dll", StringComparison.Ordinal) || local == "WTT-Campaigns.Server.deps.json");
+            var allowed = runtime || (component == "client" && (local == "wtt_campaigns_ui.bundle" || local == "wtt_campaigns_raid_editor.bundle" || local == "wtt_campaigns_story_notifications.bundle" || local.StartsWith("StoryMedia/", StringComparison.Ordinal)))
                 || (component == "server" && (local == "Newtonsoft.Json.dll" || local.StartsWith("data/", StringComparison.Ordinal) || local.StartsWith("icons/", StringComparison.Ordinal) || local.StartsWith("hub-images/", StringComparison.Ordinal) || local.StartsWith("wwwroot/", StringComparison.Ordinal)));
             if (!allowed || local.Contains("../")) { Log.LogError("Not a shipped runtime file: " + relative); continue; }
             var item = new Microsoft.Build.Utilities.TaskItem(file);
             item.SetMetadata("Destination", target);
             item.SetMetadata("Backup", backup);
-            item.SetMetadata("PackagePath", (component == "client" ? "BepInEx/plugins/SeasonalPerks/" : "SPT_Runtime/user/mods/SeasonalPerks/") + local.Replace('\\', '/'));
+            item.SetMetadata("PackagePath", (component == "client" ? "BepInEx/plugins/WTT-Campaigns/" : "SPT_Runtime/user/mods/WTT-Campaigns/") + local.Replace('\\', '/'));
             var previousHash = "";
             try {
                 if (File.Exists(target)) {
@@ -65,36 +66,45 @@
       </Code>
     </Task>
   </UsingTask>
-  <Target Name="PrepareSeasonalFiles">
-    <Error Condition="'@(SeasonalDeployFile)' == ''" Text="No runtime files were selected for deployment." />
+  <Target Name="PrepareCampaignsFiles">
+    <Error Condition="'@(CampaignsDeployFile)' == ''" Text="No runtime files were selected for deployment." />
     <PropertyGroup>
-      <_BackupDir>$(SeasonalBackupDir)$([System.DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fffffff'))\</_BackupDir>
+      <_BackupDir>$(CampaignsBackupDir)$([System.DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fffffff'))\</_BackupDir>
     </PropertyGroup>
-    <GetFileHash Files="@(SeasonalDeployFile)" Algorithm="SHA256">
+    <MigrateCampaignsInstallation
+      Phase="Check"
+      ClientDir="$(CampaignsClientDir)"
+      ServerModDir="$(CampaignsServerDir)"
+      ConfigDir="$(TarkovDir)BepInEx\config"
+      BackupDir="$(_BackupDir)"
+      Scope="$(DeploymentScope)"
+      Files="@(CampaignsDeployFile)"
+    />
+    <GetFileHash Files="@(CampaignsDeployFile)" Algorithm="SHA256">
       <Output TaskParameter="Items" ItemName="_HashedFiles" />
     </GetFileHash>
     <VerifyFileHash File="%(_HashedFiles.Identity)" Hash="%(_HashedFiles.ExpectedHash)" Condition="'%(_HashedFiles.ExpectedHash)' != ''" />
-    <PrepareSeasonalDeployment
+    <PrepareCampaignsDeployment
       Files="@(_HashedFiles)"
-      ClientDir="$(SeasonalClientDir)"
-      ServerModDir="$(SeasonalServerDir)"
+      ClientDir="$(CampaignsClientDir)"
+      ServerModDir="$(CampaignsServerDir)"
       BackupDir="$(_BackupDir)"
     >
       <Output TaskParameter="Planned" ItemName="_PlannedFiles" />
-    </PrepareSeasonalDeployment>
+    </PrepareCampaignsDeployment>
     <ItemGroup>
       <_ChangedFiles Include="@(_PlannedFiles)" Condition="'%(Changed)' == 'True'" />
       <_ExistingFiles Include="@(_ChangedFiles)" Condition="'%(PreviousHash)' != ''" />
       <_NewFiles Include="@(_ChangedFiles)" Condition="'%(PreviousHash)' == ''" />
     </ItemGroup>
   </Target>
-  <Target Name="CheckSeasonalFiles" DependsOnTargets="PrepareSeasonalFiles">
+  <Target Name="CheckCampaignsFiles" DependsOnTargets="PrepareCampaignsFiles">
     <Message
       Importance="high"
       Text="Verified @(_PlannedFiles->Count()) source files and checked destination availability. No files installed."
     />
   </Target>
-  <Target Name="BackupSeasonalFiles" DependsOnTargets="PrepareSeasonalFiles">
+  <Target Name="BackupCampaignsFiles" DependsOnTargets="PrepareCampaignsFiles">
     <Copy SourceFiles="@(_ExistingFiles->'%(Destination)')" DestinationFiles="@(_ExistingFiles->'%(Backup)')" />
     <VerifyFileHash File="%(_ExistingFiles.Backup)" Hash="%(_ExistingFiles.PreviousHash)" Condition="'%(_ExistingFiles.Identity)' != ''" />
     <WriteLinesToFile
@@ -103,7 +113,16 @@
       Overwrite="true"
     />
   </Target>
-  <Target Name="DeploySeasonalFiles" DependsOnTargets="BackupSeasonalFiles">
+  <Target Name="DeployCampaignsFiles" DependsOnTargets="BackupCampaignsFiles">
+    <MigrateCampaignsInstallation
+      Phase="Migrate"
+      ClientDir="$(CampaignsClientDir)"
+      ServerModDir="$(CampaignsServerDir)"
+      ConfigDir="$(TarkovDir)BepInEx\config"
+      BackupDir="$(_BackupDir)"
+      Scope="$(DeploymentScope)"
+      Files="@(CampaignsDeployFile)"
+    />
     <Copy SourceFiles="@(_ChangedFiles)" DestinationFiles="@(_ChangedFiles->'%(Destination)')" Retries="0" />
     <VerifyFileHash File="%(_PlannedFiles.Destination)" Hash="%(_PlannedFiles.FileHash)" />
     <Message
@@ -114,11 +133,20 @@
       Importance="high"
       Text="No servers or clients were stopped or started. Updated assemblies take effect after you manually restart the affected application."
     />
-    <OnError ExecuteTargets="RollbackSeasonalFiles" />
+    <OnError ExecuteTargets="RollbackCampaignsFiles" />
   </Target>
-  <Target Name="RollbackSeasonalFiles">
+  <Target Name="RollbackCampaignsFiles">
     <Copy SourceFiles="@(_ExistingFiles->'%(Backup)')" DestinationFiles="@(_ExistingFiles->'%(Destination)')" Retries="0" />
     <Delete Files="@(_NewFiles->'%(Destination)')" />
+    <MigrateCampaignsInstallation
+      Phase="Restore"
+      ClientDir="$(CampaignsClientDir)"
+      ServerModDir="$(CampaignsServerDir)"
+      ConfigDir="$(TarkovDir)BepInEx\config"
+      BackupDir="$(_BackupDir)"
+      Scope="$(DeploymentScope)"
+      Files="@(CampaignsDeployFile)"
+    />
     <VerifyFileHash
       File="%(_ExistingFiles.Destination)"
       Hash="%(_ExistingFiles.PreviousHash)"

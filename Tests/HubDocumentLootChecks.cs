@@ -1,9 +1,9 @@
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Hub;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
+using WTT.Campaigns.Server.Hub;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class HubDocumentLootChecks
 {

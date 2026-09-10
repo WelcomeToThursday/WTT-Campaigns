@@ -3,14 +3,14 @@ using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Profiles;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Services.Profile;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Server.Profiles;
 
-namespace SeasonalPerks.Server.Patches.Session;
+namespace WTT.Campaigns.Server.Patches.Session;
 
 public abstract class SeasonProfilePathPatch(Type type, string method) : AbstractPatch
 {

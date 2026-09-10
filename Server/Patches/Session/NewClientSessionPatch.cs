@@ -1,19 +1,19 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Profiles;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
 using SPTarkov.Server.Core.Models.Common;
+using WTT.Campaigns.Server.Profiles;
 
-namespace SeasonalPerks.Server.Patches.Session;
+namespace WTT.Campaigns.Server.Patches.Session;
 
 [Injectable]
-public class NewClientSessionPatch(SeasonService seasons, SeasonalPerks.Server.Story.StoryService story) : AbstractPatch
+public class NewClientSessionPatch(SeasonService seasons, WTT.Campaigns.Server.Story.StoryService story) : AbstractPatch
 {
     private static SeasonService _seasons = null!;
-    private static SeasonalPerks.Server.Story.StoryService _story = null!;
+    private static WTT.Campaigns.Server.Story.StoryService _story = null!;
 
     protected override MethodBase GetTargetMethod()
     {

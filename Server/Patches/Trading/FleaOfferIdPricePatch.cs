@@ -1,13 +1,13 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Models.Eft.Ragfair;
 using SPTarkov.Server.Core.Services.Ragfair;
+using WTT.Campaigns.Server.Effects;
 
-namespace SeasonalPerks.Server.Patches.Trading;
+namespace WTT.Campaigns.Server.Patches.Trading;
 
 [Injectable]
 public class FleaOfferIdPricePatch(TraderPriceEffects prices) : AbstractPatch

@@ -7,9 +7,9 @@ using HarmonyLib;
 using SPT.Reflection.Patching;
 using UnityEngine;
 
-namespace SeasonalPerks.Client.Patches.Movement;
+namespace WTT.Campaigns.Client.Patches.Movement;
 
-internal class BushSoundPatch(string methodName) : ModulePatch("SeasonalPerks.BushSound." + methodName)
+internal class BushSoundPatch(string methodName) : ModulePatch("WTT.Campaigns.BushSound." + methodName)
 {
     protected override MethodBase GetTargetMethod()
     {

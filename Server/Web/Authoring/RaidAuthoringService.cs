@@ -1,11 +1,11 @@
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Authoring;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Spatial;
 using SPTarkov.DI.Annotations;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Authoring;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Spatial;
 
-namespace SeasonalPerks.Server.Web.Authoring;
+namespace WTT.Campaigns.Server.Web.Authoring;
 
 [Injectable(InjectionType.Singleton)]
 public sealed class RaidAuthoringService(SeasonRepository repository)

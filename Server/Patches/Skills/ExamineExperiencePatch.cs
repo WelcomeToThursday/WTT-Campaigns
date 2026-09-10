@@ -1,15 +1,15 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Profiles;
-using SeasonalPerks.Shared.Effects;
-using SeasonalPerks.Shared.Effects.Skills;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
 using SPTarkov.Server.Core.Models.Eft.Profile;
+using WTT.Campaigns.Server.Profiles;
+using WTT.Campaigns.Shared.Effects;
+using WTT.Campaigns.Shared.Effects.Skills;
 
-namespace SeasonalPerks.Server.Patches.Skills;
+namespace WTT.Campaigns.Server.Patches.Skills;
 
 [Injectable]
 public class ExamineExperiencePatch : AbstractPatch

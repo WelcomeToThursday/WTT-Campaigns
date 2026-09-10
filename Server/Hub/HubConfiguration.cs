@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Server.Hub;
+namespace WTT.Campaigns.Server.Hub;
 
 public sealed class HubConfiguration
 {

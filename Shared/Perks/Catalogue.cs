@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace SeasonalPerks.Shared.Perks;
+namespace WTT.Campaigns.Shared.Perks;
 
 public sealed class Catalogue
 {

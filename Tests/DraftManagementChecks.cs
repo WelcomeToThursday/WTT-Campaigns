@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Seasons;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class DraftManagementChecks
 {

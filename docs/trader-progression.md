@@ -19,7 +19,7 @@ The native task list gains collapsible Loyalty Level I–IV, Essential Tasks and
 
 The native trader header already suppresses a zero spending requirement; the tooltip now hides its spending requirement and checkmark too. Current spending remains informational. Availability refreshes while the task list is open when player level, trader reputation or loyalty changes.
 
-`/wtt-seasonal/progression` is a read-only metadata route with `Version: 1`, a `Quests` dictionary of applied quest IDs to `{TraderId, Tier}`, and the applied `Traders` list. The client caches this per backend session and clears it during reconnect/character switching. Quest actions continue through native SPT routes.
+`/wtt-campaigns/progression` is a read-only metadata route with `Version: 1`, a `Quests` dictionary of applied quest IDs to `{TraderId, Tier}`, and the applied `Traders` list. The client caches this per backend session and clears it during reconnect/character switching. Quest actions continue through native SPT routes.
 
 ## Data and reproducibility
 

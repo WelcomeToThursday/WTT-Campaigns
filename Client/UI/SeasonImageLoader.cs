@@ -3,7 +3,7 @@ using Cysharp.Threading.Tasks;
 using SPT.Common.Http;
 using UnityEngine;
 
-namespace SeasonalPerks.Client.UI;
+namespace WTT.Campaigns.Client.UI;
 
 internal static class SeasonImageLoader
 {
@@ -12,7 +12,7 @@ internal static class SeasonImageLoader
     internal static string PathFor(string collection, string id)
     {
         var snapshot = Plugin.Current;
-        return "/wtt-seasonal/"
+        return "/wtt-campaigns/"
             + collection
             + "/"
             + Uri.EscapeDataString(id)

@@ -1,9 +1,9 @@
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.UI.Controls;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal sealed class StoryInteractionPrompt : IDisposable
 {
@@ -17,7 +17,7 @@ internal sealed class StoryInteractionPrompt : IDisposable
         var scaler = _root.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
-        var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf");
+        var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
         var label = new UiElements(font).Label(_root.transform, "Interaction", "Interact", 20, 240, 38, 0, -105);
         label.alignment = TextAnchor.MiddleCenter;
         label.raycastTarget = false;

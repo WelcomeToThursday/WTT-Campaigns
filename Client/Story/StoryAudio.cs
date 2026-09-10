@@ -3,7 +3,7 @@ using EFT.UI;
 using UnityEngine;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 internal static class StoryAudio
 {

@@ -5,12 +5,12 @@ using EFT.Quests;
 using EFT.Trading;
 using EFT.UI;
 using HarmonyLib;
-using SeasonalPerks.Client.Progression;
 using SPT.Reflection.Patching;
 using TMPro;
 using UnityEngine;
+using WTT.Campaigns.Client.Progression;
 
-namespace SeasonalPerks.Client.Patches.UI;
+namespace WTT.Campaigns.Client.Patches.UI;
 
 internal sealed class TraderSpendingTooltipPatch : ModulePatch
 {

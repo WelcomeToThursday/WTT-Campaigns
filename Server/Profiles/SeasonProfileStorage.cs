@@ -6,7 +6,7 @@ using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Utils;
 
-namespace SeasonalPerks.Server.Profiles;
+namespace WTT.Campaigns.Server.Profiles;
 
 /// <summary>Routes character files separately from launcher accounts, retaining SPT's native save pipeline.</summary>
 [Injectable(InjectionType.Singleton)]
@@ -43,7 +43,7 @@ public sealed class SeasonProfileStorage
             foreach (var folder in Directory.EnumerateDirectories(links))
             {
                 var root = Path.GetFileName(folder);
-                var path = Path.Combine(folder, "cjSeasonalPerksAccount.json");
+                var path = Path.Combine(folder, "wttCampaignsAccount.json");
                 if (!MongoId.IsValidMongoId(root) || !File.Exists(path))
                 {
                     continue;

@@ -1,5 +1,8 @@
-<Project DefaultTargets="DeploySeasonalFiles">
+<Project DefaultTargets="DeployCampaignsFiles">
   <Import Project="..\Directory.Build.props" />
+  <PropertyGroup>
+    <DeploymentScope Condition="'$(DeploymentScope)' == ''">All</DeploymentScope>
+  </PropertyGroup>
   <Import Project="$(DeploymentManifest)" Condition="Exists('$(DeploymentManifest)')" />
   <Import Project="Deployment.targets" />
 </Project>

@@ -1,10 +1,10 @@
-using SeasonalPerks.Server.Hub;
-using SeasonalPerks.Server.Seasons;
-using SeasonalPerks.Shared.Seasons;
 using SPTarkov.Server.Core.Routers;
 using SPTarkov.Server.Core.Services.Image;
+using WTT.Campaigns.Server.Hub;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Seasons;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class StoryImageRouteChecks
 {
@@ -46,7 +46,7 @@ internal static class StoryImageRouteChecks
         new HubService(store).Initialize(router);
         foreach (var id in new[] { art, icon })
         {
-            var route = "/wtt-seasonal/hub-images/" + id;
+            var route = "/wtt-campaigns/hub-images/" + id;
             check(routes.ExistsByKey(route), "Story-only chapter artwork is registered even in a nonactive playable pack");
             check(
                 File.ReadAllBytes(routes.GetByKey(route)).SequenceEqual(bytes),
@@ -54,7 +54,7 @@ internal static class StoryImageRouteChecks
             );
         }
         check(
-            routes.ExistsByKey("/wtt-seasonal/hub-images/" + store.Legacy.UniversalImage),
+            routes.ExistsByKey("/wtt-campaigns/hub-images/" + store.Legacy.UniversalImage),
             "Existing hub artwork routes remain registered"
         );
     }

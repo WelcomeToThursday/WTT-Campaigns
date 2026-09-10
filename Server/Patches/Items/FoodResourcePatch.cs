@@ -1,7 +1,6 @@
 using System.Reflection;
 using HarmonyLib;
 using JetBrains.Annotations;
-using SeasonalPerks.Server.Effects;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Reflection.Patching;
 using SPTarkov.Server.Core.Controllers;
@@ -14,8 +13,9 @@ using SPTarkov.Server.Core.Models.Eft.Health;
 using SPTarkov.Server.Core.Models.Eft.ItemEvent;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Routers;
+using WTT.Campaigns.Server.Effects;
 
-namespace SeasonalPerks.Server.Patches.Items;
+namespace WTT.Campaigns.Server.Patches.Items;
 
 [Injectable]
 public class FoodResourcePatch(ItemHelper items, InventoryHelper inventory, EventOutputHolder output) : AbstractPatch

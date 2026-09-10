@@ -1,4 +1,4 @@
-@using SeasonalPerks.Shared.Story
+@using WTT.Campaigns.Shared.Story
 <details class="editor-card">
     <summary>Conversation availability and phase</summary>
     <p>Edit this conversation's entry points and phase variable here. Shared variables and entry points remain the same records in their dedicated editors.</p>
@@ -12,5 +12,5 @@
     [Parameter] public SeasonDefinition Season { get; set; } = null!;
     [Parameter] public StoryDialog Dialog { get; set; } = null!;
     [Parameter] public EventCallback Changed { get; set; }
-    private async Task AddEntry() { Season.Story!.EntryPoints.Add(new() { Id = SeasonalPerks.Server.Web.Authoring.StoryAuthoring.NewId(), DialogId = Dialog.Id, TraderId = Dialog.TraderId, StartPoint = Dialog.StartPoints.Keys.FirstOrDefault() ?? "" }); await Changed.InvokeAsync(); }
+    private async Task AddEntry() { Season.Story!.EntryPoints.Add(new() { Id = WTT.Campaigns.Server.Web.Authoring.StoryAuthoring.NewId(), DialogId = Dialog.Id, TraderId = Dialog.TraderId, StartPoint = Dialog.StartPoints.Keys.FirstOrDefault() ?? "" }); await Changed.InvokeAsync(); }
 }

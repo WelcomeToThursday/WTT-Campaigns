@@ -3,14 +3,14 @@ using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.UI;
 using PlayerIcons;
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.UI.Controls;
-using SeasonalPerks.UI.Creation;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.UI.Controls;
+using WTT.Campaigns.UI.Creation;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Profiles;
+namespace WTT.Campaigns.Client.Profiles;
 
 // Reuse native views without registering a screen controller or invoking CreateProfileOperation.
 internal sealed class CreationIdentity : ICreationIdentity

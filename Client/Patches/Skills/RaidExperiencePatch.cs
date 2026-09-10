@@ -5,7 +5,7 @@ using HarmonyLib;
 using SPT.Reflection.Patching;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Patches.Skills;
+namespace WTT.Campaigns.Client.Patches.Skills;
 
 public class RaidExperiencePatch : ModulePatch
 {

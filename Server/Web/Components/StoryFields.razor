@@ -1,7 +1,7 @@
 @using System.Collections
 @using System.Reflection
-@using SeasonalPerks.Shared.Story
-@using SeasonalPerks.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Story
+@using WTT.Campaigns.Server.Web.Authoring
 <div class="story-fields" data-record="@Value.GetType().Name" @key="Value">
 @if (Depth > 32) { <p class="notice error">Condition nesting exceeds 32 levels. Remove this group to repair it.</p> }
 else

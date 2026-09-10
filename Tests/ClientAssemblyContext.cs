@@ -1,11 +1,11 @@
 using System.Reflection;
 using System.Runtime.Loader;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 // Isolate installed Unity libraries from the newer server packages used by the offline test executable.
-internal sealed class ClientAssemblyContext(string sptRoot, string clientPath) : AssemblyLoadContext("Seasonal client checks")
+internal sealed class ClientAssemblyContext(string sptRoot, string clientPath) : AssemblyLoadContext("WTT-Campaigns client checks")
 {
     private readonly string[] _folders =
     [

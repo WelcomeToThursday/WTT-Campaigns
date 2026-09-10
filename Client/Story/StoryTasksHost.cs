@@ -1,15 +1,15 @@
 using EFT.Quests;
 using EFT.UI;
-using SeasonalPerks.Client.UI;
-using SeasonalPerks.Shared.Story;
-using SeasonalPerks.UI.Controls;
-using SeasonalPerks.UI.Models;
-using SeasonalPerks.UI.Screens;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.Shared.Story;
+using WTT.Campaigns.UI.Controls;
+using WTT.Campaigns.UI.Models;
+using WTT.Campaigns.UI.Screens;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Story;
+namespace WTT.Campaigns.Client.Story;
 
 public sealed class StoryTasksHost : MonoBehaviour
 {
@@ -42,7 +42,7 @@ public sealed class StoryTasksHost : MonoBehaviour
             }
             var rect = (RectTransform)native._tasksPanel.transform;
             _root = StoryTaskLayout.CreatePanel(rect);
-            var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf");
+            var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
             _panel = new StoryJournalPanel(_root, font, Artwork, MarkRead, OpenLink);
             _tabs = new StoryTaskTabs(native._defaultQuestsToggleSpawner, Select);
             native._defaultQuestsToggleSpawner.gameObject.SetActive(false);

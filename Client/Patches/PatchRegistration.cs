@@ -2,15 +2,15 @@ using EFT;
 using EFT.HealthSystem;
 using EFT.Interactive;
 using EFT.UI;
-using SeasonalPerks.Client.Patches.Health;
-using SeasonalPerks.Client.Patches.Hideout;
-using SeasonalPerks.Client.Patches.Items;
-using SeasonalPerks.Client.Patches.Movement;
-using SeasonalPerks.Client.Patches.Session;
-using SeasonalPerks.Client.Patches.Skills;
-using SeasonalPerks.Client.Patches.UI;
+using WTT.Campaigns.Client.Patches.Health;
+using WTT.Campaigns.Client.Patches.Hideout;
+using WTT.Campaigns.Client.Patches.Items;
+using WTT.Campaigns.Client.Patches.Movement;
+using WTT.Campaigns.Client.Patches.Session;
+using WTT.Campaigns.Client.Patches.Skills;
+using WTT.Campaigns.Client.Patches.UI;
 
-namespace SeasonalPerks.Client.Patches;
+namespace WTT.Campaigns.Client.Patches;
 
 internal static class PatchRegistration
 {
@@ -98,7 +98,7 @@ internal static class PatchRegistration
 
     private static void EnableUi()
     {
-        new SeasonalPerks.Client.Story.StoryTasksPatch().Enable();
+        new WTT.Campaigns.Client.Story.StoryTasksPatch().Enable();
         new TaskGroupingShowPatch().Enable();
         new TaskGroupingRefreshPatch(nameof(QuestsListView.UpdateVisibility)).Enable();
         new TaskGroupingRefreshPatch(nameof(QuestsListView.QuestAddedHandler)).Enable();
@@ -107,6 +107,6 @@ internal static class PatchRegistration
         new TaskTierBadgePatch().Enable();
         new MenuEntry(typeof(MenuScreen)).Enable();
         new SkillsTabPatch().Enable();
-        new SeasonalUiInputPatch().Enable();
+        new CampaignUiInputPatch().Enable();
     }
 }

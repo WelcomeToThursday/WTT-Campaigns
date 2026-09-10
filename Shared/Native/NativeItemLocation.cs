@@ -1,7 +1,7 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Shared.Native;
+namespace WTT.Campaigns.Shared.Native;
 
 /// <summary>An item is placed in either an indexed cartridge slot or a two-dimensional inventory grid.</summary>
 [JsonConverter(typeof(NativeItemLocationConverter))]

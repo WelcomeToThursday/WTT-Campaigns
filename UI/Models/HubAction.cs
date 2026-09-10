@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SeasonalPerks.UI.Models;
+namespace WTT.Campaigns.UI.Models;
 
 [Serializable]
 public sealed class HubAction

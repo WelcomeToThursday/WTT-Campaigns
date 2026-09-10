@@ -1,12 +1,12 @@
-using SeasonalPerks.Client.Spatial;
-using SeasonalPerks.Client.Story;
-using SeasonalPerks.Shared.Spatial;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
+using WTT.Campaigns.Client.Spatial;
+using WTT.Campaigns.Client.Story;
+using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring;
 
 public sealed partial class RaidEditor
 {

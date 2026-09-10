@@ -1,6 +1,6 @@
 # Battle Pass gameplay 0.2.0
 
-The Seasonal hub now supports local reward claims, document exchanges, raid document acquisition and saved progress. WTT-Seasonal owns the eight ordinary document templates and both season crate templates. Existing content supplied by WTT-ContentBackport is resolved after mod loading; missing or unsupported dependencies keep individual rewards locked. No WTT-CommonLib quest importer or NuGet dependency is introduced.
+The Seasonal hub now supports local reward claims, document exchanges, raid document acquisition and saved progress. WTT-Campaigns owns the eight ordinary document templates and both season crate templates. Existing content supplied by WTT-ContentBackport is resolved after mod loading; missing or unsupported dependencies keep individual rewards locked. No WTT-CommonLib quest importer or NuGet dependency is introduced.
 
 ## Captured catalogue
 
@@ -28,9 +28,9 @@ Every payload is preflighted and applied to a cloned profile. Physical items use
 
 ## Persistence and lifecycle
 
-`/wtt-seasonal/hub` remains read-only. `/wtt-seasonal/hub/claim`, `/exchange` and `/raid-document` resolve operations on the server. Claim/exchange requests carry an operation ID and expected revision. Repeating a committed operation returns its receipt and current state; changing its inputs is rejected.
+`/wtt-campaigns/hub` remains read-only. `/wtt-campaigns/hub/claim`, `/exchange` and `/raid-document` resolve operations on the server. Claim/exchange requests carry an operation ID and expected revision. Repeating a committed operation returns its receipt and current state; changing its inputs is rejected.
 
-State resides in the Seasonal PMC's extension data under `wttSeasonalHub:{season}:{battlePass}`. It includes claims, Classified/Tarcoin balances, allowance windows, conserved raid units, trader unlocks and transaction receipts. Ordinary balances come from inventory. New state starts at zero; the season has no expiry or automatic wipe.
+State resides in the Seasonal PMC's extension data under `wttCampaignsHub:{season}:{battlePass}`. It includes claims, Classified/Tarcoin balances, allowance windows, conserved raid units, trader unlocks and transaction receipts. Ordinary balances come from inventory. New state starts at zero; the season has no expiry or automatic wipe.
 
 Transactions and native inventory operations reuse the account lock. The commit adapter atomically replaces the verified SPT 4.1 profile-cache entry, then uses SPT's atomic profile save. It restores the original cache on write failure. SPT's `GetProfiles()` returns a copy and must not be used for replacement.
 
@@ -40,11 +40,11 @@ The client flushes native inventory operations before transactions. Pending clai
 
 Install WTT-ContentBackport 2.0.1 or later and its dependencies. Seasonal retains its ten captured item definitions (eight documents and two crates) and localization, while Backport supplies the nine shared models at their original bundle keys. Seasonal packages no document or crate bundles.
 
-During Preload, registration checks the manifests and files of loaded mods before SPT's bundle loader runs. Missing required models stop startup with an explicit error. Older season packs containing `wtt-seasonal/` prefab paths resolve to the original shared keys. Item IDs and profile data need no migration. Custom imported models must have a registered bundle and an existing file.
+During Preload, registration checks the manifests and files of loaded mods before SPT's bundle loader runs. Missing required models stop startup with an explicit error. Older season packs containing `wtt-campaigns/` prefab paths resolve to the original shared keys. Item IDs and profile data need no migration. Custom imported models must have a registered bundle and an existing file.
 
-When upgrading an existing installation, back up Seasonal's `bundles.json` and remove its nine private document/crate entries, retaining any independently installed custom entries. An empty `manifest` array is valid. The old files beneath `bundles/wtt-seasonal/assets` can remain unregistered on disk. Item and bundle caches refresh after the user manually restarts the server and game. Never perform those restarts as part of installation.
+When upgrading an existing installation, back up Seasonal's `bundles.json` and remove its nine private document/crate entries, retaining any independently installed custom entries. An empty `manifest` array is valid. The old files beneath `bundles/wtt-campaigns/assets` can remain unregistered on disk. Item and bundle caches refresh after the user manually restarts the server and game. Never perform those restarts as part of installation.
 
-The optional research pipeline (`import_season_items.py`, `SeasonalItemBuilder.cs`, `finalize_season_items.py`) retains the original recovery and audit workflow for reference. Its rebuilt outputs are no longer build or packaging dependencies. Regenerate item JSON and provenance with `tools/import_season_items.py --dump "<Development>/1.0 Dump"` only when updating the captured source data.
+The optional research pipeline (`import_season_items.py`, `CampaignsItemBuilder.cs`, `finalize_season_items.py`) retains the original recovery and audit workflow for reference. Its rebuilt outputs are no longer build or packaging dependencies. Regenerate item JSON and provenance with `tools/import_season_items.py --dump "<Development>/1.0 Dump"` only when updating the captured source data.
 
 The documents retain the captured 999-unit stack limit and dimensions, including 2×2 blueprints. Their unsupported live BattlePassItem parent is adapted to SPT's native information-item parent. Crates retain their native random-container parent, but the capture contains no verified contents pool. Their claims and exchange stay unavailable until one is supplied; no contents are invented.
 

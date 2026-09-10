@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Native;
-using SeasonalPerks.Shared.Serialization;
+using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Serialization;
 
-namespace SeasonalPerks.Shared.Story;
+namespace WTT.Campaigns.Shared.Story;
 
 public static class StoryQuestCompatibility
 {

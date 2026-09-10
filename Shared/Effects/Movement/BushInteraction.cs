@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Effects.Movement;
+namespace WTT.Campaigns.Shared.Effects.Movement;
 
 public static class BushInteraction
 {

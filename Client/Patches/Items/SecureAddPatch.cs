@@ -2,10 +2,10 @@ using System.Reflection;
 using Diz.LanguageExtensions;
 using EFT.InventoryLogic;
 using HarmonyLib;
-using SeasonalPerks.Shared.Effects.Items;
 using SPT.Reflection.Patching;
+using WTT.Campaigns.Shared.Effects.Items;
 
-namespace SeasonalPerks.Client.Patches.Items;
+namespace WTT.Campaigns.Client.Patches.Items;
 
 internal class SecureAddPatch : ModulePatch
 {

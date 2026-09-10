@@ -1,7 +1,7 @@
-using SeasonalPerks.Shared.Effects.Consumables;
-using SeasonalPerks.Shared.Perks;
+using WTT.Campaigns.Shared.Effects.Consumables;
+using WTT.Campaigns.Shared.Perks;
 
-namespace SeasonalPerks.Shared.Effects;
+namespace WTT.Campaigns.Shared.Effects;
 
 public static class EffectSupport
 {

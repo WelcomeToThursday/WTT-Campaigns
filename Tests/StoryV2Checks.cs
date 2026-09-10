@@ -1,9 +1,9 @@
 using Newtonsoft.Json;
-using SeasonalPerks.Server.Web.Authoring;
-using SeasonalPerks.Shared.Seasons;
-using SeasonalPerks.Shared.Story;
+using WTT.Campaigns.Server.Web.Authoring;
+using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Story;
 
-namespace SeasonalPerks.Tests;
+namespace WTT.Campaigns.Tests;
 
 internal static class StoryV2Checks
 {
@@ -135,7 +135,7 @@ internal static class StoryV2Checks
             "Ordinary raid events select playable media"
         );
         check(new StoryRequest().Version == 2 && new StoryResponse().Version == 2, "Story client protocol defaults to version two");
-        var preparation = new SeasonalPerks.Server.Story.StoryPreparation { Identity = "operation", ProfileHash = "profile" };
+        var preparation = new WTT.Campaigns.Server.Story.StoryPreparation { Identity = "operation", ProfileHash = "profile" };
         var draw = preparation.Draw(0, 100);
         check(
             Enumerable.Range(0, 10).All(_ => preparation.Draw(0, 100) == draw),

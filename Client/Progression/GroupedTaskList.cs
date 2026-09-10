@@ -11,7 +11,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using ZLinq;
 
-namespace SeasonalPerks.Client.Progression;
+namespace WTT.Campaigns.Client.Progression;
 
 /// <summary>Groups native rows without replacing quest actions, binding, or the detail panel.</summary>
 internal sealed class GroupedTaskList : MonoBehaviour

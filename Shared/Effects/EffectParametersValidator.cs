@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Shared.Effects;
+namespace WTT.Campaigns.Shared.Effects;
 
 public static class EffectParametersValidator
 {

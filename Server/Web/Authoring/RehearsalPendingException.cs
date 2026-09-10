@@ -1,4 +1,4 @@
-namespace SeasonalPerks.Server.Web.Authoring;
+namespace WTT.Campaigns.Server.Web.Authoring;
 
 public sealed class RehearsalPendingException(string key, string message) : Exception(message)
 {
