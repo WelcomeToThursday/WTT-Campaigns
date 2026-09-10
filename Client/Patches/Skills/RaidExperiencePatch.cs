@@ -3,6 +3,7 @@ using System.Reflection.Emit;
 using EFT;
 using HarmonyLib;
 using SPT.Reflection.Patching;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Patches.Skills;
 
@@ -20,9 +21,9 @@ public class RaidExperiencePatch : ModulePatch
     [PatchTranspiler]
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
     {
-        var code = instructions.ToList();
+        var code = instructions.AsValueEnumerable().ToList();
         var field = typeof(ProfileStats).GetField(nameof(ProfileStats.ExperienceBonusMult))!;
-        var sites = code.Where(i => i.StoresField(field)).ToArray();
+        var sites = code.AsValueEnumerable().Where(i => i.StoresField(field)).ToArray();
         if (sites.Length != 1)
         {
             throw new InvalidOperationException("Expected one raid experience bonus store in " + __originalMethod);

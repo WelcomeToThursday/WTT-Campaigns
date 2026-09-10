@@ -11,6 +11,7 @@ using SPT.Common.Http;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Video;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Hub;
 
@@ -320,7 +321,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
                 document.Name = Plugin.Localized(document.Id + " name", document.Name);
             }
 
-            foreach (var reward in data.Pages.SelectMany(p => p.Rewards).Concat(data.SeasonalRewards))
+            foreach (var reward in data.Pages.AsValueEnumerable().SelectMany(p => p.Rewards).Concat(data.SeasonalRewards))
             {
                 reward.Name = Plugin.Localized(reward.Id + " name", reward.Name);
                 reward.Description = Plugin.Localized(reward.Id + " description", reward.Description);
@@ -332,19 +333,20 @@ public sealed partial class SeasonHubUi : MonoBehaviour
             _allowedImages.Clear();
             foreach (
                 var id in data
-                    .Pages.SelectMany(p => p.Rewards)
+                    .Pages.AsValueEnumerable()
+                    .SelectMany(p => p.Rewards)
                     .Concat(data.SeasonalRewards)
                     .SelectMany(r => new[] { r.Image, r.BigImage })
-                    .Concat(data.Documents.SelectMany(d => new[] { d.Image, d.UnavailableImage }))
-                    .Concat(data.Slides.Select(slide => slide.Image))
+                    .Concat(data.Documents.AsValueEnumerable().SelectMany(d => new[] { d.Image, d.UnavailableImage }))
+                    .Concat(data.Slides.AsValueEnumerable().Select(slide => slide.Image))
                     .Append(data.BadgeImage)
                     .Append(data.BannerImage)
-                    .Where(id => id.Length == 24 && id.All(Uri.IsHexDigit))
+                    .Where(id => id.Length == 24 && id.AsValueEnumerable().All(Uri.IsHexDigit))
                     .Append(data.UniversalImage)
                     .Append(data.UniversalUnavailableImage)
             )
             {
-                if (id.Length != 24 || id.Any(c => !Uri.IsHexDigit(c)))
+                if (id.Length != 24 || id.AsValueEnumerable().Any(c => !Uri.IsHexDigit(c)))
                 {
                     throw new InvalidDataException("Invalid hub image identifier.");
                 }
@@ -497,7 +499,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
 
     private void ReleaseImages()
     {
-        foreach (var task in _images.Values.Where(t => t.Status == TaskStatus.RanToCompletion))
+        foreach (var task in _images.Values.AsValueEnumerable().Where(t => t.Status == TaskStatus.RanToCompletion))
         {
             Destroy(task.Result.texture);
             Destroy(task.Result);

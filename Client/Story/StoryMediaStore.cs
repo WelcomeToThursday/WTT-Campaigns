@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using Newtonsoft.Json;
 using SeasonalPerks.Shared.Story;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -56,7 +57,7 @@ internal static class StoryMediaStore
         var manifest =
             JsonConvert.DeserializeObject<TraderMediaManifest>(File.ReadAllText(Path.Combine(Plugin.Folder, "StoryMedia", "traders.json")))
             ?? throw new InvalidDataException("Invalid trader media manifest.");
-        var room = manifest.Rooms.Single(r => r.Trader == traderId);
+        var room = manifest.Rooms.AsValueEnumerable().Single(r => r.Trader == traderId);
         return Open(room.Bundle, room.Sha256);
     }
 
@@ -75,11 +76,11 @@ internal static class StoryMediaStore
     }
 
     internal static StoryMedia? Trader(string traderId) =>
-        StoryClient.Current?.Definition?.Media.SingleOrDefault(m => m.Kind == "TraderScene" && m.TraderId == traderId);
+        StoryClient.Current?.Definition?.Media.AsValueEnumerable().SingleOrDefault(m => m.Kind == "TraderScene" && m.TraderId == traderId);
 
     internal static void Close(AssetBundle bundle)
     {
-        var entry = Bundles.Single(p => p.Value.Bundle == bundle);
+        var entry = Bundles.AsValueEnumerable().Single(p => p.Value.Bundle == bundle);
         if (entry.Value.Users > 1)
         {
             Bundles[entry.Key] = (bundle, entry.Value.Users - 1, entry.Value.Hash);
@@ -91,7 +92,7 @@ internal static class StoryMediaStore
 
     internal static StoryMedia Find(string id)
     {
-        return StoryClient.Current?.Definition?.Media.SingleOrDefault(m => m.Id == id)
+        return StoryClient.Current?.Definition?.Media.AsValueEnumerable().SingleOrDefault(m => m.Id == id)
             ?? throw new InvalidOperationException("The story media is not registered: " + id);
     }
 }

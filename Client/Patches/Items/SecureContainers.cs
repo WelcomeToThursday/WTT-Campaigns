@@ -1,6 +1,7 @@
 using EFT;
 using EFT.InventoryLogic;
 using SeasonalPerks.Shared.Effects.Items;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Patches.Items;
 
@@ -22,13 +23,15 @@ internal static class SecureContainers
             return false;
         }
 
-        if (!parent.GetAllParentItemsAndSelf().OfType<MobContainer>().Any(c => c.isSecured))
+        if (!parent.GetAllParentItemsAndSelf().AsValueEnumerable().OfType<MobContainer>().Any(c => c.isSecured))
         {
             return false;
         }
 
         var contents = item is ContainerCollection collection ? collection.GetAllItemsFromCollection() : new[] { item };
-        return contents.Any(i => !SecureContainerRules.Allows(Plugin.Effects, i.StringTemplateId, Ancestors(i.Template)));
+        return contents
+            .AsValueEnumerable()
+            .Any(i => !SecureContainerRules.Allows(Plugin.Effects, i.StringTemplateId, Ancestors(i.Template)));
     }
 
     private static IEnumerable<string> Ancestors(ItemTemplate template)

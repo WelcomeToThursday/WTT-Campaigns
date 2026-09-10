@@ -2,6 +2,7 @@ using SeasonalPerks.Shared.Story;
 using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -58,7 +59,7 @@ internal sealed class StoryDialogueMedia : IDisposable
         Play(_sound, playback.Sound, "Audio");
         _subtitles = playback.Subtitles.ToArray();
         _start = Time.realtimeSinceStartup;
-        _duration = _subtitles.Select(s => s.End).DefaultIfEmpty(0).Max();
+        _duration = _subtitles.AsValueEnumerable().Select(static s => s.End).DefaultIfEmpty(0).Max();
         if (_sound.clip && playback.Sound.Length > 0)
         {
             _duration = Math.Max(_duration, _sound.clip!.length);
@@ -71,10 +72,7 @@ internal sealed class StoryDialogueMedia : IDisposable
         while (_subtitle && generation == _generation && Time.realtimeSinceStartup - _start < _duration)
         {
             var time = Time.realtimeSinceStartup - _start;
-            _subtitle.text = string.Join(
-                "\n",
-                _subtitles.Where(s => time >= s.Start && time < s.End).Select(s => Plugin.Localized(s.Key, s.Key))
-            );
+            _subtitle.text = StorySubtitleText.Build(_subtitles, time, static key => Plugin.Localized(key, key), _subtitle.text);
             await Task.Delay(16);
         }
         if (_subtitle && generation == _generation)

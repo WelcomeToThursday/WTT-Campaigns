@@ -33,6 +33,12 @@ if (args.Length == 3 && (args[0] == "--resource-hooks" || args[0] == "--bush-hoo
     return;
 }
 
+if (args.Length == 3 && args[0] == "--unity-toolkit")
+{
+    SeasonalPerks.Tests.UnityToolkitChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length >= 2 && args[0] == "--ui")
 {
     SeasonalPerks.Tests.UiCompatibilityChecks.Run(args[1], args.Length > 2 ? args[2] : null);

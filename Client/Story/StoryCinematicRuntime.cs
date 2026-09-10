@@ -3,6 +3,7 @@ using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.Video;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -111,7 +112,7 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
                 _director =
                     _media.GetComponentInChildren<PlayableDirector>(true)
                     ?? throw new InvalidDataException("The cinematic requires a PlayableDirector.");
-                var camera = _media.GetComponentsInChildren<Camera>(true).Single(c => c.name == "StoryCamera");
+                var camera = _media.GetComponentsInChildren<Camera>(true).AsValueEnumerable().Single(c => c.name == "StoryCamera");
                 _surface.UseCamera(camera);
                 _director.playOnAwake = false;
                 // Hold preserves the end time, so an external Stop cannot masquerade

@@ -6,6 +6,7 @@ using SeasonalPerks.Shared.Spatial;
 using SeasonalPerks.Shared.Story;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Authoring;
 
@@ -15,9 +16,9 @@ public sealed partial class RaidEditor
     {
         get
         {
-            return _session?.Definition?.Story?.RaidBindings.FirstOrDefault(b =>
-                b.Id == (_task?.TargetKind == "Binding" ? _task.TargetId : _bindingTarget)
-            );
+            return _session
+                ?.Definition?.Story?.RaidBindings.AsValueEnumerable()
+                .FirstOrDefault(b => b.Id == (_task?.TargetKind == "Binding" ? _task.TargetId : _bindingTarget));
         }
     }
 
@@ -192,7 +193,7 @@ public sealed partial class RaidEditor
                 if (_mode == "Bindings" && Binding != null)
                 {
                     var id = Binding.Id;
-                    _session?.Edit(s => s.Story!.RaidBindings.Single(b => b.Id == id).Name = value.Trim());
+                    _session?.Edit(s => s.Story!.RaidBindings.AsValueEnumerable().Single(b => b.Id == id).Name = value.Trim());
                 }
                 else
                 {
@@ -211,7 +212,7 @@ public sealed partial class RaidEditor
                 var id = Binding.Id;
                 _session?.Edit(s =>
                 {
-                    var b = s.Story!.RaidBindings.Single(x => x.Id == id);
+                    var b = s.Story!.RaidBindings.AsValueEnumerable().Single(x => x.Id == id);
                     var kinds = new[] { "Trigger", "Interact", "Shoot", "Cinematic" };
                     b.Kind = kinds[(Array.IndexOf(kinds, b.Kind) + 1) % kinds.Length];
                     if (b.Kind is "Interact" or "Shoot")
@@ -320,7 +321,7 @@ public sealed partial class RaidEditor
         var id = _selected;
         _session?.Edit(s =>
         {
-            var point = s.Zones.Cast<SpatialCapture>().Concat(s.Captures).FirstOrDefault(p => p.Id == id);
+            var point = s.Zones.AsValueEnumerable().Cast<SpatialCapture>().Concat(s.Captures).FirstOrDefault(p => p.Id == id);
             if (point != null)
             {
                 action(point);
@@ -535,7 +536,7 @@ public sealed partial class RaidEditor
             Refresh();
             return;
         }
-        var uses = SpatialRules.Uses(_session.Definition, _selected).ToArray();
+        var uses = SpatialRules.Uses(_session.Definition, _selected).AsValueEnumerable().ToArray();
         if (uses.Length > 0)
         {
             _notice = "Reassign before deleting: " + string.Join(", ", uses);
@@ -554,6 +555,7 @@ public sealed partial class RaidEditor
     {
         _scene = Resources
             .FindObjectsOfTypeAll<Transform>()
+            .AsValueEnumerable()
             .Where(t =>
                 t
                 && t.gameObject.scene.IsValid()
@@ -583,7 +585,7 @@ public sealed partial class RaidEditor
             _bindingTarget = id;
             _selected = "";
             var binding = Binding;
-            _picked = _scene.FirstOrDefault(t => t && StoryRaidRuntime.ObjectPath(t) == binding?.ObjectPath);
+            _picked = _scene.AsValueEnumerable().FirstOrDefault(t => t && StoryRaidRuntime.ObjectPath(t) == binding?.ObjectPath);
         }
         else
         {
@@ -591,7 +593,7 @@ public sealed partial class RaidEditor
             _picked = null;
             if (Selected?.ObjectPath is { Length: > 0 } path)
             {
-                _picked = _scene.FirstOrDefault(t => t && StoryRaidRuntime.ObjectPath(t) == path);
+                _picked = _scene.AsValueEnumerable().FirstOrDefault(t => t && StoryRaidRuntime.ObjectPath(t) == path);
             }
         }
         Refresh();
@@ -605,7 +607,7 @@ public sealed partial class RaidEditor
         }
 
         var path = StoryRaidRuntime.ObjectPath(_picked!);
-        if (_scene.Count(t => t && StoryRaidRuntime.ObjectPath(t) == path) != 1)
+        if (_scene.AsValueEnumerable().Count(t => t && StoryRaidRuntime.ObjectPath(t) == path) != 1)
         {
             return "This path is ambiguous. Select a uniquely named target.";
         }
@@ -615,12 +617,12 @@ public sealed partial class RaidEditor
             return "Shoot targets need a ballistic collider on the selected object.";
         }
 
-        if (Binding?.Kind is "Trigger" or "Cinematic" && !_picked!.GetComponents<Collider>().Any(c => c.isTrigger))
+        if (Binding?.Kind is "Trigger" or "Cinematic" && !_picked!.GetComponents<Collider>().AsValueEnumerable().Any(c => c.isTrigger))
         {
             return "This event needs an existing trigger collider or an authored zone.";
         }
 
-        if (Binding?.Kind == "Interact" && !_picked!.GetComponentsInChildren<Collider>().Any())
+        if (Binding?.Kind == "Interact" && !_picked!.GetComponentsInChildren<Collider>().AsValueEnumerable().Any())
         {
             return "Interact targets need a raycastable collider.";
         }
@@ -650,7 +652,7 @@ public sealed partial class RaidEditor
             var id = Binding.Id;
             _session.Edit(s =>
             {
-                var binding = s.Story!.RaidBindings.Single(b => b.Id == id);
+                var binding = s.Story!.RaidBindings.AsValueEnumerable().Single(b => b.Id == id);
                 binding.ZoneId = zone.Id;
                 binding.ObjectPath = "";
                 binding.Location = zone.Location;
@@ -673,7 +675,7 @@ public sealed partial class RaidEditor
         var path = StoryRaidRuntime.ObjectPath(_picked!);
         _session.Edit(s =>
         {
-            var binding = s.Story!.RaidBindings.Single(b => b.Id == bindingId);
+            var binding = s.Story!.RaidBindings.AsValueEnumerable().Single(b => b.Id == bindingId);
             binding.ObjectPath = path;
             binding.ZoneId = "";
             binding.Location = _session.Location;
@@ -729,31 +731,30 @@ public sealed partial class RaidEditor
         _rows.Clear();
         if (_mode == "Scene")
         {
-            _rows.AddRange(
-                _scene
-                    .Select((t, i) => (t, i))
-                    .Where(x =>
-                        x.t
-                        && (search.Length == 0 || StoryRaidRuntime.ObjectPath(x.t).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
-                    )
-                    .Select(x => (x.i.ToString(CultureInfo.InvariantCulture), x.t.name))
-            );
+            _scene
+                .AsValueEnumerable()
+                .Select((t, i) => (t, i))
+                .Where(x =>
+                    x.t && (search.Length == 0 || StoryRaidRuntime.ObjectPath(x.t).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+                )
+                .Select(x => (x.i.ToString(CultureInfo.InvariantCulture), x.t.name))
+                .CopyTo(_rows);
         }
         else if (_mode == "Bindings")
         {
-            _rows.AddRange(
-                (_session.Definition?.Story?.RaidBindings ?? new())
-                    .Where(b => b.Location.Length == 0 || b.Location == _session.Location)
-                    .Select(b => (b.Id, b.Name + " · " + b.Kind + " · " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
-            );
+            (_session.Definition?.Story?.RaidBindings ?? new())
+                .AsValueEnumerable()
+                .Where(b => b.Location.Length == 0 || b.Location == _session.Location)
+                .Select(b => (b.Id, b.Name + " · " + b.Kind + " · " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
+                .CopyTo(_rows);
         }
         else
         {
-            _rows.AddRange(
-                (_mode == "Zones" ? _session.Definition?.Zones.Cast<SpatialCapture>() : _session.Definition?.Captures) is { } records
-                    ? records.Where(r => r.Location == _session.Location).Select(r => (r.Id, r.Name))
-                    : Enumerable.Empty<(string, string)>()
-            );
+            IEnumerable<SpatialCapture>? records = _mode == "Zones" ? _session.Definition?.Zones : _session.Definition?.Captures;
+            if (records != null)
+            {
+                records.AsValueEnumerable().Where(r => r.Location == _session.Location).Select(r => (r.Id, r.Name)).CopyTo(_rows);
+            }
         }
 
         if (_mode != "Scene")
@@ -818,7 +819,7 @@ public sealed partial class RaidEditor
             details =
                 StoryRaidRuntime.ObjectPath(_picked!)
                 + "\n"
-                + string.Join(", ", _picked!.GetComponents<Component>().Where(c => c).Select(c => c.GetType().Name))
+                + _picked!.GetComponents<Component>().AsValueEnumerable().Where(c => c).Select(c => c.GetType().Name).JoinToString(", ")
                 + "\n"
                 + ObjectError();
         }

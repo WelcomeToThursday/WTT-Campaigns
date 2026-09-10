@@ -7,6 +7,7 @@ using SeasonalPerks.UI.Controls;
 using SeasonalPerks.UI.Creation;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Profiles;
 
@@ -48,6 +49,7 @@ internal sealed class CreationIdentity : ICreationIdentity
             _message.alignment = TextAnchor.MiddleCenter;
             var source = Resources
                 .FindObjectsOfTypeAll<EftAccountSideSelectionScreen>()
+                .AsValueEnumerable()
                 .FirstOrDefault(value => value.gameObject.scene.IsValid() && value.name != ScreenName);
             if (source == null)
             {
@@ -61,7 +63,7 @@ internal sealed class CreationIdentity : ICreationIdentity
             {
                 return;
             }
-            if (profiles.Any(profile => profile == null))
+            if (profiles.AsValueEnumerable().Any(profile => profile == null))
             {
                 throw new InvalidOperationException("EFT's default character previews could not be loaded.");
             }

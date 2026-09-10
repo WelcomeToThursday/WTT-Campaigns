@@ -4,6 +4,7 @@ using SeasonalPerks.UI.Controls;
 using SeasonalPerks.UI.Screens;
 using TMPro;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.UI;
 
@@ -56,7 +57,12 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
                 {
                     continue;
                 }
-                foreach (var icon in version.GetComponentsInChildren<UnityEngine.UI.Image>(true).Where(image => image.name == "Icon"))
+                foreach (
+                    var icon in version
+                        .GetComponentsInChildren<UnityEngine.UI.Image>(true)
+                        .AsValueEnumerable()
+                        .Where(image => image.name == "Icon")
+                )
                 {
                     SeasonUi.Instance.LoadArtwork(
                         version == _tab._selectedVersion ? "modifiers-tab-selected" : "modifiers-tab-normal",
@@ -76,7 +82,7 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
             _host = host.gameObject;
             _host.SetActive(false);
             // Register only once the controller and content are ready for selection.
-            tabsField.SetValue(_group, tabs.Concat(new[] { _tab }).ToArray());
+            tabsField.SetValue(_group, tabs.AsValueEnumerable().Concat(new[] { _tab }).ToArray());
             _tab.OnSelectionChanged += _group.SelectionChangedHandler;
         }
         catch
@@ -120,7 +126,10 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
             var state = SeasonUi.Presentation(snapshot);
             state.CanOpenEditor =
                 !Plugin.InRaid
-                && (state.AllowEdits || !state.Characters.Any(character => character.Mode == "seasonal" && character.Exists));
+                && (
+                    state.AllowEdits
+                    || !state.Characters.AsValueEnumerable().Any(character => character.Mode == "seasonal" && character.Exists)
+                );
             state.IsScav = _isScav;
             if (_isScav)
             {
@@ -171,7 +180,7 @@ public sealed class SeasonalSkillsTab : MonoBehaviour, ITabController
             _tab!.OnSelectionChanged -= _group.SelectionChangedHandler;
             var tabsField = AccessTools.Field(typeof(TabGroup), "_tabs");
             var tabs = (Tab[])tabsField.GetValue(_group);
-            tabsField.SetValue(_group, tabs.Where(tab => tab != _tab).ToArray());
+            tabsField.SetValue(_group, tabs.AsValueEnumerable().Where(tab => tab != _tab).ToArray());
         }
         _view?.Dispose();
         _view = null;

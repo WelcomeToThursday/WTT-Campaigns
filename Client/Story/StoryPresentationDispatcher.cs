@@ -1,6 +1,7 @@
 using EFT.AnimationSequencePlayer;
 using EFT.UI;
 using SeasonalPerks.Shared.Story;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -37,9 +38,9 @@ internal static class StoryPresentationDispatcher
                 }
                 if (response.CinematicBindingId.Length > 0)
                 {
-                    var action = response.Presentation.Single(a => a.Type == StoryActionType.StartCinematic);
+                    var action = response.Presentation.AsValueEnumerable().Single(a => a.Type == StoryActionType.StartCinematic);
                     var result = await StoryCinematicRuntime.Instance.Play(action.Target);
-                    var binding = response.Definition!.RaidBindings.Single(b => b.Id == response.CinematicBindingId);
+                    var binding = response.Definition!.RaidBindings.AsValueEnumerable().Single(b => b.Id == response.CinematicBindingId);
                     var scene = binding.ObjectPath.Split(new[] { ":/" }, StringSplitOptions.None)[0];
                     if (
                         !StoryClient.Available

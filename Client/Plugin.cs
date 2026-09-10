@@ -14,6 +14,7 @@ namespace SeasonalPerks.Client;
 
 [BepInPlugin("com.cj.seasonalperks", "Seasonal Perks", "0.5.2")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
+[BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 public sealed class Plugin : BaseUnityPlugin
 {
     internal static Plugin Instance = null!;

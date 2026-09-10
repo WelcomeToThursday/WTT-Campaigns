@@ -2,6 +2,8 @@
 
 Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
 
+The client requires **UnityToolkit 2.0.2 or later**, installed with its plugin libraries and prepatcher. Seasonal uses its ZLinq queries and ZString text buffers; install UnityToolkit separately before loading Seasonal. Its assemblies are not bundled in Seasonal packages.
+
 Build **0.5.1** exposes the Story tab and trader visits to Seasonal characters even when the season has no authored story content. Existing season content and progression stay unchanged.
 
 Build **0.5.0** is the [story-system implementation candidate](docs/story-system.md): Seasonal journals, dialogue/quest authority, eight trader visit rooms (including a custom Peacekeeper office), raid bindings, media and [pack authoring tools](docs/story-authoring.md). No live campaign is imported. Native beta gameplay/visual acceptance remains outstanding; see the support matrix and validation gates before authoring a season.

@@ -1,5 +1,7 @@
 param([string]$ClientAssembly, [string]$ServerAssembly)
 $ErrorActionPreference = 'Stop'
+# MSBuild's child shell may inherit a different module search path from its caller.
+Import-Module (Join-Path $PSHOME 'Modules/Microsoft.PowerShell.Utility/Microsoft.PowerShell.Utility.psd1') -ErrorAction Stop
 $client = $ClientAssembly
 $server = $ServerAssembly
 if ($server) {

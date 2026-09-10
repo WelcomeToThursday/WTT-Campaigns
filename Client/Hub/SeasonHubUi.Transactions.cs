@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.UI.Models;
 using SPT.Common.Http;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Hub;
 
@@ -46,7 +47,7 @@ public sealed partial class SeasonHubUi
 
     private static string PendingPath(string profile)
     {
-        if (profile.Length != 24 || profile.Any(c => !Uri.IsHexDigit(c)))
+        if (profile.Length != 24 || profile.AsValueEnumerable().Any(c => !Uri.IsHexDigit(c)))
         {
             throw new InvalidDataException("Invalid pending-operation profile identifier.");
         }

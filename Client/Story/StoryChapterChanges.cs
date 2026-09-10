@@ -1,4 +1,5 @@
 using SeasonalPerks.Shared.Story;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -37,27 +38,31 @@ internal sealed class StoryChapterChanges
             return changes;
         }
         _revision = response.Revision;
-        foreach (var chapter in response.Definition.Chapters.OrderBy(c => c.Order))
+        foreach (var chapter in response.Definition.Chapters.AsValueEnumerable().OrderBy(c => c.Order))
         {
             if (!StoryRules.Evaluate(chapter.Visibility, response.Definition, response.State, response.Facts))
             {
                 continue;
             }
-            var quests = response.Definition.Quests.Where(q => q.ChapterId == chapter.Id).ToArray();
+            var quests = response.Definition.Quests.AsValueEnumerable().Where(q => q.ChapterId == chapter.Id).ToArray();
             var status =
                 StoryRules.ChapterComplete(chapter, response.Definition, response.Facts) ? "Complete"
-                : quests.Any(q =>
-                    q.Main && response.Facts.QuestStatuses.GetValueOrDefault(q.QuestId) is "Fail" or "MarkedAsFailed" or "Expired"
-                )
-                    ? "Failed"
-                : quests.Any(q =>
-                    !q.Hidden
-                    && StoryRules.Evaluate(q.Visibility, response.Definition, response.State, response.Facts)
-                    && (
-                        response.Facts.AvailableQuestIds.Contains(q.QuestId)
-                        || response.Facts.QuestStatuses.GetValueOrDefault(q.QuestId) is "Started" or "AvailableForFinish" or "Success"
+                : quests
+                    .AsValueEnumerable()
+                    .Any(q =>
+                        q.Main && response.Facts.QuestStatuses.GetValueOrDefault(q.QuestId) is "Fail" or "MarkedAsFailed" or "Expired"
                     )
-                )
+                    ? "Failed"
+                : quests
+                    .AsValueEnumerable()
+                    .Any(q =>
+                        !q.Hidden
+                        && StoryRules.Evaluate(q.Visibility, response.Definition, response.State, response.Facts)
+                        && (
+                            response.Facts.AvailableQuestIds.Contains(q.QuestId)
+                            || response.Facts.QuestStatuses.GetValueOrDefault(q.QuestId) is "Started" or "AvailableForFinish" or "Success"
+                        )
+                    )
                     ? "Started"
                 : "";
             if (status.Length == 0)

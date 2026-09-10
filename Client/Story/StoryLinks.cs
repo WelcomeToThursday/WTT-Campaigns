@@ -6,6 +6,7 @@ using EFT.UI;
 using HarmonyLib;
 using SeasonalPerks.Shared.Story;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -51,7 +52,7 @@ internal static class StoryLinks
     private static async Task Offer(StoryNoteLink link)
     {
         var trader =
-            Plugin.App!.Session.Traders.SingleOrDefault(t => t.Id == link.TraderId)
+            Plugin.App!.Session.Traders.AsValueEnumerable().SingleOrDefault(t => t.Id == link.TraderId)
             ?? throw new InvalidOperationException("This trader is unavailable.");
         var taskbar = PreloaderUI.Instance.MenuTaskBar;
         var open =
@@ -62,7 +63,11 @@ internal static class StoryLinks
         var trading = await WaitFor(() => UnityEngine.Object.FindObjectOfType<TradingScreen>(), character);
         trading._merchantsList.ShowTrader(trader);
         var screen = await WaitFor(
-            () => UnityEngine.Object.FindObjectsOfType<TraderScreensGroup>().FirstOrDefault(s => s.Trader?.Id == trader.Id),
+            () =>
+                UnityEngine
+                    .Object.FindObjectsOfType<TraderScreensGroup>()
+                    .AsValueEnumerable()
+                    .FirstOrDefault(s => s.Trader?.Id == trader.Id),
             character
         );
         screen.SetMode(TraderScreensGroup.ETraderMode.Trade);
@@ -74,6 +79,7 @@ internal static class StoryLinks
         var item =
             trader
                 .CurrentAssortment.GetTraderCollections.GetAllItemsFromCollections()
+                .AsValueEnumerable()
                 .FirstOrDefault(i => i.Id == link.Target || i.TemplateId == link.Target)
             ?? throw new InvalidOperationException("This offer is no longer available from the trader.");
         trader.CurrentAssortment.SelectItem(item);
@@ -84,7 +90,7 @@ internal static class StoryLinks
         var character = Plugin.Current!.EffectiveProfileId;
         var recipes = await Plugin.App!.Session.GetProductionRecipes();
         var recipe =
-            recipes.ProductionSchemes.SingleOrDefault(r => r._id == link.Target)
+            recipes.ProductionSchemes.AsValueEnumerable().SingleOrDefault(r => r._id == link.Target)
             ?? throw new InvalidOperationException("This crafting recipe is unavailable.");
         if (!StoryClient.Available || character != Plugin.Current!.EffectiveProfileId)
         {
@@ -99,7 +105,8 @@ internal static class StoryLinks
             () =>
                 UnityEngine
                     .Object.FindObjectsOfType<ProductionPanel>()
-                    .FirstOrDefault(p => p.GetSortedSchemes(false).Any(r => r._id == recipe._id)),
+                    .AsValueEnumerable()
+                    .FirstOrDefault(p => p.GetSortedSchemes(false).AsValueEnumerable().Any(r => r._id == recipe._id)),
             character,
             60
         );

@@ -7,6 +7,7 @@ using SeasonalPerks.UI.Models;
 using SeasonalPerks.UI.Screens;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -71,7 +72,7 @@ public sealed class StoryTasksHost : MonoBehaviour
         }
         if (tab != 0)
         {
-            var ids = StoryClient.Current!.Definition!.Quests.Select(q => q.QuestId).ToHashSet();
+            var ids = StoryClient.Current!.Definition!.Quests.AsValueEnumerable().Select(q => q.QuestId).ToHashSet();
             _native._tasksPanel.ShowQuests(q => tab == 2 ? q is DailyQuest : q is not DailyQuest && !ids.Contains(q.Id));
         }
     }
@@ -87,7 +88,8 @@ public sealed class StoryTasksHost : MonoBehaviour
         var progress = response.State!;
         var facts = response.Facts!;
         var chapters = definition
-            .Chapters.OrderBy(c => c.Order)
+            .Chapters.AsValueEnumerable()
+            .OrderBy(c => c.Order)
             .Where(c => StoryRules.Evaluate(c.Visibility, definition, progress, facts))
             .Select(c => new StoryChapterView
             {
@@ -97,10 +99,15 @@ public sealed class StoryTasksHost : MonoBehaviour
                 Icon = c.Icon,
                 Status = StoryRules.ChapterComplete(c, definition, facts) ? "Complete" : "Active",
                 Unread =
-                    definition.Notes.Any(n => n.ChapterId == c.Id && progress.Notes.ContainsKey(n.Id) && !progress.ReadNotes.Contains(n.Id))
-                    || response.Objectives.Any(o => o.ChapterId == c.Id && o.Visible && !progress.ReadConditions.Contains(o.Id)),
+                    definition
+                        .Notes.AsValueEnumerable()
+                        .Any(n => n.ChapterId == c.Id && progress.Notes.ContainsKey(n.Id) && !progress.ReadNotes.Contains(n.Id))
+                    || response
+                        .Objectives.AsValueEnumerable()
+                        .Any(o => o.ChapterId == c.Id && o.Visible && !progress.ReadConditions.Contains(o.Id)),
                 Notes = definition
-                    .Notes.Where(n => n.ChapterId == c.Id && progress.Notes.ContainsKey(n.Id))
+                    .Notes.AsValueEnumerable()
+                    .Where(n => n.ChapterId == c.Id && progress.Notes.ContainsKey(n.Id))
                     .OrderBy(n => progress.Notes[n.Id])
                     .Select(n => new StoryNoteView
                     {
@@ -110,7 +117,8 @@ public sealed class StoryTasksHost : MonoBehaviour
                     })
                     .ToArray(),
                 Objectives = response
-                    .Objectives.Where(o => o.ChapterId == c.Id && o.Visible)
+                    .Objectives.AsValueEnumerable()
+                    .Where(o => o.ChapterId == c.Id && o.Visible)
                     .Select(o => new StoryObjectiveView
                     {
                         Id = o.Id,
@@ -124,10 +132,11 @@ public sealed class StoryTasksHost : MonoBehaviour
                     })
                     .ToArray(),
                 Links = definition
-                    .Notes.Where(n => n.ChapterId == c.Id && progress.Notes.ContainsKey(n.Id))
+                    .Notes.AsValueEnumerable()
+                    .Where(n => n.ChapterId == c.Id && progress.Notes.ContainsKey(n.Id))
                     .SelectMany(n => n.Links)
                     .GroupBy(l => l.Id)
-                    .Select(g => g.First())
+                    .Select(g => g.AsValueEnumerable().First())
                     .Select(l => new StoryLinkView
                     {
                         Id = l.Id,
@@ -163,7 +172,7 @@ public sealed class StoryTasksHost : MonoBehaviour
 
     private void OpenLink(string id)
     {
-        var link = StoryClient.Current!.Definition!.Notes.SelectMany(n => n.Links).Single(l => l.Id == id);
+        var link = StoryClient.Current!.Definition!.Notes.AsValueEnumerable().SelectMany(n => n.Links).Single(l => l.Id == id);
         MarkRead("link", id);
         StoryLinks.Open(link);
     }
@@ -239,7 +248,7 @@ public sealed class StoryTasksHost : MonoBehaviour
             _tabs.Root.gameObject.SetActive(false);
             Destroy(_tabs.Root.gameObject);
         }
-        foreach (var sprite in _images.Values.Where(s => s))
+        foreach (var sprite in _images.Values.AsValueEnumerable().Where(s => s))
         {
             Destroy(sprite!.texture);
             Destroy(sprite);

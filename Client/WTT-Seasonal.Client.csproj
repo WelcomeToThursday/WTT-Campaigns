@@ -5,6 +5,9 @@
     <Version>0.5.2</Version>
   </PropertyGroup>
   <ItemGroup>
+    <Using Remove="System.Linq" />
+    <Reference Include="ZLinq" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll" Private="false" />
+    <Reference Include="ZString" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\ZString.dll" Private="false" />
     <Reference Include="spt-reflection" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-reflection.dll" Private="false" />
     <ProjectReference Include="..\Shared\WTT-Seasonal.Shared.csproj" />
     <ProjectReference Include="..\UI\WTT-Seasonal.UI.csproj" />
@@ -39,8 +42,16 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\seasonal_raid_editor.bundle" CopyToOutputDirectory="PreserveNewest" TargetPath="seasonal_raid_editor.bundle" />
-    <None Include="Resources\seasonal_story_notifications.bundle" CopyToOutputDirectory="PreserveNewest" TargetPath="seasonal_story_notifications.bundle" />
-    <None Include="Resources\story-notification-validation.json" CopyToOutputDirectory="PreserveNewest" TargetPath="story-notification-validation.json" />
+    <None
+      Include="Resources\seasonal_story_notifications.bundle"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="seasonal_story_notifications.bundle"
+    />
+    <None
+      Include="Resources\story-notification-validation.json"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="story-notification-validation.json"
+    />
     <None
       Include="Resources\StoryMedia\**\*"
       CopyToOutputDirectory="PreserveNewest"
@@ -53,4 +64,10 @@
       Condition="Exists('Resources\seasonalperks_ui.bundle')"
     />
   </ItemGroup>
+  <Target Name="CheckUnityToolkit" BeforeTargets="ResolveAssemblyReferences">
+    <Error
+      Condition="!Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\UnityToolkit.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\ZString.dll')"
+      Text="Install UnityToolkit 2.0.2 or later in the target SPT installation before building the Seasonal client."
+    />
+  </Target>
 </Project>

@@ -1,7 +1,6 @@
 using System.Collections;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Runtime.Loader;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -14,22 +13,10 @@ internal static class ClientHookChecks
     {
         sptRoot = Path.GetFullPath(sptRoot);
         clientPath = Path.GetFullPath(clientPath);
-        var folders = new[]
-        {
-            Path.GetDirectoryName(clientPath)!,
-            Path.Combine(sptRoot, "BepInEx/DumpedAssemblies/EscapeFromTarkov"),
-            Path.Combine(sptRoot, "BepInEx/core"),
-            Path.Combine(sptRoot, "BepInEx/plugins/spt"),
-            Path.Combine(sptRoot, "EscapeFromTarkov_Data/Managed"),
-        };
-        AssemblyLoadContext.Default.Resolving += (_, name) =>
-        {
-            var path = folders.Select(f => Path.Combine(f, name.Name + ".dll")).FirstOrDefault(File.Exists);
-            return path == null ? null : AssemblyLoadContext.Default.LoadFromAssemblyPath(path);
-        };
-        var game = AssemblyLoadContext.Default.LoadFromAssemblyPath(Path.Combine(folders[1], "Assembly-CSharp.dll"));
-        var client = AssemblyLoadContext.Default.LoadFromAssemblyPath(clientPath);
-        var harmony = Assembly.Load("0Harmony");
+        var context = new ClientAssemblyContext(sptRoot, clientPath);
+        var game = context.LoadFromAssemblyName(new AssemblyName("Assembly-CSharp"));
+        var client = context.LoadFromAssemblyPath(clientPath);
+        var harmony = context.LoadFromAssemblyName(new AssemblyName("0Harmony"));
         var instructionType = harmony.GetType("HarmonyLib.CodeInstruction")!;
         var opCodes = typeof(System.Reflection.Emit.OpCodes)
             .GetFields(BindingFlags.Public | BindingFlags.Static)

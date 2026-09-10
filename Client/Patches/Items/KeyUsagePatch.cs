@@ -6,6 +6,7 @@ using HarmonyLib;
 using SeasonalPerks.Shared.Effects;
 using SeasonalPerks.Shared.Effects.Items;
 using SPT.Reflection.Patching;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Patches.Items;
 
@@ -19,7 +20,7 @@ internal class KeyUsagePatch(Type doorType) : ModulePatch("SeasonalPerks.KeyUsag
     [PatchTranspiler]
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
     {
-        var code = instructions.ToList();
+        var code = instructions.AsValueEnumerable().ToList();
         var uses = AccessTools.Field(typeof(KeyComponent), nameof(KeyComponent.NumberOfUsages));
         var delta = AccessTools.Method(typeof(KeyUsagePatch), nameof(GetUsageDelta));
         var matches = 0;

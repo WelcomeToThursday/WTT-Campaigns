@@ -3,6 +3,7 @@ using EFT.InventoryLogic;
 using Newtonsoft.Json;
 using SeasonalPerks.Shared.Contracts;
 using SPT.Common.Http;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Hub;
 
@@ -20,7 +21,7 @@ internal static class HubDocuments
     private static void LoadJournal()
     {
         var profile = Plugin.App?.Session?.Profile?.Id ?? throw new InvalidOperationException("The Seasonal profile is not loaded.");
-        if (profile.Length != 24 || profile.Any(c => !Uri.IsHexDigit(c)))
+        if (profile.Length != 24 || profile.AsValueEnumerable().Any(c => !Uri.IsHexDigit(c)))
         {
             throw new InvalidDataException("Invalid document journal profile identifier.");
         }

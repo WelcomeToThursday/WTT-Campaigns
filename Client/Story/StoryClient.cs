@@ -3,6 +3,7 @@ using HarmonyLib;
 using Newtonsoft.Json;
 using SeasonalPerks.Shared.Story;
 using SPT.Common.Http;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -105,7 +106,7 @@ internal static class StoryClient
                 if (
                     previous.CharacterId != request.CharacterId
                     || previous.SeasonId != request.SeasonId
-                    || !new[] { "start", "select", "close", "read", "reconcile", "raid" }.Contains(previousOperation)
+                    || !new[] { "start", "select", "close", "read", "reconcile", "raid" }.AsValueEnumerable().Contains(previousOperation)
                 )
                 {
                     throw new InvalidDataException("The pending story operation is invalid.");
@@ -118,7 +119,7 @@ internal static class StoryClient
                     && previous.Target == target
                     && previous.Kind == kind
                     && previous.ItemId == itemId
-                    && previous.ItemIds.ToHashSet().SetEquals(itemIds ?? Enumerable.Empty<string>())
+                    && previous.ItemIds.AsValueEnumerable().ToHashSet().SetEquals(itemIds ?? Array.Empty<string>())
                 )
                 {
                     return replay;
@@ -130,7 +131,7 @@ internal static class StoryClient
                 await Plugin.FlushPendingOperations();
             }
             request.Target = target;
-            request.ItemIds = itemIds?.ToList() ?? new();
+            request.ItemIds = itemIds?.AsValueEnumerable().ToList() ?? new();
             request.ItemId = itemId;
             request.Kind = kind;
             request.Scene = scene;
@@ -209,7 +210,7 @@ internal static class StoryClient
         var variables = StoryProjection.Variables(definition, state);
         if (ReferenceEquals(profile, _projectedProfile))
         {
-            foreach (var id in ProjectedVariables.Except(variables.Keys))
+            foreach (var id in ProjectedVariables.AsValueEnumerable().Except(variables.Keys))
             {
                 profile.ProfileVariables.SetVariableValue(id, 0);
             }
@@ -229,8 +230,10 @@ internal static class StoryClient
             {
                 // Native rewards are merged by the server at raid end. Do not replace earned raid XP/skills
                 // or local counters with the lobby's older snapshot.
-                var owned = definition.Quests.Select(q => q.QuestId).ToHashSet();
-                Plugin.Player!.QuestController.Quests.SetQuestStatusData(changes.QuestsStatus.Where(q => owned.Contains(q.Id)).ToArray());
+                var owned = definition.Quests.AsValueEnumerable().Select(q => q.QuestId).ToHashSet();
+                Plugin.Player!.QuestController.Quests.SetQuestStatusData(
+                    changes.QuestsStatus.AsValueEnumerable().Where(q => owned.Contains(q.Id)).ToArray()
+                );
             }
             else
             {
@@ -247,7 +250,7 @@ internal static class StoryClient
             }
             _appliedRevision = response.NativeRevision;
         }
-        foreach (var counter in response.Facts!.ConditionCounters.Where(_ => !Plugin.InRaid))
+        foreach (var counter in response.Facts!.ConditionCounters.AsValueEnumerable().Where(_ => !Plugin.InRaid))
         {
             if (profile.TaskConditionCounters.TryGetValue(counter.Key, out var native))
             {

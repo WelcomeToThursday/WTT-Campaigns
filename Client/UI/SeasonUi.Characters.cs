@@ -1,5 +1,6 @@
 using SeasonalPerks.Shared.Contracts;
 using SeasonalPerks.UI.Screens;
+using ZLinq;
 
 namespace SeasonalPerks.Client.UI;
 
@@ -70,7 +71,7 @@ public sealed partial class SeasonUi
             _screen.SetState(Presentation(snapshot), ScreenPage.Characters);
             if (wipe)
             {
-                var character = snapshot.Characters.Single(c => c.Id == characterId);
+                var character = snapshot.Characters.AsValueEnumerable().Single(c => c.Id == characterId);
                 var preview = await Plugin.Request("snapshot", new Mutation { SeasonId = character.SeasonId, CharacterId = characterId });
                 _screen.BeginCreation(Presentation(preview), characterId);
                 _screen.SetMessage("Progress reset. Earned achievements kept. Choose your new character.");

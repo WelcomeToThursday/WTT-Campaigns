@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using Cysharp.Text;
 using EFT;
 using EFT.Quests;
 using EFT.Trading;
@@ -9,6 +9,7 @@ using HarmonyLib;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Progression;
 
@@ -78,13 +79,14 @@ internal sealed class GroupedTaskList : MonoBehaviour
         {
             var rows = _list
                 ._questListContainer.GetComponentsInChildren<QuestListItem>(true)
-                .Where(r => r.Quest != null)
-                .OrderBy(r => r.transform.GetSiblingIndex())
+                .AsValueEnumerable()
+                .Where(static r => r.Quest != null)
+                .OrderBy(static r => r.transform.GetSiblingIndex())
                 .ToArray();
             var index = 0;
             foreach (var tier in Order)
             {
-                var members = rows.Where(r => Category(r) == tier).ToArray();
+                var members = rows.AsValueEnumerable().Where(r => Category(r) == tier);
                 if (!_headers.TryGetValue(tier, out var header))
                 {
                     header = CreateHeader(tier);
@@ -93,11 +95,10 @@ internal sealed class GroupedTaskList : MonoBehaviour
                 var any = members.Any(Visible);
                 header.Root.SetActive(any);
                 header.Root.transform.SetSiblingIndex(index++);
-                var label =
-                    tier is >= 1 and <= 4 ? "<b>" + Roman[tier] + "</b>  " + "LOYALTY LEVEL".Localized() + " " + tier
-                    : tier == 0 ? "ESSENTIAL TASKS".Localized()
-                    : "REPEATABLE TASKS".Localized();
-                header.Label.text = label;
+                if (tier is >= 1 and <= 4)
+                    header.Label.SetTextFormat("<b>{0}</b>  {1} {2}", Roman[tier], "LOYALTY LEVEL".Localized(), tier);
+                else
+                    header.Label.text = tier == 0 ? "ESSENTIAL TASKS".Localized() : "REPEATABLE TASKS".Localized();
                 header.Root.transform.Find("Chevron").localEulerAngles = new Vector3(0, 0, _collapsed[tier] ? 0 : 180);
                 foreach (var row in members)
                 {
@@ -173,8 +174,9 @@ internal sealed class GroupedTaskList : MonoBehaviour
             return false;
         var row = _list
             ._questListContainer.GetComponentsInChildren<QuestListItem>(false)
-            .Where(r => r.Quest != null && r.gameObject.activeSelf)
-            .OrderBy(r => r.transform.GetSiblingIndex())
+            .AsValueEnumerable()
+            .Where(static r => r.Quest != null && r.gameObject.activeSelf)
+            .OrderBy(static r => r.transform.GetSiblingIndex())
             .FirstOrDefault();
         if (row == null)
             return false; // Native clears the detail panel when no visible row remains.
@@ -187,17 +189,27 @@ internal sealed class GroupedTaskList : MonoBehaviour
         if (_profile == null || _controller == null || _list == null || Time.unscaledTime < _nextCheck)
             return;
         _nextCheck = Time.unscaledTime + 0.25f;
-        var progress =
-            _profile.Info.Level
-            + ":"
-            + string.Join(
-                ";",
-                _profile.TradersInfo.Select(t => t.Key + ":" + t.Value.LoyaltyLevel + ":" + t.Value.Standing + ":" + t.Value.Available)
-            );
-        if (progress == _lastProgress)
+        using var progress = ZString.CreateStringBuilder();
+        progress.Append(_profile.Info.Level);
+        progress.Append(':');
+        var first = true;
+        foreach (var trader in _profile.TradersInfo.AsValueEnumerable())
+        {
+            if (!first)
+                progress.Append(';');
+            first = false;
+            progress.Append(trader.Key);
+            progress.Append(':');
+            progress.Append(trader.Value.LoyaltyLevel);
+            progress.Append(':');
+            progress.Append(trader.Value.Standing);
+            progress.Append(':');
+            progress.Append(trader.Value.Available);
+        }
+        if (progress.AsSpan().SequenceEqual(_lastProgress.AsSpan()))
             return;
-        _lastProgress = progress;
-        foreach (var quest in _controller.Quests.ToArray())
+        _lastProgress = progress.ToString();
+        foreach (var quest in _controller.Quests.AsValueEnumerable().ToArray())
         {
             if (
                 ProgressionClient.Metadata?.Quests.ContainsKey(quest.Id) == true

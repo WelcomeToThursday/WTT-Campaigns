@@ -1,6 +1,7 @@
 using Comfort.Common;
 using EFT.UI;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -11,7 +12,10 @@ internal static class StoryAudio
         source.spatialBlend = 0;
         if (Singleton<GUISounds>.Instantiated)
         {
-            source.outputAudioMixerGroup = Singleton<GUISounds>.Instance.MasterMixer.FindMatchingGroups("UI").FirstOrDefault();
+            source.outputAudioMixerGroup = Singleton<GUISounds>
+                .Instance.MasterMixer.FindMatchingGroups("UI")
+                .AsValueEnumerable()
+                .FirstOrDefault();
         }
     }
 }

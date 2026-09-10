@@ -4,6 +4,7 @@ using SeasonalPerks.Shared.Spatial;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Authoring;
 
@@ -143,7 +144,8 @@ public sealed partial class RaidEditor
             }
         }
         var closest = _session
-            .Definition.Zones.Where(z => z.Location == _session.Location)
+            .Definition.Zones.AsValueEnumerable()
+            .Where(z => z.Location == _session.Location)
             .Select(z => (Zone: z, Screen: _camera!.WorldToScreenPoint(ZoneRuntime.Vector(z.Position))))
             .Where(z => z.Screen.z > 0)
             .OrderBy(z => Vector2.Distance(mouse, z.Screen))
@@ -217,7 +219,8 @@ public sealed partial class RaidEditor
         _lineIndex = 0;
         foreach (
             var zone in _session
-                .Definition.Zones.Where(z => z.Location == _session.Location)
+                .Definition.Zones.AsValueEnumerable()
+                .Where(z => z.Location == _session.Location)
                 .OrderBy(z => z.Id == _selected ? 0 : 1)
                 .ThenBy(z => Vector3.Distance(_flyPosition, ZoneRuntime.Vector(z.Position)))
                 .Take(100)
@@ -319,7 +322,7 @@ public sealed partial class RaidEditor
 
     private void ClearLines()
     {
-        foreach (var line in _lines.Where(l => l))
+        foreach (var line in _lines.AsValueEnumerable().Where(static l => l))
         {
             Destroy(line.gameObject);
         }

@@ -3,6 +3,8 @@
   <PropertyGroup>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <DeploymentScope Condition="'$(DeploymentScope)' == ''">All</DeploymentScope>
+    <AssetValidationPowerShell Condition="'$(AssetValidationPowerShell)' == '' and '$(OS)' == 'Windows_NT'">$(SystemRoot)\System32\WindowsPowerShell\v1.0\powershell.exe</AssetValidationPowerShell>
+    <AssetValidationPowerShell Condition="'$(AssetValidationPowerShell)' == ''">pwsh</AssetValidationPowerShell>
     <_BuildProperties>Configuration=$(Configuration)</_BuildProperties>
     <_NativeAssembly>$(TarkovDir)BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll</_NativeAssembly>
   </PropertyGroup>
@@ -35,12 +37,13 @@
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --resource-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --bush-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --experience-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --unity-toolkit &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <GetFileHash Files="@(_SharedAssembly)" Condition="'$(DeploymentScope)' == 'Client' or '$(DeploymentScope)' == 'Server'">
       <Output TaskParameter="Hash" PropertyName="_SharedHash" />
     </GetFileHash>
     <VerifyFileHash File="$(SeasonalServerDir)WTT-Seasonal.Shared.dll" Hash="$(_SharedHash)" Condition="'$(DeploymentScope)' == 'Client'" />
     <VerifyFileHash File="$(SeasonalClientDir)WTT-Seasonal.Shared.dll" Hash="$(_SharedHash)" Condition="'$(DeploymentScope)' == 'Server'" />
-    <Exec Command="pwsh -NoProfile -File &quot;$(MSBuildThisFileDirectory)tools\validate_assets.ps1&quot; -ClientAssembly &quot;@(_ClientAssembly)&quot; -ServerAssembly &quot;@(_ServerAssembly)&quot;" Condition="'$(DeploymentScope)' != 'UI'" />
+    <Exec Command="&quot;$(AssetValidationPowerShell)&quot; -NoProfile -NonInteractive -File &quot;$(MSBuildThisFileDirectory)tools\validate_assets.ps1&quot; -ClientAssembly &quot;@(_ClientAssembly)&quot; -ServerAssembly &quot;@(_ServerAssembly)&quot;" Condition="'$(DeploymentScope)' != 'UI'" />
   </Target>
   <Target Name="Install" DependsOnTargets="Validate;DeploySeasonalFiles" />
   <Target Name="Package" DependsOnTargets="Validate;StagePackage;DeploySeasonalFiles" />

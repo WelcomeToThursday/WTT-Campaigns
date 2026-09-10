@@ -9,6 +9,7 @@ using SeasonalPerks.UI.Models;
 using SeasonalPerks.UI.Screens;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.UI;
 
@@ -182,6 +183,7 @@ public sealed partial class SeasonUi : MonoBehaviour
             _bundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf")
             ?? Resources
                 .FindObjectsOfTypeAll<Font>()
+                .AsValueEnumerable()
                 .FirstOrDefault(value => value.name.Equals("Jovanny Lemonad - Bender", StringComparison.OrdinalIgnoreCase))
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
         var view = new SeasonalScreen(
@@ -210,7 +212,8 @@ public sealed partial class SeasonUi : MonoBehaviour
             SeasonId = snapshot.SeasonId,
             SelectedCharacterId = snapshot.SelectedCharacterId,
             Seasons = snapshot
-                .Seasons.Select(season => new SeasonEntry
+                .Seasons.AsValueEnumerable()
+                .Select(season => new SeasonEntry
                 {
                     Id = season.Id,
                     Name = season.Name,
@@ -220,9 +223,13 @@ public sealed partial class SeasonUi : MonoBehaviour
             StartingPoints = snapshot.Rules.StartingPoints,
             EnforceBudget = snapshot.Rules.EnforceBudget,
             AllowEdits = snapshot.Rules.AllowEdits,
-            Selected = snapshot.State.SeasonalPerks.Where(id => snapshot.Catalogue.Personal.Any(perk => perk.Id == id)).ToArray(),
+            Selected = snapshot
+                .State.SeasonalPerks.AsValueEnumerable()
+                .Where(id => snapshot.Catalogue.Personal.AsValueEnumerable().Any(perk => perk.Id == id))
+                .ToArray(),
             Characters = snapshot
-                .Characters.Select(character => new CharacterEntry
+                .Characters.AsValueEnumerable()
+                .Select(character => new CharacterEntry
                 {
                     Mode = character.Mode,
                     Id = character.Id,
@@ -238,7 +245,8 @@ public sealed partial class SeasonUi : MonoBehaviour
                 })
                 .ToArray(),
             Perks = snapshot
-                .Catalogue.All.Select(perk => new PerkEntry
+                .Catalogue.All.AsValueEnumerable()
+                .Select(perk => new PerkEntry
                 {
                     Id = perk.Id,
                     Name = Plugin.Localized(
@@ -296,7 +304,7 @@ public sealed partial class SeasonUi : MonoBehaviour
                     CharacterId = creationFlow ? _screen.CreationCharacterId : Plugin.Current.SelectedCharacterId,
                     OperationId = creationFlow ? _screen.CreationOperationId : "",
                     ExpectedRevision = Plugin.Current.State.Revision,
-                    PerkIds = _screen.Selected.ToList(),
+                    PerkIds = _screen.Selected.AsValueEnumerable().ToList(),
                     Nickname = _screen.Nickname,
                     Side = _screen.Side,
                     HeadId = _screen.HeadId,
@@ -341,9 +349,9 @@ public sealed partial class SeasonUi : MonoBehaviour
                     // Recover the authoritative identity before offering a retry.
                     var recovered = await Plugin.Request("snapshot");
                     if (
-                        recovered.Characters.Any(character =>
-                            character.CreationOperationId == _screen.CreationOperationId && character.Exists
-                        )
+                        recovered
+                            .Characters.AsValueEnumerable()
+                            .Any(character => character.CreationOperationId == _screen.CreationOperationId && character.Exists)
                     )
                     {
                         completedCreation = recovered;
@@ -409,7 +417,7 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     private async void Switch(string characterId)
     {
-        var character = Plugin.Current?.Characters.FirstOrDefault(c => c.Id == characterId || c.Mode == characterId);
+        var character = Plugin.Current?.Characters.AsValueEnumerable().FirstOrDefault(c => c.Id == characterId || c.Mode == characterId);
         if (character == null)
         {
             return;
@@ -462,7 +470,10 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     private void LoadCharacter(string mode, RawImage target)
     {
-        var visual = Plugin.Current?.Characters.FirstOrDefault(character => character.Id == mode || character.Mode == mode)?.Visual;
+        var visual = Plugin
+            .Current?.Characters.AsValueEnumerable()
+            .FirstOrDefault(character => character.Id == mode || character.Mode == mode)
+            ?.Visual;
         if (visual == null)
         {
             return;
@@ -476,7 +487,7 @@ public sealed partial class SeasonUi : MonoBehaviour
 
         var font =
             _bundle.LoadAsset<Font>("assets/mods/seasonalperks.assets/fonts/bender.ttf")
-            ?? Resources.FindObjectsOfTypeAll<Font>().FirstOrDefault(value => value.name == "Jovanny Lemonad - Bender")
+            ?? Resources.FindObjectsOfTypeAll<Font>().AsValueEnumerable().FirstOrDefault(value => value.name == "Jovanny Lemonad - Bender")
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
         target.gameObject.AddComponent<CharacterPreview>().Show(visual, camera, font);
     }
@@ -614,7 +625,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         {
             Destroy(_canvas);
         }
-        foreach (var task in _images.Values.Where(task => task.Status == TaskStatus.RanToCompletion))
+        foreach (var task in _images.Values.AsValueEnumerable().Where(task => task.Status == TaskStatus.RanToCompletion))
         {
             Destroy(task.Result.texture);
             Destroy(task.Result);

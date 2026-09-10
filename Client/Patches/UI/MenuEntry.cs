@@ -5,6 +5,7 @@ using SeasonalPerks.Client.UI;
 using SPT.Reflection.Patching;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Patches.UI;
 
@@ -14,7 +15,10 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("SeasonalPerks.Me
     {
         return screenType
             .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
-            .Single(method => method.Name == "Show" && method.GetParameters().FirstOrDefault()?.ParameterType == typeof(EFT.Profile));
+            .AsValueEnumerable()
+            .Single(method =>
+                method.Name == "Show" && method.GetParameters().AsValueEnumerable().FirstOrDefault()?.ParameterType == typeof(EFT.Profile)
+            );
     }
 
     [PatchPostfix]
@@ -31,6 +35,7 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("SeasonalPerks.Me
         }
         var existing = __instance
             .GetComponentsInChildren<DefaultUIButton>(true)
+            .AsValueEnumerable()
             .FirstOrDefault(button => button.name == "SeasonalPerksEntry");
         if (existing != null)
         {

@@ -5,6 +5,7 @@ using EFT.InventoryLogic;
 using HarmonyLib;
 using SPT.Reflection.Patching;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Patches.Items;
 
@@ -104,7 +105,7 @@ internal class ItemResourcePatch(Type effectType, string methodName)
     [PatchTranspiler]
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
     {
-        var code = instructions.ToList();
+        var code = instructions.AsValueEnumerable().ToList();
         var med = typeof(MedKitComponent).GetField(nameof(MedKitComponent.HpResource))!;
         var food = typeof(FoodDrinkComponent).GetField(nameof(FoodDrinkComponent.HpPercent))!;
         var offline = __originalMethod.DeclaringType == typeof(OfflineHealthController.MedEffect);

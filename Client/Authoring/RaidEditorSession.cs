@@ -3,6 +3,7 @@ using Newtonsoft.Json.Linq;
 using SeasonalPerks.Shared.Authoring;
 using SeasonalPerks.Shared.Seasons;
 using SPT.Common.Http;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Authoring;
 
@@ -301,7 +302,7 @@ internal sealed class RaidEditorSession
             return;
         }
 
-        var entries = history.Reverse().ToArray();
+        var entries = history.AsValueEnumerable().Reverse().ToArray();
         history.Clear();
         foreach (var entry in entries)
         {

@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Shared\WTT-Seasonal.Shared.csproj" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <PackageReference Include="ZLinq" Version="1.5.6" />
     <PackageReference Include="SPTarkov.DI" Version="4.1.0" />
     <PackageReference Include="SPTarkov.Server.Core" Version="4.1.0" />
     <Compile Include="..\Server\Hub\HubDocumentLoot.cs" Link="Hub\HubDocumentLoot.cs" />

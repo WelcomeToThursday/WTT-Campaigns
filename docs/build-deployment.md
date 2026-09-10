@@ -1,12 +1,14 @@
 # Build, validate and install
 
-Run from the checkout with .NET SDK 10 and PowerShell 7:
+Run from the checkout with .NET SDK 10:
 
 ```powershell
 dotnet msbuild build.proj
 ```
 
 The default target builds Release, runs offline contract and native assembly checks, validates bundled assets, and installs the matching client/UI/shared/server files. Always install validated local updates. Never stop or start any server or client as part of development, validation, packaging or deployment. Application restarts are performed by the user.
+
+On Windows, MSBuild runs asset validation with the full path to the built-in Windows PowerShell 5.1 executable; `pwsh` does not need to be installed or on `PATH`. Other platforms default to `pwsh`. Override `AssetValidationPowerShell` with an executable path if needed. The optional packaging scripts still require PowerShell 7.
 
 The default layout is `<SPT>/Development/SeasonalPerks`. `Directory.Build.props` resolves the game through `../../`, the server through `<SPT>/SPT_Runtime`, and the companion Unity assets through `../CJ-SDK`. `Directory.Build.local.props` or command-line MSBuild properties can override `TarkovDir`, `ManagedDir`, `ServerDir` and `SeasonalAssetsDir`. Use directory paths with trailing separators. These same properties drive compilation, validation and installation; a separate server directory is supported. Project output overrides are respected through MSBuild target outputs.
 

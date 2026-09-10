@@ -3,6 +3,7 @@ using EFT.InputSystem;
 using EFT.InventoryLogic;
 using SeasonalPerks.Shared.Story;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -46,7 +47,7 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         var focused = player ? FocusedInteraction() : null;
         if (!_loading && !Plugin.Busy && !StoryPresentationDispatcher.Active && !StoryVisitRuntime.Instance.InputBlocked)
         {
-            foreach (var pickup in _earlyPickups.Where(p => p.Value.Player == player).ToArray())
+            foreach (var pickup in _earlyPickups.AsValueEnumerable().Where(p => p.Value.Player == player).ToArray())
             {
                 _earlyPickups.Remove(pickup.Key);
                 Collect(pickup.Key, pickup.Value.Template);
@@ -63,7 +64,7 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         }
         Clear();
         _player = player;
-        foreach (var id in _earlyPickups.Where(p => p.Value.Player != player).Select(p => p.Key).ToArray())
+        foreach (var id in _earlyPickups.AsValueEnumerable().Where(p => p.Value.Player != player).Select(p => p.Key).ToArray())
         {
             _earlyPickups.Remove(id);
         }
@@ -84,9 +85,9 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         {
             return null;
         }
-        return _bindings.FirstOrDefault(b =>
-            b && b.CanInteract() && (hit.transform == b.transform || hit.transform.IsChildOf(b.transform))
-        );
+        return _bindings
+            .AsValueEnumerable()
+            .FirstOrDefault(b => b && b.CanInteract() && (hit.transform == b.transform || hit.transform.IsChildOf(b.transform)));
     }
 
     internal void ConsumeInteraction(List<ECommand> commands)
@@ -126,15 +127,21 @@ public sealed class StoryRaidRuntime : MonoBehaviour
             }
             var transforms = Resources
                 .FindObjectsOfTypeAll<Transform>()
-                .Where(t => t.gameObject.scene.IsValid())
+                .AsValueEnumerable()
+                .Where(static t => t.gameObject.scene.IsValid())
                 .GroupBy(ObjectPath)
-                .ToDictionary(g => g.Key, g => g.ToArray());
-            foreach (var loot in Resources.FindObjectsOfTypeAll<EFT.Interactive.LootItem>().Where(l => l.gameObject.scene.IsValid()))
+                .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToArray());
+            foreach (
+                var loot in Resources
+                    .FindObjectsOfTypeAll<EFT.Interactive.LootItem>()
+                    .AsValueEnumerable()
+                    .Where(l => l.gameObject.scene.IsValid())
+            )
             {
                 var items = loot.Item is EFT.InventoryLogic.ContainerCollection collection
                     ? collection.GetAllItemsFromCollection()
                     : new[] { loot.Item };
-                foreach (var item in items.Where(i => i != null))
+                foreach (var item in items.AsValueEnumerable().Where(static i => i != null))
                 {
                     _itemScenes[item.Id] = loot.gameObject.scene.name;
                 }
@@ -142,7 +149,8 @@ public sealed class StoryRaidRuntime : MonoBehaviour
             foreach (
                 var container in Resources
                     .FindObjectsOfTypeAll<EFT.Interactive.LootableContainer>()
-                    .Where(c => c.gameObject.scene.IsValid())
+                    .AsValueEnumerable()
+                    .Where(static c => c.gameObject.scene.IsValid())
             )
             {
                 if (container.ItemOwner?.RootItem is ContainerCollection collection)
@@ -153,7 +161,11 @@ public sealed class StoryRaidRuntime : MonoBehaviour
                     }
                 }
             }
-            foreach (var binding in snapshot.Definition!.RaidBindings.Where(b => b.Location == raid.Location && b.Kind != "Collectible"))
+            foreach (
+                var binding in snapshot
+                    .Definition!.RaidBindings.AsValueEnumerable()
+                    .Where(b => b.Location == raid.Location && b.Kind != "Collectible")
+            )
             {
                 var authoredZone = binding.ZoneId.Length > 0 ? Spatial.ZoneRuntime.Instance?.Find(binding.ZoneId) : null;
                 Transform[]? matches = authoredZone ? new[] { authoredZone!.transform } : null;
@@ -166,7 +178,7 @@ public sealed class StoryRaidRuntime : MonoBehaviour
                 component.Initialize(binding);
                 _bindings.Add(component);
             }
-            foreach (var pickup in _earlyPickups.Where(p => p.Value.Player == player).ToArray())
+            foreach (var pickup in _earlyPickups.AsValueEnumerable().Where(p => p.Value.Player == player).ToArray())
             {
                 _earlyPickups.Remove(pickup.Key);
                 CollectReady(pickup.Key, pickup.Value.Template);
@@ -201,14 +213,16 @@ public sealed class StoryRaidRuntime : MonoBehaviour
         {
             return;
         }
-        var owner = _bindings.FirstOrDefault(b =>
-            b
-            && (
-                binding.ZoneId.Length > 0
-                    ? b.gameObject == Spatial.ZoneRuntime.Instance?.Find(binding.ZoneId)
-                    : ObjectPath(b.transform) == binding.ObjectPath
-            )
-        );
+        var owner = _bindings
+            .AsValueEnumerable()
+            .FirstOrDefault(b =>
+                b
+                && (
+                    binding.ZoneId.Length > 0
+                        ? b.gameObject == Spatial.ZoneRuntime.Instance?.Find(binding.ZoneId)
+                        : ObjectPath(b.transform) == binding.ObjectPath
+                )
+            );
         var character = Plugin.Player!.Profile.Id;
         var raid = StoryClient.Current?.State?.Raid?.Id;
         bool CurrentContext()
@@ -287,9 +301,9 @@ public sealed class StoryRaidRuntime : MonoBehaviour
             return;
         }
         foreach (
-            var binding in StoryClient.Current.Definition!.RaidBindings.Where(b =>
-                b.Location == raid.Location && b.Kind == "Collectible" && b.ItemId == templateId
-            )
+            var binding in StoryClient
+                .Current.Definition!.RaidBindings.AsValueEnumerable()
+                .Where(b => b.Location == raid.Location && b.Kind == "Collectible" && b.ItemId == templateId)
         )
         {
             if (raid.SpawnedItems.ContainsKey(itemId) && !raid.PickedItems.Contains(itemId))
@@ -301,7 +315,7 @@ public sealed class StoryRaidRuntime : MonoBehaviour
 
     private void Clear()
     {
-        foreach (var binding in _bindings.Where(b => b))
+        foreach (var binding in _bindings.AsValueEnumerable().Where(static b => b))
         {
             Destroy(binding);
         }

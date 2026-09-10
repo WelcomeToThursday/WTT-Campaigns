@@ -2,6 +2,7 @@ using SeasonalPerks.Client.UI;
 using SeasonalPerks.UI.Controls;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Authoring;
 
@@ -20,7 +21,10 @@ internal sealed class RaidEditorView : IDisposable
             _bundle.LoadAsset<GameObject>("assets/mods/seasonalperks.assets/raideditor/seasonalraideditor.prefab")
             ?? throw new InvalidOperationException("The raid editor prefab is missing.");
         Root = UnityEngine.Object.Instantiate(prefab);
-        _controls = Root.GetComponentsInChildren<Transform>(true).GroupBy(t => t.name).ToDictionary(g => g.Key, g => g.First());
+        _controls = Root.GetComponentsInChildren<Transform>(true)
+            .AsValueEnumerable()
+            .GroupBy(t => t.name)
+            .ToDictionary(g => g.Key, g => g.AsValueEnumerable().First());
         var ui = new UiElements(Root.GetComponentInChildren<Text>().font, sound => SeasonUi.Instance.PlayInterfaceSound(sound));
         foreach (var button in Root.GetComponentsInChildren<Button>(true))
         {
@@ -67,7 +71,7 @@ internal sealed class RaidEditorView : IDisposable
 
     internal bool Typing
     {
-        get { return Root.GetComponentsInChildren<InputField>().Any(f => f.isFocused); }
+        get { return Root.GetComponentsInChildren<InputField>().AsValueEnumerable().Any(f => f.isFocused); }
     }
 
     internal void Conflict(RaidEditorSession session)
@@ -79,9 +83,9 @@ internal sealed class RaidEditorView : IDisposable
             return;
         }
 
-        Text("ConflictPath", string.Join("\n", conflict.Conflicts.Select(c => c.Path)));
-        Value("LocalConflict", string.Join("\n\n", conflict.Conflicts.Select(c => c.Local)));
-        Value("RemoteConflict", string.Join("\n\n", conflict.Conflicts.Select(c => c.Remote)));
+        Text("ConflictPath", conflict.Conflicts.AsValueEnumerable().Select(c => c.Path).JoinToString("\n"));
+        Value("LocalConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Local).JoinToString("\n\n"));
+        Value("RemoteConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Remote).JoinToString("\n\n"));
     }
 
     public void Dispose()

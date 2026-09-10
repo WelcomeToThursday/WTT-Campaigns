@@ -1,6 +1,7 @@
 using Comfort.Common;
 using EFT.UI;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Hub;
 
@@ -27,7 +28,10 @@ public sealed class HubBannerSound : MonoBehaviour
             return;
         }
 
-        _source!.outputAudioMixerGroup = Singleton<GUISounds>.Instance.MasterMixer.FindMatchingGroups("UI").FirstOrDefault();
+        _source!.outputAudioMixerGroup = Singleton<GUISounds>
+            .Instance.MasterMixer.FindMatchingGroups("UI")
+            .AsValueEnumerable()
+            .FirstOrDefault();
         if (!_source.isPlaying)
         {
             _source.Play();

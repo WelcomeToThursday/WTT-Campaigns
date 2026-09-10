@@ -7,6 +7,7 @@ using SeasonalPerks.Shared.Authoring;
 using SeasonalPerks.Shared.Spatial;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Authoring;
 
@@ -53,7 +54,8 @@ public sealed partial class RaidEditor : MonoBehaviour
         get
         {
             return _session
-                ?.Definition?.Zones.Cast<SpatialCapture>()
+                ?.Definition?.Zones.AsValueEnumerable()
+                .Cast<SpatialCapture>()
                 .Concat(_session.Definition.Captures)
                 .FirstOrDefault(z => z.Id == _selected);
         }
@@ -141,12 +143,13 @@ public sealed partial class RaidEditor : MonoBehaviour
                     _session = new RaidEditorSession(ZoneRuntime.Location);
                     _session.NativeZoneIds = Resources
                         .FindObjectsOfTypeAll<EFT.Interactive.TriggerWithId>()
+                        .AsValueEnumerable()
                         .Where(t => t && t.gameObject.scene.IsValid() && !t.GetComponentInParent<NativeZoneBridge>())
                         .Select(t => t.Id)
                         .Where(id => !string.IsNullOrEmpty(id))
                         .Distinct()
                         .ToList();
-                    _session.Scenes = Enumerable
+                    _session.Scenes = ValueEnumerable
                         .Range(0, UnityEngine.SceneManagement.SceneManager.sceneCount)
                         .Select(UnityEngine.SceneManagement.SceneManager.GetSceneAt)
                         .Where(s => s.isLoaded)
@@ -184,7 +187,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 _nextPoll = Time.realtimeSinceStartup + 1;
                 Poll();
             }
-            if (_task != null && _session.Tasks.Any(t => t.Id == _task.Id && t.Status is "Completed" or "Cancelled"))
+            if (_task != null && _session.Tasks.AsValueEnumerable().Any(t => t.Id == _task.Id && t.Status is "Completed" or "Cancelled"))
             {
                 _task = null;
             }
@@ -198,7 +201,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 && (!_open ? !Cursor.visible : !_view!.Typing && _drag == null)
             )
             {
-                var task = _session.Tasks.FirstOrDefault(t => t.Status == "Pending");
+                var task = _session.Tasks.AsValueEnumerable().FirstOrDefault(t => t.Status == "Pending");
                 if (task != null)
                 {
                     BeginTask(task);
@@ -302,7 +305,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             _renderers.Add((renderer, renderer.enabled));
             renderer.enabled = false;
         }
-        foreach (var system in FindObjectsOfType<EventSystem>().Where(e => e.enabled))
+        foreach (var system in FindObjectsOfType<EventSystem>().AsValueEnumerable().Where(e => e.enabled))
         {
             _disabledEvents.Add(system);
             system.enabled = false;

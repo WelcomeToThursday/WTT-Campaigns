@@ -3,6 +3,7 @@ using EFT;
 using EFT.Interactive;
 using SeasonalPerks.Shared.Spatial;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Spatial;
 
@@ -60,10 +61,11 @@ public sealed class ZoneRuntime : MonoBehaviour
         {
             var existing = Resources
                 .FindObjectsOfTypeAll<TriggerWithId>()
-                .Where(t => t.gameObject.scene.IsValid())
+                .AsValueEnumerable()
+                .Where(static t => t.gameObject.scene.IsValid())
                 .Select(t => t.Id)
                 .ToHashSet();
-            foreach (var zone in Plugin.Current!.Zones.Where(z => z.Location == Location))
+            foreach (var zone in Plugin.Current!.Zones.AsValueEnumerable().Where(z => z.Location == Location))
             {
                 if (existing.Contains(zone.Id))
                 {
@@ -111,7 +113,7 @@ public sealed class ZoneRuntime : MonoBehaviour
 
     private void Clear()
     {
-        foreach (var zone in _zones.Values.Where(z => z))
+        foreach (var zone in _zones.Values.AsValueEnumerable().Where(static z => z))
         {
             zone.GetComponent<NativeZoneBridge>()?.Clear();
             Destroy(zone);
@@ -234,7 +236,7 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
         Active.Remove(this);
         if (_owner)
         {
-            foreach (var trigger in _native.Where(t => t))
+            foreach (var trigger in _native.AsValueEnumerable().Where(static t => t))
             {
                 // Another overlapping placement volume may currently own the placement prompt.
                 if (trigger is PlaceItemTrigger && _owner!.PlaceItemZone != trigger)
@@ -246,13 +248,14 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
                 if (trigger is PlaceItemTrigger)
                 {
                     var remaining = Active
+                        .AsValueEnumerable()
                         .Where(b => b && b._owner == _owner)
                         .SelectMany(b => b._native)
                         .OfType<PlaceItemTrigger>()
                         .LastOrDefault();
                     if (remaining)
                     {
-                        remaining.TriggerEnter(_owner!);
+                        remaining!.TriggerEnter(_owner!);
                     }
                 }
             }

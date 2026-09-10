@@ -10,6 +10,7 @@ using SeasonalPerks.UI.Media;
 using SeasonalPerks.UI.Models;
 using SeasonalPerks.UI.Screens;
 using UnityEngine;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -97,7 +98,8 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             }
             response.Facts!.Scene = host.Native.gameObject.scene.name;
             var entries = response
-                .Definition!.EntryPoints.Where(e =>
+                .Definition!.EntryPoints.AsValueEnumerable()
+                .Where(e =>
                     e.TraderId == _trader
                     && e.Kind == "InLobby"
                     && StoryProjection.EntryAvailable(e, response.Definition, response.State!, response.Facts!)
@@ -183,7 +185,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         _room = custom == null ? StoryRoomCamera.InstantiateRoom(prefab) : StoryRoomCamera.InstantiateCustomRoom(prefab);
         _room.SetActive(false);
         var camera = StoryRoomCamera.Prepare(_room, custom == null ? traderId : "");
-        _reader = _room.GetComponentsInChildren<SequenceReader>(true).SingleOrDefault();
+        _reader = _room.GetComponentsInChildren<SequenceReader>(true).AsValueEnumerable().SingleOrDefault();
         foreach (var source in _room.GetComponentsInChildren<AudioSource>(true))
         {
             StoryAudio.Configure(source);
@@ -252,6 +254,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             "",
             "",
             entries
+                .AsValueEnumerable()
                 .Select(e => new StoryReplyView { Id = "entry:" + e.Id, Text = Plugin.Localized(e.DialogId + " name", "Talk") })
                 .Concat(Navigation())
                 .ToArray(),
@@ -354,7 +357,10 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         var condition =
             JsonConvert.DeserializeObject<ConditionHandoverItem>(handover.ConditionJson, EftJsonConverters.Converters)
             ?? throw new InvalidDataException("The handover objective is missing.");
-        var candidates = native.Profile.Inventory.AllRealPlayerItems.Where(i => handover.Candidates.Contains(i.Id)).ToArray();
+        var candidates = native
+            .Profile.Inventory.AllRealPlayerItems.AsValueEnumerable()
+            .Where(i => handover.Candidates.Contains(i.Id))
+            .ToArray();
         if (candidates.Length == 0)
         {
             throw new InvalidOperationException("The selected quest items are no longer available.");
@@ -382,7 +388,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         _cancelSelection = Declined;
         try
         {
-            return (await completion.Task).Select(item => item.Id).Distinct().ToList();
+            return (await completion.Task).AsValueEnumerable().Select(item => item.Id).Distinct().ToList();
         }
         finally
         {
@@ -433,10 +439,11 @@ public sealed class StoryVisitRuntime : MonoBehaviour
                 var playback = line.Playback;
                 await _reader!.Play(
                     new CombinedAnimationData(
-                        playback.Animations.Select(Animation).ToList(),
-                        playback.SecondaryAnimations.Select(Animation).ToList(),
+                        playback.Animations.AsValueEnumerable().Select(Animation).ToList(),
+                        playback.SecondaryAnimations.AsValueEnumerable().Select(Animation).ToList(),
                         playback
-                            .LipSyncs.Select(s => new LipSyncParams
+                            .LipSyncs.AsValueEnumerable()
+                            .Select(s => new LipSyncParams
                             {
                                 Key = s.Key,
                                 Start = s.Start,
@@ -497,6 +504,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         var animation = _reader!
             .GetComponent<AnimationDictionary>()
             .GetKeysWithMinDurations()
+            .AsValueEnumerable()
             .FirstOrDefault(a =>
                 a.key.StartsWith("Enterance", StringComparison.OrdinalIgnoreCase)
                 || a.key.StartsWith("Entrance", StringComparison.OrdinalIgnoreCase)
@@ -525,11 +533,12 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         {
             return;
         }
-        var lines = response.Definition!.Dialogs.SelectMany(d => d.Lines).ToDictionary(l => l.Id);
-        var history = string.Join(
-            "\n\n",
-            response.State.Conversation.History.Where(lines.ContainsKey).Select(id => Plugin.Localized(id + " text", lines[id].Text))
-        );
+        var lines = response.Definition!.Dialogs.AsValueEnumerable().SelectMany(d => d.Lines).ToDictionary(l => l.Id);
+        var history = response
+            .State.Conversation.History.AsValueEnumerable()
+            .Where(lines.ContainsKey)
+            .Select(id => Plugin.Localized(id + " text", lines[id].Text))
+            .JoinToString("\n\n");
         if (_continue != null)
         {
             _panel.Set(
@@ -549,7 +558,8 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             _text,
             history,
             response
-                .Choices.Select(l => new StoryReplyView
+                .Choices.AsValueEnumerable()
+                .Select(l => new StoryReplyView
                 {
                     Id = l.Id,
                     Text = Plugin.Localized(l.Id + " text", l.Text),

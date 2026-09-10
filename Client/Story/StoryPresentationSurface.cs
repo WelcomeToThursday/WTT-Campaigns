@@ -2,6 +2,7 @@ using SeasonalPerks.UI.Controls;
 using SeasonalPerks.UI.Media;
 using UnityEngine;
 using UnityEngine.UI;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Story;
 
@@ -54,11 +55,14 @@ internal sealed class StoryPresentationSurface : IDisposable
     internal void UseCamera(Camera camera)
     {
         _camera = camera;
-        if (!Surfaces.Any(s => s._listener))
+        if (!Surfaces.AsValueEnumerable().Any(s => s._listener))
         {
-            Listeners.AddRange(UnityEngine.Object.FindObjectsOfType<AudioListener>().Where(l => l.enabled));
+            foreach (var listener in UnityEngine.Object.FindObjectsOfType<AudioListener>().AsValueEnumerable().Where(l => l.enabled))
+            {
+                Listeners.Add(listener);
+            }
         }
-        foreach (var listener in UnityEngine.Object.FindObjectsOfType<AudioListener>().Where(l => l.enabled))
+        foreach (var listener in UnityEngine.Object.FindObjectsOfType<AudioListener>().AsValueEnumerable().Where(l => l.enabled))
         {
             listener.enabled = false;
         }
@@ -102,14 +106,14 @@ internal sealed class StoryPresentationSurface : IDisposable
             Texture.Release();
             UnityEngine.Object.Destroy(Texture);
         }
-        var previous = Surfaces.LastOrDefault(s => s._listener);
+        var previous = Surfaces.AsValueEnumerable().LastOrDefault(s => s._listener);
         if (previous != null)
         {
             previous._listener!.enabled = true;
         }
         else
         {
-            foreach (var listener in Listeners.Where(l => l))
+            foreach (var listener in Listeners.AsValueEnumerable().Where(l => l))
             {
                 listener.enabled = true;
             }

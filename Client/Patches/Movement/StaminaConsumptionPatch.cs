@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using SPT.Reflection.Patching;
+using ZLinq;
 
 namespace SeasonalPerks.Client.Patches.Movement;
 
@@ -15,7 +16,7 @@ internal class StaminaConsumptionPatch(string methodName) : ModulePatch("Seasona
     [PatchTranspiler]
     private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
     {
-        var code = instructions.ToList();
+        var code = instructions.AsValueEnumerable().ToList();
         var scale = AccessTools.Method(typeof(StaminaConsumptionPatch), nameof(ScaleConsumption));
         var matched = 0;
         for (var index = 0; index < code.Count; index++)
