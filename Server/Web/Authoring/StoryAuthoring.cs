@@ -38,7 +38,7 @@ public static class StoryAuthoring
 
     public static string Friendly(string text)
     {
-        return System.Text.RegularExpressions.Regex.Replace(text, "([a-z])([A-Z])", "$1 $2");
+        return Shared.Presentation.CampaignText.Display(System.Text.RegularExpressions.Regex.Replace(text, "([a-z])([A-Z])", "$1 $2"));
     }
 
     public static IEnumerable<object> Records(StoryDefinition? story)
@@ -423,7 +423,7 @@ public static class StoryAuthoring
             "ChapterId" =>
                 "The chapter that groups this quest or note in the journal. Moving a quest does not automatically move its existing notes.",
             "TraderId" when owner is StoryMedia =>
-                "Trader whose visit uses this room. One custom room per trader per season; the prefab needs an inactive root and exactly one StoryCamera.",
+                "Trader whose visit uses this room. One custom room per trader per campaign; the prefab needs an inactive root and exactly one StoryCamera.",
             "TraderId" => "The installed trader associated with this record. Select by name; the reference ID is retained for the game.",
             "DialogId" => "The conversation opened by this entry point. Its named start point determines the initial phase.",
             "StartPoint" =>
@@ -494,7 +494,7 @@ public static class StoryAuthoring
             "PersistOnDeath" => "Enabled commits immediately, including on death. Disabled waits for a surviving raid result.",
             "Once" => "Prevent this binding from being completed more than once for the character.",
             "Bundle" =>
-                "Path beneath StoryMedia, for example packs/my-season/visit.bundle. Install Unity bundles separately from the season ZIP.",
+                "Path beneath StoryMedia, for example packs/my-campaign/visit.bundle. Install Unity bundles separately from the campaign ZIP.",
             "Sha256" => "64 hexadecimal characters from the finalized installed bundle's SHA-256 checksum.",
             "Asset" =>
                 "Exact asset name inside the finalized bundle. Assign a TraderScene to a trader to replace its built-in visit room; unassigned rooms remain unused.",
@@ -511,7 +511,8 @@ public static class StoryAuthoring
             "QuestId" when owner is StoryAction =>
                 "Only quests owned by this story can be changed. Blank uses the conversation's selected quest.",
             "Value" when owner is StoryAction => "Assign this integer to the variable; this does not increment it.",
-            "Image" or "Icon" when owner is StoryChapter => "Optional season-owned PNG artwork. Use the existing artwork upload pipeline.",
+            "Image" or "Icon" when owner is StoryChapter =>
+                "Optional campaign-owned PNG artwork. Use the existing artwork upload pipeline.",
             "InRaidOnly" => "This condition also requires the player to be in a raid.",
             "QuestId" => "The quest used by this record or condition. Native objectives and rewards are edited in Quests.",
             "Image" or "Music" or "Sound" => "Optional story media reference for this line. Choose a matching image or audio asset.",

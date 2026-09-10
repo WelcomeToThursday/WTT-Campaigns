@@ -62,6 +62,7 @@ void Check(bool value, string name)
     count++;
 }
 var rules = new Rules();
+WTT.Campaigns.Tests.CampaignTextChecks.Run(Check);
 WTT.Campaigns.Tests.RequestIdentityChecks.Run(Check);
 WTT.Campaigns.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.NativeModelChecks.Run(Check);
@@ -96,7 +97,7 @@ Check(!CharacterSession.IsLoaded(selectedNormal, "normal", "seasonal-profile"), 
 Check(!CharacterSession.IsLoaded(selectedNormal, "normal", null), "Failed or unfinished reconnect remains retryable");
 Check(!CharacterSession.IsLoaded(selectedNormal, "seasonal", "normal-profile"), "Opposite character requires reconnect");
 var selectedSeasonal = new Snapshot { ActiveMode = "seasonal", EffectiveProfileId = "seasonal-profile" };
-Check(!CharacterSession.IsLoaded(selectedSeasonal, "seasonal", "normal-profile"), "Normal-to-seasonal also checks actual loaded identity");
+Check(!CharacterSession.IsLoaded(selectedSeasonal, "seasonal", "normal-profile"), "Normal-to-campaign also checks actual loaded identity");
 IReadOnlyDictionary<string, string> unavailable = new Dictionary<string, string>();
 Check(c.Common.Count == 6 && c.Personal.Count == 33, "Captured counts");
 Check(c.Personal.Count(p => p.Points < 0) == 19, "Point sign");
@@ -206,7 +207,7 @@ Check(!hideout.HideoutRequiresFir(false), "No FiR preserves already unrestricted
 Check(neutral.HideoutRequiresFir(true) && !neutral.HideoutRequiresFir(false), "Removal restores both original requirement states");
 Check(
     CharacterSession.IsLoaded(selectedSeasonal, "seasonal", "seasonal-profile"),
-    "Hideout effect enabled only after seasonal identity finishes loading"
+    "Hideout effect enabled only after campaign identity finishes loading"
 );
 WTT.Campaigns.Tests.ConsumableChecks.Run(c, Check);
 WTT.Campaigns.Tests.AllergyContainerChecks.Run(c, Check);

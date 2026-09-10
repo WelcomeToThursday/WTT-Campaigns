@@ -16,7 +16,7 @@ public static class CampaignsHubPreview
 {
     private const string Root = "Assets/Mods/WTT-Campaigns.Assets";
 
-    [MenuItem("SDK/WTT-Campaigns/Render season hub previews")]
+    [MenuItem("SDK/WTT-Campaigns/Render campaign hub previews")]
     public static void Render()
     {
         var previous = PlayerSettings.colorSpace;
@@ -189,35 +189,35 @@ public static class CampaignsHubPreview
             );
             Capture("hub-seasonal");
             var seasonalVideos = view.Root.GetComponentsInChildren<RawImage>();
-            var seasonalTabs = view.Root.GetComponentsInChildren<Button>().Where(b => b.name == "SEASONAL REWARDS").ToArray();
+            var seasonalTabs = view.Root.GetComponentsInChildren<Button>().Where(b => b.name == "CAMPAIGN REWARDS").ToArray();
             var initialVideoRequests = videoRequests;
             Check(
                 seasonalVideos.Length == 2 && seasonalTabs.Length == 2,
-                "Seasonal header contains logo, smoke and both navigation buttons"
+                "Campaign header contains logo, smoke and both navigation buttons"
             );
             for (var i = 0; i < data.SeasonalRewards.Length; i++)
             {
                 view.Root.GetComponentsInChildren<Button>().Single(b => b.name == "Reward-" + data.SeasonalRewards[i].Id).onClick.Invoke();
                 Check(
                     videoRequests == initialVideoRequests && seasonalVideos.All(v => v && v.gameObject.activeInHierarchy),
-                    "Selecting seasonal reward " + i + " preserves playing logo and smoke"
+                    "Selecting campaign reward " + i + " preserves playing logo and smoke"
                 );
                 Check(
                     seasonalTabs.All(b => b && b.gameObject.activeInHierarchy),
-                    "Selecting seasonal reward " + i + " preserves tab buttons"
+                    "Selecting campaign reward " + i + " preserves tab buttons"
                 );
                 Check(
                     seasonalClaim && seasonalClaim.gameObject.activeInHierarchy && !seasonalClaim.interactable,
-                    "Selecting locked seasonal reward " + i + " preserves disabled claim button"
+                    "Selecting locked campaign reward " + i + " preserves disabled claim button"
                 );
                 Check(
                     view.Root.GetComponentsInChildren<Text>()
                         .Any(t => t.transform.parent.name == "SeasonalRewardName" && t.text == data.SeasonalRewards[i].Name),
-                    "Selecting seasonal reward " + i + " updates reward details"
+                    "Selecting campaign reward " + i + " updates reward details"
                 );
                 var content = view.Root.GetComponentsInChildren<Transform>().Single(t => t.name == "HubContent");
                 view.SelectReward(i);
-                Check(content && content.gameObject.activeInHierarchy, "Reselecting seasonal reward " + i + " does not rebuild content");
+                Check(content && content.gameObject.activeInHierarchy, "Reselecting campaign reward " + i + " does not rebuild content");
             }
             var claimFixture = JsonUtility.FromJson<HubState>(raw);
             claimFixture.PreviewOnly = false;
@@ -388,7 +388,7 @@ public static class CampaignsHubPreview
             data.UniversalCount = 3;
             data.ExchangeRate = 5;
             data.CrateCost = 10;
-            data.CrateUnavailableReason = "The season crate contents have not been recovered.";
+            data.CrateUnavailableReason = "The campaign crate contents have not been recovered.";
             foreach (var document in data.Documents)
                 document.Count = 10;
             var claim = data.Pages[0].Rewards[0];
@@ -506,7 +506,7 @@ public static class CampaignsHubPreview
             Check(!view.HasDialog, "Closing releases transaction dialog");
             view.Open();
             view.SetState(data, perks.ToArray());
-            view.ShowMessage("Unable to load the season. Check the local server and try again.", true);
+            view.ShowMessage("Unable to load the campaign. Check the local server and try again.", true);
             Capture("hub-error");
             var retried = false;
             view.RetryRequested = () => retried = true;
@@ -528,6 +528,6 @@ public static class CampaignsHubPreview
             Object.DestroyImmediate(cameraObject);
             Object.DestroyImmediate(events);
         }
-        Debug.Log("Season hub: all reward and navigation checks passed; Gamma previews and transaction fixtures rendered.");
+        Debug.Log("Campaign hub: all reward and navigation checks passed; Gamma previews and transaction fixtures rendered.");
     }
 }

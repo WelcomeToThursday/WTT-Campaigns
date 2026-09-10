@@ -172,7 +172,7 @@ public static class CampaignsIntroductionPreview
         state.Characters[1].Exists = true;
         view.SetState(state, ScreenPage.Characters);
         Find("SeasonInformation").onClick.Invoke();
-        Check(view.SeasonIntroductionOpen, "Existing seasonal character can replay introduction");
+        Check(view.SeasonIntroductionOpen, "Existing campaign character can replay introduction");
         Find("IntroductionClose").onClick.Invoke();
         Check(!view.SeasonIntroductionOpen && closes == 0, "Close button returns to selector");
         view.ShowSeasonIntroduction();
@@ -189,6 +189,6 @@ public static class CampaignsIntroductionPreview
             .Invoke(events.GetComponent<EventSystem>(), null);
         Object.DestroyImmediate(events);
         File.WriteAllLines(Path.Combine(output, "season-introduction-checks-" + resolution.y + ".txt"), checks);
-        Debug.Log("Season introduction: " + checks.Count + " checks passed at " + resolution);
+        Debug.Log("Campaign introduction: " + checks.Count + " checks passed at " + resolution);
     }
 }

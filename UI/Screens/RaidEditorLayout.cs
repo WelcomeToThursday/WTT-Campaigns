@@ -26,8 +26,8 @@ public static class RaidEditorLayout
         var ui = new UiElements(font);
         var left = Panel(root.transform, "Library", 338, 950, new Vector2(0, .5f), new Vector2(185, 0));
         var right = Panel(root.transform, "Inspector", 424, 950, new Vector2(1, .5f), new Vector2(-228, 0));
-        ui.Label(left, "Title", "SEASON AUTHORING", 23, 306, 36, 0, 440);
-        ui.Label(left, "Connection", "Connect a draft in the season editor", 16, 306, 50, 0, 392);
+        ui.Label(left, "Title", "CAMPAIGN AUTHORING", 23, 306, 36, 0, 440);
+        ui.Label(left, "Connection", "Connect a draft in the campaign editor", 16, 306, 50, 0, 392);
         Button(ui, left, "Zones", "Zones", 72, -117, 344);
         Button(ui, left, "Bindings", "Events", 72, -39, 344);
         Button(ui, left, "Captures", "Captures", 72, 39, 344);

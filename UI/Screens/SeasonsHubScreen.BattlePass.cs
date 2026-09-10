@@ -22,7 +22,10 @@ public sealed partial class SeasonsHubScreen
             Art(root, "SeasonBadge", "sharedassets44-499", 115, 58, 48, 48).preserveAspect = true;
         }
 
-        Caption(root, "SeasonLabel", _state.SeasonName.ToUpperInvariant(), 15, 177, 59, 75, 47);
+        var campaignName = Caption(root, "CampaignLabel", _state.SeasonName.ToUpperInvariant(), 15, 177, 59, 250, 47);
+        campaignName.resizeTextForBestFit = true;
+        campaignName.resizeTextMinSize = 12;
+        campaignName.resizeTextMaxSize = 15;
         Art(root, "RewardListBackground", "sharedassets48-475", 108, 150, 416, 874);
         Art(root, "RewardBackdrop", "sharedassets48-492", 540, 150, 840, 770);
         Art(root, "RequirementsBackground", "sharedassets48-463", 1396, 150, 416, 770);

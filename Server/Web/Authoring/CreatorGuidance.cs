@@ -16,13 +16,13 @@ public static class CreatorGuidance
     [
         new(
             "Overview",
-            "Give the season an identity and introduce it to players.",
+            "Give the campaign an identity and introduce it to players.",
             [
-                "Create a blank draft in the library, or duplicate a season to use its content as a starting point.",
+                "Create a blank draft in the library, or duplicate a campaign to use its content as a starting point.",
                 "Enter a name, author, version and description. Choose badge/banner artwork and add introductory slides.",
                 "Use Save changes to keep the draft. Editing does not change published packs or characters.",
             ],
-            "Practice in a separate draft. A season already used by characters needs a new identity for gameplay changes."
+            "Practice in a separate draft. A campaign already used by characters needs a new identity for gameplay changes."
         ),
         new(
             "Starting character",
@@ -36,11 +36,11 @@ public static class CreatorGuidance
         ),
         new(
             "Perks",
-            "Create benefits, drawbacks and rules shared by seasonal characters.",
+            "Create benefits, drawbacks and rules shared by campaign characters.",
             [
                 "Add a personal perk or common perk, then select it in the content picker.",
                 "Enter its name and description and select an implemented effect template. Adjust the effect's parameters.",
-                "For personal perks, set points and conflicts. For common perks, choose whether it applies to every seasonal character.",
+                "For personal perks, set points and conflicts. For common perks, choose whether it applies to every campaign character.",
                 "Check the perk budget under Preview and publish.",
             ],
             "A benefit costing one point uses -1. A drawback adding one point uses +1. A multiplier of 1 is unchanged; 1.2 is 20% higher."
@@ -68,7 +68,7 @@ public static class CreatorGuidance
         ),
         new(
             "Rewards",
-            "Build the season's separate reward grid.",
+            "Build the campaign's separate reward grid.",
             [
                 "Add a reward and select its tile.",
                 "Use the selected reward editor below the grid to configure costs, requirements and one or more reward payloads.",
@@ -78,7 +78,7 @@ public static class CreatorGuidance
         ),
         new(
             "Items and crates",
-            "Create season-owned items and configure exchanges and crate contents.",
+            "Create campaign-owned items and configure exchanges and crate contents.",
             [
                 "Create an item, give it a name, and choose an installed source model.",
                 "Set its dimensions and stack limit. For a crate, choose a native loot-container source model.",
@@ -199,10 +199,10 @@ public static class CreatorGuidance
             [
                 "Save changes, then Validate. Follow each issue back to the relevant editor section and fix it.",
                 "Simulate reward eligibility and perk budgets; use Story rehearsal for dialogue progression.",
-                "Save and validate again after changes. Publish pack creates an immutable revision; Download season pack exports it.",
-                "Restart SPT to load new packs, then choose the season when creating a seasonal character.",
+                "Save and validate again after changes. Publish pack creates an immutable revision; Download campaign pack exports it.",
+                "Restart SPT to load new packs, then choose the campaign when creating a campaign character.",
             ],
-            "Each seasonal character chooses its own season. Missing installed dependencies may allow export but prevent a pack from being playable. Keep practice packs separate from the season you play."
+            "Each campaign character chooses its own campaign. Missing installed dependencies may allow export but prevent a pack from being playable. Keep practice packs separate from the campaign you play."
         ),
     ];
     public static readonly CreatorTutorialStep[] Basics =
@@ -211,9 +211,9 @@ public static class CreatorGuidance
             "Create a practice draft",
             "Overview",
             [
-                "In the library, choose Create blank season. If you prefer an existing setup, duplicate it instead.",
-                "Name the draft Tutorial — my first season and enter a short description.",
-                "Choose Save changes. Keep this practice draft separate from the season you play.",
+                "In the library, choose Create blank campaign. If you prefer an existing setup, duplicate it instead.",
+                "Name the draft Tutorial — my first campaign and enter a short description.",
+                "Choose Save changes. Keep this practice draft separate from the campaign you play.",
             ],
             "The toolbar shows your draft name and Saved. Published packs and characters have not changed."
         ),
@@ -254,19 +254,19 @@ public static class CreatorGuidance
             [
                 "Save changes, then Validate. Fix each error and repeat after editing.",
                 "Set simulated document balances and player level to check the reward's eligibility.",
-                "When validation allows publication, choose Publish pack and Download season pack.",
-                "To try this pack in-game, restart SPT and create a seasonal character with this season. Start Your first story quest from Help and tutorials when ready.",
+                "When validation allows publication, choose Publish pack and Download campaign pack.",
+                "To try this pack in-game, restart SPT and create a campaign character with this campaign. Start Your first story quest from Help and tutorials when ready.",
             ],
-            "You have a saved draft and can export a published pack without changing which season any character belongs to."
+            "You have a saved draft and can export a published pack without changing which campaign any character belongs to."
         ),
     ];
     public static readonly CreatorTutorialStep[] Story =
     [
         new(
-            "Prepare a practice season",
+            "Prepare a practice campaign",
             "Overview",
             [
-                "Create a blank season in the library, or open a separate practice draft. Name it Tutorial — supply run.",
+                "Create a blank campaign in the library, or open a separate practice draft. Name it Tutorial — supply run.",
                 "This walkthrough creates a quest accepted through a trader conversation, a one-item handover, and a journal note on completion.",
                 "Use the Open section button at each step. The tutorial only provides directions; you make and save the edits.",
             ],
@@ -341,7 +341,7 @@ public static class CreatorGuidance
             "Preview and publish",
             [
                 "Save changes and Validate. Follow any issues back to the relevant content and fix them.",
-                "Publish and download the practice pack when validation allows it. Restart SPT to load it, then choose it for a new seasonal character.",
+                "Publish and download the practice pack when validation allows it. Restart SPT to load it, then choose it for a new campaign character.",
                 "For a real story, add quest-status conditions to entry points or replies so completed jobs do not keep offering the same handover.",
                 "Test the pack in-game before using it for a campaign. Add raid events, media and translations after this basic loop works.",
             ],

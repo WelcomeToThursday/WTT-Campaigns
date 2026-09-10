@@ -15,7 +15,7 @@ public sealed partial class SeasonsHubScreen
         Caption(
             root,
             "SeasonalExplanation",
-            "Seasonal rewards are available after completing special tasks",
+            "Campaign rewards are available after completing special tasks",
             17,
             230,
             380,
@@ -66,7 +66,12 @@ public sealed partial class SeasonsHubScreen
             var slide = _state.Slides[Math.Min(SlideIndex, _state.Slides.Length - 1)];
             if (slide.Image.Length != 24)
             {
-                Art(root, "CarouselArtwork", slide.Image, 108, 390, 982, 581);
+                var campaignSlide = slide.Image == "sharedassets48-480";
+                var art = Art(root, "CarouselArtwork", campaignSlide ? "sharedassets48-496" : slide.Image, 108, 390, 982, 581);
+                if (campaignSlide)
+                {
+                    CampaignBranding.Create(art.transform, _ui.Font, 620, 216);
+                }
             }
             else
             {

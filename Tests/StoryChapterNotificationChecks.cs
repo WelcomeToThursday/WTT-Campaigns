@@ -56,7 +56,7 @@ internal static class StoryChapterNotificationChecks
         response.CharacterId = "other-character";
         check(accept(response).Count == 0, "Character switch establishes its own baseline");
         response.SeasonId = "other-season";
-        check(accept(response).Count == 0, "Season switch establishes its own baseline");
+        check(accept(response).Count == 0, "Campaign switch establishes its own baseline");
         response.Definition.Chapters.Add(
             new()
             {

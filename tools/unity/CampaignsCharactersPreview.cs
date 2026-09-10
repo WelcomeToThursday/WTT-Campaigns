@@ -91,13 +91,13 @@ public static class CampaignsCharactersPreview
                 {
                     Id = "kord",
                     Name = "KORD BREACH",
-                    Description = "Explore the original seasonal challenge.",
+                    Description = "Explore the original campaign challenge.",
                 },
                 new SeasonEntry
                 {
                     Id = "winter",
                     Name = "WINTER OPERATIONS",
-                    Description = "A different season with its own modifiers and rewards.",
+                    Description = "A different campaign with its own modifiers and rewards.",
                 },
             },
             Characters = new[]
@@ -170,11 +170,11 @@ public static class CampaignsCharactersPreview
                 && contentMask.GetComponent<RectMask2D>()
                 && ((RectTransform)contentMask).sizeDelta == new Vector2(390, 800)
                 && seasonalHover.Info.parent == contentMask,
-            "Sliding season details are clipped to the card boundary"
+            "Sliding campaign details are clipped to the card boundary"
         );
         Check(
             one.Find("SeasonGlowIdle").parent == one && one.Find("SeasonGlowHover").parent == one,
-            "Season glow remains outside the content mask"
+            "Campaign glow remains outside the content mask"
         );
         seasonalHover.Apply(.35f);
         Capture("carousel-hover-transition");
@@ -208,15 +208,18 @@ public static class CampaignsCharactersPreview
             .Root.transform.GetComponentsInChildren<RectTransform>()
             .First(t => t.name == "SeasonSelection")
             .Find("Window");
-        Check(seasonWindow.Find("Caption/Title").GetComponent<Text>().text == "Choose a season", "Season picker uses the shared caption");
+        Check(
+            seasonWindow.Find("Caption/Title").GetComponent<Text>().text == "Choose a campaign",
+            "Campaign picker uses the shared caption"
+        );
         Find(view.Root.transform, "winter").onClick.Invoke();
         Check(
             Find(view.Root.transform, "winter").transform.Find("Selected").gameObject.activeSelf
                 && !Find(view.Root.transform, "kord").transform.Find("Selected").gameObject.activeSelf,
-            "Selection marker follows the chosen season"
+            "Selection marker follows the chosen campaign"
         );
         Find(view.Root.transform, "CONTINUE").onClick.Invoke();
-        Check(seasonId == "winter", "Creation uses the chosen season");
+        Check(seasonId == "winter", "Creation uses the chosen campaign");
         carousel.Focus(5);
         Check(carousel.Counter.text == "1 / 5", "Forward scrolling wraps");
         carousel.OnScroll(new PointerEventData(EventSystem.current) { scrollDelta = new Vector2(0, -1) });
@@ -234,7 +237,7 @@ public static class CampaignsCharactersPreview
         string recreated = null;
         view.RecreationRequested = (id, season) => recreated = id + ":" + season;
         Find(wipedCard, "Select-seasonal").onClick.Invoke();
-        Check(recreated == "one:kord", "Recreate uses the wiped character slot and season");
+        Check(recreated == "one:kord", "Recreate uses the wiped character slot and campaign");
         Capture("wiped-card");
         view.BeginCreation(state, "one");
         Check(view.CreationCharacterId == "one" && view.Selected.Length == 0, "Recreation starts with a fresh modifier selection");
@@ -247,7 +250,7 @@ public static class CampaignsCharactersPreview
             new SeasonEntry
             {
                 Id = "kord",
-                Name = "Season One",
+                Name = "Campaign One",
                 Description = "",
             },
         };
@@ -257,17 +260,17 @@ public static class CampaignsCharactersPreview
         Capture("season-choice-single");
         Check(
             !Find(view.Root.transform, "kord").transform.Find("Description").gameObject.activeSelf,
-            "Description-free season has a compact row"
+            "Description-free campaign has a compact row"
         );
         Find(view.Root.transform, "CANCEL").onClick.Invoke();
-        Check(seasonId == "winter", "Cancel leaves the chosen season unchanged");
+        Check(seasonId == "winter", "Cancel leaves the chosen campaign unchanged");
         state.Seasons = Enumerable
             .Range(1, 8)
             .Select(i => new SeasonEntry
             {
                 Id = "season-" + i,
-                Name = "SEASON " + i,
-                Description = "A separate season with its own challenges, modifiers and rewards.",
+                Name = "CAMPAIGN " + i,
+                Description = "A separate campaign with its own challenges, modifiers and rewards.",
             })
             .ToArray();
         view.SetState(state, ScreenPage.Characters);
@@ -277,7 +280,7 @@ public static class CampaignsCharactersPreview
         var seasonScroll = view.Root.GetComponentsInChildren<ScrollRect>().Single(s => s.name == "AvailableSeasons");
         Check(
             seasonScroll.verticalScrollbar.gameObject.activeSelf && seasonScroll.content.rect.height > seasonScroll.viewport.rect.height,
-            "Long season lists enable scrolling"
+            "Long campaign lists enable scrolling"
         );
         Find(view.Root.transform, "CANCEL").onClick.Invoke();
         state.Seasons = Array.Empty<SeasonEntry>();
@@ -286,7 +289,7 @@ public static class CampaignsCharactersPreview
         Find(carousel.transform.Find("new-seasonal-profile"), "Select-seasonal").onClick.Invoke();
         Check(!Find(view.Root.transform, "CONTINUE").interactable, "Empty picker cannot continue");
         Find(view.Root.transform, "CONTINUE").onClick.Invoke();
-        Check(view.DialogOpen && seasonId == "winter", "Empty picker does not submit a season");
+        Check(view.DialogOpen && seasonId == "winter", "Empty picker does not submit a campaign");
         Find(view.Root.transform, "CANCEL").onClick.Invoke();
         view.Dispose();
         Object.DestroyImmediate(canvasObject);

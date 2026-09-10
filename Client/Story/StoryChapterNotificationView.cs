@@ -18,7 +18,7 @@ public sealed class StoryChapterNotificationView : BaseNotificationView
         _ = SeasonUi.Instance.UiBundle;
         _bundle ??=
             AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_story_notifications.bundle"))
-            ?? throw new InvalidDataException("Missing Seasonal story notification bundle.");
+            ?? throw new InvalidDataException("Missing Campaign story notification bundle.");
         var asset =
             "assets/mods/wtt-campaigns.assets/storynotifications/seasonalchapter" + notification.Status.ToLowerInvariant() + ".prefab";
         var prefab =

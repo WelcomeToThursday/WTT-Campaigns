@@ -13,7 +13,7 @@ internal static class PlayableStorySeason
         output = Path.GetFullPath(output);
         if (Directory.Exists(output))
         {
-            throw new IOException("Choose a new output folder; existing test seasons are preserved.");
+            throw new IOException("Choose a new output folder; existing test campaigns are preserved.");
         }
 
         var workspace = Path.Combine(output, "authoring");
@@ -47,7 +47,7 @@ internal static class PlayableStorySeason
             }
         );
         season.Locales["en"][perk + " name"] = "Enduring";
-        season.Locales["en"][perk + " description"] = "Energy drains 20% slower. Included for this test season's character creation.";
+        season.Locales["en"][perk + " description"] = "Energy drains 20% slower. Included for this test campaign's character creation.";
         const string bandage = "544fb25a4bdc2dfb738b4567";
         const string trader = "54cb50c76803fa8b248b4571";
         const string roubles = "5449016a4bdc2d6f028b456f";
@@ -366,7 +366,7 @@ internal static class PlayableStorySeason
         var roundtrip = store.Import(bytes);
         if (SeasonRepository.GameplayHash(roundtrip.Definition) != SeasonRepository.GameplayHash(season))
         {
-            throw new InvalidDataException("Story test season failed round-trip validation.");
+            throw new InvalidDataException("Story test campaign failed round-trip validation.");
         }
 
         File.WriteAllBytes(Path.Combine(output, "Story-Sandbox.zip"), bytes);
@@ -391,6 +391,6 @@ internal static class PlayableStorySeason
                 Formatting.Indented
             )
         );
-        Console.WriteLine("Validated test season: " + output);
+        Console.WriteLine("Validated test campaign: " + output);
     }
 }

@@ -19,7 +19,7 @@ internal static class ProfileStateSerialization
             string saved => saved,
             JsonElement { ValueKind: JsonValueKind.String } element => element.GetString(),
             null => null,
-            _ => throw new InvalidDataException("Invalid seasonal profile extension: " + key),
+            _ => throw new InvalidDataException("Invalid campaign profile extension: " + key),
         };
         return string.IsNullOrWhiteSpace(text) ? default : JsonConvert.DeserializeObject<T>(text);
     }

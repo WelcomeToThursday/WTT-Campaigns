@@ -18,7 +18,7 @@ public sealed class FleaRestrictions(EventOutputHolder output)
         var result = output.GetOutput(sessionId);
         result.Warnings ??= [];
         result.Warnings.Add(
-            new Warning { Index = 0, ErrorMessage = "No Flea Market permits trader purchases only for this seasonal character." }
+            new Warning { Index = 0, ErrorMessage = "No Flea Market permits trader purchases only for this campaign character." }
         );
         return result;
     }

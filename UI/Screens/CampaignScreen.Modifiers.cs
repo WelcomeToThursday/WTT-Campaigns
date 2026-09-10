@@ -36,7 +36,7 @@ public sealed partial class CampaignScreen
             var empty = _ui.Label(
                 scroll.content,
                 "NoModifiers",
-                _state.IsScav ? "Seasonal modifiers do not apply to your Scav." : "Your normal character has no seasonal modifiers.",
+                _state.IsScav ? "Campaign modifiers do not apply to your Scav." : "Your normal character has no campaign modifiers.",
                 18,
                 1568,
                 80

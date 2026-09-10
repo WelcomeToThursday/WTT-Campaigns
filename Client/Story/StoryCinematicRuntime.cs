@@ -52,7 +52,7 @@ public sealed class StoryCinematicRuntime : MonoBehaviour
         {
             var media = StoryMediaStore.Find(mediaId);
             _bundle = StoryMediaStore.Open(media.Bundle, media.Sha256);
-            _surface = new StoryPresentationSurface("Seasonal cinematic", 32010);
+            _surface = new StoryPresentationSurface("Campaign cinematic", 32010);
             var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
             var skip = new UiElements(font).Button(
                 _surface.Root.transform,

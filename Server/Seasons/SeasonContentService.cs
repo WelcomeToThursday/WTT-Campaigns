@@ -49,7 +49,7 @@ public sealed class SeasonContentService(
             if (_itemBundles.Resolve(item.Properties.Prefab!.Path!) == null)
             {
                 throw new InvalidDataException(
-                    "WTT-ContentBackport is missing a required seasonal item bundle: " + item.Properties.Prefab.Path
+                    "WTT-ContentBackport is missing a required campaign item bundle: " + item.Properties.Prefab.Path
                 );
             }
         }
@@ -142,7 +142,7 @@ public sealed class SeasonContentService(
             }
             catch (Exception e)
             {
-                repository.StorageWarnings.Add("Season " + key + " unavailable: " + e.Message);
+                repository.StorageWarnings.Add("Campaign " + key + " unavailable: " + e.Message);
             }
         }
 
@@ -328,7 +328,7 @@ public sealed class SeasonContentService(
 
                 if (!definition.Items.Any(i => i.Id == crate.ItemId) && !definition.ImportedItems.ContainsKey(crate.ItemId))
                 {
-                    result.Add("Exchanges", "Create a season-owned crate item before defining its contents.");
+                    result.Add("Exchanges", "Create a campaign-owned crate item before defining its contents.");
                 }
             }
 

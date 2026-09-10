@@ -40,7 +40,7 @@ public sealed partial class SeasonHubUi
             _pendingAction = saved.Action;
             if (_pendingAction is not ("claim" or "exchange"))
             {
-                throw new InvalidDataException("Invalid pending seasonal operation.");
+                throw new InvalidDataException("Invalid pending campaign operation.");
             }
         }
     }
@@ -140,7 +140,7 @@ public sealed partial class SeasonHubUi
         {
             if (IsOpen)
             {
-                _screen!.ShowMessage("Applying seasonal transaction...", false);
+                _screen!.ShowMessage("Applying campaign transaction...", false);
             }
             var raw = await RequestHandler.PostJsonAsync("/wtt-campaigns/hub/" + _pendingAction, _pendingBody);
             var result = JsonConvert.DeserializeObject<HubResult>(raw) ?? throw new InvalidDataException("Invalid hub response.");

@@ -304,7 +304,7 @@ public sealed partial class RaidEditor
         }
         if (_lineIndex == _lines.Count)
         {
-            var root = new GameObject("Seasonal authoring outline");
+            var root = new GameObject("Campaign authoring outline");
             var line = root.AddComponent<LineRenderer>();
             line.sharedMaterial = _lineMaterial;
             line.useWorldSpace = true;

@@ -69,13 +69,13 @@ public sealed class ZoneRuntime : MonoBehaviour
             {
                 if (existing.Contains(zone.Id))
                 {
-                    Plugin.LogInfo("Seasonal zone ID collides with a native zone: " + zone.Id);
+                    Plugin.LogInfo("Campaign zone ID collides with a native zone: " + zone.Id);
                     continue;
                 }
                 var scene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(zone.Scene);
                 if (!scene.IsValid() || !scene.isLoaded)
                 {
-                    Plugin.LogInfo("Seasonal zone scene is unavailable: " + zone.Scene);
+                    Plugin.LogInfo("Campaign zone scene is unavailable: " + zone.Scene);
                     continue;
                 }
                 var root = Volume(zone);
@@ -93,7 +93,7 @@ public sealed class ZoneRuntime : MonoBehaviour
 
     internal static GameObject Volume(SeasonZone zone)
     {
-        var root = new GameObject("Seasonal zone " + zone.Id);
+        var root = new GameObject("Campaign zone " + zone.Id);
         root.transform.SetPositionAndRotation(Vector(zone.Position), Quaternion.Euler(Vector(zone.Rotation)));
         root.layer = LayerMask.NameToLayer("Triggers");
         if (zone.Shape == "Sphere")
@@ -137,7 +137,7 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
 {
     public string Description
     {
-        get { return "Seasonal quest zone"; }
+        get { return "Campaign quest zone"; }
     }
 
     private static readonly List<NativeZoneBridge> Active = new();

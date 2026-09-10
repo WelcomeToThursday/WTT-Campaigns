@@ -53,7 +53,12 @@ public sealed partial class SeasonUi
         _switchLoadingName!.text = string.IsNullOrWhiteSpace(character.Name) ? "CHARACTER" : character.Name;
         var seasonal = character.Mode == "seasonal";
         _switchLoadingMode!.text = seasonal
-            ? "PVE SEASON" + (string.IsNullOrWhiteSpace(character.SeasonName) ? "" : "  •  " + character.SeasonName.ToUpperInvariant())
+            ? "PVE CAMPAIGN"
+                + (
+                    string.IsNullOrWhiteSpace(character.SeasonName)
+                        ? ""
+                        : "  •  " + WTT.Campaigns.Shared.Presentation.CampaignText.Display(character.SeasonName).ToUpperInvariant()
+                )
             : "PVE ZONE  •  REGULAR";
         _switchLoader!.transform.SetAsLastSibling();
         _switchLoader.ShowGameObject(instant: true);

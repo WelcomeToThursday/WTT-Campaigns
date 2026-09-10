@@ -24,9 +24,9 @@
     {
         "presets" => "Leave blank to use each account’s starter edition. This chooses a clean preset, never an existing character’s inventory.",
         "offers" => "Choose an installed trader offer. An unlock grants access to purchase that offer.",
-        "quests" => "Search installed quests or quests authored in this season. The selected condition determines the required status.",
+        "quests" => "Search installed quests or quests authored in this campaign. The selected condition determines the required status.",
         "skills" => "Choose an installed skill. Values are interpreted by the field using this selection.",
-        _ => "Type a name to narrow the list, then select a result. Content authored in this season is included where available."
+        _ => "Type a name to narrow the list, then select a result. Content authored in this campaign is included where available."
     };
     private readonly string _inputId = "content-" + Guid.NewGuid().ToString("N");
     private string _search = "";

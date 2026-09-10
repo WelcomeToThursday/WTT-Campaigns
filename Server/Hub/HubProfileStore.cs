@@ -17,7 +17,7 @@ internal static class HubProfileStore
             || !profiles.TryUpdate(id, replacement, expected)
         )
         {
-            throw new InvalidOperationException("The profile changed while committing the seasonal transaction.");
+            throw new InvalidOperationException("The profile changed while committing the campaign transaction.");
         }
     }
 }

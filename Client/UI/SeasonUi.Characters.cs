@@ -19,7 +19,7 @@ public sealed partial class SeasonUi
         }
 
         Plugin.Busy = true;
-        _screen.SetBusy(true, "Loading season modifiers...");
+        _screen.SetBusy(true, "Loading campaign modifiers...");
         try
         {
             var preview = await Plugin.Request("snapshot", new Mutation { SeasonId = seasonId, CharacterId = characterId });

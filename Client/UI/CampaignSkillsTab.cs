@@ -99,7 +99,7 @@ public sealed class CampaignSkillsTab : MonoBehaviour, ITabController
         {
             if (!_host)
             {
-                throw new InvalidOperationException("The seasonal perks tab is not initialized.");
+                throw new InvalidOperationException("The campaign perks tab is not initialized.");
             }
             _host!.SetActive(true);
             _view ??= SeasonUi.Instance.CreateView(_host.transform, true);
@@ -107,7 +107,7 @@ public sealed class CampaignSkillsTab : MonoBehaviour, ITabController
             {
                 if (Plugin.InRaid)
                 {
-                    _view.SetMessage("Finish the raid before editing seasonal perks.");
+                    _view.SetMessage("Finish the raid before editing campaign perks.");
                 }
                 else
                 {

@@ -12,7 +12,7 @@ internal static class HubChecks
         check(state.Pages.Length == 12 && state.Pages.Sum(p => p.Rewards.Length) == 53, "Captured Battle Pass page and reward counts");
         check(
             state.SeasonalRewards.Length == 5 && state.Documents.Length == 8 && state.Slides.Length == 5,
-            "Captured season content counts"
+            "Captured campaign content counts"
         );
         check(
             state.PreviewOnly && state.ClaimedRewards == 0 && state.UniversalCount == 0 && state.Documents.All(d => d.Count == 0),

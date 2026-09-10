@@ -149,7 +149,7 @@ internal static class RaidAuthoringChecks
         var copy = SeasonRepository.Duplicate(response.Definition!);
         check(
             copy.Zones[0].Id != zone.Id && SpatialRules.Conditions(copy).Any(c => SpatialRules.References(c).Contains(copy.Zones[0].Id)),
-            "Season duplication replaces zones and repairs native references"
+            "Campaign duplication replaces zones and repairs native references"
         );
         var packDraft = repository.Create(true, resolved.Definition!);
         var asset = repository.AddImage(

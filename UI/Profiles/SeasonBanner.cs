@@ -19,7 +19,7 @@ public sealed class SeasonBanner : MonoBehaviour, IPointerEnterHandler, IPointer
     public Action? Clicked;
     public Action<bool>? HoverChanged;
 
-    public void Initialize(Font font, Func<string, Sprite?> artwork, Action<string, RawImage, bool, Image?>? video)
+    public void Initialize(Font font, Func<string, Sprite?> artwork)
     {
         var rect = (RectTransform)transform;
         UiElements.Fill(rect, Color.clear, true);
@@ -38,15 +38,7 @@ public sealed class SeasonBanner : MonoBehaviour, IPointerEnterHandler, IPointer
         _bottom = Layer("BottomGlow", "sharedassets44-644", 440, 112);
         _sweep = Layer("Sweep", "sharedassets44-935", 400, 112, -250);
         Layer("Pattern", "sharedassets44-948", 256, 67, 92);
-        var logo = UiElements.Fill(UiElements.Rect("Logo", mask, 360, 120), Color.white);
-        logo.sprite = SeasonLogoArtwork.Load();
-        if (video != null)
-        {
-            var raw = UiElements.Rect("AnimatedLogo", mask, 360, 120).gameObject.AddComponent<RawImage>();
-            raw.raycastTarget = false;
-            raw.color = Color.clear;
-            video("Season_1_logo_video_1380x460.webm", raw, true, logo);
-        }
+        CampaignBranding.Create(mask, font, 360, 90);
         _caption = new UiElements(font).Label(mask, "HoverCaption", "BATTLE PASS  ›", 15, 390, 22, 0, -42);
         _caption.alignment = TextAnchor.MiddleRight;
         Apply(0);

@@ -48,7 +48,7 @@ public static class CampaignsStoryBuilder
         foreach (var entry in ((JObject)imported["scenes"]).Properties().Where(p => selected == null || p.Name == selected))
         {
             var scene = EditorSceneManager.OpenScene((string)entry.Value, OpenSceneMode.Single);
-            var root = new GameObject("Seasonal trader " + entry.Name);
+            var root = new GameObject("Campaign trader " + entry.Name);
             root.SetActive(false);
             foreach (var original in scene.GetRootGameObjects().Where(g => g != root))
             {

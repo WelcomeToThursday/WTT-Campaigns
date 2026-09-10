@@ -27,7 +27,7 @@ public sealed class SeasonProfileStorage
     {
         if (!MongoId.IsValidMongoId(id))
         {
-            throw new InvalidDataException("Invalid seasonal profile identity.");
+            throw new InvalidDataException("Invalid campaign profile identity.");
         }
 
         Characters.TryAdd(id, 0);
@@ -51,7 +51,7 @@ public sealed class SeasonProfileStorage
 
                 var link =
                     JsonConvert.DeserializeObject<AccountLink>(File.ReadAllText(path))
-                    ?? throw new InvalidDataException("Invalid seasonal account link: " + root);
+                    ?? throw new InvalidDataException("Invalid campaign account link: " + root);
                 var ids = link
                     .Characters.Select(c => c.ProfileId)
                     .Concat(link.Seasons.Values.Select(c => c.ProfileId))
@@ -62,7 +62,7 @@ public sealed class SeasonProfileStorage
                 {
                     if (id == root)
                     {
-                        throw new InvalidDataException("A seasonal character cannot own its launcher account.");
+                        throw new InvalidDataException("A campaign character cannot own its launcher account.");
                     }
 
                     Register(id);
@@ -120,7 +120,7 @@ public sealed class SeasonProfileStorage
         var hash = Hash(source);
         if (File.Exists(destination) && Hash(destination) != hash)
         {
-            throw new InvalidDataException("Conflicting seasonal profile copies require recovery: " + id);
+            throw new InvalidDataException("Conflicting campaign profile copies require recovery: " + id);
         }
 
         var backup = Path.Combine(Path.GetDirectoryName(DirectoryPath)!, "migration-backups", id + "-" + hash + ".json");
@@ -132,7 +132,7 @@ public sealed class SeasonProfileStorage
 
         if (Hash(backup) != hash)
         {
-            throw new IOException("Seasonal profile backup verification failed: " + id);
+            throw new IOException("Campaign profile backup verification failed: " + id);
         }
 
         if (!File.Exists(destination))
@@ -142,7 +142,7 @@ public sealed class SeasonProfileStorage
 
         if (Hash(destination) != hash)
         {
-            throw new IOException("Seasonal profile migration verification failed: " + id);
+            throw new IOException("Campaign profile migration verification failed: " + id);
         }
 
         File.Delete(source);

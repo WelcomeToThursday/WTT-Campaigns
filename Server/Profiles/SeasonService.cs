@@ -396,7 +396,7 @@ public sealed class SeasonService(
         }
         if (entry != null && entry.SeasonId != definition.Id)
         {
-            throw new InvalidOperationException("The creation request belongs to another season.");
+            throw new InvalidOperationException("The creation request belongs to another campaign.");
         }
 
         if (entry?.Created == true)
@@ -528,11 +528,11 @@ public sealed class SeasonService(
         var definition = repository.Runtime(entry.SeasonId).Definition;
         if (request.SeasonId.Length > 0 && request.SeasonId != entry.SeasonId)
         {
-            throw new InvalidOperationException("These modifiers belong to a different season.");
+            throw new InvalidOperationException("These modifiers belong to a different campaign.");
         }
         if (!definition.Rules.AllowEdits)
         {
-            throw new InvalidOperationException("Perk editing is disabled in this season.");
+            throw new InvalidOperationException("Perk editing is disabled in this campaign.");
         }
 
         EnsureNotInRaid(EffectiveId(root));
@@ -680,7 +680,7 @@ public sealed class SeasonService(
         var pmc = saves.GetProfile(new MongoId(entry.ProfileId)).CharacterData!.PmcData!;
         var before = SeasonCompiler.Copy(link);
         entry.PreservedAchievements = pmc.Achievements?.ToDictionary(p => p.Key.ToString(), p => p.Value) ?? new();
-        entry.Name = pmc.Info?.Nickname ?? "Seasonal";
+        entry.Name = pmc.Info?.Nickname ?? "Campaign";
         entry.Wiped = true;
         entry.Created = false;
         entry.WipeOperationId = request.OperationId;
@@ -848,7 +848,7 @@ public sealed class SeasonService(
         }
         if (!saves.ProfileExists(new MongoId(parent)) || !Link(parent).Characters.Any(c => c.ProfileId == sessionId))
         {
-            throw new InvalidOperationException("The seasonal account link is invalid.");
+            throw new InvalidOperationException("The campaign account link is invalid.");
         }
         return parent;
     }
@@ -878,9 +878,9 @@ public sealed class SeasonService(
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return "Seasonal";
+            return "Campaign";
         }
         value = new string(value.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_').Take(15).ToArray());
-        return value.Length < 3 ? "Seasonal" : value;
+        return value.Length < 3 ? "Campaign" : value;
     }
 }

@@ -8,7 +8,7 @@ public class Snapshot
 {
     public int ProtocolVersion { get; set; }
     public string SeasonId { get; set; } = "";
-    public string SeasonName { get; set; } = "Season One";
+    public string SeasonName { get; set; } = "Campaign One";
     public List<SeasonChoice> Seasons { get; set; } = new();
     public string SelectedCharacterId { get; set; } = "";
     public long PackRevision { get; set; }

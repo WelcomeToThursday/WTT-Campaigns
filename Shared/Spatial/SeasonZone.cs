@@ -176,7 +176,7 @@ public static class SpatialRules
 
         if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion != 2)
         {
-            errors.Add("Spatial content requires season format 2.");
+            errors.Add("Spatial content requires campaign format 2.");
         }
 
         return errors;

@@ -23,12 +23,12 @@ public sealed class HubService(SeasonRepository repository)
         {
             if (id.Length != 24 || id.Any(c => !Uri.IsHexDigit(c)))
             {
-                throw new InvalidDataException("Invalid seasonal hub image identifier.");
+                throw new InvalidDataException("Invalid campaign hub image identifier.");
             }
             var path = repository.AssetPath(id) ?? "";
             if (!File.Exists(path))
             {
-                throw new FileNotFoundException("Missing local seasonal hub image", path);
+                throw new FileNotFoundException("Missing local campaign hub image", path);
             }
             images.AddRoute("/wtt-campaigns/hub-images/" + id, path);
         }

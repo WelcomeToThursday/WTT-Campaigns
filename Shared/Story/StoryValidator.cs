@@ -51,7 +51,7 @@ public static class StoryValidator
         {
             Need(SeasonValidator.IsId(id), path, "A valid 24-character identity is required.");
             Need(ids.Add(id), path, "Duplicate story identity: " + id);
-            Need(!owned.Contains(id), path, "Story identity collides with another owned season object: " + id);
+            Need(!owned.Contains(id), path, "Story identity collides with another owned campaign object: " + id);
         }
         var chapters = story.Chapters.Select(x => x.Id).ToHashSet();
         var dialogs = story.Dialogs.Select(x => x.Id).ToHashSet();

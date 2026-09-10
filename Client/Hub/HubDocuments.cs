@@ -20,7 +20,7 @@ internal static class HubDocuments
 
     private static void LoadJournal()
     {
-        var profile = Plugin.App?.Session?.Profile?.Id ?? throw new InvalidOperationException("The Seasonal profile is not loaded.");
+        var profile = Plugin.App?.Session?.Profile?.Id ?? throw new InvalidOperationException("The Campaign profile is not loaded.");
         if (profile.Length != 24 || profile.AsValueEnumerable().Any(c => !Uri.IsHexDigit(c)))
         {
             throw new InvalidDataException("Invalid document journal profile identifier.");

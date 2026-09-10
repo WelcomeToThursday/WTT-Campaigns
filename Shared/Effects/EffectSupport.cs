@@ -38,7 +38,7 @@ public static class EffectSupport
     {
         if (!perk.Enabled)
         {
-            return "Disabled by the season author.";
+            return "Disabled by the campaign author.";
         }
 
         if (perk.Effects.Count == 0)

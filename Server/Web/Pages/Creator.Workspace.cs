@@ -87,7 +87,7 @@ public partial class Creator
 
     private static readonly (string Name, string[] Sections)[] NavigationGroups =
     [
-        ("Season setup", ["Overview", "Starting character", "Perks"]),
+        ("Campaign setup", ["Overview", "Starting character", "Perks"]),
         ("Rewards and economy", ["Documents", "Battle pass", "Rewards", "Items and crates"]),
         (
             "Quests and story",
@@ -116,7 +116,7 @@ public partial class Creator
         return section switch
         {
             "Overview" =>
-                "Set the season's identity and introduction. Use a new season identity for gameplay changes after characters have used it.",
+                "Set the campaign's identity and introduction. Use a new campaign identity for gameplay changes after characters have used it.",
             "Starting character" =>
                 "Choose a starter edition, then add stash contents or replace equipment. USEC and BEAR have independent setups. Skills range from 0 to 51.",
             "Perks" =>
@@ -147,7 +147,7 @@ public partial class Creator
             "Story rehearsal" =>
                 "Rehearsal uses a copied draft and simulated state. Native outcomes are labeled; unresolved behavior pauses for your explicit result. It never opens player profiles.",
             _ =>
-                "Save, validate and publish an immutable pack. Missing installed dependencies can allow export but prevent play. Restart SPT to load new packs, then choose a season when creating a seasonal character.",
+                "Save, validate and publish an immutable pack. Missing installed dependencies can allow export but prevent play. Restart SPT to load new packs, then choose a campaign when creating a campaign character.",
         };
     }
 }

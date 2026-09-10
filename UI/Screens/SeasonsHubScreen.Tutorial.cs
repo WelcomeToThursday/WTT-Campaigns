@@ -25,10 +25,10 @@ public sealed partial class SeasonsHubScreen
 
     private void TutorialButton(Transform root)
     {
-        var button = Button(root, "BattlePassTutorial", 266, 67, 32, 32, StartTutorial, false);
+        var button = Button(root, "BattlePassTutorial", 447, 67, 32, 32, StartTutorial, false);
         button.GetComponentInChildren<Text>().text = "";
         Art(button.transform, "InfoIcon", "sharedassets48-454", 4, 4, 24, 24);
-        Hint(button.gameObject, "Press to start the tutorial", 265, 110);
+        Hint(button.gameObject, "Press to start the tutorial", 446, 110);
     }
 
     public void StartTutorial()
@@ -201,7 +201,7 @@ public sealed partial class SeasonsHubScreen
             case 1:
                 return "To unlock a reward, <color=#83C5A9>meet all of its requirements</color>.\nCollect the required documents, then select CLAIM REWARD and confirm the handover.";
             case 2:
-                return "<color=#83C5A9>Documents</color> are used to unlock Battle Pass rewards.\nFind them in Seasonal PMC raids and extract with them. Your owned documents appear here.";
+                return "<color=#83C5A9>Documents</color> are used to unlock Battle Pass rewards.\nFind them in Campaign PMC raids and extract with them. Your owned documents appear here.";
             case 3:
                 return "Hover over a document to see <color=#83C5A9>its name, your owned count and where to look</color>.\nDocuments can be found in eligible jackets, filing drawers, safes and duffel bags.";
             case 4:
@@ -214,7 +214,7 @@ public sealed partial class SeasonsHubScreen
                     + "-hour window</color>.\nThe window starts with your first pickup. Hover over the limit to see when it resets.";
             default:
                 return _state.ExchangeUnavailableReason.Length > 0
-                    ? "<color=#83C5A9>Exchange documents</color> lets you trade ordinary documents.\nExchanges are currently unavailable for this season."
+                    ? "<color=#83C5A9>Exchange documents</color> lets you trade ordinary documents.\nExchanges are currently unavailable for this campaign."
                     : "<color=#83C5A9>Exchange documents</color> for another type or an available crate.\nChoose a category, select the documents to spend, then choose an output. Review the displayed cost before confirming.";
         }
     }
@@ -223,7 +223,7 @@ public sealed partial class SeasonsHubScreen
     {
         return "Owned: "
             + count
-            + "\n\nLook in jackets, filing drawers, safes and duffel bags during Seasonal PMC raids. Extract with documents to use them for rewards.";
+            + "\n\nLook in jackets, filing drawers, safes and duffel bags during Campaign PMC raids. Extract with documents to use them for rewards.";
     }
 
     private void TutorialBriefing(Transform overlay)
@@ -235,12 +235,12 @@ public sealed partial class SeasonsHubScreen
         Caption(panel, "BriefingLabel", "BATTLEPASS_SYSTEM_v1.     // FINAL BRIEFING", 14, 56, 15, 1168, 35).color = TutorialInk;
         Caption(panel, "BriefingTitle", "BATTLE PASS", 52, 56, 95, 1168, 70).color = TutorialInk;
         Caption(panel, "BriefingSubtitle", "SYSTEM INFORMATION", 22, 56, 174, 1168, 40).color = TutorialInk;
-        var titles = new[] { "SEASONAL PROGRESSION", "REWARDS", "DOCUMENTS & EXCHANGES" };
+        var titles = new[] { "CAMPAIGN PROGRESSION", "REWARDS", "DOCUMENTS & EXCHANGES" };
         var bodies = new[]
         {
-            "Battle Pass progress belongs to your active Seasonal character and season.\n\nNormal characters do not use this Battle Pass. Progress is saved locally for this character and season.",
+            "Battle Pass progress belongs to your active Campaign character and campaign.\n\nNormal characters do not use this Battle Pass. Progress is saved locally for this character and campaign.",
             "Claim rewards by meeting their requirements and submitting documents.\n\nItems go to your stash. Other rewards unlock their supported local features. Unavailable rewards explain what is missing.",
-            "Collect documents in Seasonal PMC raids. Classified documents cover claim shortages one for one.\n\nExchanges use ordinary documents. Crates are offered when their contents are available. Online purchases are unavailable.",
+            "Collect documents in Campaign PMC raids. Classified documents cover claim shortages one for one.\n\nExchanges use ordinary documents. Crates are offered when their contents are available. Online purchases are unavailable.",
         };
         for (var i = 0; i < titles.Length; i++)
         {

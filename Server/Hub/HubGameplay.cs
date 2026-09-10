@@ -73,13 +73,13 @@ public sealed partial class HubGameplay(
         var id = seasons.EffectiveId(root);
         if (id == root || !seasons.IsSeasonal(id))
         {
-            throw new InvalidOperationException("Open the Seasonal character to use the Battle Pass.");
+            throw new InvalidOperationException("Open the Campaign character to use the Battle Pass.");
         }
 
         var profile = saves.GetProfile(new MongoId(id));
         if (seasons.SeasonIdFor(profile.CharacterData!.PmcData!) != _presentation.SeasonId)
         {
-            throw new InvalidOperationException("The selected season changed. Refresh and try again.");
+            throw new InvalidOperationException("The selected campaign changed. Refresh and try again.");
         }
         return profile;
     }
@@ -161,7 +161,9 @@ public sealed partial class HubGameplay(
         var runtime = _runtimes != null ? ForSession(sessionId) : this;
         if (seasonId.Length > 0 && seasonId != runtime._presentation.SeasonId)
         {
-            throw new InvalidOperationException("The selected season changed. Select your character again before opening the Battle Pass.");
+            throw new InvalidOperationException(
+                "The selected campaign changed. Select your character again before opening the Battle Pass."
+            );
         }
         return runtime.Snapshot(root);
     }
@@ -170,7 +172,7 @@ public sealed partial class HubGameplay(
     {
         if (!_ready)
         {
-            throw new InvalidOperationException("Seasonal content is still loading.");
+            throw new InvalidOperationException("Campaign content is still loading.");
         }
 
         var profile = Active(root);
@@ -195,7 +197,7 @@ public sealed partial class HubGameplay(
         }
 
         view.ExchangeUnavailableReason = Documents.Values.Any(t => !templates.Items.ContainsKey(new MongoId(t)))
-            ? "Seasonal document assets are not installed."
+            ? "Campaign document assets are not installed."
             : "";
         view.CrateUnavailableReason = ItemUnavailable(Crate);
         if (view.CrateUnavailableReason.Length == 0)
@@ -320,7 +322,7 @@ public sealed partial class HubGameplay(
 
                 if (!pmc.Quests!.Any(q => q.QId.ToString() == id && (int)q.Status == 4))
                 {
-                    return "Complete the required seasonal task.";
+                    return "Complete the required campaign task.";
                 }
             }
             if (kind is not ("Quest" or "Level"))
@@ -383,7 +385,7 @@ public sealed partial class HubGameplay(
     {
         if (string.IsNullOrEmpty(template))
         {
-            return "Crate exchange is disabled for this season.";
+            return "Crate exchange is disabled for this campaign.";
         }
 
         var id = new MongoId(template);
@@ -399,7 +401,7 @@ public sealed partial class HubGameplay(
             && inventory.GetRandomLootContainerRewardDetails(id) == null
         )
         {
-            return "The season crate contents have not been recovered.";
+            return "The campaign crate contents have not been recovered.";
         }
         return "";
     }
@@ -482,7 +484,7 @@ public sealed partial class HubGameplay(
     {
         if (saves.IsProfileInvalidOrUnloadable(id))
         {
-            throw new InvalidOperationException("The Seasonal profile cannot be saved.");
+            throw new InvalidOperationException("The Campaign profile cannot be saved.");
         }
         HubProfileStore.Replace(saves, id, original, staged);
         try
@@ -512,7 +514,7 @@ public sealed partial class HubGameplay(
 
         if (request.SeasonId.Length > 0 && request.SeasonId != _presentation.SeasonId)
         {
-            throw new InvalidOperationException("This operation belongs to another season.");
+            throw new InvalidOperationException("This operation belongs to another campaign.");
         }
     }
 

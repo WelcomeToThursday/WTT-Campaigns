@@ -51,7 +51,7 @@ public sealed partial class CampaignScreen
             _ui.Label(_body, "CreationTitle", common ? "COMMON MODIFIERS" : "PERSONAL MODIFIERS", 42, 1600, 60, 0, 468).alignment =
                 TextAnchor.MiddleCenter;
             var explanation = common
-                ? "Rules configured for your seasonal character. These cannot be selected or changed here."
+                ? "Rules configured for your campaign character. These cannot be selected or changed here."
                 : "Positive and negative traits that apply only to your character. Each modifier has a point cost.\n"
                     + (
                         _state.EnforceBudget
@@ -65,7 +65,7 @@ public sealed partial class CampaignScreen
                 var label = _ui.Label(
                     _body,
                     "ChosenSeason",
-                    season?.Name.ToUpperInvariant() ?? "SEASONAL CHARACTER",
+                    season?.Name.ToUpperInvariant() ?? "CAMPAIGN CHARACTER",
                     32,
                     1400,
                     100,

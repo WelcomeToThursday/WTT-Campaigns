@@ -83,7 +83,7 @@ internal static class StoryChecks
         copy.Story!.Chapters[0].Name = "A translated chapter";
         copy.Story.Notes[0].Text = "A translated journal entry";
         copy.Story.Dialogs[0].Lines[0].Text = "A translated line";
-        check(initialHash == SeasonRepository.GameplayHash(copy), "Story text edits preserve used-season gameplay hash");
+        check(initialHash == SeasonRepository.GameplayHash(copy), "Story text edits preserve used-campaign gameplay hash");
         copy.Story.Variables[0].InitialValue = 99;
         check(initialHash != SeasonRepository.GameplayHash(copy), "Story variable changes alter gameplay hash");
         copy = SeasonRepository.Duplicate(season);

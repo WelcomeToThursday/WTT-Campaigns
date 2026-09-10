@@ -194,7 +194,7 @@ internal sealed class RaidEditorSession
                 DraftId = "";
                 Definition = Baseline = null;
                 _pending = null;
-                Status = "Enable and connect this raid in the web season editor";
+                Status = "Enable and connect this raid in the web campaign editor";
                 Changed?.Invoke();
                 return;
             }

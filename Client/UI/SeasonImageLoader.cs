@@ -37,7 +37,7 @@ internal static class SeasonImageLoader
         {
             if (!ImageConversion.LoadImage(texture, bytes) || texture.width > 4096 || texture.height > 4096)
             {
-                throw new InvalidDataException("Invalid seasonal image: " + path);
+                throw new InvalidDataException("Invalid campaign image: " + path);
             }
             return texture;
         }

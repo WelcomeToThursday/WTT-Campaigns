@@ -559,7 +559,7 @@ public sealed partial class RaidEditor
             .Where(t =>
                 t
                 && t.gameObject.scene.IsValid()
-                && !t.name.StartsWith("Seasonal", StringComparison.Ordinal)
+                && !t.name.StartsWith("Season", StringComparison.Ordinal)
                 && !t.GetComponentInParent<Canvas>()
                 && !t.GetComponentInParent<EFT.Player>()
             )

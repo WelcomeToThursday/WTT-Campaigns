@@ -45,7 +45,7 @@ public partial class Creator
             "Perks" => "Build modifiers, balance point costs and define conflicts.",
             "Documents" => "Set document types, collection limits and map-specific placement caps.",
             "Battle pass" => "Arrange reward pages and set the requirements to unlock them.",
-            "Rewards" => "Arrange the seasonal reward grid and edit selected tiles below the grid.",
+            "Rewards" => "Arrange the campaign reward grid and edit selected tiles below the grid.",
             "Items and crates" => "Reuse installed models and configure exchanges and weighted loot pools.",
             "Quests" => "Create and edit quests that do not belong to a story chapter.",
             "Chapters" => "Select a chapter to create and edit its quests in one workspace.",
@@ -58,7 +58,7 @@ public partial class Creator
             "Story media" => "Register separately installed media and finalized bundle checksums.",
             "Story rehearsal" => "Try dialogue and journal progression with isolated simulated state.",
             "Localization" => "Edit English text and translations with English fallback.",
-            _ => "Simulate progress, review validation and prepare a shareable season pack.",
+            _ => "Simulate progress, review validation and prepare a shareable campaign pack.",
         };
     }
 
@@ -126,6 +126,12 @@ public partial class Creator
     private SeasonDefinition S
     {
         get { return _draft!.Definition; }
+    }
+
+    private string CampaignName
+    {
+        get { return Shared.Presentation.CampaignText.Display(S.Name); }
+        set { S.Name = value; }
     }
 
     private bool DirtyState
@@ -337,7 +343,7 @@ public partial class Creator
             }
 
             _published = Repository.Publish(_draft!, _validation);
-            _message = "Pack published. Export it to share, or restart SPT and choose the season when creating a seasonal character.";
+            _message = "Pack published. Export it to share, or restart SPT and choose the campaign when creating a campaign character.";
         });
     }
 

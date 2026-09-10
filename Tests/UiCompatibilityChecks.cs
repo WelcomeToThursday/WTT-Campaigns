@@ -45,7 +45,7 @@ internal static class UiCompatibilityChecks
         Check(
             types["EFT.UI.PreloaderUI"]
                 .Fields.Any(field => field.Name == "_loader" && field.FieldType.FullName == "UnityEngine.GameObject" && field.IsPublic),
-            "Native loading indicator is available to the seasonal creation overlay"
+            "Native loading indicator is available to the campaign creation overlay"
         );
         Check(
             types["EFT.UI.PreloaderUI"]
@@ -95,7 +95,7 @@ internal static class UiCompatibilityChecks
             var unityStay = zoneBridge.Methods.Single(m => m.Name == "OnTriggerStay");
             Check(
                 unityStay.Parameters.Count == 1 && unityStay.Parameters[0].ParameterType.FullName == "UnityEngine.Collider",
-                "Seasonal zone stay callback has a valid Unity message signature"
+                "Campaign zone stay callback has a valid Unity message signature"
             );
             var eftStay = zoneBridge.Methods.Single(m => m.Overrides.Any(o => o.Name == "OnTriggerStay"));
             Check(
@@ -170,16 +170,16 @@ internal static class UiCompatibilityChecks
                 storyAvailability.Any(i => Equals(i.Operand, "seasonal"))
                     && storyAvailability.Any(i => i.Operand is MethodReference method && method.Name == "get_EffectiveProfileId")
                     && !storyAvailability.Any(i => i.Operand is MethodReference method && method.Name == "get_HasStory"),
-                "Seasonal story interface requires the loaded character, not authored story content"
+                "Campaign story interface requires the loaded character, not authored story content"
             );
             var hub = client.MainModule.GetType("WTT.Campaigns.Client.Hub.SeasonHubUi");
-            Check(hub != null, "Season hub client adapter is packaged");
+            Check(hub != null, "Campaign hub client adapter is packaged");
             var availability = hub!.Methods.Single(m => m.Name == "get_Available").Body.Instructions;
             Check(
                 availability.Any(i => Equals(i.Operand, "seasonal"))
                     && availability.Any(i => i.Operand is MethodReference method && method.Name == "get_InRaid")
                     && availability.Any(i => i.Operand is FieldReference field && field.Name == "Busy"),
-                "Hub visibility checks Seasonal, raid and busy state"
+                "Hub visibility checks Campaign, raid and busy state"
             );
             var menu = client.MainModule.GetType("WTT.Campaigns.Client.Patches.UI.MenuEntry").Methods.Single(m => m.Name == "Postfix");
             Check(

@@ -26,7 +26,7 @@ public sealed class SeasonDefinition : ExtensibleJsonModel
     public int FormatVersion { get; set; } = 1;
     public string Id { get; set; } = "";
     public string BattlePassId { get; set; } = "";
-    public string Name { get; set; } = "New season";
+    public string Name { get; set; } = "New campaign";
     public string Description { get; set; } = "";
     public string Author { get; set; } = "";
     public string Version { get; set; } = "1.0.0";
@@ -118,7 +118,7 @@ public sealed class SeasonItem : ExtensibleJsonModel
 {
     public string Id { get; set; } = "";
     public string CloneFrom { get; set; } = "";
-    public string Name { get; set; } = "Season item";
+    public string Name { get; set; } = "Campaign item";
     public string Description { get; set; } = "";
     public int Width { get; set; } = 1;
     public int Height { get; set; } = 1;

@@ -11,7 +11,7 @@ internal sealed class StoryInteractionPrompt : IDisposable
 
     internal StoryInteractionPrompt()
     {
-        _root = new GameObject("Seasonal story interaction", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+        _root = new GameObject("Campaign story interaction", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
         _root.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
         _root.GetComponent<Canvas>().sortingOrder = 31900;
         var scaler = _root.GetComponent<CanvasScaler>();

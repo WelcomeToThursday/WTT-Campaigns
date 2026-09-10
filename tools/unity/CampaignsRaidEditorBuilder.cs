@@ -70,6 +70,6 @@ public static class CampaignsRaidEditorBuilder
             UnityEngine.Object.DestroyImmediate(cameraObject);
             UnityEngine.Object.DestroyImmediate(target);
         }
-        Debug.Log("Seasonal raid editor previews: " + output);
+        Debug.Log("Campaign raid editor previews: " + output);
     }
 }

@@ -44,6 +44,29 @@ internal static class ModIdentityChecks
                 Require((string)metadata.ConstructorArguments[0].Value == "com.wtt.campaigns", "Client GUID");
                 Require((string)metadata.ConstructorArguments[1].Value == "WTT-Campaigns", "Client display name");
             }
+            if (assembly.Name.Name == "WTT-Campaigns.UI")
+            {
+                Require(!strings.Contains("Season_1_logo_video_1380x460.webm"), "UI cannot play the old season logo video");
+                Require(
+                    !assembly.MainModule.Resources.Any(resource => resource.Name.EndsWith("season-1-logo.png")),
+                    "Old season lettering is not embedded in UI"
+                );
+                Require(
+                    strings.Contains("PvE Campaign") && strings.Contains("CAMPAIGN REWARDS") && strings.Contains("Choose a campaign"),
+                    "Campaign labels are present in compiled UI"
+                );
+                var label = assembly
+                    .MainModule.GetType("WTT.Campaigns.UI.Controls.UiElements")
+                    .Methods.Single(method => method.Name == "Label");
+                Require(
+                    label.Body.Instructions.Any(instruction =>
+                        instruction.Operand is MethodReference call
+                        && call.DeclaringType.FullName == "WTT.Campaigns.Shared.Presentation.CampaignText"
+                        && call.Name == "Display"
+                    ),
+                    "Dynamic campaign names use presentation terminology"
+                );
+            }
             if (path == serverPath)
             {
                 var metadata = assembly.MainModule.GetType("WTT.Campaigns.Server.Metadata");

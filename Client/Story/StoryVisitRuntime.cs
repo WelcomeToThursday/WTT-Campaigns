@@ -153,7 +153,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         }
         _character = character;
         _startedInRaid = Plugin.InRaid;
-        _surface = new StoryPresentationSurface("Seasonal trader visit", 32000);
+        _surface = new StoryPresentationSurface("Campaign trader visit", 32000);
         var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
         _media = new StoryDialogueMedia(_surface.Root.transform, font);
         _panel = new StoryConversationPanel(

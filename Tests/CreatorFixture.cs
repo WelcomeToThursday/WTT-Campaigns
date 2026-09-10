@@ -18,7 +18,7 @@ internal static class CreatorFixture
         var store = new SeasonRepository(path);
         var draft = store.Create(false);
         var s = draft.Definition;
-        s.Name = "Creator acceptance season";
+        s.Name = "Creator acceptance campaign";
         s.Rules.StartingPoints = 1;
         var perk = SeasonRepository.NewId();
         s.Perks.Personal.Add(

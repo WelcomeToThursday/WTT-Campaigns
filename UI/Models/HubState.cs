@@ -5,7 +5,7 @@ namespace WTT.Campaigns.UI.Models;
 [Serializable]
 public sealed class HubState
 {
-    public string SeasonName = "Season One";
+    public string SeasonName = "Campaign One";
     public long PackRevision;
     public string BadgeImage = "";
     public string BannerImage = "";

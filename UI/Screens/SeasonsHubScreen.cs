@@ -60,7 +60,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
         _selections.Clear();
         Root.SetActive(true);
         Fit();
-        ShowMessage("Loading season...", false);
+        ShowMessage("Loading campaign...", false);
     }
 
     public void SetState(HubState state, PerkEntry[] perks)
@@ -194,7 +194,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
         ClearPage();
         var root = _page!;
         TabButton(root, "BATTLE PASS", 520, 55, 300, Tab == HubTab.BattlePass, () => ShowTab(HubTab.BattlePass));
-        TabButton(root, "SEASONAL REWARDS", 832, 55, 300, Tab != HubTab.BattlePass, () => ShowTab(HubTab.SeasonalRewards));
+        TabButton(root, "CAMPAIGN REWARDS", 832, 55, 300, Tab != HubTab.BattlePass, () => ShowTab(HubTab.SeasonalRewards));
         var leagues = Caption(root, "Leagues", "LEAGUES AND RATINGS", 23, 1144, 55, 340, 40);
         leagues.color = new Color(.34f, .4f, .38f, .5f);
         Hint(leagues.gameObject, "Leagues and ratings are unavailable.", 1150, 100);
@@ -203,9 +203,7 @@ public sealed partial class SeasonsHubScreen : IDisposable
         {
             if (_state.LegacyBranding)
             {
-                var logo = UiElements.Fill(Box(root, "SeasonLogo", 650, 110, 620, 207), Color.white);
-                logo.sprite = SeasonLogoArtwork.Load();
-                Video(root, "Season_1_logo_video_1380x460.webm", 650, 110, 620, 207, false, logo);
+                CampaignBranding.Create(Box(root, "CampaignLogo", 650, 110, 620, 207), _ui.Font, 620, 207);
             }
             else if (_state.BannerImage.Length > 0)
             {
@@ -217,8 +215,8 @@ public sealed partial class SeasonsHubScreen : IDisposable
             }
 
             Video(root, "Smoke_1144x264.webm", 445, 135, 1030, 238, true);
-            TabButton(root, "SEASONAL REWARDS", 108, 316, 290, Tab == HubTab.SeasonalRewards, () => ShowTab(HubTab.SeasonalRewards));
-            TabButton(root, "ABOUT THE SEASON", 414, 316, 290, Tab == HubTab.AboutSeason, () => ShowTab(HubTab.AboutSeason));
+            TabButton(root, "CAMPAIGN REWARDS", 108, 316, 290, Tab == HubTab.SeasonalRewards, () => ShowTab(HubTab.SeasonalRewards));
+            TabButton(root, "ABOUT THE CAMPAIGN", 414, 316, 290, Tab == HubTab.AboutSeason, () => ShowTab(HubTab.AboutSeason));
         }
         RenderContent();
     }

@@ -68,7 +68,7 @@ public partial class Creator
     {
         RefreshDraftLibrary();
         _renamingDraft = draft;
-        _draftName = draft.Definition.Name;
+        _draftName = Shared.Presentation.CampaignText.Display(draft.Definition.Name);
         _focusDraftAction = true;
     }
 
@@ -147,6 +147,7 @@ public partial class Creator
     private bool LibraryMatches(params string[] values)
     {
         var query = _librarySearch.Trim();
-        return query.Length == 0 || values.Any(value => value.Contains(query, StringComparison.OrdinalIgnoreCase));
+        return query.Length == 0
+            || values.Any(value => Shared.Presentation.CampaignText.Display(value).Contains(query, StringComparison.OrdinalIgnoreCase));
     }
 }

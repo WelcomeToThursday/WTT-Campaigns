@@ -14,7 +14,7 @@ public sealed partial class CampaignScreen
     private static readonly string[] IntroductionArtwork =
     {
         "sharedassets48-389",
-        "sharedassets48-480",
+        "sharedassets48-496",
         "sharedassets48-324",
         "sharedassets48-500",
         "sharedassets48-493",
@@ -22,11 +22,11 @@ public sealed partial class CampaignScreen
 
     private static readonly string[] IntroductionText =
     {
-        "<color=#83C5A9>WELCOME TO SEASONS</color>",
-        "<color=#83C5A9>SEASONS</color>\n\nExplore seasonal content, modifiers, a Battle Pass\nand seasonal rewards. Choose from the seasons installed\non your SPT server.",
-        "<color=#83C5A9>SEASONAL CHARACTER</color>\n\nCreate a separate seasonal PMC with its own equipment\nand progression. Your regular character remains available.\nCreate several characters and choose a season for each.",
-        "<color=#83C5A9>MODIFIER SYSTEM</color>\n\nCustomize your character with personal modifiers.\nBalance beneficial perks with detrimental modifiers.\nCommon modifiers apply to the seasonal PMC.",
-        "<color=#83C5A9>BATTLE PASS</color>\n\nCollect documents in raids and complete requirements\nto unlock rewards in the Seasons hub.\nProgress belongs to your local seasonal character.",
+        "<color=#83C5A9>WELCOME TO CAMPAIGNS</color>",
+        "<color=#83C5A9>CAMPAIGNS</color>\n\nExplore campaign content, modifiers, a Battle Pass\nand campaign rewards. Choose from the campaigns installed\non your SPT server.",
+        "<color=#83C5A9>CAMPAIGN CHARACTER</color>\n\nCreate a separate campaign PMC with its own equipment\nand progression. Your regular character remains available.\nCreate several characters and choose a campaign for each.",
+        "<color=#83C5A9>MODIFIER SYSTEM</color>\n\nCustomize your character with personal modifiers.\nBalance beneficial perks with detrimental modifiers.\nCommon modifiers apply to the campaign PMC.",
+        "<color=#83C5A9>BATTLE PASS</color>\n\nCollect documents in raids and complete requirements\nto unlock rewards in the Campaigns hub.\nProgress belongs to your local campaign character.",
     };
 
     private RectTransform? _introduction;
@@ -34,6 +34,8 @@ public sealed partial class CampaignScreen
     private Text? _introductionText;
     private Image? _introductionOutgoingImage;
     private Text? _introductionOutgoingText;
+    private RectTransform? _introductionBranding;
+    private RectTransform? _introductionOutgoingBranding;
     private Text? _introductionCounter;
     private CanvasGroup? _introductionUnderlying;
     private bool _introductionInteractable;
@@ -69,6 +71,7 @@ public sealed partial class CampaignScreen
         UiElements.Fill(content, new Color(.025f, .035f, .03f), true);
         content.gameObject.AddComponent<HubPointer>().Scroll = ChangeSeasonIntroductionPage;
         _introductionOutgoingImage = UiElements.Fill(UiElements.Rect("OutgoingBackground", content, 1050, 621, 0, 28), Color.white);
+        _introductionOutgoingBranding = CampaignBranding.Create(_introductionOutgoingImage.transform, _ui.Font, 660, 230);
         _introductionOutgoingText = _ui.Label(content, "OutgoingBody", "", 18, 840, 106, 0, -209.5f);
         _introductionOutgoingText.supportRichText = true;
         _introductionOutgoingText.alignment = TextAnchor.MiddleCenter;
@@ -76,6 +79,7 @@ public sealed partial class CampaignScreen
         _introductionOutgoingImage.canvasRenderer.SetAlpha(0);
         _introductionOutgoingText.canvasRenderer.SetAlpha(0);
         _introductionImage = UiElements.Fill(UiElements.Rect("Background", content, 1050, 621, 0, 28), Color.white);
+        _introductionBranding = CampaignBranding.Create(_introductionImage.transform, _ui.Font, 660, 230);
         _introductionText = _ui.Label(content, "Body", "", 18, 840, 106, 0, -209.5f);
         _introductionText.supportRichText = true;
         _introductionText.alignment = TextAnchor.MiddleCenter;
@@ -120,6 +124,8 @@ public sealed partial class CampaignScreen
     {
         _introductionOutgoingImage!.sprite = _introductionImage!.sprite;
         _introductionOutgoingText!.text = _introductionText!.text;
+        _introductionOutgoingBranding!.gameObject.SetActive(_introductionBranding!.gameObject.activeSelf);
+        _introductionBranding.gameObject.SetActive(SeasonIntroductionPage == 1);
         ArtworkRequested?.Invoke("hub:" + IntroductionArtwork[SeasonIntroductionPage], _introductionImage!);
         _introductionText!.text = IntroductionText[SeasonIntroductionPage];
         _introductionCounter!.text = (SeasonIntroductionPage + 1) + " / " + IntroductionArtwork.Length;
@@ -128,6 +134,16 @@ public sealed partial class CampaignScreen
         {
             graphic.CrossFadeAlpha(animate && Application.isPlaying ? 0 : 1, 0, true);
             graphic.CrossFadeAlpha(1, .15f, true);
+        }
+        foreach (var graphic in _introductionBranding.GetComponentsInChildren<Graphic>())
+        {
+            graphic.CrossFadeAlpha(animate && Application.isPlaying ? 0 : 1, 0, true);
+            graphic.CrossFadeAlpha(1, .15f, true);
+        }
+        foreach (var graphic in _introductionOutgoingBranding.GetComponentsInChildren<Graphic>())
+        {
+            graphic.CrossFadeAlpha(animate && Application.isPlaying ? 1 : 0, 0, true);
+            graphic.CrossFadeAlpha(0, .15f, true);
         }
         foreach (var graphic in new Graphic[] { _introductionOutgoingImage!, _introductionOutgoingText! })
         {
@@ -157,6 +173,8 @@ public sealed partial class CampaignScreen
         _introductionText = null;
         _introductionOutgoingImage = null;
         _introductionOutgoingText = null;
+        _introductionBranding = null;
+        _introductionOutgoingBranding = null;
         _introductionCounter = null;
     }
 }

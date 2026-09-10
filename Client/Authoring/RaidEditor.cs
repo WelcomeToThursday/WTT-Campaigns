@@ -68,7 +68,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             "Raid authoring",
             "Enable authoring",
             false,
-            "Advertise this raid to the administrator's season editor. Draft previews never execute gameplay actions."
+            "Advertise this raid to the administrator's campaign editor. Draft previews never execute gameplay actions."
         );
         _shortcut = Plugin.Instance.Config.Bind(
             "Raid authoring",
@@ -310,7 +310,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             _disabledEvents.Add(system);
             system.enabled = false;
         }
-        _events = new GameObject("Seasonal authoring input", typeof(EventSystem), typeof(StandaloneInputModule));
+        _events = new GameObject("Campaign authoring input", typeof(EventSystem), typeof(StandaloneInputModule));
         Camera.onPreCull += CameraPose;
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;

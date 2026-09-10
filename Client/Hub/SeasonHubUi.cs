@@ -162,7 +162,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         sound.Initialize(Bundle.LoadAsset<AudioClip>("assets/mods/wtt-campaigns.assets/audio/hub-hover-loop.wav"));
         if (Plugin.Current?.LegacyBranding != false)
         {
-            banner.Initialize(Font, Artwork, PlayVideo);
+            banner.Initialize(Font, Artwork);
         }
         else
         {
@@ -267,7 +267,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         _loading?.Dispose();
         ReleaseImages();
         _loading = new CancellationTokenSource();
-        _screen!.ShowMessage("Loading season...", false);
+        _screen!.ShowMessage("Loading campaign...", false);
         try
         {
             var snapshot = Plugin.Current ?? throw new InvalidOperationException("Select your character before opening the Battle Pass.");
@@ -301,18 +301,18 @@ public sealed partial class SeasonHubUi : MonoBehaviour
                 return;
             }
 
-            var data = JsonConvert.DeserializeObject<HubState>(raw) ?? throw new InvalidDataException("Empty seasonal hub response.");
+            var data = JsonConvert.DeserializeObject<HubState>(raw) ?? throw new InvalidDataException("Empty campaign hub response.");
             if (data.Error.Length > 0)
             {
                 throw new InvalidOperationException(data.Error);
             }
             if (data.SeasonId != seasonId)
             {
-                throw new InvalidDataException("The server returned a different season's Battle Pass. Select your character again.");
+                throw new InvalidDataException("The server returned a different campaign's Battle Pass. Select your character again.");
             }
             if (data.Pages.Length == 0)
             {
-                throw new InvalidDataException("Season catalogue is unavailable.");
+                throw new InvalidDataException("Campaign catalogue is unavailable.");
             }
 
             data.SeasonName = Plugin.Localized(data.SeasonId + " name", data.SeasonName);
@@ -360,7 +360,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         {
             if (generation == _generation && IsOpen)
             {
-                _screen.ShowMessage("Unable to load the season. Check the local server and try again.", true);
+                _screen.ShowMessage("Unable to load the campaign. Check the local server and try again.", true);
                 Plugin.Error(exception);
             }
         }
@@ -387,7 +387,7 @@ public sealed partial class SeasonHubUi : MonoBehaviour
         }
         else
         {
-            Plugin.LogInfo("Season hub video asset missing: " + name);
+            Plugin.LogInfo("Campaign hub video asset missing: " + name);
         }
     }
 

@@ -73,7 +73,7 @@ public sealed class UiElements
         text.font = Font;
         text.fontSize = size;
         text.color = Ink;
-        text.text = value;
+        text.text = WTT.Campaigns.Shared.Presentation.CampaignText.Display(value);
         text.supportRichText = false;
         text.alignment = TextAnchor.MiddleLeft;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;

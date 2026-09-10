@@ -79,7 +79,7 @@ public sealed partial class SeasonsHubScreen
 
     public void ShowResult(string message)
     {
-        var panel = Dialog("SEASONAL HUB");
+        var panel = Dialog("CAMPAIGN HUB");
         Caption(panel, "Result", message, 23, 60, 140, 840, 260).alignment = TextAnchor.MiddleCenter;
         Button(panel, "OK", 720, 544, 208, 42, DismissDialog);
     }

@@ -22,7 +22,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         {
             return _bundle ??=
                 AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_ui.bundle"))
-                ?? throw new InvalidDataException("Missing seasonal UI bundle.");
+                ?? throw new InvalidDataException("Missing campaign UI bundle.");
         }
     }
     private readonly Dictionary<string, Task<Sprite>> _images = new();
@@ -121,7 +121,7 @@ public sealed partial class SeasonUi : MonoBehaviour
             _screen!.StartupSelection = _startup;
             _screen!.SetBusy(false);
             _screen.Open(page);
-            _screen.SetBusy(true, "Loading seasonal characters...");
+            _screen.SetBusy(true, "Loading campaign characters...");
             var snapshot = await Plugin.Request("snapshot");
             if (_destroyed)
             {
@@ -172,7 +172,7 @@ public sealed partial class SeasonUi : MonoBehaviour
     {
         _bundle ??=
             AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_ui.bundle"))
-            ?? throw new InvalidDataException("Missing seasonal UI bundle.");
+            ?? throw new InvalidDataException("Missing campaign UI bundle.");
         var font =
             _bundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf")
             ?? Resources
@@ -184,7 +184,7 @@ public sealed partial class SeasonUi : MonoBehaviour
             parent,
             layoutName =>
                 _bundle.LoadAsset<GameObject>("assets/mods/wtt-campaigns.assets/ui/" + layoutName + ".prefab")
-                ?? throw new InvalidDataException("Missing seasonal UI layout: " + layoutName),
+                ?? throw new InvalidDataException("Missing campaign UI layout: " + layoutName),
             font,
             embedded
         );
@@ -282,7 +282,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         var creationFlow = _screen.Page == ScreenPage.CreationPersonal;
         var created = !creationFlow;
         ClientSnapshot? completedCreation = null;
-        _screen.SetBusy(true, creationFlow ? "" : "Saving seasonal character...");
+        _screen.SetBusy(true, creationFlow ? "" : "Saving campaign character...");
         try
         {
             if (creationFlow)
@@ -321,7 +321,7 @@ public sealed partial class SeasonUi : MonoBehaviour
             }
             if (snapshot.ActiveMode == "seasonal")
             {
-                _screen.SetMessage("Reloading your seasonal character...");
+                _screen.SetMessage("Reloading your campaign character...");
                 await Plugin.Reload(snapshot);
             }
             else
@@ -330,7 +330,7 @@ public sealed partial class SeasonUi : MonoBehaviour
             }
             _screen.SetBusy(false);
             _screen.SetState(Presentation(snapshot), created ? ScreenPage.Personal : ScreenPage.Characters);
-            _screen.SetMessage(created ? "Your perk changes have been saved." : "Seasonal character created. Select it to begin.");
+            _screen.SetMessage(created ? "Your perk changes have been saved." : "Campaign character created. Select it to begin.");
         }
         catch (Exception exception)
         {
@@ -376,7 +376,7 @@ public sealed partial class SeasonUi : MonoBehaviour
                 _startup = true;
                 _screen.StartupSelection = true;
                 _screen.SetState(Presentation(completedCreation), ScreenPage.Characters);
-                _screen.SetMessage("Your character was created. Select PvE Season to retry loading it. " + exception.Message, true);
+                _screen.SetMessage("Your character was created. Select PvE Campaign to retry loading it. " + exception.Message, true);
             }
             else
             {
@@ -553,7 +553,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         {
             _bundle ??=
                 AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_ui.bundle"))
-                ?? throw new InvalidDataException("Missing seasonal UI bundle.");
+                ?? throw new InvalidDataException("Missing campaign UI bundle.");
             var assetPath = artworkName.StartsWith("hub:", StringComparison.Ordinal)
                 ? "hubartwork/" + artworkName.Substring(4)
                 : "selectionartwork/" + artworkName;
@@ -605,7 +605,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         if (_destroyed)
         {
             Destroy(texture);
-            throw new OperationCanceledException("Seasonal UI closed.");
+            throw new OperationCanceledException("Campaign UI closed.");
         }
         return Sprite.Create(texture, new Rect(0, 0, 272, 272), new Vector2(.5f, .5f));
     }

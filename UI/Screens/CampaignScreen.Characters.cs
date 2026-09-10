@@ -25,7 +25,7 @@ public sealed partial class CampaignScreen
         _creating = true;
         CreationCharacterId = characterId;
         CreationOperationId = Guid.NewGuid().ToString("N");
-        _creationDraft.Nickname = _name = "Seasonal";
+        _creationDraft.Nickname = _name = "Campaign";
         _creationDraft.Side = _creationDraft.HeadId = _creationDraft.VoiceId = "";
         _creationDraft.Appearance = false;
         state.Selected = Array.Empty<string>();
@@ -40,11 +40,11 @@ public sealed partial class CampaignScreen
         }
 
         var choice = _state.Seasons.FirstOrDefault(s => s.Id == _state.SeasonId) ?? _state.Seasons.FirstOrDefault();
-        var window = ConfirmationWindow("SeasonSelection", "Choose a season");
+        var window = ConfirmationWindow("SeasonSelection", "Choose a campaign");
         var description = _ui.Label(
             window,
             "SeasonDescription",
-            "Your new character will have separate equipment, progression and rewards in this season.",
+            "Your new character will have separate equipment, progression and rewards in this campaign.",
             18,
             936,
             59,
@@ -114,7 +114,7 @@ public sealed partial class CampaignScreen
         RefreshSelection();
         if (choice == null)
         {
-            var empty = _ui.Label(list.transform, "NoSeasons", "No playable seasons are installed on this server.", 18, 872, 100);
+            var empty = _ui.Label(list.transform, "NoSeasons", "No playable campaigns are installed on this server.", 18, 872, 100);
             empty.alignment = TextAnchor.MiddleCenter;
             empty.color = new Color32(149, 158, 163, 255);
         }
@@ -143,7 +143,7 @@ public sealed partial class CampaignScreen
             return;
         }
 
-        var window = ConfirmationWindow("CharacterManagement", wipe ? "Wipe seasonal character" : "Delete seasonal character");
+        var window = ConfirmationWindow("CharacterManagement", wipe ? "Wipe campaign character" : "Delete campaign character");
         var heading = _ui.Label(window, "Character", character.Name + "  /  " + character.SeasonName, 22, 936, 48, 0, 207);
         heading.alignment = TextAnchor.MiddleCenter;
         heading.color = new Color32(197, 195, 178, 255);
@@ -151,8 +151,8 @@ public sealed partial class CampaignScreen
         var body = UiElements.Rect("ConsequencesPanel", window, 936, 322, 0, -19);
         ConfirmationBorder(body, "Border", new Color32(88, 93, 96, 51));
         var message = wipe
-            ? "All items, equipment, currency, completed quests, leveled skills and season progress will be permanently reset. Earned in-game achievements will be kept.\n\nChoose your faction, appearance, voice and modifiers again. Your character will start this same season again with the bonuses and equipment from your current game edition.\n\nYour other characters are unaffected."
-            : "Permanently delete this seasonal character and its profile?\n\nAll items, equipment, currency, quests, skills, achievements and season progress belonging to this character will be lost.\n\nYour other characters are unaffected.";
+            ? "All items, equipment, currency, completed quests, leveled skills and campaign progress will be permanently reset. Earned in-game achievements will be kept.\n\nChoose your faction, appearance, voice and modifiers again. Your character will start this same campaign again with the bonuses and equipment from your current game edition.\n\nYour other characters are unaffected."
+            : "Permanently delete this campaign character and its profile?\n\nAll items, equipment, currency, quests, skills, achievements and campaign progress belonging to this character will be lost.\n\nYour other characters are unaffected.";
         var description = _ui.Label(body, "Consequences", message, 18, 872, 230, 0, 20);
         description.alignment = TextAnchor.MiddleLeft;
         description.color = new Color32(149, 158, 163, 255);

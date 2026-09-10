@@ -8,7 +8,7 @@ public sealed record Metadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMeta
 {
     public string? WWWRootUrl { get; init; } = "wtt-campaigns-creator-assets";
     public string? HomePage { get; init; } = "/wtt-campaigns/creator";
-    public string? HomePageDescription { get; init; } = "Create, preview, and publish playable seasons.";
+    public string? HomePageDescription { get; init; } = "Create, preview, and publish playable campaigns.";
     public static string DirectoryPath
     {
         get { return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!; }

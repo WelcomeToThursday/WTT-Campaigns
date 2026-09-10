@@ -27,9 +27,9 @@ internal static class CreatorChecks
             var first = store.Create(false);
             check(
                 first.Definition.Id != store.Legacy.Id && first.Definition.BattlePassId != store.Legacy.BattlePassId,
-                "Blank season has independent identities"
+                "Blank campaign has independent identities"
             );
-            check(SeasonValidator.Validate(first.Definition).CanPublish, "Blank season is structurally valid");
+            check(SeasonValidator.Validate(first.Definition).CanPublish, "Blank campaign is structurally valid");
             check(
                 !JObject
                     .FromObject(first.Definition)
@@ -39,10 +39,10 @@ internal static class CreatorChecks
                 "Authored rewards exclude profile state"
             );
             var old = SeasonCompiler.Copy(first);
-            first.Definition.Name = "Test season";
+            first.Definition.Name = "Test campaign";
             first = store.Save(first);
             Reject(() => store.Save(old), "Concurrent draft save is rejected");
-            check(store.Load(first.Id).Definition.Name == "Test season", "Save conflict preserves newer draft");
+            check(store.Load(first.Id).Definition.Name == "Test campaign", "Save conflict preserves newer draft");
             var state = new HubProgress();
             var raid = new HubRaid
             {
@@ -121,13 +121,13 @@ internal static class CreatorChecks
             cosmetic.Name = "Corrected name";
             cosmetic.Branding.Badge = asset;
             store.CheckGameplay(cosmetic);
-            check(true, "Cosmetic updates preserve used-season gameplay");
+            check(true, "Cosmetic updates preserve used-campaign gameplay");
             cosmetic.Collection.DocumentLimit++;
-            Reject(() => store.CheckGameplay(cosmetic), "Used-season gameplay changes rejected");
+            Reject(() => store.CheckGameplay(cosmetic), "Used-campaign gameplay changes rejected");
             store.Queue(key);
             check(
                 store.Current.Definition.Id == store.Legacy.Id && store.Selection.Pending == key,
-                "Pending activation leaves running season unchanged"
+                "Pending activation leaves running campaign unchanged"
             );
             store.Activate(key);
             check(store.Current.Definition.Id == first.Definition.Id, "Activation selects published pack");

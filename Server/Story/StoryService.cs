@@ -39,13 +39,13 @@ public sealed partial class StoryService(
         var id = seasons.EffectiveId(seasons.ResolveRoot(sessionId));
         if (request.Version is not (1 or 2) || request.CharacterId != id || !seasons.IsSeasonal(id))
         {
-            throw new InvalidOperationException("Refresh the active Seasonal character before using its story.");
+            throw new InvalidOperationException("Refresh the active Campaign character before using its story.");
         }
         var profile = saves.GetProfile(new MongoId(id));
         var seasonId = seasons.SeasonIdFor(profile.CharacterData!.PmcData!);
         if (seasonId != request.SeasonId || !repository.Playable.TryGetValue(seasonId, out var runtime))
         {
-            throw new InvalidOperationException("This request belongs to another season.");
+            throw new InvalidOperationException("This request belongs to another campaign.");
         }
         // The journal shell and trader visits are systems available without authored content.
         // Keep this fallback transient so existing season identities and definitions stay unchanged.

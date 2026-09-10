@@ -50,7 +50,7 @@ public sealed class HubVideo : MonoBehaviour
         {
             _fallback!.enabled = false;
         }
-        Plugin.LogInfo("Season hub video playing: " + player.clip.name);
+        Plugin.LogInfo("Campaign hub video playing: " + player.clip.name);
     }
 
     private void Failed(VideoPlayer player, string message)
@@ -64,7 +64,7 @@ public sealed class HubVideo : MonoBehaviour
             _image!.color = Color.clear;
         }
 
-        Plugin.LogInfo("Season hub video unavailable: " + message);
+        Plugin.LogInfo("Campaign hub video unavailable: " + message);
     }
 
     private void OnEnable()

@@ -92,13 +92,13 @@ public sealed partial class CampaignScreen
             return;
         }
         var window = Dialog(
-            Created ? "CONFIRM PERK CHANGES" : "CREATE SEASONAL CHARACTER",
+            Created ? "CONFIRM PERK CHANGES" : "CREATE CAMPAIGN CHARACTER",
             Created
-                ? "These selections replace your seasonal perk choices when you save."
-                : (string.IsNullOrWhiteSpace(_name) ? "Seasonal" : _name)
+                ? "These selections replace your campaign perk choices when you save."
+                : (string.IsNullOrWhiteSpace(_name) ? "Campaign" : _name)
                     + "  /  "
                     + _side.ToUpperInvariant()
-                    + "  /  Separate seasonal PMC",
+                    + "  /  Separate campaign PMC",
             Created ? "SAVE CHANGES" : "CREATE CHARACTER",
             () => SaveRequested?.Invoke()
         );

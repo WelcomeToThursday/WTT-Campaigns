@@ -37,7 +37,7 @@ public class InsurancePatch(EventOutputHolder output) : AbstractPatch
         // The item-event batch ultimately serializes its shared output holder.
         __result = _output.GetOutput(sessionId);
         __result.Warnings ??= [];
-        __result.Warnings.Add(new Warning { Index = 0, ErrorMessage = "Insurance is disabled for this seasonal character." });
+        __result.Warnings.Add(new Warning { Index = 0, ErrorMessage = "Insurance is disabled for this campaign character." });
         return false;
     }
 }

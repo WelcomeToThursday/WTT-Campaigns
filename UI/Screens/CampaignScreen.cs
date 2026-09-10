@@ -35,7 +35,7 @@ public sealed partial class CampaignScreen : IDisposable
     private bool _busy;
     private bool _disposed;
     private ProfileSelection? _profileSelection;
-    private string _name = "Seasonal";
+    private string _name = "Campaign";
     private string _side = "Usec";
     private string _query = "";
     private readonly CreationDraft _creationDraft = new CreationDraft();
@@ -283,14 +283,14 @@ public sealed partial class CampaignScreen : IDisposable
             page == ScreenPage.Characters ? "CHARACTER SELECTION"
             : page == ScreenPage.Personal ? "PERSONAL PERKS"
             : page == ScreenPage.Global ? "GLOBAL MODIFIERS"
-            : "SEASONAL PERKS";
+            : "CAMPAIGN PERKS";
         _subtitle.text =
             page == ScreenPage.Characters ? "Choose your character. Each has its own progression and equipment."
             : page == ScreenPage.Personal ? "Balance detrimental modifiers with beneficial perks. Review your selection before saving."
-            : page == ScreenPage.Global ? "Season-wide rules are configured on the SPT server and apply to your seasonal PMC."
-            : _state.IsScav ? "Seasonal PMC perks do not apply to your Scav."
-            : _state.ActiveMode == "seasonal" ? "Perks currently applied to this seasonal character."
-            : "Your normal character has no seasonal modifiers.";
+            : page == ScreenPage.Global ? "Campaign-wide rules are configured on the SPT server and apply to your campaign PMC."
+            : _state.IsScav ? "Campaign PMC perks do not apply to your Scav."
+            : _state.ActiveMode == "seasonal" ? "Perks currently applied to this campaign character."
+            : "Your normal character has no campaign modifiers.";
         if (_embedded)
         {
             BuildModifiers();
@@ -374,7 +374,7 @@ public sealed partial class CampaignScreen : IDisposable
         _primary.gameObject.SetActive(Page != ScreenPage.Characters);
         var label = _primary.GetComponentInChildren<Text>();
         label.text =
-            Page == ScreenPage.Summary ? "EDIT SEASONAL PERKS"
+            Page == ScreenPage.Summary ? "EDIT CAMPAIGN PERKS"
             : Page == ScreenPage.Global ? "PERSONAL PERKS"
             : Created ? "REVIEW CHANGES"
             : "REVIEW & CREATE";

@@ -255,7 +255,7 @@ internal sealed class CreationIdentity : ICreationIdentity
         }
         AppearanceLoaded();
         Plugin.LogInfo(
-            $"Seasonal appearance: active={head.StateCanvasGroup.gameObject.activeInHierarchy}, alpha={head.StateCanvasGroup.alpha}, heads={head._faceCards.Count}, voices={head._voiceTemplates.Count}, modelReady={head._preview.PlayerModelView.LoadingComplete}"
+            $"Campaign appearance: active={head.StateCanvasGroup.gameObject.activeInHierarchy}, alpha={head.StateCanvasGroup.alpha}, heads={head._faceCards.Count}, voices={head._voiceTemplates.Count}, modelReady={head._preview.PlayerModelView.LoadingComplete}"
         );
     }
 

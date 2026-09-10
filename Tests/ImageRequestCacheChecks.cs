@@ -34,7 +34,7 @@ internal static class ImageRequestCacheChecks
         {
             await cache.GetAsync(key, Download);
         }
-        check(requests == 5, "Server, route, season and revision isolate image cache entries");
+        check(requests == 5, "Server, route, campaign and revision isolate image cache entries");
 
         var failed = cache.GetAsync("failed", () => throw new IOException("offline"));
         try

@@ -2,6 +2,8 @@
 
 `WTT-Campaigns.UI` contains Unity presentation code without EFT or SPT dependencies. Namespaces match folders beneath `UI`, for example `WTT.Campaigns.UI.Screens`.
 
+The UI references Shared for `Presentation/CampaignText`, which converts standalone season/seasonal/seasons words in display text to campaign/campaign/campaigns, preserving capitalization. This includes existing authored names such as “Test Season”; persisted identities, pack checksums and native contract keys are unchanged. New source labels and localization values use campaign terminology directly. UI-only deployment verifies that its Shared dependency matches both installed components; use a matching full update when that helper changes.
+
 | Folder / namespace suffix | Responsibility |
 | --- | --- |
 | `Screens` | `CampaignScreen`, its page/dialog/creation partial files, and `ScreenPage` navigation |
@@ -26,6 +28,8 @@ Keep each type in its own named file, and keep all `CampaignScreen` partial file
 Run `python tools/sync_ui_preview.py` after editing UI sources. It searches subfolders, excludes `bin` and `obj`, and converts file-scoped namespaces for Unity 2022's C# 9 compiler. Generated files retain their existing flat filenames and `.meta` GUIDs in the companion CJ-SDK project. Filenames must be unique across UI source folders.
 
 Attachable components, their sound enum and the shared `UiElements` helper compile under `PreviewRuntime`; other sources compile under `Editor/Generated`. When adding a runtime component, update `RUNTIME_SOURCES` and keep its dependencies in that assembly. The sync script preserves metadata GUIDs when moving generated sources between these directories. Generated sources are not bundle dependencies.
+
+The sync also exposes `CampaignText` from Shared to Unity's preview runtime. `Controls/CampaignBranding` draws the WTT/CAMPAIGNS title using the UI font and accent rules. The menu banner, built-in rewards header, and second introduction slide use this treatment instead of the recovered Season 1 logo/video. The second legacy hub slide uses the same replacement, including when loaded from an existing pack.
 
 Update the client and the companion SDK's editor preview/check imports when moving types. Build the solution, run the UI assembly compatibility checks described in [CONTRIBUTING](../CONTRIBUTING.md), and use **SDK / WTT-Campaigns / Render UI previews** for Unity interaction checks. These namespace changes preserve UI behavior and layouts, but consumers must rebuild against the new CLR type names.
 

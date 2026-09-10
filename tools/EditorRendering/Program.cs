@@ -179,7 +179,7 @@ foreach (var (name, markup) in pages)
             + "</title><style>"
             + theme
             + css
-            + "</style></head><body><main class=\"season-creator\"><div class=\"editor-body\" style=\"max-width:1100px;margin:auto\">"
+            + "</style></head><body><main class=\"campaign-creator\"><div class=\"editor-body\" style=\"max-width:1100px;margin:auto\">"
             + markup
             + "</div></main></body></html>"
     );

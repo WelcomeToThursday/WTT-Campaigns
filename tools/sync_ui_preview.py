@@ -8,7 +8,7 @@ from pathlib import Path
 import re
 
 RUNTIME_SOURCES = {
-    'SeasonLogoArtwork.cs',
+    'CampaignBranding.cs',
     'StoryTitleMask.cs',
     'StoryRoomAmbient.cs',
     'StoryRoomRenderState.cs',
@@ -75,4 +75,8 @@ if __name__ == '__main__':
     project = Path(__file__).resolve().parents[1]
     assets = project.parent / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets'
     count = sync_sources(project / 'UI', assets / 'Editor/Generated', assets / 'PreviewRuntime')
+    # Pure presentation copy is shared with the server, and compiled directly by Unity previews.
+    presentation = (project / 'Shared/Presentation/CampaignText.cs').read_text(encoding='utf-8-sig')
+    presentation = presentation.replace('namespace WTT.Campaigns.Shared.Presentation;', 'namespace WTT.Campaigns.Shared.Presentation\n{') + '\n}\n'
+    (assets / 'PreviewRuntime/CampaignText.cs').write_text(presentation, encoding='utf-8')
     print(f'Synchronized {count} UI view sources for the Unity editor preview.')

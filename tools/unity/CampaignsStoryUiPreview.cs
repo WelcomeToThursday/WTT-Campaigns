@@ -122,7 +122,7 @@ public static class CampaignsStoryUiPreview
                     Id = "objective" + i,
                     Text = i < exampleObjectives.Length ? exampleObjectives[i] : "Inspect storage zone " + (i + 1),
                     Main = i < 20,
-                    Hint = i % 3 == 0 ? "Only equipment from this season counts toward the delivery." : "",
+                    Hint = i % 3 == 0 ? "Only equipment from this campaign counts toward the delivery." : "",
                     Counter = i == 1 ? "2 / 5" : "",
                     Unread = true,
                     Complete = i == 4,

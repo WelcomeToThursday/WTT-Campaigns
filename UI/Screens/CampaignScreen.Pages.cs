@@ -19,7 +19,7 @@ public sealed partial class CampaignScreen
         if (personal && !Created)
         {
             _ui.Label(_body, "NicknameLabel", "NICKNAME", 15, 110, 32, -805, 270).color = UiElements.Muted;
-            _nickname = _ui.Input(_body, "Nickname", "Seasonal", 300, -590, 270);
+            _nickname = _ui.Input(_body, "Nickname", "Campaign", 300, -590, 270);
             _nickname.text = _name;
             _nickname.characterLimit = 15;
             _nickname.contentType = InputField.ContentType.Alphanumeric;
@@ -44,7 +44,7 @@ public sealed partial class CampaignScreen
                 "Context",
                 common ? "GLOBAL RULES"
                     : Page == ScreenPage.Summary ? "ACTIVE MODIFIERS"
-                    : "SEASONAL CHARACTER",
+                    : "CAMPAIGN CHARACTER",
                 17,
                 700,
                 42,

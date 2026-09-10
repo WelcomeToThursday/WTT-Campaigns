@@ -69,7 +69,7 @@ public partial class Creator
 
     private void FinishTutorial()
     {
-        _tutorialFinished = _tutorialTrack == "story" ? "Your first story quest" : "Season basics";
+        _tutorialFinished = _tutorialTrack == "story" ? "Your first story quest" : "Campaign basics";
         _tutorialTrack = "";
     }
 }

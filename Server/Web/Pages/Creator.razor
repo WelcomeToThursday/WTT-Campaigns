@@ -1,3 +1,4 @@
+@using WTT.Campaigns.Shared.Presentation
 @using WTT.Campaigns.Server.Web.Authoring
 @page "/wtt-campaigns/creator"
 @attribute [Authorize(Policy = "Administrator")]
@@ -6,13 +7,13 @@
 @inject SeasonRepository Repository
 @inject SeasonContentService Content
 
-<PageTitle>Season Creator</PageTitle>
+<PageTitle>Campaign Creator</PageTitle>
 <HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
 <main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
     <header class="creator-header">
-        <div><h1><span class="app-mark" aria-hidden="true">S</span>Season Creator</h1><p>Create and publish seasons. Each seasonal character chooses its own season.</p></div>
+        <div><h1><span class="app-mark" aria-hidden="true">C</span>Campaign Creator</h1><p>Create and publish campaigns. Each campaign character chooses its own campaign.</p></div>
         <div class="row"><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
     </header>
     @if (_showHelp) { <CreatorHelp HasDraft="@(_draft != null)" Navigate="OpenGuideSection" StartTutorial="StartTutorial" Close="@(() => _showHelp = false)" /> }
@@ -20,7 +21,7 @@
     @if (_tutorialFinished.Length > 0) { <div class="notice" role="status">Walkthrough finished: @_tutorialFinished. Save and validate your draft to check your work. You can revisit either tutorial from Help and tutorials. <button class="subtle" @onclick="@(() => _tutorialFinished = "")">Dismiss</button></div> }
     @foreach (var warning in Repository.StorageWarnings) { <div class="notice error">Storage needs attention: @warning</div> }
     @if (_message.Length > 0) { <div class="notice" role="status">@_message</div> }
-    @if (Repository.Selection.Error.Length > 0) { <div class="notice error">Season loading issue: @Repository.Selection.Error</div> }
+    @if (Repository.Selection.Error.Length > 0) { <div class="notice error">Campaign loading issue: @Repository.Selection.Error</div> }
 
     @if (_draft != null)
     {
@@ -46,13 +47,13 @@
         var visiblePacks = packs.Where(p => LibraryMatches(p.Manifest.Name)).ToArray();
         <div class="season-library">
             <section class="library-heading" aria-labelledby="library-title">
-                <div><span class="eyebrow">YOUR WORKSPACE</span><h2 id="library-title">Season library</h2><p>Build something new, or pick up where you left off.</p></div>
-                <button class="primary library-create" @onclick="@(() => Run(() => Open(Repository.Create(false))))"><span aria-hidden="true">＋</span> Create blank season</button>
+                <div><span class="eyebrow">YOUR WORKSPACE</span><h2 id="library-title">Campaign library</h2><p>Build something new, or pick up where you left off.</p></div>
+                <button class="primary library-create" @onclick="@(() => Run(() => Open(Repository.Create(false))))"><span aria-hidden="true">＋</span> Create blank campaign</button>
             </section>
             <div class="library-layout">
                 <div class="library-content">
                     <div class="library-searchbar">
-                        <label for="season-library-search">Find a season</label>
+                        <label for="season-library-search">Find a campaign</label>
                         <div class="library-search-input"><input id="season-library-search" type="search" placeholder="Search drafts and published packs…" @bind="_librarySearch" @bind:event="oninput" />@if (_librarySearch.Length > 0) { <button class="subtle" @onclick="@(() => _librarySearch = "")">Clear</button> }</div>
                     </div>
                     <section class="library-section" aria-labelledby="drafts-title">
@@ -69,7 +70,7 @@
                         @if (_renamingDraft != null)
                         {
                             <section class="draft-action-panel" aria-labelledby="rename-draft-title">
-                                <h4 id="rename-draft-title">Rename @_renamingDraft.Definition.Name</h4><p>This changes the draft name. Existing published packs keep their names.</p>
+                                <h4 id="rename-draft-title">Rename @CampaignText.Display(_renamingDraft.Definition.Name)</h4><p>This changes the draft name. Existing published packs keep their names.</p>
                                 <label>Draft name<input @ref="_draftActionFocus" maxlength="120" @bind="_draftName" @bind:event="oninput" @onkeydown="RenameDraftKey" /></label>
                                 <div class="row"><button class="primary" disabled="@string.IsNullOrWhiteSpace(_draftName)" @onclick="RenameLibraryDraft">Save name</button><button @onclick="RefreshDraftLibrary">Cancel</button></div>
                             </section>
@@ -77,7 +78,7 @@
                         @if (_trashDraft != null)
                         {
                             <section class="draft-action-panel" aria-labelledby="trash-draft-title">
-                                <h4 id="trash-draft-title">Move @_trashDraft.Definition.Name to Trash?</h4><p>You can restore this draft at any time. Published packs and characters are unaffected.</p>
+                                <h4 id="trash-draft-title">Move @CampaignText.Display(_trashDraft.Definition.Name) to Trash?</h4><p>You can restore this draft at any time. Published packs and characters are unaffected.</p>
                                 <div class="row"><button class="danger" @onclick="@(() => MoveLibraryDraft(_trashDraft, DraftStatus.Trashed))">Move to Trash</button><button @ref="_draftActionFocus" @onclick="RefreshDraftLibrary">Cancel</button></div>
                             </section>
                         }
@@ -87,8 +88,8 @@
                             {
                                 <article class="library-card" @key="draft.Id">
                                     <div class="library-card-meta"><span class="library-status">@(draft.Status == DraftStatus.Active ? "DRAFT" : draft.Status == DraftStatus.Archived ? "ARCHIVED" : "IN TRASH")</span><span>v@(draft.Definition.Version) · Revision @draft.Revision</span></div>
-                                    <h4>@draft.Definition.Name</h4><time class="draft-edited" datetime="@draft.LastEditedUtc?.ToString("O")" title="@draft.LastEditedUtc?.ToString("u")">Edited @draft.LastEditedUtc?.ToLocalTime().ToString("MMM d, yyyy · h:mm tt")</time>
-                                    <p class="library-description" title="@draft.Definition.Description">@(string.IsNullOrWhiteSpace(draft.Definition.Description) ? "Add a description in Overview to introduce this season." : draft.Definition.Description)</p>
+                                    <h4>@CampaignText.Display(draft.Definition.Name)</h4><time class="draft-edited" datetime="@draft.LastEditedUtc?.ToString("O")" title="@draft.LastEditedUtc?.ToString("u")">Edited @draft.LastEditedUtc?.ToLocalTime().ToString("MMM d, yyyy · h:mm tt")</time>
+                                    <p class="library-description" title="@draft.Definition.Description">@(string.IsNullOrWhiteSpace(draft.Definition.Description) ? "Add a description in Overview to introduce this campaign." : draft.Definition.Description)</p>
                                     <div class="library-facts"><span>@LibraryQuantity(draft.Definition.Quests.Count, "quest")</span><span>@LibraryQuantity(draft.Definition.Perks.All.Count(), "perk")</span><span>@LibraryQuantity(draft.Definition.AllRewards.Count(), "reward")</span></div>
                                                                         <div class="library-card-actions">
                                         @if (draft.Status == DraftStatus.Active) { <button @onclick="@(() => OpenLibraryDraft(draft))">Edit draft <span aria-hidden="true">→</span></button> }
@@ -108,43 +109,43 @@
                         </div>
                         @if (visibleDrafts.Length == 0)
                         {
-                            <div class="library-empty"><strong>@(_librarySearch.Trim().Length > 0 ? "No matching drafts" : _draftView == DraftStatus.Archived ? "No archived drafts" : _draftView == DraftStatus.Trashed ? "Trash is empty" : "Your first season starts here")</strong><p>@(_librarySearch.Trim().Length > 0 ? "Try another name or clear the search." : _draftView == DraftStatus.Active ? "Create a blank season above, duplicate a published pack, or restore a draft from Archived or Trash." : "Use Manage on a draft to move it here. You can always restore it to Drafts.")</p></div>
+                            <div class="library-empty"><strong>@(_librarySearch.Trim().Length > 0 ? "No matching drafts" : _draftView == DraftStatus.Archived ? "No archived drafts" : _draftView == DraftStatus.Trashed ? "Trash is empty" : "Your first campaign starts here")</strong><p>@(_librarySearch.Trim().Length > 0 ? "Try another name or clear the search." : _draftView == DraftStatus.Active ? "Create a blank campaign above, duplicate a published pack, or restore a draft from Archived or Trash." : "Use Manage on a draft to move it here. You can always restore it to Drafts.")</p></div>
                         }
                     </section>
                     <section class="library-section" aria-labelledby="packs-title">
                         <header class="library-section-heading"><div><h3 id="packs-title">Published packs <span class="library-count">@(packs.Count + 1)</span></h3><p>Saved releases you can share or use as a starting point.</p></div></header>
                         <div class="library-pack-list">
-                            @if (LibraryMatches("Built-in Season One"))
+                            @if (LibraryMatches("Built-in Campaign One"))
                             {
                                 <article class="library-pack">
-                                    <div class="library-pack-info"><span class="library-status built-in">BUILT-IN</span><h4>Built-in Season One</h4><p>Duplicate the original season to make it your own.</p></div>
+                                    <div class="library-pack-info"><span class="library-status built-in">BUILT-IN</span><h4>Built-in Campaign One</h4><p>Duplicate the original campaign to make it your own.</p></div>
                                     <div class="row"><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Legacy))))">Duplicate</button></div>
                                 </article>
                             }
                             @foreach (var pack in visiblePacks)
                             {
                                 <article class="library-pack" @key="pack.Key">
-                                    <div class="library-pack-info"><span class="library-status published">PUBLISHED · REVISION @pack.Manifest.Revision</span><h4>@pack.Manifest.Name</h4><p>Version @pack.Manifest.Version</p></div>
-                                    <div class="row"><button @onclick="@(() => EditPublished(pack.Key))">Edit revision</button><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Pack(pack.Key)))))">Duplicate as new season</button><a class="button subtle" href="@($"/wtt-campaigns/creator/packs/{pack.Key}/download")" download>Export pack <span aria-hidden="true">↓</span></a></div>
+                                    <div class="library-pack-info"><span class="library-status published">PUBLISHED · REVISION @pack.Manifest.Revision</span><h4>@CampaignText.Display(pack.Manifest.Name)</h4><p>Version @pack.Manifest.Version</p></div>
+                                    <div class="row"><button @onclick="@(() => EditPublished(pack.Key))">Edit revision</button><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Pack(pack.Key)))))">Duplicate as new campaign</button><a class="button subtle" href="@($"/wtt-campaigns/creator/packs/{pack.Key}/download")" download>Export pack <span aria-hidden="true">↓</span></a></div>
                                 </article>
                             }
                         </div>
-                        @if (visiblePacks.Length == 0 && !LibraryMatches("Built-in Season One"))
+                        @if (visiblePacks.Length == 0 && !LibraryMatches("Built-in Campaign One"))
                         {
                             <div class="library-empty"><strong>No matching published packs</strong><p>Try another name or clear the search.</p></div>
                         }
-                        <p class="library-play-note">Each seasonal character chooses its own season. Restart SPT to load newly published packs with their required dependencies, then choose one when creating a character.</p>
+                        <p class="library-play-note">Each campaign character chooses its own campaign. Restart SPT to load newly published packs with their required dependencies, then choose one when creating a character.</p>
                     </section>
                 </div>
                 <aside class="library-sidebar" aria-label="Import and learn">
                     <section class="library-side-panel">
-                        <span class="eyebrow">BRING YOUR CONTENT</span><h3>Import a season</h3><p>Open a shared season pack as an editable draft.</p>
-                        <label class="library-import"><span>Choose a .zip file <span aria-hidden="true">↑</span></span><InputFile OnChange="Import" accept=".zip" aria-label="Import season pack" /></label>
+                        <span class="eyebrow">BRING YOUR CONTENT</span><h3>Import a campaign</h3><p>Open a shared campaign pack as an editable draft.</p>
+                        <label class="library-import"><span>Choose a .zip file <span aria-hidden="true">↑</span></span><InputFile OnChange="Import" accept=".zip" aria-label="Import campaign pack" /></label>
                         <small>Save, validate and publish the imported draft to make it a local pack.</small>
                     </section>
                     <section class="library-side-panel library-learn">
                         <span class="eyebrow">LEARN AS YOU BUILD</span><h3>A little guidance</h3><p>Follow a walkthrough alongside your draft.</p>
-                        <button class="library-guide" @onclick="@(() => StartTutorial("basics"))"><strong>Season basics <span aria-hidden="true">→</span></strong><span>From a blank draft to your first published pack.</span></button>
+                        <button class="library-guide" @onclick="@(() => StartTutorial("basics"))"><strong>Campaign basics <span aria-hidden="true">→</span></strong><span>From a blank draft to your first published pack.</span></button>
                         <button class="library-guide" @onclick="@(() => StartTutorial("story"))"><strong>Your first story quest <span aria-hidden="true">→</span></strong><span>Connect a quest, conversation and journal entry.</span></button>
                     </section>
                 </aside>
@@ -155,7 +156,7 @@
     {
         <div class="editor-toolbar" aria-label="Draft actions">
             <button class="subtle" @onclick="@(() => Leave(() => _draft = null))">← Library</button>
-            <strong class="draft-title">@S.Name</strong><span class="save-state @(DirtyState ? "unsaved" : "")">@(DirtyState ? "Unsaved changes" : "Saved")</span>
+            <strong class="draft-title">@CampaignText.Display(S.Name)</strong><span class="save-state @(DirtyState ? "unsaved" : "")">@(DirtyState ? "Unsaved changes" : "Saved")</span>
             <div class="toolbar-actions">
                 <MudTooltip Text="Check content, artwork and installed dependencies. Errors link back to the relevant section." ShowOnFocus="true"><button @onclick="Validate">Validate</button></MudTooltip>
                 <MudTooltip Text="Create an immutable pack from the saved draft. Restart SPT to load new packs for character creation." ShowOnFocus="true"><button @onclick="Publish">Publish pack</button></MudTooltip>
@@ -178,12 +179,12 @@
             @switch (_section)
             {
                 case "Overview":
-                <section class="inspector-panel"><div class="panel-heading"><h3>Season summary</h3><span class="small-tag">DRAFT</span></div><strong>@S.Name</strong>
-                    @if(SeasonValidator.IsId(S.Branding.Badge)) { <img class="season-badge" src="@AssetUrl(S.Branding.Badge)" alt="Season badge" /> }
+                <section class="inspector-panel"><div class="panel-heading"><h3>Campaign summary</h3><span class="small-tag">DRAFT</span></div><strong>@CampaignText.Display(S.Name)</strong>
+                    @if(SeasonValidator.IsId(S.Branding.Badge)) { <img class="season-badge" src="@AssetUrl(S.Branding.Badge)" alt="Campaign badge" /> }
                     <p>@S.Description</p><dl><dt>Perks</dt><dd>@S.Perks.All.Count()</dd><dt>Documents</dt><dd>@S.Documents.Count / 8</dd><dt>Pages</dt><dd>@S.Pages.Count</dd><dt>Rewards</dt><dd>@S.AllRewards.Count()</dd><dt>Total document cost</dt><dd>@S.AllRewards.SelectMany(r => r.Costs).Sum(c => (long)c.Count)</dd><dt>Custom quests</dt><dd>@S.Quests.Count</dd></dl>
                 </section>
-                    <EditorSection Title="Identity and branding" Description="Name, describe and illustrate the season players will choose.">
-<div class="form-grid"><label>Season name<input @bind="S.Name" /></label><label>Version <HelpTip Text="An author-facing version such as 1.0.0. Published pack revisions are numbered automatically." /><input @bind="S.Version" /></label><label>Author<input @bind="S.Author" /></label><label>Description<textarea @bind="S.Description"></textarea></label><AssetPicker Label="Season badge" @bind-Value="S.Branding.Badge" ArtAssets="ArtAssets" /><AssetPicker Label="Menu banner" @bind-Value="S.Branding.Banner" ArtAssets="ArtAssets" /></div>
+                    <EditorSection Title="Identity and branding" Description="Name, describe and illustrate the campaign players will choose.">
+<div class="form-grid"><label>Campaign name<input @bind="CampaignName" /></label><label>Version <HelpTip Text="An author-facing version such as 1.0.0. Published pack revisions are numbered automatically." /><input @bind="S.Version" /></label><label>Author<input @bind="S.Author" /></label><label>Description<textarea @bind="S.Description"></textarea></label><AssetPicker Label="Campaign badge" @bind-Value="S.Branding.Badge" ArtAssets="ArtAssets" /><AssetPicker Label="Menu banner" @bind-Value="S.Branding.Banner" ArtAssets="ArtAssets" /></div>
 
 </EditorSection>
 <EditorSection Title="First-launch introduction" Description="Select a slide to edit its artwork and text.">
@@ -210,7 +211,7 @@
 </EditorSection>
                     break;
                 case "Perks":
-                    <EditorSection Title="Season-wide perk rules" Description="Budget and editing rules apply to every perk selection.">
+                    <EditorSection Title="Campaign-wide perk rules" Description="Budget and editing rules apply to every perk selection.">
 <div class="form-grid"><label>Starting points <HelpTip Text="The points available before selecting perks. Negative perk points spend the budget; positive points add to it." /><input type="number" @bind="S.Rules.StartingPoints" /></label><label class="check"><input type="checkbox" @bind="S.Rules.EnforceBudget" />Enforce selection budget</label><label class="check"><input type="checkbox" @bind="S.Rules.AllowEdits" />Allow perk edits outside raids</label></div>
 
 </EditorSection>
@@ -222,7 +223,7 @@
                         <details class="editor-card" open @key="perk.Id"><summary>@PerkName(perk) · @perk.Type · @(perk.Points?.ToString() ?? "Common")</summary>
                             <label class="check"><input type="checkbox" @bind="perk.Enabled" />Enabled</label><div class="form-grid"><label>Name<input value="@PerkName(perk)" @onchange="@(e => S.Locales["en"][perk.Id + " name"] = Text(e))" /></label><label>Description<textarea value="@S.Locales["en"].GetValueOrDefault(perk.Id + " description")" @onchange="@(e => S.Locales["en"][perk.Id + " description"] = Text(e))"></textarea></label><AssetPicker Label="Perk icon" @bind-Value="perk.ImageUrl" ArtAssets="ArtAssets" /></div>
                             @if (perk.Type == "personal") { <label>Points (benefits cost negative points) <HelpTip Text="Use -1 for a benefit that costs one point, or +1 for a drawback that adds one point to the selection budget." /><input type="number" @bind="perk.Points" /></label><h4>Conflicts <HelpTip Text="Conflicting personal perks cannot be selected together. This relationship applies in both directions." /></h4>@foreach (var other in S.Perks.Personal.Where(p => p.Id != perk.Id)) { <label class="check"><input type="checkbox" checked="@perk.Conflicts.Contains(other.Id)" @onchange="@(e => Conflict(perk, other, (bool)e.Value!))" />@PerkName(other)</label> } }
-                            else { <label class="check"><input type="checkbox" checked="@S.Rules.EnabledCommonIds.Contains(perk.Id)" @onchange="@(e => Common(perk.Id, (bool)e.Value!))" />Apply to every seasonal character</label> }
+                            else { <label class="check"><input type="checkbox" checked="@S.Rules.EnabledCommonIds.Contains(perk.Id)" @onchange="@(e => Common(perk.Id, (bool)e.Value!))" />Apply to every campaign character</label> }
                             @for (var i = 0; i < perk.Effects.Count; i++)
                             {
                                 var index = i; var effect = perk.Effects[index];
@@ -237,7 +238,7 @@
                     break;
                 case "Documents":
                     <EditorSection Title="Collection rules" Description="Control raid placement, collection limits and the Classified bonus.">
-<div class="form-grid"><label>Documents per raid <HelpTip Text="Maximum ordinary documents placed in a seasonal PMC raid, from zero to eight. Map overrides replace this cap; the remaining collection allowance can reduce it." /><input type="number" min="0" max="8" @bind="S.Collection.DocumentsPerRaid" /></label><label>Collection allowance <HelpTip Text="How many newly collected document units a character can pick up during one collection window. Splitting or merging a stack does not add allowance." /><input type="number" min="1" @bind="S.Collection.DocumentLimit" /></label><label>Collection window (seconds) <HelpTip Text="The collection allowance resets after this many seconds. The default 23-hour window is 82,800 seconds." /><input type="number" min="60" @bind="S.Collection.WindowSeconds" /></label><label>Classified chance (%) <HelpTip Text="Chance of earning a Classified bonus for a newly collected document extracted from a survived raid. The default is 5 percent." /><input type="number" min="0" max="100" @bind="S.Collection.ClassifiedChancePercent" /></label></div>
+<div class="form-grid"><label>Documents per raid <HelpTip Text="Maximum ordinary documents placed in a campaign PMC raid, from zero to eight. Map overrides replace this cap; the remaining collection allowance can reduce it." /><input type="number" min="0" max="8" @bind="S.Collection.DocumentsPerRaid" /></label><label>Collection allowance <HelpTip Text="How many newly collected document units a character can pick up during one collection window. Splitting or merging a stack does not add allowance." /><input type="number" min="1" @bind="S.Collection.DocumentLimit" /></label><label>Collection window (seconds) <HelpTip Text="The collection allowance resets after this many seconds. The default 23-hour window is 82,800 seconds." /><input type="number" min="60" @bind="S.Collection.WindowSeconds" /></label><label>Classified chance (%) <HelpTip Text="Chance of earning a Classified bonus for a newly collected document extracted from a survived raid. The default is 5 percent." /><input type="number" min="0" max="100" @bind="S.Collection.ClassifiedChancePercent" /></label></div>
 
 </EditorSection>
 <EditorSection Title="Map-specific placement" Description="Override the ordinary document cap for individual maps.">
@@ -337,22 +338,22 @@
 
 </EditorSection>
 <EditorSection Title="Validation and publication" Description="Review the pack and resolve validation issues before publishing.">
-<h3>Pack contents</h3><p>Manifest, season definition, and @SeasonCompiler.Assets(S).Count(SeasonValidator.IsId) PNG files.</p><details><summary>Installed dependencies</summary>@foreach (var dependency in SeasonCompiler.Dependencies(S)) { <p>@dependency</p> }</details><h3>Validation report</h3><button @onclick="Validate">Run validation</button>
+<h3>Pack contents</h3><p>Manifest, campaign definition, and @SeasonCompiler.Assets(S).Count(SeasonValidator.IsId) PNG files.</p><details><summary>Installed dependencies</summary>@foreach (var dependency in SeasonCompiler.Dependencies(S)) { <p>@dependency</p> }</details><h3>Validation report</h3><button @onclick="Validate">Run validation</button>
                     @if (_validation != null) { @if (ValidationStale) { <p class="notice">Draft changed since validation. Run validation again before publishing.</p> } <p>@(_validation.CanActivate ? "Ready to publish. Restart SPT to load the pack for play." : _validation.CanPublish ? "Exportable; install required dependencies before playing." : "Fix errors before publishing.")</p>@foreach(var issue in _validation.Issues) { <button class="issue @issue.Severity" @onclick="@(() => GoToIssue(issue.Path))">@issue.Severity · @issue.Path — @issue.Message</button> } }
-                    @if (_published != null) { <div class="notice"><strong>Published successfully.</strong><a class="button" href="@($"/wtt-campaigns/creator/packs/{_published}/download")" download>Download season pack</a><p>Restart SPT to load new packs, then choose a season when creating a seasonal character.</p></div> }
+                    @if (_published != null) { <div class="notice"><strong>Published successfully.</strong><a class="button" href="@($"/wtt-campaigns/creator/packs/{_published}/download")" download>Download campaign pack</a><p>Restart SPT to load new packs, then choose a campaign when creating a campaign character.</p></div> }
 
 </EditorSection>
                     break;
             }
             </section>
-            <details class="inspector-drawer"><summary>Help and inspector</summary><aside class="editor-preview" aria-label="Season inspector">
+            <details class="inspector-drawer"><summary>Help and inspector</summary><aside class="editor-preview" aria-label="Campaign inspector">
                 <div class="row workspace-tabs" role="tablist" aria-label="Inspector">@foreach(var tab in new[] { "Help", "Connections", "Preview" }) { <button role="tab" aria-selected="@(_inspectorTab == tab)" @onclick="@(() => _inspectorTab = tab)">@tab</button> }</div>
                 <section class="inspector-panel">
                 @if (_inspectorTab == "Help") { <h3>@_section guidance</h3><p>@SectionDescription(_section)</p><p>@SectionGuidance(_section)</p><p>Hover or focus a ? marker for field help. Changes remain in this draft until you save and publish.</p> }
                 else if (_inspectorTab == "Connections") { <h3>Content relationships</h3><p>Chapters contain quests and notes. Conversations change variables, publish notes and progress owned quests. Entry points and raid events make conversations available.</p><button @onclick="@(() => _section = "Chapters")">Browse chapters</button><p>Use the selected story record's Connections view for its references and dialogue flow.</p> }
                 else { <h3>Player preview</h3><p>Open a story record's Preview view for text and artwork, or rehearse its progression with simulated player state.</p><button @onclick="@(() => _section = "Story rehearsal")">Rehearse story</button> }
                 </section>
-                <section class="inspector-panel"><h3>Publication</h3><p>@(_validation == null ? "Validate to check this draft before publishing." : ValidationStale ? "Draft changed. Validation needs to run again." : _validation.CanActivate ? "Validation passed. Save and publish when ready." : $"{_validation.Issues.Count} issues to review.")</p><p class="muted">Save → Validate → Publish → Restart SPT → Create a character</p><HelpTip Text="After a character has used a season, only text and artwork can change. Duplicate it to change gameplay without altering existing progress." /></section>
+                <section class="inspector-panel"><h3>Publication</h3><p>@(_validation == null ? "Validate to check this draft before publishing." : ValidationStale ? "Draft changed. Validation needs to run again." : _validation.CanActivate ? "Validation passed. Save and publish when ready." : $"{_validation.Issues.Count} issues to review.")</p><p class="muted">Save → Validate → Publish → Restart SPT → Create a character</p><HelpTip Text="After a character has used a campaign, only text and artwork can change. Duplicate it to change gameplay without altering existing progress." /></section>
             </aside></details>
         </div>
     }

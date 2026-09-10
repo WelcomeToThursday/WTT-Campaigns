@@ -2,7 +2,7 @@
 <section class="creator-handbook" aria-labelledby="creator-help-title" @oninput:stopPropagation @onchange:stopPropagation>
     <div class="guide-heading"><div><span class="eyebrow">AUTHOR'S GUIDE</span><h2 id="creator-help-title">Help and tutorials</h2><p>Learn the workspace, follow a walkthrough, or find instructions for a specific section.</p></div><button class="subtle" @onclick="Close">Close help</button></div>
     <div class="guide-tracks">
-        <article><h3>Season basics</h3><p>Create a draft, set up starting items and documents, build a reward, then validate and export.</p><button @onclick="@(() => StartTutorial.InvokeAsync("basics"))">Start season basics</button></article>
+        <article><h3>Campaign basics</h3><p>Create a draft, set up starting items and documents, build a reward, then validate and export.</p><button @onclick="@(() => StartTutorial.InvokeAsync("basics"))">Start campaign basics</button></article>
         <article><h3>Your first story quest</h3><p>Connect a chapter, supply quest, journal note and trader conversation, then try the complete loop in rehearsal.</p><button class="primary" @onclick="@(() => StartTutorial.InvokeAsync("story"))">Start story tutorial</button></article>
     </div>
     <p class="guide-note">Tutorials provide directions and section links. You choose the edits and when to save. Opening help or advancing a step never creates content, publishes a pack or changes player progress.</p>
@@ -22,7 +22,7 @@
     <details class="guide-topic"><summary>Common terms</summary><dl class="guide-glossary">
         <dt>Draft</dt><dd>Your editable work. Save changes keeps it without affecting published packs or characters.</dd>
         <dt>Published pack</dt><dd>An immutable revision you can export. Activation is a separate choice.</dd>
-        <dt>Owned quest</dt><dd>A native quest authored in this season. Story actions can change owned story quests; installed prerequisites remain read-only.</dd>
+        <dt>Owned quest</dt><dd>A native quest authored in this campaign. Story actions can change owned story quests; installed prerequisites remain read-only.</dd>
         <dt>Condition / trigger</dt><dd>A rule that must pass. All means every child, Any means at least one, and Not reverses exactly one child. Empty All always passes.</dd>
         <dt>Action</dt><dd>A change performed after a line or event runs. Actions execute in their listed order.</dd>
         <dt>Phase variable</dt><dd>An integer used to track a conversation's current stage, such as 0 for the greeting and 1 for the first choices.</dd>

@@ -68,7 +68,7 @@ internal sealed class ImageRequestCache
                 bytes = await download().ConfigureAwait(false);
                 if (bytes == null || bytes.Length == 0)
                 {
-                    throw new InvalidDataException("The seasonal image response was empty.");
+                    throw new InvalidDataException("The campaign image response was empty.");
                 }
             }
             finally

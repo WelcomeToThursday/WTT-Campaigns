@@ -76,7 +76,7 @@ public sealed class SeasonRepository
         }
         return Playable.TryGetValue(id, out var runtime)
             ? runtime
-            : throw new InvalidOperationException("This season is unavailable. Install its pack and restart the server.");
+            : throw new InvalidOperationException("This campaign is unavailable. Install its pack and restart the server.");
     }
 
     public SeasonSelection Selection { get; private set; }
@@ -344,7 +344,7 @@ public sealed class SeasonRepository
         if (!duplicate)
         {
             var document = definition.Documents.First();
-            definition.Name = "New season";
+            definition.Name = "New campaign";
             definition.Description = "";
             definition.Author = "";
             definition.Perks = new();
@@ -369,7 +369,7 @@ public sealed class SeasonRepository
                 {
                     Id = document.ItemId,
                     CloneFrom = original.ItemId,
-                    Name = "Season document",
+                    Name = "Campaign document",
                 },
             };
             definition.Locales = new() { ["en"] = new() };
@@ -467,7 +467,7 @@ public sealed class SeasonRepository
         var path = Path.Combine(_root, "used", CheckId(definition.Id) + ".json");
         if (File.Exists(path) && Read<UsedSeason>(path).Hash != GameplayHash(definition))
         {
-            throw new InvalidOperationException("This season has been used. Duplicate it as a new season to change gameplay.");
+            throw new InvalidOperationException("This campaign has been used. Duplicate it as a new campaign to change gameplay.");
         }
     }
 
@@ -477,7 +477,7 @@ public sealed class SeasonRepository
         {
             if (draft.Definition.Legacy)
             {
-                throw new InvalidOperationException("Duplicate the built-in season before publishing changes.");
+                throw new InvalidOperationException("Duplicate the built-in campaign before publishing changes.");
             }
 
             if (!validation.CanPublish || !SeasonValidator.Validate(draft.Definition).CanPublish)
@@ -793,7 +793,7 @@ public sealed class SeasonRepository
 
         if (zip.Entries.Any(e => e.FullName != "manifest.json" && !PackFile(e.FullName)))
         {
-            throw new InvalidDataException("Unexpected file in season pack.");
+            throw new InvalidDataException("Unexpected file in campaign pack.");
         }
 
         var extracted = new Dictionary<string, byte[]>();
@@ -916,7 +916,7 @@ public sealed class SeasonRepository
         {
             Id = hub.SeasonId,
             BattlePassId = hub.Id,
-            Name = "Season One",
+            Name = "Campaign One",
             Legacy = true,
             Perks = perks,
             Pages = hub

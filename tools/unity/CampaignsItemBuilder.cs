@@ -97,7 +97,7 @@ public static class CampaignsItemBuilder
             );
             if (!built)
             {
-                throw new Exception("Season item bundle build failed.");
+                throw new Exception("Campaign item bundle build failed.");
             }
             File.WriteAllText(
                 Path.Combine(output, "bundles.json"),
@@ -112,7 +112,7 @@ public static class CampaignsItemBuilder
                     ),
                 }.ToString()
             );
-            Debug.Log("Season items: rebuilt " + builds.Count + " prefabs using SDK script references.");
+            Debug.Log("Campaign items: rebuilt " + builds.Count + " prefabs using SDK script references.");
         }
         finally
         {

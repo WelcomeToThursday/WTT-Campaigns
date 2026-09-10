@@ -7,7 +7,7 @@ public static class StoryTaskLayout
 {
     public static RectTransform CreatePanel(RectTransform native)
     {
-        var panel = UiElements.Rect("Seasonal story journal", native.parent, 0, 0);
+        var panel = UiElements.Rect("Campaign story journal", native.parent, 0, 0);
         panel.SetSiblingIndex(native.GetSiblingIndex());
         panel.anchorMin = native.anchorMin;
         panel.anchorMax = native.anchorMax;

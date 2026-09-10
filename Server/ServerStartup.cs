@@ -38,7 +38,7 @@ public sealed class ServerStartup(
             var file = repository.AssetPath(perk.ImageUrl) ?? "";
             if (!File.Exists(file))
             {
-                throw new FileNotFoundException("Missing local seasonal perk icon", file);
+                throw new FileNotFoundException("Missing local campaign perk icon", file);
             }
 
             images.AddRoute("/wtt-campaigns/icons/" + perk.Id, file);

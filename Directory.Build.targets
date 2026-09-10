@@ -1,6 +1,14 @@
 <Project>
   <!-- Evaluate after Build so output overrides and newly copied content are respected. -->
   <Target Name="GetCampaignsDeployFiles" DependsOnTargets="Build" Returns="@(CampaignsDeployFile)">
+    <GetFileHash
+      Files="$(TargetDir)WTT-Campaigns.Shared.dll"
+      Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.UI' and '$(DeploymentScope)' == 'UI'"
+    >
+      <Output TaskParameter="Hash" PropertyName="_UISharedHash" />
+    </GetFileHash>
+    <VerifyFileHash File="$(CampaignsClientDir)WTT-Campaigns.Shared.dll" Hash="$(_UISharedHash)" Condition="'$(_UISharedHash)' != ''" />
+    <VerifyFileHash File="$(CampaignsServerDir)WTT-Campaigns.Shared.dll" Hash="$(_UISharedHash)" Condition="'$(_UISharedHash)' != ''" />
     <PropertyGroup>
       <_CampaignsComponent Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Server'">server</_CampaignsComponent>
       <_CampaignsComponent Condition="'$(MSBuildProjectName)' != 'WTT-Campaigns.Server'">client</_CampaignsComponent>

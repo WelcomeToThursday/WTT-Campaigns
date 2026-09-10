@@ -41,7 +41,7 @@ public class HubQuestAcceptPatch(SeasonService seasons, HubQuestService quests, 
             return true;
         }
         __result = _output.GetOutput(sessionID);
-        _responses.AppendErrorToOutput(__result, "This task belongs to a different season.");
+        _responses.AppendErrorToOutput(__result, "This task belongs to a different campaign.");
         return false;
     }
 }

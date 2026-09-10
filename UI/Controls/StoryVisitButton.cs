@@ -15,7 +15,7 @@ public sealed class StoryVisitButton : Button
     public static StoryVisitButton Create(Transform parent, Font font, Action open, Action<InterfaceSound> sound)
     {
         // Live DialogueStartButton: centered in Tab Bar, 32px high, 16px type.
-        var root = UiElements.Rect("Seasonal Visit", parent, 187, 32);
+        var root = UiElements.Rect("Campaign Visit", parent, 187, 32);
         root.anchorMin = root.anchorMax = new Vector2(.5f, 0);
         root.pivot = new Vector2(.5f, .5f);
         root.anchoredPosition = new Vector2(0, 18);

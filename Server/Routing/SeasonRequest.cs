@@ -12,7 +12,7 @@ public record SeasonRequest : IRequestData
     public long ExpectedRevision { get; set; }
     public List<string> PerkIds { get; set; } = [];
     public string Mode { get; set; } = "normal";
-    public string Nickname { get; set; } = "Seasonal";
+    public string Nickname { get; set; } = "Campaign";
     public string Side { get; set; } = "Usec";
     public string HeadId { get; set; } = "";
     public string VoiceId { get; set; } = "";

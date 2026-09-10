@@ -73,7 +73,7 @@ public sealed class ProfileSelection
         var hint = _ui.Label(root, "CarouselHint", "SCROLL  /  DRAG  /  LEFT & RIGHT     TO BROWSE CHARACTERS", 16, 950, 30, 0, -508);
         hint.alignment = TextAnchor.MiddleCenter;
         hint.color = UiElements.Muted;
-        var create = _ui.Button(root, "+ NEW SEASONAL CHARACTER", 340, 0, -441, edit, 38);
+        var create = _ui.Button(root, "+ NEW CAMPAIGN CHARACTER", 340, 0, -441, edit, 38);
         create.targetGraphic.color = Color.clear;
         create.GetComponentInChildren<Text>().color = new Color(.392f, .855f, .655f);
         carousel.Focus(
@@ -168,8 +168,12 @@ public sealed class ProfileSelection
 
         var tint = seasonal ? new Color(.392f, .855f, .655f) : new Color(.482f, .639f, .667f);
         Art(rect, seasonal ? "seasonal-badge" : "normal-badge", 92, 92, -150, 355);
-        _ui.Label(rect, "Mode", seasonal ? "PvE Season" : "PvE Zone", 36, 286, 47, 28, 370).color = tint;
-        _ui.Label(rect, "Type", seasonal ? "SEASONAL" : "REGULAR", 16, 286, 26, 28, 336).color = seasonal
+        var modeLabel = _ui.Label(rect, "Mode", seasonal ? "PvE Campaign" : "PvE Zone", 36, 258, 47, 14, 370);
+        modeLabel.color = tint;
+        modeLabel.resizeTextForBestFit = true;
+        modeLabel.resizeTextMinSize = 24;
+        modeLabel.resizeTextMaxSize = 36;
+        _ui.Label(rect, "Type", seasonal ? "CAMPAIGN" : "REGULAR", 16, 286, 26, 28, 336).color = seasonal
             ? new Color(tint.r, tint.g, tint.b, .6f)
             : UiElements.Muted;
         Art(rect, "footer-gradient", 390, 104, 0, -348);
@@ -202,9 +206,9 @@ public sealed class ProfileSelection
             "Description",
             seasonal
                 ? (
-                    character.Exists ? "• Separate seasonal progression\n• " + character.SeasonName
+                    character.Exists ? "• Separate campaign progression\n• " + character.SeasonName
                     : character.Wiped ? "• Earned achievements kept\n• Choose your character again"
-                    : "• Create another seasonal character\n• Choose a season and personal modifiers"
+                    : "• Create another campaign character\n• Choose a campaign and personal modifiers"
                 )
                 : "• Your main character in Tarkov\n• Fight against AI opponents\n• Progress does not reset\n• Independent equipment and progression",
             16,
@@ -225,7 +229,7 @@ public sealed class ProfileSelection
             var seasonLabel = _ui.Label(
                 info,
                 "SeasonName",
-                character.Exists || character.Wiped ? character.SeasonName.ToUpperInvariant() : "CHOOSE YOUR SEASON",
+                character.Exists || character.Wiped ? character.SeasonName.ToUpperInvariant() : "CHOOSE YOUR CAMPAIGN",
                 19,
                 350,
                 34,
@@ -248,7 +252,7 @@ public sealed class ProfileSelection
                 _ui.Label(details, "PerkName", rules[i].Name, 16, 150, 28, px + 24, py).color = new Color(.392f, .855f, .655f, .6f);
             }
             Art(details, "season-stats-divider", 389, 12, 0, 47);
-            _ui.Label(details, "StatsTitle", "SEASON STATS", 18, 354, 24, 0, 9).color = new Color(.851f, .851f, .851f);
+            _ui.Label(details, "StatsTitle", "CAMPAIGN STATS", 18, 354, 24, 0, 9).color = new Color(.851f, .851f, .851f);
             var captions = new[] { "Battle Pass rewards", "Story Chapters", "K/D", "Survivals" };
             var artwork = new[] { "season-stat-rewards", "season-stat-story", "season-stat-kd", "season-stat-survivals" };
             var values = new[] { character.BattlePassRewards, character.StoryChapters, character.Kd, character.Survivals };
@@ -297,7 +301,7 @@ public sealed class ProfileSelection
         button.interactable = character.Available;
         if (character.Exists && !character.Available)
         {
-            button.GetComponentInChildren<Text>().text = "SEASON UNAVAILABLE";
+            button.GetComponentInChildren<Text>().text = "CAMPAIGN UNAVAILABLE";
         }
 
         if (seasonal && (character.Exists || character.Wiped) && manage != null)

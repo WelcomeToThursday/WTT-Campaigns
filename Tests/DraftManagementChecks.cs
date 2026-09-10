@@ -21,7 +21,7 @@ internal static class DraftManagementChecks
         draft = store.RenameDraft(id, draft.Revision, "  Managed draft  ");
         check(
             draft.Definition.Name == "Managed draft" && draft.Definition.Id == seasonId,
-            "Quick rename trims the name and preserves season identity"
+            "Quick rename trims the name and preserves campaign identity"
         );
         check(draft.LastEditedUtc != null && draft.LastEditedUtc >= old.LastEditedUtc, "Rename records its edit time");
         Reject(() => store.RenameDraft(id, old.Revision, "Stale rename"), "Stale rename cannot overwrite newer content");

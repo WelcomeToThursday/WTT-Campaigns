@@ -37,7 +37,7 @@ internal static class StoryClient
     {
         if (!Available)
         {
-            throw new InvalidOperationException("Select a Seasonal character with a story first.");
+            throw new InvalidOperationException("Select a Campaign character with a story first.");
         }
         return new StoryRequest
         {

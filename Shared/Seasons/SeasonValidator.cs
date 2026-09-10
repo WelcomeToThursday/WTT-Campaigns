@@ -41,8 +41,8 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion is 1 or 2, "Overview", "Unsupported season format version.");
-        Need(IsId(s.Id) && IsId(s.BattlePassId), "Overview", "Season and battle pass require valid identities.");
+        Need(s.FormatVersion is 1 or 2, "Overview", "Unsupported campaign format version.");
+        Need(IsId(s.Id) && IsId(s.BattlePassId), "Overview", "Campaign and battle pass require valid identities.");
         Need(!string.IsNullOrWhiteSpace(s.Name) && s.Name.Length <= 120, "Overview", "Name is required (up to 120 characters).");
         Need(s.Rules.StartingPoints is >= 0 and <= 100000, "Perks", "Starting budget must be 0–100000.");
         Need(IsId(s.UniversalImage) && IsId(s.UniversalUnavailableImage), "Assets", "Choose both Classified document images.");

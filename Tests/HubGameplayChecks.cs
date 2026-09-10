@@ -16,7 +16,7 @@ internal static class HubGameplayChecks
         check(rewards.Length == 53 && presentation.Pages.Length == 12, "Complete Battle Pass tile catalogue");
         check(rewards.Sum(r => r.Costs.Sum(c => c.Count)) == 501, "Amended document costs total 501");
         check(rewards.Sum(r => catalogue["Rewards"]![r.Id]!["Grants"]!.Count()) == 58, "All 58 Battle Pass payloads retained");
-        check(presentation.Documents.Length == 8 && presentation.SeasonalRewards.Length == 5, "Document and seasonal reward catalogues");
+        check(presentation.Documents.Length == 8 && presentation.SeasonalRewards.Length == 5, "Document and campaign reward catalogues");
         foreach (var reward in rewards.Concat(presentation.SeasonalRewards))
         {
             var definition = catalogue["Rewards"]![reward.Id]!;

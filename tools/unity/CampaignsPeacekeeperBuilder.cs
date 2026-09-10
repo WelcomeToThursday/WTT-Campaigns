@@ -18,7 +18,7 @@ public static class CampaignsPeacekeeperBuilder
     public static GameObject Create()
     {
         var source = AssetDatabase.LoadAssetAtPath<GameObject>(Assets + "StoryTraders/54cb50c76803fa8b248b4571.prefab");
-        var root = new GameObject("Seasonal Peacekeeper supply office");
+        var root = new GameObject("Campaign Peacekeeper supply office");
         root.SetActive(false);
         var original = source.GetComponentsInChildren<Transform>(true).Single(t => t.name == "Vendor_Prapor");
         var actor = Object.Instantiate(original.gameObject, root.transform);

@@ -4,7 +4,7 @@ namespace WTT.Campaigns.Shared.Contracts;
 
 public sealed class HubState
 {
-    public string SeasonName { get; set; } = "Season One";
+    public string SeasonName { get; set; } = "Campaign One";
     public long PackRevision { get; set; }
     public string BadgeImage { get; set; } = "";
     public string BannerImage { get; set; } = "";
