@@ -1,76 +1,76 @@
 # WTT-Campaigns
 
-Development backport for **SPT 4.1.3 / EFT 0.16.9.40743**. This is a test build, not a completed parity release. See [compatibility and remaining gates](docs/compatibility.md).
+**0.6.0 — Initial beta release**
 
-The client requires **UnityToolkit 2.0.2 or later**, installed with its plugin libraries and prepatcher. WTT-Campaigns uses UniTask for presentation timing and callbacks, ZLinq queries and ZString text buffers; install UnityToolkit separately before loading WTT-Campaigns. Its assemblies are not bundled in WTT-Campaigns packages.
+WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass progression and campaign authoring to SPT. Create separate characters for different campaigns, build a playstyle around benefits and drawbacks, and use the Campaign Creator to make and share your own content.
 
-Build **0.5.1** exposes the Story tab and trader visits to Seasonal characters even when the season has no authored story content. Existing season content and progression stay unchanged.
+## Features
 
-Build **0.5.0** is the [story-system implementation candidate](docs/story-system.md): Seasonal journals, dialogue/quest authority, eight trader visit rooms (including a custom Peacekeeper office), raid bindings, media and [pack authoring tools](docs/story-authoring.md). No live campaign is imported. Native beta gameplay/visual acceptance remains outstanding; see the support matrix and validation gates before authoring a season.
+- **Separate campaign characters.** Keep multiple characters across multiple campaigns alongside your regular PMC. Each campaign character has its own inventory, quests, traders, hideout, mail, insurance and Scav progression. Switch characters from the in-game selector.
+- **Perks and common campaign rules.** Balance beneficial and detrimental modifiers within a campaign's point budget. Supported effects cover skills, stamina, metabolism, injuries, consumables, keys, trader prices, insurance, the flea market and hideout requirements. The bundled catalogue has 39 entries, of which 33 are implemented; unsupported entries remain unavailable.
+- **Local Battle Pass and rewards.** Collect campaign documents in raids, spend them on eligible rewards, and use document exchanges. Progress and claims are saved per character. Rewards depend on the campaign's rules and installed content.
+- **Story tools and trader visits.** Visit trader rooms and play authored chapters, dialogue, objectives and raid events. The Story tab and trader visits are available even in campaigns without a story. A complete live campaign is not included.
+- **Campaign Creator.** Build campaigns in SPT's administrator web interface: configure starting characters, perks, quests, documents, rewards, crates, artwork and story content. Validate, preview, publish, import and export campaign packs.
+- **Trader and task progression.** Updated loyalty requirements, task reputation rewards and grouped task lists apply to both regular and campaign characters. Spending requirements are removed; loyalty still depends on level and reputation. Existing progress is retained, but recalculated loyalty can decrease.
 
-Build **0.4.0** adds [live trader and task progression](docs/trader-progression.md) for normal and seasonal characters: captured loyalty requirements without spending gates, reputation changes for 381 existing tasks, and a grouped native task list. Missing live tasks are excluded. Existing reputation and task progress are preserved; loyalty may decrease under the new thresholds. Install both client and server. In-game visual acceptance remains a release gate.
+## Requirements
 
-Build **0.3.0** adds the [Season Creator](docs/season-creator.md), hosted in SPT’s administrator web interface at `/wtt-campaigns/creator`. Create and duplicate drafts, configure supported content, validate and export packs, and select a default season for the next restart. The [character selector](docs/characters.md) supports several characters per season, simultaneous playable seasons, a wrapping carousel, and confirmed deletion or achievement-preserving wipes. Install the client and server together. Browser interaction and installed-game visual acceptance remain release gates.
+- **SPT 4.1.3 / EFT 0.16.9.40743** is the target build for this beta.
+- **UnityToolkit 2.0.2 or later**, including its plugin libraries and prepatcher.
+- **WTT-ContentBackport 2.0.1 or later** and its dependencies, which supply the document and crate models.
 
-Build **0.2.0** adds [Battle Pass gameplay](docs/battle-pass-gameplay.md) to the Seasonal hub: document acquisition, local claims, exchanges and persistent progress, using the amended capture. WTT-Campaigns includes the eight document items and two season crate definitions. Missing quest, customization and crate-content dependencies remain explicitly locked; online purchases stay disabled. Install both client and server, plus **WTT-ContentBackport 2.0.1 or later** and its dependencies. Seasonal supplies the item JSON and localization; Backport supplies the document and crate bundles.
+Install the dependencies separately. They are not bundled with WTT-Campaigns. Use matching client and server components from the same release.
 
-The project imports the captured 39-entry catalogue and English localization, serves all perk icons from the local SPT server, creates an independent seasonal PMC/Scav profile, persists selections and grant receipts, and supplies a client selection screen with recovered perk cards and a confirmation window. Thirty-three catalogue entries currently have implementations; six remain unavailable in selection. Actual in-game switching and gameplay still need validation.
+## Installation
 
-Build **0.1.23** adds Allergic (three persistent random medication/provision targets and three symptoms per use) and Broken Secure Container (the captured recursive item allow-list, enforced on client and server). See [behavior and validation](docs/allergy-container.md). It retains the [consumable perks](docs/consumables.md), [experience/flea perks](docs/experience-flea.md) and [trader-price perks](docs/trader-prices.md). Install both client and server from the full gameplay package produced by `tools/package.ps1`.
+1. Close the game and SPT server before replacing mod files.
+2. Back up your SPT profiles. If WTT-Campaigns is already installed, also back up its server mod folder and `SPT_Runtime/user/seasonal`.
+3. Extract the release's `BepInEx` and `SPT_Runtime` folders into your SPT installation, merging them with the existing folders.
+4. Check that these files exist:
 
-For a fresh checkout, start with [development setup](CONTRIBUTING.md). This repository contains mod source, reviewed documentation and sanitized data. Game binaries, recovered assets, generated bundles, research output, test profiles and releases remain local. Original code is MIT-licensed; see [third-party notices](THIRD_PARTY_NOTICES.md) for captured data and external dependencies.
+   ```text
+   <SPT>/BepInEx/plugins/WTT-Campaigns/WTT-Campaigns.Client.dll
+   <SPT>/BepInEx/plugins/WTT-Campaigns/WTT-Campaigns.UI.dll
+   <SPT>/SPT_Runtime/user/mods/WTT-Campaigns/WTT-Campaigns.Server.dll
+   ```
 
-Seasonal character files are stored separately from launcher accounts in `SPT_Runtime/user/seasonal/profiles`. Existing character files migrate automatically with verified backups. See [typed models and profile storage](docs/typed-models-and-profile-storage.md) for compatibility details and regression checks.
+5. Start SPT and the game normally.
 
-## Project layout
+When updating, preserve configuration files and the server mod's entire `creator` folder. Campaign profiles live in `SPT_Runtime/user/seasonal/profiles`; keep these together with your regular account profiles and do not remove linked profiles manually.
 
-UI build **0.1.7** includes the seasonal creation sequence and a native reconnect adapter for character switching. See [UI changes and validation limits](docs/ui.md).
+## Getting started
 
-Open `WTT-Campaigns.slnx` in this directory. Each C# project has its own directory:
+1. Open **CHARACTERS** from the menu, or press **F8** outside a raid.
+2. Choose the creation card, select a campaign, and set up your character's faction and appearance.
+3. Select perks within the point budget. Detrimental perks provide room for beneficial ones; incompatible choices cannot be combined. Confirm the selection to save.
+4. Select the new character's card to switch to it. Creating a character leaves your regular PMC active until you switch, and does not clone existing progress.
+5. Use the **PERKS** tab beside Skills and Mastery to inspect saved modifiers and open the editor. Editing is subject to the campaign's rules and is unavailable during raids.
 
-Projects and built assemblies use the `WTT-Campaigns` prefix (for example, `WTT-Campaigns.Client.csproj` produces `WTT-Campaigns.Client.dll`). C# and Unity preview namespaces use `WTT.Campaigns`. Both components identify the mod as `WTT-Campaigns` with GUID `com.wtt.campaigns`; routes use `/wtt-campaigns`.
+The campaign hub contains the campaign overview, Battle Pass, rewards and Story pages. Available rewards and story content depend on the selected campaign. Missing content dependencies leave the affected rewards locked.
 
-- `Client`: BepInEx plugin, SPT `ModulePatch` hooks and UI controllers.
-- `UI`: Unity views shared by the client and CJ-SDK preview, organized into [screens, models, creation, profiles, modifiers, controls and audio](docs/ui-structure.md).
-- `Server`: SPT server mod, SPT `AbstractPatch` hooks and local routes. Uses `SPTarkov.Server.Core` and `SPTarkov.Reflection` NuGets at 4.1.0, matching the existing projects; it is built and integration-tested against the installed 4.1.3 runtime. Host assemblies are excluded from the mod output.
-- `Shared`: contracts, configuration, perks, profile state, gameplay effects and serialization, with [namespaces matching their folders](docs/shared.md).
-- `Tests`: contract tests and read-only assembly compatibility checks.
-- `tools`, `data`, `docs`, `Research`: import/build tools, sanitized data and investigation evidence.
+Character cards also offer confirmed deletion and wiping. **Delete** removes that campaign character. **Wipe** resets its progression while preserving earned in-game achievements and lets you recreate it. Your regular account cannot be deleted through this screen.
 
-Client and server code use [folders with matching feature namespaces](docs/client-server-structure.md). Client registration lives in `Client/Patches/PatchRegistration.cs`; server patches are discovered through SPT dependency injection. See [patch organization and extension guide](docs/patches.md).
+## Create and share campaigns
 
-Asset sources, all 39 PNGs, recovered layout data and the Unity editor builder are in `../CJ-SDK/Assets/Mods/WTT-Campaigns.Assets`. The UI bundle contains layout prefabs, all 26 decorative artwork sprites, fonts and materials. **Perk icons remain outside the bundle.** Icons are fetched lazily by perk ID from `/wtt-campaigns/icons/{id}.png`. Installed operation does not use the live backend or CDN.
+With the SPT server running, open the **WTT-Campaigns creator link in the SPT launcher**, or open the [Campaign Creator on your local server](https://127.0.0.1:6969/wtt-campaigns/creator) in a browser.
 
-Client image downloads share a session cache across the hub, banner, story journal and perk selector. Requests for the same server, image, season and pack revision share one download; reopening screens reuses the encoded bytes while each screen releases its own textures. The cache retains up to 64 MiB / 256 images, evicts least recently used entries, and limits downloads to six at a time. Failed, empty or undecodable responses can be retried. Pack revision changes use fresh entries; restarting the game clears the cache. No images are cached on disk.
+The direct URL for a default local server is **https://127.0.0.1:6969/wtt-campaigns/creator**. If your server uses a different address or port, replace `127.0.0.1:6969` with the address configured in your launcher and keep `/wtt-campaigns/creator` at the end. Sign in with an administrator account if prompted.
 
-Formatting and shared Rider/Visual Studio defaults follow SP-Tushonka/server-csharp. See [editor setup](CONTRIBUTING.md#editor-and-ide-defaults). Restore the formatter from `.config/dotnet-tools.json` with `dotnet tool restore`, then run `dotnet csharpier format Client UI Server Shared Tests`. Text files use UTF-8 and LF line endings.
+Start with **Create blank campaign**, duplicate an existing campaign, or import a campaign ZIP.
 
-## Build and install
+Configure the content, save the draft, then validate and publish it. Published packs can be exported as ZIP files for sharing. Restart the server after publishing or importing a new pack so its content can load; players can then choose it during character creation. Several compatible campaigns can be played in the same server session.
 
-Run `dotnet msbuild build.proj` to build Release, validate and install the matching update. Paths resolve relative to this checkout: the game is two directories above it, and the companion Unity project is `../CJ-SDK`. Local MSBuild path overrides apply to both compilation and deployment. For an isolated UI assembly update, use `dotnet msbuild build.proj -p:DeploymentScope=UI`.
+Once a campaign has characters, gameplay changes require duplicating it into a new campaign. Text and artwork can still be revised. The creator includes **Help and tutorials**; see the [Campaign Creator guide](docs/season-creator.md) and [story authoring guide](docs/story-authoring.md) for details.
 
-Use Unity 2022.3.43f1 to open CJ-SDK and run **SDK / WTT-Campaigns / Build recovered UI** when rebuilding the local UI bundle. The game-derived bundles, media and icons remain local dependencies.
+## Beta limitations and feedback
 
-`tools/package.ps1` builds, validates, stages and installs a complete matching update. `tools/package_ui.ps1` is a compatibility alias for the matching package. Both return the timestamped release directory. Existing packages can be installed with `tools/install_matching.ps1 -Package <path>` through the same MSBuild deployment targets.
+This is the first public beta. Gameplay, balance, compatibility with other mods and in-game presentation are still being tested. Offline validation does not establish a complete in-game playthrough or full parity with live EFT.
 
-Always install validated local updates. Deployment backs up replaced files, verifies SHA-256 hashes, and preserves configuration, creator content and profiles. Never stop or start any server or client. If a required file is locked, retain the validated build and report that the user must close the locking application before installation can finish. Updated assemblies take effect after the user manually restarts the affected application.
+- Street Tax, Kappa Protocol, Lucky, Unlucky, Armor Shortage and Black Division are unavailable.
+- A complete live story campaign, online purchases, leaderboards and automatic campaign wipes are not included.
+- Rewards requiring unavailable quests, customization or crate contents remain locked.
+- Character switching, raid persistence, item effects and visual behavior still need broader in-game testing.
 
-See [build and deployment](docs/build-deployment.md) for scopes, overrides, backups, packages and offline checks, and [CONTRIBUTING](CONTRIBUTING.md) for setup.
+When reporting a problem, include the mod and SPT versions, installed mods, the affected campaign and character type, steps to reproduce it, and relevant client/server log excerpts. Remove account identifiers and credentials before sharing logs.
 
-## Configuration and use
-
-On the first 0.3.0 startup, existing catalogue, item, quest, hub, `config.json` and `hub-config.json` values are imported into `creator/legacy.json`. Later restarts use that saved definition. Use the browser creator for new seasons. Defaults retain zero starting points, budget enforcement, editing outside raids, and supported common rules. Once a season has a character, gameplay changes require duplication into a new season; artwork and text can be revised. Preserve the entire server mod’s `creator` directory when upgrading.
-
-Open **CHARACTERS** from the menu or press **F8** outside a raid. The native **PERKS** tab beside Skills and Mastery shows saved active perks and opens the editor. Pick a faction/nickname for creation, balance beneficial perks with detrimental perks, and save through the confirmation window. Creation leaves the normal PMC active; the character buttons switch profiles. Existing progress is never cloned. Skill presets grant a minimum level once on first selection; removing/reselecting a perk never refills that grant. Skill caps can reduce progress when selected.
-
-The linked seasonal profile has independent inventory, quests, traders, hideout, mail, insurance and Scav data, because it is a separate full SPT profile. The root account's mod data contains the link and selected mode. Do not delete either linked profile while using character switching.
-
-## Reproduce validation
-
-`dotnet run --project Tests -- "../../BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll"` checks contracts and the actual client hook shapes.
-
-The isolated test server is retired. Use the offline validation in `build.proj`. Historical server fixtures are retained for reference only; do not run them or redirect them to installed profiles. No workflow step stops or starts a server or client.
-
-Importer: `tools/import_captures.py --download-icons` uses the supplied packet-log location by default. Existing icons can be imported offline without that flag. `tools/recover_ui.py` uses the supplied live files and extracted metadata. Python dependencies are recorded in `tools/requirements.txt`; use a local virtual environment. Raw packet logs, account IDs and credentials are never included in the package.
-
-Story protocol 2 (0.5.2) adds complete automatic dialogue pacing, staged native handovers, live raid observations, scene restrictions, assigned custom trader rooms and ordinary raid-event media. Install matching client, UI, shared and server components together. See [story behavior](docs/story-system.md#protocol-2-client-completion) and [authoring](docs/story-authoring.md). Existing story saves and format-1 packs remain compatible.
+For the beta release overview, see [release notes](RELEASE_NOTES.md). For source setup and builds, see [CONTRIBUTING](CONTRIBUTING.md). Original code is MIT-licensed; game assets and external dependencies retain their respective ownership as described in [third-party notices](THIRD_PARTY_NOTICES.md).

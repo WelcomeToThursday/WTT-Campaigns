@@ -12,7 +12,7 @@ using WTT.Campaigns.Shared.Profiles;
 
 namespace WTT.Campaigns.Client;
 
-[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.5.2")]
+[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.6.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 public sealed class Plugin : BaseUnityPlugin
