@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Cysharp.Threading.Tasks;
 using Newtonsoft.Json;
 using UnityEngine;
 using WTT.Campaigns.Shared.Story;
@@ -11,6 +12,7 @@ internal static class StoryMediaStore
     private static readonly Dictionary<string, (AssetBundle Bundle, int Users, string Hash)> Bundles = new(
         StringComparer.OrdinalIgnoreCase
     );
+    private static readonly SemaphoreSlim TraderLoads = new(1, 1);
 
     internal static AssetBundle Open(string relative, string expectedHash)
     {
@@ -46,19 +48,55 @@ internal static class StoryMediaStore
         return bundle;
     }
 
-    internal static AssetBundle OpenTrader(string traderId)
+    internal static async UniTask<AssetBundle> OpenTraderAsync(string traderId)
     {
         var custom = Trader(traderId);
-        if (custom != null)
+        var relative = custom?.Bundle;
+        var expectedHash = custom?.Sha256;
+        if (custom == null)
         {
-            return Open(custom.Bundle, custom.Sha256);
+            var manifest =
+                JsonConvert.DeserializeObject<TraderMediaManifest>(
+                    File.ReadAllText(Path.Combine(Plugin.Folder, "StoryMedia", "traders.json"))
+                ) ?? throw new InvalidDataException("Invalid trader media manifest.");
+            var room = manifest.Rooms.AsValueEnumerable().Single(r => r.Trader == traderId);
+            relative = room.Bundle;
+            expectedHash = room.Sha256;
         }
-
-        var manifest =
-            JsonConvert.DeserializeObject<TraderMediaManifest>(File.ReadAllText(Path.Combine(Plugin.Folder, "StoryMedia", "traders.json")))
-            ?? throw new InvalidDataException("Invalid trader media manifest.");
-        var room = manifest.Rooms.AsValueEnumerable().Single(r => r.Trader == traderId);
-        return Open(room.Bundle, room.Sha256);
+        var root = Path.GetFullPath(Path.Combine(Plugin.Folder, "StoryMedia")) + Path.DirectorySeparatorChar;
+        var path = Path.GetFullPath(Path.Combine(root, relative!));
+        if (
+            !path.StartsWith(root, StringComparison.OrdinalIgnoreCase)
+            || !string.Equals(Path.GetExtension(path), ".bundle", StringComparison.OrdinalIgnoreCase)
+        )
+            throw new InvalidDataException("Story media must be a bundle inside StoryMedia.");
+        // Serialize rapid close/reopen loads. Acquired bundles are released by the
+        // caller even when its visit was cancelled while Unity was loading.
+        await TraderLoads.WaitAsync();
+        try
+        {
+            if (Bundles.ContainsKey(path))
+                return Open(relative!, expectedHash!);
+            var actual = await Task.Run(() =>
+            {
+                using var stream = File.OpenRead(path);
+                using var sha = SHA256.Create();
+                return BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", "");
+            });
+            if (!string.Equals(actual, expectedHash, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("Story media checksum failed: " + relative);
+            if (Bundles.ContainsKey(path))
+                return Open(relative!, expectedHash!);
+            var request = AssetBundle.LoadFromFileAsync(path);
+            await UniTask.WaitUntil(() => request.isDone);
+            var bundle = request.assetBundle ?? throw new InvalidDataException("Unable to load story media: " + relative);
+            Bundles.Add(path, (bundle, 1, expectedHash!));
+            return bundle;
+        }
+        finally
+        {
+            TraderLoads.Release();
+        }
     }
 
     internal static bool HasTrader(string traderId)

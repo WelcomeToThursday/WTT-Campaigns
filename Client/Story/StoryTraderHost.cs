@@ -9,7 +9,7 @@ namespace WTT.Campaigns.Client.Story;
 public sealed class StoryTraderHost : MonoBehaviour
 {
     private TraderScreensGroup? _native;
-    private Button? _visit;
+    private StoryTradeTabRow? _visit;
     private bool _loading;
     internal TraderScreensGroup Native
     {
@@ -21,9 +21,18 @@ public sealed class StoryTraderHost : MonoBehaviour
         _native = native;
         if (!_visit)
         {
-            var tab = (RectTransform)native._servicesTab.transform;
+            var buy = (RectTransform)native._traderDealScreen._buyTab.transform;
+            var sell = (RectTransform)native._traderDealScreen._sellTab.transform;
             var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
-            _visit = StoryVisitButton.Create(tab.parent.parent, font, Open, SeasonUi.Instance.PlayInterfaceSound);
+            _visit = StoryTradeTabRow.Create(
+                buy,
+                sell,
+                font,
+                () => native._traderDealScreen._buyTab.OnPointerClick(new UnityEngine.EventSystems.PointerEventData(null)),
+                () => native._traderDealScreen._sellTab.OnPointerClick(new UnityEngine.EventSystems.PointerEventData(null)),
+                Open,
+                SeasonUi.Instance.PlayInterfaceSound
+            );
         }
         _visit!.gameObject.SetActive(StoryClient.Available && StoryMediaStore.HasTrader(native.Trader.Id));
         if (StoryClient.Available && !_loading)
@@ -55,6 +64,8 @@ public sealed class StoryTraderHost : MonoBehaviour
         {
             // Selecting a portrait reuses this screen without calling Show again.
             _visit!.gameObject.SetActive(StoryClient.Available && StoryMediaStore.HasTrader(_native!.Trader.Id));
+            var deal = _native!._traderDealScreen;
+            _visit.SetState(deal.TradeMode == ETradeMode.Purchase, deal._buyTab.Interactable, deal._sellTab.Interactable, !Plugin.Busy);
         }
     }
 

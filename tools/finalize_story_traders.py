@@ -6,6 +6,7 @@ from collections import Counter
 from pathlib import Path
 import UnityPy
 from story_compiled_shaders import CompiledShaders
+from compact_story_traders import compact
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,7 +45,12 @@ def main():
         compiled.restore(env)
         preview = ROOT / 'Research/Story/PreviewBundles' / source.name
         preview.parent.mkdir(parents=True, exist_ok=True)
-        preview.write_bytes(env.file.save(packer='lz4'))
+        restored = ROOT / 'Research/Story/RestoredBundles' / source.name
+        restored.parent.mkdir(parents=True, exist_ok=True)
+        restored.write_bytes(env.file.save(packer='lz4'))
+        del env
+        compact(restored, preview)
+        env = UnityPy.load(str(preview))
         mapped = []
         shader_names = []
         for obj in env.objects:
@@ -90,7 +96,7 @@ def main():
                 raise ValueError('SDK assembly reference survived finalization.')
         audit.append({'trader': room['trader'], 'bundle': 'traders/' + source.name,
                       'sha256': hashlib.sha256(destination.read_bytes()).hexdigest(),
-                      'bytes': destination.stat().st_size, 'objects': dict(types), 'scripts': mapped,
+                      'bytes': destination.stat().st_size, 'textureProfile': 'compact-v1', 'objects': dict(types), 'scripts': mapped,
                       'shaders': sorted(set(shader_names))})
     (output.parent / 'traders.json').write_text(json.dumps({'formatVersion': 1, 'rooms': audit}, indent=2))
     (ROOT / 'Research/Story/trader-bundle-audit.json').write_text(json.dumps({

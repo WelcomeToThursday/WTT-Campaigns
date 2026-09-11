@@ -16,6 +16,12 @@ public static class CampaignsStoryPreview
         RenderRoom(null);
     }
 
+    public static void RenderCompact()
+    {
+        RenderRoom(null, "artifacts/compact-preview");
+        CampaignsVisitPreview.Render();
+    }
+
     public static void RenderPeacekeeper()
     {
         RenderRoom(CampaignsPeacekeeperBuilder.TraderId);
@@ -26,9 +32,9 @@ public static class CampaignsStoryPreview
         RenderRoom("54cb50c76803fa8b248b4571");
     }
 
-    private static void RenderRoom(string selected)
+    private static void RenderRoom(string selected, string relative = "Research/Story")
     {
-        var research = Path.GetFullPath(Path.Combine(Application.dataPath, "../../SeasonalPerks/Research/Story"));
+        var research = Path.GetFullPath(Path.Combine(Application.dataPath, "../../SeasonalPerks", relative));
         var audit = new JArray();
         foreach (var path in Directory.GetFiles(Path.Combine(research, "PreviewBundles"), "*.bundle"))
         {

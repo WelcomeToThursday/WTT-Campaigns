@@ -30,6 +30,7 @@ if ($client) {
         $path = [IO.Path]::GetFullPath((Join-Path $media $room.bundle))
         if (!$path.StartsWith([IO.Path]::GetFullPath($media) + [IO.Path]::DirectorySeparatorChar, [StringComparison]::OrdinalIgnoreCase)) { throw 'Invalid trader bundle path.' }
         if ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -ne $room.sha256) { throw "Trader bundle changed after validation: $($room.trader)" }
+        if ((Get-Item -LiteralPath $path).Length -ne $room.bytes) { throw "Trader bundle size differs from the validated manifest: $($room.trader)" }
     }
     $example = Get-Content -LiteralPath (Join-Path $media 'examples/story-test.json') -Raw | ConvertFrom-Json
     if ((Get-FileHash -LiteralPath (Join-Path $media 'examples/story-test.bundle') -Algorithm SHA256).Hash -ne $example.sha256) { throw 'The synthetic cinematic has not passed finalization.' }

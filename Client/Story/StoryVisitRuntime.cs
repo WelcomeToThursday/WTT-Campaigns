@@ -8,6 +8,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 using WTT.Campaigns.Client.UI;
 using WTT.Campaigns.Shared.Story;
+using WTT.Campaigns.UI.Controls;
 using WTT.Campaigns.UI.Media;
 using WTT.Campaigns.UI.Models;
 using WTT.Campaigns.UI.Screens;
@@ -25,6 +26,8 @@ public sealed class StoryVisitRuntime : MonoBehaviour
     private GameObject? _room;
     private SequenceReader? _reader;
     private StoryDialogueMedia? _media;
+    private CampaignLoadingScreen? _loadingScreen;
+    private CancellationTokenSource? _roomLoadingCancellation;
     private string _character = "";
     private string _trader = "";
     private string _text = "";
@@ -39,7 +42,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
     private UniTaskCompletionSource<bool>? _continue;
     internal bool InputBlocked
     {
-        get { return !_nativeWindow && (_surface != null || Time.frameCount <= _blockedThrough); }
+        get { return !_nativeWindow && (_loadingScreen != null || _surface != null || Time.frameCount <= _blockedThrough); }
     }
 
     private void Awake()
@@ -50,11 +53,12 @@ public sealed class StoryVisitRuntime : MonoBehaviour
 
     private void Update()
     {
-        if (_surface == null)
+        if (_surface == null && _loadingScreen == null)
         {
             return;
         }
-        if (!StoryClient.Available || Plugin.Current!.EffectiveProfileId != _character || !_surface.Root)
+        _panel?.RefreshLayout();
+        if (!StoryClient.Available || Plugin.Current!.EffectiveProfileId != _character || (_surface != null && !_surface.Root))
         {
             Clear();
         }
@@ -77,10 +81,22 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         }
         _busy = true;
         _host = host;
+        _character = Plugin.Current!.EffectiveProfileId;
+        _startedInRaid = Plugin.InRaid;
         var traderId = host.Native.Trader.Id;
         var generation = ++_generation;
+        using var loading = new CancellationTokenSource();
+        _roomLoadingCancellation = loading;
         try
         {
+            var font = SeasonUi.Instance.UiBundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
+            _loadingScreen = new CampaignLoadingScreen(font);
+            await _loadingScreen.Show(
+                "LOADING TRADER",
+                Plugin.Localized(traderId + " Nickname", traderId),
+                "PREPARING VISIT",
+                loading.Token
+            );
             var response = await StoryClient.Load();
             if (!host || !host.isActiveAndEnabled || generation != _generation || host.Native.Trader.Id != traderId)
             {
@@ -89,7 +105,13 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             _host = host;
             _trader = traderId;
             CreateSurface(response.CharacterId);
-            LoadRoom(_trader);
+            await LoadRoom(_trader, loading.Token);
+            // Keep the native loading artwork above the room until the camera has
+            // produced a frame. Opening the dialogue never exposes a black flash.
+            await UniTask.NextFrame(loading.Token);
+            await UniTask.NextFrame(loading.Token);
+            _loadingScreen?.Dispose();
+            _loadingScreen = null;
             RenderEntries(Array.Empty<StoryEntryPoint>());
             Render();
             await EnterRoom();
@@ -127,6 +149,11 @@ public sealed class StoryVisitRuntime : MonoBehaviour
                 RenderEntries(entries);
             }
         }
+        catch (OperationCanceledException)
+        {
+            if (generation == _generation)
+                Clear();
+        }
         catch (Exception exception)
         {
             if (generation == _generation)
@@ -137,8 +164,12 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         }
         finally
         {
+            if (ReferenceEquals(_roomLoadingCancellation, loading))
+                _roomLoadingCancellation = null;
             if (generation == _generation)
             {
+                _loadingScreen?.Dispose();
+                _loadingScreen = null;
                 _busy = false;
                 Render();
             }
@@ -165,15 +196,54 @@ public sealed class StoryVisitRuntime : MonoBehaviour
             StoryUiArtwork.Load("reply"),
             SeasonUi.Instance.PlayInterfaceSound
         );
+        if (_host)
+        {
+            StoryVisitButton.CreateNavigation(
+                _surface.Root.transform,
+                font,
+                () => NavigateTrade(false),
+                () => NavigateTrade(true),
+                SeasonUi.Instance.PlayInterfaceSound
+            );
+        }
     }
 
-    private void LoadRoom(string traderId)
+    private async void NavigateTrade(bool sell)
     {
-        _bundle = StoryMediaStore.OpenTrader(traderId);
+        if (_closing || Plugin.Busy || !_host)
+            return;
+        var host = _host;
+        var trader = host!.Native.Trader.Id;
+        await Navigate(TraderScreensGroup.ETraderMode.Trade);
+        if (_surface == null && host && host!.Native.isActiveAndEnabled && host.Native.Trader.Id == trader)
+        {
+            var deal = host.Native._traderDealScreen;
+            (sell ? deal._sellTab : deal._buyTab).OnPointerClick(new UnityEngine.EventSystems.PointerEventData(null));
+        }
+    }
+
+    private async UniTask LoadRoom(string traderId, CancellationToken token)
+    {
         var custom = StoryMediaStore.Trader(traderId);
-        var prefab = _bundle.LoadAsset<GameObject>(
-            custom?.Asset ?? "assets/mods/wtt-campaigns.assets/storytraders/" + traderId + ".prefab"
-        );
+        var bundle = await StoryMediaStore.OpenTraderAsync(traderId);
+        GameObject prefab;
+        try
+        {
+            token.ThrowIfCancellationRequested();
+            var request = bundle.LoadAssetAsync<GameObject>(
+                custom?.Asset ?? "assets/mods/wtt-campaigns.assets/storytraders/" + traderId + ".prefab"
+            );
+            await UniTask.WaitUntil(() => request.isDone);
+            token.ThrowIfCancellationRequested();
+            prefab =
+                request.asset as GameObject ?? throw new InvalidDataException("The trader bundle does not contain its registered room.");
+            _bundle = bundle;
+        }
+        catch
+        {
+            StoryMediaStore.Close(bundle);
+            throw;
+        }
         if (!prefab)
         {
             throw new InvalidDataException("The trader bundle does not contain its registered room.");
@@ -607,6 +677,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         _busy = true;
         var generation = ++_generation;
         var host = _host;
+        _roomLoadingCancellation?.Cancel();
         Skip();
         await EndConversation();
         if (generation != _generation)
@@ -630,6 +701,7 @@ public sealed class StoryVisitRuntime : MonoBehaviour
         _busy = true;
         _closing = true;
         var generation = ++_generation;
+        _roomLoadingCancellation?.Cancel();
         Skip();
         await EndConversation();
         if (generation != _generation)
@@ -665,6 +737,10 @@ public sealed class StoryVisitRuntime : MonoBehaviour
 
     private void Clear()
     {
+        _roomLoadingCancellation?.Cancel();
+        _roomLoadingCancellation = null;
+        _loadingScreen?.Dispose();
+        _loadingScreen = null;
         _continue?.TrySetCanceled();
         _continue = null;
         _cancelSelection?.Invoke();

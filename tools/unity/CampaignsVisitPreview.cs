@@ -52,7 +52,16 @@ public static class CampaignsVisitPreview
         if (!Rejected())
             throw new InvalidOperationException("Ambiguous custom cameras must be rejected.");
         Object.DestroyImmediate(custom);
-        foreach (var size in new[] { new Vector2Int(1920, 1080), new Vector2Int(2560, 1440), new Vector2Int(1902, 992) })
+        foreach (
+            var size in new[]
+            {
+                new Vector2Int(1280, 720),
+                new Vector2Int(1024, 768),
+                new Vector2Int(1920, 1080),
+                new Vector2Int(2560, 1440),
+                new Vector2Int(3440, 1440),
+            }
+        )
             RenderAt(size);
     }
 
@@ -60,6 +69,9 @@ public static class CampaignsVisitPreview
     {
         EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
         var folder = Path.GetFullPath(Path.Combine(Application.dataPath, "../../SeasonalPerks/Research/Story/Preview"));
+        var compactRoom = Path.GetFullPath(
+            Path.Combine(Application.dataPath, "../../SeasonalPerks/artifacts/compact-preview/Preview/54cb50c76803fa8b248b4571.png")
+        );
         var font = AssetDatabase.LoadAssetAtPath<Font>("Assets/Mods/WTT-Campaigns.Assets/Fonts/Bender.ttf");
         var camera = new GameObject("UI camera").AddComponent<Camera>();
         camera.clearFlags = CameraClearFlags.SolidColor;
@@ -76,7 +88,7 @@ public static class CampaignsVisitPreview
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight = .5f;
         var room = new Texture2D(2, 2);
-        room.LoadImage(File.ReadAllBytes(Path.Combine(folder, "54cb50c76803fa8b248b4571.png")));
+        room.LoadImage(File.ReadAllBytes(File.Exists(compactRoom) ? compactRoom : Path.Combine(folder, "54cb50c76803fa8b248b4571.png")));
         var backdrop = UiElements.Rect("Room", canvas.transform, 0, 0);
         UiElements.Stretch(backdrop);
         backdrop.gameObject.AddComponent<RawImage>().texture = room;
@@ -96,6 +108,13 @@ public static class CampaignsVisitPreview
             new StoryReplyView { Id = "trade", Text = "Want to trade?" },
             new StoryReplyView { Id = "tasks", Text = "Got any jobs for me?" },
         };
+        var navigation = StoryVisitButton.CreateNavigation(
+            canvas.transform,
+            font,
+            () => selected = "buy",
+            () => selected = "sell",
+            _ => { }
+        );
         void Check(bool pass, string text)
         {
             if (!pass)
@@ -119,7 +138,7 @@ public static class CampaignsVisitPreview
             var image = new Texture2D(size.x, size.y, TextureFormat.RGB24, false);
             image.ReadPixels(new Rect(0, 0, size.x, size.y), 0, 0);
             image.Apply();
-            File.WriteAllBytes(Path.Combine(folder, "visit-" + size.y + "-" + suffix + ".png"), image.EncodeToPNG());
+            File.WriteAllBytes(Path.Combine(folder, "visit-" + size.x + "x" + size.y + "-" + suffix + ".png"), image.EncodeToPNG());
             Object.DestroyImmediate(image);
             RenderTexture.active = null;
         }
@@ -134,6 +153,10 @@ public static class CampaignsVisitPreview
             false
         );
         Layout();
+        Find("BUY").onClick.Invoke();
+        Check(selected == "buy", "Visit Buy navigation failed");
+        Find("SELL").onClick.Invoke();
+        Check(selected == "sell", "Visit Sell navigation failed");
         Check(Find("Continue").interactable, "Text-only Continue is inaccessible");
         Check(
             canvas.GetComponentsInChildren<Text>().Any(t => t.text == "This closing line waits until you continue."),
@@ -145,11 +168,15 @@ public static class CampaignsVisitPreview
         panel.Set("Prapor", "", "", replies, false);
         Layout();
         Check(!canvas.GetComponentsInChildren<Button>().Any(b => b.name == "Skip playback"), "Idle visit exposes Skip");
-        Check(((RectTransform)canvas.transform.Find("Story conversation")).rect.height < 160, "Empty dialogue wastes vertical space");
+        Check(((RectTransform)canvas.transform.Find("Story conversation")).rect.height < 210, "Empty dialogue wastes vertical space");
         Find("Want to trade?").onClick.Invoke();
         Check(selected == "trade", "Trade navigation callback failed");
         Capture("idle");
+        Find("Want to trade?").OnPointerEnter(new PointerEventData(null));
+        Capture("reply-hover");
+        Find("Want to trade?").OnPointerExit(new PointerEventData(null));
         panel.SetBusy(true, true);
+        Capture("reply-disabled");
         Check(!Find("Want to trade?").interactable, "Busy replies remain enabled");
         Find("Skip playback").onClick.Invoke();
         Check(skip == 1, "Playback skip callback failed");
@@ -178,30 +205,97 @@ public static class CampaignsVisitPreview
         Check(close == 1, "Leave callback failed");
         panel.Set("Prapor", string.Join("\n", Enumerable.Repeat("Long history line for scrolling verification.", 60)), "", replies, false);
         Layout();
-        var scroll = canvas.GetComponentInChildren<ScrollRect>();
+        var scroll = canvas.GetComponentsInChildren<ScrollRect>().Single(s => s.name == "Dialogue scroll");
         Check(scroll.content.rect.height > scroll.viewport.rect.height, "Long dialogue does not scroll");
+        var replyScroll = canvas.GetComponentsInChildren<ScrollRect>().Single(s => s.name == "Replies scroll");
+        Check(replyScroll.viewport.rect.height > 50, "Long history hides reply viewport");
         var panelRect = (RectTransform)canvas.transform.Find("Story conversation");
-        Check(
-            panelRect.rect.height + 150 <= ((RectTransform)canvas.transform).rect.height + 1,
-            "Dialogue exceeds the available screen height"
+        Check(panelRect.rect.height <= ((RectTransform)canvas.transform).rect.height * .5f, "Dialogue exceeds the available screen height");
+        Check(panelRect.rect.width <= ((RectTransform)canvas.transform).rect.width - 32, "Dialogue exceeds screen width");
+        Capture("long-dialogue");
+        panel.Set(
+            "Prapor",
+            "Pick a reply.",
+            "",
+            Enumerable
+                .Range(0, 24)
+                .Select(i => new StoryReplyView
+                {
+                    Id = "reply" + i,
+                    Text = "A long reply with explicit line breaks\nthat must remain readable and selectable " + i,
+                })
+                .ToArray(),
+            false
         );
+        Layout();
+        replyScroll = canvas.GetComponentsInChildren<ScrollRect>().Single(s => s.name == "Replies scroll");
+        Check(replyScroll.content.rect.height > replyScroll.viewport.rect.height, "Many replies do not scroll");
+        foreach (var label in replyScroll.content.GetComponentsInChildren<Text>())
+            Check(label.preferredHeight <= label.rectTransform.rect.height + 1, "Reply text clips after applying the Tarkov style");
+        replyScroll.verticalNormalizedPosition = 0;
+        Layout();
+        Find("A long reply with explicit line breaks\nthat must remain readable and selectable 23").onClick.Invoke();
+        Check(selected == "reply23", "Last reply callback is inaccessible");
+        Capture("many-replies");
         panel.Set("Prapor", "A sample line used to check the dialogue layout.", "", replies, false);
+        Check(Find("Leave  [ESC]") is StoryVisitButton, "Leave retains placeholder styling");
+        Check(Find("Leave  [ESC]").targetGraphic is Image leaveImage && leaveImage.sprite, "Leave lost Tarkov artwork");
         Capture("dialogue");
         panelRect.gameObject.SetActive(false);
+        navigation.gameObject.SetActive(false);
         backdrop.gameObject.SetActive(false);
-        var bar = UiElements.Rect("Trader header", canvas.transform, 0, 53);
-        bar.anchorMin = new Vector2(0, .5f);
-        bar.anchorMax = new Vector2(1, .5f);
-        bar.sizeDelta = new Vector2(0, 53);
+        var bar = UiElements.Rect("Trader header", canvas.transform, 540, 36);
+        var ui = new UiElements(font);
+        var buy = (RectTransform)ui.Button(bar, "BUY", 270, -135, 0, () => { }, 36).transform;
+        var sell = (RectTransform)ui.Button(bar, "SELL", 270, 135, 0, () => { }, 36).transform;
         var visitCount = 0;
-        var visit = StoryVisitButton.Create(bar, font, () => visitCount++, _ => { });
+        var row = StoryTradeTabRow.Create(buy, sell, font, () => selected = "buy", () => selected = "sell", () => visitCount++, _ => { });
+        row.SetState(true, true, true, true);
+        Layout();
+        Check(Math.Abs(buy.rect.width - 270) < 1 && Math.Abs(sell.rect.width - 270) < 1, "Native geometry was squeezed");
+        Check(!buy.gameObject.activeSelf && !sell.gameObject.activeSelf, "Native visuals still overlap the replacement row");
+        var visit = row.GetComponentsInChildren<StoryVisitButton>().Single(b => b.name == "Campaign Visit");
+        Check(
+            Math.Abs(((RectTransform)visit.transform).rect.width - (540 + 50) / 3f) < 1,
+            "Connected tabs do not share the native row footprint"
+        );
         visit.onClick.Invoke();
         Check(visitCount == 1, "Visit callback failed");
         Capture("button-idle");
         visit.OnPointerEnter(new PointerEventData(null));
         Capture("button-hover");
+        visit.SetSelected(true);
+        Capture("button-selected");
+        // Reproduce the cramped native trade column, including fixed-width
+        // children that previously overlapped when their parents were resized.
+        buy.sizeDelta = sell.sizeDelta = new Vector2(165, 36);
+        visit.SetSelected(false);
+        visit.OnPointerExit(new PointerEventData(null));
+        buy.anchoredPosition = new Vector2(-82.5f, 0);
+        sell.anchoredPosition = new Vector2(82.5f, 0);
+        row.RefreshLayout();
+        Layout();
+        foreach (var button in row.GetComponentsInChildren<StoryVisitButton>())
+        {
+            var label = button.GetComponentInChildren<Text>();
+            Check(label.preferredWidth <= label.rectTransform.rect.width + 1, "Narrow tab label clips: " + label.text);
+            Check(button.targetGraphic is Image image && image.sprite, "Tab still uses placeholder artwork");
+            Check(button.GetComponentsInChildren<Image>().Any(i => i.type == Image.Type.Tiled), "Native tab texture is stretched");
+            Check(button.GetComponentsInChildren<Image>().Any(i => i.name == "Dialogue icon" && i.sprite), "Tab icon is missing");
+        }
+        var tabRects = row.GetComponentsInChildren<StoryVisitButton>()
+            .Select(b => (RectTransform)b.transform)
+            .OrderBy(r => r.anchoredPosition.x)
+            .ToArray();
+        Check(
+            Math.Abs(tabRects[0].anchoredPosition.x + tabRects[0].rect.width - tabRects[1].anchoredPosition.x - 25) < 1,
+            "Native connected tab overlap is missing"
+        );
+        Capture("button-narrow");
+        row.gameObject.SetActive(false);
+        Check(buy.gameObject.activeSelf && sell.gameObject.activeSelf, "Native tabs are not restored on disable");
         File.WriteAllText(
-            Path.Combine(folder, "visit-checks-" + size.y + ".txt"),
+            Path.Combine(folder, "visit-checks-" + size.x + "x" + size.y + ".txt"),
             "Passed: text-only Continue, closing text acknowledgement, compact idle, navigation, busy state, skip, confirmation, history, leave, long-text scrolling, screen bounds, Visit callback and hover.\n"
         );
         camera.targetTexture = null;

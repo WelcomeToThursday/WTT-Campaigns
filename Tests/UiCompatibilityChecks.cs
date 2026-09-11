@@ -13,6 +13,21 @@ internal static class UiCompatibilityChecks
         {
             count += value ? 1 : throw new InvalidOperationException(description);
         }
+        foreach (var name in new[] { "_buyTab", "_sellTab" })
+        {
+            Check(
+                types["EFT.UI.TraderDealScreen"].Fields.Any(f => f.Name == name && f.IsPublic && f.FieldType.Name == "Tab"),
+                "Visit shares the native trading tab row: " + name
+            );
+        }
+        Check(
+            types["EFT.UI.TraderScreensGroup"].Fields.Any(f => f.Name == "_traderDealScreen" && f.IsPublic),
+            "Visit can return to the active native trading screen"
+        );
+        Check(
+            types["Tab"].Methods.Any(m => m.Name == "OnPointerClick" && m.IsPublic && m.Parameters.Count == 1),
+            "Visit returns through native tab selection so mode and highlights stay synchronized"
+        );
         var appearance = types["EFT.UI.HeadSelectionState"];
         Check(
             appearance.Fields.Any(field => field.Name == "_faceCards" && field.IsPublic && field.IsNotSerialized),
@@ -91,6 +106,61 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            MethodDefinition AsyncBody(string typeName, string methodName)
+            {
+                var method = client.MainModule.GetType(typeName).Methods.Single(m => m.Name == methodName);
+                var machine = (TypeReference)
+                    method.CustomAttributes.Single(a => a.AttributeType.Name == "AsyncStateMachineAttribute").ConstructorArguments[0].Value;
+                return machine.Resolve().Methods.Single(m => m.Name == "MoveNext");
+            }
+            var visitOpen = AsyncBody("WTT.Campaigns.Client.Story.StoryVisitRuntime", "Open").Body.Instructions;
+            var profileOpen = AsyncBody("WTT.Campaigns.Client.UI.SeasonUi", "ShowSwitchLoader").Body.Instructions;
+            foreach (var body in new[] { visitOpen, profileOpen })
+                Check(
+                    body.Any(i => i.Operand is MethodReference m && m.DeclaringType.Name == "CampaignLoadingScreen" && m.Name == "Show"),
+                    "Profile and trader loading share the same native loading screen implementation"
+                );
+            var showLoader = visitOpen.First(i =>
+                i.Operand is MethodReference m && m.DeclaringType.Name == "CampaignLoadingScreen" && m.Name == "Show"
+            );
+            var loadStory = visitOpen.First(i =>
+                i.Operand is MethodReference m && m.DeclaringType.Name == "StoryClient" && m.Name == "Load"
+            );
+            Check(showLoader.Offset < loadStory.Offset, "Trader loader appears before story/network preparation");
+            var loaderBody = AsyncBody("WTT.Campaigns.Client.UI.CampaignLoadingScreen", "Show").Body.Instructions;
+            Check(
+                loaderBody.Count(i => i.Operand is MethodReference m && m.Name == "NextFrame") == 2,
+                "Shared loader receives render frames before blocking preparation"
+            );
+            var roomBody = AsyncBody("WTT.Campaigns.Client.Story.StoryVisitRuntime", "LoadRoom").Body;
+            Check(
+                roomBody.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "LoadAssetAsync")
+                    && roomBody.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "ThrowIfCancellationRequested")
+                    && roomBody.Instructions.Any(i =>
+                        i.Operand is MethodReference m && m.DeclaringType.Name == "StoryMediaStore" && m.Name == "Close"
+                    ),
+                "Cancelled room loads retain ownership until the async request completes, then release the bundle"
+            );
+            var bundleBody = AsyncBody("WTT.Campaigns.Client.Story.StoryMediaStore", "OpenTraderAsync").Body.Instructions;
+            Check(
+                bundleBody.Any(i => i.Operand is MethodReference m && m.Name == "LoadFromFileAsync")
+                    && bundleBody.Any(i =>
+                        i.Operand is MethodReference m && m.DeclaringType.FullName == "System.Threading.Tasks.Task" && m.Name == "Run"
+                    ),
+                "Trader checksum work runs in the background and Unity loads bundles asynchronously"
+            );
+            var visitClear = client
+                .MainModule.GetType("WTT.Campaigns.Client.Story.StoryVisitRuntime")
+                .Methods.Single(m => m.Name == "Clear");
+            Check(
+                visitClear.Body.Instructions.Any(i =>
+                    i.Operand is MethodReference m && m.DeclaringType.Name == "CampaignLoadingScreen" && m.Name == "Dispose"
+                )
+                    && visitClear.Body.Instructions.Any(i =>
+                        i.Operand is MethodReference m && m.DeclaringType.Name == "CancellationTokenSource" && m.Name == "Cancel"
+                    ),
+                "Trader closure cancels pending load ownership and removes the loading overlay"
+            );
             var zoneBridge = client.MainModule.GetType("WTT.Campaigns.Client.Spatial.NativeZoneBridge");
             var unityStay = zoneBridge.Methods.Single(m => m.Name == "OnTriggerStay");
             Check(

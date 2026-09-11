@@ -79,6 +79,8 @@ Ordinary Trigger, Interact, Shoot and Collectible bindings can reference Image, 
 
 ## Recovering the built-in rooms
 
+The finalized rooms now use the compact texture profile. See [compact trader media and Visit](trader-media-and-visit.md) for size measurements, quality trade-offs, candidate previews and deployment validation.
+
 These steps need the locally supplied donor, beta game, AssetRipper, Python dependencies and companion CJ-SDK. They are not a clean-checkout asset download process.
 
 1. `recover_story.py` inventories UI hierarchies/sprites and the eight scenes.

@@ -14,6 +14,7 @@ RUNTIME_SOURCES = {
     'StoryRoomRenderState.cs',
     'StoryRoomIsolation.cs',
     'StoryVisitButton.cs',
+    'StoryTradeTabRow.cs',
     'StoryUiArtwork.cs',
     'StoryEnvironmentState.cs',
     'StoryRoomLighting.cs',
