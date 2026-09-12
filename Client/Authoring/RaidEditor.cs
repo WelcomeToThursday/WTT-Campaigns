@@ -228,7 +228,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 }
                 return;
             }
-            if (!_view!.Typing && !_session.Busy)
+            if (!_view!.Typing && !_session.Busy && _session.Conflict == null)
             {
                 if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Z))
                 {
@@ -336,7 +336,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
         try
         {
-            if (_view?.Typing != true && _drag == null)
+            if (_view?.Typing != true && _drag == null && _session?.Conflict == null)
             {
                 var look = Input.GetMouseButton(1);
                 Cursor.visible = !look;

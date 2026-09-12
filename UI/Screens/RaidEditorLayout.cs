@@ -8,7 +8,7 @@ namespace WTT.Campaigns.UI.Screens;
 // Shared by the CJ-SDK prefab builder and visual previews. The bundle contains only native uGUI components.
 public static class RaidEditorLayout
 {
-    public static GameObject Build(Font font)
+    public static GameObject Build(Font font, Sprite border, Sprite header)
     {
         var root = new GameObject(
             "SeasonalRaidEditor",
@@ -21,12 +21,110 @@ public static class RaidEditorLayout
         root.GetComponent<Canvas>().sortingOrder = 32100;
         var scaler = root.GetComponent<CanvasScaler>();
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1920, 1080);
-        scaler.matchWidthOrHeight = 1f;
+        scaler.referenceResolution = new Vector2(1920, 1200);
+        scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
         var ui = new UiElements(font);
-        var left = Panel(root.transform, "Library", 338, 950, new Vector2(0, .5f), new Vector2(185, 0));
-        var right = Panel(root.transform, "Inspector", 424, 950, new Vector2(1, .5f), new Vector2(-228, 0));
-        ui.Label(left, "Title", "CAMPAIGN AUTHORING", 23, 306, 36, 0, 440);
+        var workspace = Panel(root.transform, "Workspace", 800, 1110, new Vector2(.5f, .5f), new Vector2(-530, 0));
+        var title = UiElements.Rect("WorkspaceTitleBar", workspace, 800, 52, 0, 529);
+        UiElements.Fill(title, new Color(.16f, .16f, .14f), true);
+        ui.Label(title, "WorkspaceTitle", "CAMPAIGN / RAID EDITOR", 22, 410, 44, -180, 0);
+        Button(ui, title, "ResetLayout", "Reset layout", 120, 180, 0, 36);
+        Button(ui, title, "HelpToggle", "Help", 68, 280, 0, 36);
+        Button(ui, title, "CloseEditor", "X", 40, 350, 0, 36);
+        var dock = UiElements.Rect("DockArea", workspace, 780, 950, 0, 25);
+        foreach (var module in Modules)
+        {
+            var placeholder = UiElements.Rect(module.Id + "Placeholder", dock, module.Width, 950, module.X, 0);
+            ui.Label(
+                placeholder,
+                module.Id + "Detached",
+                module.Caption + "\nOpen in a popout",
+                20,
+                module.Width - 36,
+                75,
+                0,
+                45
+            ).alignment = TextAnchor.MiddleCenter;
+            Button(ui, placeholder, module.Id + "Return", "Return to workspace", module.Width - 36, 0, -30);
+            placeholder.gameObject.SetActive(false);
+            var panel = Panel(dock, module.Id, module.Width, 950, new Vector2(.5f, .5f), new Vector2(module.X, 0));
+            module.Build(ui, panel);
+            var bar = UiElements.Rect(module.Id + "TitleBar", panel, module.Width, 52, 0, 449);
+            UiElements.Fill(bar, new Color(.12f, .12f, .10f), true);
+            ui.Label(bar, module.Id + "Heading", module.Caption, 21, module.Width - 120, 42, -48, 0);
+            Button(ui, bar, module.Id + "Popout", "Pop out", 90, module.Width / 2 - 55, 0, 34);
+        }
+        var top = UiElements.Rect("RequestBar", workspace, 780, 98, 0, -499);
+        ui.Label(top, "Request", "RAID CONTINUES / Player remains in place", 16, 760, 25, 0, 30);
+        ui.Label(top, "Status", "Ctrl+F8 to close / Hold right mouse to fly", 15, 760, 58, 0, -15);
+        var bottom = Panel(root.transform, "Controls", 710, 170, new Vector2(.5f, .5f), new Vector2(300, -330));
+        ui.Label(bottom, "HelpHeading", "EDITOR CONTROLS", 22, 660, 38, 0, 58);
+        ui.Label(
+            bottom,
+            "Help",
+            "WASD / Q E / Shift boost / RMB look\nDrag axis handles / Ctrl+Z / Ctrl+Y\nEscape cancels an action, then closes the editor.\nDrag window headers. Pop out a panel; Dock returns it.",
+            17,
+            660,
+            110,
+            0,
+            -15
+        );
+        bottom.gameObject.SetActive(false);
+        var shield = UiElements.Rect("ConflictShield", root.transform, 0, 0);
+        UiElements.Stretch(shield);
+        UiElements.Fill(shield, new Color(0, 0, 0, .65f), true);
+        BuildConflict(ui, shield);
+        shield.gameObject.SetActive(false);
+        foreach (var image in root.GetComponentsInChildren<Image>(true))
+        {
+            if (image.name.EndsWith("TitleBar"))
+            {
+                image.sprite = header;
+                image.type = Image.Type.Sliced;
+            }
+            if (image.name == "ConflictShield")
+                continue;
+            var frame = UiElements.Rect("Frame", image.transform, 0, 0);
+            UiElements.Stretch(frame);
+            var outline = frame.gameObject.AddComponent<Image>();
+            outline.sprite = border;
+            outline.type = Image.Type.Sliced;
+            outline.fillCenter = false;
+            outline.color = new Color(.55f, .52f, .43f, .65f);
+            outline.raycastTarget = false;
+        }
+        foreach (var feedback in root.GetComponentsInChildren<UiButtonFeedback>(true))
+            UnityEngine.Object.DestroyImmediate(feedback);
+        return root;
+    }
+
+    // Add tool panels here; the runtime window host uses the same registry.
+    public sealed class Module
+    {
+        public readonly string Id,
+            Caption;
+        public readonly float Width,
+            X;
+        public readonly Action<UiElements, RectTransform> Build;
+
+        public Module(string id, string caption, float width, float x, Action<UiElements, RectTransform> build)
+        {
+            Id = id;
+            Caption = caption;
+            Width = width;
+            X = x;
+            Build = build;
+        }
+    }
+
+    public static readonly Module[] Modules =
+    {
+        new Module("Library", "LIBRARY", 338, -221, BuildLibrary),
+        new Module("Inspector", "PROPERTIES", 424, 166, BuildInspector),
+    };
+
+    private static void BuildLibrary(UiElements ui, RectTransform left)
+    {
         ui.Label(left, "Connection", "Connect a draft in the campaign editor", 16, 306, 50, 0, 392);
         Button(ui, left, "Zones", "Zones", 72, -117, 344);
         Button(ui, left, "Bindings", "Events", 72, -39, 344);
@@ -46,7 +144,10 @@ public static class RaidEditorLayout
         Button(ui, left, "Pick", "Pick scene object", 306, 0, -361);
         Button(ui, left, "Undo", "Undo", 145, -80, -417);
         Button(ui, left, "Redo", "Redo", 145, 80, -417);
-        ui.Label(right, "InspectorTitle", "PROPERTIES", 23, 388, 36, 0, 440);
+    }
+
+    private static void BuildInspector(UiElements ui, RectTransform right)
+    {
         ui.Input(right, "Name", "Record name", 388, 0, 393);
         ui.Label(right, "Identity", "Select a zone, event or capture", 14, 388, 40, 0, 345);
         Button(ui, right, "EventKind", "Event kind: Trigger", 388, 0, 345);
@@ -71,19 +172,12 @@ public static class RaidEditorLayout
         Button(ui, right, "Delete", "Delete", 185, 100, -343);
         Button(ui, right, "Complete", "Complete capture", 250, -68, -409);
         Button(ui, right, "Cancel", "Cancel", 124, 132, -409);
-        var top = Panel(root.transform, "RequestBar", 660, 86, new Vector2(.5f, 1), new Vector2(-35, -63));
-        ui.Label(top, "Request", "RAID CONTINUES · Player remains in place", 20, 630, 35, 0, 20);
-        ui.Label(top, "Status", "Ctrl+F8 to close · Hold right mouse to fly", 16, 630, 35, 0, -20);
-        var bottom = Panel(root.transform, "Controls", 710, 78, new Vector2(.5f, 0), new Vector2(-35, 58));
-        ui.Label(
-            bottom,
-            "Help",
-            "WASD / Q E · Shift boost · RMB look\nDrag axis handles · Ctrl+Z / Ctrl+Y · Escape cancels, then closes",
-            17,
-            680,
-            70
-        );
-        var conflict = Panel(root.transform, "Conflict", 670, 620, new Vector2(.5f, .5f), new Vector2(-35, 0));
+        right.Find("EventKind").gameObject.SetActive(false);
+    }
+
+    private static void BuildConflict(UiElements ui, Transform parent)
+    {
+        var conflict = Panel(parent, "Conflict", 670, 620, new Vector2(.5f, .5f), Vector2.zero);
         ui.Label(conflict, "ConflictTitle", "DRAFT CONFLICT", 25, 620, 45, 0, 270);
         ui.Label(conflict, "ConflictPath", "Another editor changed this record", 16, 620, 55, 0, 215);
         ui.Label(conflict, "LocalCaption", "THIS EDITOR", 18, 620, 30, 0, 170);
@@ -92,15 +186,6 @@ public static class RaidEditorLayout
         Multiline(ui, conflict, "RemoteConflict", -150);
         Button(ui, conflict, "KeepLocal", "Keep my conflicts", 290, -157, -272);
         Button(ui, conflict, "KeepRemote", "Keep server conflicts", 290, 157, -272);
-        conflict.gameObject.SetActive(false);
-        right.Find("EventKind").gameObject.SetActive(false);
-        // Runtime adds feedback components with the game's sound callback. No mod scripts enter the asset bundle.
-        foreach (var feedback in root.GetComponentsInChildren<UiButtonFeedback>(true))
-        {
-            UnityEngine.Object.DestroyImmediate(feedback);
-        }
-
-        return root;
     }
 
     private static RectTransform Panel(Transform parent, string name, float width, float height, Vector2 anchor, Vector2 position)

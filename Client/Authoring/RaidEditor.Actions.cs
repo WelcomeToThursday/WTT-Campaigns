@@ -27,6 +27,7 @@ public sealed partial class RaidEditor
     private RaidEditorView BuildView()
     {
         var view = new RaidEditorView();
+        view.Button("CloseEditor", Close);
         void Button(string name, Action action)
         {
             view.Button(
@@ -727,6 +728,8 @@ public sealed partial class RaidEditor
         );
         view.Text("Status", _session.Status + (_notice.Length > 0 ? "\n" + _notice : ""));
         view.Conflict(_session);
+        foreach (var mode in new[] { "Zones", "Bindings", "Captures", "Scene" })
+            view.Highlight(mode, _mode == mode);
         var search = view.Get<InputField>("Search").text;
         _rows.Clear();
         if (_mode == "Scene")

@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 
 RUNTIME_SOURCES = {
+    'EditorWindowDrag.cs',
+    'RaidEditorWindows.cs',
     'CampaignBranding.cs',
     'StoryTitleMask.cs',
     'StoryRoomAmbient.cs',
@@ -76,6 +78,14 @@ if __name__ == '__main__':
     project = Path(__file__).resolve().parents[1]
     assets = project.parent / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets'
     count = sync_sources(project / 'UI', assets / 'Editor/Generated', assets / 'PreviewRuntime')
+    builder = 'CampaignsRaidEditorBuilder.cs'
+    (assets / 'Editor' / builder).write_text((project / 'tools/unity' / builder).read_text(encoding='utf-8'), encoding='utf-8')
+    legacy = assets / 'Editor/SeasonalRaidEditorBuilder.cs'
+    if legacy.exists():
+        legacy.write_text('// Legacy SDK entry point. Implementation lives in SeasonalPerks/tools/unity.\n'
+                          'public static class SeasonalRaidEditorBuilder {\n'
+                          '    public static void Build() => CampaignsRaidEditorBuilder.Build();\n'
+                          '    public static void Preview() => CampaignsRaidEditorBuilder.Preview();\n}\n', encoding='utf-8')
     # Pure presentation copy is shared with the server, and compiled directly by Unity previews.
     presentation = (project / 'Shared/Presentation/CampaignText.cs').read_text(encoding='utf-8-sig')
     presentation = presentation.replace('namespace WTT.Campaigns.Shared.Presentation;', 'namespace WTT.Campaigns.Shared.Presentation\n{') + '\n}\n'

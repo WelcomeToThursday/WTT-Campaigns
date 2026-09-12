@@ -10,6 +10,20 @@ The Campaign Creator and the in-raid editor share a recoverable draft. Publishin
 
 The raid keeps running. Your character remains in place and can take damage. The editor does not pause AI, the raid timer, or audio.
 
+## Arrange the workspace
+
+The editor opens as one window containing **Library** and **Properties**. Drag the main title bar to move it. Each panel has **Pop out** to detach it and a draggable header. Use **Dock** in the popout or **Return to workspace** in its original slot to return it. Selection and draft fields stay with the panel. **Reset layout** returns all panels to their starting positions. Layout is retained while the editor view exists; it is not saved across game launches.
+
+**Help** toggles the controls reference. **X** closes the editor using the same draft recovery and camera restoration as the keyboard shortcut. Conflict dialogs block the workspace and popouts until resolved or the editor is closed.
+
+The SDK prefab uses EFT's recovered Bender font, native window border and footer gradient, with the campaign interface sounds.
+
+### Expand the UI
+
+`UI/Screens/RaidEditorLayout.cs` registers panels and builds their content. Each module has a stable ID, caption, dock width and position, and a content builder. Keep control names unique. `RaidEditorWindows` discovers panel headers and return slots and owns docking, reset and screen bounds; authoring actions remain in `RaidEditor.Actions.cs`. Window movement is handled by `EditorWindowDrag`.
+
+Run `tools/sync_ui_preview.py`, then **SDK → WTT-Campaigns → Build raid editor** in CJ-SDK. This builds the native uGUI prefab, renders docked/popout/conflict previews at four resolutions, reloads the bundle, and verifies docking, retained draft inputs, reset, bounds and modal ordering. The resulting validation hash is required by `dotnet msbuild build.proj -p:DeploymentScope=Client`, which validates and installs the matching client, UI assembly and bundle with backups. These are offline editor checks; game/server startup is controlled by the user.
+
 ## Place and bind content
 
 - **Zones**: create a box or sphere, place it at the player or camera aim point, and edit its position, rotation, dimensions, or radius. Drag the red/green/blue handles to move, rotate, or resize; numeric fields commit when editing ends.

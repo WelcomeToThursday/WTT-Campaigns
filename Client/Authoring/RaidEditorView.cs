@@ -31,6 +31,8 @@ internal sealed class RaidEditorView : IDisposable
             ui.Feedback(button);
         }
 
+        Root.AddComponent<RaidEditorWindows>().Initialize();
+
         Root.SetActive(false);
     }
 
@@ -48,6 +50,11 @@ internal sealed class RaidEditorView : IDisposable
     internal void Caption(string name, string value)
     {
         Get<Button>(name).GetComponentInChildren<Text>().text = value;
+    }
+
+    internal void Highlight(string name, bool selected)
+    {
+        Get<Button>(name).targetGraphic.color = selected ? new Color(.36f, .33f, .23f) : new Color(.18f, .18f, .15f);
     }
 
     internal void Button(string name, Action action)
@@ -77,7 +84,8 @@ internal sealed class RaidEditorView : IDisposable
     internal void Conflict(RaidEditorSession session)
     {
         var conflict = session.Conflict;
-        _controls["Conflict"].gameObject.SetActive(conflict != null);
+        _controls["ConflictShield"].gameObject.SetActive(conflict != null);
+        Root.GetComponent<RaidEditorWindows>().KeepModalOnTop();
         if (conflict == null)
         {
             return;
