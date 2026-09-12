@@ -115,7 +115,10 @@ internal static class ProgressionChecks
             File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "data", "trader-progression.json"))
         )!;
         var audit = JObject.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "data", "trader-progression-audit.json")));
-        check(data.Version == 1 && data.Quests.Count == (int)audit["Counts"]!["Applied"]!, "Audited quest count matches progression overlay");
+        check(
+            data.Version == 1 && data.Quests.Count == (int)audit["Counts"]!["Applied"]!,
+            "Audited quest count matches progression overlay"
+        );
         check(data.Quests.Values.Count(q => q.Tier > 0) == (int)audit["Counts"]!["Tiered"]!, "Audited tiered task count matches overlay");
         foreach (
             var (id, prerequisite, level) in new[]

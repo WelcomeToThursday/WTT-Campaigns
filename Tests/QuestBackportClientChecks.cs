@@ -17,8 +17,10 @@ internal static class QuestBackportClientChecks
         var status = assembly.GetType("EFT.Quests.EQuestStatus", true)!;
         var stagesType = typeof(Dictionary<,>).MakeGenericType(status, typeof(JArray));
         var names = Enum.GetNames(status);
-        check(QuestBackportCompatibility.ConditionStages.Concat(QuestBackportCompatibility.RewardStages).All(names.Contains),
-            "Backport stages exist in the installed client's actual quest status enum");
+        check(
+            QuestBackportCompatibility.ConditionStages.Concat(QuestBackportCompatibility.RewardStages).All(names.Contains),
+            "Backport stages exist in the installed client's actual quest status enum"
+        );
 
         // Exercise the same enum-keyed dictionary conversion that blocked /client/quest/list.
         var rejected = false;
