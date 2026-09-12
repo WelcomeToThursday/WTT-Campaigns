@@ -82,6 +82,7 @@ WTT.Campaigns.Tests.ProfileReconnectChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.NativeModelChecks.Run(Check);
 WTT.Campaigns.Tests.SeasonItemBundleChecks.Run(Check);
 WTT.Campaigns.Tests.StoryChecks.Run(Check);
+WTT.Campaigns.Tests.StoryEnumCompatibilityChecks.Run(Check);
 WTT.Campaigns.Tests.StoryChapterNotificationChecks.Run(Check);
 WTT.Campaigns.Tests.StoryEngineChecks.Run(Check);
 WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
