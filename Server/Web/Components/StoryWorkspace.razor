@@ -12,36 +12,46 @@ else
         <aside class="content-list" aria-label="@($"{Section} content")">
             <label>Search @Section.ToLowerInvariant()<input @bind="_search" @bind:event="oninput" placeholder="Name, text or ID…" /></label>
             <button class="primary" @onclick="Add">Add @Singular</button>
-            @foreach (var record in Records.Where(Matches))
+            @foreach (var record in Records.Where(r => Matches(r) || r is StoryChapter chapter && QuestStoryFlow.Quests(Season, chapter.Id).Any(QuestMatches)))
             {
-                <button class="content-row @(ReferenceEquals(record, Selected) ? "selected" : "")" @onclick="@(() => Select(record))"><span>@ReferenceNames.Label(Season, record, Content.Name)</span><small>@StoryAuthoring.Friendly(record.GetType().Name.Replace("Story", ""))</small></button>
+                <div class="chapter-tree-group" @key="record">
+                <button class="content-row @(ReferenceEquals(record, Selected) && _view != "Quests" ? "selected" : "")" @onclick="@(() => SelectFromTree(record))"><span>@ReferenceNames.Label(Season, record, Content.Name)</span><small>@(record is StoryChapter ? "Chapter settings" : StoryAuthoring.Friendly(record.GetType().Name.Replace("Story", "")))</small></button>
+                @if (record is StoryChapter treeChapter)
+                {
+                    <div class="chapter-tree-quests" aria-label="@($"Quests in {treeChapter.Name}")">
+                    @foreach(var quest in QuestStoryFlow.Quests(Season, treeChapter.Id).Where(q => Matches(record) || QuestMatches(q)))
+                    { <button class="content-row @(ReferenceEquals(record, Selected) && _view == "Quests" && (string?)quest.Id == ActiveQuestId ? "selected" : "")" aria-current="@(ReferenceEquals(record, Selected) && _view == "Quests" && (string?)quest.Id == ActiveQuestId ? "page" : null)" @onclick="@(() => SelectTreeQuest(treeChapter, (string)quest.Id!))">@NativeQuestAuthoring.QuestName(quest)<small>Quest</small></button> }
+                    <button class="tree-add" @onclick="@(() => AddTreeQuest(treeChapter))">+ Create quest</button>
+                    </div>
+                }
+                </div>
             }
             @if (!Records.Any()) { <p>No @Section.ToLowerInvariant() yet.</p> }
         </aside>
         <div class="content-detail">
             @if (Selected is { } selected)
             {
+                @if (selected is not StoryChapter || _view != "Quests")
+                {
                 <div class="record-heading"><h3>@ReferenceNames.Label(Season, selected, Content.Name)</h3><details class="reference-details"><summary>Reference ID</summary><code>@StoryAuthoring.Id(selected)</code></details><div class="row"><button @onclick="Duplicate">@(selected is StoryChapter ? "Duplicate chapter" : "Duplicate")</button><button @onclick="@(() => Move(-1))" disabled="@(List.IndexOf(selected) == 0)">Move earlier</button><button @onclick="@(() => Move(1))" disabled="@(List.IndexOf(selected) == List.Count - 1)">Move later</button><button class="danger" @onclick="Delete">@(selected is StoryChapter ? "Delete chapter" : "Delete")</button></div></div>
                 @if (selected is StoryChapter deletingChapter && _deletingChapter == deletingChapter.Id)
                 { <ChapterDeletePanel @key="deletingChapter.Id" Season="Season" Chapter="deletingChapter" Deleted="ChapterDeleted" Cancel="@(() => _deletingChapter = "")" Navigate="Go" /> }
-                <div class="row workspace-tabs" role="tablist" aria-label="Content views">@foreach(var view in (selected is StoryChapter ? new[] { "Quests", "Chapter settings", "Connections", "Preview" } : new[] { "Edit", "Connections", "Preview" })) { <button role="tab" aria-selected="@(_view == view)" @onclick="@(() => _view = view)">@view</button> }</div>
+                @if (selected is StoryDialog deletingDialog && _deletingDialog == deletingDialog.Id)
+                { <ConversationDeletePanel @key="@($"delete-{deletingDialog.Id}")" Season="Season" Dialog="deletingDialog" Deleted="ConversationDeleted" Cancel="@(() => _deletingDialog = "")" Navigate="Go" /> }
+                <div class="row workspace-tabs" role="tablist" aria-label="Content views">@foreach(var view in (selected is StoryChapter ? new[] { "Chapter settings", "Connections", "Preview" } : new[] { "Edit", "Connections", "Preview" })) { <button role="tab" aria-selected="@(_view == view)" @onclick="@(() => _view = view)">@view</button> }</div>
+                }
                 @if (selected is StoryChapter selectedChapter && _view == "Quests")
                 {
-                    <QuestWorkspace @key="selectedChapter.Id" Season="Season" ChapterId="@selectedChapter.Id" FocusId="@_chapterQuest" SelectionChanged="SelectChapterQuest" Changed="Changed" Navigate="Go" />
+                    <QuestWorkspace @key="selectedChapter.Id" Season="Season" ChapterId="@selectedChapter.Id" ViewState="QuestViews" FocusId="@_chapterQuest" SelectionChanged="SelectChapterQuest" Changed="Changed" Navigate="Go" />
                 }
                 else if (_view is "Edit" or "Chapter settings")
                 {
-                    <StoryFields @key="selected" Season="Season" Value="selected" Changed="Changed" Excluded="@(selected is StoryDialog ? new[] { "Lines" } : Array.Empty<string>())" />
                     @if (selected is StoryDialog dialog)
                     {
-                        <ConversationSetup Season="Season" Dialog="dialog" Changed="Changed" /><h3>Conversation lines</h3>
-                        <ContentNavigator Label="Lines" Choices="@dialog.Lines.Select(l => new ContentChoice(l.Id, StoryAuthoring.Label(l)))" Value="@SelectedLine(dialog)?.Id" ValueChanged="@(v => _line = v)"><Actions><button @onclick="@(() => AddLine(dialog, "Npc"))">Add NPC line</button><button @onclick="@(() => AddLine(dialog, "Player"))">Add player reply</button></Actions></ContentNavigator>
-                        @if (SelectedLine(dialog) is { } line)
-                        {
-                            <div class="editor-card"><h4>@StoryAuthoring.Label(line)</h4><small>@line.Id</small><StoryFields Season="Season" Value="line" Changed="Changed" />
-                            <div class="row"><button @onclick="@(async () => { var copy = (StoryDialogLine)StoryAuthoring.Duplicate(line); dialog.Lines.Add(copy); _line = copy.Id; await Changed.InvokeAsync(); })">Duplicate line</button><button disabled="@(dialog.Lines.IndexOf(line) == 0)" @onclick="@(() => MoveLine(dialog, line, -1))">Move earlier</button><button disabled="@(dialog.Lines.IndexOf(line) == dialog.Lines.Count - 1)" @onclick="@(() => MoveLine(dialog, line, 1))">Move later</button><button class="danger" @onclick="@(() => DeleteLine(dialog, line))">Delete line</button></div></div>
-                        }
+                        <ConversationWriter @key="dialog.Id" Season="Season" Dialog="dialog" FocusLineId="@_line" SelectionChanged="SelectConversationLine" Changed="Changed" Navigate="Go" />
                     }
+                    else
+                    { <StoryFields @key="selected" Season="Season" Value="selected" Changed="Changed" /> }
 
                 }
                 else if (_view == "Connections")
@@ -49,7 +59,7 @@ else
                 else
                 {
                     <StoryPresentation Season="Season" Value="selected" />
-                    <button @onclick="@(() => Go("Story rehearsal"))">Open interactive rehearsal</button>
+                    <details class="editor-card"><summary>Rehearse @(selected is StoryDialog ? "this conversation" : "this story")</summary><StoryRehearsalPanel Season="Season" FocusDialogId="@(selected is StoryDialog previewDialog ? previewDialog.Id : "")" /></details>
                 }
             }
             else { <div class="empty-selection"><strong>Select @Singular.ToLowerInvariant()</strong><p>Choose an entry from the list or create one.</p></div> }
@@ -67,6 +77,7 @@ else
 @if (_message.Length > 0) { <div class="notice error" role="alert">@_message</div> }
 @code {
     [Parameter, EditorRequired] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public Dictionary<string, string> QuestViews { get; set; } = new();
     [Parameter] public string Section { get; set; } = "Chapters";
     [Parameter] public string FocusId { get; set; } = "";
     [Parameter] public string FocusChildId { get; set; } = "";
@@ -75,7 +86,7 @@ else
     [Parameter] public EventCallback Changed { get; set; }
     [Parameter] public EventCallback<string> Navigate { get; set; }
     private string _selectedId = "", _search = "", _view = "Edit", _message = "", _trader = "", _quest = "", _lastSection = "", _lastFocus = "";
-    private string _line = "", _lastChild = "", _chapterQuest = "", _deletingChapter = "";
+    private string _line = "", _lastChild = "", _chapterQuest = "", _deletingChapter = "", _deletingDialog = "";
     private string DefaultView => Section == "Chapters" ? "Quests" : "Edit";
     private IList List => Section switch { "Chapters" => Season.Story!.Chapters, "Journal notes" => Season.Story!.Notes, "Conversations" => Season.Story!.Dialogs, "Variables" => Season.Story!.Variables, "Entry points" => Season.Story!.EntryPoints, "Raid events" => Season.Story!.RaidBindings, _ => Season.Story!.Media };
     private Type RecordType => List.GetType().GetGenericArguments()[0];
@@ -85,12 +96,13 @@ else
     private bool Matches(object record) => _search.Length == 0 || ReferenceNames.Label(Season, record, Content.Name).Contains(_search, StringComparison.OrdinalIgnoreCase) || StoryAuthoring.Id(record).Contains(_search, StringComparison.OrdinalIgnoreCase);
     protected override void OnParametersSet()
     {
-        if (_lastSection != Section) { _search = ""; _selectedId = Season.Story == null ? "" : Records.Select(StoryAuthoring.Id).FirstOrDefault() ?? ""; _lastSection = Section; _view = DefaultView; }
+        if (_lastSection != Section) { _deletingDialog = ""; _search = ""; _selectedId = Season.Story == null ? "" : Records.Select(StoryAuthoring.Id).FirstOrDefault() ?? ""; _lastSection = Section; _view = DefaultView; }
         if (_lastFocus != FocusId) { _lastFocus = FocusId; if (FocusId.Length > 0) _selectedId = FocusId; _view = DefaultView; _search = ""; }
         if (_lastChild != FocusChildId) { _lastChild = FocusChildId; _line = FocusChildId; _chapterQuest = FocusChildId; _view = DefaultView; }
     }
     private async Task Go(string path) { _lastFocus = _selectedId; await SelectionChanged.InvokeAsync(_selectedId); await Navigate.InvokeAsync(path); }
-    private async Task Select(object record) { _deletingChapter = ""; _selectedId = StoryAuthoring.Id(record); _lastFocus = _selectedId; _chapterQuest = ""; _lastChild = ""; _view = DefaultView; _message = ""; await SelectionChanged.InvokeAsync(_selectedId); await ChildSelectionChanged.InvokeAsync(""); }
+    private async Task Select(object record) { _deletingDialog = ""; _deletingChapter = ""; _selectedId = StoryAuthoring.Id(record); _lastFocus = _selectedId; _chapterQuest = ""; _lastChild = ""; _view = DefaultView; _message = ""; await SelectionChanged.InvokeAsync(_selectedId); await ChildSelectionChanged.InvokeAsync(""); }
+    private async Task SelectConversationLine(string id) { _line = id; _lastChild = id; await ChildSelectionChanged.InvokeAsync(id); }
     private async Task SelectChapterQuest(string id) { _chapterQuest = id; _lastChild = id; await ChildSelectionChanged.InvokeAsync(id); }
 
     private async Task Enable() { Season.Story = new(); Season.Story.Chapters.Add(new() { Id = StoryAuthoring.NewId(), Name = "New chapter" }); await Changed.InvokeAsync(); await Select(Season.Story.Chapters[0]); _lastSection = Section; _view = "Chapter settings"; }
@@ -103,10 +115,12 @@ else
     }
     private async Task Duplicate() { if (Selected is not { } selected) return; var copy = StoryAuthoring.Duplicate(selected); List.Insert(List.IndexOf(selected) + 1, copy); await Select(copy); await Changed.InvokeAsync(); }
     private async Task ChapterDeleted() { _deletingChapter = ""; _selectedId = Records.Select(StoryAuthoring.Id).FirstOrDefault() ?? ""; _lastFocus = _selectedId; _chapterQuest = ""; _lastChild = ""; _message = ""; _view = DefaultView; await SelectionChanged.InvokeAsync(_selectedId); await ChildSelectionChanged.InvokeAsync(""); await Changed.InvokeAsync(); }
+    private async Task ConversationDeleted() { _deletingDialog = ""; _line = ""; await ChapterDeleted(); }
     private async Task Delete()
     {
         if (Selected is not { } selected) return;
         if (selected is StoryChapter chapter) { _deletingChapter = chapter.Id; _message = ""; return; }
+        if (selected is StoryDialog dialog) { _deletingDialog = dialog.Id; _message = ""; return; }
         var uses = StoryAuthoring.Uses(Season, selected);
         if (uses.Count > 0) { _message = "Remove or reassign these references before deleting: " + string.Join(", ", uses); _view = "Connections"; return; }
         List.Remove(selected); _selectedId = Records.Select(StoryAuthoring.Id).FirstOrDefault() ?? ""; await Changed.InvokeAsync();
@@ -119,9 +133,9 @@ else
         await Changed.InvokeAsync();
     }
     private async Task Template(bool branching, string quest = "") { await Select(StoryAuthoring.AddConversation(Season, _trader, branching, quest)); _view = DefaultView; await Changed.InvokeAsync(); }
-    private string QuestName(string id) => ReferenceNames.Resolve(Season, "quests", id, Content.Name);
-    private StoryDialogLine? SelectedLine(StoryDialog dialog) => dialog.Lines.FirstOrDefault(l => l.Id == _line) ?? dialog.Lines.FirstOrDefault();
-    private async Task AddLine(StoryDialog dialog, string side) { var line = (StoryDialogLine)StoryAuthoring.Create(typeof(StoryDialogLine)); line.Side = side; line.Text = side == "Npc" ? "New NPC line" : "New reply"; dialog.Lines.Add(line); _line = line.Id; await Changed.InvokeAsync(); }
-    private async Task MoveLine(StoryDialog dialog, StoryDialogLine line, int direction) { var index = dialog.Lines.IndexOf(line); dialog.Lines.RemoveAt(index); dialog.Lines.Insert(index + direction, line); await Changed.InvokeAsync(); }
-    private async Task DeleteLine(StoryDialog dialog, StoryDialogLine line) { var uses = StoryAuthoring.Uses(Season, line); if (uses.Count > 0) { _message = "Remove or reassign these references first: " + string.Join(", ", uses); return; } dialog.Lines.Remove(line); await Changed.InvokeAsync(); }
+    private string ActiveQuestId => _chapterQuest.Length > 0 ? _chapterQuest : Selected is StoryChapter chapter ? (string?)QuestStoryFlow.Quests(Season, chapter.Id).FirstOrDefault()?.Id ?? "" : "";
+    private bool QuestMatches(NativeQuest quest) => _search.Length == 0 || NativeQuestAuthoring.QuestName(quest).Contains(_search, StringComparison.OrdinalIgnoreCase) || ((string?)quest.Id ?? "").Contains(_search, StringComparison.OrdinalIgnoreCase);
+    private async Task SelectFromTree(object record) { await Select(record); if (record is StoryChapter) _view = "Chapter settings"; }
+    private async Task SelectTreeQuest(StoryChapter chapter, string id) { if (!ReferenceEquals(Selected, chapter)) await Select(chapter); _view = "Quests"; await SelectChapterQuest(id); }
+    private async Task AddTreeQuest(StoryChapter chapter) { var quest = QuestStoryFlow.AddQuest(Season, chapter.Id); await SelectTreeQuest(chapter, (string)quest.Id!); await Changed.InvokeAsync(); }
 }

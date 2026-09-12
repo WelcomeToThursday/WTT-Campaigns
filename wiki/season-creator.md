@@ -65,9 +65,11 @@ The in-raid editor reuses the client's existing SPT notification WebSocket. It o
 
 Installed traders use their localized nickname, with a full-name fallback. Item, quest, offer and craft references show names across selectors, previews and rehearsal facts. Searching never replaces the selected name with its ID; expand **Reference ID** when you need the underlying identity. Unknown references remain visible for repair. Draft names take precedence over installed copies.
 
-**Chapters and quests** is the story authoring workspace. Select a chapter, open **Quests**, and use **Create quest in this chapter** or select an existing quest. Creation, duplication and editing stay within that chapter. Use the quest's **Details**, **Objectives**, **Rewards** and **Story** tabs; use **Chapter settings** for its title, visibility and artwork. The Story tab contains status notes and linked conversations. **Create and link note** creates the note and status association together; **Create quest conversation** creates the phase variable and entry point as well.
+**Chapters and quests** lists each quest beneath its chapter in a searchable tree. Select a chapter name for its settings, or a quest name for **Basics**, **Unlock requirements**, **Objectives**, **Rewards**, **Story events** and **Preview**. A breadcrumb identifies the current chapter, quest and step. Quest steps are remembered when following links and returning during the editor session. Use **+ Create quest** beneath a chapter to add one.
 
-**Non-story quests** is separate and lists quests without a valid chapter assignment. It has no Story behavior tab. To convert a non-story quest, use **Add to a story chapter**, or add it from the chapter's **Add an existing non-story quest** control. Moving a quest preserves its identity, objectives and rewards. Imported broken memberships remain accessible here with a repair notice.
+Objective cards show player instructions and a separate summary of saved rules; expand **Edit rules** to edit. **Story events** shows when journal notes are revealed and links to related conversations. **Create and write note** assigns the chapter and quest status before opening the note workspace. **Create and write conversation** creates an introduction with a phase variable and entry point, then opens its dialogue outline. Select a line to edit **Write**, **Conditions**, **Effects** or **Presentation**. Guided continuation and ending controls preserve other effects; complex imported transitions stay editable in the condition and effect forms.
+
+**Non-story quests** is separate and lists quests without a valid chapter assignment. It has no Story events step. To convert a non-story quest, use **Add to a story chapter**, or add it from the chapter's **Add an existing non-story quest** control. Moving a quest preserves its identity, objectives and rewards. Imported broken memberships remain accessible here with a repair notice.
 
 Quest links and validation links open the quest inside its chapter. Duplicating a chapter quest retains its membership; deleting an unreferenced quest removes its own membership too. Other references continue to block deletion.
 
@@ -86,3 +88,5 @@ Story conditions and actions group behavior, targets, comparisons, progression a
 ---
 
 [Documentation home](Home.md) · [Guide navigation](_Sidebar.md)
+
+To delete a conversation, select **Delete** and review the listed contents. Confirming removes its dialogue lines, its entry points and an unused Dialogue-scope phase variable. Quests and journal notes are kept, as are variables still used elsewhere. If another conversation, raid event or quest references the deleted content, the preview links to that record so you can remove or reassign the reference first. Cancel leaves the draft unchanged.

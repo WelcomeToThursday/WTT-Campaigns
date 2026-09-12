@@ -91,8 +91,8 @@ public static class CreatorGuidance
             "Quests",
             "Create non-story quests independently of the chapter workspace.",
             [
-                "Add a non-story quest. In Details, name it, write its description and choose a trader.",
-                "In Objectives, configure start requirements and completion objectives. New quests include a Level requirement and an unfinished HandoverItem objective; choose its target item.",
+                "Add a non-story quest. In Basics, name it, write its description and choose a trader.",
+                "In Unlock requirements, configure when the quest becomes available. In Objectives, configure completion rules. New quests include a Level requirement and an unfinished HandoverItem objective; choose its target item.",
                 "In Rewards, add completion rewards. Non-story quests have no story behavior tab.",
                 "To convert a quest into a story quest, expand Add to a story chapter. Assign a chapter to move it into that chapter workspace.",
             ],
@@ -105,7 +105,7 @@ public static class CreatorGuidance
                 "Choose Add story chapter when starting a story, or Add chapter when a story already exists.",
                 "Use Chapter settings to name the chapter and optionally select its image and icon.",
                 "Leave Visibility as empty All for an always-visible chapter, or add conditions.",
-                "Open the Quests tab. Create quest in this chapter, or select an existing chapter quest. Its Details, Objectives, Rewards and Story tabs are edited here without leaving the chapter.",
+                "Use + Create quest beneath a chapter in the tree, or select an existing quest by name. Follow Basics, Unlock requirements, Objectives, Rewards, Story events and Preview. Select the chapter name to edit chapter settings.",
             ],
             "Required quests determine chapter completion. A chapter with no required quests does not automatically become complete."
         ),
@@ -124,8 +124,8 @@ public static class CreatorGuidance
             "Write NPC dialogue and player replies with conditions and actions.",
             [
                 "Open Conversation templates, choose a trader, and create a Simple conversation, Branching exchange or Quest-linked conversation.",
-                "Select each line under Conversation lines and edit its Text. NPC lines run automatically; Player lines are selectable replies.",
-                "Use Trigger to control when a line is available and Actions to change state. Actions execute from top to bottom.",
+                "Select a line in the dialogue outline and edit its Text under Write. NPC lines run automatically; Player lines are selectable replies.",
+                "Use Conditions to control when a line is available and Effects to change state. Effects execute from top to bottom. Guided connections are available for Dialogue-scope phase templates.",
                 "Use Connections to inspect the flow, Preview to review text, and Story rehearsal to try the choices.",
             ],
             "Templates create a phase variable and entry point. Keep the phase-changing actions: a repeating NPC line or two eligible NPC lines will roll back the conversation step."
@@ -286,9 +286,9 @@ public static class CreatorGuidance
             "Add a supply quest",
             "Chapters",
             [
-                "Select First contact, open its Quests tab and choose Create quest in this chapter. In Details, name it A small favor, describe the supply request, and choose Prapor.",
-                "In Objectives, keep the Level start requirement at 1. Configure the default HandoverItem completion objective: choose one ordinary inventory item, set Value to 1, and leave Only found in raid off with durability 0–100.",
-                "The quest already belongs to First contact. In its Story tab, keep Main enabled, enable Auto complete, and leave Auto start disabled.",
+                "Choose + Create quest beneath First contact in the chapter tree. In Basics, name it A small favor, describe the supply request, and choose Prapor.",
+                "In Unlock requirements, keep Player level at 1. In Objectives, expand the Hand over items rule: choose one ordinary inventory item, set Value to 1, and leave Only found in raid off with durability 0–100.",
+                "The quest already belongs to First contact. In Story events, open Journal visibility and chapter completion and keep Main enabled. Under Automatic quest progression, enable Auto complete and leave Auto start disabled.",
                 "The quest will be accepted by a conversation. You can leave Rewards empty for this lesson.",
             ],
             "A small favor belongs to First contact and completes automatically after its one required handover."
@@ -297,8 +297,8 @@ public static class CreatorGuidance
             "Write the completion note",
             "Chapters",
             [
-                "In First contact, select A small favor and open its Story tab. Under Journal notes for this quest, choose Success and Create and link note.",
-                "Expand the new note and write: Prapor received the supplies. We have made our first contact.",
+                "Select A small favor in the chapter tree and open Story events. Choose completed and handed in, then Create and write note.",
+                "The note workspace opens. Write: Prapor received the supplies. We have made our first contact.",
                 "The chapter and Success association are already assigned. You can edit this same note later in Journal notes.",
             ],
             "The note is linked to quest Success. It will appear after completion, not merely because it exists."
@@ -307,10 +307,10 @@ public static class CreatorGuidance
             "Build the trader conversation",
             "Chapters",
             [
-                "Inside First contact → Quests → A small favor → Story, find Quest conversations. Keep Prapor selected and click Create quest conversation. Expand the new conversation below.",
+                "Select A small favor → Story events, then expand Create a quest introduction. Keep Prapor selected and choose Create and write conversation to open its writing workspace.",
                 "The template adds a conversation, phase variable and lobby entry. Edit its NPC text and acceptance reply, keeping the generated triggers and phase-changing actions.",
-                "Expand Lines and find the final Goodbye player line. Change its Text to Here are the supplies.",
-                "Under Actions, Add action and choose Handover item. Select A small favor for Quest id and its HandoverItem objective for Condition id. Move this action before Quit action.",
+                "Select the final Goodbye reply in the dialogue outline. Under Write, change its Text to Here are the supplies.",
+                "Under Effects, Add action and choose Handover item. Select A small favor for Quest id and its HandoverItem objective for Condition id. Move this action before Quit action.",
             ],
             "The conversation accepts the quest, then offers a handover reply. The handover runs before the conversation closes."
         ),
@@ -318,7 +318,7 @@ public static class CreatorGuidance
             "Check the entry and flow",
             "Conversations",
             [
-                "Select the new conversation and expand Conversation availability and phase. Its entry should use InLobby, Prapor and this conversation.",
+                "Select the conversation and expand Conversation settings and availability, then Conversation availability and phase. Its entry should use InLobby, Prapor and this conversation.",
                 "Leave Start point blank and Condition as empty All for this lesson.",
                 "In Conversations, open Connections to inspect phase transitions. Use Preview to read the dialogue in order.",
                 "The main variable uses Dialogue scope, so a new conversation starts at its initial phase.",

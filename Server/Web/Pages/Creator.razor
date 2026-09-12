@@ -8,7 +8,7 @@
 @inject SeasonContentService Content
 
 <PageTitle>Campaign Creator</PageTitle>
-<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-raid-menu" /></HeadContent>
+<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-story-workspace" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
 <main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
@@ -296,7 +296,7 @@
                     <SpatialWorkspace Season="S" Changed="Dirty" />
                     break;
                 case "Quests":
-                    <QuestWorkspace Season="S" FocusId="@_focusId" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
+                    <QuestWorkspace Season="S" ViewState="_questViews" FocusId="@_focusId" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
                     break;
                 case "Chapters":
                 case "Journal notes":
@@ -305,7 +305,7 @@
                 case "Entry points":
                 case "Raid events":
                 case "Story media":
-                    <StoryWorkspace Season="S" Section="@_section" FocusId="@_focusId" FocusChildId="@_focusChildId" ChildSelectionChanged="@(v => _focusChildId = v)" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
+                    <StoryWorkspace Season="S" QuestViews="_questViews" Section="@_section" FocusId="@_focusId" FocusChildId="@_focusChildId" ChildSelectionChanged="@(v => _focusChildId = v)" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
                     break;
                 case "Story rehearsal":
                     <StoryRehearsalPanel Season="S" />

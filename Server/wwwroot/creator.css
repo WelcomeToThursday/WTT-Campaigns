@@ -570,3 +570,64 @@
     .creator-library .draft-sort-controls label { flex: 1; }
     .creator-library .draft-action-panel { padding: 16px; }
 }
+
+/* Quest and story authoring: distinct navigation, saved-rule summaries and focused forms. */
+.season-creator .authoring-breadcrumb { display:flex; flex-wrap:wrap; gap:8px; align-items:center; color:var(--muted); padding:12px 0; font-size:12px; overflow-wrap:anywhere; }
+.season-creator .authoring-breadcrumb strong { color:var(--ink); }
+.season-creator .authoring-breadcrumb [aria-current] { color:var(--accent); }
+.season-creator .quest-heading { background:var(--surface); padding:18px 20px; border-left:3px solid var(--accent); border-radius:6px; }
+.season-creator .quest-heading h3 { font-size:24px; margin:4px 0 12px; line-height:1.3; }
+.season-creator .quest-steps { display:flex; flex-wrap:wrap; gap:6px; border-bottom:2px solid var(--line); padding:8px 0 16px; margin:0 0 24px; }
+.season-creator .quest-steps button { background:transparent; border-color:transparent; color:var(--muted); padding:9px 12px; }
+.season-creator .quest-steps button[aria-current] { background:var(--accent); color:#09090b; border-color:var(--accent); font-weight:700; }
+.season-creator .quest-step-footer { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; border-top:1px solid var(--line); padding:18px 0; color:var(--muted); }
+.season-creator .chapter-tree-group { margin:0 0 16px; }
+.season-creator .chapter-tree-group > .content-row { background:var(--surface); font-weight:700; }
+.season-creator .chapter-tree-quests { border-left:2px solid var(--line); margin-left:12px; padding-left:10px; }
+.season-creator .chapter-tree-quests .content-row { font-size:12px; }
+.season-creator .chapter-tree-quests .selected { border-left:3px solid var(--accent); }
+.season-creator .tree-add { background:transparent; border:0; font-size:12px; color:var(--accent); text-align:left; }
+.season-creator .authoring-empty { padding:20px; border:1px dashed var(--line); border-radius:6px; line-height:1.7; }
+.season-creator .objective-stage { border-top:3px solid var(--spt-info, #38bdf8); }
+.season-creator .objective-entry { padding:0; margin:0 0 18px; border:1px solid var(--spt-border-strong, #3f3f46); border-radius:8px; background:var(--panel); overflow:hidden; }
+.season-creator .objective-card { border:0; margin:0; background:var(--panel); padding:16px 20px; }
+.season-creator .objective-card > summary { display:grid; grid-template-columns:1fr auto; gap:4px 16px; list-style:none; }
+.season-creator .objective-card > summary .eyebrow { grid-column:1; color:var(--spt-info, #38bdf8); }
+.season-creator .objective-card > summary strong { grid-column:1; font-size:16px; line-height:1.5; }
+.season-creator .objective-rule { grid-column:1; color:var(--muted); font-size:12px; font-weight:400; }
+.season-creator .edit-affordance { grid-column:2; grid-row:1 / 4; align-self:center; color:var(--accent); font-size:12px; }
+.season-creator .objective-card[open] > summary .edit-affordance { font-size:0; }
+.season-creator .objective-card[open] > summary .edit-affordance::after { content:'Collapse'; font-size:12px; }
+.season-creator .objective-entry > .record-actions { padding:8px 16px; background:var(--surface); border-top:1px solid var(--line); justify-content:flex-end; }
+.season-creator .add-objective { border-top:1px solid var(--line); padding-top:18px; margin:20px 0 0; max-width:480px; }
+.season-creator .story-event-row { display:grid; grid-template-columns:minmax(130px,1fr) auto minmax(180px,2fr) auto; gap:16px; align-items:center; padding:18px; margin:12px 0; border:1px solid var(--line); border-left:3px solid var(--spt-info, #38bdf8); background:var(--panel); border-radius:6px; }
+.season-creator .story-event-row .eyebrow, .season-creator .linked-story-record strong { display:block; }
+.season-creator .story-event-row p { margin:4px 0 0; color:var(--ink); white-space:pre-wrap; overflow-wrap:anywhere; }
+.season-creator .authoring-create { display:flex; flex-wrap:wrap; gap:14px; align-items:end; padding:18px; background:var(--panel); border-radius:6px; }
+.season-creator .authoring-create label { margin:0; flex:1 1 200px; }
+.season-creator .linked-story-record { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; padding:18px; border:1px solid var(--line); border-left:3px solid #c4b5fd; border-radius:6px; margin:12px 0; background:var(--panel); }
+.season-creator .linked-story-record > div { flex:1 1 240px; min-width:0; overflow-wrap:anywhere; }
+.season-creator .conversation-writer { display:grid; grid-template-columns:minmax(180px,32%) minmax(0,1fr); gap:24px; align-items:start; margin-bottom:28px; }
+.season-creator .conversation-outline { min-width:0; border-right:1px solid var(--line); padding-right:16px; }
+.season-creator .conversation-outline > h3 { margin-top:0; font-size:17px; }
+.season-creator .conversation-outline > p { font-size:12px; }
+.season-creator .outline-entry { margin:0 0 18px; border-left:3px solid var(--spt-info, #38bdf8); padding-left:8px; }
+.season-creator .outline-entry.player { border-color:#c4b5fd; }
+.season-creator .outline-entry .content-row { background:var(--surface); }
+.season-creator .outline-entry .content-row > span { display:block; white-space:pre-wrap; }
+.season-creator .outline-edge { display:block; text-align:left; width:100%; border:0; padding:4px 8px; background:transparent; font-size:11px; color:var(--muted); overflow-wrap:anywhere; }
+.season-creator .outline-end { display:block; color:var(--muted); font-size:11px; padding:4px 8px; }
+.season-creator .conversation-line-editor { min-width:0; background:var(--surface); border:1px solid var(--spt-border-strong, #3f3f46); border-radius:8px; padding:20px; }
+.season-creator .line-heading h3 { font-size:18px; margin:8px 0 16px; overflow-wrap:anywhere; }
+.season-creator .conversation-line-editor textarea { min-height:160px; font-size:15px; line-height:1.7; }
+.season-creator .line-transition { border-top:2px solid var(--line); padding-top:12px; margin-top:24px; }
+.season-creator .line-transition > p { font-size:12px; }
+.season-creator .story-fields .nested-record { border-left:2px solid var(--spt-border-strong, #3f3f46); background:var(--panel); padding:12px; margin:14px 0; }
+.season-creator .story-fields .field-section { margin-bottom:24px; }
+.season-creator .preserve-lines { white-space:pre-wrap; }
+@media (max-width:1400px) { .season-creator .story-event-row { grid-template-columns:1fr auto; } .season-creator .story-event-row > span[aria-hidden] { display:none; } .season-creator .story-event-row > div { grid-column:1; } .season-creator .story-event-row > button { grid-column:2; grid-row:1 / 3; } }
+@media (max-width:1100px) { .season-creator .conversation-writer { grid-template-columns:minmax(0,1fr); } .season-creator .conversation-outline { border-right:0; border-bottom:1px solid var(--line); padding:0 0 20px; max-height:360px; overflow-y:auto; } }
+@media (max-width:680px) { .season-creator .story-event-row { display:flex; flex-direction:column; align-items:stretch; } .season-creator .conversation-line-editor { padding:14px; } .season-creator .quest-heading h3 { font-size:20px; } .season-creator .quest-steps button { padding:8px; } .season-creator .edit-affordance { grid-column:1; grid-row:auto; } }
+
+.season-creator .content-detail { container-type:inline-size; }
+@container (max-width: 720px) { .season-creator .conversation-writer { grid-template-columns:minmax(0,1fr); } .season-creator .conversation-outline { max-height:320px; overflow-y:auto; border-right:0; border-bottom:1px solid var(--line); padding:0 0 16px; } }

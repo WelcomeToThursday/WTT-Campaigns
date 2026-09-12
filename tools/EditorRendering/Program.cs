@@ -13,6 +13,7 @@ using WTT.Campaigns.Server.Seasons;
 using WTT.Campaigns.Server.Web.Authoring;
 using WTT.Campaigns.Server.Web.Components;
 using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Native;
 using WTT.Campaigns.Shared.Story;
 
 // Offline rendering of the real editor components; no game/server process or profiles.
@@ -164,6 +165,26 @@ Require(
     pages["zone-binding"].Contains("Trigger zone") && pages["zone-binding"].Contains("Pick in raid"),
     "Story bindings expose both zone and scene-target capture"
 );
+var chapter = new StoryChapter { Id = "333333333333333333333333", Name = "First contact" };
+season.Story.Chapters.Add(chapter);
+season.Quests.Add(quest);
+NativeQuestAuthoring.QuestText(quest, "name", "A small favor");
+NativeQuestAuthoring.QuestText(quest, "description", "Prapor needs supplies for a stranded patrol. Bring the medical supplies back to him.");
+var membership = new StoryQuest { QuestId = (string)quest.Id!, ChapterId = chapter.Id };
+season.Story.Quests.Add(membership);
+quest.English()[counter.Id] = "Eliminate five Scavs on Customs";
+quest.Conditions.AvailableForFinish.Add(counter);
+var note = QuestStoryFlow.AddNote(season, membership, "Success");
+note.Text = "Prapor received the supplies. We have made our first contact.";
+var conversation = StoryAuthoring.AddConversation(season, "444444444444444444444444", true, membership.QuestId);
+conversation.Lines[0].Text = "A patrol is waiting on medical supplies. Can you help?";
+pages["chapter-tree"] = await Render<StoryWorkspace>(new() { ["Season"] = season, ["Section"] = "Chapters", ["FocusId"] = chapter.Id, ["FocusChildId"] = membership.QuestId });
+pages["quest-objectives"] = await Render<StoryWorkspace>(new() { ["Season"] = season, ["Section"] = "Chapters", ["FocusId"] = chapter.Id, ["FocusChildId"] = membership.QuestId, ["QuestViews"] = new Dictionary<string, string> { [membership.QuestId] = "Objectives" } });
+pages["quest-events"] = await Render<QuestStoryFlowEditor>(new() { ["Season"] = season, ["Quest"] = quest, ["Membership"] = membership });
+pages["conversation-writer"] = await Render<StoryWorkspace>(new() { ["Season"] = season, ["Section"] = "Conversations", ["FocusId"] = conversation.Id });
+Require(pages["chapter-tree"].Contains("Current editing location") && pages["chapter-tree"].Contains("Unlock requirements"), "Quest navigation has chapter context and separate unlock step");
+Require(pages["quest-events"].Contains("completed and handed in") && !pages["quest-events"].Contains("Conversation lines"), "Story event overview describes lifecycle without nested conversation editing");
+Require(pages["conversation-writer"].Contains("Conversation outline") && pages["conversation-writer"].Contains("Add connected reply"), "Conversation writing keeps flow alongside connected reply controls");
 var theme = File.ReadAllText(
     Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -179,7 +200,7 @@ foreach (var (name, markup) in pages)
             + "</title><style>"
             + theme
             + css
-            + "</style></head><body><main class=\"campaign-creator\"><div class=\"editor-body\" style=\"max-width:1100px;margin:auto\">"
+            + "</style></head><body><main class=\"season-creator\"><div class=\"editor-body\" style=\"max-width:1640px;margin:auto\">"
             + markup
             + "</div></main></body></html>"
     );

@@ -1,0 +1,71 @@
+@inject SeasonContentService Content
+@using WTT.Campaigns.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Story
+<details class="editor-section"><summary>Conversation settings and availability</summary><p>Choose the trader and entry points. The writing workspace below edits one line at a time.</p><StoryFields Season="Season" Value="Dialog" Changed="Changed" Excluded="@(new[] { "Lines", "Id" })" /><ConversationSetup Season="Season" Dialog="Dialog" Changed="Changed" /></details>
+<div class="conversation-writer">
+    <aside class="conversation-outline" aria-label="Conversation outline"><h3>Dialogue and replies</h3><p>Connections show matching phase transitions. Conditions and random gates can still block a line.</p>
+    @foreach(var entry in Dialog.Lines)
+    {
+        <div class="outline-entry @entry.Side.ToLowerInvariant()" @key="entry.Id"><button class="content-row @(Selected == entry ? "selected" : "")" aria-current="@(Selected == entry ? "true" : null)" @onclick="@(() => Select(entry.Id))"><small>@(entry.Side == "Npc" ? "TRADER" : "PLAYER REPLY")</small><span>@entry.Text</span><small>@TriggerSummary(entry)</small></button>
+        @if (entry.Actions.Any(a => a.Type == StoryActionType.QuitAction)) { <span class="outline-end">Ends conversation</span> }
+        else
+        {
+            @foreach(var next in ConversationAuthoring.NextLines(Dialog, entry)) { <button class="outline-edge" @onclick="@(() => Select(next.Id))">↳ @next.Text</button> }
+        }
+        </div>
+    }
+    @if (Dialog.Lines.Count == 0) { <p class="authoring-empty">No dialogue yet. Add the first trader line.</p> }
+    <div class="row"><button @onclick="@(() => AddLoose("Npc"))">Add trader line</button><button @onclick="@(() => AddLoose("Player"))">Add player reply</button></div>
+    </aside>
+    <section class="conversation-line-editor">
+    @if (Selected is { } line)
+    {
+        <header class="line-heading"><span class="eyebrow">EDITING @(line.Side == "Npc" ? "TRADER LINE" : "PLAYER REPLY") · @(Dialog.Lines.IndexOf(line) + 1) OF @Dialog.Lines.Count</span><h3>@line.Text</h3></header>
+        <nav class="quest-steps" aria-label="Selected dialogue line">@foreach(var tab in new[] { "Write", "Conditions", "Effects", "Presentation" }) { <button aria-current="@(_tab == tab ? "page" : null)" @onclick="@(() => _tab = tab)">@tab</button> }</nav>
+        @if (_tab == "Write")
+        {
+            <label>Who speaks?<select value="@line.Side" @onchange="@(e => Apply(() => line.Side = e.Value?.ToString() ?? "Player"))"><option value="Npc">Trader</option><option value="Player">Player reply</option></select></label>
+            <StoryValue @key="line" Season="Season" Owner="line" Field="Text" Caption="Dialogue text" Value="line.Text" Changed="@(v => Apply(() => line.Text = (string)v))" />
+            <details class="editor-card"><summary>Optional confirmation prompt</summary><StoryValue Season="Season" Owner="line" Field="Confirmation" Value="line.Confirmation" Changed="@(v => Apply(() => line.Confirmation = (string)v))" /></details>
+            <section class="line-transition"><h4>What happens next?</h4><p>Continue makes the destination phase available. Other lines in that phase may also become available. Ending keeps other effects and removes the phase transition.</p>
+            @if (ConversationAuthoring.HasPhase(Season.Story!, Dialog))
+            {
+                <label>Continue to line<select @bind="_next"><option value="">Choose a destination…</option>@foreach(var target in Dialog.Lines.Where(l => l != line && ConversationAuthoring.IsPhaseLine(Dialog, l))) { <option value="@target.Id">@target.Text</option> }</select></label>
+                <div class="row"><button disabled="@(_next.Length == 0)" @onclick="Connect">Connect selected line</button><button @onclick="@(() => Apply(() => ConversationAuthoring.End(Season.Story!, Dialog, line)))">End conversation</button><button @onclick="@(() => AddAfter(line.Side == "Npc" ? "Player" : "Npc"))">@(line.Side == "Npc" ? "Add connected reply" : "Add trader continuation")</button></div>
+            }
+            else { <p>Use Conditions and Effects to connect imported dialogue, or create a conversation from a template for guided connections.</p> }
+            </section>
+        }
+        else if (_tab == "Conditions")
+        { <h4>If these conditions are met</h4><p>@AuthoringSummary.Condition(Season, line.Trigger, Content.Name)</p><StoryFields @key="line" Season="Season" Value="line" Changed="Changed" Excluded="@(new[] { "Id", "Side", "Text", "Icon", "Confirmation", "TraderId", "Actions", "Playback" })" /> }
+        else if (_tab == "Effects")
+        { <h4>Then apply these effects, in order</h4><p>Effects run when the trader line plays or the player selects this reply.</p><StoryFields @key="line" Season="Season" Value="line" Changed="Changed" Excluded="@(new[] { "Id", "Side", "Text", "Icon", "Confirmation", "TraderId", "Trigger", "Playback", "Random" })" /> }
+        else
+        { <h4>Voice, artwork and playback</h4><StoryFields @key="line" Season="Season" Value="line" Changed="Changed" Excluded="@(new[] { "Id", "Side", "Text", "Confirmation", "Trigger", "Actions", "Random" })" /> }
+        <details class="editor-card"><summary>Line actions and reference ID</summary><code>@line.Id</code><div class="row"><button @onclick="Duplicate">Duplicate line</button><button disabled="@(Dialog.Lines.IndexOf(line) == 0)" @onclick="@(() => Move(-1))">Move earlier</button><button disabled="@(Dialog.Lines.IndexOf(line) == Dialog.Lines.Count - 1)" @onclick="@(() => Move(1))">Move later</button><button class="danger" @onclick="Delete">Delete line</button></div></details>
+    }
+    else { <p class="authoring-empty">Select a line to write its text and connect its effects.</p> }
+    @if (_message.Length > 0) { <p class="notice error" role="alert">@_message</p> }
+    </section>
+</div>
+<details class="editor-section"><summary>Preview this conversation with simulated player state</summary><StoryRehearsalPanel Season="Season" FocusDialogId="@Dialog.Id" /></details>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public StoryDialog Dialog { get; set; } = null!;
+    [Parameter] public string FocusLineId { get; set; } = "";
+    [Parameter] public EventCallback<string> SelectionChanged { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback<string> Navigate { get; set; }
+    private string _selected = "", _lastFocus = "", _tab = "Write", _next = "", _message = "";
+    private StoryDialogLine? Selected => Dialog.Lines.FirstOrDefault(l => l.Id == _selected) ?? Dialog.Lines.FirstOrDefault();
+    protected override void OnParametersSet() { if (_lastFocus != FocusLineId) { _lastFocus = FocusLineId; _selected = FocusLineId; _tab = "Write"; _next = ""; } }
+    private string TriggerSummary(StoryDialogLine line) => ConversationAuthoring.IsPhaseLine(Dialog, line) ? "Available at conversation phase " + line.Trigger.Value + (line.Trigger.InRaidOnly ? " · in raid" : "") : AuthoringSummary.Condition(Season, line.Trigger, Content.Name);
+    private async Task Select(string id) { _selected = id; _lastFocus = id; _tab = "Write"; _next = ""; _message = ""; await SelectionChanged.InvokeAsync(id); }
+    private async Task Apply(Action edit) { try { edit(); _message = ""; await Changed.InvokeAsync(); } catch (InvalidOperationException e) { _message = e.Message; } }
+    private async Task Connect() { if (Selected is { } line && Dialog.Lines.FirstOrDefault(l => l.Id == _next) is { } target) await Apply(() => ConversationAuthoring.Connect(Season.Story!, Dialog, line, target)); }
+    private async Task AddAfter(string side) { if (Selected is not { } line) return; StoryDialogLine? added = null; await Apply(() => added = ConversationAuthoring.AddAfter(Season.Story!, Dialog, line, side)); if (added != null) await Select(added.Id); }
+    private async Task AddLoose(string side) { var line = (StoryDialogLine)StoryAuthoring.Create(typeof(StoryDialogLine)); line.Side = side; line.Text = side == "Npc" ? "New trader line" : "New player reply"; Dialog.Lines.Add(line); await Select(line.Id); await Changed.InvokeAsync(); }
+    private async Task Duplicate() { if (Selected is not { } line) return; var copy = (StoryDialogLine)StoryAuthoring.Duplicate(line); Dialog.Lines.Insert(Dialog.Lines.IndexOf(line) + 1, copy); await Select(copy.Id); await Changed.InvokeAsync(); }
+    private async Task Move(int direction) { if (Selected is not { } line) return; var index = Dialog.Lines.IndexOf(line); Dialog.Lines.RemoveAt(index); Dialog.Lines.Insert(index + direction, line); await Changed.InvokeAsync(); }
+    private async Task Delete() { if (Selected is not { } line) return; var uses = StoryAuthoring.Uses(Season, line); if (uses.Count > 0) { _message = "Reassign these references first: " + string.Join(", ", uses); return; } Dialog.Lines.Remove(line); await Select(Dialog.Lines.FirstOrDefault()?.Id ?? ""); await Changed.InvokeAsync(); }
+}

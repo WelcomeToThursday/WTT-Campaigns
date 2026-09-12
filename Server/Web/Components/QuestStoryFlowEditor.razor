@@ -1,31 +1,34 @@
 @using WTT.Campaigns.Server.Web.Authoring
 @using WTT.Campaigns.Shared.Story
 <div class="quest-story-flow">
-    <p>Build this quest's story here. Related records are shared with the chapter, journal and conversation editors; changes use the same draft save.</p>
-    <details class="editor-card" open>
-        <summary>Journal notes for this quest</summary>
-        <p>Create a note and link it to a quest status in one step. Use Status notes above to reassign or remove a link.</p>
-        @foreach (var note in LinkedNotes)
-        { <details class="editor-card" @key="note.Id"><summary>@note.Text</summary><StoryFields Season="Season" Value="note" Changed="Changed" /></details> }
-        <div class="inline-fields"><label>Publish when <HelpTip Text="The note is added to the journal when the quest reaches this status. Success means the quest has been handed in and completed." /><select @bind="_status">@foreach (var status in StoryRules.QuestStatuses) { <option>@status</option> }</select></label><button @onclick="AddNote">Create and link note</button></div>
-    </details>
-    <details class="editor-card" open>
-        <summary>Quest conversations</summary>
-        <p>Conversations referencing this quest appear here and stay available while you edit, even if you change their actions. The optional template adds an accept-quest reply, phase variable and lobby entry point.</p>
-        @foreach (var dialog in LinkedDialogs)
+    <section class="editor-section"><header><h3>What happens as this quest progresses?</h3><p>Connect journal notes and conversations here. Open a linked record to write its content in its own workspace.</p></header>
+    @foreach (var pair in Membership.StatusNotes)
+    {
+        @foreach(var id in pair.Value)
         {
-            <details class="editor-card" @key="dialog.Id"><summary>@StoryAuthoring.Label(dialog)</summary>
-                @if (!ReferencesQuest(dialog))
-                { <p class="notice" role="status">This conversation no longer references this quest. It stays here while you edit and is always available in Conversations.</p> }
-                <StoryFields Season="Season" Value="dialog" Changed="Changed" /><ConversationSetup Season="Season" Dialog="dialog" Changed="Changed" />
-                <button @onclick="@(() => Navigate.InvokeAsync("Story/" + dialog.Id))">Open in Conversations</button>
-            </details>
+            var note = Season.Story!.Notes.FirstOrDefault(n => n.Id == id);
+            <article class="story-event-row" @key="@(pair.Key + "/" + id)"><div><span class="eyebrow">WHEN</span><strong>Quest is @AuthoringSummary.Status(pair.Key)</strong></div><span aria-hidden="true">→</span><div><span class="eyebrow">THEN · ADD JOURNAL NOTE</span><p>@(note?.Text ?? "Missing journal note — repair this link below")</p></div>@if (note != null) { <button @onclick="@(() => Navigate.InvokeAsync("Story/" + id))">Edit note</button> }</article>
         }
-        <ContentPicker Kind="traders" Label="Conversation trader" Value="@Trader" ValueChanged="@(v => _trader = v)" HelpText="Defaults to this quest's trader. The template uses this trader for the conversation and its lobby entry point." />
-        <label class="check"><input type="checkbox" @bind="_branching" />Include a decline reply <HelpTip Text="Adds a player reply that closes the conversation without accepting the quest." /></label>
-        <button disabled="@(!SeasonValidator.IsId(Trader))" @onclick="AddConversation">Create quest conversation</button>
-    </details>
-    <button @onclick="@(() => Navigate.InvokeAsync("Story rehearsal"))">Rehearse story</button>
+    }
+    @if (!Membership.StatusNotes.Values.Any(ids => ids.Count > 0)) { <p class="authoring-empty">No journal events yet. Add a note for acceptance, completion or another quest status.</p> }
+    <div class="authoring-create"><label>When this quest is<select @bind="_status">@foreach (var status in StoryRules.QuestStatuses) { <option value="@status">@AuthoringSummary.Status(status)</option> }</select></label><button @onclick="AddNote">Create and write note</button></div>
+    <details class="editor-card"><summary>Link or unlink existing notes</summary><p>Choose a quest status, then add a reference to an existing journal note. Unlinking keeps the note in the campaign.</p><StoryFields Season="Season" Value="Membership" Changed="Changed" Excluded="@(new[] { "QuestId", "ChapterId", "Main", "AutoStart", "AutoComplete", "Hidden", "Visibility" })" /></details>
+    </section>
+    <section class="editor-section"><header><h3>Quest conversations</h3><p>Write dialogue and player replies in the conversation workspace. These links follow conversations that reference this quest.</p></header>
+    @foreach (var dialog in LinkedDialogs)
+    {
+        <article class="linked-story-record" @key="dialog.Id"><div><span class="eyebrow">CONVERSATION · @dialog.Lines.Count LINES</span><strong>@StoryAuthoring.Label(dialog)</strong>
+        @if (!ReferencesQuest(dialog)) { <p class="notice">This conversation no longer references this quest. It remains available here until you leave, and in Conversations.</p> }
+        </div><button @onclick="@(() => Navigate.InvokeAsync("Story/" + dialog.Id))">Open in Conversations</button></article>
+    }
+    @if (!LinkedDialogs.Any()) { <p class="authoring-empty">No linked conversations. Start with a quest introduction below.</p> }
+    <details class="editor-card"><summary>Create a quest introduction</summary><p>Creates an accept-quest reply, a conversation phase and a lobby entry point. Write the dialogue after creating it.</p>
+        <ContentPicker Kind="traders" Label="Conversation trader" Value="@Trader" ValueChanged="@(v => _trader = v)" HelpText="Defaults to this quest's trader. The introduction and lobby entry point use this trader." />
+        <label class="check"><input type="checkbox" @bind="_branching" />Include a decline reply</label>
+        <button disabled="@(!SeasonValidator.IsId(Trader))" @onclick="AddConversation">Create and write conversation</button>
+    </details></section>
+    <details class="editor-section"><summary>Automatic quest progression</summary><p>These options control acceptance and hand-in. Native unlock requirements and completion objectives still apply.</p><StoryFields Season="Season" Value="Membership" Changed="Changed" Excluded="@(new[] { "QuestId", "ChapterId", "Main", "Hidden", "Visibility", "StatusNotes" })" /></details>
+    <details class="editor-section"><summary>Journal visibility and chapter completion</summary><p>Control whether this quest appears in the story journal and counts toward chapter completion. This does not replace its native unlock requirements.</p><StoryFields Season="Season" Value="Membership" Changed="Changed" Excluded="@(new[] { "QuestId", "ChapterId", "AutoStart", "AutoComplete", "StatusNotes" })" /></details>
 </div>
 @code {
     [Parameter] public SeasonDefinition Season { get; set; } = null!;
@@ -40,7 +43,6 @@
     private string? _dialogQuest;
     private readonly HashSet<string> _visibleDialogs = new(StringComparer.Ordinal);
     private string Trader => _trader ?? (string?)Quest.TraderId ?? "";
-    private IEnumerable<StoryNote> LinkedNotes => Season.Story!.Notes.Where(n => Membership.StatusNotes.Values.Any(ids => ids.Contains(n.Id)));
     private bool ReferencesQuest(StoryDialog dialog) => ModelGraph.Texts(dialog).Any(p => p.Field == "QuestId" && p.Value == Membership.QuestId);
     private IEnumerable<StoryDialog> LinkedDialogs => Season.Story!.Dialogs.Where(d => _visibleDialogs.Contains(d.Id));
     protected override void OnParametersSet()
@@ -51,6 +53,6 @@
         { _visibleDialogs.Clear(); _dialogSeason = Season; _dialogQuest = Membership.QuestId; }
         _visibleDialogs.UnionWith(Season.Story!.Dialogs.Where(ReferencesQuest).Select(d => d.Id));
     }
-    private async Task AddNote() { QuestStoryFlow.AddNote(Season, Membership, _status); await Changed.InvokeAsync(); }
-    private async Task AddConversation() { StoryAuthoring.AddConversation(Season, Trader, _branching, Membership.QuestId); await Changed.InvokeAsync(); }
+    private async Task AddNote() { var note = QuestStoryFlow.AddNote(Season, Membership, _status); await Changed.InvokeAsync(); await Navigate.InvokeAsync("Story/" + note.Id); }
+    private async Task AddConversation() { var dialog = StoryAuthoring.AddConversation(Season, Trader, _branching, Membership.QuestId); await Changed.InvokeAsync(); await Navigate.InvokeAsync("Story/" + dialog.Id); }
 }

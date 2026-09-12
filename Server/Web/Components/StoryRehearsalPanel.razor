@@ -21,7 +21,7 @@
     { <div class="notice"><strong>Native outcome needed</strong><p>@pending.Message</p><p>The step is paused and has not committed changes.</p><button disabled="@run.Stale(Season)" @onclick="@(() => Act(() => run.Resume(true)))">Simulate success</button><button @onclick="@(() => Act(() => run.Resume(false)))">Simulate failure</button></div> }
     @if (run.Error.Length > 0) { <p class="notice error" role="alert">@run.Error</p> }
     <h3>Conversation entry points</h3>
-    @foreach(var entry in run.Definition.EntryPoints)
+    @foreach(var entry in run.Definition.EntryPoints.Where(e => FocusDialogId.Length == 0 || e.DialogId == FocusDialogId))
     {
         var eligible = StoryProjection.EntryAvailable(entry, run.Definition, run.State, run.Facts);
         <div class="preview-reward"><button disabled="@(Disabled || !eligible)" @onclick="@(() => Act(() => run.Start(entry.Id)))">@StoryAuthoring.Label(entry) · @DialogName(run, entry.DialogId)</button><span>@(eligible ? "Available" : "Blocked by context or conditions")</span><small>@Trace(run, entry.Condition)</small></div>
@@ -58,6 +58,7 @@
 </div>
 @code {
     [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public string FocusDialogId { get; set; } = "";
     private StoryRehearsal? _run;
     private StoryFacts _facts = new() { Level = 1 };
     private Dictionary<string, int> _variables = new();

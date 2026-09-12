@@ -1,0 +1,26 @@
+@using WTT.Campaigns.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Story
+@{ var plan = ConversationDeletion.Check(Season, Dialog.Id); }
+<section class="editor-card" aria-label="Delete conversation options">
+    <h3>Delete this conversation?</h3>
+    <p><strong>@StoryAuthoring.Label(Dialog)</strong></p>
+    <ul><li>@Dialog.Lines.Count dialogue lines and their actions</li><li>@plan.EntryPoints entry points that open this conversation</li>
+    @if (plan.RemovePhase) { <li>Its unused conversation phase variable</li> }</ul>
+    <p>Quests, rewards and journal notes are kept. Variables used elsewhere are kept. Changes remain in this draft until you save.</p>
+    @if (plan.Uses.Count > 0)
+    {
+        <div class="notice error" role="alert"><strong>Other content still uses this conversation or its entry points.</strong><p>Open the linked records below and remove or reassign their references before deleting.</p>
+        @foreach(var use in plan.Uses)
+        { <div>@if (use.Navigation.Length > 0) { <button @onclick="@(() => Navigate.InvokeAsync(use.Navigation))">Open @use.Name</button> } else { <p>@use.Name</p> }<details class="reference-details"><summary>Reference details</summary><code>@use.Path</code></details></div> }
+        </div>
+    }
+    <div class="row"><button @onclick="Cancel">Cancel</button><button class="danger" disabled="@(plan.Uses.Count > 0)" @onclick="Confirm">Delete conversation and entry points</button></div>
+</section>
+@code {
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public StoryDialog Dialog { get; set; } = null!;
+    [Parameter] public EventCallback Deleted { get; set; }
+    [Parameter] public EventCallback Cancel { get; set; }
+    [Parameter] public EventCallback<string> Navigate { get; set; }
+    private async Task Confirm() { if (ConversationDeletion.Delete(Season, Dialog.Id).Uses.Count == 0) await Deleted.InvokeAsync(); }
+}

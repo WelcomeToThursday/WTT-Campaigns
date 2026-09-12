@@ -2,6 +2,7 @@ namespace WTT.Campaigns.Server.Web.Pages;
 
 public partial class Creator
 {
+    private readonly Dictionary<string, string> _questViews = new();
     private readonly Stack<(string Section, string Id, string Child)> _workspaceHistory = new();
 
     private void NavigateWorkspace(string path)

@@ -1,7 +1,8 @@
+@inject SeasonContentService Content
 @using WTT.Campaigns.Server.Web.Authoring
 @using WTT.Campaigns.Shared.Story
-<details class="editor-card objective-card" open @key="Value">
-<summary><span class="eyebrow">@(Nested ? "EVENT FILTER" : "OBJECTIVE")</span> @StoryAuthoring.Friendly(Value.ConditionType)</summary>
+<details class="editor-card objective-card" open="@Expanded" @key="Value">
+<summary><span class="eyebrow">@(Nested ? "EVENT FILTER" : "SAVED RULE")</span><strong>@(Nested || string.IsNullOrWhiteSpace(Quest.Text(Value.Id)) ? AuthoringSummary.ObjectiveKind(Value.ConditionType) : Quest.Text(Value.Id))</strong><span class="objective-rule">@AuthoringSummary.Objective(Season, Value, Content.Name)</span><span class="edit-affordance">Edit rules</span></summary>
 @if (StoryQuest && !StoryQuestCompatibility.Supports(Value, Nested)) { <p class="notice error">This objective is unsupported here. Counter filters must be inside a counter objective.</p> }
 @if (!Nested)
 {
@@ -37,6 +38,7 @@
     [Parameter] public NativeCondition Value { get; set; } = null!;
     [Parameter] public bool StoryQuest { get; set; }
     [Parameter] public bool Nested { get; set; }
+    [Parameter] public bool Expanded { get; set; }
     [Parameter] public EventCallback Changed { get; set; }
     private IEnumerable<ContentChoice> OwnedItems => StoryAuthoring.Choices(Season, "items").Select(c => new ContentChoice(c.Id, c.Name));
     private IEnumerable<ContentChoice> OwnedQuests => StoryAuthoring.Choices(Season, "quests").Select(c => new ContentChoice(c.Id, c.Name));

@@ -19,6 +19,7 @@ await using var services = new ServiceCollection()
     .AddSingleton<IJSRuntime, OfflineJsRuntime>()
     .AddMudServices()
     .AddSingleton((SeasonContentService)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(SeasonContentService)))
+    .AddSingleton((SeasonRepository)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(SeasonRepository)))
     .BuildServiceProvider();
 var count = 0;
 void Check(bool passed, string message)
@@ -63,7 +64,13 @@ foreach (var operation in new[] { "remove", "switch", "clear quest", "reassign q
         {
             return renderer.Components<StoryFields>().Any(c => ReferenceEquals(c.Component.Value, record));
         }
-        Check(Visible(dialog) && !Visible(unrelated), "Initially show only conversations referencing this quest");
+        Check(!Visible(dialog) && !Visible(unrelated), "Quest events show links without embedding conversation forms");
+        var flow = renderer.Components<QuestStoryFlowEditor>().Single();
+        Check(renderer.Text(flow.Id).Contains("Keep this reply") && !renderer.Text(flow.Id).Contains("Unrelated"), "Quest links include only related conversations");
+        await renderer.DispatchEventAsync(renderer.Event(flow.Id, "button", "Open in Conversations", "onclick"), null, new MouseEventArgs());
+        Check(host.Navigation == "Story/" + dialog.Id, "Conversation opens in its permanent workspace");
+        var writer = renderer.Components<ConversationWriter>().Single();
+        await renderer.DispatchEventAsync(renderer.Event(writer.Id, "button", "Effects", "onclick"), null, new MouseEventArgs());
         if (operation == "remove")
         {
             var fields = renderer.Components<StoryFields>().Single(c => ReferenceEquals(c.Component.Value, line));
@@ -97,15 +104,6 @@ foreach (var operation in new[] { "remove", "switch", "clear quest", "reassign q
             season.Story.Dialogs.Count == 2 && dialog.Lines.Single() == line && line.Text == "Keep this reply",
             "Action edits preserve conversations and dialogue text"
         );
-        var flow = renderer.Components<QuestStoryFlowEditor>().Single();
-        Check(renderer.Text(flow.Id).Contains("no longer references this quest"), "Detached conversation explains its availability");
-        await renderer.DispatchEventAsync(
-            renderer.Event(flow.Id, "button", "Open in Conversations", "onclick"),
-            null,
-            new MouseEventArgs()
-        );
-        Check(host.Navigation == "Story/" + dialog.Id, "Detached conversation links to its permanent editor");
-
         var remaining = renderer.Components<StoryFields>().Single(c => ReferenceEquals(c.Component.Value, line));
         await renderer.DispatchEventAsync(renderer.Event(remaining.Id, "button", "Add action", "onclick"), null, new MouseEventArgs());
         Check(
@@ -118,21 +116,77 @@ foreach (var operation in new[] { "remove", "switch", "clear quest", "reassign q
         );
 
         host.Show(season, otherQuest, otherMembership);
-        Check(Visible(dialog) == (operation == "reassign quest"), "Retained conversations do not leak into another quest");
+        flow = renderer.Components<QuestStoryFlowEditor>().Single();
+        Check(renderer.Text(flow.Id).Contains("Keep this reply") == (operation == "reassign quest"), "Quest links follow current references");
         host.Show(season, quest, membership);
-        Check(!Visible(dialog), "Reopening the quest rediscovers only its current references");
+        flow = renderer.Components<QuestStoryFlowEditor>().Single();
+        Check(!renderer.Text(flow.Id).Contains("Keep this reply"), "Reopening the quest rediscovers only its current references");
         action.QuestId = membership.QuestId;
-        if (!line.Actions.Contains(action))
-        {
-            line.Actions.Add(action);
-        }
+        if (!line.Actions.Contains(action)) { line.Actions.Add(action); }
         host.Show(season, quest, membership);
-        Check(Visible(dialog), "Newly linked conversations appear while the quest editor is open");
+        flow = renderer.Components<QuestStoryFlowEditor>().Single();
+        Check(renderer.Text(flow.Id).Contains("Keep this reply"), "Newly linked conversations appear while editing");
         var otherDraft = SeasonCompiler.Copy(season);
-        var copiedDialog = otherDraft.Story!.Dialogs.Single(d => d.Id == dialog.Id);
-        copiedDialog.Lines.Single().Actions.Clear();
+        otherDraft.Story!.Dialogs.Single(d => d.Id == dialog.Id).Lines.Single().Actions.Clear();
         host.Show(otherDraft, otherDraft.Quests[0], otherDraft.Story.Quests[0]);
-        Check(!Visible(copiedDialog), "Retained IDs do not leak into a different draft with the same quest IDs");
+        flow = renderer.Components<QuestStoryFlowEditor>().Single();
+        Check(!renderer.Text(flow.Id).Contains("Keep this reply"), "Retained IDs do not leak into a different draft");
+    });
+}
+await using (var renderer = new EditorRenderer(services))
+{
+    var season = new SeasonDefinition { Story = new() };
+    var chapter = new StoryChapter { Id = StoryAuthoring.NewId(), Name = "First contact" };
+    season.Story.Chapters.Add(chapter);
+    var first = QuestStoryFlow.AddQuest(season, chapter.Id);
+    var second = QuestStoryFlow.AddQuest(season, chapter.Id);
+    NativeQuestAuthoring.QuestText(first, "name", "First quest");
+    NativeQuestAuthoring.QuestText(second, "name", "Second quest");
+    var views = new Dictionary<string, string>();
+    var host = new WorkspaceHost(season, chapter.Id, views);
+    await renderer.Dispatcher.InvokeAsync(async () =>
+    {
+        await renderer.Mount(host);
+        var workspace = renderer.Components<StoryWorkspace>().Single();
+        var questEditor = renderer.Components<QuestWorkspace>().Single();
+        await renderer.DispatchEventAsync(renderer.Event(questEditor.Id, "button", "Unlock requirements", "onclick"), null, new MouseEventArgs());
+        Check(renderer.Components<NativeObjectiveFields>().All(c => c.Component.Value.ConditionType == "Level"), "Unlock step contains only start requirements");
+        await renderer.DispatchEventAsync(renderer.Event(questEditor.Id, "button", "Objectives", "onclick"), null, new MouseEventArgs());
+        Check(renderer.Components<NativeObjectiveFields>().All(c => c.Component.Value.ConditionType != "Level"), "Objective step keeps start requirements separate");
+        await renderer.DispatchEventAsync(renderer.Event(workspace.Id, "button", "Second quest", "onclick"), null, new MouseEventArgs());
+        questEditor = renderer.Components<QuestWorkspace>().Single();
+        Check(renderer.Text(questEditor.Id).Contains("Quest identity"), "A different quest opens at Basics");
+        await renderer.DispatchEventAsync(renderer.Event(workspace.Id, "button", "First quest", "onclick"), null, new MouseEventArgs());
+        questEditor = renderer.Components<QuestWorkspace>().Single();
+        Check(renderer.Text(questEditor.Id).Contains("What must the player do?"), "Returning to a quest restores its editing step");
+        var snapshot = Newtonsoft.Json.JsonConvert.SerializeObject(season);
+        await renderer.DispatchEventAsync(renderer.Event(questEditor.Id, "button", "Preview", "onclick"), null, new MouseEventArgs());
+        Check(Newtonsoft.Json.JsonConvert.SerializeObject(season) == snapshot, "Opening quest preview leaves all authored data unchanged");
+        await renderer.DispatchEventAsync(renderer.Event(workspace.Id, "button", "First contact", "onclick"), null, new MouseEventArgs());
+        Check(!renderer.Components<QuestWorkspace>().Any(), "Chapter selection opens chapter settings without nested quest tabs");
+    });
+}
+await using (var renderer = new EditorRenderer(services))
+{
+    var season = new SeasonDefinition { Story = new() };
+    var dialog = StoryAuthoring.AddConversation(season, "111111111111111111111111", true);
+    var host = new ConversationWorkspaceHost(season, dialog.Id);
+    await renderer.Dispatcher.InvokeAsync(async () =>
+    {
+        await renderer.Mount(host);
+        var workspace = renderer.Components<StoryWorkspace>().Single();
+        var before = Newtonsoft.Json.JsonConvert.SerializeObject(season);
+        await renderer.DispatchEventAsync(renderer.Event(workspace.Id, "button", "Delete", "onclick"), null, new MouseEventArgs());
+        var panel = renderer.Components<ConversationDeletePanel>().Single();
+        Check(Newtonsoft.Json.JsonConvert.SerializeObject(season) == before, "Delete opens a preview before changing conversation content");
+        await renderer.DispatchEventAsync(renderer.Event(panel.Id, "button", "Cancel", "onclick"), null, new MouseEventArgs());
+        Check(!renderer.Components<ConversationDeletePanel>().Any() && Newtonsoft.Json.JsonConvert.SerializeObject(season) == before, "Cancel dismisses deletion without changes");
+        await renderer.DispatchEventAsync(renderer.Event(workspace.Id, "button", "Delete", "onclick"), null, new MouseEventArgs());
+        panel = renderer.Components<ConversationDeletePanel>().Single();
+        await renderer.DispatchEventAsync(renderer.Event(panel.Id, "button", "Delete conversation and entry points", "onclick"), null, new MouseEventArgs());
+        Check(season.Story.Dialogs.Count == 0 && season.Story.EntryPoints.Count == 0, "Confirm deletes a template conversation without manual entry-point cleanup");
+        Check(!renderer.Components<ConversationWriter>().Any() && !renderer.Components<ConversationDeletePanel>().Any(), "After deletion no editor retains the removed conversation");
+        Check(host.Changes == 1 && host.SelectedId == "", "Deletion marks the draft changed and clears the parent selection");
     });
 }
 Console.WriteLine($"PASS {count} Creator component assertions");
@@ -140,9 +194,11 @@ Console.WriteLine($"PASS {count} Creator component assertions");
 sealed class EditorHost(SeasonDefinition season, NativeQuest quest, StoryQuest membership) : ComponentBase
 {
     public string Navigation { get; private set; } = "";
+    private StoryDialog? _dialog;
 
     public void Show(SeasonDefinition definition, NativeQuest selected, StoryQuest storyQuest)
     {
+        _dialog = null;
         season = definition;
         quest = selected;
         membership = storyQuest;
@@ -153,12 +209,61 @@ sealed class EditorHost(SeasonDefinition season, NativeQuest quest, StoryQuest m
     {
         builder.OpenComponent<MudBlazor.MudPopoverProvider>(0);
         builder.CloseComponent();
-        builder.OpenComponent<QuestStoryFlowEditor>(1);
+        if (_dialog != null)
+        {
+            builder.OpenComponent<ConversationWriter>(1);
+            builder.AddAttribute(2, "Season", season);
+            builder.AddAttribute(3, "Dialog", _dialog);
+            builder.AddAttribute(4, "Changed", EventCallback.Factory.Create(this, () => { }));
+            builder.CloseComponent();
+        }
+        else
+        {
+            builder.OpenComponent<QuestStoryFlowEditor>(5);
+            builder.AddAttribute(6, "Season", season);
+            builder.AddAttribute(7, "Quest", quest);
+            builder.AddAttribute(8, "Membership", membership);
+            builder.AddAttribute(9, "Changed", EventCallback.Factory.Create(this, () => { }));
+            builder.AddAttribute(10, "Navigate", EventCallback.Factory.Create<string>(this, path => { Navigation = path; _dialog = season.Story!.Dialogs.FirstOrDefault(d => "Story/" + d.Id == path); }));
+            builder.CloseComponent();
+        }
+    }
+}
+
+sealed class WorkspaceHost(SeasonDefinition season, string chapterId, Dictionary<string, string> views) : ComponentBase
+{
+    private string _child = "";
+    protected override void BuildRenderTree(RenderTreeBuilder builder)
+    {
+        builder.OpenComponent<MudBlazor.MudPopoverProvider>(0); builder.CloseComponent();
+        builder.OpenComponent<StoryWorkspace>(1);
         builder.AddAttribute(2, "Season", season);
-        builder.AddAttribute(3, "Quest", quest);
-        builder.AddAttribute(4, "Membership", membership);
-        builder.AddAttribute(5, "Changed", EventCallback.Factory.Create(this, () => { }));
-        builder.AddAttribute(6, "Navigate", EventCallback.Factory.Create<string>(this, path => Navigation = path));
+        builder.AddAttribute(3, "Section", "Chapters");
+        builder.AddAttribute(4, "FocusId", chapterId);
+        builder.AddAttribute(5, "FocusChildId", _child);
+        builder.AddAttribute(6, "QuestViews", views);
+        builder.AddAttribute(7, "Changed", EventCallback.Factory.Create(this, () => { }));
+        builder.AddAttribute(8, "ChildSelectionChanged", EventCallback.Factory.Create<string>(this, id => _child = id));
+        builder.CloseComponent();
+    }
+}
+
+sealed class ConversationWorkspaceHost(SeasonDefinition season, string selectedId) : ComponentBase
+{
+    public string SelectedId { get; private set; } = selectedId;
+    public int Changes { get; private set; }
+    private string _child = "";
+    protected override void BuildRenderTree(RenderTreeBuilder builder)
+    {
+        builder.OpenComponent<MudBlazor.MudPopoverProvider>(0); builder.CloseComponent();
+        builder.OpenComponent<StoryWorkspace>(1);
+        builder.AddAttribute(2, "Season", season);
+        builder.AddAttribute(3, "Section", "Conversations");
+        builder.AddAttribute(4, "FocusId", SelectedId);
+        builder.AddAttribute(5, "FocusChildId", _child);
+        builder.AddAttribute(6, "SelectionChanged", EventCallback.Factory.Create<string>(this, id => SelectedId = id));
+        builder.AddAttribute(7, "Changed", EventCallback.Factory.Create(this, () => Changes++));
+        builder.AddAttribute(8, "ChildSelectionChanged", EventCallback.Factory.Create<string>(this, id => _child = id));
         builder.CloseComponent();
     }
 }
@@ -226,7 +331,7 @@ sealed class EditorRenderer(IServiceProvider services) : Renderer(services, Null
                     : ""
                 )
             );
-            if (text.Length > 0 && label != text)
+            if (text.Length > 0 && !label.StartsWith(text, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -256,11 +361,18 @@ sealed class EditorActivator : IComponentActivator
 {
     public IComponent CreateInstance(Type componentType)
     {
-        return componentType == typeof(ContentPicker) ? new OfflineContentPicker() : (IComponent)Activator.CreateInstance(componentType)!;
+        return componentType == typeof(ContentPicker) ? new OfflineContentPicker()
+            : componentType == typeof(AssetPicker) ? new OfflineAssetPicker()
+            : (IComponent)Activator.CreateInstance(componentType)!;
     }
 }
 
 sealed class OfflineContentPicker : ContentPicker
+{
+    protected override void BuildRenderTree(RenderTreeBuilder builder) { }
+}
+
+sealed class OfflineAssetPicker : AssetPicker
 {
     protected override void BuildRenderTree(RenderTreeBuilder builder) { }
 }

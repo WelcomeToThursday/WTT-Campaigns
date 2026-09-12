@@ -85,7 +85,7 @@ public static class ChapterDeletion
         story.Chapters.RemoveAll(c => c.Id == chapterId);
     }
 
-    private static ChapterDeletionUse Describe(SeasonDefinition season, SeasonDefinition original, string path)
+    internal static ChapterDeletionUse Describe(SeasonDefinition season, SeasonDefinition original, string path)
     {
         var match = System.Text.RegularExpressions.Regex.Match(path, @"^Story\.(\w+)\[(\d+)\]");
         if (
