@@ -13,7 +13,7 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 - **Local Battle Pass and rewards.** Collect campaign documents in raids, spend them on eligible rewards, and use document exchanges. Progress and claims are saved per character. Rewards depend on the campaign's rules and installed content.
 - **Story tools and trader visits.** Visit trader rooms and play authored chapters, dialogue, objectives and raid events. The Story tab and trader visits are available even in campaigns without a story. A complete live campaign is not included.
 - **Campaign Creator.** Build campaigns in SPT's administrator web interface: configure starting characters, perks, quests, documents, rewards, crates, artwork and story content. Validate, preview, publish, import and export campaign packs.
-- **Trader and task progression.** Updated loyalty requirements, task reputation rewards and grouped task lists apply to both regular and campaign characters. Spending requirements are removed; loyalty still depends on level and reputation. Existing progress is retained, but recalculated loyalty can decrease.
+- **Trader and task progression.** Updated loyalty requirements, task reputation rewards and grouped task lists apply to both regular and campaign characters. Spending requirements are removed; loyalty still depends on level and reputation. Compatible quests are backported after an offline audit. Older characters receive one-time reputation corrections with verified profile backups. See [trader progression](wiki/trader-progression.md).
 
 ## Requirements
 

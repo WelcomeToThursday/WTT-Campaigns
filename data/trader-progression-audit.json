@@ -27,7 +27,6 @@
     "6942b44f891369fc790e385a",
     "69788d4e963f08d9140bce19",
     "6978907718bd6d7cbd0e8b8e",
-    "6a5cd2178fd7c2b201032f3f",
     "6a5c1578f2689567c30eb0f3",
     "6a5ccda873f06065630d61b0",
     "68bdb3b00deb8afba70216bd",
@@ -1677,6 +1676,12 @@
           "Reason": "unsupported live condition"
         }
       ]
+    },
+    {
+      "QuestId": "6a5cd2178fd7c2b201032f3f",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
     },
     {
       "QuestId": "5edabd13218d181e29451442",
@@ -3607,9 +3612,9 @@
   ],
   "Counts": {
     "Captured": 645,
-    "Beta": 558,
-    "Applied": 381,
-    "Tiered": 238
+    "Beta": 559,
+    "Applied": 382,
+    "Tiered": 239
   },
   "Sources": [
     {
@@ -3623,6 +3628,14 @@
     {
       "File": "quests.json",
       "Sha256": "81d3ffc69f009723d62e3da93d4c88f3da108fc9cfb0657ce827913efe359956"
+    },
+    {
+      "File": "quest-backports.json",
+      "Sha256": "f84582093f5e19c0cc5679d1c953291db5237628c2025bfed3aa7a766ade2e50"
+    },
+    {
+      "File": "quest.json",
+      "Sha256": "2563a647edc3154bd0d518965330d0ee53885d4dce3de8b542835905bba1d66d"
     }
   ]
 }

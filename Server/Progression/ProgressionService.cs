@@ -10,6 +10,7 @@ using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
+using SPTarkov.Server.Core.Servers;
 using WTT.Campaigns.Server.Hub;
 using WTT.Campaigns.Server.Profiles;
 using WTT.Campaigns.Shared.Progression;
@@ -18,15 +19,22 @@ using Path = System.IO.Path;
 namespace WTT.Campaigns.Server.Progression;
 
 [Injectable(InjectionType.Singleton, OnLoadOrder.PostLoad + 700)]
-public sealed class ProgressionService(TemplateTable templates, TradersTable traders, JsonUtil json, ICloner cloner, RewardHelper rewards)
-    : IOnLoad
+public sealed class ProgressionService(
+    TemplateTable templates,
+    TradersTable traders,
+    JsonUtil json,
+    ICloner cloner,
+    RewardHelper rewards,
+    ReputationMigrationService migrations,
+    SaveServer saves
+) : IOnLoad
 {
     public TraderProgression Data { get; private set; } = new();
     public ProgressionMetadata Metadata { get; } = new();
     private readonly HashSet<string> _hidden = new();
     public HashSet<string> StandingConditions { get; } = new();
 
-    public Task OnLoadAsync(CancellationToken cancellationToken)
+    public async Task OnLoadAsync(CancellationToken cancellationToken)
     {
         Data = JsonConvert.DeserializeObject<TraderProgression>(
             File.ReadAllText(Path.Combine(Server.Metadata.DirectoryPath, "data", "trader-progression.json"))
@@ -88,7 +96,14 @@ public sealed class ProgressionService(TemplateTable templates, TradersTable tra
             }
             Metadata.Quests[id] = new TaskTier { TraderId = spec.TraderId, Tier = spec.Tier };
         }
-        return Task.CompletedTask;
+        foreach (var (id, profile) in saves.GetProfiles())
+        {
+            if (profile.CharacterData?.PmcData is { } pmc && migrations.Apply(pmc))
+            {
+                Recalculate(pmc);
+                await saves.SaveProfileAsync(id);
+            }
+        }
     }
 
     public void Recalculate(PmcData profile)
@@ -97,6 +112,7 @@ public sealed class ProgressionService(TemplateTable templates, TradersTable tra
         {
             return;
         }
+        migrations.Apply(profile);
         foreach (var id in Metadata.Traders)
         {
             if (profile.TradersInfo.TryGetValue(new MongoId(id), out var info))

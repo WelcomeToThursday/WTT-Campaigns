@@ -6,12 +6,13 @@ using SPTarkov.Server.Core.Services.Locales;
 using SPTarkov.Server.Core.Utils;
 using WTT.Campaigns.Server.Seasons;
 using WTT.Campaigns.Shared.Story;
+using WTT.Campaigns.Server.Progression;
 using Path = System.IO.Path;
 
 namespace WTT.Campaigns.Server.Hub;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class HubQuestService(TemplateTable templates, JsonUtil json, SeasonRepository repository)
+public sealed class HubQuestService(TemplateTable templates, JsonUtil json, SeasonRepository repository, QuestBackportService backports)
 {
     private Dictionary<string, NativeQuest> _captured = new();
     private readonly Dictionary<string, string> _unavailable = new();
@@ -21,7 +22,8 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
 
     public bool Allowed(string questId, string seasonId)
     {
-        return !Imported.Contains(questId) || _seasonQuests.TryGetValue(seasonId, out var quests) && quests.Contains(questId);
+        return backports.Allowed(questId, seasonId)
+            && (!Imported.Contains(questId) || _seasonQuests.TryGetValue(seasonId, out var quests) && quests.Contains(questId));
     }
 
     public void Initialize()
@@ -57,7 +59,9 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
                 ? StoryQuestCompatibility.NativeTemplate(pair.Value)
                 : WTT.Campaigns.Shared.Seasons.SeasonCompiler.Copy(pair.Value);
             definition.Localization = new();
-            templates.Quests[id] = json.Deserialize<Quest>(Newtonsoft.Json.JsonConvert.SerializeObject(definition))!;
+            var native = Newtonsoft.Json.Linq.JObject.FromObject(definition);
+            QuestBackportCompatibility.Normalize(native);
+            templates.Quests[id] = json.Deserialize<Quest>(native.ToString())!;
             Imported.Add(pair.Key);
         }
     }
@@ -89,9 +93,19 @@ public sealed class HubQuestService(TemplateTable templates, JsonUtil json, Seas
             return Fail("The required quest definition has not been recovered.");
         }
 
+        if (!_storyQuests.Contains(id) && backports.SkippedReason(id) is { } skipped)
+        {
+            return Fail(skipped);
+        }
+
         if (!visiting.Add(id))
         {
             return Fail("The quest has a cyclic dependency requiring a compatibility adapter.");
+        }
+
+        if (QuestBackportCompatibility.Blocker(Newtonsoft.Json.Linq.JObject.FromObject(quest)) is { } stageBlocker)
+        {
+            return Fail(stageBlocker);
         }
 
         foreach (var condition in quest.AllConditions())

@@ -1,4 +1,4 @@
-"""Import progression only from captured PvE responses; never import quest definitions."""
+"""Compile native progression plus validated backports and offline reputation repairs."""
 import argparse
 import copy
 import hashlib
@@ -77,6 +77,32 @@ def compile_data(captured, traders, beta, beta_traders):
     return output, audit
 
 
+def compile_package(dump, database):
+    root = dump / 'gw-pve.escapefromtarkov.com/client'
+    quests = latest(root, 'quest/list')
+    traders = latest(root, 'trading/api/traderSettings')
+    beta_path = database / 'templates/quests.json'
+    beta = read(beta_path)
+    backports = read(PROJECT / 'data/quest-backports.json')
+    captured = read(quests)
+    for entry in backports['Quests']:
+        quest = copy.deepcopy(entry['Quest'])
+        quest['wttSeasonalOnly'] = bool(entry['CampaignId'])
+        beta[quest['_id']] = quest
+        if not any(q['_id'] == quest['_id'] for q in captured):
+            captured.append(quest)
+    beta_traders = {p.parent.name for p in (database / 'traders').glob('*/base.json')}
+    output, audit = compile_data(captured, read(traders), beta, beta_traders)
+    from balance_quest_reputation import balance
+    unlocked = {p.parent.name for p in (database / 'traders').glob('*/base.json') if read(p).get('unlockedByDefault')}
+    reachability = balance(beta, output, unlocked, read(database.parent / 'configs/quest.json'))
+    output['Sources'] = [{'File': p.name, 'Sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
+                         for p in (quests, traders, beta_path, PROJECT / 'data/quest-backports.json', database.parent / 'configs/quest.json')]
+    audit['Sources'] = output['Sources']
+    audit['Counts']['Applied'] = len(output['Quests'])
+    return output, audit, reachability
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--dump', type=Path, default=PROJECT.parent / '1.0 Dump')
@@ -84,18 +110,10 @@ def main():
     parser.add_argument('--output', type=Path, default=PROJECT / 'data/trader-progression.json')
     parser.add_argument('--audit', type=Path, default=PROJECT / 'data/trader-progression-audit.json')
     args = parser.parse_args()
-    root = args.dump / 'gw-pve.escapefromtarkov.com/client'
-    quests = latest(root, 'quest/list')
-    traders = latest(root, 'trading/api/traderSettings')
-    beta_path = args.database / 'templates/quests.json'
-    beta = read(beta_path)
-    beta_traders = {p.parent.name for p in (args.database / 'traders').glob('*/base.json')}
-    output, audit = compile_data(read(quests), read(traders), beta, beta_traders)
-    output['Sources'] = [{'File': p.name, 'Sha256': hashlib.sha256(p.read_bytes()).hexdigest()}
-                         for p in (quests, traders, beta_path)]
-    audit['Sources'] = output['Sources']
+    output, audit, reachability = compile_package(args.dump, args.database)
     write(args.output, output)
     write(args.audit, audit)
+    write(PROJECT / 'data/trader-progression-reachability.json', reachability)
     print(json.dumps(audit['Counts']))
 
 

@@ -3004,7 +3004,7 @@
             "id": "60cc75eb7c496e588343a6d6",
             "type": "TraderStanding",
             "target": "5a7c2eca46aef81a7ca2145d",
-            "value": 0.1
+            "value": 0.15
           }
         ],
         "Fail": []
@@ -3062,7 +3062,7 @@
             "id": "60cc74ac65e4664318606aeb",
             "type": "TraderStanding",
             "target": "5a7c2eca46aef81a7ca2145d",
-            "value": 0.1
+            "value": 0.15
           }
         ],
         "Fail": []
@@ -3176,7 +3176,7 @@
             "id": "60cc752f77dc197c774254c0",
             "type": "TraderStanding",
             "target": "5a7c2eca46aef81a7ca2145d",
-            "value": 0.1
+            "value": 0.15
           }
         ],
         "Fail": []
@@ -4444,7 +4444,7 @@
             "id": "65846f879622c723546f3d3a",
             "type": "TraderStanding",
             "target": "5a7c2eca46aef81a7ca2145d",
-            "value": 0.1
+            "value": 0.15
           }
         ],
         "Fail": []
@@ -6065,6 +6065,12 @@
             "type": "TraderStanding",
             "target": "58330581ace78e27b8b10cee",
             "value": 0.1
+          },
+          {
+            "id": "be1f419866029c2192439c20",
+            "type": "TraderStanding",
+            "target": "5ac3b934156ae10c4430e83c",
+            "value": 0.5
           }
         ],
         "Fail": []
@@ -7467,6 +7473,51 @@
             "type": "TraderStanding",
             "target": "5a7c2eca46aef81a7ca2145d",
             "value": 1.5
+          }
+        ],
+        "Fail": []
+      }
+    },
+    "6a5cd2178fd7c2b201032f3f": {
+      "TraderId": "5935c25fb3acc3127c3d8cd9",
+      "Tier": 3,
+      "UseBetaStart": false,
+      "Start": [
+        {
+          "index": 0,
+          "dynamicLocale": false,
+          "visibilityConditions": [],
+          "globalQuestCounterId": "",
+          "parentId": "",
+          "dialogId": null,
+          "entryPoint": null,
+          "fromTraderId": null,
+          "id": "6a5cd23c88202b468cfd7d95",
+          "props": {
+            "index": 0,
+            "dynamicLocale": false,
+            "visibilityConditions": [],
+            "globalQuestCounterId": "",
+            "parentId": "",
+            "entryPoint": null,
+            "dialogId": null,
+            "fromTraderId": null
+          },
+          "questNoteId": null,
+          "value": 3,
+          "compareMethod": ">=",
+          "target": "5935c25fb3acc3127c3d8cd9",
+          "conditionType": "TraderLoyalty"
+        }
+      ],
+      "Reputation": {
+        "Started": [],
+        "Success": [
+          {
+            "id": "6a5cd2178fd7c2b201032f44",
+            "type": "TraderStanding",
+            "target": "5935c25fb3acc3127c3d8cd9",
+            "value": 0.75
           }
         ],
         "Fail": []
@@ -8989,7 +9040,7 @@
             "id": "60dc294fc9aa3c36c947f736",
             "type": "TraderStanding",
             "target": "54cb50c76803fa8b248b4571",
-            "value": 0.1
+            "value": 0.12
           }
         ],
         "Fail": []
@@ -9057,7 +9108,7 @@
             "id": "60c8a5c39339363e8f0c6ad2",
             "type": "TraderStanding",
             "target": "54cb50c76803fa8b248b4571",
-            "value": 0.1
+            "value": 0.12
           }
         ],
         "Fail": []
@@ -9194,7 +9245,7 @@
             "id": "60c89c0c80b2027f403dd992",
             "type": "TraderStanding",
             "target": "54cb50c76803fa8b248b4571",
-            "value": 0.1
+            "value": 0.12
           }
         ],
         "Fail": []
@@ -9354,7 +9405,7 @@
             "id": "65846e694f381a0ad975a860",
             "type": "TraderStanding",
             "target": "54cb50c76803fa8b248b4571",
-            "value": 0.1
+            "value": 0.12
           }
         ],
         "Fail": []
@@ -9422,7 +9473,7 @@
             "id": "60c89e2980b2027f403dd993",
             "type": "TraderStanding",
             "target": "54cb50c76803fa8b248b4571",
-            "value": 0.1
+            "value": 0.12
           }
         ],
         "Fail": []
@@ -10199,7 +10250,7 @@
             "id": "60c8c1f1a0b5c924fc6e9d55",
             "type": "TraderStanding",
             "target": "54cb57776803fa99248b456e",
-            "value": 0.1
+            "value": 0.27
           }
         ],
         "Fail": []
@@ -10346,7 +10397,7 @@
             "id": "60c8c20c1f21c1669a48c332",
             "type": "TraderStanding",
             "target": "54cb57776803fa99248b456e",
-            "value": 0.25
+            "value": 0.48
           }
         ],
         "Fail": []
@@ -10894,7 +10945,7 @@
             "id": "60c8c29b1f21c1669a48c333",
             "type": "TraderStanding",
             "target": "54cb57776803fa99248b456e",
-            "value": 0.1
+            "value": 0.27
           }
         ],
         "Fail": []
@@ -11630,7 +11681,7 @@
             "id": "65846cc73eed2c22a516d5c5",
             "type": "TraderStanding",
             "target": "54cb57776803fa99248b456e",
-            "value": 0.1
+            "value": 0.27
           }
         ],
         "Fail": []
@@ -11676,7 +11727,7 @@
             "id": "67b31ac708c052acd49f0716",
             "type": "TraderStanding",
             "target": "54cb57776803fa99248b456e",
-            "value": 0.25
+            "value": 0.48
           }
         ],
         "Fail": []
@@ -11961,7 +12012,7 @@
             "id": "60c8c263919c14709f497399",
             "type": "TraderStanding",
             "target": "54cb57776803fa99248b456e",
-            "value": 0.1
+            "value": 0.27
           }
         ],
         "Fail": []
@@ -14682,7 +14733,7 @@
             "id": "60c8c03f80b2027f403dd99e",
             "type": "TraderStanding",
             "target": "5935c25fb3acc3127c3d8cd9",
-            "value": 0.1
+            "value": 0.5
           }
         ],
         "Fail": []
@@ -15103,7 +15154,7 @@
             "id": "65846d739622c723546f3d36",
             "type": "TraderStanding",
             "target": "54cb50c76803fa8b248b4571",
-            "value": 0.1
+            "value": 0.12
           }
         ],
         "Fail": []
@@ -15122,6 +15173,14 @@
     {
       "File": "quests.json",
       "Sha256": "81d3ffc69f009723d62e3da93d4c88f3da108fc9cfb0657ce827913efe359956"
+    },
+    {
+      "File": "quest-backports.json",
+      "Sha256": "f84582093f5e19c0cc5679d1c953291db5237628c2025bfed3aa7a766ade2e50"
+    },
+    {
+      "File": "quest.json",
+      "Sha256": "2563a647edc3154bd0d518965330d0ee53885d4dce3de8b542835905bba1d66d"
     }
   ]
 }

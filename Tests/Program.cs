@@ -104,9 +104,11 @@ WTT.Campaigns.Tests.EditorLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.WikiDocumentationChecks.Run(Check);
 WTT.Campaigns.Tests.ProgressionChecks.Run(Check);
 WTT.Campaigns.Tests.TieredQuestRequirementChecks.Run(Check);
+WTT.Campaigns.Tests.ReputationMigrationChecks.Run(Check);
 if (args.Length > 0 && File.Exists(args[0]))
 {
     WTT.Campaigns.Tests.ProgressionChecks.Hooks(args[0], Check);
+    WTT.Campaigns.Tests.QuestBackportClientChecks.Run(args[0], Check);
 }
 WTT.Campaigns.Tests.CreatorChecks.Run(Check);
 WTT.Campaigns.Tests.HubGameplayChecks.Run(Check);

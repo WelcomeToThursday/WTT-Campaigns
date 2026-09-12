@@ -16,6 +16,16 @@ internal static class ProgressionChecks
     internal static void Database(string database)
     {
         var native = JObject.Parse(File.ReadAllText(Path.Combine(database, "templates", "quests.json")));
+        var backports = JObject.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "data", "quest-backports.json")));
+        foreach (var entry in backports["Quests"]!)
+        {
+            var quest = (JObject)entry["Quest"]!.DeepClone();
+            if (quest["status"] != null)
+            {
+                throw new Exception("Captured character status must not be imported");
+            }
+            native.Add((string)quest["_id"]!, quest);
+        }
         var overlay = JObject.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "data", "trader-progression.json")));
         var options = new System.Text.Json.JsonSerializerOptions();
         foreach (var converter in new SptJsonConverterRegistrator().GetJsonConverters())
@@ -104,8 +114,9 @@ internal static class ProgressionChecks
         var data = JsonConvert.DeserializeObject<TraderProgression>(
             File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "data", "trader-progression.json"))
         )!;
-        check(data.Version == 1 && data.Quests.Count == 381, "381 existing tasks in progression overlay");
-        check(data.Quests.Values.Count(q => q.Tier > 0) == 238, "238 loyalty-group tasks");
+        var audit = JObject.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "data", "trader-progression-audit.json")));
+        check(data.Version == 1 && data.Quests.Count == (int)audit["Counts"]!["Applied"]!, "Audited quest count matches progression overlay");
+        check(data.Quests.Values.Count(q => q.Tier > 0) == (int)audit["Counts"]!["Tiered"]!, "Audited tiered task count matches overlay");
         foreach (
             var (id, prerequisite, level) in new[]
             {
