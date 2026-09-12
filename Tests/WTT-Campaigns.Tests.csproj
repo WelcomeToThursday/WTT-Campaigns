@@ -23,6 +23,7 @@
     <Compile Include="..\Client\Patches\Session\BotDifficultyFallback.cs" Link="Client\BotDifficultyFallback.cs" />
     <Compile Include="..\Client\Patches\Session\RaidLoadRecovery.cs" Link="Client\RaidLoadRecovery.cs" />
     <Compile Include="..\Server\Profiles\AccountLink.cs" Link="Profiles\AccountLink.cs" />
+    <Compile Include="..\Server\Profiles\AppearanceSelection.cs" Link="Profiles\AppearanceSelection.cs" />
     <Compile Include="..\Server\Profiles\ProfileReadiness.cs" Link="Profiles\ProfileReadiness.cs" />
     <Compile Include="..\Server\Profiles\RaidAbortGuard.cs" Link="Profiles\RaidAbortGuard.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />

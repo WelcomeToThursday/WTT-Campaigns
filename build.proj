@@ -29,6 +29,7 @@
     <Error Condition="!Exists('$(_NativeAssembly)')" Text="Missing game reference: $(_NativeAssembly)" />
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; &quot;$(_NativeAssembly)&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --progression-data &quot;$(ServerDir)SPT_Data\database&quot;" />
+    <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --appearance-data &quot;$(ServerDir)SPT_Data\database&quot;" />
     <ItemGroup>
       <_ClientAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Client.dll'" />
       <_ServerAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Server.dll'" />

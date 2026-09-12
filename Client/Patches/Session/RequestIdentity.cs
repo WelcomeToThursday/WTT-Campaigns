@@ -8,7 +8,11 @@ internal static class RequestIdentity
         // active backend character, just like the native raid start/end requests.
         if (
             !sharedClient
-            || (path.StartsWith("/wtt-campaigns/", StringComparison.Ordinal) && path != "/wtt-campaigns/hub/raid-document")
+            || (
+                path.StartsWith("/wtt-campaigns/", StringComparison.Ordinal)
+                && path != "/wtt-campaigns/hub/raid-document"
+                && path != "/wtt-campaigns/appearance"
+            )
             || string.IsNullOrEmpty(sessionId)
         )
         {

@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Using Remove="System.Linq" />
+    <EmbeddedResource Include="Customization\Assets\face.png" LogicalName="WTT.Campaigns.Customization.face.png" />
     <Reference
       Include="WTT-ClientCommonLib"
       HintPath="$(TarkovDir)BepInEx\plugins\WTT-ClientCommonLib\WTT-ClientCommonLib.dll"

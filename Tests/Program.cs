@@ -9,6 +9,12 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 2 && args[0] == "--appearance-data")
+{
+    await WTT.Campaigns.Tests.AppearanceChecks.Run(args[1]);
+    return;
+}
+
 if (args.Length == 4 && args[0] == "--authoring-socket")
 {
     WTT.Campaigns.Tests.AuthoringSocketCompatibility.Run(args[1], args[2], args[3]);

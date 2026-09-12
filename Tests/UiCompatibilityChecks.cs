@@ -30,6 +30,31 @@ internal static class UiCompatibilityChecks
         );
         var appearance = types["EFT.UI.HeadSelectionState"];
         Check(
+            types["EFT.UI.InventoryScreen"]
+                .Methods.Any(m =>
+                    m.Name == "Show" && m.Parameters.Count == 1 && m.Parameters[0].ParameterType.Name == "InventoryScreenController"
+                ),
+            "Customization binds the controller Show overload before native tab registration"
+        );
+        Check(
+            types["EFT.UI.InventoryScreen/InventoryScreenController"]
+                .Methods.Any(m =>
+                    m.Name == "CloseScreenInterruption" && m.ReturnType.FullName == "System.Threading.Tasks.Task`1<System.Boolean>"
+                ),
+            "Customization can flush saves before navigation closes the screen"
+        );
+        foreach (var method in new[] { "UpdatePreview", "PlayVoice" })
+        {
+            Check(
+                appearance.Methods.Count(m => m.Name == method && m.ReturnType.FullName == "System.Threading.Tasks.Task") == 1,
+                "Customization tracks the native asynchronous " + method + " operation"
+            );
+        }
+        Check(
+            types["Arena.UI.FaceCardView"].Fields.Any(f => f.Name == "_toggle" && f.IsPublic),
+            "Failed appearance saves can restore the native card highlight"
+        );
+        Check(
             appearance.Fields.Any(field => field.Name == "_faceCards" && field.IsPublic && field.IsNotSerialized),
             "Native appearance card tracking is runtime-only and is not inherited by screen clones"
         );
@@ -106,6 +131,15 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            var faceIcon = client
+                .MainModule.Resources.OfType<EmbeddedResource>()
+                .SingleOrDefault(r => r.Name == "WTT.Campaigns.Customization.face.png");
+            Check(
+                faceIcon != null
+                    && Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(faceIcon.GetResourceData()))
+                        == "42544B972D804E148E99230710247817B3E907D91A37E1F7DF60000735A858AC",
+                "Customization embeds the recovered live face icon, with no placeholder"
+            );
             MethodDefinition AsyncBody(string typeName, string methodName)
             {
                 var method = client.MainModule.GetType(typeName).Methods.Single(m => m.Name == methodName);

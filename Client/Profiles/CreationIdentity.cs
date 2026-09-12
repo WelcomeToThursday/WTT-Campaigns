@@ -144,7 +144,7 @@ internal sealed class CreationIdentity : ICreationIdentity
         }
     }
 
-    private static void RemoveInheritedFaceCards(HeadSelectionState head)
+    internal static void RemoveInheritedFaceCards(HeadSelectionState head)
     {
         // A previously used native screen keeps its face-card children. Instantiate copies
         // those children, but not the NonSerialized list that PrepareFaceSelector reuses.
@@ -161,7 +161,7 @@ internal sealed class CreationIdentity : ICreationIdentity
         head._faceCards.Clear();
     }
 
-    private static void RemoveInheritedPreviewModels(EftAccountSideSelectionScreen screen)
+    internal static void RemoveInheritedPreviewModels(EftAccountSideSelectionScreen screen)
     {
         // Instantiate copies loaded model children, but not PlayerModelView's runtime loader.
         // Remove those untracked copies before Init/Show creates the seasonal models.

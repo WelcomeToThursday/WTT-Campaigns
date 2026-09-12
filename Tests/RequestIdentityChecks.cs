@@ -23,6 +23,10 @@ internal static class RequestIdentityChecks
         }
 
         using var pickup = Create(documents);
+        using var appearance = Create("/wtt-campaigns/appearance");
+        check(Cookie(appearance) == "PHPSESSID=" + character, "Appearance saves authenticate as the active character");
+        using var appearanceSwitched = Create("/wtt-campaigns/appearance", otherCharacter);
+        check(Cookie(appearanceSwitched) == "PHPSESSID=" + otherCharacter, "Appearance saves follow the selected seasonal character");
         check(Cookie(pickup) == "PHPSESSID=" + character, "Raid documents authenticate as the active character, not the launcher account");
         using var retry = Create(documents);
         check(Cookie(retry) == Cookie(pickup), "Persisted document retries use the same active character identity");

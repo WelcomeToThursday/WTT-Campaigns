@@ -102,6 +102,11 @@ internal static class PatchRegistration
 
     private static void EnableUi()
     {
+        new CustomizationPatch().Enable();
+        new CustomizationClosePatch().Enable();
+        new CustomizationCleanupPatch().Enable();
+        new CustomizationPreviewPatch(nameof(HeadSelectionState.UpdatePreview)).Enable();
+        new CustomizationPreviewPatch(nameof(HeadSelectionState.PlayVoice)).Enable();
         new WTT.Campaigns.Client.Story.StoryTasksPatch().Enable();
         new TaskGroupingShowPatch().Enable();
         new TaskGroupingRefreshPatch(nameof(QuestsListView.UpdateVisibility)).Enable();
