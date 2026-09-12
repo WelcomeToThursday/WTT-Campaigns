@@ -8,7 +8,7 @@ Open **Character → Tasks → Story** with a campaign character active. Select 
 
 Story quests appear in the Story journal instead of the character's Side list. They may also appear in the trader's normal task list. A campaign without authored chapters shows an empty journal and still allows supported trader visits.
 
-[Chapter notifications](story-notifications.md) announce newly available, completed or failed chapters. An availability notification does not automatically accept a quest unless the author enabled automatic acceptance.
+[Chapter notifications](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-notifications) announce newly available, completed or failed chapters. An availability notification does not automatically accept a quest unless the author enabled automatic acceptance.
 
 ## Conversations and handovers
 
@@ -18,7 +18,7 @@ Use **Continue** to advance automatic text, then choose from the available repli
 
 For a handover, choose eligible items in the normal item selection window and confirm. Cancelling a multi-step handover abandons the pending operation without committing its earlier steps. Handovers are available in the lobby, not during raids.
 
-See [trader visits](trader-media-and-visit.md) for navigation.
+See [trader visits](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/trader-media-and-visit) for navigation.
 
 ## Raid events and cinematics
 
@@ -36,4 +36,4 @@ Paid dialogue services (`PurchaseService` and `ServiceAvailable`) and `WeaponAss
 
 `PlayerReward` awards an owned quest's native rewards. `CompleteItem` records a story flag without creating or consuming inventory. `SelectSubService` opens Services without selecting or buying a paid service.
 
-Story events and cinematics require authored content and compatible installed media. No live map placements, transitions or endings are added automatically. See [story authoring](story-authoring.md) to create them.
+Story events and cinematics require authored content and compatible installed media. No live map placements, transitions or endings are added automatically. See [story authoring](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-authoring) to create them.

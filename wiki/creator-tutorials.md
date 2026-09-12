@@ -43,7 +43,7 @@ The tutorial never creates content or saves or publishes a pack on your behalf. 
 | A raid event does nothing in-game | Verify the exact scene target and location. Bindings do not spawn objects or loot. Deferred actions commit only after survival. |
 | Publication or play is blocked | Follow the validation issues. Missing dependencies can allow export but still prevent play; structural errors must be fixed. |
 
-Rehearsal records native rewards and media requests without granting or playing them. Filtered item eligibility, world detection and Unity playback still require in-game testing. See [story authoring](story-authoring.md) for media and raid details.
+Rehearsal records native rewards and media requests without granting or playing them. Filtered item eligibility, world detection and Unity playback still require in-game testing. See [story authoring](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-authoring) for media and raid details.
 
 
 You can also complete the note and dialogue steps inside **Chapters and quests → your chapter → Quests → your quest → Story**. Use **Create and link note** with the Success status, then expand the new note to write its text. Under **Quest conversations**, use **Create quest conversation** and expand it to edit the lines. **Conversation availability and phase** contains the generated entry point and variable. These controls edit the same records as the standalone sections and use the normal Save changes action.

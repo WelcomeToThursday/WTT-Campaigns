@@ -2,7 +2,7 @@
 
 An optional example campaign containing **Field dressing**, a short Prapor delivery. Existing characters keep their original campaign and progression.
 
-Import and publish the Story Sandbox pack through the [Campaign Creator](../season-creator.md), then restart the server to load it. The example must be obtained separately; it is not automatically activated by installing the mod.
+Import and publish the Story Sandbox pack through the [Campaign Creator](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/season-creator), then restart the server to load it. The example must be obtained separately; it is not automatically activated by installing the mod.
 
 To play:
 

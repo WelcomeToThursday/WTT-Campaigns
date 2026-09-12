@@ -10,7 +10,7 @@ The landing library keeps drafts and published packs in separate sections. Searc
 
 Grouped navigation stays at the left and a broad editing column holds the selected content. Help, connections and preview guidance live in a collapsed inspector below the workspace. Reward settings open directly below the reward grid. Each editor separates presentation, rules, content and advanced settings into labeled sections that stack on smaller screens.
 
-Open **Help and tutorials** from the library or any draft for searchable instructions and a glossary. **Campaign basics** covers setup through export; **Your first story quest** walks through a chapter, native quest, completion note, conversation and rehearsal. Each editor section also includes **How to use this section**. Tutorials provide self-paced directions and navigation; they do not create or save content automatically. See the [tutorial guide](creator-tutorials.md) for a printable walkthrough and troubleshooting.
+Open **Help and tutorials** from the library or any draft for searchable instructions and a glossary. **Campaign basics** covers setup through export; **Your first story quest** walks through a chapter, native quest, completion note, conversation and rehearsal. Each editor section also includes **How to use this section**. Tutorials provide self-paced directions and navigation; they do not create or save content automatically. See the [tutorial guide](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/creator-tutorials) for a printable walkthrough and troubleshooting.
 
 Hover or focus the **?** markers for explanations of point costs, collection windows, page gates, weighted crate contents and other settings. Tap a marker on touch devices; Escape dismisses focused help. Reward tiles show selection and disabled states. Select a tile to edit its contents and dimensions below the grid, then use **Save changes** in the top bar.
 
@@ -52,11 +52,11 @@ Preserve these files and SPT’s profiles/profile data together. Do not remove a
 
 A legacy default-pack loading failure falls back to the last valid default and shows a loading issue in the library. Draft corruption falls back to its atomic backup when available. Competing editor tabs must reload after a save conflict. Used campaigns permit presentation revisions; gameplay edits require **Duplicate as new campaign**. Duplication remaps owned content and internal references while preserving installed dependencies.
 
-Multiple characters can share a campaign, and all compatible published campaigns can be played during the same server session. Quests, gameplay and rewards follow the selected character's campaign. See [character selection and wipe behavior](characters.md).
+Multiple characters can share a campaign, and all compatible published campaigns can be played during the same server session. Quests, gameplay and rewards follow the selected character's campaign. See [character selection and wipe behavior](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/characters).
 
 ## Story extension
 
-Format-1 Story definitions survive draft, pack import/export and duplication. The graphical editor includes chapters, quest membership, notes, conversations, variables, entry points, raid bindings and media references, plus an isolated story rehearsal. Start **Your first story quest** from Help and tutorials for a complete example. The [story composition tool and example overlay](story-authoring.md) remain available for external authoring. Unity media is installed separately from the Creator ZIP and verified against authored SHA-256 hashes. [Story capabilities and limits](story-system.md) apply.
+Format-1 Story definitions survive draft, pack import/export and duplication. The graphical editor includes chapters, quest membership, notes, conversations, variables, entry points, raid bindings and media references, plus an isolated story rehearsal. Start **Your first story quest** from Help and tutorials for a complete example. The [story composition tool and example overlay](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-authoring) remain available for external authoring. Unity media is installed separately from the Creator ZIP and verified against authored SHA-256 hashes. [Story capabilities and limits](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-system) apply.
 
 
 ### Connected quest workflow and reference names

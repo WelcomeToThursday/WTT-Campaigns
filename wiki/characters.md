@@ -10,7 +10,7 @@ Campaign characters have separate inventories, quests, traders, hideouts, mail, 
 4. Review the confirmation and accept to create the character.
 5. Select its card to switch to it. Creation leaves your regular PMC active until you switch.
 
-Use the mouse wheel, dragging, arrow buttons or Left/Right keys to browse character cards. Wait for any save or loading operation to finish before navigating again. See [character creation](creation-reference.md) for perk selection details.
+Use the mouse wheel, dragging, arrow buttons or Left/Right keys to browse character cards. Wait for any save or loading operation to finish before navigating again. See [character creation](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/creation-reference) for perk selection details.
 
 ## Delete or wipe
 
@@ -31,4 +31,4 @@ Compatible published campaigns load when the server starts. You can switch betwe
 
 Each character uses its own campaign's perks, starting grants, quests, documents and rewards. If a campaign is missing or cannot load, its existing character cards remain unavailable for play. Restore the required pack and dependencies instead of deleting its profiles.
 
-See [profile backups and recovery](typed-models-and-profile-storage.md) for save locations.
+See [profile backups and recovery](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/typed-models-and-profile-storage) for save locations.

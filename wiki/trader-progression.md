@@ -20,4 +20,4 @@ The task list groups tasks into collapsible **Loyalty Level I–IV**, **Essentia
 
 Use **Show completed** and **Show locked** to control which tasks appear. Locked previews still respect faction, edition, event, secret-task, trader and campaign restrictions. Previewing a task does not accept it or grant rewards.
 
-Trader stock, prices, service fees and discovery rules keep their existing behavior unless affected by a selected [trader-price perk](trader-prices.md).
+Trader stock, prices, service fees and discovery rules keep their existing behavior unless affected by a selected [trader-price perk](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/trader-prices).

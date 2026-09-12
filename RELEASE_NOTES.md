@@ -51,4 +51,4 @@ Reports about character creation and switching, saving after raids, perk behavio
 - The built-in campaign does not include Kord Breach quests.
 - Some artwork and presentation are placeholders.
 
-See [compatibility](docs/compatibility.md) for feature limits and [the documentation index](docs/README.md) for help.
+See [compatibility](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/compatibility) for feature limits and [the documentation index](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/Home) for help.

@@ -13,10 +13,10 @@ Campaign characters use separate save files linked to your launcher account. Kee
 
 1. Close the game and server before making a consistent backup or replacing files.
 2. Back up the profile locations above, your WTT-Campaigns configuration and the entire server mod's `creator` folder.
-3. Install the complete matching release as described in the [installation guide](../README.md#installation).
+3. Install the complete matching release as described in the [installation guide](https://github.com/WelcomeToThursday/WTT-Campaigns#installation).
 4. Keep the campaign packs used by existing characters.
 
-Do not remove linked campaign profiles manually. Use the character selector's confirmed [Delete or Wipe actions](characters.md#delete-or-wipe) when you intend to remove a character.
+Do not remove linked campaign profiles manually. Use the character selector's confirmed [Delete or Wipe actions](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/characters#delete-or-wipe) when you intend to remove a character.
 
 ## Older profile locations
 

@@ -8,4 +8,4 @@ The pages explain the bundled campaign, campaigns in SPT, campaign characters, m
 - Choose **CLOSE**, or press Escape or F8, to return to the same character selector.
 - Reopen the information button whenever you want to read it again.
 
-Reading the introduction does not create or select a character. The [Battle Pass tutorial](battle-pass-ui.md#tutorial) is a separate guide inside the campaign hub.
+Reading the introduction does not create or select a character. The [Battle Pass tutorial](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/battle-pass-ui#tutorial) is a separate guide inside the campaign hub.

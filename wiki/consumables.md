@@ -13,4 +13,4 @@ A use grants its effect once. A separate partial use can refresh the timer, but 
 
 Sailor's Nostalgia heals one eligible body part at a time, skipping destroyed or fully healed parts. Its rate is **2 HP per second total**, rather than per body part; healing can be lower when a part reaches full health.
 
-These extra effects do not apply to regular PMCs, Scavs, AI or stash/hideout use. Ordinary food effects and [Diet's resource reduction](item-resources.md) still apply. The perks can coexist with [Allergic](allergy-container.md).
+These extra effects do not apply to regular PMCs, Scavs, AI or stash/hideout use. Ordinary food effects and [Diet's resource reduction](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/item-resources) still apply. The perks can coexist with [Allergic](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/allergy-container).

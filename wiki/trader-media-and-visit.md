@@ -12,7 +12,7 @@ Visits open an animated trader room. They are available even when the campaign h
 - Use **Leave** to exit the visit, or the Buy/Sell navigation to return to trading.
 - Use **Skip** when offered by media playback.
 
-Item handovers use the game's item selection window. Cancelling an uncommitted handover cancels the pending conversation operation. See [story and quests](story-system.md) for supported actions and limits.
+Item handovers use the game's item selection window. Cancelling an uncommitted handover cancels the pending conversation operation. See [story and quests](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-system) for supported actions and limits.
 
 ## Rooms and loading
 

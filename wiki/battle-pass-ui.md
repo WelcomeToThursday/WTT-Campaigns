@@ -13,7 +13,7 @@ Use Q/E or the page arrows to browse. Back or Escape returns to the menu. Reward
 
 The character reloads after a successful transaction, returning to the selected hub tab and page. Closing the hub does not undo a completed claim.
 
-For collection limits and locked rewards, see [documents and rewards](battle-pass-gameplay.md).
+For collection limits and locked rewards, see [documents and rewards](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/battle-pass-gameplay).
 
 ## Exchange documents
 

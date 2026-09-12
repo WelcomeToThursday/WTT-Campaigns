@@ -1,6 +1,6 @@
 # Story authoring
 
-Story is an optional extension to the existing campaign definition. Use [the format-1 example overlay](examples/story-introduction.json) as a small working example. It adds a chapter, a journal note and a Prapor conversation; it contains no live campaign content or inventory rewards. All eight visit rooms are available to campaign characters, including campaigns without authored conversations.
+Story is an optional extension to the existing campaign definition. Use [the format-1 example overlay](https://raw.githubusercontent.com/wiki/WelcomeToThursday/WTT-Campaigns/examples/story-introduction.json) as a small working example. It adds a chapter, a journal note and a Prapor conversation; it contains no live campaign content or inventory rewards. All eight visit rooms are available to campaign characters, including campaigns without authored conversations.
 
 ## Edit and rehearse
 
@@ -15,7 +15,7 @@ Text-only automatic NPC lines use Continue between lines, and closing text stays
 3. From the project root, compose and validate it:
 
 ```powershell
-dotnet run --project Tests -c Release -- --story-pack base-season.zip docs/examples/story-introduction.json new-story-season.zip
+dotnet run --project Tests -c Release -- --story-pack base-season.zip wiki/examples/story-introduction.json new-story-season.zip
 ```
 
 This optional command requires a source checkout and .NET SDK 10. It validates the composed pack without changing installed profiles or overwriting an existing output ZIP. If validation fails, the printed recovery workspace preserves your draft. For browser-only authoring, use the Creator's story editor and export the published pack directly.
@@ -33,7 +33,7 @@ A line has `Side` (`Npc` or `Player`), `Text`, `Trigger`, `Actions` and optional
 
 Text falls back to the definition's English fields. Locale keys are `<chapter> name`, `<note> text`, `<line> text` and `<line> confirmation`. Chapter `Image`/`Icon` reference season-owned artwork registered through the existing Creator image pipeline. Note links support Item, Offer (with TraderId) and Craft targets. A chapter can include main and optional quests, visibility conditions, automatic start/completion and status-triggered notes.
 
-Use the Creator's reference pickers and Validate action to check supported fields and relationships before publishing. Review the [compatibility limits](story-system.md#supported-contracts-and-explicit-limits) before authoring compound-item quests or paid services.
+Use the Creator's reference pickers and Validate action to check supported fields and relationships before publishing. Review the [compatibility limits](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-system#supported-contracts-and-explicit-limits) before authoring compound-item quests or paid services.
 
 ## Media and animation
 

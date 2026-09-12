@@ -19,7 +19,7 @@ The UI references Shared for `Presentation/CampaignText`, which converts standal
 
 `SeasonsHubScreen.Tutorial` owns the eight-step Battle Pass overlay and input isolation. `SeasonHubUi.Tutorial` supplies keyboard routing, first-visit presentation and the local completion preference; the tutorial does not mutate server progress.
 
-`CampaignScreen.Introduction` owns the separate five-page season introduction opened from the seasonal profile card. See [player introduction guide](../docs/season-introduction.md).
+`CampaignScreen.Introduction` owns the separate five-page season introduction opened from the seasonal profile card. See [player introduction guide](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/season-introduction).
 
 Keep each type in its own named file, and keep all `CampaignScreen` partial files together. Native character creation, model previews, asset loading, and game sound playback remain in `Client`; the UI requests those services through callbacks and `ICreationIdentity`.
 

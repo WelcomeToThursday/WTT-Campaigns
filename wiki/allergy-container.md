@@ -17,7 +17,7 @@ Assigned item types persist through saves, character switches and restarts. Remo
 
 Effects apply once per use to your living campaign PMC during raids. Regular PMCs, Scavs, AI and stash/hideout use are unaffected. Health loss affects one eligible body part at a time and can destroy it; repeated rate effects refresh their timer instead of stacking.
 
-If required item templates are missing, they are not silently replaced. Restore the campaign's content dependencies if selection cannot be completed. [Juice Time and Sailor's Nostalgia](consumables.md) can remain selected alongside Allergic.
+If required item templates are missing, they are not silently replaced. Restore the campaign's content dependencies if selection cannot be completed. [Juice Time and Sailor's Nostalgia](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/consumables) can remain selected alongside Allergic.
 
 ## Broken Secure Container
 
