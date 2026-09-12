@@ -9,8 +9,8 @@ public static class ConversationDeletion
 {
     public static ConversationDeletionPlan Check(SeasonDefinition season, string dialogId)
     {
-        var dialog = season.Story?.Dialogs.FirstOrDefault(d => d.Id == dialogId)
-            ?? throw new ArgumentException("Select an existing conversation.");
+        var dialog =
+            season.Story?.Dialogs.FirstOrDefault(d => d.Id == dialogId) ?? throw new ArgumentException("Select an existing conversation.");
         var entries = season.Story!.EntryPoints.Where(e => e.DialogId == dialogId).ToArray();
         var removed = new List<object> { dialog };
         removed.AddRange(entries);

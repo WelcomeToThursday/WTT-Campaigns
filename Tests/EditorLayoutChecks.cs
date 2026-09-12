@@ -117,31 +117,72 @@ internal static class EditorLayoutChecks
         var originalReplyTrigger = JsonConvert.SerializeObject(existingReply.Trigger);
         var added = ConversationAuthoring.AddAfter(authored.Story, dialog, source, "Player");
         check(added.Trigger.Value == existingReply.Trigger.Value, "An additional player reply joins the existing branch phase");
-        check(JsonConvert.SerializeObject(existingReply.Trigger) == originalReplyTrigger, "Adding a reply preserves existing reply conditions");
-        var accept = new StoryAction { Id = StoryAuthoring.NewId(), Type = StoryActionType.AcceptQuest, QuestId = "222222222222222222222222" };
+        check(
+            JsonConvert.SerializeObject(existingReply.Trigger) == originalReplyTrigger,
+            "Adding a reply preserves existing reply conditions"
+        );
+        var accept = new StoryAction
+        {
+            Id = StoryAuthoring.NewId(),
+            Type = StoryActionType.AcceptQuest,
+            QuestId = "222222222222222222222222",
+        };
         added.Actions.Add(accept);
         var continuation = ConversationAuthoring.AddAfter(authored.Story, dialog, added, "Npc");
         check(continuation.Trigger.Value != added.Trigger.Value, "New continuation allocates a different phase");
-        check(continuation.Actions.Any(a => a.Type == StoryActionType.SetVariable && a.Value != continuation.Trigger.Value), "New automatic trader line advances its phase instead of repeating");
+        check(
+            continuation.Actions.Any(a => a.Type == StoryActionType.SetVariable && a.Value != continuation.Trigger.Value),
+            "New automatic trader line advances its phase instead of repeating"
+        );
         check(added.Actions[0] == accept, "Connecting dialogue preserves preceding quest effects");
         ConversationAuthoring.End(authored.Story, dialog, added);
-        check(added.Actions[0] == accept && added.Actions.Last().Type == StoryActionType.QuitAction, "Ending a conversation keeps quest effects before close");
+        check(
+            added.Actions[0] == accept && added.Actions.Last().Type == StoryActionType.QuitAction,
+            "Ending a conversation keeps quest effects before close"
+        );
         check(!added.Actions.Any(a => a.Type == StoryActionType.SetVariable), "Ending removes the phase advance");
         var terminalSnapshot = JsonConvert.SerializeObject(authored);
-        try { ConversationAuthoring.AddAfter(authored.Story, dialog, added, "Npc"); check(false, "Terminal line must reject a continuation"); }
-        catch (InvalidOperationException) { check(JsonConvert.SerializeObject(authored) == terminalSnapshot, "Rejected continuation preserves every draft record"); }
+        try
+        {
+            ConversationAuthoring.AddAfter(authored.Story, dialog, added, "Npc");
+            check(false, "Terminal line must reject a continuation");
+        }
+        catch (InvalidOperationException)
+        {
+            check(JsonConvert.SerializeObject(authored) == terminalSnapshot, "Rejected continuation preserves every draft record");
+        }
         ConversationAuthoring.Connect(authored.Story, dialog, added, continuation);
-        check(!added.Actions.Any(a => a.Type == StoryActionType.QuitAction) && added.Actions[0] == accept, "Explicit reconnection replaces close and retains quest effect");
+        check(
+            !added.Actions.Any(a => a.Type == StoryActionType.QuitAction) && added.Actions[0] == accept,
+            "Explicit reconnection replaces close and retains quest effect"
+        );
         check(ConversationAuthoring.NextLines(dialog, added).Contains(continuation), "Outline follows saved phase actions");
         authored.Story.Variables.Single(v => v.Id == dialog.MainVariable).Scope = StoryVariableScope.Profile;
         var importedSnapshot = JsonConvert.SerializeObject(authored);
-        try { ConversationAuthoring.End(authored.Story, dialog, added); check(false, "Shared profile phase must not be rewritten"); }
-        catch (InvalidOperationException) { check(JsonConvert.SerializeObject(authored) == importedSnapshot, "Imported profile state is preserved by guided editing guard"); }
+        try
+        {
+            ConversationAuthoring.End(authored.Story, dialog, added);
+            check(false, "Shared profile phase must not be rewritten");
+        }
+        catch (InvalidOperationException)
+        {
+            check(JsonConvert.SerializeObject(authored) == importedSnapshot, "Imported profile state is preserved by guided editing guard");
+        }
         var summarySnapshot = JsonConvert.SerializeObject(authored);
-        var level = NativeQuestAuthoring.Condition("Level"); level.Value = 10;
-        check(AuthoringSummary.Objective(authored, level, (_, id) => id).Contains(">= 10"), "Unlock summary reflects saved level comparison");
-        check(AuthoringSummary.Condition(authored, new StoryCondition(), (_, id) => id) == "Always", "Empty All summary explains unconditional visibility");
-        check(JsonConvert.SerializeObject(authored) == summarySnapshot, "Generating conversation and quest summaries does not mutate the draft");
+        var level = NativeQuestAuthoring.Condition("Level");
+        level.Value = 10;
+        check(
+            AuthoringSummary.Objective(authored, level, (_, id) => id).Contains(">= 10"),
+            "Unlock summary reflects saved level comparison"
+        );
+        check(
+            AuthoringSummary.Condition(authored, new StoryCondition(), (_, id) => id) == "Always",
+            "Empty All summary explains unconditional visibility"
+        );
+        check(
+            JsonConvert.SerializeObject(authored) == summarySnapshot,
+            "Generating conversation and quest summaries does not mutate the draft"
+        );
 
         var deletionSeason = new SeasonDefinition { Story = new() };
         var keptQuest = NativeQuestAuthoring.Create();
@@ -150,27 +191,56 @@ internal static class EditorLayoutChecks
         var keptDialog = StoryAuthoring.AddConversation(deletionSeason, "111111111111111111111111", false);
         var deletionSnapshot = JsonConvert.SerializeObject(deletionSeason);
         var plan = ConversationDeletion.Check(deletionSeason, deletedDialog.Id);
-        check(plan.Uses.Count == 0 && plan.EntryPoints == 1 && plan.RemovePhase, "A template's own entry point does not block conversation deletion");
+        check(
+            plan.Uses.Count == 0 && plan.EntryPoints == 1 && plan.RemovePhase,
+            "A template's own entry point does not block conversation deletion"
+        );
         check(JsonConvert.SerializeObject(deletionSeason) == deletionSnapshot, "Opening deletion preview leaves the draft unchanged");
         var raid = new StoryRaidBinding { Id = StoryAuthoring.NewId(), EntryPointId = deletionSeason.Story.EntryPoints[0].Id };
         deletionSeason.Story.RaidBindings.Add(raid);
         var blockedSnapshot = JsonConvert.SerializeObject(deletionSeason);
         plan = ConversationDeletion.Delete(deletionSeason, deletedDialog.Id);
         check(plan.Uses.Any(u => u.Navigation == "Story/" + raid.Id), "An external raid reference links to the blocking raid record");
-        check(JsonConvert.SerializeObject(deletionSeason) == blockedSnapshot, "A reference added after preview prevents all deletion mutations");
+        check(
+            JsonConvert.SerializeObject(deletionSeason) == blockedSnapshot,
+            "A reference added after preview prevents all deletion mutations"
+        );
         deletionSeason.Story.RaidBindings.Clear();
-        var switchAction = new StoryAction { Id = StoryAuthoring.NewId(), Type = StoryActionType.SwitchDialog, Target = deletedDialog.Id };
+        var switchAction = new StoryAction
+        {
+            Id = StoryAuthoring.NewId(),
+            Type = StoryActionType.SwitchDialog,
+            Target = deletedDialog.Id,
+        };
         keptDialog.Lines[0].Actions.Add(switchAction);
-        check(ConversationDeletion.Check(deletionSeason, deletedDialog.Id).Uses.Any(u => u.Navigation == "Story/" + keptDialog.Id), "Incoming dialogue transitions prevent broken conversations");
+        check(
+            ConversationDeletion.Check(deletionSeason, deletedDialog.Id).Uses.Any(u => u.Navigation == "Story/" + keptDialog.Id),
+            "Incoming dialogue transitions prevent broken conversations"
+        );
         keptDialog.Lines[0].Actions.Remove(switchAction);
-        var sharedPhase = new StoryAction { Id = StoryAuthoring.NewId(), Type = StoryActionType.SetVariable, Target = deletedDialog.MainVariable };
+        var sharedPhase = new StoryAction
+        {
+            Id = StoryAuthoring.NewId(),
+            Type = StoryActionType.SetVariable,
+            Target = deletedDialog.MainVariable,
+        };
         keptDialog.Lines[0].Actions.Add(sharedPhase);
-        check(!ConversationDeletion.Check(deletionSeason, deletedDialog.Id).RemovePhase, "A phase used by another conversation is retained");
+        check(
+            !ConversationDeletion.Check(deletionSeason, deletedDialog.Id).RemovePhase,
+            "A phase used by another conversation is retained"
+        );
         keptDialog.Lines[0].Actions.Remove(sharedPhase);
         var keptSnapshot = JsonConvert.SerializeObject(keptDialog);
         ConversationDeletion.Delete(deletionSeason, deletedDialog.Id);
-        check(!deletionSeason.Story.Dialogs.Contains(deletedDialog) && deletionSeason.Story.EntryPoints.All(e => e.DialogId != deletedDialog.Id), "Confirmed deletion removes dialogue and its entry points together");
+        check(
+            !deletionSeason.Story.Dialogs.Contains(deletedDialog)
+                && deletionSeason.Story.EntryPoints.All(e => e.DialogId != deletedDialog.Id),
+            "Confirmed deletion removes dialogue and its entry points together"
+        );
         check(deletionSeason.Story.Variables.All(v => v.Id != deletedDialog.MainVariable), "Unreferenced conversation phase is cleaned up");
-        check(deletionSeason.Quests.Single() == keptQuest && JsonConvert.SerializeObject(keptDialog) == keptSnapshot, "Conversation deletion preserves quests and other dialogue");
+        check(
+            deletionSeason.Quests.Single() == keptQuest && JsonConvert.SerializeObject(keptDialog) == keptSnapshot,
+            "Conversation deletion preserves quests and other dialogue"
+        );
     }
 }

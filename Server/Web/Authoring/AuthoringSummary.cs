@@ -42,18 +42,26 @@ public static class AuthoringSummary
     public static string Objective(SeasonDefinition season, NativeCondition condition, Func<string, string, string> installed)
     {
         var kind = condition.ConditionType;
-        var targetKind = kind is "Quest" ? "quests" : kind is "TraderLoyalty" ? "traders" : "items";
-        var targets = string.Join(" or ", (condition.Target?.Values ?? []).Where(t => t.Length > 0)
-            .Select(t => ReferenceNames.Resolve(season, targetKind, t, installed)));
+        var targetKind =
+            kind is "Quest" ? "quests"
+            : kind is "TraderLoyalty" ? "traders"
+            : "items";
+        var targets = string.Join(
+            " or ",
+            (condition.Target?.Values ?? []).Where(t => t.Length > 0).Select(t => ReferenceNames.Resolve(season, targetKind, t, installed))
+        );
         var amount = condition.Value?.ToString(CultureInfo.InvariantCulture) ?? "unset";
         var comparison = condition.CompareMethod ?? ">=";
         var summary = kind switch
         {
             "Level" => $"Player level {comparison} {amount}",
-            "Quest" => $"{(targets.Length > 0 ? targets : "Choose a prerequisite quest")} · {string.Join(" or ", (condition.Status ?? []).Select(Status))}",
+            "Quest" =>
+                $"{(targets.Length > 0 ? targets : "Choose a prerequisite quest")} · {string.Join(" or ", (condition.Status ?? []).Select(Status))}",
             "TraderLoyalty" => $"{targets} · loyalty {comparison} {amount}",
-            "FindItem" or "HandoverItem" or "HasItem" or "LeaveItemAtLocation" => $"{ObjectiveKind(kind)} · {comparison} {amount} · {(targets.Length > 0 ? targets : "Choose accepted items")}",
-            "CounterCreator" => $"Count raid events · {comparison} {amount} · {string.Join(", ", condition.Counter?.Conditions.Select(c => ObjectiveKind(c.ConditionType)) ?? [])}",
+            "FindItem" or "HandoverItem" or "HasItem" or "LeaveItemAtLocation" =>
+                $"{ObjectiveKind(kind)} · {comparison} {amount} · {(targets.Length > 0 ? targets : "Choose accepted items")}",
+            "CounterCreator" =>
+                $"Count raid events · {comparison} {amount} · {string.Join(", ", condition.Counter?.Conditions.Select(c => ObjectiveKind(c.ConditionType)) ?? [])}",
             _ => ObjectiveKind(kind),
         };
         if (condition.OnlyFoundInRaid == true)
@@ -90,7 +98,8 @@ public static class AuthoringSummary
             "Not" => "Not: " + string.Join("; ", children),
             "QuestStatus" => $"{target} is {string.Join(" or ", condition.Status.Select(Status))}",
             "VariableValue" => $"{target} {condition.Operator} {condition.Value.ToString(CultureInfo.InvariantCulture)}",
-            _ => $"{StoryAuthoring.Friendly(condition.Type)} · {target} {condition.Operator} {condition.Value.ToString(CultureInfo.InvariantCulture)}",
+            _ =>
+                $"{StoryAuthoring.Friendly(condition.Type)} · {target} {condition.Operator} {condition.Value.ToString(CultureInfo.InvariantCulture)}",
         };
         return condition.InRaidOnly ? summary + " · only while in raid" : summary;
     }
