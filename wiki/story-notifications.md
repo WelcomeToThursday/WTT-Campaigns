@@ -6,6 +6,10 @@ The first story snapshot establishes the current state without replaying old not
 
 A chapter becoming available does not necessarily accept its quest. If automatic acceptance is disabled, open the journal or the relevant trader conversation to take the quest.
 
-For missing chapter artwork, confirm that the campaign includes its referenced images and that the complete matching mod package is installed. Campaign authors can check artwork references in the [Creator](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/season-creator).
+For missing chapter artwork, confirm that the campaign includes its referenced images and that the complete matching mod package is installed. Campaign authors can check artwork references in the [Creator](season-creator.md).
 
-See [story and quests](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-system) for journal navigation and progression.
+See [story and quests](story-system.md) for journal navigation and progression.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

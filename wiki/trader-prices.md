@@ -22,3 +22,7 @@ Payment totals round upward after multiplying the requirement by the purchase qu
 If a price changes while an offer is open, the purchase can be rejected without taking payment. Refresh the offer and check the new total before trying again.
 
 Removing a perk and saving restores ordinary prices after the character reloads.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

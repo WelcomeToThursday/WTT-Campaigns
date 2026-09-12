@@ -1,37 +1,15 @@
-# Publishing the GitHub wiki
+# Editing documentation
 
-Player and campaign-author documentation lives in `wiki/`. `Home.md` is the landing page; `_Sidebar.md` and `_Footer.md` provide shared navigation. Keep page Markdown files at the top level and supporting files in `examples/`. Page links use the canonical `https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/<page-name>` URL without `.md`.
+All documentation is maintained in this source repository. Edit the Markdown files in `wiki/`, then commit and push them with the rest of the project. No separate repository, synchronization workflow or publishing credential is required.
 
-GitHub hosts the wiki in a separate Git repository. Committing `wiki/` in the source repository does not publish it to the Wiki tab.
+Readers open **Documentation home** from the main README, or browse the `wiki/` folder and follow its README to `Home.md`. GitHub displays these files in the repository's **Code** tab. The GitHub **Wiki** tab is a separate service and is not used for these guides.
 
-## First publication
+## Maintaining pages
 
-An authenticated repository maintainer must open the [Wiki tab](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki), choose **Create the first page**, and save a page named **Home**. This initializes the wiki Git repository. If the Wiki tab is unavailable, check the repository's wiki setting and your access.
+- Keep `Home.md` as the complete guide index and `README.md` as the folder entry point.
+- Use relative Markdown links with `.md` extensions, such as `[Characters](characters.md)` or `[Documentation home](Home.md)`. Keep section anchors after the extension.
+- Keep supporting files in `examples/`, including the story overlay JSON.
+- Update `Home.md` and `_Sidebar.md` when adding or renaming a guide. `_Sidebar.md` and `_Footer.md` are ordinary Markdown files here; GitHub does not automatically insert them into repository pages. Each guide has an explicit return link to the home page and navigation.
+- Check that linked files and section headings exist before committing.
 
-## Publish reviewed pages
-
-From the source checkout, clone the wiki into a new sibling directory, then copy the contents of `wiki/` into the clone. Use a fresh destination name if the example directory already exists.
-
-```powershell
-git clone https://github.com/WelcomeToThursday/WTT-Campaigns.wiki.git ../WTT-Campaigns.wiki
-Copy-Item -Path ./wiki/* -Destination ../WTT-Campaigns.wiki -Recurse -Force
-git -C ../WTT-Campaigns.wiki status --short
-git -C ../WTT-Campaigns.wiki diff --check
-git -C ../WTT-Campaigns.wiki diff
-```
-
-Review changes against any edits already made on GitHub. Copying preserves unrelated wiki pages; explicitly review obsolete pages when a guide is renamed or retired. The clone retains the previous committed versions of replaced files.
-
-After review, commit and publish the copied files:
-
-```powershell
-git -C ../WTT-Campaigns.wiki add -- Home.md _Sidebar.md _Footer.md *.md examples
-git -C ../WTT-Campaigns.wiki diff --cached --check
-git -C ../WTT-Campaigns.wiki diff --cached
-git -C ../WTT-Campaigns.wiki commit -m "Move campaign guides to GitHub wiki"
-git -C ../WTT-Campaigns.wiki push origin HEAD
-```
-
-Open the published Home page and check its guide links, sidebar and the downloadable JSON example. Commit the corresponding source changes through the normal repository review workflow so future edits start from the published content.
-
-Release packaging includes the `wiki/` snapshot alongside the README and release notes. Wiki-only changes do not alter installed runtime files or require a game/server restart.
+Release packaging includes the `wiki/` snapshot alongside the README and release notes. Relative links also work in a local Markdown viewer. Documentation-only changes do not alter installed runtime files or require a game/server restart.

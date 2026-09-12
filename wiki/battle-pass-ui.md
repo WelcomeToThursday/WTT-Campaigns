@@ -13,7 +13,7 @@ Use Q/E or the page arrows to browse. Back or Escape returns to the menu. Reward
 
 The character reloads after a successful transaction, returning to the selected hub tab and page. Closing the hub does not undo a completed claim.
 
-For collection limits and locked rewards, see [documents and rewards](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/battle-pass-gameplay).
+For collection limits and locked rewards, see [documents and rewards](battle-pass-gameplay.md).
 
 ## Exchange documents
 
@@ -35,3 +35,7 @@ Use the information button beside the campaign badge to replay the eight-step tu
 | Remember completion | FINISH or SKIP TUTORIAL |
 
 Clicking a highlighted region advances the tutorial without activating the control underneath. The tutorial covers rewards, requirements, ordinary and Classified documents, collection limits and exchanges. Its completion preference is shared by characters on the same installation and does not change progression.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

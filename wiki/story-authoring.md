@@ -1,6 +1,6 @@
 # Story authoring
 
-Story is an optional extension to the existing campaign definition. Use [the format-1 example overlay](https://raw.githubusercontent.com/wiki/WelcomeToThursday/WTT-Campaigns/examples/story-introduction.json) as a small working example. It adds a chapter, a journal note and a Prapor conversation; it contains no live campaign content or inventory rewards. All eight visit rooms are available to campaign characters, including campaigns without authored conversations.
+Story is an optional extension to the existing campaign definition. Use [the format-1 example overlay](examples/story-introduction.json) as a small working example. It adds a chapter, a journal note and a Prapor conversation; it contains no live campaign content or inventory rewards. All eight visit rooms are available to campaign characters, including campaigns without authored conversations.
 
 ## Edit and rehearse
 
@@ -33,7 +33,7 @@ A line has `Side` (`Npc` or `Player`), `Text`, `Trigger`, `Actions` and optional
 
 Text falls back to the definition's English fields. Locale keys are `<chapter> name`, `<note> text`, `<line> text` and `<line> confirmation`. Chapter `Image`/`Icon` reference season-owned artwork registered through the existing Creator image pipeline. Note links support Item, Offer (with TraderId) and Craft targets. A chapter can include main and optional quests, visibility conditions, automatic start/completion and status-triggered notes.
 
-Use the Creator's reference pickers and Validate action to check supported fields and relationships before publishing. Review the [compatibility limits](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-system#supported-contracts-and-explicit-limits) before authoring compound-item quests or paid services.
+Use the Creator's reference pickers and Validate action to check supported fields and relationships before publishing. Review the [compatibility limits](story-system.md#supported-contracts-and-explicit-limits) before authoring compound-item quests or paid services.
 
 ## Media and animation
 
@@ -70,3 +70,7 @@ Collectibles use ItemId (template) and the server's generated loot instance IDs.
 Ordinary Trigger, Interact, Shoot and Collectible bindings can reference Image, Audio, Video or Cinematic media in MediaId. Accepted events present that media immediately, then their conversation: images wait for Continue, audio plays once with Skip, and Video/Timeline use playback controls. This presentation never sends cinematic-binding completion messages.
 
 `PersistOnDeath: true` commits eligible actions immediately. Otherwise the server defers them until a surviving raid result. Cinematics send begin followed by complete, skip or interrupt; skip completes the binding and interruption leaves it unfinished. Play through your published events in the game to confirm that targets, conditions and media behave as intended.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

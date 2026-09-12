@@ -12,4 +12,8 @@ Use Back to revisit earlier choices before confirming. After creation, select th
 
 You can inspect saved perks in the **MODIFIERS** tab beside Skills and Mastery. Use the character selector's editor to change selections when the campaign permits edits. Editing is unavailable during raids.
 
-For switching, deletion and achievement-preserving wipes, see [campaign characters](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/characters).
+For switching, deletion and achievement-preserving wipes, see [campaign characters](characters.md).
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

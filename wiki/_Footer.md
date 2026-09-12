@@ -1,1 +1,1 @@
-WTT-Campaigns · [Wiki home](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/Home) · [Source and installation](https://github.com/WelcomeToThursday/WTT-Campaigns) · [Report an issue](https://github.com/WelcomeToThursday/WTT-Campaigns/issues)
+WTT-Campaigns · [Wiki home](Home.md) · [Source and installation](../README.md) · [Report an issue](https://github.com/WelcomeToThursday/WTT-Campaigns/issues)

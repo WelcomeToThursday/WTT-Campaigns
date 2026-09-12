@@ -12,7 +12,7 @@ Visits open an animated trader room. They are available even when the campaign h
 - Use **Leave** to exit the visit, or the Buy/Sell navigation to return to trading.
 - Use **Skip** when offered by media playback.
 
-Item handovers use the game's item selection window. Cancelling an uncommitted handover cancels the pending conversation operation. See [story and quests](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-system) for supported actions and limits.
+Item handovers use the game's item selection window. Cancelling an uncommitted handover cancels the pending conversation operation. See [story and quests](story-system.md) for supported actions and limits.
 
 ## Rooms and loading
 
@@ -23,3 +23,7 @@ The eight built-in trader bundles occupy approximately **1.69 GB**. Room texture
 Peacekeeper uses a custom logistics office and an approximate character model. Recovered Peacekeeper voice recordings and facial animation are not included.
 
 If a room cannot load, check the client log for a missing media file or checksum mismatch and reinstall the matching release files. A custom campaign can supply its own room; obtain that campaign's separate media package as well.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

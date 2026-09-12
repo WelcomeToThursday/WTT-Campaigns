@@ -1,27 +1,27 @@
-[**WTT-Campaigns Wiki**](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/Home)
+[**WTT-Campaigns Wiki**](Home.md)
 
 **Getting started**
 
-- [Installation](https://github.com/WelcomeToThursday/WTT-Campaigns#installation)
-- [Characters](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/characters)
-- [Menus and perks](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/ui)
-- [Compatibility](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/compatibility)
+- [Installation](../README.md#installation)
+- [Characters](characters.md)
+- [Menus and perks](ui.md)
+- [Compatibility](compatibility.md)
 
 **Playing**
 
-- [Documents and rewards](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/battle-pass-gameplay)
-- [Story and quests](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-system)
-- [Trader visits](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/trader-media-and-visit)
-- [Trader progression](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/trader-progression)
-- [Perk details](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/Home#perk-details)
-- [Profile recovery](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/typed-models-and-profile-storage)
+- [Documents and rewards](battle-pass-gameplay.md)
+- [Story and quests](story-system.md)
+- [Trader visits](trader-media-and-visit.md)
+- [Trader progression](trader-progression.md)
+- [Perk details](Home.md#perk-details)
+- [Profile recovery](typed-models-and-profile-storage.md)
 
 **Creating campaigns**
 
-- [Campaign Creator](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/season-creator)
-- [Tutorials](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/creator-tutorials)
-- [Story authoring](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-authoring)
-- [Raid authoring](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/raid-authoring)
-- [Story Sandbox](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-sandbox)
+- [Campaign Creator](season-creator.md)
+- [Tutorials](creator-tutorials.md)
+- [Story authoring](story-authoring.md)
+- [Raid authoring](raid-authoring.md)
+- [Story Sandbox](story-sandbox.md)
 
-[All guides](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/Home) · [Releases](https://github.com/WelcomeToThursday/WTT-Campaigns/releases) · [Issues](https://github.com/WelcomeToThursday/WTT-Campaigns/issues)
+[All guides](Home.md) · [Releases](https://github.com/WelcomeToThursday/WTT-Campaigns/releases) · [Issues](https://github.com/WelcomeToThursday/WTT-Campaigns/issues)

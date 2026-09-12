@@ -2,6 +2,8 @@
 
 **0.6.0 — Initial beta release**
 
+**[Documentation home](wiki/Home.md)** · [Player guides](wiki/Home.md#playing) · [Campaign creation](wiki/Home.md#creating-campaigns)
+
 WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass progression and campaign authoring to SPT. Create separate characters for different campaigns, build a playstyle around benefits and drawbacks, and use the Campaign Creator to make and share your own content.
 
 ## Features
@@ -60,11 +62,11 @@ Start with **Create blank campaign**, duplicate an existing campaign, or import 
 
 Configure the content, save the draft, then validate and publish it. Published packs can be exported as ZIP files for sharing. Restart the server after publishing or importing a new pack so its content can load; players can then choose it during character creation. Several compatible campaigns can be played in the same server session.
 
-Once a campaign has characters, gameplay changes require duplicating it into a new campaign. Text and artwork can still be revised. The creator includes **Help and tutorials**; see the [Campaign Creator guide](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/season-creator) and [story authoring guide](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/story-authoring) for details.
+Once a campaign has characters, gameplay changes require duplicating it into a new campaign. Text and artwork can still be revised. The creator includes **Help and tutorials**; see the [Campaign Creator guide](wiki/season-creator.md) and [story authoring guide](wiki/story-authoring.md) for details.
 
 ## Beta limitations and feedback
 
-This beta supports local campaign play and custom campaign authoring. It does not reproduce every live EFT feature. See [compatibility and known limitations](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/compatibility) before choosing a campaign or combining mods.
+This beta supports local campaign play and custom campaign authoring. It does not reproduce every live EFT feature. See [compatibility and known limitations](wiki/compatibility.md) before choosing a campaign or combining mods.
 
 - Street Tax, Kappa Protocol, Lucky, Unlucky, Armor Shortage and Black Division are unavailable.
 - A complete live story campaign, online purchases, leaderboards and automatic campaign wipes are not included.
@@ -76,6 +78,6 @@ When reporting a problem, include the mod and SPT versions, installed mods, the 
 
 ## Guides
 
-Browse the [documentation index](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/Home) for player guides, perk details, profile recovery and campaign authoring. Start with [characters](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/characters), [documents and rewards](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/battle-pass-gameplay), or [Creator tutorials](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/creator-tutorials).
+Browse the [documentation index](wiki/Home.md) for player guides, perk details, profile recovery and campaign authoring. Start with [characters](wiki/characters.md), [documents and rewards](wiki/battle-pass-gameplay.md), or [Creator tutorials](wiki/creator-tutorials.md).
 
 For changes in this release, see [release notes](RELEASE_NOTES.md). Original code is MIT-licensed; game assets and external dependencies retain their respective ownership as described in [third-party notices](THIRD_PARTY_NOTICES.md).

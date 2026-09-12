@@ -48,3 +48,7 @@ Published zones load for the active campaign character on the matching map. Nati
 Zone references must be reassigned before deletion. Scene paths must resolve uniquely. Shoot targets require a ballistic collider; interaction targets require a raycastable collider. IDs colliding with native map zones are rejected during connected editing and skipped with a diagnostic at runtime.
 
 NPC/item spawning, cinematic camera paths, and specialized native triggers beyond the types listed above are outside this version.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

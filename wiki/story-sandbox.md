@@ -2,7 +2,7 @@
 
 An optional example campaign containing **Field dressing**, a short Prapor delivery. Existing characters keep their original campaign and progression.
 
-Import and publish the Story Sandbox pack through the [Campaign Creator](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/season-creator), then restart the server to load it. The example must be obtained separately; it is not automatically activated by installing the mod.
+Import and publish the Story Sandbox pack through the [Campaign Creator](season-creator.md), then restart the server to load it. The example must be obtained separately; it is not automatically activated by installing the mod.
 
 To play:
 
@@ -13,3 +13,7 @@ To play:
 5. Collect the reward in the conversation. Completion grants 250 XP and a base payment of 5,000 roubles through Messenger. Native character reward bonuses can increase the payment.
 
 You can leave and return before or after handing over the bandage. Completion cannot repeat the reward. Switching back to your original character preserves its inventory and progression.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

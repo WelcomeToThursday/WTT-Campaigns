@@ -6,4 +6,8 @@ The list groups common campaign rules, beneficial personal perks and detrimental
 
 This display has no selection controls or point budget. To change perks, return to the character selector and open the editor when your campaign permits changes. Editing is unavailable during raids. Regular PMC and Scav profiles show an empty state.
 
-Descriptions summarize each perk. Some bundled descriptions differ from their actual numeric effects; see [compatibility notes](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/compatibility#perk-behavior-notes) and the [perk guides](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/Home#perk-details).
+Descriptions summarize each perk. Some bundled descriptions differ from their actual numeric effects; see [compatibility notes](compatibility.md#perk-behavior-notes) and the [perk guides](Home.md#perk-details).
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

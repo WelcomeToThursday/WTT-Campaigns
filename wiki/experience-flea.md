@@ -16,4 +16,8 @@ You cannot create or extend listings. The game's listing controls may still appe
 
 Existing listings can expire, settle or be removed normally. Selecting the perk does not confiscate outstanding offers or rewards. Removing it restores ordinary searches, purchases and listing access.
 
-Trader loyalty, availability and any selected [price perks](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/trader-prices) still apply.
+Trader loyalty, availability and any selected [price perks](trader-prices.md) still apply.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

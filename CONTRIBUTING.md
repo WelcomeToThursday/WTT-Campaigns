@@ -66,6 +66,6 @@ Follow the [client/server](contributing/client-server-structure.md), [patch](con
 
 Keep game binaries, generated bundles, recovered media, raw captures, profiles, credentials and machine-specific settings out of commits. The whole `Research/` tree is ignored; preserve contributor references in `contributing/` and keep `wiki/` focused on players and campaign authors. Keep sanitized catalogue/localization data and fixtures in their existing directories.
 
-The `wiki/` directory contains the GitHub wiki pages, navigation and authoring example. See [wiki publishing](contributing/wiki-publishing.md) for how to publish reviewed documentation changes to GitHub's separate wiki repository.
+The `wiki/` directory contains the documentation home page, guides and authoring example in this repository. See [editing documentation](contributing/wiki-publishing.md) for the normal edit, commit and push workflow.
 
 Before a commit, inspect `git status --short`, `git diff --check` and `git diff --cached`. Before publishing a repository, review `THIRD_PARTY_NOTICES.md`, including the captured data retained in source control. Packaging stages and installs the validated local update; it does not publish it. Never stop or start any server or client.

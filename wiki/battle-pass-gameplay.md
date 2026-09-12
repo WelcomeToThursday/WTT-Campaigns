@@ -16,7 +16,7 @@ Survived and run-through extractions give each newly acquired extracted document
 
 ## Claim rewards
 
-Select a reward in the [campaign hub](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/battle-pass-ui) to see its requirements. These can include faction, level, completed quests, prior-page claims and document costs.
+Select a reward in the [campaign hub](battle-pass-ui.md) to see its requirements. These can include faction, level, completed quests, prior-page claims and document costs.
 
 Claims spend the required ordinary document types first. **Classified documents can cover a shortage one-for-one**, but only after confirmation.
 
@@ -53,6 +53,10 @@ For the bundled setup, an optional `hub-config.json` beside `WTT-Campaigns.Serve
 | `MapCounts` | Map names mapped to caps of 0–8 | Uses the overall cap |
 | `ClassifiedChancePercent` | 0–100 | 5 |
 
-These caps do not bypass document map restrictions or per-type limits. Custom campaigns also have document settings in the [Campaign Creator](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/season-creator).
+These caps do not bypass document map restrictions or per-type limits. Custom campaigns also have document settings in the [Campaign Creator](season-creator.md).
 
 Back up existing configuration before editing and restart the server to load changes. Preserve character profiles and campaign packs during updates.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

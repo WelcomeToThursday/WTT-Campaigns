@@ -16,4 +16,8 @@ Stash food costs round to the nearest whole unit, with halfway values rounded to
 
 With Well That Hurt!, less than 1.25 remaining kit resource cannot fund one whole HP of stash healing. Fractional leftovers can remain. Stash and raid resource remainders may differ because the game uses different rounding for each.
 
-For food that also grants temporary raid effects, see [Juice Time and Sailor's Nostalgia](https://github.com/WelcomeToThursday/WTT-Campaigns/wiki/consumables).
+For food that also grants temporary raid effects, see [Juice Time and Sailor's Nostalgia](consumables.md).
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

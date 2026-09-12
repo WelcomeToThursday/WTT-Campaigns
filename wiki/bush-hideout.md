@@ -13,3 +13,7 @@ Bush interaction sound range and volume are reduced. Other characters and bots k
 This common campaign rule allows non-found-in-raid materials to satisfy hideout construction requirements. It does not change the items' found-in-raid flags or remove quest, barter, item-type or other suitability requirements.
 
 The campaign must enable the rule. Server owners maintaining an older bundled configuration can add `69ce5eb3e4b79de94a0d78c8` to `EnabledCommonIds`, restart the server, and save the campaign character's perk selection again. Existing configuration choices are preserved when updating.
+
+---
+
+[Documentation home](Home.md) · [Guide navigation](_Sidebar.md)
