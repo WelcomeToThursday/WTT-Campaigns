@@ -40,8 +40,10 @@ internal sealed class TaskTierBadgePatch : ModulePatch
             var rect = (RectTransform)badge.transform;
             rect.anchorMin = rect.anchorMax = new Vector2(1, 0.5f);
             rect.pivot = new Vector2(1, 0.5f);
-            rect.sizeDelta = new Vector2(26, 26);
+            rect.sizeDelta = new Vector2(TaskTierBadgeLayout.BadgeSize, TaskTierBadgeLayout.BadgeSize);
             rect.anchoredPosition = Vector2.zero;
+            var layout = badge.GetComponent<UnityEngine.UI.LayoutElement>() ?? badge.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
+            layout.ignoreLayout = true;
             foreach (var graphic in badge.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
             {
                 graphic.raycastTarget = false;
@@ -49,8 +51,12 @@ internal sealed class TaskTierBadgePatch : ModulePatch
         }
         if (badge != null)
         {
-            badge.gameObject.SetActive(tier is >= 1 and <= 4);
-            if (tier is >= 1 and <= 4)
+            var visible = tier is >= 1 and <= 4;
+            var layout = __instance._title.GetComponent<TaskTierBadgeLayout>()
+                ?? __instance._title.gameObject.AddComponent<TaskTierBadgeLayout>();
+            layout.Apply(__instance._title, (RectTransform)badge.transform, visible);
+            badge.gameObject.SetActive(visible);
+            if (visible)
             {
                 // Tasks use Roman I–IV, rather than the trader's special elite emblem.
                 badge.Show(tier, 5);
