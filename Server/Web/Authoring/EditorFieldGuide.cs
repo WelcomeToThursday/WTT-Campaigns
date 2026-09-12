@@ -149,6 +149,8 @@ public static class EditorFieldGuide
                     $"Number of accepted items to hand over to the quest trader. Current requirement: {amount}; handed-in items are consumed.",
                 "HasItem" => $"Number of accepted items the player must possess. Current requirement: {amount}.",
                 "LeaveItemAtLocation" => $"Number of accepted items to place at the configured zone. Current requirement: {amount}.",
+                "Salvage" =>
+                    "One completed CommonLib salvage interaction satisfies this objective. Leave this value at 1; configure reward quantities on the zone.",
                 "CounterCreator" => $"Number of qualifying events required: {amount}. The nested filters define which events count. "
                     + (
                         (value as NativeCondition)?.OneSessionOnly == true
@@ -202,7 +204,9 @@ public static class EditorFieldGuide
             == true
                 ? "All required counter progress must be earned in one raid."
                 : "Counter progress can accumulate across raids. Enable for a single-raid challenge.",
-            "plantTime" => $"The player must spend {amount} seconds placing an item at this objective's zone.",
+            "plantTime" => kind == "Salvage"
+                ? "Salvage description time. The zone's salvage time controls the actual interaction duration."
+                : $"The player must spend {amount} seconds placing an item at this objective's zone.",
             "zoneId" =>
                 $"Exact in-game zone identifier for {StoryAuthoring.Friendly(kind)}. This is a zone inside a map, not the map name.",
             "weapon" => "Only events using these weapon templates count. An empty list applies no weapon restriction.",

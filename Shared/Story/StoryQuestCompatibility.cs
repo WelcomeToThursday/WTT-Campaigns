@@ -42,6 +42,7 @@ public static class StoryQuestCompatibility
         "ExitStatus",
         "Kills",
         "LeaveItemAtLocation",
+        "Salvage",
         "ExitName",
         "InZone",
         "Time",

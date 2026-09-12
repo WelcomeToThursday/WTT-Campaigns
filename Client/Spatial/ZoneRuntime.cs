@@ -1,4 +1,5 @@
 using Comfort.Common;
+using Diz.Jobs;
 using EFT;
 using EFT.Interactive;
 using UnityEngine;
@@ -169,6 +170,60 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
         {
             Add<PlaceItemTrigger>();
         }
+        if (zone.Uses.Contains("Salvage"))
+        {
+            Add<SalvageItemTrigger>();
+            var salvage = zone.Salvage;
+            ((SalvageItemTrigger)_native[_native.Count - 1]).Configure(
+                salvage.RequiredItemTpl,
+                salvage.SalvageTime,
+                salvage
+                    .Rewards.AsValueEnumerable()
+                    .Select(r => new SalvageItemTrigger.SalvageReward
+                    {
+                        ItemTpl = r.ItemTpl,
+                        Count = r.Count,
+                        ToQuestInventory = r.ToQuestInventory,
+                    })
+                    .ToArray(),
+                salvage.ConsumeRequiredItem
+            );
+            _ = PreloadSalvageRewards(salvage);
+        }
+    }
+
+    private static async Task PreloadSalvageRewards(SalvageZoneSettings salvage)
+    {
+        try
+        {
+            var factory = Singleton<ItemFactory>.Instance;
+            var pools = Singleton<ObjectsFactory>.Instance;
+            if (factory == null || pools == null)
+                return;
+            var keys = new List<ResourceKey>();
+            foreach (var reward in salvage.Rewards)
+            {
+                if (!factory.ItemTemplates.TryGetValue(reward.ItemTpl, out var template))
+                    continue;
+                if (template.Prefab != null)
+                    keys.Add(template.Prefab);
+                if (template.UsePrefab != null)
+                    keys.Add(template.UsePrefab);
+            }
+            if (keys.Count > 0)
+                await pools.LoadBundlesAndCreatePools(
+                    0,
+                    ObjectsFactory.AssemblyType.Local,
+                    keys.ToArray(),
+                    JobYieldPriority.Immediate,
+                    null,
+                    System.Threading.CancellationToken.None
+                );
+        }
+        catch (Exception e)
+        {
+            Plugin.Error(e);
+        }
     }
 
     public void OnTriggerEnter(Collider other)
@@ -203,7 +258,8 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
         Active.Add(this);
         foreach (var trigger in _native)
         {
-            trigger.TriggerEnter(player);
+            if (trigger)
+                trigger.TriggerEnter(player);
         }
     }
 

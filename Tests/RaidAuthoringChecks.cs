@@ -12,6 +12,7 @@ internal static class RaidAuthoringChecks
 {
     public static void Run(SeasonRepository repository, Action<bool, string> check)
     {
+        SalvageChecks.Run(check);
         var service = new RaidAuthoringService(repository);
         var draft = repository.Create(false);
         var request = new AuthoringRequest

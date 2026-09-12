@@ -415,7 +415,9 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                     }
                 }
 
-                var errors = SpatialRules.Errors(candidate);
+                // Captures may be saved before their salvage items are configured in the browser.
+                // Publishing still requires the complete salvage configuration.
+                var errors = SpatialRules.Errors(candidate, requireCompleteSalvage: false);
                 if (errors.Count > 0)
                 {
                     throw new InvalidOperationException(string.Join("\n", errors.Take(10)));

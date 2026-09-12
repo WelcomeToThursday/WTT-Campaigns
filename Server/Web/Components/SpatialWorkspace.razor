@@ -12,7 +12,26 @@
         <label>Shape<select @bind="zone.Shape"><option>Box</option><option>Sphere</option></select></label>
         @if (zone.Shape == "Box") { <SpatialVectorFields Value="zone.Size" Label="Size (metres)" Changed="Changed" /> }
         else { <label>Radius (metres)<input type="number" min="0.05" step="0.05" @bind="zone.Radius" /></label> }
-        @foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation" }) { <label class="check"><input type="checkbox" checked="@zone.Uses.Contains(use)" @onchange="@(e => Use(zone, use, (bool)e.Value!))" />@use</label> }
+        @foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation", "Salvage" }) { <label class="check"><input type="checkbox" checked="@zone.Uses.Contains(use)" @onchange="@(e => Use(zone, use, (bool)e.Value!))" />@use</label> }
+        @if (zone.Uses.Contains("Salvage"))
+        {
+            <fieldset class="field-section"><legend>CommonLib salvage</legend>
+                <ContentPicker Kind="items" Label="Required salvage item" Value="@zone.Salvage.RequiredItemTpl" Additional="OwnedItems" ValueChanged="@(async id => { zone.Salvage.RequiredItemTpl = id; await NotifyChanged(); })" />
+                <label>Salvage time (seconds)<input type="number" min="0.1" step="0.1" @bind="zone.Salvage.SalvageTime" @bind:after="NotifyChanged" /></label>
+                <label class="check"><input type="checkbox" @bind="zone.Salvage.ConsumeRequiredItem" @bind:after="NotifyChanged" />Consume required item</label>
+                <p>Rewards are granted during the raid. Enable quest inventory only for quest items.</p>
+                @foreach (var reward in zone.Salvage.Rewards.ToArray())
+                {
+                    <div class="editor-card" @key="reward">
+                        <ContentPicker Kind="items" Label="Salvage reward item" Value="@reward.ItemTpl" Additional="OwnedItems" ValueChanged="@(async id => { reward.ItemTpl = id; await NotifyChanged(); })" />
+                        <label>Count<input type="number" min="1" @bind="reward.Count" @bind:after="NotifyChanged" /></label>
+                        <label class="check"><input type="checkbox" @bind="reward.ToQuestInventory" @bind:after="NotifyChanged" />Send to quest inventory</label>
+                        <button class="danger" @onclick="@(async () => { zone.Salvage.Rewards.Remove(reward); await NotifyChanged(); })">Remove reward</button>
+                    </div>
+                }
+                <button @onclick="@(async () => { zone.Salvage.Rewards.Add(new()); await NotifyChanged(); })">Add salvage reward</button>
+            </fieldset>
+        }
         <p>Referenced by: @string.Join(", ", SpatialRules.Uses(Season, zone.Id))</p>
     }
     else { <p>@record.ObjectPath</p> }
@@ -24,6 +43,8 @@
     [Parameter] public SeasonDefinition Season { get; set; } = null!;
     [Parameter] public EventCallback Changed { get; set; }
     private string _search = "";
+    private IEnumerable<ContentChoice> OwnedItems => WTT.Campaigns.Server.Web.Authoring.StoryAuthoring.Choices(Season, "items").Select(c => new ContentChoice(c.Id, c.Name));
+    private Task NotifyChanged() => Changed.InvokeAsync();
     private async Task Delete(SpatialCapture record) { if (SpatialRules.Uses(Season, record.Id).Any()) return; if (record is SeasonZone zone) Season.Zones.Remove(zone); else Season.Captures.Remove(record); await Changed.InvokeAsync(); }
     private async Task Use(SeasonZone zone, string use, bool enabled) { if (enabled && !zone.Uses.Contains(use)) zone.Uses.Add(use); if (!enabled) zone.Uses.Remove(use); await Changed.InvokeAsync(); }
 }

@@ -6,6 +6,11 @@
   </PropertyGroup>
   <ItemGroup>
     <Using Remove="System.Linq" />
+    <Reference
+      Include="WTT-ClientCommonLib"
+      HintPath="$(TarkovDir)BepInEx\plugins\WTT-ClientCommonLib\WTT-ClientCommonLib.dll"
+      Private="false"
+    />
     <Reference Include="UniTask" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\UniTask.dll" Private="false" />
     <Reference Include="ZLinq" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll" Private="false" />
     <Reference Include="ZString" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\ZString.dll" Private="false" />

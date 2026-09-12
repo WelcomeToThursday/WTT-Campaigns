@@ -22,9 +22,20 @@ public static class NativeQuestAuthoring
 
     public static IEnumerable<string> ConditionKinds(bool story, bool nested)
     {
-        return nested ? CounterFilters
+        return nested ? CounterFilters.Concat(new[] { "Salvage" })
             : story ? WTT.Campaigns.Shared.Story.StoryQuestCompatibility.ConditionTypes.Except(CounterFilters).Order()
-            : ["Level", "Quest", "TraderLoyalty", "FindItem", "HandoverItem", "VisitPlace", "LeaveItemAtLocation", "CounterCreator"];
+            :
+            [
+                "Level",
+                "Quest",
+                "TraderLoyalty",
+                "FindItem",
+                "HandoverItem",
+                "VisitPlace",
+                "LeaveItemAtLocation",
+                "Salvage",
+                "CounterCreator",
+            ];
     }
 
     public static NativeCondition Condition(string kind)
@@ -73,7 +84,12 @@ public static class NativeQuestAuthoring
             condition.ZoneId = null;
         }
 
-        if (kind == "LeaveItemAtLocation")
+        if (kind == "Salvage")
+        {
+            condition.Target = null;
+            condition.ZoneId = "";
+        }
+        if (kind is "LeaveItemAtLocation" or "Salvage")
         {
             condition.PlantTime = 10;
         }

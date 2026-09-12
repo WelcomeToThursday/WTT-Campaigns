@@ -272,6 +272,15 @@ public sealed class SeasonContentService(
                 }
             }
 
+            foreach (var zone in definition.Zones.Where(z => z.Uses.Contains("Salvage")))
+            {
+                Item(zone.Salvage.RequiredItemTpl, "Zones and captures/" + zone.Id);
+                foreach (var reward in zone.Salvage.Rewards)
+                {
+                    Item(reward.ItemTpl, "Zones and captures/" + zone.Id);
+                }
+            }
+
             foreach (var item in definition.Items)
             {
                 Item(item.CloneFrom, "Items/" + item.Id);

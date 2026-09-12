@@ -35,6 +35,7 @@ public class SpatialCapture
 
 public sealed class SeasonZone : SpatialCapture
 {
+    public SalvageZoneSettings Salvage { get; set; } = new();
     public string Shape { get; set; } = "Box";
     public SpatialVector Size { get; set; } =
         new()
@@ -47,6 +48,21 @@ public sealed class SeasonZone : SpatialCapture
 
     [Newtonsoft.Json.JsonProperty(ObjectCreationHandling = Newtonsoft.Json.ObjectCreationHandling.Replace)]
     public List<string> Uses { get; set; } = new() { "InZone", "VisitPlace" };
+}
+
+public sealed class SalvageZoneSettings
+{
+    public string RequiredItemTpl { get; set; } = "";
+    public float SalvageTime { get; set; } = 10;
+    public bool ConsumeRequiredItem { get; set; } = true;
+    public List<SalvageZoneReward> Rewards { get; set; } = new();
+}
+
+public sealed class SalvageZoneReward
+{
+    public string ItemTpl { get; set; } = "";
+    public int Count { get; set; } = 1;
+    public bool ToQuestInventory { get; set; }
 }
 
 public static class SpatialRules
@@ -89,7 +105,7 @@ public static class SpatialRules
         ).Concat(Conditions(season).Where(c => References(c).Contains(id)).Select(c => "Objective " + c.Id));
     }
 
-    public static List<string> Errors(SeasonDefinition season)
+    public static List<string> Errors(SeasonDefinition season, bool requireCompleteSalvage = true)
     {
         var errors = new List<string>();
         var ids = new HashSet<string>();
@@ -139,9 +155,29 @@ public static class SpatialRules
                     errors.Add("Zone dimensions must be positive and finite: " + zone.Id);
                 }
 
-                if (zone.Uses == null || zone.Uses.Any(u => u is not ("InZone" or "VisitPlace" or "LeaveItemAtLocation")))
+                if (zone.Uses == null || zone.Uses.Any(u => u is not ("InZone" or "VisitPlace" or "LeaveItemAtLocation" or "Salvage")))
                 {
                     errors.Add("Unsupported quest zone use: " + zone.Id);
+                }
+                if (zone.Uses?.Contains("Salvage") == true)
+                {
+                    var salvage = zone.Salvage;
+                    if (
+                        requireCompleteSalvage
+                        && (
+                            salvage == null
+                            || !SeasonValidator.IsId(salvage.RequiredItemTpl)
+                            || !float.IsFinite(salvage.SalvageTime)
+                            || salvage.SalvageTime <= 0
+                            || salvage.Rewards == null
+                            || salvage.Rewards.Any(r => r == null || !SeasonValidator.IsId(r.ItemTpl) || r.Count <= 0)
+                        )
+                    )
+                        errors.Add(
+                            "Salvage requires an item, a positive finite interaction time and valid reward items/counts: " + zone.Id
+                        );
+                    if (zone.Uses.Contains("LeaveItemAtLocation"))
+                        errors.Add("Salvage and item placement require separate zones: " + zone.Id);
                 }
             }
         }

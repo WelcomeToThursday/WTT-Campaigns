@@ -144,6 +144,7 @@ public sealed partial class StoryService
             case "CounterCreator":
             case "VisitPlace":
             case "LeaveItemAtLocation":
+            case "Salvage":
             case "LaunchFlare":
                 return Compare(facts.ConditionCounters.GetValueOrDefault(id));
             default:

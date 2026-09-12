@@ -43,6 +43,18 @@ internal static class ModIdentityChecks
                 var metadata = plugin.CustomAttributes.Single(attribute => attribute.AttributeType.FullName == "BepInEx.BepInPlugin");
                 Require((string)metadata.ConstructorArguments[0].Value == "com.wtt.campaigns", "Client GUID");
                 Require((string)metadata.ConstructorArguments[1].Value == "WTT-Campaigns", "Client display name");
+                Require(
+                    plugin.CustomAttributes.Any(a =>
+                        a.AttributeType.FullName == "BepInEx.BepInDependency"
+                        && (string)a.ConstructorArguments[0].Value == "com.wtt.commonlib"
+                        && (string)a.ConstructorArguments[1].Value == "3.0.6"
+                    ),
+                    "Client requires CommonLib 3.0.6"
+                );
+                Require(
+                    assembly.MainModule.AssemblyReferences.Any(r => r.Name == "WTT-ClientCommonLib"),
+                    "Client links the CommonLib salvage runtime"
+                );
             }
             if (assembly.Name.Name == "WTT-Campaigns.UI")
             {
@@ -69,6 +81,7 @@ internal static class ModIdentityChecks
             }
             if (path == serverPath)
             {
+                Require(strings.Contains("com.wtt.commonlib") && strings.Contains(">=3.0.6"), "Server requires CommonLib 3.0.6");
                 var metadata = assembly.MainModule.GetType("WTT.Campaigns.Server.Metadata");
                 var constructor = metadata.Methods.Single(method => method.IsConstructor && !method.HasParameters && !method.IsStatic);
                 foreach (

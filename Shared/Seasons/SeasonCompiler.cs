@@ -77,6 +77,11 @@ public static class SeasonCompiler
             .Items.Select(i => i.CloneFrom)
             .Concat(season.Documents.Select(d => d.ItemId))
             .Concat(season.Crates.SelectMany(c => c.Pool.Keys))
+            .Concat(
+                season
+                    .Zones.Where(z => z.Uses.Contains("Salvage"))
+                    .SelectMany(z => z.Salvage.Rewards.Select(r => r.ItemTpl).Append(z.Salvage.RequiredItemTpl))
+            )
             .Concat(new[] { season.Starting.Usec, season.Starting.Bear }.SelectMany(f => f.Items.Select(i => i.Template)))
             .Concat(
                 season
