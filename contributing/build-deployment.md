@@ -39,7 +39,7 @@ MSBuild collects an explicit list of shipped runtime assemblies, dependencies, b
 
 Install folders are `BepInEx/plugins/WTT-Campaigns` and `SPT_Runtime/user/mods/WTT-Campaigns`. When the previous `SeasonalPerks` or `WTT-Seasonal` folders exist, installation requires all matching components. It checks old files for locks before changing either component, archives both old folders under the installation backup with verified SHA-256 hashes, and retains configuration, creator drafts and other non-shipped content in the new folders. The BepInEx configuration is copied to `com.wtt.campaigns.cfg` for the new plugin GUID. Existing Campaigns configuration wins if both versions are present; the old copy remains in the backup. Failed installation restores the old folders. This prevents duplicate plugin loading.
 
-This development rename changes namespaces, assembly identities, routes and mod-owned profile extension keys. Existing profile files remain untouched; old progression keys are not migrated. Native seasonal gameplay fields and the seasonal character storage directory retain their existing names.
+Legacy installations use different namespaces, assembly identities, routes and mod-owned profile extension keys. Existing profile files remain untouched; old progression keys are not migrated. Native seasonal gameplay fields and the seasonal character storage directory retain their existing names.
 
 Archival copies and verifies the old files before removing them from the plugin search paths. Empty legacy directories can remain if an editor or file watcher holds them open; they contain no runtime assemblies and do not trigger another migration. The backup remains available after rollback as well as successful installation.
 
@@ -55,6 +55,6 @@ If any changed destination is locked, installation fails before replacement and 
 
 ## Retired server tests
 
-The isolated server lifecycle scripts and profile-storage server runner have been removed. Do not create or use an isolated SPT runtime for this workflow. Existing `tools/test_*.py` and `tools/test_*.cjs` server fixtures remain historical references, with their synthetic-profile safeguards intact; they are not current validation commands and must never be redirected to installed profiles. Existing ignored `Testing/` state is left untouched. Historical route and restart counts in feature documents describe previous runs, not checks executed by the current workflow.
+The isolated server lifecycle scripts and profile-storage server runner have been removed. Do not create or use an isolated SPT runtime for this workflow. Existing `tools/test_*.py` and `tools/test_*.cjs` server fixtures remain historical references, with their synthetic-profile safeguards intact; they are not current validation commands and must never be redirected to installed profiles. Existing ignored `Testing/` state is left untouched.
 
 Use offline Tests, client assembly compatibility checks, `pwsh -File tools/test_deployment.ps1` and `pwsh -File tools/test_rename_deployment.ps1` for file-only deployment regression checks. These temporary files are under `artifacts/deployment-tests/` and `artifacts/rename-deployment-tests/`; no runtime is copied or launched. In-game visual or live behavior acceptance remains a user-controlled activity and must be reported separately from offline verification.

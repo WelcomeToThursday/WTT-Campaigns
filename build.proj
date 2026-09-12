@@ -53,7 +53,7 @@
     <Error Condition="'$(PackageDir)' == ''" Text="PackageDir is required. Use tools/package.ps1 to choose a timestamped release directory." />
     <Copy SourceFiles="@(_PlannedFiles)" DestinationFiles="@(_PlannedFiles->'$(PackageDir)\%(PackagePath)')" />
     <ItemGroup>
-      <_PackageDocument Include="README.md;RELEASE_NOTES.md;CONTRIBUTING.md;LICENSE;THIRD_PARTY_NOTICES.md;docs\**\*" />
+      <_PackageDocument Include="README.md;RELEASE_NOTES.md;LICENSE;THIRD_PARTY_NOTICES.md;docs\**\*" />
       <_PackageCopy Include="@(_PackageDocument)">
         <Destination>$(PackageDir)\$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '%(_PackageDocument.FullPath)'))</Destination>
       </_PackageCopy>

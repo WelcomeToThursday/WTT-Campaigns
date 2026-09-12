@@ -1,15 +1,15 @@
-# Season Creator instructions and tutorials
+# Campaign Creator instructions and tutorials
 
-Open **Help and tutorials** at the top of the Season Creator. It is available in the library and while editing a draft. Search for a section or a term such as **handover**, **variables** or **publishing**. Every editor section also has a collapsible **How to use this section** guide.
+Open **Help and tutorials** at the top of the Campaign Creator. It is available in the library and while editing a draft. Search for a section or a term such as **handover**, **variables** or **publishing**. Every editor section also has a collapsible **How to use this section** guide.
 
 Two walkthroughs run alongside the editor:
 
-- **Season basics:** create a practice draft, configure starting items and documents, add a battle-pass reward, validate and export.
+- **Campaign basics:** create a practice draft, configure starting items and documents, add a battle-pass reward, validate and export.
 - **Your first story quest:** create a chapter, a supply quest, a completion note and a trader conversation, then rehearse the complete loop.
 
 Use **Open [section]** to navigate, **Back** and **Next step** to move through the directions, or **Jump to step** to revisit a topic. **Pause tutorial** hides it; **Resume tutorial** restores the current step during the same editor session. Reloading the page resets the tutorial position. Steps are self-paced, not automatic checks of your draft.
 
-The tutorial never creates content or saves or publishes a pack on your behalf. Save your edits with **Save changes**. Use a practice draft to keep experiments separate from the season you play.
+The tutorial never creates content or saves or publishes a pack on your behalf. Save your edits with **Save changes**. Use a practice draft to keep experiments separate from the campaign you play.
 
 ## Your first story quest
 
@@ -20,7 +20,7 @@ The tutorial never creates content or saves or publishes a pack on your behalf. 
 5. Under **Quest conversations**, keep Prapor selected and **Create quest conversation**. Expand it to edit the dialogue while preserving its triggers and phase-changing actions. Under Lines, rename the Goodbye player line `Here are the supplies.` Add a **Handover item** action targeting this quest and its handover objective; move it before **Quit action**.
 6. Expand **Conversation availability and phase** to check the generated entry uses InLobby, Prapor and your dialogue. Leave Start point blank and its condition as empty All. The separate Conversations section also provides Connections and Preview views.
 7. **Story rehearsal:** keep level 1 and In raid off. Under simulated **Items**, set the chosen item template's count to 1. Under **Handover items**, set the handover objective's eligible count to 1. Start rehearsal, open the entry point, accept the quest and choose the handover reply. The quest should reach Success, the chapter should complete and the note should appear.
-8. **Preview and publish:** save and validate. Fix issues, then publish/export if desired. Restart SPT to load the practice pack, then choose it when creating a seasonal character. For a real campaign, add quest-status conditions so completed jobs do not keep offering the same handover, and verify the behavior in-game.
+8. **Preview and publish:** save and validate. Fix issues, then publish/export if desired. Restart SPT to load the practice pack, then choose it when creating a campaign character. For a real campaign, add quest-status conditions so completed jobs do not keep offering the same handover, and verify the behavior in-game.
 
 ## Useful distinctions
 
@@ -28,7 +28,7 @@ The tutorial never creates content or saves or publishes a pack on your behalf. 
 - **Condition vs. action:** conditions decide whether something can run; actions make changes after it runs. Actions execute in their listed order.
 - **Variable scopes:** Profile persists for a character, Session resets on reconnect, and Dialogue belongs to a conversation. Set variable assigns an integer rather than incrementing it.
 - **Always available:** an empty All condition passes. Any needs at least one passing child; Not reverses exactly one child.
-- **Published vs. playable:** a published revision can be downloaded. Restart SPT to load new packs with their required dependencies, then choose a season when creating a seasonal character.
+- **Published vs. playable:** a published revision can be downloaded. Restart SPT to load new packs with their required dependencies, then choose a campaign when creating a campaign character.
 
 ## Troubleshooting
 

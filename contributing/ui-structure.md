@@ -19,7 +19,7 @@ The UI references Shared for `Presentation/CampaignText`, which converts standal
 
 `SeasonsHubScreen.Tutorial` owns the eight-step Battle Pass overlay and input isolation. `SeasonHubUi.Tutorial` supplies keyboard routing, first-visit presentation and the local completion preference; the tutorial does not mutate server progress.
 
-`CampaignScreen.Introduction` owns the separate five-page season introduction opened from the seasonal profile card. See [reference and validation](season-introduction.md).
+`CampaignScreen.Introduction` owns the separate five-page season introduction opened from the seasonal profile card. See [player introduction guide](../docs/season-introduction.md).
 
 Keep each type in its own named file, and keep all `CampaignScreen` partial files together. Native character creation, model previews, asset loading, and game sound playback remain in `Client`; the UI requests those services through callbacks and `ICreationIdentity`.
 
@@ -31,7 +31,7 @@ Attachable components, their sound enum and the shared `UiElements` helper compi
 
 The sync also exposes `CampaignText` from Shared to Unity's preview runtime. `Controls/CampaignBranding` draws the WTT/CAMPAIGNS title using the UI font and accent rules. The menu banner, built-in rewards header, and second introduction slide use this treatment instead of the recovered Season 1 logo/video. The second legacy hub slide uses the same replacement, including when loaded from an existing pack.
 
-Update the client and the companion SDK's editor preview/check imports when moving types. Build the solution, run the UI assembly compatibility checks described in [CONTRIBUTING](../CONTRIBUTING.md), and use **SDK / WTT-Campaigns / Render UI previews** for Unity interaction checks. These namespace changes preserve UI behavior and layouts, but consumers must rebuild against the new CLR type names.
+Update the client and the companion SDK's editor preview/check imports when moving types. Build the solution, run the UI assembly compatibility checks described in [CONTRIBUTING](../CONTRIBUTING.md), and use **SDK / WTT-Campaigns / Render UI previews** for Unity interaction checks. Consumers must rebuild against changed CLR type names.
 
 ## Battle Pass transactions
 

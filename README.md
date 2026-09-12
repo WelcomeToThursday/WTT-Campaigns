@@ -7,7 +7,7 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 ## Features
 
 - **Separate campaign characters.** Keep multiple characters across multiple campaigns alongside your regular PMC. Each campaign character has its own inventory, quests, traders, hideout, mail, insurance and Scav progression. Switch characters from the in-game selector.
-- **Perks and common campaign rules.** Balance beneficial and detrimental modifiers within a campaign's point budget. Supported effects cover skills, stamina, metabolism, injuries, consumables, keys, trader prices, insurance, the flea market and hideout requirements. The bundled catalogue has 39 entries, of which 33 are implemented; unsupported entries remain unavailable.
+- **Perks and common campaign rules.** Balance beneficial and detrimental modifiers within a campaign's point budget. Supported effects cover skills, stamina, metabolism, injuries, consumables, keys, trader prices, insurance, the flea market and hideout requirements. The bundled catalogue offers 33 supported perks and common rules; six entries are unavailable.
 - **Local Battle Pass and rewards.** Collect campaign documents in raids, spend them on eligible rewards, and use document exchanges. Progress and claims are saved per character. Rewards depend on the campaign's rules and installed content.
 - **Story tools and trader visits.** Visit trader rooms and play authored chapters, dialogue, objectives and raid events. The Story tab and trader visits are available even in campaigns without a story. A complete live campaign is not included.
 - **Campaign Creator.** Build campaigns in SPT's administrator web interface: configure starting characters, perks, quests, documents, rewards, crates, artwork and story content. Validate, preview, publish, import and export campaign packs.
@@ -44,7 +44,7 @@ When updating, preserve configuration files and the server mod's entire `creator
 2. Choose the creation card, select a campaign, and set up your character's faction and appearance.
 3. Select perks within the point budget. Detrimental perks provide room for beneficial ones; incompatible choices cannot be combined. Confirm the selection to save.
 4. Select the new character's card to switch to it. Creating a character leaves your regular PMC active until you switch, and does not clone existing progress.
-5. Use the **PERKS** tab beside Skills and Mastery to inspect saved modifiers and open the editor. Editing is subject to the campaign's rules and is unavailable during raids.
+5. Use the **MODIFIERS** tab beside Skills and Mastery to inspect saved modifiers. Open the editor from the character selector to change selections. Editing is subject to the campaign's rules and is unavailable during raids.
 
 The campaign hub contains the campaign overview, Battle Pass, rewards and Story pages. Available rewards and story content depend on the selected campaign. Missing content dependencies leave the affected rewards locked.
 
@@ -64,13 +64,18 @@ Once a campaign has characters, gameplay changes require duplicating it into a n
 
 ## Beta limitations and feedback
 
-This is the first public beta. Gameplay, balance, compatibility with other mods and in-game presentation are still being tested. Offline validation does not establish a complete in-game playthrough or full parity with live EFT.
+This beta supports local campaign play and custom campaign authoring. It does not reproduce every live EFT feature. See [compatibility and known limitations](docs/compatibility.md) before choosing a campaign or combining mods.
 
 - Street Tax, Kappa Protocol, Lucky, Unlucky, Armor Shortage and Black Division are unavailable.
 - A complete live story campaign, online purchases, leaderboards and automatic campaign wipes are not included.
 - Rewards requiring unavailable quests, customization or crate contents remain locked.
-- Character switching, raid persistence, item effects and visual behavior still need broader in-game testing.
+- Fika is not supported.
+- The bundled campaign does not include Kord Breach quests. Some artwork and presentation are placeholders.
 
 When reporting a problem, include the mod and SPT versions, installed mods, the affected campaign and character type, steps to reproduce it, and relevant client/server log excerpts. Remove account identifiers and credentials before sharing logs.
 
-For the beta release overview, see [release notes](RELEASE_NOTES.md). For source setup and builds, see [CONTRIBUTING](CONTRIBUTING.md). Original code is MIT-licensed; game assets and external dependencies retain their respective ownership as described in [third-party notices](THIRD_PARTY_NOTICES.md).
+## Guides
+
+Browse the [documentation index](docs/README.md) for player guides, perk details, profile recovery and campaign authoring. Start with [characters](docs/characters.md), [documents and rewards](docs/battle-pass-gameplay.md), or [Creator tutorials](docs/creator-tutorials.md).
+
+For changes in this release, see [release notes](RELEASE_NOTES.md). Original code is MIT-licensed; game assets and external dependencies retain their respective ownership as described in [third-party notices](THIRD_PARTY_NOTICES.md).

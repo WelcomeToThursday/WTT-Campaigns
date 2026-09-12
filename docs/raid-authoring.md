@@ -1,11 +1,11 @@
 # Connected raid authoring
 
-The season creator and the in-raid editor share a recoverable draft. Publishing a pack is still a separate action. A preview never registers quest triggers, runs story actions, or spawns gameplay objects.
+The Campaign Creator and the in-raid editor share a recoverable draft. Publishing a pack is still a separate action. A preview never registers quest triggers, runs story actions, or spawns gameplay objects.
 
 ## Connect a raid
 
 1. In the game's BepInEx configuration, enable **WTT-Campaigns → Raid authoring → Enable authoring**. Enter a raid on the map you want to edit. Any character can capture a draft, including a normal character.
-2. Open a draft in the administrator's season creator. In **Connected raid**, choose the advertised map/client and select **Connect draft**.
+2. Open a draft in the administrator's Campaign Creator. In **Connected raid**, choose the advertised map/client and select **Connect draft**.
 3. Press **Ctrl+F8**, or use **Create in raid**, **Pick in raid**, or **Edit in raid** beside a compatible web field. A web request opens its focused task when no other screen or unfinished capture owns input.
 
 The raid keeps running. Your character remains in place and can take damage. The editor does not pause AI, the raid timer, or audio.
@@ -32,7 +32,7 @@ The editor restores its camera, cursor, input, and temporary rendering state whe
 
 ## Published zones
 
-Spatial packs use season format 2. Existing format-1 packs keep their serialization and identities. Update both Seasonal client and server components together before using a spatial pack.
+Spatial packs use campaign format 2. Existing format-1 packs keep their serialization and identities. Install matching WTT-Campaigns client and server components before using a spatial pack.
 
 Zones belong to a map and scene and can support:
 
@@ -43,14 +43,8 @@ Zones belong to a map and scene and can support:
 | LeaveItemAtLocation | Supplies a native quest-item placement area. |
 | Story Trigger/Cinematic | Runs the published binding through the existing story event rules. |
 
-Published zones load for the active seasonal character on the matching map. Native quest zones work even when the season has no story definition. Draft previews stay separate from these published objects. Publish, then let the user manually restart the server and client before entering a new raid to test published gameplay. Seasons already used by characters retain the existing gameplay-lock rule; duplicate them to change gameplay.
+Published zones load for the active campaign character on the matching map. Native quest zones work even when the campaign has no story definition. Draft previews stay separate from these published objects. Publish, then restart the server and game before entering a new raid to test published gameplay. Campaigns already used by characters retain the existing gameplay-lock rule; duplicate them to change gameplay.
 
 Zone references must be reassigned before deletion. Scene paths must resolve uniquely. Shoot targets require a ballistic collider; interaction targets require a raycastable collider. IDs colliding with native map zones are rejected during connected editing and skipped with a diagnostic at runtime.
 
 NPC/item spawning, cinematic camera paths, and specialized native triggers beyond the types listed above are outside this version.
-
-## Development checks
-
-Build the dedicated UI through **CJ-SDK → SDK → WTT-Campaigns → Build raid editor**. Its source builder lives in `tools/unity/CampaignsRaidEditorBuilder.cs`; layout sources follow the existing `tools/sync_ui_preview.py` workflow. The builder produces `wtt_campaigns_raid_editor.bundle` and 1080p, 1440p, and ultrawide previews.
-
-The regression suite covers merging, conflicting and repeated requests, grant ownership, raid expiry, native objective field assignment, validation, duplication, and pack round trips. `tools/EditorRendering` renders the actual web components. `tools/package.ps1` uses MSBuild to validate, stage and install matching assemblies and both UI bundles with backups and checksum verification. Existing packages can be installed with `tools/install_matching.ps1`. Neither path stops or starts servers or clients.

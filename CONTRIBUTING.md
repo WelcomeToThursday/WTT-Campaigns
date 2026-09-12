@@ -46,7 +46,7 @@ Use UniTask for single-consumer presentation operations and Unity timing. `NextF
 
 For a checkout elsewhere, copy `Directory.Build.local.props.example` to `Directory.Build.local.props` and edit the paths. This local file is ignored. `TarkovDir`, `ManagedDir`, `ServerDir` and `CampaignsAssetsDir` can also be passed as MSBuild properties. Keep trailing directory separators. The same settings drive compilation, validation and installation. Optional research scripts retain their separately documented input paths.
 
-The game-derived UI bundles, story media and icons are local dependencies. The UI builder and asset workspace live in the separate CJ-SDK project. A source checkout alone does not recreate those assets. See the README for the Unity build sequence.
+The game-derived UI bundles, story media and icons are local dependencies. The UI builder and asset workspace live in the separate CJ-SDK project. A source checkout alone does not recreate those assets. See [local UI resources](Client/Resources/README.md) for bundle requirements.
 
 ```powershell
 # Build, validate and install all matching components
@@ -56,14 +56,14 @@ dotnet msbuild build.proj
 dotnet msbuild build.proj -p:DeploymentScope=UI
 ```
 
-Always install the validated update, with backups and checksum verification. Never stop or start servers or clients, including test instances. If installation is blocked by a locked file, keep the validated build ready and report the file and the application the user needs to close. The user performs any restart needed to load installed assemblies. See [build and deployment](docs/build-deployment.md) for all targets and compatibility installers.
+Always install the validated update, with backups and checksum verification. Never stop or start servers or clients, including test instances. If installation is blocked by a locked file, keep the validated build ready and report the file and the application the user needs to close. The user performs any restart needed to load installed assemblies. See [build and deployment](contributing/build-deployment.md) for all targets and compatibility installers.
 
 The isolated test server is retired. Do not stage a runtime or run the historical server fixtures. Keep their synthetic-profile safeguards intact and never redirect them to installed profiles. Existing ignored `Testing/` state is left untouched. Offline contracts, native assembly checks and file-only deployment checks are the automated validation workflow; live acceptance remains user-controlled.
 
 ## Changes and review
 
-Follow the [client/server](docs/client-server-structure.md), [patch](docs/patches.md), [shared project](docs/shared.md), and [UI project](docs/ui-structure.md) organization guides. Format edited C# files with `dotnet csharpier format <paths>`. Source uses UTF-8 and LF line endings; `.gitattributes` also normalizes text when Git adds it.
+Follow the [client/server](contributing/client-server-structure.md), [patch](contributing/patches.md), [shared project](contributing/shared.md), and [UI project](contributing/ui-structure.md) organization guides. Format edited C# files with `dotnet csharpier format <paths>`. Source uses UTF-8 and LF line endings; `.gitattributes` also normalizes text when Git adds it.
 
-Keep game binaries, generated bundles, recovered media, raw captures, profiles, credentials and machine-specific settings out of commits. The whole `Research/` tree is ignored; preserve useful conclusions in reviewed `docs/` files. Keep sanitized catalogue/localization data and fixtures in their existing directories.
+Keep game binaries, generated bundles, recovered media, raw captures, profiles, credentials and machine-specific settings out of commits. The whole `Research/` tree is ignored; preserve contributor references in `contributing/` and keep `docs/` focused on players and campaign authors. Keep sanitized catalogue/localization data and fixtures in their existing directories.
 
 Before a commit, inspect `git status --short`, `git diff --check` and `git diff --cached`. Before publishing a repository, review `THIRD_PARTY_NOTICES.md`, including the captured data retained in source control. Packaging stages and installs the validated local update; it does not publish it. Never stop or start any server or client.

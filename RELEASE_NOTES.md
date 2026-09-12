@@ -1,16 +1,16 @@
 # WTT-Campaigns 0.6.0 — Initial Beta
 
-WTT-Campaigns 0.6.0 is the mod's **first public beta release**. Earlier version numbers reflect development milestones. This release introduces campaign character progression and the tools to create and share custom campaigns for SPT.
+WTT-Campaigns 0.6.0 is the mod's **first public beta release**. This release introduces campaign character progression and the tools to create and share custom campaigns for SPT.
 
 ## Hotfixes
 
-- Prevent missing client bot roles such as `blackdivlead` from crashing raid setup. Roles without server difficulty settings use SPT's assault fallback; existing settings from SPT and other mods are retained.
-- Release the matching character's raid lock and pending story raid state when client raid loading fails or is cancelled. Cleanup checks the character and server-issued raid ID before changing state.
+- Fix raid setup crashes caused by missing bot-role difficulty settings.
+- Clear the affected character's pending raid state when raid loading fails or is cancelled, allowing another attempt.
 
 ## What is included
 
 - Multiple independent campaign characters, with a character selector, switching, and confirmed delete or achievement-preserving wipe actions.
-- A perk selection system with point budgets, conflicts and shared campaign rules. The bundled catalogue includes 33 implemented entries covering character skills, survival, equipment use, trading and hideout behavior.
+- A perk selection system with point budgets, conflicts and shared campaign rules. The bundled catalogue includes 33 supported entries covering character skills, survival, equipment use, trading and hideout behavior.
 - A campaign hub with local Battle Pass rewards, raid document collection, document exchanges and saved claim progress.
 - Story journals, dialogue, trader visits and support for authored raid objectives and events. Story content is supplied by campaign authors; a complete live campaign is not bundled.
 - A browser-based Campaign Creator for starting loadouts, perks, quests, rewards, crates, artwork and stories, with validation, previews, tutorials and campaign pack import/export.
@@ -32,7 +32,7 @@ Choose **Create blank campaign**, duplicate an existing campaign, or import a ca
 
 ## Beta scope
 
-This release is ready for beta feedback; it is not a claim of complete live-EFT parity. In-game character switching, raid persistence, perk effects, presentation and compatibility with other mods still need broader testing.
+This beta supports local campaigns and custom content. It does not include every live EFT feature; compatibility with other mods can vary.
 
 Street Tax, Kappa Protocol, Lucky, Unlucky, Armor Shortage and Black Division remain unavailable. Rewards with missing content dependencies stay locked. Online purchases, leaderboards and automatic campaign wipes are not included.
 
@@ -44,6 +44,8 @@ Reports about character creation and switching, saving after raids, perk behavio
 
 ## Known Issues
 
-- Does not support Fika. This will come later
-- No "Kord Breach" quests in the built-in campaign
-- Some UI elements may not be representative of a final product, or may be placeholder. UI development is ongoing.
+- Fika is not supported.
+- The built-in campaign does not include Kord Breach quests.
+- Some artwork and presentation are placeholders.
+
+See [compatibility](docs/compatibility.md) for feature limits and [the documentation index](docs/README.md) for help.

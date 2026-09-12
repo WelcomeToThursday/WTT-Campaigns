@@ -1,23 +1,11 @@
-# Chapter notifications and Factory Office log repair
+# Chapter notifications
 
-Story chapters now use a dedicated notification GameObject prefab, registered with SPT's native notification manager. This is a backport of the recovered live `level49` `MainQuestNotification` layout: 500 × 48.22 content, chapter artwork, separate 16-point title and status text, gold chapter background and trailing started/completed/failed indicator. The banner supports native click dismissal and automatic dismissal. Bundled animation adapts the live show/hold/hide timing to SPT's `BaseNotificationView.OnAnimationDone` callback. Live chapter sounds 44–46 are recovered from `UISoundsWrapper`, rather than substituting ordinary quest sounds.
+Chapter banners show a chapter's artwork, title and status when it becomes available, completes or fails. Click a banner to dismiss it, or let it disappear automatically.
 
-`wtt_campaigns_story_notifications.bundle` contains three prefabs, their backgrounds, animation controller and audio. It depends on `wtt_campaigns_ui.bundle` for shared status sprites and the font asset. The journal also loads its active/complete/failed status sprites from the main bundle; those sprites are no longer embedded in the UI assembly. Authored chapter icons remain season content and load through the existing artwork route.
+The first story snapshot establishes the current state without replaying old notifications. Repeated updates and re-entering the same zone do not repeatedly announce the same transition during a character session.
 
-The recovered Content and Left achievement-frame images stay disabled, matching live; enabling them adds overlapping angular borders around the chapter artwork. The icon uses live's 56.1584 × 44.9268 rectangle and 2.82 horizontal offset, preserving its aspect ratio and original orientation. The visible chapter background receives dismissal clicks. Bundle validation compares image visibility and icon geometry directly with the recovered hierarchy. Set `SEASONAL_NOTIFICATION_PREVIEW_ARTWORK` to an authored PNG path when building to preview that image without adding it to the bundle.
+A chapter becoming available does not necessarily accept its quest. If automatic acceptance is disabled, open the journal or the relevant trader conversation to take the quest.
 
-Every accepted story response feeds a chapter transition tracker, including passive raid observations. The first snapshot establishes a silent baseline. Subsequent unlocks, completions and failures notify once per character session; repeated polls, read markers, zone reentry and stale responses do not replay them. Server-evaluated `AvailableQuestIds` reports satisfied prerequisites without changing native quest acceptance. Thus the Factory Office test quest, whose Auto start setting is off, announces chapter availability after the visit requirement is met and still requires acceptance.
+For missing chapter artwork, confirm that the campaign includes its referenced images and that the complete matching mod package is installed. Campaign authors can check artwork references in the [Creator](season-creator.md).
 
-The zone bridge now exposes Unity's one-collider `OnTriggerStay` separately from EFT's explicit two-collider physics interface. Both dispatch through the existing deduplicated entry path. This fixes the logged invalid Unity callback signature and supports entry recovery when bindings become ready while the player is inside a volume.
-
-The image router registers all valid season artwork IDs, including chapter-only image/icon references in playable packs. The Factory Office chapter image was present on disk but omitted from the previous hub-only route list, causing four HTTP 404 errors through the request handler's retries.
-
-## Rebuild and validation
-
-1. Run `.tools/Scripts/python.exe tools/recover_story_notifications.py` against the supplied local live assets and previously recovered `Research/Story/level49-2206.json`. It writes notification assets and `StoryStatusIcons` into the companion CJ-SDK.
-2. Copy `tools/unity/StoryChapterBannerLayout.cs` and `tools/unity/CampaignsStoryNotificationBuilder.cs` into CJ-SDK's WTT-Campaigns Editor folder. Run `WTT.Campaigns.Tools.CampaignsStoryNotificationBuilder.Build` in Unity 2022.3.43f1. This preserves the main bundle's existing asset list, builds both bundles together, reloads them, validates the dependency and prefab components, and renders all three statuses at 1080p, 1440p and ultrawide. It creates `Client/Resources/story-notification-validation.json` with both hashes.
-3. Run `dotnet msbuild build.proj`. It checks offline contracts, native assembly bindings, assets and the paired bundle hashes, then backs up and installs the matching components. Rebuilding the main bundle independently invalidates the notification validation record; rebuild the pair before installation.
-
-The offline checks cover chapter transitions, manual acceptance, reconnect/reentry suppression, actual image-route registration, physics callback signatures, dedicated view selection and file-only deployment. Unity renders are under `Research/Story/NotificationPreview`. In-game timing and a Factory Office revisit still require user-controlled acceptance; no game or SPT server is launched by these checks.
-
-The inspected September 9 session also contained a missing Skills Extended API assembly and native affinity, material, map/loot, ballistic-prewarm and optic-camera messages. Those have no Seasonal stack trace establishing their cause and are not hidden or patched by this change.
+See [story and quests](story-system.md) for journal navigation and progression.

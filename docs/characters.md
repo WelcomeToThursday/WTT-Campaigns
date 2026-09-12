@@ -1,29 +1,34 @@
-# Seasonal character selection
+# Campaign characters
 
-The selector supports multiple seasonal characters, including multiple characters in the same season. Each card has a stable character ID. The permanent creation card and footer shortcut open a season picker before the native faction/appearance and modifier screens. Cards retain the recovered artwork, font, tint and hover presentation.
+Campaign characters have separate inventories, quests, traders, hideouts, mail, insurance and Scav progression. You can create several characters in one campaign or play different campaigns alongside your regular PMC.
 
-Mouse wheel, horizontal wheel, dragging, arrow buttons and Left/Right keys browse a wrapping cylindrical carousel. Cards scale and fade with distance from its center; hidden equipment previews are released. Navigation is blocked during dialogs and requests.
+## Create and switch
 
-## Delete and wipe
+1. Open **CHARACTERS** from the menu, or press **F8** outside a raid.
+2. Choose the creation card and select an available campaign.
+3. Choose your faction, appearance and nickname, review common rules, and select personal perks.
+4. Review the confirmation and accept to create the character.
+5. Select its card to switch to it. Creation leaves your regular PMC active until you switch.
 
-Seasonal cards provide separate confirmations naming the character and season. Cancel and Escape do not submit an operation. The regular card represents the launcher account and is not deletable through this screen.
+Use the mouse wheel, dragging, arrow buttons or Left/Right keys to browse character cards. Wait for any save or loading operation to finish before navigating again. See [character creation](creation-reference.md) for perk selection details.
 
-Delete removes the seasonal character and its saved profile. Wipe follows the supplied live Seasonal Character Wipe reference: items, equipment, currency, quests, skills, modifiers and all other seasonal progression are removed, while earned in-game achievements are preserved. The client returns to faction/appearance creation and the player chooses faction, head, voice and modifiers again. Recreation uses the account's current game edition for the native starting profile, then applies the selected season's configured starting grants. Other characters are unaffected.
+## Delete or wipe
 
-A wiped character keeps its card and season. Cancelling creation leaves a **RECREATE** action for later. Its achievement receipt is saved in the root account link before the old profile file is removed, so achievements survive cancellation and server restarts. The receipt is cleared only after successful recreation. Creating/recreating uses an operation ID and choice fingerprint to prevent duplicate submissions. Replaying the completed wipe request cannot wipe its newly recreated character again.
+Both actions ask you to confirm the character and campaign. Back up your profiles first. Cancel or Escape closes the confirmation.
 
-The client flushes pending operations and reconnects to the regular character before wiping/deleting a currently loaded seasonal character. The server independently checks ownership, raid state and active identity. The root account is rejected by both destructive endpoints.
+| Action | Result |
+| --- | --- |
+| Delete | Removes the campaign character and its saved profile. |
+| Wipe | Removes inventory, currency, quests, skills, perks and other progression while preserving earned in-game achievements. Keeps the card and campaign so you can recreate the character. |
 
-## Several seasons in one server session
+After wiping, choose faction, appearance and perks again. If you cancel recreation, use **RECREATE** on the card later; preserved achievements remain available. Starting equipment follows the account's current edition and the campaign's starting grants.
 
-All compatible published seasons are loaded at startup. The server's selected pack remains the default; characters can select any playable season without restarting between them. New or updated packs still require a server restart for content registration. For each season, the highest compatible revision is chosen, except that the configured default pack retains its selected revision. Invalid packs are omitted, and missing seasons leave their existing cards unavailable for play.
+If the affected character is active, the game returns to your regular character before completing the action. Other characters are unaffected. Your regular account cannot be deleted through this screen.
 
-Effects, starting grants, document loot, reward progress, exchanges and trader unlocks resolve from the character's season. Imported quest visibility and acceptance are restricted to that season. Existing current and archived account links migrate to the character list without replacing profiles or merging their progression.
+## Play several campaigns
 
-## Verification
+Compatible published campaigns load when the server starts. You can switch between their characters during the same server session. New or updated packs need a server restart before their content becomes available.
 
-The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
+Each character uses its own campaign's perks, starting grants, quests, documents and rewards. If a campaign is missing or cannot load, its existing character cards remain unavailable for play. Restore the required pack and dependencies instead of deleting its profiles.
 
-`tools/unity/CampaignsCharactersPreview.cs` runs against the synchronized UI sources in CJ-SDK. It renders the carousel, season picker, delete/wipe confirmations and wiped card at 1920×1080, 1280×720 and 2560×1080, with interaction checks for target identity, cancellation, wrapping and recreation. Editor equipment images are stand-ins; installed-game animation, model lighting and reconnect behavior still require an in-game check.
-
-Build client and server together. The carousel uses the existing artwork bundle; no new recovered media is required. `tools/package_ui.ps1` builds, validates and installs the matching update through MSBuild. It never stops or starts a server or client.
+See [profile backups and recovery](typed-models-and-profile-storage.md) for save locations.

@@ -1,81 +1,58 @@
-# Battle Pass gameplay 0.2.0
+# Documents and rewards
 
-The Seasonal hub now supports local reward claims, document exchanges, raid document acquisition and saved progress. WTT-Campaigns owns the eight ordinary document templates and both season crate templates. Existing content supplied by WTT-ContentBackport is resolved after mod loading; missing or unsupported dependencies keep individual rewards locked. No WTT-CommonLib quest importer or NuGet dependency is introduced.
+Campaign characters earn local Battle Pass rewards by collecting documents in raids. Each character has separate claims, document allowances and unlocks. New progress starts at zero; there is no automatic campaign expiry or wipe.
 
-## Captured catalogue
+Custom campaigns can change document types, reward costs and collection settings. Always check the selected campaign's displayed requirements.
 
-The amended Seasonal capture supplies 12 pages, 53 Battle Pass tiles and 58 payloads, eight documents and five seasonal rewards. Forty tile costs changed; their total remains 501 ordinary documents. Ordering, tile spans, faction labels, previous-page counts, localization, level comparisons and quest targets are preserved. PvE contributes prerequisite quest definitions and localization. The importer reads public definitions, not request headers or account progress.
+## Collect documents
 
-The quest dependency closure contains 41 definitions and one missing definition. Historical Perspectives remains unavailable. The compatibility adapter accepts only verified native condition families and existing SPT definitions; unsupported story conditions, encounter dependencies, quest-item placements and unresolved dependency graphs block their chains. Dialogue references never create a quest. Native seasonal quest completion is checked on the active PMC; synthetic completion appears only in isolated test fixtures.
+In the bundled campaign, up to **eight ordinary documents** can appear in an eligible campaign PMC raid. Documents spawn as loose loot at existing eligible locations, rather than inside containers. Fewer can appear when the map has too few suitable loot points or your remaining allowance is lower.
 
-Trader rewards map captured offer IDs to installed offers using trader, root item, attachment/slot structure and loyalty level. Ambiguous matches remain unavailable. Verified non-currency barters can supply a missing native offer. Existing monetary offers use SPT's current prices and the existing Seasonal price adapter. Native stock, loyalty, purchase limits and quest restrictions remain in force. Locked offers are filtered from Seasonal trader/flea results and rejected when purchased directly. Fallback offers are hidden from Normal profiles.
+Document types have map restrictions and per-type limits. Maps without eligible document types receive none. Regular PMC and Scav raids do not receive campaign document spawns.
 
-## Documents and transactions
+The first pickup starts a **23-hour collection window** with a **30-document allowance**. Picking up the same document again, splitting or merging stacks, or bringing an existing document into a raid does not create another new pickup.
 
-The default is up to eight ordinary documents per Seasonal PMC raid. Original document types are restricted to the maps listed in `CapturedMapCaps` in `data/hub-gameplay.json`, matched without case sensitivity, and cannot exceed their captured per-type caps. Types are selected with equal weights among those still eligible on that map. Unlisted maps receive none of the original documents. Custom document templates retain their season-configured map limits. Normal and Scav raids receive no injection.
+Survived and run-through extractions give each newly acquired extracted document a **5% chance** to award an additional Classified document by default. You keep the ordinary document. Failed raids do not award this bonus.
 
-Documents spawn only as standalone loose loot. Each replaces one ordinary loose barter/information item at its existing generated world position and rotation. Containers, mandatory spawns, quest items and attached item trees are excluded. If there are too few eligible loose points, fewer documents spawn; there is no container fallback. Only documents placed by this raid injector receive new pickup identities.
+## Claim rewards
 
-Optional `hub-config.json` beside the server DLL accepts `DocumentsPerRaid` (0–8), `MapCounts` (map names to 0–8) and `ClassifiedChancePercent` (0–100, default 5). Overrides change the total raid cap without bypassing the original document map assignments or per-type caps. Missing configuration uses defaults. The catalogue and all installed image/model dependencies operate locally.
+Select a reward in the [campaign hub](battle-pass-ui.md) to see its requirements. These can include faction, level, completed quests, prior-page claims and document costs.
 
-The first pickup starts a server-timed 23-hour window with a 30-document allowance. Each spawned unit has a persistent identity, including units subsequently merged into another stack or split into a new stack. Brought-in units are tracked separately. Repeat pickups and operation retries do not consume the allowance again. The client journals pickup/stack operations before transmission and flushes them before native raid start/end. Unfinished server raid receipts permit reconciling those known operations after reconnecting. Spawn counts also respect remaining allowance.
+Claims spend the required ordinary document types first. **Classified documents can cover a shortage one-for-one**, but only after confirmation.
 
-Survived and run-through extractions roll once per newly acquired extracted unit for a Classified document. The default is 5%; ordinary documents remain in inventory. Failed raids award no bonus. Raid receipts prevent repeated extraction requests from rerolling bonuses or replaying the native inventory update. Starting another raid closes abandoned receipts.
+Physical rewards go into your stash. Make room before claiming: there is no mail or sorting-table fallback. A shortage, missing dependency, full stash or outdated reward state rejects the whole transaction. Refresh the hub if its displayed state is outdated.
 
-Claims consume the required ordinary types first. Classified documents cover the exact shortage 1:1 only after confirmation. Five mixed ordinary documents exchange for one selected ordinary type; ten exchange for the captured gear crate when its contents dependency is available. Classified documents are excluded from exchange sources. Online purchases remain disabled.
+A tile can contain several rewards but counts as one claim. Trader unlocks still obey normal stock, loyalty, quest and purchase limits. Local Tarcoins do not enable online purchases.
 
-Every payload is preflighted and applied to a cloned profile. Physical items use SPT's stash placement helper, without sorting-table or mail fallback. Missing dependencies, shortages, full stash and stale revisions reject the entire transaction. Customizations, trader unlocks and local Tarcoins use separate adapters. A multi-payload tile adds one claim.
+## Exchanges
 
-## Persistence and lifecycle
+The bundled exchange offers:
 
-`/wtt-campaigns/hub` remains read-only. `/wtt-campaigns/hub/claim`, `/exchange` and `/raid-document` resolve operations on the server. Claim/exchange requests carry an operation ID and expected revision. Repeating a committed operation returns its receipt and current state; changing its inputs is rejected.
-
-State resides in the Seasonal PMC's extension data under `wttCampaignsHub:{season}:{battlePass}`. It includes claims, Classified/Tarcoin balances, allowance windows, conserved raid units, trader unlocks and transaction receipts. Ordinary balances come from inventory. New state starts at zero; the season has no expiry or automatic wipe.
-
-Transactions and native inventory operations reuse the account lock. The commit adapter atomically replaces the verified SPT 4.1 profile-cache entry, then uses SPT's atomic profile save. It restores the original cache on write failure. SPT's `GetProfiles()` returns a copy and must not be used for replacement.
-
-The client flushes native inventory operations before transactions. Pending claim/exchange operation IDs are saved locally before submission and reconciled after reopening or restarting. Successful transactions use the existing controlled profile reload and preserve the hub tab, page and selected tile. Closing cancels presentation loads; it does not cancel a committed transaction. Raid entry, character changes and teardown close the hub and release presentation resources.
-
-## Item data and bundle dependency
-
-Install WTT-ContentBackport 2.0.1 or later and its dependencies. Seasonal retains its ten captured item definitions (eight documents and two crates) and localization, while Backport supplies the nine shared models at their original bundle keys. Seasonal packages no document or crate bundles.
-
-During Preload, registration checks the manifests and files of loaded mods before SPT's bundle loader runs. Missing required models stop startup with an explicit error. Older season packs containing `wtt-campaigns/` prefab paths resolve to the original shared keys. Item IDs and profile data need no migration. Custom imported models must have a registered bundle and an existing file.
-
-When upgrading an existing installation, back up Seasonal's `bundles.json` and remove its nine private document/crate entries, retaining any independently installed custom entries. An empty `manifest` array is valid. The old files beneath `bundles/wtt-campaigns/assets` can remain unregistered on disk. Item and bundle caches refresh after the user manually restarts the server and game. Never perform those restarts as part of installation.
-
-The optional research pipeline (`import_season_items.py`, `CampaignsItemBuilder.cs`, `finalize_season_items.py`) retains the original recovery and audit workflow for reference. Its rebuilt outputs are no longer build or packaging dependencies. Regenerate item JSON and provenance with `tools/import_season_items.py --dump "<Development>/1.0 Dump"` only when updating the captured source data.
-
-The documents retain the captured 999-unit stack limit and dimensions, including 2×2 blueprints. Their unsupported live BattlePassItem parent is adapted to SPT's native information-item parent. Crates retain their native random-container parent, but the capture contains no verified contents pool. Their claims and exchange stay unavailable until one is supplied; no contents are invented.
-
-## Validation and remaining limits
-
-Run `tools/test_item_bundles.py --port <server-port>` for read-only verification that all ten definitions retain their item properties, resolve to nine Backport models with dependencies, and have no duplicate Seasonal bundle registrations. The bundle resolver tests also cover older pack paths and missing or unregistered files.
-
-Automated checks cover every tile's eligibility and all four reward adapters, amended costs, page gates, confirmed Classified shortages, mixed-source exchanges, dependency failures, full stash, duplicate/concurrent requests, forced save failure, restart and idempotency. Separate real raid-route checks cover distinct loose-loot points, map-specific types and caps, pickup limits, conserved split identities, survived/run-through extraction, duplicate raid-end handling, and Normal/Scav exclusion. Normal profiles, Scav data and unrelated PMC fields are compared separately from intentional Seasonal changes.
-
-The tested installed content set leaves 22 tiles unavailable: eight crate tiles without a contents pool, nine unsupported/missing customization definitions, and five seasonal rewards gated by unavailable quest chains. Those are explicit dependency locks. The other 36 tiles exercise 41 payloads in isolated fixtures. Actual profile progress is never imported from the recording or captures.
-
-Unity interaction fixtures cover 1920×1080, 2560×1440 and 1902×992, including claims, Classified confirmation, exchanges, result/error dialogs, paging and tab restoration. These are editor renders, not evidence of installed game parity. Animation, audio, item rendering, native inventory event timing, and repeated menu/profile reloads still require an in-game acceptance pass. Do not declare visual parity from automated results alone.
-
-The September 6, 2026 automated run passed:
-
-| Check | Result |
+| Give | Receive |
 | --- | --- |
-| Contract, catalogue and native compatibility assertions | 520 |
-| Native UI/event bindings | 42 |
-| Isolated claim/exchange checks | 589 |
-| Persisted state and operation receipts after restart | 102 |
-| Native raid-route checks | 171 |
-| Existing account/profile integration checks | 74 |
-| Read-only hub and image checks | 173 |
-| Hub Unity interactions | 141 per resolution |
-| Existing Unity interactions and modifiers | 96 + 14 per resolution |
-| Recovered item bundles | Nine audited bundles; original compressed texture data and mip levels verified |
-| Release build and formatting | Passed; zero build warnings/errors |
+| Five mixed ordinary documents | One selected ordinary document |
+| Ten ordinary documents | The configured gear crate, when an eligible contents pool is available |
 
-The SDK project-settings hash was unchanged after the Gamma preview runs. Native resource, bush and experience hook checks also passed. The versioned release is staged locally; it has not been installed or accepted in-game.
+Classified documents are excluded from exchange sources. Campaign authors can disable the crate exchange or supply their own eligible crate.
 
-The server fixture described by earlier validation is retired from the workflow. Use the offline checks and mandatory installation in [build and deployment](build-deployment.md); never stop or start any server or client.
+## Locked rewards
 
-The September 9, 2026 document-spawn update passed 4,793 release assertions and 487 real-route checks across all 13 supported maps in the captured catalogue. Those route checks used the now-retired synthetic runtime; they are historical coverage, not current workflow commands. Icebreaker is covered by the map-policy assertions but is not present in this SPT runtime. Actual world rendering still needs an in-game check.
+A listed reward is not necessarily available in your installation. Missing quests, customization, trader offers or crate contents keep the affected reward locked. Historical Perspectives and rewards depending on unavailable quest chains cannot be completed through this mod alone.
+
+The bundled crate definitions do not include a contents pool. Their claims and exchange remain unavailable until the campaign supplies one. No substitute contents are awarded.
+
+Install WTT-ContentBackport and its dependencies for document and crate models. Missing required models can prevent the server from loading the mod; check the startup error for the missing dependency.
+
+## Server settings
+
+For the bundled setup, an optional `hub-config.json` beside `WTT-Campaigns.Server.dll` accepts:
+
+| Setting | Allowed values | Default |
+| --- | --- | --- |
+| `DocumentsPerRaid` | 0–8 | 8 |
+| `MapCounts` | Map names mapped to caps of 0–8 | Uses the overall cap |
+| `ClassifiedChancePercent` | 0–100 | 5 |
+
+These caps do not bypass document map restrictions or per-type limits. Custom campaigns also have document settings in the [Campaign Creator](season-creator.md).
+
+Back up existing configuration before editing and restart the server to load changes. Preserve character profiles and campaign packs during updates.
