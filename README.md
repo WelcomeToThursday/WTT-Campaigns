@@ -15,7 +15,7 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 
 ## Requirements
 
-- **SPT 4.1.3 / EFT 0.16.9.40743** is the target build for this beta.
+- **SPT >=4.1.3 / EFT 0.16.9.40743** is the target build for this beta.
 - **UnityToolkit 2.0.2 or later**, including its plugin libraries and prepatcher.
 - **WTT-ContentBackport 2.0.1 or later** and its dependencies, which supply the document and crate models.
 
