@@ -1,54 +1,32 @@
-# WTT-Campaigns 0.6.0 — Initial Beta
+# WTT-Campaigns 0.6.1
 
-WTT-Campaigns 0.6.0 is the mod's **first public beta release**. This release introduces campaign character progression and the tools to create and share custom campaigns for SPT.
+Beta maintenance release covering changes since [0.6.0](https://github.com/CJ-SPT/SeasonalPerks/releases/tag/V0.6.0).
 
-## Hotfixes
+## Fixes
 
-- Fix tiered tasks becoming available solely from trader loyalty and Essential Tasks losing native prerequisites. All supported tasks retain SPT's quest prerequisites, player-level requirements and unlock delays, including for fresh EoD characters. The Punisher – Part 3 now requires level 19 and completion of Part 2. Already accepted and completed tasks retain their progress.
-- The quest prerequisite fix is also applied by the server assembly when using older progression data, allowing a DLL-only hotfix.
-- Fix raid setup crashes caused by missing bot-role difficulty settings.
-- Clear the affected character's pending raid state when raid loading fails or is cancelled, allowing another attempt.
+- **Restore native quest unlock requirements.** Tiered and Essential Tasks retain SPT's prerequisite quests, player-level requirements and unlock delays. Trader loyalty is an additional gate for tiered tasks. Fresh characters can no longer bypass native task chains; for example, The Punisher - Part 3 requires level 19 and completion of Part 2. Accepted and completed tasks retain their progress. The server also repairs older progression data at runtime.
+- **Restore access to the main character after a launcher wipe.** The character selector keeps the main character available and correctly recognizes that native character creation is required. Campaign loading overlays release the screen and input while character creation runs.
+- **Prevent task tier badges from overlapping long quest titles.** Quest titles reserve space for the badge and truncate with an ellipsis when needed.
+- **Limit story enum conversion to story data.** The story JSON converter no longer applies its string-only rules to unrelated game or mod enums.
+- **Handle missing bot difficulty settings during raid setup.** Bot roles without server-provided difficulty settings use SPT's assault fallback when available, avoiding the associated raid setup crash.
+- **Recover from failed or cancelled raid loading.** Clear the matching character's pending raid and story-session state so another attempt is possible. Cleanup checks the character and raid identity to avoid clearing a different raid.
 
-## What is included
+## Documentation and validation
 
-- Multiple independent campaign characters, with a character selector, switching, and confirmed delete or achievement-preserving wipe actions.
-- A perk selection system with point budgets, conflicts and shared campaign rules. The bundled catalogue includes 33 supported entries covering character skills, survival, equipment use, trading and hideout behavior.
-- A campaign hub with local Battle Pass rewards, raid document collection, document exchanges and saved claim progress.
-- Story journals, dialogue, trader visits and support for authored raid objectives and events. Story content is supplied by campaign authors; a complete live campaign is not bundled.
-- A browser-based Campaign Creator for starting loadouts, perks, quests, rewards, crates, artwork and stories, with validation, previews, tutorials and campaign pack import/export.
-- Trader loyalty and task progression changes for regular and campaign characters, including grouped task lists, updated reputation requirements and no trader spending gates.
+- Move player and creator guides into the repository's `wiki` directory, with a documentation home, navigation and updated guides. Contributor documentation now lives in `contributing`.
+- Expand offline regression coverage for quest prerequisites, character reconnects, story enum compatibility, task badge layout and raid startup/recovery hooks.
 
-## Before playing
+## Updating
 
-This beta targets **SPT 4.1.3 / EFT 0.16.9.40743**. Install **UnityToolkit 2.0.2 or later** with its prepatcher and **WTT-ContentBackport 2.0.1 or later** with its dependencies. These dependencies are separate downloads.
+Targets **SPT 4.1.3 / EFT 0.16.9.40743**. Requires **UnityToolkit 2.0.2 or later**, including its prepatcher, and **WTT-ContentBackport 2.0.1 or later** with its dependencies. Dependencies are separate downloads.
 
-Extract the package's `BepInEx` and `SPT_Runtime` folders into your SPT installation while the game and server are closed. Install the complete matching package. Back up profiles before trying the beta, and preserve existing configuration, campaign profiles and the server mod's `creator` folder when updating.
+With the game and server closed, extract the archive's `BepInEx` and `SPT_Runtime` folders into your SPT installation. Install the full matching package. Preserve existing configuration, profiles and the server mod's `creator` folder. Back up profiles before updating this beta, then manually start the server and game when ready.
 
-Open **CHARACTERS** or press **F8** outside a raid to create a campaign character. For installation details, first steps and the Campaign Creator workflow, see the [README](README.md).
+## Known limitations
 
-## Open the Campaign Creator
-
-With the SPT server running, use the **WTT-Campaigns creator link in the SPT launcher** or open [https://127.0.0.1:6969/wtt-campaigns/creator](https://127.0.0.1:6969/wtt-campaigns/creator) in your browser for a default local server. If you changed the server address or port, use the address from your launcher followed by `/wtt-campaigns/creator`. Sign in with an administrator account if prompted.
-
-Choose **Create blank campaign**, duplicate an existing campaign, or import a campaign ZIP to get started. The creator includes **Help and tutorials** for authoring, validation and publishing.
-
-## Beta scope
-
-This beta supports local campaigns and custom content. It does not include every live EFT feature; compatibility with other mods can vary.
-
-Street Tax, Kappa Protocol, Lucky, Unlucky, Armor Shortage and Black Division remain unavailable. Rewards with missing content dependencies stay locked. Online purchases, leaderboards and automatic campaign wipes are not included.
-
-Trader progression changes also affect regular characters. Existing reputation and task progress are retained, but loyalty can decrease when the new requirements are applied.
-
-## Feedback
-
-Reports about character creation and switching, saving after raids, perk behavior, reward claims, authored campaigns and UI issues are especially useful. Include your mod/SPT versions, other installed mods, reproduction steps, expected and actual behavior, and relevant log excerpts with personal identifiers removed.
-
-## Known Issues
-
-- With native task chains restored, the current loyalty thresholds require additional reputation sources for Therapist, Peacekeeper and Ragman; one-time tasks alone do not cover their progression.
+- With native task chains restored, Therapist, Peacekeeper and Ragman require additional reputation sources; one-time tasks alone do not cover the current loyalty thresholds.
 - Fika is not supported.
-- The built-in campaign does not include Kord Breach quests.
-- Some artwork and presentation are placeholders.
+- The built-in campaign does not include Kord Breach quests or a complete authored story campaign.
+- Some artwork and presentation remain placeholders.
 
-See [compatibility](wiki/compatibility.md) for feature limits and [the documentation index](wiki/Home.md) for help.
+See the [README](README.md), [documentation home](wiki/Home.md) and [compatibility guide](wiki/compatibility.md) for setup and feature limits.
