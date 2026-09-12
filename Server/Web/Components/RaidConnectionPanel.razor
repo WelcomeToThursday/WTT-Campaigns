@@ -2,15 +2,34 @@
 @using WTT.Campaigns.Shared.Authoring
 @implements IDisposable
 @inject RaidAuthoringService Authoring
-<section class="editor-card connected-raid" aria-label="Connected raid">
-    <header><h3>Connected raid</h3><p>Enable authoring in the game's WTT-Campaigns settings, enter a raid, then connect it here. Draft edits synchronize; publishing remains explicit.</p></header>
-    <div class="row"><select aria-label="Available raids" @bind="_client"><option value="">Choose a raid…</option>@foreach (var c in _clients) { <option value="@c.Id">@c.Location · @c.CharacterId · @(c.DraftId == Draft.Id ? "Connected to this draft" : "Available")</option> }</select><button disabled="@(_client.Length == 0)" @onclick="Connect">Connect draft</button><button disabled="@(!_clients.Any(c => c.DraftId == Draft.Id))" @onclick="Disconnect">Disconnect</button></div>
-    <p role="status">@Status @_message</p>
-    @foreach (var c in _clients.Where(c => c.DraftId == Draft.Id))
-    {
-        <p>@Draft.Definition.Name · @c.Location · Revision @Draft.Revision · Last contact @c.LastSeen.ToLocalTime().ToString("T")</p>
-        @foreach (var task in c.Tasks) { <span class="small-tag">@task.Tool · @task.Status · @task.TargetId</span> }
-    }
+<section class="connected-raid" aria-label="Raid connector">
+    <details class="raid-connection-details">
+        <summary class="raid-connection-summary">
+            <span class="raid-connection-title"><span class="raid-connection-dot @(Connected ? "is-connected" : "")" aria-hidden="true"></span>Raid connector</span>
+            <span class="raid-connection-state">@(Connected ? "Connected" : _clients.Count > 0 ? "Raid available" : "Not connected")</span>
+            <span class="raid-connection-chevron" aria-hidden="true">⌄</span>
+        </summary>
+        <div class="raid-connection-body">
+            <div class="raid-connection-controls">
+                <select aria-label="Available raids" @bind="_client"><option value="">@(_clients.Count == 0 ? "No active raids" : "Choose a raid…")</option>@foreach (var c in _clients) { <option value="@c.Id">@c.Location · @c.CharacterId · @(c.DraftId == Draft.Id ? "Connected to this draft" : "Available")</option> }</select>
+                <button disabled="@(_client.Length == 0)" @onclick="Connect">Connect draft</button>
+                @if (Connected) { <button class="subtle" @onclick="Disconnect">Disconnect</button> }
+            </div>
+            <details class="raid-connection-help">
+                <summary>How to connect</summary>
+                <p>Enable authoring in the game's WTT-Campaigns settings, enter a raid, then choose it here. Draft edits synchronize; publish when you're ready. Use Ctrl+F8 to open the editor in the raid.</p>
+            </details>
+            @foreach (var c in _clients.Where(c => c.DraftId == Draft.Id))
+            {
+                <p class="raid-connection-session">@Draft.Definition.Name · @c.Location · Revision @Draft.Revision · Last contact @c.LastSeen.ToLocalTime().ToString("T")</p>
+                @foreach (var task in c.Tasks) { <span class="small-tag">@task.Tool · @task.Status · @task.TargetId</span> }
+            }
+            @if (!string.IsNullOrWhiteSpace(Status) || !string.IsNullOrWhiteSpace(_message))
+            {
+                <p class="raid-connection-feedback" role="status">@Status @_message</p>
+            }
+        </div>
+    </details>
 </section>
 @code {
     [Parameter] public DraftEnvelope Draft { get; set; } = null!;
@@ -19,6 +38,7 @@
     [Parameter] public EventCallback Flush { get; set; }
     private List<AuthoringClient> _clients = new();
     private string _client = "", _message = "";
+    private bool Connected => _clients.Any(c => c.DraftId == Draft.Id);
     private readonly CancellationTokenSource _stop = new();
     protected override void OnInitialized() { _clients = Authoring.Clients(); _ = Refresh(); }
     private async Task Refresh()

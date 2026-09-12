@@ -425,6 +425,34 @@
     .season-creator .story-section-fields { gap: 16px; }
 }
 
+/* The raid menu shares the draft toolbar; its dropdown never expands the bar. */
+.season-creator .editor-toolbar { flex-wrap: wrap; }
+.season-creator .connected-raid { flex: 0 1 auto; max-width: 100%; border: 1px solid var(--line); border-radius: 4px; background: transparent; }
+.season-creator .raid-connection-summary { display: flex; align-items: center; gap: 12px; min-height: 38px; padding: 7px 11px; cursor: pointer; list-style: none; border-radius: 4px; }
+.season-creator .raid-connection-summary::-webkit-details-marker { display: none; }
+.season-creator .raid-connection-summary:hover { background: var(--panel); }
+.season-creator .raid-connection-title { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 650; }
+.season-creator .raid-connection-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: var(--muted); }
+.season-creator .raid-connection-dot.is-connected { background: #afc28e; box-shadow: 0 0 0 3px #afc28e18; }
+.season-creator .raid-connection-state { margin-left: auto; color: var(--muted); font-size: 12px; }
+.season-creator .raid-connection-chevron { color: var(--accent); }
+.season-creator .raid-connection-details[open] > summary .raid-connection-chevron { transform: rotate(180deg); }
+.season-creator .raid-connection-body { position: absolute; top: calc(100% + 8px); right: 16px; z-index: 6; width: min(680px, calc(100% - 32px)); max-height: min(480px, 65vh); overflow-y: auto; padding: 0 16px 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); box-shadow: 0 12px 32px #0008; }
+.season-creator .raid-connection-controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding-top: 12px; }
+.season-creator .raid-connection-controls select { flex: 1 1 240px; width: auto; margin: 0; min-height: 34px; padding: 6px 9px; font-size: 12px; }
+.season-creator .raid-connection-controls button { min-height: 34px; padding: 6px 10px; font-size: 12px; }
+.season-creator .raid-connection-help { margin-top: 8px; font-size: 12px; }
+.season-creator .raid-connection-help summary { width: fit-content; color: var(--muted); cursor: pointer; }
+.season-creator .raid-connection-help p, .season-creator .raid-connection-session { font-size: 12px; margin: 8px 0 0; overflow-wrap: anywhere; }
+.season-creator .raid-connection-feedback { border-top: 1px solid var(--line); padding: 9px 0 0; margin: 10px 0 0; font-size: 12px; overflow-wrap: anywhere; }
+@media (max-width: 800px) {
+    .season-creator .editor-toolbar { position: relative; top: auto; }
+}
+@media (max-width: 480px) {
+    .season-creator .raid-connection-summary { gap: 8px; padding: 10px 12px; flex-wrap: wrap; }
+    .season-creator .raid-connection-controls select { flex-basis: 100%; }
+}
+
 /* Landing library: scoped so the authoring workspace keeps its own layout. */
 .season-creator.creator-library > .creator-header,
 .creator-library > :is(.notice, .creator-handbook, .creator-tutorial),

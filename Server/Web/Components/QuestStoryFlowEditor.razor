@@ -11,10 +11,15 @@
     </details>
     <details class="editor-card" open>
         <summary>Quest conversations</summary>
-        <p>Conversations shown here explicitly reference this quest in an action or condition. The optional template adds an accept-quest reply, phase variable and lobby entry point.</p>
+        <p>Conversations referencing this quest appear here and stay available while you edit, even if you change their actions. The optional template adds an accept-quest reply, phase variable and lobby entry point.</p>
         @foreach (var dialog in LinkedDialogs)
         {
-            <details class="editor-card" @key="dialog.Id"><summary>@StoryAuthoring.Label(dialog)</summary><StoryFields Season="Season" Value="dialog" Changed="Changed" /><ConversationSetup Season="Season" Dialog="dialog" Changed="Changed" /></details>
+            <details class="editor-card" @key="dialog.Id"><summary>@StoryAuthoring.Label(dialog)</summary>
+                @if (!ReferencesQuest(dialog))
+                { <p class="notice" role="status">This conversation no longer references this quest. It stays here while you edit and is always available in Conversations.</p> }
+                <StoryFields Season="Season" Value="dialog" Changed="Changed" /><ConversationSetup Season="Season" Dialog="dialog" Changed="Changed" />
+                <button @onclick="@(() => Navigate.InvokeAsync("Story/" + dialog.Id))">Open in Conversations</button>
+            </details>
         }
         <ContentPicker Kind="traders" Label="Conversation trader" Value="@Trader" ValueChanged="@(v => _trader = v)" HelpText="Defaults to this quest's trader. The template uses this trader for the conversation and its lobby entry point." />
         <label class="check"><input type="checkbox" @bind="_branching" />Include a decline reply <HelpTip Text="Adds a player reply that closes the conversation without accepting the quest." /></label>
@@ -31,9 +36,21 @@
     private string _status = "Success";
     private string? _trader;
     private bool _branching = true;
+    private SeasonDefinition? _dialogSeason;
+    private string? _dialogQuest;
+    private readonly HashSet<string> _visibleDialogs = new(StringComparer.Ordinal);
     private string Trader => _trader ?? (string?)Quest.TraderId ?? "";
     private IEnumerable<StoryNote> LinkedNotes => Season.Story!.Notes.Where(n => Membership.StatusNotes.Values.Any(ids => ids.Contains(n.Id)));
-    private IEnumerable<StoryDialog> LinkedDialogs => Season.Story!.Dialogs.Where(d => ModelGraph.Texts(d).Any(p => p.Field == "QuestId" && p.Value == Membership.QuestId));
+    private bool ReferencesQuest(StoryDialog dialog) => ModelGraph.Texts(dialog).Any(p => p.Field == "QuestId" && p.Value == Membership.QuestId);
+    private IEnumerable<StoryDialog> LinkedDialogs => Season.Story!.Dialogs.Where(d => _visibleDialogs.Contains(d.Id));
+    protected override void OnParametersSet()
+    {
+        // A mutable quest reference discovers conversations; it must not evict an editor mid-edit.
+        // This selection is local to the current draft and quest, never persisted as story data.
+        if (!ReferenceEquals(_dialogSeason, Season) || _dialogQuest != Membership.QuestId)
+        { _visibleDialogs.Clear(); _dialogSeason = Season; _dialogQuest = Membership.QuestId; }
+        _visibleDialogs.UnionWith(Season.Story!.Dialogs.Where(ReferencesQuest).Select(d => d.Id));
+    }
     private async Task AddNote() { QuestStoryFlow.AddNote(Season, Membership, _status); await Changed.InvokeAsync(); }
     private async Task AddConversation() { StoryAuthoring.AddConversation(Season, Trader, _branching, Membership.QuestId); await Changed.InvokeAsync(); }
 }

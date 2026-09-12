@@ -8,7 +8,7 @@
 @inject SeasonContentService Content
 
 <PageTitle>Campaign Creator</PageTitle>
-<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-docs2" /></HeadContent>
+<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-raid-menu" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
 <main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
@@ -25,7 +25,6 @@
 
     @if (_draft != null)
     {
-        <RaidConnectionPanel @key="_draft.Id" Draft="_draft" Status="_raidStatus" Synchronize="SyncRaid" Flush="FlushRaid" />
         @if (_raidConflict != null)
         {
             <section class="notice error"><h3>Conflicting draft edits</h3>
@@ -159,6 +158,7 @@
             <button class="subtle" @onclick="@(() => Leave(() => _draft = null))">← Library</button>
             <strong class="draft-title">@CampaignText.Display(S.Name)</strong><span class="save-state @(DirtyState ? "unsaved" : "")">@(DirtyState ? "Unsaved changes" : "Saved")</span>
             <div class="toolbar-actions">
+                <RaidConnectionPanel @key="_draft.Id" Draft="_draft" Status="@_raidStatus" Synchronize="SyncRaid" Flush="FlushRaid" />
                 <MudTooltip Text="Check content, artwork and installed dependencies. Errors link back to the relevant section." ShowOnFocus="true"><button @onclick="Validate">Validate</button></MudTooltip>
                 <MudTooltip Text="Create an immutable pack from the saved draft. Restart SPT to load new packs for character creation." ShowOnFocus="true"><button @onclick="Publish">Publish pack</button></MudTooltip>
                 <MudTooltip Text="Save this draft without changing published packs or characters." ShowOnFocus="true"><button class="primary" @onclick="Save">Save changes</button></MudTooltip>

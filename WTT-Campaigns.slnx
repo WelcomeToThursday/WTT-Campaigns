@@ -15,6 +15,7 @@
   </Folder>
   <Folder Name="/Tests/">
     <Project Path="Tests/WTT-Campaigns.Tests.csproj" />
+    <Project Path="Tests.Web/WTT-Campaigns.Web.Tests.csproj" />
   </Folder>
   <Folder Name="/UI/">
     <Project Path="UI/WTT-Campaigns.UI.csproj" />

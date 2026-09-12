@@ -15,21 +15,26 @@
     <_DeployProject Include="Server\WTT-Campaigns.Server.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" />
     <_DeployProject Include="UI\WTT-Campaigns.UI.csproj" Condition="'$(DeploymentScope)' == 'UI'" />
     <_TestProject Include="Tests\WTT-Campaigns.Tests.csproj" />
+    <_WebTestProject Include="Tests.Web\WTT-Campaigns.Web.Tests.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" />
   </ItemGroup>
   <Import Project="tools\Deployment.targets" />
   <Target Name="Build">
     <Error Condition="'@(_DeployProject)' == ''" Text="DeploymentScope must be All, Client, Server or UI." />
-    <MSBuild Projects="@(_DeployProject);@(_TestProject)" Targets="Restore" Properties="$(_BuildProperties)" />
+    <MSBuild Projects="@(_DeployProject);@(_TestProject);@(_WebTestProject)" Targets="Restore" Properties="$(_BuildProperties)" />
     <MSBuild Projects="@(_DeployProject)" Targets="GetCampaignsDeployFiles" Properties="$(_BuildProperties)">
       <Output TaskParameter="TargetOutputs" ItemName="CampaignsDeployFile" />
     </MSBuild>
     <MSBuild Projects="@(_TestProject)" Targets="Build" Properties="$(_BuildProperties)">
       <Output TaskParameter="TargetOutputs" ItemName="_TestAssembly" />
     </MSBuild>
+    <MSBuild Projects="@(_WebTestProject)" Targets="Build" Properties="$(_BuildProperties)">
+      <Output TaskParameter="TargetOutputs" ItemName="_WebTestAssembly" />
+    </MSBuild>
   </Target>
   <Target Name="Validate" DependsOnTargets="Build">
     <Error Condition="!Exists('$(_NativeAssembly)')" Text="Missing game reference: $(_NativeAssembly)" />
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; &quot;$(_NativeAssembly)&quot;" />
+    <Exec Condition="'@(_WebTestAssembly)' != ''" Command="dotnet &quot;@(_WebTestAssembly)&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\test_quest_backports.py&quot;" />
     <CallTarget Targets="ValidateCapturedQuests" Condition="('$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server') and Exists('$(MSBuildProjectDirectory)\..\1.0 Dump\gw-pve.escapefromtarkov.com\client\quest\list\response')" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --progression-data &quot;$(ServerDir)SPT_Data\database&quot;" />
