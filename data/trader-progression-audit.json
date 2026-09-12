@@ -277,7 +277,7 @@
     {
       "QuestId": "675c1cf4a757ddd00404f0a3",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43cd31d85cd616ceb0f3df",
@@ -287,9 +287,27 @@
       ]
     },
     {
+      "QuestId": "669fa3a08b4a64b332041ff7",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "626bdcc3a371ee3a7a3514c5",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "639136e84ed9512be67647db",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5d25e4ca86f77409dd5cdf2c",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4533d03f35ccf23f3fe818",
@@ -301,7 +319,7 @@
     {
       "QuestId": "60e71e8ed54b755a3b53eb67",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4536726ba0df9bc29e6366",
@@ -311,9 +329,15 @@
       ]
     },
     {
+      "QuestId": "66b38e144f2ab7cc530c3fe7",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5d25e43786f7740a212217fa",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43ce5cc1b3ad54c4dd4793",
@@ -323,9 +347,45 @@
       ]
     },
     {
+      "QuestId": "6578eb36e5020875d64645cd",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25e4d586f77443e625e388",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25bfd086f77442734d3007",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25e2e286f77444001e2e48",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "64e7b971f9d6fa49d6769b44",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "63a9b36cc31b00242d28a99f",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5edab4b1218d181e29451435",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a453555279305f4656ccb86",
@@ -335,9 +395,15 @@
       ]
     },
     {
+      "QuestId": "5d24b81486f77439c92d6ba8",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5d25e48186f77443e625e386",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43eaa20a88bf63fd47e312",
@@ -349,7 +415,7 @@
     {
       "QuestId": "63a88045abf76d719f42d715",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43e9e0f70bbd5e9a520a0d",
@@ -361,7 +427,7 @@
     {
       "QuestId": "5d25e2ee86f77443e35162ea",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43cba4257c0584e53d16fe",
@@ -371,9 +437,27 @@
       ]
     },
     {
+      "QuestId": "5bc4856986f77454c317bea7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "66b38c7bf85b8bf7250f9cb6",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "600302d73b897b11364cd161",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5d25e4ad86f77443e625e387",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43f10b9538033e8ccd8242",
@@ -383,9 +467,27 @@
       ]
     },
     {
+      "QuestId": "60c0c018f7afb4354815096a",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25b6be86f77444001e1b89",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25aed386f77442734d25d2",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5d25e2c386f77443e7549029",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43cf86e0364dab9cfa7de4",
@@ -397,7 +499,7 @@
     {
       "QuestId": "669fa3979b0ce3feae01a130",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43f1c7a90006f0243f7997",
@@ -407,9 +509,21 @@
       ]
     },
     {
+      "QuestId": "5bc4893c86f774626f5ebf3e",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5eaaaa7c93afa0558f3b5a1c",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5d25e44386f77409453bce7b",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43cee5e8931e9af59ce72b",
@@ -421,7 +535,7 @@
     {
       "QuestId": "5d25e46e86f77409453bce7c",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43cabd74b6c31309f9a6a5",
@@ -433,7 +547,7 @@
     {
       "QuestId": "60e729cf5698ee7b05057439",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a43c77b3ee1758d722ef805",
@@ -443,9 +557,75 @@
       ]
     },
     {
+      "QuestId": "5d25d2c186f77443e35162e5",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "60effd818b669d08a35bfad5",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "675c15fbf7da9792a4059871",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6745fdddd3346c216702e0bf",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "665eec1f5e47a79f8605565a",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "665eec4a4dfc83b0ed0a9dca",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "665eeacf5d86b6c8aa03c79b",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25e4b786f77408251c4bfc",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "639136df4b15ca31f76bc31f",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "63966faeea19ac7ed845db2c",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "61904daa7d0d857927447b9c",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ac345dc86f774288030817f",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf4f0a9f9fe8ad8d54dea",
@@ -455,9 +635,15 @@
       ]
     },
     {
+      "QuestId": "5c0be13186f7746f016734aa",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "6179ad0a6e9dd54ac275e3f2",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a453040b5fec39844094eeb",
@@ -469,7 +655,7 @@
     {
       "QuestId": "608a768d82e40b3c727fd17d",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a452ed96403401c4ca26585",
@@ -481,7 +667,7 @@
     {
       "QuestId": "66ab9da7eb102b9bcd08591c",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4530f1658ff9be9d2e80c8",
@@ -493,7 +679,7 @@
     {
       "QuestId": "5d25e2cc86f77443e47ae019",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4531410c5a4f2a97fb7d51",
@@ -505,7 +691,7 @@
     {
       "QuestId": "5d25e2b486f77409de05bba0",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a452f721977a58e972d05cd",
@@ -517,7 +703,7 @@
     {
       "QuestId": "5d25e45e86f77408251c4bfa",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a452fda409c034e81788cd9",
@@ -529,7 +715,7 @@
     {
       "QuestId": "639135e8c115f907b14700aa",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf350856d0183cb220993",
@@ -541,7 +727,7 @@
     {
       "QuestId": "5ae3267986f7742a413592fe",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf54b7d8d240f68fb47be",
@@ -551,9 +737,15 @@
       ]
     },
     {
+      "QuestId": "5ae3270f86f77445ba41d4dd",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ae3277186f7745973054106",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d06923e380b93dedbe4d3",
@@ -565,7 +757,7 @@
     {
       "QuestId": "5ac3467986f7741d6224abc2",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf083568a94e7beae41b1",
@@ -577,7 +769,7 @@
     {
       "QuestId": "675c1570526ff496850895d9",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3bee21f93d55d68c9bd900",
@@ -587,9 +779,15 @@
       ]
     },
     {
+      "QuestId": "669fa39b91b0a8c9680fc467",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ac2428686f77412450b42bf",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3c0680db988d432db35e1e",
@@ -601,7 +799,7 @@
     {
       "QuestId": "5ac23c6186f7741247042bad",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3bda9a408ef52190ac78ca",
@@ -613,7 +811,7 @@
     {
       "QuestId": "60e71d6d7fcf9c556f325055",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3c061d1cf21218265e4589",
@@ -625,7 +823,7 @@
     {
       "QuestId": "5ac2426c86f774138762edfe",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3bf6c5bdb041727fc51dc5",
@@ -649,7 +847,7 @@
     {
       "QuestId": "6179b3bdc7560e13d23eeb8d",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0c492ff3d383c1076a6c",
@@ -661,7 +859,7 @@
     {
       "QuestId": "5ae449c386f7744bde357697",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b3757c4724593f07e762d",
@@ -673,7 +871,7 @@
     {
       "QuestId": "5ac3477486f7741d651d6885",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf42d43e4e379cb85e4f9",
@@ -685,7 +883,7 @@
     {
       "QuestId": "66aa74571e5e199ecd094f18",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf528353a56e4bc430872",
@@ -695,9 +893,15 @@
       ]
     },
     {
+      "QuestId": "60e71d23c1bfa3050473b8e6",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "64ee9df4496db64f9b7a4432",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0c9522c447cba712082c",
@@ -709,7 +913,7 @@
     {
       "QuestId": "5ac3464c86f7741d651d6877",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a63c9fd669b86eea7a02a41",
@@ -721,7 +925,7 @@
     {
       "QuestId": "6573382e557ff128bf3da536",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf0c18ceebb036ddcb71e",
@@ -731,9 +935,15 @@
       ]
     },
     {
+      "QuestId": "626bd75e47ea7f506e5493c5",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ac3475486f7741d6224abd3",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3bef618fffa6b44ad5dcd1",
@@ -743,9 +953,15 @@
       ]
     },
     {
+      "QuestId": "639136fa9444fb141f4e6eee",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ae448f286f77448d73c0131",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b390edce9a13bbb6c6be6",
@@ -755,9 +971,15 @@
       ]
     },
     {
+      "QuestId": "6089732b59b92115597ad789",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ae3280386f7742a41359364",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0fe3dae3d5cc38bb08c4",
@@ -769,7 +991,7 @@
     {
       "QuestId": "5ac3462b86f7741d6118b983",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3c0697ccc916a30472e08e",
@@ -781,7 +1003,7 @@
     {
       "QuestId": "5ae4490786f7744ca822adcc",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b39baf441ee861e11a6f9",
@@ -791,9 +1013,15 @@
       ]
     },
     {
+      "QuestId": "6089736efa70fc097863b8f6",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5c139eb686f7747878361a6f",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0e90e26cf4f9dc9e8cb1",
@@ -805,7 +1033,7 @@
     {
       "QuestId": "5b47799d86f7746c5d6a5fd8",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0ff1c6201854bd856b55",
@@ -817,7 +1045,7 @@
     {
       "QuestId": "5c1128e386f7746565181106",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0e3079a0e860e4ee0c53",
@@ -829,7 +1057,7 @@
     {
       "QuestId": "6179b3a12153c15e937d52bc",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0de20773ad727b11ae23",
@@ -841,7 +1069,7 @@
     {
       "QuestId": "6578ec473dbd035d04531a8d",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3bf690d565ddd321f60ede",
@@ -853,7 +1081,7 @@
     {
       "QuestId": "5ae327c886f7745c7b3f2f3f",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0d5b4183439c5ed55ad8",
@@ -865,7 +1093,7 @@
     {
       "QuestId": "657315e4a6af4ab4b50f3459",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "68dfd865aaf6f3c722200252",
@@ -877,7 +1105,7 @@
     {
       "QuestId": "5f04886a3937dc337a6b8238",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf0e76a3dc5f844b8e4e5",
@@ -889,7 +1117,7 @@
     {
       "QuestId": "5ae448bf86f7744d733e55ee",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b3845723a4707a0ad4420",
@@ -899,9 +1127,21 @@
       ]
     },
     {
+      "QuestId": "63913715f8e5dd32bf4e3aaa",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5ac346a886f7744e1b083d67",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "639872f9decada40426d3447",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3cf479bcc09d262c1aa91b",
@@ -911,9 +1151,15 @@
       ]
     },
     {
+      "QuestId": "5ac244eb86f7741356335af1",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "639872fc93ae507d5858c3a6",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0dada08a68efb8e8227b",
@@ -925,7 +1171,7 @@
     {
       "QuestId": "5ae4493486f7744efa289417",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b3a3b374cec11d07aa1c9",
@@ -937,7 +1183,7 @@
     {
       "QuestId": "639872fa9b4fb827b200d8e5",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3d0c0c02240d023ff33fdf",
@@ -947,9 +1193,15 @@
       ]
     },
     {
+      "QuestId": "65734c186dc1e402c80dc19e",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ae4493d86f7744b8e15aa8f",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b3a93533200e3f230ab33",
@@ -961,7 +1213,7 @@
     {
       "QuestId": "5b47891f86f7744d1b23c571",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5769ca7fc68cdd9c8de550",
@@ -973,7 +1225,7 @@
     {
       "QuestId": "5b478b1886f7744d1b23c57d",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b61d3576dc193890244dd",
@@ -985,7 +1237,7 @@
     {
       "QuestId": "5ae449b386f77446d8741719",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b3bfb43ab251a6b60d8f1",
@@ -995,9 +1247,15 @@
       ]
     },
     {
+      "QuestId": "675c085d59b0575973005f52",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ae4498786f7744bde357695",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b62991248a8b00360f4cf",
@@ -1007,9 +1265,45 @@
       ]
     },
     {
+      "QuestId": "639135bbc115f907b14700a6",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5c1141f386f77430ff393792",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67af4c1991ee75c6d7060a16",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "64f5e20652fc01298e2c61e3",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5c0bc91486f7746ab41857a2",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68400953506db3b4db0700e7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5b478d0f86f7744d190d91b5",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b6380e21b6d80558855cb",
@@ -1019,9 +1313,15 @@
       ]
     },
     {
+      "QuestId": "65802b627b44fa5e14638899",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5ae449d986f774453a54a7e1",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b62feecb813c1763e8f01",
@@ -1031,9 +1331,15 @@
       ]
     },
     {
+      "QuestId": "638fcd23dc65553116701d33",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "60e71dc0a94be721b065bbfc",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b3c7bb6bcf854842aa133",
@@ -1045,7 +1351,7 @@
     {
       "QuestId": "5b47926a86f7747ccc057c15",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a8f916a4e4b5d2f5e4ca9",
@@ -1055,9 +1361,15 @@
       ]
     },
     {
+      "QuestId": "5b4795fb86f7745876267770",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "596b36c586f77450d6045ad2",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a8e2360cf004801084b67",
@@ -1069,7 +1381,7 @@
     {
       "QuestId": "64f6aafd67e11a7c6206e0d0",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a954fcaf3070cb0a6d0d3",
@@ -1081,7 +1393,7 @@
     {
       "QuestId": "5ae448e586f7744dcf0c2a67",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b605e58a01ce8fd46dd9d",
@@ -1093,7 +1405,7 @@
     {
       "QuestId": "5c1234c286f77406fa13baeb",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ab38aeac0839cd31b7ab8",
@@ -1103,9 +1415,15 @@
       ]
     },
     {
+      "QuestId": "67af4c1405c58dc6f7056667",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "658027799634223183395339",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a920526f21a16f9634797",
@@ -1117,7 +1435,7 @@
     {
       "QuestId": "5b478eca86f7744642012254",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a97c6bcb34ee22fc79feb",
@@ -1127,9 +1445,15 @@
       ]
     },
     {
+      "QuestId": "66aa61663aa37705c5024277",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "657315e270bb0b8dba00cc48",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6917b4c8e0ec62f3d7a46246",
@@ -1141,7 +1465,7 @@
     {
       "QuestId": "5979eee086f774311955e614",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a9158e59661ee467d6e2d",
@@ -1153,7 +1477,7 @@
     {
       "QuestId": "669fa39c64ea11e84c0642a6",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ab27d3f13f76f04f70ac0",
@@ -1163,9 +1487,15 @@
       ]
     },
     {
+      "QuestId": "608974d01a66564e74191fc0",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5b478ff486f7744d184ecbbf",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a991df320624911d562bb",
@@ -1175,9 +1505,15 @@
       ]
     },
     {
+      "QuestId": "671a59e43d73dac1360765cc",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5979ed3886f77431307dc512",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a9293c6e51d646eec64ff",
@@ -1189,7 +1525,7 @@
     {
       "QuestId": "596b43fb86f77457ca186186",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a909ec3e6d53ec5e3b41c",
@@ -1201,7 +1537,7 @@
     {
       "QuestId": "639135a7e705511c8a4a1b78",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b619fafdbe81603c572ff",
@@ -1213,7 +1549,7 @@
     {
       "QuestId": "639dbaf17c898a131e1cffff",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a96931ac5646f7e7c95be",
@@ -1225,7 +1561,7 @@
     {
       "QuestId": "5c112d7e86f7740d6f647486",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5750646953e5d1f28416fa",
@@ -1237,7 +1573,7 @@
     {
       "QuestId": "675c3582f6ddc329a90f9c6d",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a8f2858343795678c8bb4",
@@ -1249,7 +1585,7 @@
     {
       "QuestId": "5c10f94386f774227172c572",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4b3d0677168485e665599b",
@@ -1261,7 +1597,7 @@
     {
       "QuestId": "608974af4b05530f55550c21",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5761a49f13b0687add12b4",
@@ -1271,9 +1607,21 @@
       ]
     },
     {
+      "QuestId": "67af4c17f4f1fb58a907f8f6",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68400926706e0a55e90b0007",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "6089743983426423753cd58a",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ab8502a294d6240265ad3",
@@ -1285,7 +1633,7 @@
     {
       "QuestId": "6572e876dc0d635f633a5714",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ab9a7766ade631c404649",
@@ -1295,9 +1643,33 @@
       ]
     },
     {
+      "QuestId": "5a27b75b86f7742e97191958",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5c0bbaa886f7746941031d82",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "675c1d6d59b0575973008fc7",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6179b4f16e9dd54ac275e407",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5c0bde0986f77479cf22c2f8",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a4f5aadb685ad42e7a403cc",
@@ -1309,7 +1681,7 @@
     {
       "QuestId": "5edabd13218d181e29451442",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ab8f3e33e7ae011d46a61",
@@ -1321,7 +1693,7 @@
     {
       "QuestId": "5a27b7a786f774579c3eb376",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5c14522a1363c38d9813a4",
@@ -1331,9 +1703,27 @@
       ]
     },
     {
+      "QuestId": "5a03153686f77442d90e2171",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a27b9de86f77464e5044585",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a27bafb86f7741c73584017",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "669fa38fad7f1eac2607ed46",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5c1497dd3caf961c5ffd41",
@@ -1345,7 +1735,7 @@
     {
       "QuestId": "626bd75d5bef5d7d590bd415",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5aba20177a1cd1a116535c",
@@ -1357,7 +1747,7 @@
     {
       "QuestId": "5a0449d586f77474e66227b7",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5c14cfa2627215a46fe6f2",
@@ -1369,7 +1759,7 @@
     {
       "QuestId": "5a27bb1e86f7741f27621b7e",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cd375512938938e82dbc8",
@@ -1381,7 +1771,7 @@
     {
       "QuestId": "60e71ccb5688f6424c7bfec4",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cd716f09e630c0f4ef8c3",
@@ -1391,9 +1781,15 @@
       ]
     },
     {
+      "QuestId": "671a49f77d49aea42c029b5f",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "639282134ed9512be67647ed",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ccd6900eebaca2d32a762",
@@ -1403,9 +1799,15 @@
       ]
     },
     {
+      "QuestId": "5ae4495c86f7744e87761355",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5c0d4c12d09282029f539173",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cd854c0637e0963014995",
@@ -1417,7 +1819,7 @@
     {
       "QuestId": "639135534b15ca31f76bc317",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a7303c529291f42679875cc",
@@ -1429,7 +1831,7 @@
     {
       "QuestId": "5a27b80086f774429a5d7e20",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cce729e178248c4114d5f",
@@ -1441,7 +1843,7 @@
     {
       "QuestId": "639135f286e646067c176a87",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ccf35b5318bec427b2906",
@@ -1453,7 +1855,7 @@
     {
       "QuestId": "6179b5eabca27a099552e052",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cda6dd21182206df76c36",
@@ -1465,7 +1867,7 @@
     {
       "QuestId": "5a27ba1c86f77461ea5a3c56",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cd06848f50fb151dba3b7",
@@ -1475,9 +1877,21 @@
       ]
     },
     {
+      "QuestId": "5ae4497b86f7744cf402ed00",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6615141bfda04449120269a7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5c0d4e61d09282029f53920e",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cdb909787085f199aff19",
@@ -1487,9 +1901,15 @@
       ]
     },
     {
+      "QuestId": "5a27bb3d86f77411ea361a21",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5a03296886f774569778596a",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5e6258fe76f81230c9b8f7",
@@ -1501,7 +1921,7 @@
     {
       "QuestId": "60e71c9ad54b755a3b53eb66",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cd5e7e0c446ef0379f330",
@@ -1513,7 +1933,7 @@
     {
       "QuestId": "5a27b87686f77460de0252a8",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ccee7fbe7bd1df628669e",
@@ -1521,6 +1941,12 @@
           "Reason": "unsupported live condition"
         }
       ]
+    },
+    {
+      "QuestId": "6179b4d1bca27a099552e04e",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
     },
     {
       "QuestId": "5ae4495086f77443c122bc40",
@@ -1535,9 +1961,33 @@
       ]
     },
     {
+      "QuestId": "60896bca6ee58f38c417d4f2",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "597a171586f77405ba6887d3",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5ae4496986f774459e77beb6",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "59ca2eb686f77445a80ed049",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5936da9e86f7742d65037edf",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a549d7e28bc65f81906cab4",
@@ -1547,9 +1997,27 @@
       ]
     },
     {
+      "QuestId": "59c512ad86f7741f0d09de9b",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5fd9fad9c1ce6b1a3b486d00",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "59c50c8886f7745fed3193bf",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "60896b7bfa70fc097863b8f5",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a32e9cb18a6e85182dc98d7",
@@ -1559,9 +2027,21 @@
       ]
     },
     {
+      "QuestId": "59c50a9e86f7745fef66f4ff",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5936d90786f7742b1420ba5b",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "669fa3a40c828825de06d6a1",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a330b1867c4b6a3181e2caa",
@@ -1573,7 +2053,7 @@
     {
       "QuestId": "5c0bd94186f7747a727f09b2",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a268606eb3ec3bc4c460e83",
@@ -1583,9 +2063,15 @@
       ]
     },
     {
+      "QuestId": "59ca264786f77445a80ed044",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "657315e1dccd301f1301416a",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a26853c8b6be04aa1955f83",
@@ -1595,9 +2081,15 @@
       ]
     },
     {
+      "QuestId": "59ca29fb86f77445ab465c87",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "59674cd986f7744ab26e32f2",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a2683da6aaa3aaa04c037ad",
@@ -1607,9 +2099,15 @@
       ]
     },
     {
+      "QuestId": "666314b2a9290f9e0806cca3",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "63a5cf262964a7488f5243ce",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a26df623e68c3ca8f1836c1",
@@ -1621,7 +2119,7 @@
     {
       "QuestId": "5967530a86f77462ba22226b",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a2684c65635319a712fa1cc",
@@ -1633,7 +2131,7 @@
     {
       "QuestId": "675c3507a06634b5110e3c18",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a2685856fc13648f3a9560b",
@@ -1645,7 +2143,7 @@
     {
       "QuestId": "66ab970848ddbe9d4a0c49a8",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a32e931fdf2c8d0034693aa",
@@ -1655,9 +2153,15 @@
       ]
     },
     {
+      "QuestId": "666314b696a9349baa021bac",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "596a0e1686f7741ddf17dbee",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a541bbff43cda8994db38b7",
@@ -1669,7 +2173,7 @@
     {
       "QuestId": "675c03d1f7da9792a405549a",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5423ce0bb60fa8e88a1dc1",
@@ -1679,9 +2183,27 @@
       ]
     },
     {
+      "QuestId": "666314bafd5ca9577902e03a",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "666314bc1d3ec95634095e77",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "66aba85403e0ee3101042877",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5edaba7c0c502106f869bc02",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a568d403c4c69b5ce40551e",
@@ -1691,9 +2213,21 @@
       ]
     },
     {
+      "QuestId": "5969f90786f77420d2328015",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "59675d6c86f7740a842fc482",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5eda19f0edce541157209cee",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a26e2c8c47ce34914fe1e5e",
@@ -1705,7 +2239,7 @@
     {
       "QuestId": "59675ea386f77414b32bded2",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a26e0672e49b1577082c7a1",
@@ -1715,9 +2249,21 @@
       ]
     },
     {
+      "QuestId": "666314b8312343839d032d24",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a68665c86f774255929b4c7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "675c047fa46173572a0bd878",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a542455920f7f2be967e229",
@@ -1729,7 +2275,7 @@
     {
       "QuestId": "5967733e86f774602332fc84",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a541c59ad49c0df49871093",
@@ -1739,9 +2285,33 @@
       ]
     },
     {
+      "QuestId": "5a68669a86f774255929b4d4",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a68663e86f774501078f78a",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "669fa3a3ad7f1eac2607ed48",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "639135d89444fb141f4e6eea",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "59689ee586f7740d1570bbd5",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a567fe394373d4ef646db38",
@@ -1753,7 +2323,7 @@
     {
       "QuestId": "60896e28e4a85c72ef3fa301",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a56910a672be13e89497a88",
@@ -1763,9 +2333,27 @@
       ]
     },
     {
+      "QuestId": "666314bd920800278d0f6748",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "59c9392986f7742f6923add2",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5c0d190cd09282029f5390d8",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "639136f086e646067c176a8b",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a26e47f87674ec2fd38476d",
@@ -1775,9 +2363,15 @@
       ]
     },
     {
+      "QuestId": "6179afd0bca27a099552e040",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5967725e86f774601a446662",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a2687c6cf807954f797de75",
@@ -1787,9 +2381,21 @@
       ]
     },
     {
+      "QuestId": "67b45467814ab0ffa000c7e7",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5c0d1c4cd0928202a02a6f5c",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "626bd75c71bd851e971b82a5",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a32ec845a0244c95a60d4c7",
@@ -1799,9 +2405,15 @@
       ]
     },
     {
+      "QuestId": "5a68667486f7742607157d28",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5968eb3186f7741dde183a4d",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a54230d5372cccd9882b855",
@@ -1813,7 +2425,7 @@
     {
       "QuestId": "5969f9e986f7741dde183a50",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a542395eded4179f78f17bc",
@@ -1823,9 +2435,15 @@
       ]
     },
     {
+      "QuestId": "669fa39ee749756c920d02c8",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "64f731ab83cfca080a361e42",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5684151f8461538d9a0909",
@@ -1837,7 +2455,7 @@
     {
       "QuestId": "6573397ef3f8344c4575cd87",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a26e3ed8a625af7e6c6e6e0",
@@ -1847,9 +2465,15 @@
       ]
     },
     {
+      "QuestId": "64e7b9bffd30422ed03dad38",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "64f3176921045e77405d63b5",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a56821dbe37c1cbc6794a5d",
@@ -1859,9 +2483,15 @@
       ]
     },
     {
+      "QuestId": "6179ac7511973d018217d0b9",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "63a9ae24009ffc6a551631a5",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3318a6174071e3a7452400",
@@ -1873,7 +2503,7 @@
     {
       "QuestId": "675c1ff1a757ddd00404f0aa",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a557c941360c129d2497805",
@@ -1885,7 +2515,7 @@
     {
       "QuestId": "59c124d686f774189b3c843f",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a2686ed241cbac1770933b9",
@@ -1897,7 +2527,7 @@
     {
       "QuestId": "596a1e6c86f7741ddc2d3206",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a56734a3d84b3f25f92f1d3",
@@ -1909,7 +2539,7 @@
     {
       "QuestId": "639135e0fa894f0a866afde6",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5674e5d4dca6fa8ac96d16",
@@ -1919,9 +2549,21 @@
       ]
     },
     {
+      "QuestId": "6391359b9444fb141f4e6ee6",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "596760e186f7741e11214d58",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "657315ddab5a49b71f098853",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "68dfd6d220b777b168d7ef72",
@@ -1933,7 +2575,7 @@
     {
       "QuestId": "67a09673972c11a3f507731d",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5683baf14384a719bfcc17",
@@ -1945,7 +2587,7 @@
     {
       "QuestId": "59674eb386f774539f14813a",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a269b11d5ea81aadc5c5952",
@@ -1955,9 +2597,15 @@
       ]
     },
     {
+      "QuestId": "64f5aac4b63b74469b6c14c2",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "60e71bb4e456d449cd47ca75",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a3319b26e99b8bc4b9ba19d",
@@ -1967,9 +2615,15 @@
       ]
     },
     {
+      "QuestId": "60e71b9bbd90872cb85440f3",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "59689fbd86f7740d137ebfc4",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a541aee0f558b660e06709d",
@@ -1981,7 +2635,7 @@
     {
       "QuestId": "61958c366726521dd96828ec",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cd548fd1cb6b6390ae5c5",
@@ -1993,7 +2647,7 @@
     {
       "QuestId": "60e71b62a0beca400d69efc4",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a331a17e38c9986c69e4674",
@@ -2003,9 +2657,15 @@
       ]
     },
     {
+      "QuestId": "669fa395c4c5c04798002497",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "60e71c11d54b755a3b53eb65",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5abd447c0cd5dbc9fcd692",
@@ -2015,15 +2675,39 @@
       ]
     },
     {
+      "QuestId": "597a160786f77477531d39d2",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5ede55112c95834b583f052a",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d4bec3486f7743cac246665",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "60896888e4a85c72ef3fa300",
       "Action": "use captured trader assignment",
       "PreviousTrader": "5935c25fb3acc3127c3d8cd9",
       "TraderId": "58330581ace78e27b8b10cee"
     },
     {
+      "QuestId": "60896888e4a85c72ef3fa300",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "59ca1a6286f774509a270942",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a330c986377a9ab6d16e3f9",
@@ -2041,7 +2725,7 @@
     {
       "QuestId": "5c0d0f1886f77457b8210226",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5aba5abbb53b1da38bdaec",
@@ -2051,9 +2735,15 @@
       ]
     },
     {
+      "QuestId": "6086c852c945025d41566124",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
       "QuestId": "5a27c99a86f7747d2c6bdd8e",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a975c62deebb4829b2bdc",
@@ -2063,9 +2753,15 @@
       ]
     },
     {
+      "QuestId": "66d9cbb67b491f9d5304f6e6",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "6179aff8f57fb279792c60a1",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cd47d3f8c836446bcb635",
@@ -2075,9 +2771,21 @@
       ]
     },
     {
+      "QuestId": "5edac020218d181e29451446",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a68661a86f774500f48afb0",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "60e71c48c1bfa3050473b8e5",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a56928eb6f60e911714b7d5",
@@ -2087,9 +2795,15 @@
       ]
     },
     {
+      "QuestId": "6663149cfd5ca9577902e037",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "626bd75b05f287031503c7f6",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a579d91f292d23d06efc168",
@@ -2099,9 +2813,21 @@
       ]
     },
     {
+      "QuestId": "666314a31cd52e3d040a2e76",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "66151401efb0539ae10875ae",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "6179ad56c760af5ad2053587",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a568fbb6325469a81a27d4f",
@@ -2111,9 +2837,21 @@
       ]
     },
     {
+      "QuestId": "5edab736cc183c769d778bc2",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6663149f1d3ec95634095e75",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "596a218586f77420d232807c",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a568d87630f63e248d59349",
@@ -2123,9 +2861,15 @@
       ]
     },
     {
+      "QuestId": "666314a1920800278d0f6746",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5edac63b930f5454f51e128b",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cd81b244fdfe0b0eca7db",
@@ -2133,6 +2877,108 @@
           "Reason": "unsupported live condition"
         }
       ]
+    },
+    {
+      "QuestId": "673f4e956f1b89c7bc0f56ef",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "66631489acf8442f8b05319f",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6752f6d83038f7df520c83e8",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "673f348dd3346c21670217e7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6745fae369a58fceba10343d",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6745fcded0fbbc74ca0f721d",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6663148ca9290f9e0806cca1",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "673f2cd5d3346c2167020484",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "673f629c5b555b53460cf827",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6740a02a69a58fceba0ff399",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5e4d515e86f77438b2195244",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67a096577e86e067eb045733",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67a0970744893b9f3f0d9b68",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "674600a366e6a521aa05eb66",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67a0970f05d1611ed90be75d",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67a09724972c11a3f5077324",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67a096ed77dd677f600804ba",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
     },
     {
       "QuestId": "67a09636b8725511260bc421",
@@ -2145,6 +2991,84 @@
           "Reason": "unsupported live condition"
         }
       ]
+    },
+    {
+      "QuestId": "67a0967c003a9986cb0f5ac1",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5e383a6386f77465910ce1f3",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67a0964e972c11a3f507731b",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5bc47dbf86f7741ee74e93b9",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5ac242ab86f77412464f68b4",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67d03be712fb5f8fd2096332",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "64f83bb69878a0569d6ecfbe",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5b477f7686f7744d1b23c4d2",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67a097379f2068e74603c6ac",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "684009026ceedc792c09b2a7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "666314b4d7f171c4c20226c3",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5b47825886f77468074618d3",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "639872fe8871e1272b10ccf6",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
     },
     {
       "QuestId": "5979f9ba86f7740f6c3fe9f2",
@@ -2171,9 +3095,117 @@
       ]
     },
     {
+      "QuestId": "676529af9c90953d090882e7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "625d700cc48e6c62a440fab5",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6672d9def1c88688a707d042",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "597a0e5786f77426d66c0636",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "597a0f5686f774273b74f676",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5b47749f86f7746c5d6a5fd4",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "67a0972e77dd677f600804bd",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "63987301e11ec11ff5504036",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "625d6ffcaa168e51321d69d7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "625d7005a4eb80027c4f2e09",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "666314b0acf8442f8b0531a1",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "625d6ffaf7308432be1d44c5",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "669fa399033a3ce9870338a8",
+      "Tier": 2,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5ac244c486f77413e12cf945",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6574e0dedc0d635f633a5805",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "64f83bd983cfca080a362c82",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "64f83bcdde58fc437700d8fa",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "639873003693c63d86328f25",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "64f5deac39e45b527a7c4232",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5527a09ee0da33ac34ceca",
@@ -2183,9 +3215,117 @@
       ]
     },
     {
+      "QuestId": "5bc4836986f7740c0152911c",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "597a0b2986f77426d66c0633",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "625d6ff5ddc94657c21a1625",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "625d70031ed3bb5bcc5bd9e5",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5b477b6f86f7747290681823",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "625d6fff4149f1149b5b12c9",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "625d7001c4874104f230c0c5",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "669fa3910c828825de06d69f",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a27bc8586f7741b543d8ea4",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68341846186efa3c5b07f989",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5c51aac186f77432ea65c552",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "683425dd8f5b18d29a05d9d1",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25cf2686f77443e75488d4",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25e2d886f77442734d335e",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a0327ba86f77456b9154236",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68341b407559f4e6d50bc0ce",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "63a9b229813bba58a50c9ee5",
+      "Tier": 4,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6834202a186efa3c5b07f9a2",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5d25e44f86f77443e625e385",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a452e54e82f2dd5fb1c27a9",
@@ -2193,6 +3333,30 @@
           "Reason": "unsupported live condition"
         }
       ]
+    },
+    {
+      "QuestId": "6834145ebc1f443d7603c8a7",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a27bbf886f774333a418eeb",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a27bc6986f7741c7358402b",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6834158f2f0e2a7eb90b62c8",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
     },
     {
       "QuestId": "68341eb25619c8e2a9031501",
@@ -2209,7 +3373,7 @@
     {
       "QuestId": "5a27b7d686f77460d847e6a6",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cceadbb8e3df6203c40c6",
@@ -2219,9 +3383,21 @@
       ]
     },
     {
+      "QuestId": "5a27bb8386f7741c770d2d0a",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68341f6fe2e7ef70a3060a0a",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "639135c3744e452011470807",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a95aa033186f393cb1ce9",
@@ -2231,9 +3407,27 @@
       ]
     },
     {
+      "QuestId": "5d25e29d86f7740a22516326",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "683421515619c8e2a9031511",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5d25c81b86f77443e625dd71",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "5c0bd01e86f7747cdd799e56",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5cdadc542c14bbc62ea9c3",
@@ -2241,6 +3435,12 @@
           "Reason": "unsupported live condition"
         }
       ]
+    },
+    {
+      "QuestId": "68341d7d7559f4e6d50bc0db",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
     },
     {
       "QuestId": "5979f8bb86f7743ec214c7a6",
@@ -2251,7 +3451,7 @@
     {
       "QuestId": "5979f8bb86f7743ec214c7a6",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a9010cb4d9fd9229667d7",
@@ -2269,7 +3469,7 @@
     {
       "QuestId": "5b4794cb86f774598100d5d4",
       "Tier": 1,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5c13a7b3f0cbbfd739a762",
@@ -2281,7 +3481,7 @@
     {
       "QuestId": "60e71ce009d7c801eb0c0ec6",
       "Tier": 4,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a62912d9709ae6226d37e53",
@@ -2291,9 +3491,21 @@
       ]
     },
     {
+      "QuestId": "5edac34d0bb72a50635c2bfa",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68341c4babec72d95d0c1260",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "596b455186f77457cb50eccb",
       "Tier": 2,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5a94c4c4de657ffc7a5f83",
@@ -2303,9 +3515,39 @@
       ]
     },
     {
+      "QuestId": "60e71dc67fcf9c556f325056",
+      "Tier": 3,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a27bc1586f7741f6d40fa2f",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68342265a8d674b5740b31f0",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "6834254f2f0e2a7eb90b62ef",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68341a0b2f0e2a7eb90b62d4",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
       "QuestId": "6193850f60b34236ee0483de",
       "Tier": 3,
-      "Action": "use loyalty tier for unsupported gates",
+      "Action": "retain beta start requirements and add loyalty tier",
       "Conditions": [
         {
           "Condition": "6a5ab93a6c796f99243131ed",
@@ -2331,6 +3573,36 @@
           "Reason": "missing prerequisite"
         }
       ]
+    },
+    {
+      "QuestId": "5bc480a686f7741af0342e29",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5a27bc3686f7741c73584026",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "68342446a8d674b5740b31fc",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "5bc479e586f7747f376c7da3",
+      "Tier": 0,
+      "Action": "retain beta start requirements",
+      "Conditions": []
+    },
+    {
+      "QuestId": "657315df034d76585f032e01",
+      "Tier": 1,
+      "Action": "retain beta start requirements and add loyalty tier",
+      "Conditions": []
     }
   ],
   "Counts": {

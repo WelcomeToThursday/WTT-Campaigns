@@ -28,6 +28,7 @@
   <Target Name="Validate" DependsOnTargets="Build">
     <Error Condition="!Exists('$(_NativeAssembly)')" Text="Missing game reference: $(_NativeAssembly)" />
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; &quot;$(_NativeAssembly)&quot;" />
+    <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --progression-data &quot;$(ServerDir)SPT_Data\database&quot;" />
     <ItemGroup>
       <_ClientAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Client.dll'" />
       <_ServerAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Server.dll'" />
@@ -49,6 +50,23 @@
   </Target>
   <Target Name="Install" DependsOnTargets="Validate;DeployCampaignsFiles" />
   <Target Name="Package" DependsOnTargets="Validate;StagePackage;DeployCampaignsFiles" />
+  <Target Name="PackageDllHotfix" DependsOnTargets="Validate;StageDllHotfix;DeployCampaignsFiles" />
+  <Target Name="StageDllHotfix">
+    <Error Condition="'$(PackageDir)' == ''" Text="PackageDir is required for a DLL hotfix." />
+    <ItemGroup>
+      <_HotfixDll Include="@(CampaignsDeployFile)" Condition="'%(Extension)' == '.dll' and $([System.String]::Copy('%(Filename)').StartsWith('WTT-Campaigns.'))">
+        <PackagePath>$([System.String]::Copy('%(InstallPath)').Replace('client\', 'BepInEx\plugins\WTT-Campaigns\').Replace('server\', 'SPT_Runtime\user\mods\WTT-Campaigns\'))</PackagePath>
+      </_HotfixDll>
+      <CampaignsDeployFile Remove="@(CampaignsDeployFile)" />
+      <CampaignsDeployFile Include="@(_HotfixDll)" />
+    </ItemGroup>
+    <GetFileHash Files="@(_HotfixDll)">
+      <Output TaskParameter="Items" ItemName="_HashedHotfixDll" />
+    </GetFileHash>
+    <Copy SourceFiles="@(_HashedHotfixDll)" DestinationFiles="@(_HashedHotfixDll->'$(PackageDir)\%(PackagePath)')" />
+    <VerifyFileHash File="$(PackageDir)\%(_HashedHotfixDll.PackagePath)" Hash="%(_HashedHotfixDll.FileHash)" />
+    <Message Importance="high" Text="Staged and SHA-256 verified @(_HashedHotfixDll->Count()) project DLLs in $(PackageDir)." />
+  </Target>
   <Target Name="StagePackage" DependsOnTargets="PrepareCampaignsFiles">
     <Error Condition="'$(PackageDir)' == ''" Text="PackageDir is required. Use tools/package.ps1 to choose a timestamped release directory." />
     <Copy SourceFiles="@(_PlannedFiles)" DestinationFiles="@(_PlannedFiles->'$(PackageDir)\%(PackagePath)')" />

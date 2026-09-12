@@ -4,6 +4,8 @@ WTT-Campaigns 0.6.0 is the mod's **first public beta release**. This release int
 
 ## Hotfixes
 
+- Fix tiered tasks becoming available solely from trader loyalty and Essential Tasks losing native prerequisites. All supported tasks retain SPT's quest prerequisites, player-level requirements and unlock delays, including for fresh EoD characters. The Punisher – Part 3 now requires level 19 and completion of Part 2. Already accepted and completed tasks retain their progress.
+- The quest prerequisite fix is also applied by the server assembly when using older progression data, allowing a DLL-only hotfix.
 - Fix raid setup crashes caused by missing bot-role difficulty settings.
 - Clear the affected character's pending raid state when raid loading fails or is cancelled, allowing another attempt.
 
@@ -44,6 +46,7 @@ Reports about character creation and switching, saving after raids, perk behavio
 
 ## Known Issues
 
+- With native task chains restored, the current loyalty thresholds require additional reputation sources for Therapist, Peacekeeper and Ragman; one-time tasks alone do not cover their progression.
 - Fika is not supported.
 - The built-in campaign does not include Kord Breach quests.
 - Some artwork and presentation are placeholders.

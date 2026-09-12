@@ -4,14 +4,14 @@
   "CapturedTasks": 645,
   "AppliedTasks": 381,
   "SkippedLiveTasks": 264,
-  "OptimisticallyReachableTasks": 521,
+  "OptimisticallyReachableTasks": 381,
   "Traders": [
     {
       "Id": "54cb50c76803fa8b248b4571",
       "Name": "Prapor",
       "HighestLoyalty": 4,
       "MaximumLoyalty": 4,
-      "OptimisticStanding": 22.13,
+      "OptimisticStanding": 22.11,
       "MaximumRequired": 7.9,
       "MissingLiveSuccessReputation": 1.5,
       "Shortfall": 0
@@ -19,12 +19,12 @@
     {
       "Id": "54cb57776803fa99248b456e",
       "Name": "Therapist",
-      "HighestLoyalty": 4,
+      "HighestLoyalty": 2,
       "MaximumLoyalty": 4,
-      "OptimisticStanding": 14.2,
+      "OptimisticStanding": 1.91,
       "MaximumRequired": 5.8,
       "MissingLiveSuccessReputation": 0.1,
-      "Shortfall": 0
+      "Shortfall": 3.89
     },
     {
       "Id": "579dc571d53a0658a154fbec",
@@ -41,7 +41,7 @@
       "Name": "Skier",
       "HighestLoyalty": 4,
       "MaximumLoyalty": 4,
-      "OptimisticStanding": 15.4,
+      "OptimisticStanding": 13.83,
       "MaximumRequired": 5.8,
       "MissingLiveSuccessReputation": 0,
       "Shortfall": 0
@@ -49,19 +49,19 @@
     {
       "Id": "5935c25fb3acc3127c3d8cd9",
       "Name": "Peacekeeper",
-      "HighestLoyalty": 4,
+      "HighestLoyalty": 1,
       "MaximumLoyalty": 4,
-      "OptimisticStanding": 22.49,
+      "OptimisticStanding": 0.25,
       "MaximumRequired": 6.0,
       "MissingLiveSuccessReputation": 1.1,
-      "Shortfall": 0
+      "Shortfall": 5.75
     },
     {
       "Id": "5a7c2eca46aef81a7ca2145d",
       "Name": "Mechanic",
       "HighestLoyalty": 4,
       "MaximumLoyalty": 4,
-      "OptimisticStanding": 21.0,
+      "OptimisticStanding": 17.65,
       "MaximumRequired": 7.6,
       "MissingLiveSuccessReputation": 3.0,
       "Shortfall": 0
@@ -69,19 +69,19 @@
     {
       "Id": "5ac3b934156ae10c4430e83c",
       "Name": "Ragman",
-      "HighestLoyalty": 4,
+      "HighestLoyalty": 1,
       "MaximumLoyalty": 4,
-      "OptimisticStanding": 10.41,
+      "OptimisticStanding": 0.27,
       "MaximumRequired": 6.5,
       "MissingLiveSuccessReputation": 0,
-      "Shortfall": 0
+      "Shortfall": 6.23
     },
     {
       "Id": "5c0647fdd443bc2504c2d371",
       "Name": "Jaeger",
       "HighestLoyalty": 4,
       "MaximumLoyalty": 4,
-      "OptimisticStanding": 20.5,
+      "OptimisticStanding": 13.45,
       "MaximumRequired": 7.3,
       "MissingLiveSuccessReputation": 2.25,
       "Shortfall": 0

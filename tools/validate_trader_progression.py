@@ -21,6 +21,14 @@ def main():
         q['traderId'] = spec['TraderId']
         if not spec['UseBetaStart']:
             q['conditions']['AvailableForStart'] = spec['Start']
+        if spec['Tier']:
+            # Every native condition must survive unchanged, including branch
+            # statuses, time delays and fields the importer does not interpret.
+            native = beta[qid]['conditions']['AvailableForStart']
+            assert spec['Start'][:len(native)] == native, qid + ' lost native start requirements'
+        else:
+            assert spec['UseBetaStart'] and not spec['Start'], qid + ' must use native essential requirements'
+            assert q['conditions']['AvailableForStart'] == beta[qid]['conditions']['AvailableForStart']
         for stage in q['rewards'].keys() | spec['Reputation'].keys():
             q['rewards'][stage] = [r for r in q['rewards'].get(stage, []) if r['type'] != 'TraderStanding'] + spec['Reputation'].get(stage, [])
         assert q['conditions']['AvailableForFinish'] == beta[qid]['conditions']['AvailableForFinish']
@@ -37,11 +45,11 @@ def main():
     done = set()
     def loyalty(tid):
         return max([1] + [i+1 for i,t in enumerate(expected['Traders'].get(tid, [])) if standing.get(tid, 0) + 1e-8 >= t['Standing']])
-    def satisfied(c):
+    def satisfied(c, level=79):
         target = c.get('target', [])
         targets = target if isinstance(target, list) else [target]
         kind = c['conditionType']
-        if kind == 'Level': return c.get('compareMethod') in ('>=', '>') and c.get('value', 0) <= 79
+        if kind == 'Level': return c.get('compareMethod') in ('>=', '>') and c.get('value', 0) <= level
         if kind == 'Quest': return any(t in done for t in targets)
         if kind in ('TraderStanding', 'TraderLoyalty'):
             value = standing.get(targets[0], 0) if kind == 'TraderStanding' else loyalty(targets[0])
@@ -49,6 +57,26 @@ def main():
                     '<': value < c.get('value', 0), '<=': value <= c.get('value', 0),
                     '=': abs(value-c.get('value', 0)) < 1e-8}.get(c.get('compareMethod'), False)
         return False
+
+    # Fresh Standard and EoD-like standings must not bypass the native chain.
+    # This only evaluates in-memory database copies; no character is created.
+    for initial in (0.0, 0.2):
+        standing = {tid: initial for tid in expected['Traders']}
+        fresh = {qid for qid, q in overlaid.items()
+                 if all(satisfied(c, level=1) for c in q['conditions']['AvailableForStart'])}
+        assert '657315df034d76585f032e01' in fresh, 'Shooting Cans must remain a starter'
+        assert fresh.isdisjoint({'5936d90786f7742b1420ba5b', '5936da9e86f7742d65037edf',
+                                 '59674cd986f7744ab26e32f2', '5fd9fad9c1ce6b1a3b486d00',
+                                 '59c512ad86f7741f0d09de9b'}), 'Fresh PMC bypassed a quest chain'
+        done.add('657315df034d76585f032e01')
+        assert all(satisfied(c, level=1) for c in overlaid['5936d90786f7742b1420ba5b']['conditions']['AvailableForStart']), 'Debut must unlock after Shooting Cans'
+        done.add('5936d90786f7742b1420ba5b')
+        search = overlaid['5fd9fad9c1ce6b1a3b486d00']['conditions']['AvailableForStart']
+        assert not all(satisfied(c, level=4) for c in search), 'Search Mission must retain its level gate'
+        assert all(satisfied(c, level=5) for c in search), 'Search Mission must unlock at level 5 after Debut'
+        done.clear()
+    standing = {tid: 0.0 for tid in expected['Traders']}
+
     while True:
         unlocked = [i for i,q in overlaid.items() if i not in done and all(satisfied(c) for c in q['conditions']['AvailableForStart'])]
         if not unlocked: break

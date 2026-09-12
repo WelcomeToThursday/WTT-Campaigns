@@ -9,6 +9,12 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 2 && args[0] == "--progression-data")
+{
+    WTT.Campaigns.Tests.ProgressionChecks.Database(args[1]);
+    return;
+}
+
 if (args.Length == 3 && args[0] == "--mod-identity")
 {
     WTT.Campaigns.Tests.ModIdentityChecks.Run(args[1], args[2]);
@@ -81,6 +87,7 @@ WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
 WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.EditorLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.ProgressionChecks.Run(Check);
+WTT.Campaigns.Tests.TieredQuestRequirementChecks.Run(Check);
 if (args.Length > 0 && File.Exists(args[0]))
 {
     WTT.Campaigns.Tests.ProgressionChecks.Hooks(args[0], Check);

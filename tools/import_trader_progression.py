@@ -7,8 +7,6 @@ from pathlib import Path
 
 PROJECT = Path(__file__).resolve().parents[1]
 SUPPORTED = {'Quest', 'Level', 'TraderLoyalty', 'TraderStanding'}
-CONDITION_FIELDS = {'id', 'index', 'conditionType', 'target', 'value', 'compareMethod',
-                    'status', 'availableAfter', 'dispersion'}
 
 
 def read(path):
@@ -45,7 +43,7 @@ def compile_data(captured, traders, beta, beta_traders):
                 PreviousTrader=beta[qid]['traderId'], TraderId=tid))
         if tier not in range(5):
             continue
-        start, reasons = [], []
+        reasons = []
         for condition in quest['conditions']['AvailableForStart']:
             kind = condition['conditionType']
             target = condition.get('target', [])
@@ -54,11 +52,10 @@ def compile_data(captured, traders, beta, beta_traders):
             if kind not in SUPPORTED or missing:
                 reasons.append({'Condition': condition['id'], 'Type': kind,
                                 'Reason': 'missing prerequisite' if missing else 'unsupported live condition'})
-                continue
-            normalized = {k: copy.deepcopy(v) for k, v in condition.items() if k in CONDITION_FIELDS}
-            normalized.update(dynamicLocale=False, visibilityConditions=[], parentId='', globalQuestCounterId='')
-            start.append(normalized)
-        use_beta = tier == 0 and bool(reasons)
+        # All tasks, including Essentials with empty or supported captures, keep
+        # their native chain, level gates, branch statuses and unlock delays.
+        use_beta = tier == 0
+        start = copy.deepcopy(beta[qid]['conditions']['AvailableForStart'])
         if tier and not any(c['conditionType'] == 'TraderLoyalty' and c.get('target') == tid
                             and c.get('compareMethod') == '>=' and c.get('value', 0) >= tier for c in start):
             # A display tier is also the minimum unlock tier in this compatibility backport.
@@ -72,10 +69,9 @@ def compile_data(captured, traders, beta, beta_traders):
                               for r in entries if r['type'] == 'TraderStanding' and r['target'] in beta_traders]
         output['Quests'][qid] = dict(TraderId=tid, Tier=tier, UseBetaStart=use_beta,
                                      Start=[] if use_beta else start, Reputation=rewards)
-        if reasons:
-            audit['Adaptations'].append(dict(QuestId=qid, Tier=tier,
-                Action='retain beta start requirements' if use_beta else 'use loyalty tier for unsupported gates',
-                Conditions=reasons))
+        audit['Adaptations'].append(dict(QuestId=qid, Tier=tier,
+            Action='retain beta start requirements and add loyalty tier' if tier else 'retain beta start requirements',
+            Conditions=reasons))
     audit['Counts'] = dict(Captured=len(captured), Beta=len(beta), Applied=len(output['Quests']),
                            Tiered=sum(q['Tier'] > 0 for q in output['Quests'].values()))
     return output, audit

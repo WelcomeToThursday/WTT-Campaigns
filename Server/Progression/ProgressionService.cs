@@ -67,12 +67,7 @@ public sealed class ProgressionService(TemplateTable templates, TradersTable tra
                 _hidden.Add(id);
             }
             quest.TraderId = new MongoId(spec.TraderId);
-            if (!spec.UseBetaStart)
-            {
-                quest.Conditions.AvailableForStart = json.Deserialize<List<QuestCondition>>(
-                    Newtonsoft.Json.JsonConvert.SerializeObject(spec.Start)
-                )!;
-            }
+            QuestStartRequirements.Apply(quest, spec);
             foreach (var condition in quest.Conditions.AvailableForStart ?? [])
             {
                 if (condition.ConditionType == "TraderStanding")
@@ -126,49 +121,7 @@ public sealed class ProgressionService(TemplateTable templates, TradersTable tra
 
     public bool CanStart(Quest quest, PmcData profile, long now)
     {
-        return quest.Conditions.AvailableForStart?.All(c => Satisfied(c, profile, now)) == true;
-    }
-
-    private static IEnumerable<string> Targets(QuestCondition c)
-    {
-        return c.Target?.IsList == true ? c.Target.List ?? []
-            : c.Target?.Item is string id ? [id]
-            : [];
-    }
-
-    private static bool Satisfied(QuestCondition c, PmcData profile, long now)
-    {
-        if (c.ConditionType == "Level")
-        {
-            return TraderProgression.Compare(profile.Info?.Level ?? 1, c.Value ?? 0, c.CompareMethod);
-        }
-        if (c.ConditionType is "TraderLoyalty" or "TraderStanding")
-        {
-            return Targets(c)
-                .Any(id =>
-                    profile.TradersInfo?.TryGetValue(new MongoId(id), out var t) == true
-                    && TraderProgression.Compare(
-                        c.ConditionType == "TraderLoyalty" ? t.LoyaltyLevel ?? 1 : t.Standing ?? 0,
-                        c.Value ?? 0,
-                        c.CompareMethod
-                    )
-                );
-        }
-        if (c.ConditionType == "Quest")
-        {
-            return Targets(c)
-                .Any(id =>
-                    profile.Quests?.Any(q =>
-                        q.QId == id
-                        && c.Status?.Contains(q.Status) == true
-                        && (
-                            c.AvailableAfter.GetValueOrDefault() <= 0
-                            || q.StatusTimers != null && q.StatusTimers.TryGetValue(q.Status, out var at) && at + c.AvailableAfter <= now
-                        )
-                    ) == true
-                );
-        }
-        return false;
+        return QuestStartRequirements.CanStart(quest, profile, now);
     }
 
     public List<Quest> WithPreviews(
