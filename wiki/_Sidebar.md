@@ -21,6 +21,7 @@
 - [Campaign Creator](season-creator.md)
 - [Tutorials](creator-tutorials.md)
 - [Story authoring](story-authoring.md)
+- [Custom story media](story-media-bundles.md)
 - [Raid authoring](raid-authoring.md)
 - [Story Sandbox](story-sandbox.md)
 

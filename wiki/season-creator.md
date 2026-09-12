@@ -56,7 +56,7 @@ Multiple characters can share a campaign, and all compatible published campaigns
 
 ## Story extension
 
-Format-1 Story definitions survive draft, pack import/export and duplication. The graphical editor includes chapters, quest membership, notes, conversations, variables, entry points, raid bindings and media references, plus an isolated story rehearsal. Start **Your first story quest** from Help and tutorials for a complete example. The [story composition tool and example overlay](story-authoring.md) remain available for external authoring. Unity media is installed separately from the Creator ZIP and verified against authored SHA-256 hashes. [Story capabilities and limits](story-system.md) apply.
+Format-1 Story definitions survive draft, pack import/export and duplication. The graphical editor includes chapters, quest membership, notes, conversations, variables, entry points, raid bindings and media references, plus an isolated story rehearsal. Start **Your first story quest** from Help and tutorials for a complete example. The [story composition tool and example overlay](story-authoring.md) remain available for external authoring. Unity media is installed separately from the Creator ZIP and verified against authored SHA-256 hashes; see [custom story media bundles](story-media-bundles.md) for custom-trader rooms and the other bundled media types. [Story capabilities and limits](story-system.md) apply.
 
 
 ### Connected quest workflow and reference names

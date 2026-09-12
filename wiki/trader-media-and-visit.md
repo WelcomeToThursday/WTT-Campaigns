@@ -24,6 +24,8 @@ Peacekeeper uses a custom logistics office and an approximate character model. R
 
 If a room cannot load, check the client log for a missing media file or checksum mismatch and reinstall the matching release files. A custom campaign can supply its own room; obtain that campaign's separate media package as well.
 
+Campaign authors can also add Visit to an installed custom trader by assigning a custom `TraderScene` to that trader's ID. See [custom story media bundles](story-media-bundles.md) for the room prefab contract and complete setup.
+
 ---
 
 [Documentation home](Home.md) · [Guide navigation](_Sidebar.md)

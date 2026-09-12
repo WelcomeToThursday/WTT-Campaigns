@@ -37,6 +37,8 @@ Use the Creator's reference pickers and Validate action to check supported field
 
 ## Media and animation
 
+See [custom story media bundles](story-media-bundles.md) for the complete Unity build, custom-trader Visit, installation, checksum, distribution and troubleshooting workflow.
+
 Place reviewed bundles under `BepInEx/plugins/WTT-Campaigns/StoryMedia/`. Use a unique path such as `packs/<season-id>/visit-media.bundle` for each authored media set. Register each asset in `Story.Media`:
 
 ```json
@@ -49,7 +51,7 @@ Place reviewed bundles under `BepInEx/plugins/WTT-Campaigns/StoryMedia/`. Use a 
 }
 ```
 
-Kinds are Image, Audio, Video, Cinematic and TraderScene. Assign optional TraderId on a TraderScene reference to override that trader's built-in room. Only one assigned room per trader is allowed in a season. Its prefab root must be inactive and contain exactly one camera named StoryCamera. Dialogue native animation/lip-sync cues also require a compatible SequenceReader with the authored keys. Rooms reuse camera isolation, UI audio routing and cleanup. An unassigned legacy TraderScene stays in the pack with an editor warning and is not selected for a visit. Hashes are checked before load, and conflicting hashes for a shared path are rejected. Media paths cannot escape StoryMedia. Bundles are locally installed trusted assets; the runtime does not download or execute arbitrary code from a Creator ZIP. Rebuilding a bundle requires updating its hash and publishing a compatible pack revision/new season.
+Kinds are Image, Audio, Video, Cinematic and TraderScene. Assign TraderId on a TraderScene reference to add Visit support to a custom trader or override a built-in trader's room. Only one assigned room per trader is allowed in a season. Its prefab root must be inactive and contain exactly one camera named StoryCamera. Dialogue native animation/lip-sync cues also require a compatible SequenceReader with the authored keys. Rooms reuse camera isolation, UI audio routing and cleanup. An unassigned legacy TraderScene stays in the pack with an editor warning and is not selected for a visit. Hashes are checked before load, and conflicting hashes for a shared path are rejected. Media paths cannot escape StoryMedia. Bundles are locally installed trusted assets; the runtime does not download or execute arbitrary code from a Creator ZIP. Rebuilding a bundle requires updating its hash and publishing a compatible pack revision/new season.
 
 `Playback.Image`, `Music` and `Sound` reference registered media IDs. Music loops for the line, Sound plays once, and timed subtitles display their localized Key between Start and End. Audio uses the UI mixer. Native animation/secondary/lip-sync sequences use exact dictionary keys from the corresponding room; each has Start, End, Speed and Volume. Do not reuse numeric live enum ordinals or assume all traders share keys. Peacekeeper has body gestures but no recovered lip-sync dictionary.
 
