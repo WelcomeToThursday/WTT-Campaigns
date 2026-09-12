@@ -9,6 +9,25 @@ public sealed partial class SeasonUi
 {
     private CampaignLoadingScreen? _switchLoader;
     private CancellationTokenSource? _switchLoadingCancellation;
+    private bool _restoreReconnectScreen;
+    private bool _restoreReconnectCreationLoader;
+
+    internal void SetReconnectOverlayVisible(bool visible)
+    {
+        if (!visible)
+        {
+            _restoreReconnectScreen = IsOpen;
+            _restoreReconnectCreationLoader = _creationLoader && _creationLoader!.activeSelf;
+            HideSwitchLoader();
+            _screen?.Root.SetActive(false);
+            SetCreationLoader(false);
+        }
+        else if (!_destroyed)
+        {
+            _screen?.Root.SetActive(_restoreReconnectScreen);
+            SetCreationLoader(_restoreReconnectCreationLoader);
+        }
+    }
 
     private async UniTask ShowSwitchLoader(CharacterSummary<CharacterVisual> character)
     {

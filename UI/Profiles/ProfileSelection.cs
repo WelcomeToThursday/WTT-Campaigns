@@ -54,7 +54,7 @@ public sealed class ProfileSelection
         var carousel = viewport.gameObject.AddComponent<ProfileCarousel>();
         carousel.CanNavigate = canNavigate;
         var characters = state
-            .Characters.Where(c => c.Exists || c.Wiped)
+            .Characters.Where(c => c.Mode == "normal" || c.Exists || c.Wiped)
             .Concat(new[] { new CharacterEntry { Mode = "seasonal" } })
             .ToArray();
         foreach (var character in characters)
@@ -123,7 +123,12 @@ public sealed class ProfileSelection
     {
         var mode = character.Mode;
         var seasonal = mode == "seasonal";
-        var rect = UiElements.Rect((character.Exists || character.Wiped ? character.Id : "new-seasonal") + "-profile", parent, 390, 800);
+        var rect = UiElements.Rect(
+            (!seasonal || character.Exists || character.Wiped ? character.Id : "new-seasonal") + "-profile",
+            parent,
+            390,
+            800
+        );
         UiElements.Fill(rect, Color.clear, true);
         var hover = rect.gameObject.AddComponent<ProfileCardHover>();
         hover.Seasonal = seasonal;
@@ -280,7 +285,7 @@ public sealed class ProfileSelection
             -356,
             () =>
             {
-                if (character.Exists)
+                if (!seasonal || character.Exists)
                 {
                     select(character.Id.Length > 0 ? character.Id : mode);
                 }

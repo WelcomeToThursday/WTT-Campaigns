@@ -140,7 +140,11 @@ public sealed class Plugin : BaseUnityPlugin
             LogInfo("WTT-Campaigns switch/save: reconnecting to " + snapshot.ActiveMode + ".");
             // EFT deliberately starts old-session shutdown without awaiting the websocket close.
             // The CreateBackend patch applies the target identity at the new connection boundary.
-            await app.RecreateBackend(mode, force: true);
+            await ProfileReconnect.Run(
+                snapshot,
+                SeasonUi.Instance.SetReconnectOverlayVisible,
+                () => app.RecreateBackend(mode, force: true)
+            );
             if (!CharacterSession.IsLoaded(snapshot, snapshot.ActiveMode, app.Session?.Profile?.Id))
             {
                 throw new InvalidOperationException("The requested character did not finish loading. Select it again to retry.");

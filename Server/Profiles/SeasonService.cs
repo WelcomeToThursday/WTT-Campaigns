@@ -258,7 +258,8 @@ public sealed class SeasonService(
         };
         void Add(string id, string mode, string season, bool created)
         {
-            var pmc = created && saves.ProfileExists(new MongoId(id)) ? saves.GetProfile(new MongoId(id)).CharacterData?.PmcData : null;
+            var profile = created && saves.ProfileExists(new MongoId(id)) ? saves.GetProfile(new MongoId(id)) : null;
+            var pmc = ProfileReadiness.PlayablePmc(profile);
             var entry = link.Characters.FirstOrDefault(c => c.ProfileId == id);
             var name = repository.Playable.TryGetValue(season, out var pack) ? pack.Definition.Name : season;
             snapshot.Characters.Add(
@@ -270,7 +271,7 @@ public sealed class SeasonService(
                     SeasonName = name,
                     CreationOperationId = link.Characters.FirstOrDefault(c => c.ProfileId == id)?.CreationOperationId ?? "",
                     Available = mode == "normal" || repository.Playable.ContainsKey(season),
-                    Name = pmc?.Info?.Nickname ?? entry?.Name ?? "Wiped character",
+                    Name = pmc?.Info?.Nickname ?? entry?.Name ?? (mode == "normal" ? "Main character" : "Wiped character"),
                     Wiped = entry?.Wiped == true,
                     Level = pmc?.Info?.Level ?? 1,
                     StoryChapters = StoryChapters(pmc, pack?.Definition.Story),

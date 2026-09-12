@@ -25,6 +25,8 @@ After wiping, choose faction, appearance and perks again. If you cancel recreati
 
 If the affected character is active, the game returns to your regular character before completing the action. Other characters are unaffected. Your regular account cannot be deleted through this screen.
 
+Wiping your main profile in the SPT launcher leaves campaign characters and their progression intact. The regular card remains available with **CREATE** so you can recreate your main character. If you delete or wipe the active campaign character while the main profile is empty, complete the native main-character setup that appears; the confirmed campaign action then resumes.
+
 ## Play several campaigns
 
 Compatible published campaigns load when the server starts. You can switch between their characters during the same server session. New or updated packs need a server restart before their content becomes available.

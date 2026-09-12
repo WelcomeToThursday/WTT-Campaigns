@@ -114,6 +114,22 @@ internal static class UiCompatibilityChecks
                 return machine.Resolve().Methods.Single(m => m.Name == "MoveNext");
             }
             var visitOpen = AsyncBody("WTT.Campaigns.Client.Story.StoryVisitRuntime", "Open").Body.Instructions;
+            var campaignReconnect = AsyncBody("WTT.Campaigns.Client.Plugin", "Reload").Body.Instructions;
+            Check(
+                campaignReconnect.Any(i => i.Operand is MethodReference m && m.DeclaringType.Name == "ProfileReconnect" && m.Name == "Run"),
+                "Every campaign backend reconnect uses the native profile-creation handoff"
+            );
+            var creationOverlay = client
+                .MainModule.GetType("WTT.Campaigns.Client.UI.SeasonUi")
+                .Methods.Single(m => m.Name == "SetReconnectOverlayVisible")
+                .Body.Instructions;
+            foreach (var required in new[] { "HideSwitchLoader", "SetCreationLoader", "SetActive" })
+            {
+                Check(
+                    creationOverlay.Any(i => i.Operand is MethodReference m && m.Name == required),
+                    "Native profile creation releases campaign overlay: " + required
+                );
+            }
             var profileOpen = AsyncBody("WTT.Campaigns.Client.UI.SeasonUi", "ShowSwitchLoader").Body.Instructions;
             foreach (var body in new[] { visitOpen, profileOpen })
                 Check(

@@ -78,6 +78,7 @@ WTT.Campaigns.Tests.CampaignTextChecks.Run(Check);
 WTT.Campaigns.Tests.RequestIdentityChecks.Run(Check);
 WTT.Campaigns.Tests.RaidStartupChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
+WTT.Campaigns.Tests.ProfileReconnectChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.NativeModelChecks.Run(Check);
 WTT.Campaigns.Tests.SeasonItemBundleChecks.Run(Check);
 WTT.Campaigns.Tests.StoryChecks.Run(Check);
