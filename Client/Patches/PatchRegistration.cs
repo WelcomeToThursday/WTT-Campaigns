@@ -31,6 +31,8 @@ internal static class PatchRegistration
     {
         new BackendIdentity().Enable();
         new SptRequestIdentity().Enable();
+        new AuthoringNotificationSocket().Enable();
+        new AuthoringNotificationReply().Enable();
         new BotDifficultyFallbackPatch().Enable();
         new RaidLoadRecoveryPatch().Enable();
     }

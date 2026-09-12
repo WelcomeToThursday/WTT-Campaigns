@@ -15,6 +15,7 @@
     <Compile Include="..\Server\Seasons\SeasonRepository.cs" Link="Storage\SeasonRepository.cs" />
     <Compile Include="..\Server\Seasons\SeasonItemBundles.cs" Link="Storage\SeasonItemBundles.cs" />
     <Compile Include="..\Client\UI\ImageRequestCache.cs" Link="Client\ImageRequestCache.cs" />
+    <Compile Include="..\Client\Authoring\AuthoringSocket.cs" Link="Client\AuthoringSocket.cs" />
     <Compile Include="..\Client\Profiles\ProfileReconnect.cs" Link="Client\ProfileReconnect.cs" />
     <Compile Include="..\Client\Story\StoryChapterChanges.cs" Link="Client\StoryChapterChanges.cs" />
     <Compile Include="..\Server\Hub\HubService.cs" Link="Hub\HubService.cs" />

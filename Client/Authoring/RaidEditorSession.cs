@@ -1,6 +1,6 @@
+using System.Threading;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SPT.Common.Http;
 using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Seasons;
 using ZLinq;
@@ -36,6 +36,7 @@ internal sealed class RaidEditorSession
         Contacted;
     internal event Action? Changed;
     private AuthoringRequest? _pending;
+    private readonly CancellationTokenSource _socketLifetime = new();
     private readonly Stack<SeasonDefinition> _undo = new(),
         _redo = new();
     private readonly string _recoveryRoot = Path.Combine(BepInEx.Paths.ConfigPath, "WTT-Campaigns", "raid-authoring");
@@ -151,11 +152,9 @@ internal sealed class RaidEditorSession
         };
     }
 
-    private static async Task<AuthoringResponse> Send(string route, AuthoringRequest request)
+    private async Task<AuthoringResponse> Send(string route, AuthoringRequest request)
     {
-        var json = await RequestHandler.PostJsonAsync("/wtt-campaigns/authoring/" + route, JsonConvert.SerializeObject(request));
-        var response =
-            JsonConvert.DeserializeObject<AuthoringResponse>(json) ?? throw new InvalidOperationException("Empty authoring response.");
+        var response = await AuthoringSocket.Shared.Send(route, request, _socketLifetime.Token);
         if (response.Version != 1)
         {
             throw new InvalidOperationException("Update both authoring components together.");
@@ -395,6 +394,10 @@ internal sealed class RaidEditorSession
         catch (Exception e)
         {
             Plugin.LogInfo("Authoring disconnect: " + e.Message);
+        }
+        finally
+        {
+            _socketLifetime.Cancel();
         }
     }
 }

@@ -4,6 +4,7 @@ Beta maintenance release covering changes since [0.6.0](https://github.com/CJ-SP
 
 ## Fixes
 
+- **Reuse SPT's notification WebSocket for the raid editor.** Presence, draft synchronization and capture updates share the client's existing connection. Editor replies are matched to requests and separated from native notifications; SPT controls reconnection. Install matching client and server components together; the former HTTP authoring routes and separate editor socket are removed.
 - **Restore native quest unlock requirements.** Tiered and Essential Tasks retain SPT's prerequisite quests, player-level requirements and unlock delays. Trader loyalty is an additional gate for tiered tasks. Fresh characters can no longer bypass native task chains; for example, The Punisher - Part 3 requires level 19 and completion of Part 2. Accepted and completed tasks retain their progress. The server also repairs older progression data at runtime.
 - **Restore access to the main character after a launcher wipe.** The character selector keeps the main character available and correctly recognizes that native character creation is required. Campaign loading overlays release the screen and input while character creation runs.
 - **Prevent task tier badges from overlapping long quest titles.** Quest titles reserve space for the badge and truncate with an ellipsis when needed.

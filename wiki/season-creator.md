@@ -61,6 +61,8 @@ Format-1 Story definitions survive draft, pack import/export and duplication. Th
 
 ### Connected quest workflow and reference names
 
+The in-raid editor reuses the client's existing SPT notification WebSocket. It opens no additional connection or listener. Install matching client and server components, then manually restart both applications to use the updated connection. If the native connection is unavailable, the editor waits for SPT to reconnect it. Editor timeouts and raid cleanup do not close the shared socket. Local draft recovery, revision checks and conflict resolution still apply. Presence and draft checks keep their existing cadence. Each message is limited to 4 MiB by SPT's listener; an oversized update is reported in the editor.
+
 Installed traders use their localized nickname, with a full-name fallback. Item, quest, offer and craft references show names across selectors, previews and rehearsal facts. Searching never replaces the selected name with its ID; expand **Reference ID** when you need the underlying identity. Unknown references remain visible for repair. Draft names take precedence over installed copies.
 
 **Chapters and quests** is the story authoring workspace. Select a chapter, open **Quests**, and use **Create quest in this chapter** or select an existing quest. Creation, duplication and editing stay within that chapter. Use the quest's **Details**, **Objectives**, **Rewards** and **Story** tabs; use **Chapter settings** for its title, visibility and artwork. The Story tab contains status notes and linked conversations. **Create and link note** creates the note and status association together; **Create quest conversation** creates the phase variable and entry point as well.

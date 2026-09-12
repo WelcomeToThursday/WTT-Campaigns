@@ -9,6 +9,12 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 4 && args[0] == "--authoring-socket")
+{
+    WTT.Campaigns.Tests.AuthoringSocketCompatibility.Run(args[1], args[2], args[3]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--progression-data")
 {
     WTT.Campaigns.Tests.ProgressionChecks.Database(args[1]);
@@ -87,6 +93,7 @@ WTT.Campaigns.Tests.StoryChapterNotificationChecks.Run(Check);
 WTT.Campaigns.Tests.StoryEngineChecks.Run(Check);
 WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
 WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.AuthoringSocketChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.EditorLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.ProgressionChecks.Run(Check);
 WTT.Campaigns.Tests.TieredQuestRequirementChecks.Run(Check);
