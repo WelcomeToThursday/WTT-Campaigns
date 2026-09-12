@@ -17,12 +17,15 @@ public sealed class ReputationMigrationService(SaveServer saves, JsonUtil json)
     {
         if (_revisions == null)
         {
-            var report = JObject.Parse(File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data", "trader-progression-reachability.json")));
+            var report = JObject.Parse(
+                File.ReadAllText(Path.Combine(Metadata.DirectoryPath, "data", "trader-progression-reachability.json"))
+            );
             if ((int?)report["Version"] != 1)
             {
                 throw new InvalidDataException("Unsupported reputation adjustment report.");
             }
-            _revisions = report["Adjustments"]!.ToObject<List<ReputationRevision>>()!
+            _revisions = report["Adjustments"]!
+                .ToObject<List<ReputationRevision>>()!
                 .GroupBy(r => r.QuestId + "/" + r.RewardId)
                 .Select(g => new ReputationRevision
                 {
@@ -31,7 +34,8 @@ public sealed class ReputationMigrationService(SaveServer saves, JsonUtil json)
                     TraderId = g.First().TraderId,
                     Before = g.Min(r => r.Before),
                     After = g.Max(r => r.After),
-                }).ToList();
+                })
+                .ToList();
         }
         return ReputationMigration.Apply(profile, _revisions, () => Backup(profile));
     }
@@ -39,8 +43,9 @@ public sealed class ReputationMigrationService(SaveServer saves, JsonUtil json)
     private void Backup(PmcData profile)
     {
         var owner = saves.GetProfiles().Single(p => ReferenceEquals(p.Value.CharacterData?.PmcData, profile));
-        var bytes = System.Text.Encoding.UTF8.GetBytes(json.Serialize(owner.Value)
-            ?? throw new InvalidDataException("Could not serialize the profile before reputation migration."));
+        var bytes = System.Text.Encoding.UTF8.GetBytes(
+            json.Serialize(owner.Value) ?? throw new InvalidDataException("Could not serialize the profile before reputation migration.")
+        );
         var hash = Convert.ToHexString(SHA256.HashData(bytes));
         var root = Path.GetFullPath("user/seasonal/progression-backups");
         Directory.CreateDirectory(root);

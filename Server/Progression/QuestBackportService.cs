@@ -14,8 +14,13 @@ namespace WTT.Campaigns.Server.Progression;
 
 // Campaign items are registered at +500; progression consumes these quests at +700.
 [Injectable(InjectionType.Singleton, OnLoadOrder.PostLoad + 650)]
-public sealed class QuestBackportService(TemplateTable templates, JsonUtil json, LocaleService locales, LocaleTable localeTable, ImageRouter images)
-    : IOnLoad
+public sealed class QuestBackportService(
+    TemplateTable templates,
+    JsonUtil json,
+    LocaleService locales,
+    LocaleTable localeTable,
+    ImageRouter images
+) : IOnLoad
 {
     private readonly Dictionary<string, string?> _owners = new();
     private readonly Dictionary<string, string> _skipped = new();
@@ -76,9 +81,15 @@ public sealed class QuestBackportService(TemplateTable templates, JsonUtil json,
             var relativeIcon = (string)entry["Icon"]!;
             var iconRoot = Path.GetFullPath(Path.Combine(root, "data", "quest-icons")) + Path.DirectorySeparatorChar;
             var icon = Path.GetFullPath(Path.Combine(root, relativeIcon));
-            if (!icon.StartsWith(iconRoot, StringComparison.OrdinalIgnoreCase)
+            if (
+                !icon.StartsWith(iconRoot, StringComparison.OrdinalIgnoreCase)
                 || !File.Exists(icon)
-                || !string.Equals(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(icon))), (string?)entry["IconSha256"], StringComparison.OrdinalIgnoreCase))
+                || !string.Equals(
+                    Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(icon))),
+                    (string?)entry["IconSha256"],
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
             {
                 throw new InvalidDataException("Quest backport icon is missing or changed: " + id);
             }
