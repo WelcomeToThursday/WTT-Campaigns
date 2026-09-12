@@ -18,13 +18,13 @@ Use **Continue** to advance automatic text, then choose from the available repli
 
 For a handover, choose eligible items in the normal item selection window and confirm. Cancelling a multi-step handover abandons the pending operation without committing its earlier steps. Handovers are available in the lobby, not during raids.
 
-See [trader visits](trader-media-and-visit.md) for navigation.
+See [trader visits](trader-media-and-visit.md) for navigation. Campaign authors can use [dialogue and interaction authoring](dialogue-and-interactions.md) for entry points, branching, actions and handover behavior.
 
 ## Raid events and cinematics
 
 Authors can attach story events to zones, interactions, shooting targets and collectible pickups. Conditions determine when an event becomes available.
 
-Some actions save immediately and can persist through death; others require survival. The campaign determines which rule applies.
+A raid event's own actions can commit immediately or wait for survival, depending on its `PersistOnDeath` setting. Choices made inside a conversation opened by that event are separate conversation transactions.
 
 Images wait for Continue; audio can offer Skip. Video and cinematic playback provide their own controls. Skipping a registered cinematic completes its binding, while interruption leaves it unfinished. Death, character changes and raid transitions close playback.
 

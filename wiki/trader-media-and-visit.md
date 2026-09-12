@@ -14,6 +14,8 @@ Visits open an animated trader room. They are available even when the campaign h
 
 Item handovers use the game's item selection window. Cancelling an uncommitted handover cancels the pending conversation operation. See [story and quests](story-system.md) for supported actions and limits.
 
+Campaign authors can use [dialogue and interaction authoring](dialogue-and-interactions.md) for the complete entry, phase, reply, action and raid-binding model.
+
 ## Rooms and loading
 
 A loading screen remains visible while the trader room loads. Leaving during loading cancels the visit.

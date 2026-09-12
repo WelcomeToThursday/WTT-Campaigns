@@ -4,7 +4,7 @@ Story is an optional extension to the existing campaign definition. Use [the for
 
 ## Edit and rehearse
 
-The Campaign Creator story editor supports chapters, dialogues, entries, raid bindings and media. Use its reference pickers and validation before publication. Rehearsal includes the candidate trader, exact Scene, raid facts, and explicit cinematic complete/skip/interrupt controls. Rehearsal simulates progression; it cannot validate Unity bundle contents or native inventory windows.
+The Campaign Creator story editor supports chapters, dialogues, entries, raid bindings and media. Use its reference pickers and validation before publication. See [dialogue and interaction authoring](dialogue-and-interactions.md) for the conversation lifecycle, phase patterns, action reference, entry behavior, handover transactions and world-interaction setup. Rehearsal includes the candidate trader, exact Scene, raid facts, and explicit cinematic complete/skip/interrupt controls. Rehearsal simulates progression; it cannot validate Unity bundle contents or native inventory windows.
 
 Text-only automatic NPC lines use Continue between lines, and closing text stays until acknowledged. A final open NPC line shows the reply choices. Continue does not rerun story actions. Multiple automatic lobby handovers collect native item selections before any part of the transaction commits; cancelling a selection abandons the entire operation.
 
@@ -31,7 +31,7 @@ Variables declare `Scope` as `Profile`, `Session` or `Dialogue`, plus `InitialVa
 
 A line has `Side` (`Npc` or `Player`), `Text`, `Trigger`, `Actions` and optional `Playback`, `Confirmation` and `Random`. Exactly one eligible automatic NPC line may run at a time. Change a phase variable so an NPC line becomes ineligible after execution. Ambiguous NPC branches and automatic loops roll back the operation. Random gates use one draw per named variable/group; all members of a group must use the same maximum.
 
-Text falls back to the definition's English fields. Locale keys are `<chapter> name`, `<note> text`, `<line> text` and `<line> confirmation`. Chapter `Image`/`Icon` reference season-owned artwork registered through the existing Creator image pipeline. Note links support Item, Offer (with TraderId) and Craft targets. A chapter can include main and optional quests, visibility conditions, automatic start/completion and status-triggered notes.
+Text falls back to the definition's English fields. Locale keys are `<chapter> name`, `<note> text`, `<dialogue> name`, `<line> text` and `<line> confirmation`. The dialogue name labels its topic during a trader visit and falls back to **Talk**. Chapter `Image`/`Icon` reference season-owned artwork registered through the existing Creator image pipeline. Note links support Item, Offer (with TraderId) and Craft targets. A chapter can include main and optional quests, visibility conditions, automatic start/completion and status-triggered notes.
 
 Use the Creator's reference pickers and Validate action to check supported fields and relationships before publishing. Review the [compatibility limits](story-system.md#supported-contracts-and-explicit-limits) before authoring compound-item quests or paid services.
 
@@ -71,7 +71,7 @@ Collectibles use ItemId (template) and the server's generated loot instance IDs.
 
 Ordinary Trigger, Interact, Shoot and Collectible bindings can reference Image, Audio, Video or Cinematic media in MediaId. Accepted events present that media immediately, then their conversation: images wait for Continue, audio plays once with Skip, and Video/Timeline use playback controls. This presentation never sends cinematic-binding completion messages.
 
-`PersistOnDeath: true` commits eligible actions immediately. Otherwise the server defers them until a surviving raid result. Cinematics send begin followed by complete, skip or interrupt; skip completes the binding and interruption leaves it unfinished. Play through your published events in the game to confirm that targets, conditions and media behave as intended.
+`PersistOnDeath: true` commits the binding's actions and completion immediately. Otherwise the server defers those binding effects until a surviving raid result. Choices made later inside a linked conversation are separate transactions and are not deferred by this setting. Cinematics send begin followed by complete, skip or interrupt; skip completes the binding and interruption leaves it unfinished. Play through your published events in the game to confirm that targets, conditions and media behave as intended.
 
 ---
 

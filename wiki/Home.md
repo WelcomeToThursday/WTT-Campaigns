@@ -46,6 +46,7 @@ These guides cover **0.6.1 — beta maintenance release**, targeting **SPT 4.1.3
 - [Campaign Creator](season-creator.md): set up, save, publish and share a campaign.
 - [Tutorials and troubleshooting](creator-tutorials.md): build your first story quest.
 - [Story authoring](story-authoring.md): conversations, conditions, media and raid events.
+- [Dialogue and interaction authoring](dialogue-and-interactions.md): build phases and branches, choose actions, configure handovers and connect raid interactions.
 - [Custom story media bundles](story-media-bundles.md): add Visit rooms to custom traders and package images, audio, video and cinematics.
 - [Connected raid authoring](raid-authoring.md): capture scene targets and place quest zones.
 - [Story Sandbox](story-sandbox.md): a small example campaign.
