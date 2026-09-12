@@ -8,13 +8,38 @@ using WTT.Campaigns.Server.Seasons;
 namespace WTT.Campaigns.Server.Routing;
 
 [Injectable]
-public sealed class SeasonRouter(JsonUtil json, SeasonService seasons, SeasonRepository repository)
-    : StaticRouter(json, Routes(json, seasons, repository))
+public sealed class SeasonRouter(
+    JsonUtil json,
+    SeasonService seasons,
+    SeasonRepository repository,
+    WTT.Campaigns.Server.Story.StoryService story
+) : StaticRouter(json, Routes(json, seasons, repository, story))
 {
-    private static List<RouteAction> Routes(JsonUtil json, SeasonService s, SeasonRepository repository)
+    private static List<RouteAction> Routes(
+        JsonUtil json,
+        SeasonService s,
+        SeasonRepository repository,
+        WTT.Campaigns.Server.Story.StoryService story
+    )
     {
         return
         [
+            new RouteAction<SeasonRequest>(
+                "/wtt-campaigns/raid-abort",
+                async (_, r, id, _, _) =>
+                    await Respond(
+                        json,
+                        s,
+                        id.ToString(),
+                        r,
+                        repository,
+                        async root =>
+                        {
+                            await s.AbortRaid(root, r.CharacterId, r.OperationId, story.ResetSessionUnderLease);
+                            return new ServerSnapshot();
+                        }
+                    )
+            ),
             new RouteAction<SeasonRequest>(
                 "/wtt-campaigns/snapshot",
                 async (_, r, id, _, _) =>

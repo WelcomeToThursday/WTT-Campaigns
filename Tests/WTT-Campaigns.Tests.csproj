@@ -17,6 +17,10 @@
     <Compile Include="..\Client\Story\StoryChapterChanges.cs" Link="Client\StoryChapterChanges.cs" />
     <Compile Include="..\Server\Hub\HubService.cs" Link="Hub\HubService.cs" />
     <Compile Include="..\Client\Patches\Session\RequestIdentity.cs" Link="Client\RequestIdentity.cs" />
+    <Compile Include="..\Client\Patches\Session\BotDifficultyFallback.cs" Link="Client\BotDifficultyFallback.cs" />
+    <Compile Include="..\Client\Patches\Session\RaidLoadRecovery.cs" Link="Client\RaidLoadRecovery.cs" />
+    <Compile Include="..\Server\Profiles\AccountLink.cs" Link="Profiles\AccountLink.cs" />
+    <Compile Include="..\Server\Profiles\RaidAbortGuard.cs" Link="Profiles\RaidAbortGuard.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />
     <Compile Include="..\Server\Story\StoryPreparation.cs" Link="Story\StoryPreparation.cs" />
   </ItemGroup>

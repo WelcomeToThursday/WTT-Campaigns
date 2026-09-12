@@ -45,6 +45,12 @@ if (args.Length == 3 && args[0] == "--unity-toolkit")
     return;
 }
 
+if (args.Length == 3 && args[0] == "--raid-startup-hooks")
+{
+    WTT.Campaigns.Tests.RaidStartupHookChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length >= 2 && args[0] == "--ui")
 {
     WTT.Campaigns.Tests.UiCompatibilityChecks.Run(args[1], args.Length > 2 ? args[2] : null);
@@ -64,6 +70,7 @@ void Check(bool value, string name)
 var rules = new Rules();
 WTT.Campaigns.Tests.CampaignTextChecks.Run(Check);
 WTT.Campaigns.Tests.RequestIdentityChecks.Run(Check);
+WTT.Campaigns.Tests.RaidStartupChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.NativeModelChecks.Run(Check);
 WTT.Campaigns.Tests.SeasonItemBundleChecks.Run(Check);

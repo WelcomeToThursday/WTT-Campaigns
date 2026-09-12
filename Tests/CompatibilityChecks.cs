@@ -27,6 +27,16 @@ internal static class CompatibilityChecks
             );
         }
 
+        check(
+            Method("EFT.TarkovApplication", "LocalGameCreate").ReturnType.FullName == "System.Threading.Tasks.Task",
+            "Raid startup exposes the awaited Task used for failed-load recovery"
+        );
+        check(
+            types["EFT.TarkovApplication"]
+                .Fields.Any(field => field.Name == "_localRaidSettings" && field.FieldType.Name == "LocalRaidSettings"),
+            "Raid recovery can read the server-issued raid identity"
+        );
+
         foreach (var door in new[] { "EFT.Interactive.WorldInteractiveObject", "EFT.Interactive.KeycardDoor" })
         {
             var method = Method(door, "UnlockOperation");

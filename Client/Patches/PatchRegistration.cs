@@ -31,6 +31,8 @@ internal static class PatchRegistration
     {
         new BackendIdentity().Enable();
         new SptRequestIdentity().Enable();
+        new BotDifficultyFallbackPatch().Enable();
+        new RaidLoadRecoveryPatch().Enable();
     }
 
     private static void EnableHealth()

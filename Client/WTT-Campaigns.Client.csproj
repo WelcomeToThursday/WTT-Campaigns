@@ -40,6 +40,7 @@
     <Reference Include="0Harmony" HintPath="$(TarkovDir)BepInEx\core\0Harmony.dll" Private="false" />
     <Reference Include="BepInEx" HintPath="$(TarkovDir)BepInEx\core\BepInEx.dll" Private="false" />
     <Reference Include="spt-common" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-common.dll" Private="false" />
+    <Reference Include="spt-custom" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-custom.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
     <None

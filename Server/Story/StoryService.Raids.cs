@@ -68,6 +68,11 @@ public sealed partial class StoryService
     {
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
+        await ResetSessionUnderLease(root);
+    }
+
+    internal async Task ResetSessionUnderLease(string root)
+    {
         var active = seasons.EffectiveId(root);
         _sessions.TryRemove(active, out _);
         if (!seasons.IsSeasonal(active))

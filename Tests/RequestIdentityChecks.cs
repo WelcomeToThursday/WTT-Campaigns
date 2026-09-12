@@ -36,6 +36,7 @@ internal static class RequestIdentityChecks
             {
                 "/wtt-campaigns/snapshot",
                 "/wtt-campaigns/switch",
+                "/wtt-campaigns/raid-abort",
                 "/wtt-campaigns/hub",
                 "/wtt-campaigns/hub/claim",
                 "/wtt-campaigns/hub/exchange",

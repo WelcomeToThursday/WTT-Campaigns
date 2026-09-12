@@ -853,7 +853,28 @@ public sealed class SeasonService(
         return parent;
     }
 
-    public async Task MarkRaid(string sessionId, bool active)
+    public async Task AbortRaid(string root, string character, string raidId, Func<string, Task> cleanup)
+    {
+        // The account router holds the lease through validation, cleanup and persistence.
+        if (!RaidAbortGuard.Matches(Link(root), EffectiveId(root), character, raidId))
+        {
+            return;
+        }
+        await cleanup(root);
+        var id = new MongoId(character);
+        var profile = saves.GetProfile(id);
+        if (profile.InraidData != null)
+        {
+            profile.InraidData.Location = "none";
+            await saves.SaveProfileAsync(id);
+        }
+        var link = Link(root);
+        link.ActiveRaidProfiles.Remove(character);
+        link.ActiveRaidIds.Remove(character);
+        await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
+    }
+
+    public async Task MarkRaid(string sessionId, bool active, string? raidId = null)
     {
         var root = ResolveRoot(sessionId);
         using var lease = Enter(root);
@@ -861,10 +882,19 @@ public sealed class SeasonService(
         if (active)
         {
             link.ActiveRaidProfiles.Add(sessionId);
+            if (!string.IsNullOrEmpty(raidId))
+            {
+                link.ActiveRaidIds[sessionId] = raidId;
+            }
+            else
+            {
+                link.ActiveRaidIds.Remove(sessionId);
+            }
         }
         else
         {
             link.ActiveRaidProfiles.Remove(sessionId);
+            link.ActiveRaidIds.Remove(sessionId);
         }
         await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
     }

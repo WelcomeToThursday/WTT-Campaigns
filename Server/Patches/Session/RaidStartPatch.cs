@@ -51,6 +51,7 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaign
             var result = await original;
             await _hub.StartRaid(id, request, result);
             await _story.StartRaid(id, request, result);
+            await _seasons.MarkRaid(id, true, result.ServerId);
             return result;
         }
         catch

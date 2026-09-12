@@ -2,6 +2,11 @@
 
 WTT-Campaigns 0.6.0 is the mod's **first public beta release**. Earlier version numbers reflect development milestones. This release introduces campaign character progression and the tools to create and share custom campaigns for SPT.
 
+## Hotfixes
+
+- Prevent missing client bot roles such as `blackdivlead` from crashing raid setup. Roles without server difficulty settings use SPT's assault fallback; existing settings from SPT and other mods are retained.
+- Release the matching character's raid lock and pending story raid state when client raid loading fails or is cancelled. Cleanup checks the character and server-issued raid ID before changing state.
+
 ## What is included
 
 - Multiple independent campaign characters, with a character selector, switching, and confirmed delete or achievement-preserving wipe actions.
