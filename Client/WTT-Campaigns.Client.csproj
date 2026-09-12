@@ -43,11 +43,7 @@
     <Reference Include="spt-custom" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-custom.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
-    <None
-      Include="Resources\raid-editor-validation.json"
-      CopyToOutputDirectory="PreserveNewest"
-      TargetPath="raid-editor-validation.json"
-    />
+    <None Include="Resources\raid-editor-validation.json" CopyToOutputDirectory="PreserveNewest" TargetPath="raid-editor-validation.json" />
     <None
       Include="Resources\wtt_campaigns_raid_editor.bundle"
       CopyToOutputDirectory="PreserveNewest"
