@@ -43,5 +43,6 @@ internal sealed class TaskTierBadgeLayout : MonoBehaviour
     }
 
     private void OnDisable() => Restore();
+
     private void OnDestroy() => Restore();
 }

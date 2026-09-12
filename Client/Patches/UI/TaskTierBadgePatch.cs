@@ -42,7 +42,8 @@ internal sealed class TaskTierBadgePatch : ModulePatch
             rect.pivot = new Vector2(1, 0.5f);
             rect.sizeDelta = new Vector2(TaskTierBadgeLayout.BadgeSize, TaskTierBadgeLayout.BadgeSize);
             rect.anchoredPosition = Vector2.zero;
-            var layout = badge.GetComponent<UnityEngine.UI.LayoutElement>() ?? badge.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
+            var layout =
+                badge.GetComponent<UnityEngine.UI.LayoutElement>() ?? badge.gameObject.AddComponent<UnityEngine.UI.LayoutElement>();
             layout.ignoreLayout = true;
             foreach (var graphic in badge.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
             {
@@ -52,8 +53,8 @@ internal sealed class TaskTierBadgePatch : ModulePatch
         if (badge != null)
         {
             var visible = tier is >= 1 and <= 4;
-            var layout = __instance._title.GetComponent<TaskTierBadgeLayout>()
-                ?? __instance._title.gameObject.AddComponent<TaskTierBadgeLayout>();
+            var layout =
+                __instance._title.GetComponent<TaskTierBadgeLayout>() ?? __instance._title.gameObject.AddComponent<TaskTierBadgeLayout>();
             layout.Apply(__instance._title, (RectTransform)badge.transform, visible);
             badge.gameObject.SetActive(visible);
             if (visible)
