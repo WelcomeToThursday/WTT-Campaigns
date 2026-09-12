@@ -19,7 +19,7 @@ Beta maintenance release covering changes since [0.6.0](https://github.com/CJ-SP
 
 ## Updating
 
-Targets **SPT 4.1.3 / EFT 0.16.9.40743**. Requires **UnityToolkit 2.0.2 or later**, including its prepatcher, and **WTT-ContentBackport 2.0.1 or later** with its dependencies. Dependencies are separate downloads.
+Targets **SPT 4.1.x / EFT 0.16.9.40743**. Requires **UnityToolkit 2.0.2 or later**, including its prepatcher, and **WTT-ContentBackport 2.0.1 or later** with its dependencies. Dependencies are separate downloads.
 
 With the game and server closed, extract the archive's `BepInEx` and `SPT_Runtime` folders into your SPT installation. Install the full matching package. Preserve existing configuration, profiles and the server mod's `creator` folder. Back up profiles before updating this beta, then manually start the server and game when ready.
 

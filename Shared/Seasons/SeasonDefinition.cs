@@ -165,7 +165,7 @@ public sealed class SeasonManifest : ExtensibleJsonModel
     public long Revision { get; set; }
     public string GameplayHash { get; set; } = "";
     public int ProtocolVersion { get; set; } = 2;
-    public string SptVersion { get; set; } = "~4.1.3";
+    public string SptVersion { get; set; } = "4.1.x";
     public string ModVersion { get; set; } = "~0.3.0";
     public List<string> Dependencies { get; set; } = new();
     public Dictionary<string, string> Files { get; set; } = new();

@@ -7,6 +7,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
+    <PackageReference Include="Markdig" Version="1.3.2" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
     <PackageReference Include="SPTarkov.DI" Version="4.1.0" />
     <PackageReference Include="SPTarkov.Server.Core" Version="4.1.0" />
@@ -27,9 +28,18 @@
     <Compile Include="..\Server\Profiles\ProfileReadiness.cs" Link="Profiles\ProfileReadiness.cs" />
     <Compile Include="..\Server\Profiles\RaidAbortGuard.cs" Link="Profiles\RaidAbortGuard.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />
+    <Compile Include="..\Server\Web\Documentation\WikiDocumentation.cs" Link="Documentation\WikiDocumentation.cs" />
     <Compile Include="..\Server\Story\StoryPreparation.cs" Link="Story\StoryPreparation.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\data\**\*" Link="data\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="..\wiki\*.md" LogicalName="WTT.Campaigns.Wiki.%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\README.md" LogicalName="WTT.Campaigns.Wiki.installation.md" />
+    <EmbeddedResource Include="..\RELEASE_NOTES.md" LogicalName="WTT.Campaigns.Wiki.release-notes.md" />
+    <EmbeddedResource Include="..\CONTRIBUTING.md" LogicalName="WTT.Campaigns.Wiki.contributing.md" />
+    <EmbeddedResource Include="..\THIRD_PARTY_NOTICES.md" LogicalName="WTT.Campaigns.Wiki.third-party-notices.md" />
+    <EmbeddedResource Include="..\contributing\*.md" LogicalName="WTT.Campaigns.Wiki.contributor-%(Filename)%(Extension)" />
+    <EmbeddedResource Include="..\Client\Resources\README.md" LogicalName="WTT.Campaigns.Wiki.local-ui-resources.md" />
+    <EmbeddedResource Include="..\wiki\examples\story-introduction.json" LogicalName="WTT.Campaigns.Wiki.example-story-introduction.json" />
   </ItemGroup>
 </Project>

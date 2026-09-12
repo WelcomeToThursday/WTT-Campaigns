@@ -8,13 +8,13 @@
 @inject SeasonContentService Content
 
 <PageTitle>Campaign Creator</PageTitle>
-<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css" /></HeadContent>
+<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-docs2" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
 <main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
     <header class="creator-header">
         <div><h1><span class="app-mark" aria-hidden="true">C</span>Campaign Creator</h1><p>Create and publish campaigns. Each campaign character chooses its own campaign.</p></div>
-        <div class="row"><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
+        <div class="row"><a class="button subtle" href="/wtt-campaigns/docs">Documentation</a><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
     </header>
     @if (_showHelp) { <CreatorHelp HasDraft="@(_draft != null)" Navigate="OpenGuideSection" StartTutorial="StartTutorial" Close="@(() => _showHelp = false)" /> }
     @if (_tutorialTrack.Length > 0 && !_tutorialPaused) { <CreatorTutorial Track="@_tutorialTrack" Index="_tutorialStep" HasDraft="@(_draft != null)" IndexChanged="@(i => _tutorialStep = i)" Navigate="OpenGuideSection" Pause="@(() => _tutorialPaused = true)" Finish="FinishTutorial" /> }
@@ -147,6 +147,7 @@
                         <span class="eyebrow">LEARN AS YOU BUILD</span><h3>A little guidance</h3><p>Follow a walkthrough alongside your draft.</p>
                         <button class="library-guide" @onclick="@(() => StartTutorial("basics"))"><strong>Campaign basics <span aria-hidden="true">→</span></strong><span>From a blank draft to your first published pack.</span></button>
                         <button class="library-guide" @onclick="@(() => StartTutorial("story"))"><strong>Your first story quest <span aria-hidden="true">→</span></strong><span>Connect a quest, conversation and journal entry.</span></button>
+                        <a class="library-guide" href="/wtt-campaigns/docs/season-creator"><strong>Browse the complete documentation <span aria-hidden="true">→</span></strong><span>Open player guides, authoring references and troubleshooting.</span></a>
                     </section>
                 </aside>
             </div>

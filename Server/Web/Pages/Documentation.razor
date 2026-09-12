@@ -1,0 +1,56 @@
+@using WTT.Campaigns.Server.Web.Documentation
+@page "/wtt-campaigns/docs"
+@page "/wtt-campaigns/docs/{Slug}"
+@attribute [Authorize(Policy = "Administrator")]
+@rendermode InteractiveServer
+@layout SPTarkov.Server.Web.Layout.BaseMudBlazorLayout
+
+<PageTitle>@_page.Title · WTT-Campaigns documentation</PageTitle>
+<HeadContent>
+    <link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-docs2" />
+    <link rel="stylesheet" href="/wtt-campaigns-creator-assets/docs.css?v=061-docs2" />
+</HeadContent>
+<main class="season-creator campaign-docs">
+    <header class="creator-header docs-header">
+        <div><h1><span class="app-mark" aria-hidden="true">W</span>WTT-Campaigns documentation</h1><p>Player guides, perk references, campaign authoring and troubleshooting—available directly from your local server.</p></div>
+        <nav class="row" aria-label="Campaign pages"><a class="button subtle" href="/wtt-campaigns/creator">Campaign Creator</a><a class="button subtle" href="/wtt-campaigns/docs">Documentation home</a></nav>
+    </header>
+    <div class="docs-layout">
+        <aside class="docs-navigation" aria-label="Documentation navigation">
+            <label for="docs-search">Search the guides</label>
+            <input id="docs-search" type="search" placeholder="Try profiles, rewards or story…" @bind="_search" @bind:event="oninput" />
+            @if (_search.Trim().Length > 0)
+            {
+                var results = WikiDocumentation.Search(_search);
+                <div class="docs-search-summary" role="status">@results.Count @(results.Count == 1 ? "guide" : "guides") found</div>
+                <nav class="docs-search-results" aria-label="Search results">
+                    @foreach (var result in results)
+                    {
+                        <a href="@($"/wtt-campaigns/docs/{Uri.EscapeDataString(result.Slug)}")" @onclick="@(() => _search = "")"><strong>@result.Title</strong><span>@result.Summary</span></a>
+                    }
+                </nav>
+                @if (results.Count == 0) { <p>Try fewer or shorter words.</p> }
+            }
+            else
+            {
+                <nav class="docs-sidebar-markdown">@((MarkupString)WikiDocumentation.SidebarHtml)</nav>
+            }
+        </aside>
+        <article class="docs-article">
+            <div class="docs-breadcrumb"><a href="/wtt-campaigns/docs">Documentation</a><span aria-hidden="true">/</span><span>@_page.Title</span></div>
+            <div class="docs-markdown">@((MarkupString)_page.Html)</div>
+            <footer><a href="/wtt-campaigns/docs">Documentation home</a><span aria-hidden="true">·</span><a href="/wtt-campaigns/creator">Campaign Creator</a></footer>
+        </article>
+    </div>
+</main>
+
+@code {
+    [Parameter] public string? Slug { get; set; }
+    private WikiPage _page = WikiDocumentation.Home;
+    private string _search = "";
+
+    protected override void OnParametersSet()
+    {
+        _page = WikiDocumentation.Page(Slug);
+    }
+}

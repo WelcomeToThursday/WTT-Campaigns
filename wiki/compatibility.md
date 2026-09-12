@@ -2,7 +2,7 @@
 
 ## Requirements
 
-Use **SPT 4.1.3 / EFT 0.16.9.40743**, with:
+Use **SPT 4.1.x / EFT 0.16.9.40743**, with:
 
 - **UnityToolkit 2.0.2 or later**, including its plugin libraries and prepatcher.
 - **WTT-ContentBackport 2.0.1 or later** and its dependencies.

@@ -101,6 +101,7 @@ WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
 WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.AuthoringSocketChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.EditorLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.WikiDocumentationChecks.Run(Check);
 WTT.Campaigns.Tests.ProgressionChecks.Run(Check);
 WTT.Campaigns.Tests.TieredQuestRequirementChecks.Run(Check);
 if (args.Length > 0 && File.Exists(args[0]))

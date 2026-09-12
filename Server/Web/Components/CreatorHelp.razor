@@ -6,6 +6,7 @@
         <article><h3>Your first story quest</h3><p>Connect a chapter, supply quest, journal note and trader conversation, then try the complete loop in rehearsal.</p><button class="primary" @onclick="@(() => StartTutorial.InvokeAsync("story"))">Start story tutorial</button></article>
     </div>
     <p class="guide-note">Tutorials provide directions and section links. You choose the edits and when to save. Opening help or advancing a step never creates content, publishes a pack or changes player progress.</p>
+    <p class="guide-note"><a class="button subtle" href="/wtt-campaigns/docs/season-creator">Open the complete Campaign Creator documentation</a></p>
     <label>Find instructions<input @bind="_search" @bind:event="oninput" placeholder="Try handover, artwork, variables or publishing…" /></label>
     <div class="guide-topics">
         @foreach (var topic in Topics)

@@ -19,7 +19,7 @@ public sealed record Metadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMeta
     public string Author { get; init; } = "CJ, WTT";
     public List<string>? Contributors { get; init; }
     public SemanticVersioning.Version Version { get; init; } = new("0.6.1");
-    public Range SptVersion { get; init; } = new("~4.1.3");
+    public Range SptVersion { get; init; } = new("4.1.x");
     public bool HasPrepatcher { get; init; }
     public List<string>? Incompatibilities { get; init; }
 

@@ -2,7 +2,7 @@
 
 Welcome to the WTT-Campaigns wiki: guides for playing campaigns, understanding perks and rewards, and creating your own stories in SPT.
 
-These guides cover **0.6.1 — beta maintenance release**, targeting **SPT 4.1.3 / EFT 0.16.9.40743**. They describe the bundled campaign and supported features; custom campaigns can change perks, rewards and progression.
+These guides cover **0.6.1 — beta maintenance release**, targeting **SPT 4.1.x / EFT 0.16.9.40743**. They describe the bundled campaign and supported features; custom campaigns can change perks, rewards and progression.
 
 ## Start here
 

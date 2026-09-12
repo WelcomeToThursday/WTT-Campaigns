@@ -82,6 +82,23 @@ internal static class ModIdentityChecks
             if (path == serverPath)
             {
                 Require(strings.Contains("com.wtt.commonlib") && strings.Contains(">=3.0.6"), "Server requires CommonLib 3.0.6");
+                Require(strings.Contains("4.1.x") && !strings.Contains("~4.1." + "3"), "Server supports the complete SPT 4.1.x line");
+                var documentation = assembly.MainModule.GetType("WTT.Campaigns.Server.Web.Pages.Documentation");
+                Require(
+                    documentation.CustomAttributes.Any(attribute =>
+                        attribute.AttributeType.FullName == "Microsoft.AspNetCore.Components.RouteAttribute"
+                        && attribute.ConstructorArguments.Any(argument => (string)argument.Value == "/wtt-campaigns/docs")
+                    ),
+                    "Server exposes embedded wiki documentation"
+                );
+                Require(
+                    assembly.MainModule.AssemblyReferences.Any(reference => reference.Name == "Markdig"),
+                    "Server links the Markdown documentation renderer"
+                );
+                Require(
+                    assembly.MainModule.Resources.Count(resource => resource.Name.StartsWith("WTT.Campaigns.Wiki.")) >= 30,
+                    "Server embeds the complete wiki page set"
+                );
                 var metadata = assembly.MainModule.GetType("WTT.Campaigns.Server.Metadata");
                 var constructor = metadata.Methods.Single(method => method.IsConstructor && !method.HasParameters && !method.IsStatic);
                 foreach (

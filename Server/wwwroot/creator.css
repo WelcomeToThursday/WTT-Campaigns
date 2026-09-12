@@ -491,6 +491,7 @@
 .creator-library .library-guide strong { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 600; }
 .creator-library .library-guide strong span { color: var(--accent); }
 .creator-library .library-guide > span { display: block; margin-top: 4px; font-size: 12px; font-weight: 400; line-height: 1.65; color: var(--muted); }
+.creator-library a.library-guide { color: var(--ink); text-decoration: none; }
 @media (max-width: 1680px) { .season-creator.creator-library > .creator-header { padding-left: 48px; } }
 @media (max-width: 1250px) {
     .creator-library .library-layout { gap: 24px; grid-template-columns: minmax(0, 1fr) 260px; }
