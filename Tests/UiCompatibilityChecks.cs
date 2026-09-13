@@ -131,6 +131,7 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            EditorHomeCompatibilityChecks.Run(assembly, client);
             var faceIcon = client
                 .MainModule.Resources.OfType<EmbeddedResource>()
                 .SingleOrDefault(r => r.Name == "WTT.Campaigns.Customization.face.png");

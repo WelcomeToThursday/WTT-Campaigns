@@ -225,6 +225,7 @@ await using (var renderer = new EditorRenderer(services))
         Check(host.Changes == 1 && host.SelectedId == "", "Deletion marks the draft changed and clears the parent selection");
     });
 }
+await MapLayoutUiChecks.Run(services, Check);
 await TraderOfferUiChecks.Run(Check);
 Console.WriteLine($"PASS {count} Creator component assertions");
 

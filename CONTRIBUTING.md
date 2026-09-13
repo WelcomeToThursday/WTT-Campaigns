@@ -2,6 +2,12 @@
 
 Use .NET SDK 10. `global.json` accepts stable 10.0 feature bands and does not silently select a different major SDK. Restore the formatter with `dotnet tool restore`; the manifest lives in `.config/dotnet-tools.json`.
 
+## Server package references
+
+Server and offline test projects use the stable `SPTushonka.*` packages from [SP-Tushonka/server-csharp](https://github.com/SP-Tushonka/server-csharp), published on NuGet.org. The shared `SptPackageVersion` property in `Directory.Build.props` pins them to **4.1.5**. Update that property when moving to a newer supported stable server release; keep all SPT references aligned. The package IDs changed, while assembly names and code namespaces remain `SPTarkov.*`.
+
+The server excludes SPT package runtime assets from deployment because the installed server supplies those assemblies. Validation checks the compiled editor routing patch against both the restored package and the actual installed server DLL, without starting a server.
+
 ## Editor and IDE defaults
 
 The shared settings come from [SP-Tushonka/server-csharp at revision 7d7add5](https://github.com/SP-Tushonka/server-csharp/tree/7d7add556a6f781e9a531fa3b0cf4cc925986e03). `.editorconfig` adopts its formatting, naming, and inspection preferences, including a 140-character line limit, four-space C# indentation, two-space JSON/YAML/XML project indentation, and file-scoped namespaces. The existing UTF-8 default is retained for all text files. CSharpier remains pinned to the same upstream version, 1.3.0.

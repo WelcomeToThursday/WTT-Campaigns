@@ -20,6 +20,8 @@ public sealed class SeasonLauncherProfilesPatch : AbstractPatch
     [PatchPostfix, UsedImplicitly]
     private static void Postfix(List<MiniProfile> __result)
     {
-        __result.RemoveAll(p => SeasonProfileStorage.Contains(p.ProfileId?.ToString() ?? ""));
+        __result.RemoveAll(p =>
+            SeasonProfileStorage.Contains(p.ProfileId?.ToString() ?? "") || Editor.EditorSessions.IsScratch(p.ProfileId?.ToString() ?? "")
+        );
     }
 }

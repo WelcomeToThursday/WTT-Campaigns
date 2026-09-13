@@ -73,6 +73,76 @@ public static class CampaignsRaidEditorBuilder
         }
         foreach (var component in root.GetComponentsInChildren<MonoBehaviour>(true))
             Check(component && component.GetType().Namespace == "UnityEngine.UI", "Bundle contains a missing or non-native UI script.");
+        foreach (
+            var control in new[]
+            {
+                "EditorHome",
+                "EditorMapToolbar",
+                "MapInspector",
+                "EditorOpen",
+                "EditorReturn",
+                "EditorWalk",
+                "MapNew",
+                "MapRebind",
+                "MapTool",
+            }
+        )
+            Check(
+                Array.Exists(root.GetComponentsInChildren<Transform>(true), t => t.name == control),
+                "Missing editor control: " + control
+            );
+        var controls = root.GetComponentsInChildren<Transform>(true);
+        foreach (
+            var name in new[]
+            {
+                "EditorDraft",
+                "EditorLayout",
+                "EditorMap",
+                "EditorOpen",
+                "EditorRefresh",
+                "EditorRetry",
+                "EditorReturn",
+                "EditorStartup",
+                "EditorWeb",
+                "EditorWalk",
+                "EditorReset",
+                "EditorUnload",
+                "MapNew",
+                "MapCopy",
+                "MapDelete",
+                "MapStart",
+                "MapCheckpoint",
+                "MapExit",
+                "MapBarrier",
+                "MapShape",
+                "MapMoveObject",
+                "MapCopyObject",
+                "MapHideObject",
+                "MapDoor",
+                "MapRebind",
+                "MapAtPlayer",
+                "MapEarlier",
+                "MapLater",
+                "MapWalkStart",
+                "MapTool",
+                "MapSnap",
+            }
+        )
+            Check(
+                Array.FindAll(controls, t => t.name == name && t.GetComponent<Button>()).Length == 1,
+                "Missing or duplicate bound editor button: " + name
+            );
+        foreach (var group in new[] { "Position", "Rotation", "Size" })
+        foreach (var axis in "XYZ")
+            Check(
+                Array.FindAll(controls, t => t.name == "Map" + group + axis && t.GetComponent<InputField>()).Length == 1,
+                "Missing transform input: " + group + axis
+            );
+        foreach (var name in new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" })
+        {
+            var tab = Array.Find(controls, t => t.name == name).GetComponentInChildren<Text>();
+            Check(tab.preferredWidth <= ((RectTransform)tab.transform).rect.width + .5f, "Module label does not fit: " + name);
+        }
         var canvas = root.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         Canvas.ForceUpdateCanvases();
@@ -149,7 +219,7 @@ public static class CampaignsRaidEditorBuilder
             Canvas.ForceUpdateCanvases();
             var host = root.AddComponent<RaidEditorWindows>();
             host.Initialize();
-            foreach (var state in new[] { "docked", "popout", "conflict" })
+            foreach (var state in new[] { "docked", "popout", "conflict", "maps", "home" })
             {
                 if (state == "popout")
                     root.transform.Find("Workspace/DockArea/Inspector/InspectorTitleBar/InspectorPopout")
@@ -159,6 +229,19 @@ public static class CampaignsRaidEditorBuilder
                 {
                     root.transform.Find("ConflictShield").gameObject.SetActive(true);
                     host.KeepModalOnTop();
+                }
+                if (state == "maps")
+                {
+                    root.transform.Find("ConflictShield").gameObject.SetActive(false);
+                    host.ResetLayout();
+                    root.transform.Find("Workspace/DockArea/Inspector/MapInspector").gameObject.SetActive(true);
+                    root.transform.Find("EditorMapToolbar").gameObject.SetActive(true);
+                }
+                if (state == "home")
+                {
+                    root.transform.Find("Workspace").gameObject.SetActive(false);
+                    root.transform.Find("EditorMapToolbar").gameObject.SetActive(false);
+                    root.transform.Find("EditorHome").gameObject.SetActive(true);
                 }
                 Canvas.ForceUpdateCanvases();
                 camera.Render();

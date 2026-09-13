@@ -6,7 +6,7 @@ using WTT.Campaigns.UI.Controls;
 namespace WTT.Campaigns.UI.Screens;
 
 // Shared by the CJ-SDK prefab builder and visual previews. The bundle contains only native uGUI components.
-public static class RaidEditorLayout
+public static partial class RaidEditorLayout
 {
     public static GameObject Build(Font font, Sprite border, Sprite header)
     {
@@ -75,6 +75,7 @@ public static class RaidEditorLayout
         UiElements.Fill(shield, new Color(0, 0, 0, .65f), true);
         BuildConflict(ui, shield);
         shield.gameObject.SetActive(false);
+        BuildEditorHome(ui, root.transform);
         foreach (var image in root.GetComponentsInChildren<Image>(true))
         {
             if (image.name.EndsWith("TitleBar"))
@@ -126,10 +127,20 @@ public static class RaidEditorLayout
     private static void BuildLibrary(UiElements ui, RectTransform left)
     {
         ui.Label(left, "Connection", "Connect a draft in the campaign editor", 16, 306, 50, 0, 392);
-        Button(ui, left, "Zones", "Zones", 72, -117, 344);
-        Button(ui, left, "Bindings", "Events", 72, -39, 344);
-        Button(ui, left, "Captures", "Captures", 72, 39, 344);
-        Button(ui, left, "Scene", "Scene", 72, 117, 344);
+        var modes = new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" };
+        var widths = new[] { 52, 52, 62, 76, 52 };
+        var position = -153f;
+        for (var i = 0; i < modes.Length; i++)
+        {
+            Button(ui, left, modes[i], modes[i] == "Bindings" ? "Events" : modes[i], widths[i], position + widths[i] / 2f, 344);
+            var label = left.Find(modes[i]).GetComponentInChildren<Text>();
+            label.resizeTextForBestFit = false;
+            label.fontSize = 14;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            var labelRect = (RectTransform)label.transform;
+            labelRect.sizeDelta = new Vector2(widths[i] - 8, labelRect.sizeDelta.y);
+            position += widths[i] + 3;
+        }
         ui.Input(left, "Search", "Search records / scene paths", 306, 0, 294);
         for (var i = 0; i < 10; i++)
         {
@@ -173,6 +184,7 @@ public static class RaidEditorLayout
         Button(ui, right, "Complete", "Complete capture", 250, -68, -409);
         Button(ui, right, "Cancel", "Cancel", 124, 132, -409);
         right.Find("EventKind").gameObject.SetActive(false);
+        BuildMapInspector(ui, right);
     }
 
     private static void BuildConflict(UiElements ui, Transform parent)

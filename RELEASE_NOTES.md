@@ -1,3 +1,13 @@
+# WTT-Campaigns 0.8.0 — Editor milestone
+
+- Added Campaign Editor entry and a separate Normal / Editor startup preference.
+- Added disposable editor sessions, restricted native map loading, editor home and direct map exit.
+- Extended the existing raid editor bundle with map layouts, scenery overrides, door previews, barriers and ordered walkthrough routes.
+- Added reversible scene previews, target rebinding, format 4 map data, draft recovery and concurrent editing support.
+- Existing ordinary-raid authoring remains opt-in. Dedicated playable missions, encounters and rewards are a later milestone.
+
+See the [Editor mode guide](wiki/editor-mode.md) for controls and the user-controlled acceptance pass. Offline validation does not replace that in-game pass.
+
 # WTT-Campaigns 0.7.0
 
 Beta release expanding campaign authoring, trader assortments and character customization, with progression fixes since [0.6.1](https://github.com/CJ-SPT/SeasonalPerks/releases/tag/V0.6.1).

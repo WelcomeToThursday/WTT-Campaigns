@@ -87,6 +87,23 @@ public sealed partial class RaidEditor
                     zone.Size = ZoneRuntime.Vector(size);
                 }
             }
+            if (_tool == "Scale" && point is MapVolume volume && before is MapVolume sourceVolume)
+            {
+                var size = ZoneRuntime.Vector(sourceVolume.Size);
+                size[_drag.Axis] = Mathf.Max(.05f, size[_drag.Axis] + amount);
+                if (volume.Shape == "Sphere")
+                {
+                    volume.Radius = size[_drag.Axis] / 2;
+                    size = Vector3.one * volume.Radius * 2;
+                }
+                volume.Size = ZoneRuntime.Vector(size);
+            }
+            if (_tool == "Scale" && point is MapObjectEdit { Operation: "Copy" } obj && before is MapObjectEdit sourceObject)
+            {
+                var scale = ZoneRuntime.Vector(sourceObject.Scale);
+                scale[_drag.Axis] = Mathf.Max(.05f, scale[_drag.Axis] + amount);
+                obj.Scale = ZoneRuntime.Vector(scale);
+            }
             Refresh();
             return;
         }
@@ -133,7 +150,7 @@ public sealed partial class RaidEditor
 
                     _drag = new Drag
                     {
-                        Before = selected is SeasonZone z ? RaidEditorSession.Copy(z) : RaidEditorSession.Copy(selected),
+                        Before = CopyPoint(selected),
                         Axis = axis,
                         Mouse = mouse,
                         Direction = direction.normalized,
@@ -159,10 +176,26 @@ public sealed partial class RaidEditor
         }
     }
 
+    private static SpatialCapture CopyPoint(SpatialCapture point) =>
+        point switch
+        {
+            SeasonZone zone => RaidEditorSession.Copy(zone),
+            MapVolume volume => RaidEditorSession.Copy(volume),
+            MapObjectEdit edit => RaidEditorSession.Copy(edit),
+            _ => RaidEditorSession.Copy(point),
+        };
+
     private void RestorePoint(SpatialCapture target, SpatialCapture source)
     {
         target.Position = RaidEditorSession.Copy(source.Position);
         target.Rotation = RaidEditorSession.Copy(source.Rotation);
+        if (target is MapVolume volume && source is MapVolume originalVolume)
+        {
+            volume.Size = RaidEditorSession.Copy(originalVolume.Size);
+            volume.Radius = originalVolume.Radius;
+        }
+        if (target is MapObjectEdit obj && source is MapObjectEdit originalObject)
+            obj.Scale = RaidEditorSession.Copy(originalObject.Scale);
         if (target is SeasonZone zone && source is SeasonZone original)
         {
             zone.Size = RaidEditorSession.Copy(original.Size);
@@ -178,7 +211,7 @@ public sealed partial class RaidEditor
         }
 
         var point = Selected;
-        var after = point is SeasonZone zone ? RaidEditorSession.Copy(zone) : RaidEditorSession.Copy(point);
+        var after = CopyPoint(point);
         RestorePoint(point, _drag.Before);
         _drag = null;
         EditPoint(p => RestorePoint(p, after));
@@ -271,6 +304,18 @@ public sealed partial class RaidEditor
             }
             Line(new[] { center - Vector3.right * .15f, center + Vector3.right * .15f }, color);
             Line(new[] { center - Vector3.up * .15f, center + Vector3.up * .15f }, color);
+        }
+        if (Layout != null && _mode == "Maps")
+        {
+            var route = new List<Vector3>();
+            if (Layout.Start != null)
+                route.Add(ZoneRuntime.Vector(Layout.Start.Position));
+            foreach (var checkpoint in Layout.Checkpoints)
+                route.Add(ZoneRuntime.Vector(checkpoint.Position));
+            if (Layout.Exit != null)
+                route.Add(ZoneRuntime.Vector(Layout.Exit.Position));
+            if (route.Count > 1)
+                Line(route.ToArray(), Color.cyan);
         }
         if (Selected is { } selected)
         {

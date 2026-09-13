@@ -151,6 +151,9 @@ public sealed class SeasonProfileStorage
     // Called only from patched SPT profile/backup methods, not from general filesystem operations.
     public static string Combine(string directory, string filename)
     {
+        var scratch = Editor.EditorSessions.ScratchPath(directory, filename);
+        if (scratch != null)
+            return scratch;
         if (
             Path.GetFullPath(directory)
                 .TrimEnd(Path.DirectorySeparatorChar)

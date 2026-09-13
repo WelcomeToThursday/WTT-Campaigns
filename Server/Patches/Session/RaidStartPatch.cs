@@ -28,8 +28,20 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaign
 
     [PatchPrefix]
     [UsedImplicitly]
-    private static void Prefix(MongoId sessionId)
+    private static void Prefix(MongoId sessionId, StartLocalRaidRequestData request)
     {
+        if (Editor.EditorSessions.IsScratch(sessionId.ToString()))
+        {
+            var editor = Editor.EditorSessions.Find(sessionId.ToString());
+            if (
+                editor?.Ready != true
+                || editor.Location.Length == 0
+                || editor.Location != request.Location
+                || DateTimeOffset.UtcNow - editor.Contact > TimeSpan.FromMinutes(1)
+            )
+                throw new InvalidOperationException("Open the map from editor home.");
+            return;
+        }
         _seasons.MarkRaid(sessionId.ToString(), true).GetAwaiter().GetResult();
     }
 
@@ -49,6 +61,8 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaign
         try
         {
             var result = await original;
+            if (Editor.EditorSessions.IsScratch(id))
+                return result;
             await _hub.StartRaid(id, request, result);
             await _story.StartRaid(id, request, result);
             await _seasons.MarkRaid(id, true, result.ServerId);
@@ -56,7 +70,8 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaign
         }
         catch
         {
-            await _seasons.MarkRaid(id, false);
+            if (!Editor.EditorSessions.IsScratch(id))
+                await _seasons.MarkRaid(id, false);
             throw;
         }
     }

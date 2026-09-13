@@ -11,6 +11,10 @@ namespace WTT.Campaigns.Shared.Seasons;
 // These are authoring contracts. Player state is constructed by the runtime compiler only.
 public sealed class SeasonDefinition : ExtensibleJsonModel
 {
+    public List<Spatial.MapLayout> MapLayouts { get; set; } = new();
+
+    public bool ShouldSerializeMapLayouts() => MapLayouts.Count > 0;
+
     public bool ShouldSerializeZones()
     {
         return Zones.Count > 0;

@@ -41,8 +41,15 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion is 1 or 2 or 3, "Overview", "Unsupported campaign format version.");
+        Need(s.FormatVersion is 1 or 2 or 3 or 4, "Overview", "Unsupported campaign format version.");
         TraderOfferRules.Validate(s, r);
+        if (s.MapLayouts.Count > 0 && s.FormatVersion != 4)
+            r.Add("Maps", "Map layouts require campaign format 4.");
+        if (s.MapLayouts.Count > 128 || s.MapLayouts.SelectMany(Spatial.MapLayoutRules.OwnedIds).GroupBy(x => x).Any(g => g.Count() > 1))
+            r.Add("Maps", "Layouts require unique identities (at most 128 layouts).");
+        foreach (var layout in s.MapLayouts)
+        foreach (var error in Spatial.MapLayoutRules.Errors(layout))
+            r.Add("Maps/" + layout.Name, error);
         Need(IsId(s.Id) && IsId(s.BattlePassId), "Overview", "Campaign and battle pass require valid identities.");
         Need(!string.IsNullOrWhiteSpace(s.Name) && s.Name.Length <= 120, "Overview", "Name is required (up to 120 characters).");
         Need(s.Rules.StartingPoints is >= 0 and <= 100000, "Perks", "Starting budget must be 0–100000.");

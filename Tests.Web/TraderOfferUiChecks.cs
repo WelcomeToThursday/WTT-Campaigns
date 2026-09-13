@@ -61,7 +61,7 @@ internal static class TraderOfferUiChecks
                 null!,
                 new LocaleTable
                 {
-                    Global = new() { ["en"] = new(() => new GlobalLocaleDictionary()) },
+                    Global = new() { ["en"] = new(() => new GlobalLocaleDictionary(), cacheValue: false) },
                     Menu = [],
                     Languages = [],
                 },

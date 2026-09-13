@@ -26,6 +26,8 @@ public class NewClientSessionPatch(SeasonService seasons, WTT.Campaigns.Server.S
     [UsedImplicitly]
     private static void Postfix(MongoId sessionId)
     {
+        if (Editor.EditorSessions.IsScratch(sessionId.ToString()))
+            return;
         // Solo SPT starts a new client session after a crash; the previous local raid cannot resume.
         _seasons.MarkRaid(sessionId.ToString(), false).GetAwaiter().GetResult();
         _story.NewSession(sessionId.ToString()).GetAwaiter().GetResult();

@@ -11,12 +11,17 @@ internal sealed class RaidEditorView : IDisposable
     internal readonly GameObject Root;
     private readonly Dictionary<string, Transform> _controls;
     private readonly AssetBundle _bundle;
+    private static AssetBundle? _sharedBundle;
+    private static int _bundleUsers;
+    private bool _disposed;
+    internal bool Valid => !_disposed && Root;
 
     internal RaidEditorView()
     {
-        _bundle =
-            AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_raid_editor.bundle"))
-            ?? throw new InvalidOperationException("Install the CJ-SDK raid editor UI bundle.");
+        _bundle = _sharedBundle
+            ? _sharedBundle!
+            : AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_raid_editor.bundle"))
+                ?? throw new InvalidOperationException("Install the CJ-SDK raid editor UI bundle.");
         var prefab =
             _bundle.LoadAsset<GameObject>("assets/mods/wtt-campaigns.assets/raideditor/seasonalraideditor.prefab")
             ?? throw new InvalidOperationException("The raid editor prefab is missing.");
@@ -34,6 +39,8 @@ internal sealed class RaidEditorView : IDisposable
         Root.AddComponent<RaidEditorWindows>().Initialize();
 
         Root.SetActive(false);
+        _sharedBundle = _bundle;
+        _bundleUsers++;
     }
 
     internal T Get<T>(string name)
@@ -78,7 +85,7 @@ internal sealed class RaidEditorView : IDisposable
 
     internal bool Typing
     {
-        get { return Root.GetComponentsInChildren<InputField>().AsValueEnumerable().Any(f => f.isFocused); }
+        get { return Valid && Root.GetComponentsInChildren<InputField>().AsValueEnumerable().Any(f => f.isFocused); }
     }
 
     internal void Conflict(RaidEditorSession session)
@@ -98,7 +105,15 @@ internal sealed class RaidEditorView : IDisposable
 
     public void Dispose()
     {
-        UnityEngine.Object.Destroy(Root);
-        _bundle.Unload(false);
+        if (_disposed)
+            return;
+        _disposed = true;
+        if (Root)
+            UnityEngine.Object.Destroy(Root);
+        if (--_bundleUsers == 0 && _bundle)
+        {
+            _bundle.Unload(false);
+            _sharedBundle = null;
+        }
     }
 }

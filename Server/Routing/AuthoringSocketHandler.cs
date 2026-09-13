@@ -54,9 +54,27 @@ public sealed class AuthoringSocketHandler(IServiceProvider services) : ISptWebS
             // Identity comes from the existing SPT connection, never from message data.
             var seasons = services.GetRequiredService<SeasonService>();
             var authoring = services.GetRequiredService<RaidAuthoringService>();
-            var root = seasons.ResolveRoot(sessionID);
+            var editor = Editor.EditorSessions.Find(sessionID);
+            if (Editor.EditorSessions.IsScratch(sessionID) && editor?.Ready != true)
+                throw new InvalidOperationException("Editor session expired.");
+            var root = editor?.Owner ?? seasons.ResolveRoot(sessionID);
             using var lease = seasons.Enter(root);
-            var character = seasons.EffectiveId(root);
+            if (editor == null && message.Request.EditorSessionId.Length > 0)
+            {
+                editor = Editor.EditorSessions.ForOwner(root);
+                if (editor == null)
+                    throw new InvalidOperationException("Editor session expired.");
+            }
+            var character = editor?.Profile ?? seasons.EffectiveId(root);
+            if (
+                editor != null
+                && (
+                    message.Request.Version != 2
+                    || !editor.Accepts(root, message.Request.EditorSessionId, DateTimeOffset.UtcNow)
+                    || message.Request.Location != editor.Location
+                )
+            )
+                throw new InvalidOperationException("Editor map session does not match.");
             response =
                 message.Operation == "preview"
                     ? services.GetRequiredService<ItemPreviewService>().Exchange(root, character, message.Request)

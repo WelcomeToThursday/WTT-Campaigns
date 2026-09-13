@@ -167,6 +167,38 @@ internal static class RaidAuthoringChecks
         var imported = repository.Import(repository.Export(pack));
         check(imported.Definition.Zones[0].Name == packDraft.Definition.Zones[0].Name, "Spatial pack import preserves geometry");
 
+        var mapDraft = repository.Create(true, packDraft.Definition);
+        mapDraft.Definition.FormatVersion = 4;
+        mapDraft.Definition.MapLayouts.Add(MapEditorChecks.Example());
+        mapDraft = repository.Save(mapDraft);
+        var mapPack = repository.Publish(mapDraft, SeasonValidator.Validate(mapDraft.Definition));
+        var mapImport = repository.Import(repository.Export(mapPack));
+        check(
+            mapImport.Definition.FormatVersion == 4 && mapImport.Definition.MapLayouts[0].Checkpoints.Count == 2,
+            "Format 4 map pack export/import preserves routes"
+        );
+        var oldClient = new AuthoringRequest
+        {
+            ClientId = Guid.NewGuid().ToString("N"),
+            RaidId = Guid.NewGuid().ToString("N"),
+            Location = "woods",
+            Enabled = true,
+        };
+        service.Poll("legacy-account", "legacy-character", oldClient);
+        service.Connect(oldClient.ClientId, mapDraft.Id);
+        var oldResponse = service.Poll("legacy-account", "legacy-character", oldClient);
+        oldClient.DraftId = oldResponse.DraftId;
+        oldClient.Grant = oldResponse.Grant;
+        oldClient.Revision = oldResponse.Revision;
+        oldClient.Definition = SeasonCompiler.Copy(oldResponse.Definition!);
+        oldClient.Definition.MapLayouts.Clear();
+        oldClient.OperationId = Guid.NewGuid().ToString("N");
+        var oldSubmit = service.Submit("legacy-account", "legacy-character", oldClient);
+        check(
+            oldSubmit.Definition!.MapLayouts.Count == 1 && oldSubmit.Definition.FormatVersion == 4,
+            "Older authoring clients cannot erase map layouts or downgrade their format"
+        );
+
         request.RaidId = Guid.NewGuid().ToString("N");
         request.Definition = null;
         check(service.Poll("account", "character", request).Grant.Length == 0, "Changing raids expires grants and capture tasks");

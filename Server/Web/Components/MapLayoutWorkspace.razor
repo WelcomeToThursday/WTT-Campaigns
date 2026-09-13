@@ -1,0 +1,37 @@
+@using WTT.Campaigns.Shared.Seasons
+@using WTT.Campaigns.Shared.Spatial
+@using WTT.Campaigns.Server.Seasons
+
+<section class="editor-section">
+    <h3>Mission map layouts</h3>
+    <p>Open Campaign Editor from the game's main menu, select this draft, then open a map. Layouts are previewed only in Editor mode; they do not change ordinary raids.</p>
+    @foreach (var map in Season.MapLayouts)
+    {
+        <details @key="map.Id">
+            <summary>@map.Name · @map.Location · @map.Checkpoints.Count checkpoints</summary>
+            <label>Name <input @bind="map.Name" @bind:after="Notify" /></label>
+            <p>@map.Objects.Count scenery edits · @map.Doors.Count doors · @map.Barriers.Count barriers</p>
+            @foreach (var error in MapLayoutRules.Errors(map, true)) { <p class="validation-warning">@error</p> }
+            <p>Choose this layout in the client's Maps library to edit geometry, rebind targets, or walk the route.</p>
+            <button disabled="@(Raid?.Connected != true)" @onclick="() => Focus(map)">Edit in connected editor</button>
+            <button @onclick="() => Duplicate(map)">Duplicate layout</button>
+            <button class="danger" @onclick="() => Delete(map)">Delete layout</button>
+        </details>
+    }
+</section>
+
+@code {
+    [CascadingParameter] public WTT.Campaigns.Server.Web.Authoring.RaidEditorContext? Raid { get; set; }
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private Task Focus(MapLayout map) => Raid?.Request(new WTT.Campaigns.Shared.Authoring.CaptureTask { Tool = "MapLayout", TargetKind = "MapLayout", TargetId = map.Id, RecordId = map.Id }) ?? Task.CompletedTask;
+    private Task Notify() => Changed.InvokeAsync();
+    private async Task Delete(MapLayout map) { Season.MapLayouts.Remove(map); await Notify(); }
+    private async Task Duplicate(MapLayout map)
+    {
+        var copy = SeasonCompiler.Copy(map); copy.Id = SeasonRepository.NewId(); copy.Name += " copy";
+        foreach (var p in MapLayoutRules.Points(copy)) p.Id = SeasonRepository.NewId();
+        foreach (var d in copy.Doors) d.Id = SeasonRepository.NewId();
+        Season.MapLayouts.Add(copy); Season.FormatVersion = 4; await Notify();
+    }
+}

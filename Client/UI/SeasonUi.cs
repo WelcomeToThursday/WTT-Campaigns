@@ -38,6 +38,8 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     internal void ShowStartupSelection()
     {
+        if (Authoring.EditorMode.Active)
+            return;
         if (_startupShown)
         {
             return;
@@ -68,6 +70,12 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     private void Update()
     {
+        if (Authoring.EditorMode.Active)
+        {
+            if (IsOpen)
+                Close();
+            return;
+        }
         if (IsOpen)
         {
             _screen!.Fit();
@@ -100,7 +108,7 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     internal async void Open(ScreenPage page = ScreenPage.Characters)
     {
-        if (Plugin.InRaid || Plugin.Busy || _opening)
+        if (Authoring.EditorMode.Active || Plugin.InRaid || Plugin.Busy || _opening)
         {
             return;
         }

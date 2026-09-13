@@ -12,7 +12,7 @@ using WTT.Campaigns.Shared.Profiles;
 
 namespace WTT.Campaigns.Client;
 
-[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.7.0")]
+[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.8.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 [BepInDependency("com.wtt.commonlib", "3.0.6")]
@@ -42,7 +42,13 @@ public sealed class Plugin : BaseUnityPlugin
 
     internal static bool SeasonalPlayer
     {
-        get { return Player != null && Current?.ActiveMode == "seasonal" && Player.Profile.Id == App?.Session?.Profile?.Id; }
+        get
+        {
+            return !Authoring.EditorMode.Active
+                && Player != null
+                && Current?.ActiveMode == "seasonal"
+                && Player.Profile.Id == App?.Session?.Profile?.Id;
+        }
     }
 
     internal static string Folder
@@ -53,6 +59,7 @@ public sealed class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Instance = this;
+        gameObject.AddComponent<Authoring.EditorMode>();
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
         WTT.Campaigns.UI.Media.StoryUiArtwork.SharedStatusIcon = name =>

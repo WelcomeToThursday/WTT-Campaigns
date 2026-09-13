@@ -6,6 +6,7 @@ internal static class RaidStartupHookChecks
 {
     internal static void Run(string gamePath, string clientPath)
     {
+        AuthoringRaidNotificationChecks.Run(gamePath, clientPath);
         using var spt = AssemblyDefinition.ReadAssembly(Path.Combine(gamePath, "BepInEx/plugins/spt/spt-custom.dll"));
         using var client = AssemblyDefinition.ReadAssembly(clientPath);
         var manager = spt.MainModule.GetType("SPT.Custom.Utils.DifficultyManager");

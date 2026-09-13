@@ -15,6 +15,12 @@ if (args.Length == 2 && args[0] == "--appearance-data")
     return;
 }
 
+if (args.Length == 3 && args[0] == "--editor-hooks")
+{
+    WTT.Campaigns.Tests.EditorRoutingCompatibility.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 4 && args[0] == "--authoring-socket")
 {
     WTT.Campaigns.Tests.AuthoringSocketCompatibility.Run(args[1], args[2], args[3]);
@@ -99,6 +105,7 @@ WTT.Campaigns.Tests.StoryChapterNotificationChecks.Run(Check);
 WTT.Campaigns.Tests.StoryEngineChecks.Run(Check);
 WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
 WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.MapEditorChecks.Run(Check);
 WTT.Campaigns.Tests.AuthoringSocketChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.EditorLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.WikiDocumentationChecks.Run(Check);

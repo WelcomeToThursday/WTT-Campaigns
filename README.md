@@ -1,6 +1,8 @@
 # WTT-Campaigns
 
-**0.7.0 — Beta release**
+**0.8.0 — Editor milestone**
+
+[Campaign Editor and mission map layouts](wiki/editor-mode.md): open a disposable editor character, reshape supported scenery, and walk through a saved route.
 
 **[Documentation home](wiki/Home.md)** · [Player guides](wiki/Home.md#playing) · [Campaign creation](wiki/Home.md#creating-campaigns)
 

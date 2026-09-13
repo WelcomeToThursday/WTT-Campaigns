@@ -14,6 +14,7 @@ public sealed class CaptureTask
 
 public class AuthoringRequest
 {
+    public string EditorSessionId { get; set; } = "";
     public ItemPreviewExchange? Preview { get; set; }
     public int Version { get; set; } = 1;
     public string ClientId { get; set; } = "";

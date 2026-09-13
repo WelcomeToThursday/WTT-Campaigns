@@ -23,6 +23,7 @@ public sealed partial class RaidEditor
     }
 
     private string _bindingTarget = "";
+    private readonly Dictionary<string, (string Selection, int Page)> _moduleSelection = new();
 
     private RaidEditorView BuildView()
     {
@@ -47,15 +48,18 @@ public sealed partial class RaidEditor
             );
         }
 
-        foreach (var mode in new[] { "Zones", "Bindings", "Captures", "Scene" })
+        foreach (var mode in new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" })
         {
             var value = mode;
             Button(
                 mode,
                 () =>
                 {
+                    _moduleSelection[_mode] = (_selected, _page);
                     _mode = value;
-                    _page = 0;
+                    var previous = _moduleSelection.GetValueOrDefault(value);
+                    _selected = previous.Selection ?? "";
+                    _page = previous.Page;
                     Refresh();
                 }
             );
@@ -302,6 +306,7 @@ public sealed partial class RaidEditor
         );
         Button("KeepLocal", () => _session?.Resolve(true));
         Button("KeepRemote", () => _session?.Resolve(false));
+        BindMapControls(view);
         return view;
     }
 
@@ -322,7 +327,10 @@ public sealed partial class RaidEditor
         var id = _selected;
         _session?.Edit(s =>
         {
-            var point = s.Zones.AsValueEnumerable().Cast<SpatialCapture>().Concat(s.Captures).FirstOrDefault(p => p.Id == id);
+            var point =
+                _mode == "Maps"
+                    ? s.MapLayouts.AsValueEnumerable().SelectMany(MapLayoutRules.Points).FirstOrDefault(p => p.Id == id)
+                    : s.Zones.AsValueEnumerable().Cast<SpatialCapture>().Concat(s.Captures).FirstOrDefault(p => p.Id == id);
             if (point != null)
             {
                 action(point);
@@ -485,6 +493,11 @@ public sealed partial class RaidEditor
 
     private void Duplicate()
     {
+        if (_mode == "Maps")
+        {
+            DuplicateMapRecord();
+            return;
+        }
         if (_mode == "Bindings" && Binding != null)
         {
             var copied = RaidEditorSession.Copy(Binding);
@@ -524,6 +537,11 @@ public sealed partial class RaidEditor
 
     private void Delete()
     {
+        if (_mode == "Maps")
+        {
+            DeleteMapRecord();
+            return;
+        }
         if (_session?.Definition == null)
         {
             return;
@@ -577,7 +595,13 @@ public sealed partial class RaidEditor
         }
 
         var id = _rows[index].Id;
-        if (_mode == "Scene")
+        if (_mode == "Maps")
+        {
+            if (_session?.Definition?.MapLayouts.AsValueEnumerable().Any(l => l.Id == id) == true)
+                _layoutId = id;
+            _selected = id;
+        }
+        else if (_mode == "Scene")
         {
             _picked = _scene[int.Parse(id, CultureInfo.InvariantCulture)];
         }
@@ -715,7 +739,7 @@ public sealed partial class RaidEditor
 
     private void Refresh(bool geometry)
     {
-        if (_view == null || !_open || _session == null)
+        if (_view?.Valid != true || !_open || _session == null)
         {
             return;
         }
@@ -728,11 +752,13 @@ public sealed partial class RaidEditor
         );
         view.Text("Status", _session.Status + (_notice.Length > 0 ? "\n" + _notice : ""));
         view.Conflict(_session);
-        foreach (var mode in new[] { "Zones", "Bindings", "Captures", "Scene" })
+        foreach (var mode in new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" })
             view.Highlight(mode, _mode == mode);
         var search = view.Get<InputField>("Search").text;
         _rows.Clear();
-        if (_mode == "Scene")
+        if (_mode == "Maps" && _session.Definition != null)
+            MapRows();
+        else if (_mode == "Scene")
         {
             _scene
                 .AsValueEnumerable()
@@ -833,5 +859,6 @@ public sealed partial class RaidEditor
         {
             DrawGeometry();
         }
+        RefreshMaps(geometry);
     }
 }

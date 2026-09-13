@@ -15,6 +15,7 @@ namespace WTT.Campaigns.Client.Authoring;
 public sealed partial class RaidEditor : MonoBehaviour
 {
     internal static RaidEditor? Instance;
+    internal static bool KeepNotificationConnection => EditorMode.Active && !EditorMode.Returning || Instance && Instance!._enabled.Value;
     internal bool InputBlocked
     {
         get { return _open; }
@@ -53,6 +54,8 @@ public sealed partial class RaidEditor : MonoBehaviour
     {
         get
         {
+            if (_mode == "Maps")
+                return MapPoint;
             return _session
                 ?.Definition?.Zones.AsValueEnumerable()
                 .Cast<SpatialCapture>()
@@ -60,6 +63,8 @@ public sealed partial class RaidEditor : MonoBehaviour
                 .FirstOrDefault(z => z.Id == _selected);
         }
     }
+
+    private bool AuthoringEnabled => EditorMode.Active ? EditorMode.Ready : _enabled.Value;
 
     private void Awake()
     {
@@ -128,19 +133,33 @@ public sealed partial class RaidEditor : MonoBehaviour
         try
         {
             var player = Plugin.InRaid && Plugin.Player?.HealthController?.IsAlive == true ? Plugin.Player : null;
-            if (player != _player || !_enabled.Value || player && _enabled.Value && _session == null)
+            if (player != _player || !AuthoringEnabled || player && AuthoringEnabled && _session == null)
             {
                 if (_session != null)
                 {
+                    EndWalkthrough();
                     Close();
                     _ = _session.Retire();
                     _session = null;
                 }
                 _player = player;
                 _task = null;
-                if (player && _enabled.Value && ZoneRuntime.Location.Length > 0)
+                if (player && AuthoringEnabled && ZoneRuntime.Location.Length > 0)
                 {
+                    _moduleSelection.Clear();
                     _session = new RaidEditorSession(ZoneRuntime.Location);
+                    if (EditorMode.Ready)
+                    {
+                        _layoutId = EditorMode.SelectedLayout;
+                        _mode = "Maps";
+                        _selected = _layoutId;
+                    }
+                    else if (_mode == "Maps")
+                    {
+                        _mode = "Zones";
+                        _selected = "";
+                        _layoutId = "";
+                    }
                     _session.NativeZoneIds = Resources
                         .FindObjectsOfTypeAll<EFT.Interactive.TriggerWithId>()
                         .AsValueEnumerable()
@@ -160,11 +179,16 @@ public sealed partial class RaidEditor : MonoBehaviour
                     _nextPoll = 0;
                 }
             }
-            if (!player || !_enabled.Value || _session == null)
+            if (!player || !AuthoringEnabled || _session == null)
             {
                 return;
             }
 
+            if (_walking && _shortcut.Value.IsDown())
+            {
+                EndWalkthrough();
+                return;
+            }
             if (_shortcut.Value.IsDown())
             {
                 if (_open)
@@ -176,12 +200,23 @@ public sealed partial class RaidEditor : MonoBehaviour
                     Open();
                 }
             }
-            if (_open && (OtherModal || Time.realtimeSinceStartup - _lastContact > 20))
+            if (_open && OtherModal)
             {
+                EndWalkthrough();
                 Close();
-                _notice = "Editor closed because another screen or a connection interruption took priority.";
+                _notice = "Editor closed because another screen took priority.";
             }
-            _session.Hold = _view?.Typing == true || _drag != null;
+            // Keep draft controls and recovery accessible while the native socket
+            // reconnects. Only the applied physical walkthrough needs to stop.
+            if (_walking && Time.realtimeSinceStartup - _lastContact > 20)
+            {
+                EndWalkthrough();
+                _notice = "Walkthrough restored while the editor connection recovers.";
+            }
+            UpdateWalkthrough();
+            if (EditorMode.Ready && !_open && !_walking && !OtherModal && _session.Definition != null)
+                Open();
+            _session.Hold = _walking || _view?.Typing == true || _drag != null;
             if (!_session.Busy && Time.realtimeSinceStartup >= _nextPoll)
             {
                 _nextPoll = Time.realtimeSinceStartup + 1;
@@ -194,6 +229,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
             if (
                 _task == null
+                && !_walking
                 && !_session.Dirty
                 && _session.Conflict == null
                 && !_session.Busy
@@ -250,6 +286,7 @@ public sealed partial class RaidEditor : MonoBehaviour
         }
         catch (Exception e)
         {
+            EndWalkthrough();
             _notice = e.Message;
             Plugin.Error(e);
             Close();
@@ -288,7 +325,11 @@ public sealed partial class RaidEditor : MonoBehaviour
             return;
         }
 
-        _view ??= BuildView();
+        if (_view?.Valid != true)
+        {
+            _view?.Dispose();
+            _view = BuildView();
+        }
         _camera = Camera.main;
         if (!_camera)
         {
@@ -414,7 +455,8 @@ public sealed partial class RaidEditor : MonoBehaviour
             _disabledEvents.Clear();
             Cursor.visible = _savedCursor;
             Cursor.lockState = _savedLock;
-            _view?.Root.SetActive(false);
+            if (_view?.Valid == true)
+                _view.Root.SetActive(false);
             ClearLines();
             _camera = null;
         }
@@ -422,6 +464,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
     private void OnDestroy()
     {
+        EndWalkthrough();
         Close();
         if (_session != null)
         {
@@ -447,6 +490,15 @@ public sealed partial class RaidEditor : MonoBehaviour
             return;
         }
 
+        if (task.Tool == "MapLayout")
+        {
+            _layoutId = _selected = task.RecordId;
+            _mode = "Maps";
+            _task = null;
+            _session!.TaskStatus(task, "Completed", task.RecordId);
+            Refresh();
+            return;
+        }
         _task = task;
         _selected = task.RecordId;
         _mode = task.Tool == "Zone" ? "Zones" : "Captures";

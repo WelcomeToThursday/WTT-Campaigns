@@ -80,7 +80,7 @@ public static class TraderOfferRules
         {
             var path = "Trader offers/" + assort.TraderId;
             if (
-                definition.FormatVersion != 3
+                definition.FormatVersion is not (3 or 4)
                 || !SeasonValidator.IsId(assort.TraderId)
                 || assort.TraderId == Fence
                 || !traders.Add(assort.TraderId)
@@ -108,7 +108,7 @@ public static class TraderOfferRules
                 if (!valid)
                     result.Add(path, message);
             }
-            Need(definition.FormatVersion == 3, "Trader offers require campaign format 3.");
+            Need(definition.FormatVersion is 3 or 4, "Trader offers require campaign format 3.");
             Need(
                 SeasonValidator.IsId(offer.Id) && SeasonValidator.IsId(offer.TraderId) && offer.TraderId != Fence,
                 "Choose a fixed-assort trader and valid offer identity."

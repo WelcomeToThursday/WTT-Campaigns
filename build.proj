@@ -44,6 +44,7 @@
       <_ServerAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Server.dll'" />
       <_SharedAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Shared.dll'" />
     </ItemGroup>
+    <Exec Condition="'@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-hooks &quot;$(ServerDir).&quot; &quot;@(_ServerAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != '' and '@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --mod-identity &quot;@(_ClientAssembly)&quot; &quot;@(_ServerAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != '' and '@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --authoring-socket &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot; &quot;@(_ServerAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --ui &quot;$(_NativeAssembly)&quot; &quot;@(_ClientAssembly)&quot;" />

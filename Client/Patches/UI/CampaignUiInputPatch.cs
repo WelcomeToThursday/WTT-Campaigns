@@ -16,11 +16,19 @@ internal sealed class CampaignUiInputPatch : ModulePatch
     [PatchPrefix]
     private static bool Prefix(InputNode __instance, List<ECommand> commands, ref float[]? axes, ref ECursorResult shouldLockCursor)
     {
+        if (Authoring.EditorMode.Active)
+            Authoring.EditorRestrictions.Filter(commands);
+        var editorHome = Authoring.EditorMode.Active && !Plugin.InRaid;
         var editorBlocked = Authoring.RaidEditor.Instance && Authoring.RaidEditor.Instance!.InputBlocked;
         var storyBlocked =
             (Story.StoryVisitRuntime.Instance && Story.StoryVisitRuntime.Instance.InputBlocked)
             || (Story.StoryCinematicRuntime.Instance && Story.StoryCinematicRuntime.Instance.InputBlocked);
-        if (!editorBlocked && !storyBlocked && (__instance is not UIInputRoot || !SeasonUi.Instance || !SeasonUi.Instance.InputBlocked))
+        if (
+            !editorHome
+            && !editorBlocked
+            && !storyBlocked
+            && (__instance is not UIInputRoot || !SeasonUi.Instance || !SeasonUi.Instance.InputBlocked)
+        )
         {
             if (Story.StoryRaidRuntime.Instance)
             {

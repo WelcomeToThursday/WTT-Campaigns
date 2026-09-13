@@ -28,7 +28,7 @@ foreach (
 var localeTable = Activator.CreateInstance<LocaleTable>();
 typeof(LocaleTable)
     .GetProperty("Global")!
-    .SetValue(localeTable, new Dictionary<string, LazyLoad<GlobalLocaleDictionary>> { ["en"] = new(() => new()) });
+    .SetValue(localeTable, new Dictionary<string, LazyLoad<GlobalLocaleDictionary>> { ["en"] = new(() => new(), cacheValue: false) });
 var content = new SeasonContentService(
     null!,
     tables,
@@ -39,7 +39,9 @@ var content = new SeasonContentService(
     null!,
     null!,
     null!,
-    []
+    [],
+    null!,
+    null!
 );
 var services = new ServiceCollection().AddLogging();
 services.AddMudServices();

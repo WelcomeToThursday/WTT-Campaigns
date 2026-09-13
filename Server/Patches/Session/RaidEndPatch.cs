@@ -30,13 +30,20 @@ public class RaidEndPatch(SeasonService seasons, HubGameplay hub, WTT.Campaigns.
     [UsedImplicitly]
     private static void Postfix(MongoId sessionId, EndLocalRaidRequestData request, IDisposable __state, ref Task __result)
     {
-        __result = Complete(__result, sessionId.ToString(), request, __state);
+        if (__state != null)
+            __result = Complete(__result, sessionId.ToString(), request, __state);
     }
 
     [PatchPrefix]
     [UsedImplicitly]
     private static bool Prefix(MongoId sessionId, EndLocalRaidRequestData request, out IDisposable __state, ref Task __result)
     {
+        if (Editor.EditorSessions.IsScratch(sessionId.ToString()))
+        {
+            __state = null!;
+            __result = Task.CompletedTask;
+            return false;
+        }
         __state = _seasons.Enter(_seasons.ResolveRoot(sessionId.ToString()));
         if (_hub.RaidFinished(sessionId.ToString(), request.ServerId))
         {

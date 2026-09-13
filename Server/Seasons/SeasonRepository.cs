@@ -405,6 +405,7 @@ public sealed class SeasonRepository
         owned.UnionWith(source.TraderOffers.SelectMany(o => o.Items).Select(i => i.Id));
         owned.UnionWith(source.Zones.Select(z => z.Id));
         owned.UnionWith(source.Captures.Select(c => c.Id));
+        owned.UnionWith(source.MapLayouts.SelectMany(WTT.Campaigns.Shared.Spatial.MapLayoutRules.OwnedIds));
         var replacements = owned.ToDictionary(id => id, _ => NewId());
         string Replace(string text)
         {
@@ -553,7 +554,11 @@ public sealed class SeasonRepository
 
         var folder = Path.Combine(_root, "packs", CheckId(key));
         var manifest = Read<SeasonManifest>(Path.Combine(folder, "manifest.json"));
-        if (manifest.FormatVersion is not (1 or 2 or 3) || manifest.ProtocolVersion != 2 || !manifest.Files.ContainsKey("definition.json"))
+        if (
+            manifest.FormatVersion is not (1 or 2 or 3 or 4)
+            || manifest.ProtocolVersion != 2
+            || !manifest.Files.ContainsKey("definition.json")
+        )
         {
             throw new InvalidDataException("Incompatible pack manifest.");
         }
@@ -836,7 +841,7 @@ public sealed class SeasonRepository
         }
         var manifest = JsonConvert.DeserializeObject<SeasonManifest>(Encoding.UTF8.GetString(Entry("manifest.json")))!;
         if (
-            manifest.FormatVersion is not (1 or 2 or 3)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
             || manifest.Files.Count != zip.Entries.Count - 1

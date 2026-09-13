@@ -69,7 +69,17 @@ internal sealed class RaidEditorSession
         }
 
         var before = Copy(Definition);
-        action(Definition);
+        try
+        {
+            action(Definition);
+        }
+        catch
+        {
+            Definition = before;
+            throw;
+        }
+        if (Definition.MapLayouts.Count > 0)
+            Definition.FormatVersion = 4;
         if (Definition.Zones.Count > 0 || Definition.Captures.Count > 0)
         {
             Definition.FormatVersion = Math.Max(Definition.FormatVersion, 2);
@@ -139,6 +149,8 @@ internal sealed class RaidEditorSession
     {
         return new()
         {
+            Version = EditorMode.Ready ? 2 : 1,
+            EditorSessionId = EditorMode.SessionId,
             ClientId = ClientId,
             RaidId = RaidId,
             Location = Location,
