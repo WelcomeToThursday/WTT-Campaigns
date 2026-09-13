@@ -395,9 +395,11 @@ sealed class EditorRenderer(IServiceProvider services) : Renderer(services, Null
     public string? ImageSource(int id)
     {
         var frames = GetCurrentRenderTreeFrames(id);
-        return frames.Array.Take(frames.Count)
+        return frames
+            .Array.Take(frames.Count)
             .Where(f => f.FrameType == RenderTreeFrameType.Attribute && f.AttributeName == "src")
-            .Select(f => f.AttributeValue?.ToString()).FirstOrDefault();
+            .Select(f => f.AttributeValue?.ToString())
+            .FirstOrDefault();
     }
 
     public string Text(int id)

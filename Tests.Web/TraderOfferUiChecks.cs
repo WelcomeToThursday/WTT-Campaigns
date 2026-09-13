@@ -173,40 +173,63 @@ internal static class TraderOfferUiChecks
                     var failedJob = previews.Exchange("fixture", "Fixture character", previewRequest).Preview!.Job!;
                     previewRequest.Preview.Result = new()
                     {
-                        Id = failedJob.Id, Key = failedJob.Key, Errors = ["Critical MongoId error: incorrect length. Id: hideout"],
+                        Id = failedJob.Id,
+                        Key = failedJob.Key,
+                        Errors = ["Critical MongoId error: incorrect length. Id: hideout"],
                     };
                     previews.Exchange("fixture", "Fixture character", previewRequest);
                     previewRequest.Preview.Result = null;
-                    await renderer.DispatchEventAsync(renderer.Event(editor.Id, "select", "Use cached images", "onchange"),
-                        null, new ChangeEventArgs { Value = previewRequest.ClientId });
+                    await renderer.DispatchEventAsync(
+                        renderer.Event(editor.Id, "select", "Use cached images", "onchange"),
+                        null,
+                        new ChangeEventArgs { Value = previewRequest.ClientId }
+                    );
                     var thumbnailJob = previews.Exchange("fixture", "Fixture character", previewRequest).Preview!.Job;
-                    check(thumbnailJob != null && thumbnailJob.Key != failedJob.Key,
-                        "Browsing installed cards queues a fresh thumbnail despite the old cached render failure");
+                    check(
+                        thumbnailJob != null && thumbnailJob.Key != failedJob.Key,
+                        "Browsing installed cards queues a fresh thumbnail despite the old cached render failure"
+                    );
                     var thumbnailRoot = thumbnailJob!.Items.Single();
-                    check(thumbnailRoot.ParentId == null && thumbnailRoot.SlotId == null && thumbnailRoot.Location == null
-                        && thumbnailRoot.Upd?.StackObjectsCount == 1 && thumbnailRoot.Upd.UnlimitedCount == null
-                        && thumbnailRoot.Upd.BuyRestrictionMax == null && thumbnailRoot.Upd.BuyRestrictionCurrent == null,
-                        "Installed card rendering receives a detached single item without trader stock or purchase counters");
+                    check(
+                        thumbnailRoot.ParentId == null
+                            && thumbnailRoot.SlotId == null
+                            && thumbnailRoot.Location == null
+                            && thumbnailRoot.Upd?.StackObjectsCount == 1
+                            && thumbnailRoot.Upd.UnlimitedCount == null
+                            && thumbnailRoot.Upd.BuyRestrictionMax == null
+                            && thumbnailRoot.Upd.BuyRestrictionCurrent == null,
+                        "Installed card rendering receives a detached single item without trader stock or purchase counters"
+                    );
                     previewRequest.Preview.Result = new()
                     {
-                        Id = thumbnailJob.Id, Key = thumbnailJob.Key, Verified = true,
+                        Id = thumbnailJob.Id,
+                        Key = thumbnailJob.Key,
+                        Verified = true,
                         Png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGP4z8DwHwAFAAH/iZk9HQAAAABJRU5ErkJggg==",
                     };
                     previews.Exchange("fixture", "Fixture character", previewRequest);
                     await Task.Delay(2200);
                     var thumbnail = renderer.Components<ItemPreviewImage>().Single();
-                    check(renderer.ImageSource(thumbnail.Id) == $"/wtt-campaigns/creator/item-previews/{thumbnailJob.Key}.png"
-                        && season.TraderOffers.Count == 0 && json.Serialize(trader.Assort) == installedJson,
-                        "The assortment card displays its completed icon automatically before editing and leaves native stock intact");
-                    await renderer.DispatchEventAsync(renderer.Event(editor.Id, "select", "Use cached images", "onchange"),
-                        null, new ChangeEventArgs { Value = "" });
+                    check(
+                        renderer.ImageSource(thumbnail.Id) == $"/wtt-campaigns/creator/item-previews/{thumbnailJob.Key}.png"
+                            && season.TraderOffers.Count == 0
+                            && json.Serialize(trader.Assort) == installedJson,
+                        "The assortment card displays its completed icon automatically before editing and leaves native stock intact"
+                    );
+                    await renderer.DispatchEventAsync(
+                        renderer.Event(editor.Id, "select", "Use cached images", "onchange"),
+                        null,
+                        new ChangeEventArgs { Value = "" }
+                    );
                     check(renderer.ImageSource(thumbnail.Id) != null, "Installed thumbnails remain visible in cached-image mode");
                     previewRequest.Enabled = false;
                     previews.Exchange("fixture", "Fixture character", previewRequest);
                     await Click("Edit assortment");
                     await Click("Edit offer");
-                    check(previews.Get(season.TraderOffers.Single().Items, season.Id).Key == thumbnailJob.Key,
-                        "Editing an installed offer reuses the already generated card image");
+                    check(
+                        previews.Get(season.TraderOffers.Single().Items, season.Id).Key == thumbnailJob.Key,
+                        "Editing an installed offer reuses the already generated card image"
+                    );
                     check(
                         season.TraderOffers.Count == 1
                             && season.TraderOffers[0].Items[0].Template == weapon
