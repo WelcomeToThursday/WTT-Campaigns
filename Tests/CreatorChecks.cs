@@ -22,6 +22,7 @@ internal static class CreatorChecks
                 File.Copy(file, target);
             }
             var store = new SeasonRepository(directory);
+            TraderOfferChecks.Run(store, check);
             StoryImageRouteChecks.Run(store, directory, check);
             RaidAuthoringChecks.Run(store, check);
             var first = store.Create(false);

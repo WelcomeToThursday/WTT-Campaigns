@@ -210,9 +210,9 @@ public static class SpatialRules
             }
         }
 
-        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion != 2)
+        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion is not (2 or 3))
         {
-            errors.Add("Spatial content requires campaign format 2.");
+            errors.Add("Spatial content requires campaign format 2 or later.");
         }
 
         return errors;

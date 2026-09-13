@@ -4,7 +4,7 @@
     Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.local.props')"
   />
   <PropertyGroup>
-    <Version>0.6.1</Version>
+    <Version>0.7.0</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

@@ -225,6 +225,7 @@ await using (var renderer = new EditorRenderer(services))
         Check(host.Changes == 1 && host.SelectedId == "", "Deletion marks the draft changed and clears the parent selection");
     });
 }
+await TraderOfferUiChecks.Run(Check);
 Console.WriteLine($"PASS {count} Creator component assertions");
 
 sealed class EditorHost(SeasonDefinition season, NativeQuest quest, StoryQuest membership) : ComponentBase
@@ -389,6 +390,14 @@ sealed class EditorRenderer(IServiceProvider services) : Renderer(services, Null
             return subtree.First(f => f.FrameType == RenderTreeFrameType.Attribute && f.AttributeName == eventName).AttributeEventHandlerId;
         }
         throw new Exception($"Missing {element} '{text}'");
+    }
+
+    public string? ImageSource(int id)
+    {
+        var frames = GetCurrentRenderTreeFrames(id);
+        return frames.Array.Take(frames.Count)
+            .Where(f => f.FrameType == RenderTreeFrameType.Attribute && f.AttributeName == "src")
+            .Select(f => f.AttributeValue?.ToString()).FirstOrDefault();
     }
 
     public string Text(int id)

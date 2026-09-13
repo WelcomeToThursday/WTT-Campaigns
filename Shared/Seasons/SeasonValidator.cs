@@ -41,7 +41,8 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion is 1 or 2, "Overview", "Unsupported campaign format version.");
+        Need(s.FormatVersion is 1 or 2 or 3, "Overview", "Unsupported campaign format version.");
+        TraderOfferRules.Validate(s, r);
         Need(IsId(s.Id) && IsId(s.BattlePassId), "Overview", "Campaign and battle pass require valid identities.");
         Need(!string.IsNullOrWhiteSpace(s.Name) && s.Name.Length <= 120, "Overview", "Name is required (up to 120 characters).");
         Need(s.Rules.StartingPoints is >= 0 and <= 100000, "Perks", "Starting budget must be 0–100000.");
@@ -198,7 +199,7 @@ public static class SeasonValidator
                     Need(IsId((string?)grant.Target), path, "Select a reward target.");
                 }
 
-                if (kind is "Item" or "AssortmentUnlock")
+                if (kind == "Item" || (kind == "AssortmentUnlock" && !s.TraderOffers.Any(o => o.Id == grant.Target)))
                 {
                     ItemTree(grant.Items, path, r);
                 }

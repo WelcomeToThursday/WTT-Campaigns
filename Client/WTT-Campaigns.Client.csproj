@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RootNamespace>WTT.Campaigns.Client</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.6.1</Version>
+    <Version>0.7.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Using Remove="System.Linq" />
@@ -21,6 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Sirenix.Serialization" HintPath="$(ManagedDir)Sirenix.Serialization.dll" Private="false" />
+    <Reference Include="ItemComponent.Types" HintPath="$(ManagedDir)ItemComponent.Types.dll" Private="false" />
     <Reference
       Include="Assembly-CSharp"
       HintPath="$(TarkovDir)BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll"

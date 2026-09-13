@@ -1,0 +1,55 @@
+@page "/wtt-campaigns/creator/traders"
+@using WTT.Campaigns.Server.Web.Authoring
+@attribute [Authorize(Policy = "Administrator")]
+@rendermode InteractiveServer
+@layout SPTarkov.Server.Web.Layout.BaseMudBlazorLayout
+@inject StandaloneAssortRepository Assorts
+
+<PageTitle>Standalone trader editor</PageTitle>
+<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-trader-portraits" /></HeadContent>
+<NavigationLock ConfirmExternalNavigation="@_dirty" OnBeforeInternalNavigation="BeforeNavigate" />
+<main class="season-creator standalone-assorts">
+    <header class="creator-header"><div><h1>Standalone trader editor</h1><p>Edit installed trader assortments and export native assort.json files independently of any campaign.</p></div><a class="button subtle" href="/wtt-campaigns/creator">Campaign Creator</a></header>
+    @if (_draft != null)
+    {
+        <div class="editor-card row"><span role="status">@(_dirty ? "Unsaved draft changes" : "Draft saved")</span><button class="primary" @onclick="Save">Save draft</button><button @onclick="@(() => _confirmReload = true)">Reload saved draft…</button><button disabled="@(!CanExport)" @onclick="PrepareExport">Prepare export</button>@if (_download.Length > 0) { <a class="button primary" href="@_download" download>Download assort.json</a> }</div>
+        <p class="field-help">Your draft is stored separately from campaigns. Exports contain this trader’s complete assortment, including prices, loyalty and stock. Exporting does not install or change a live trader.</p>
+        @if (_confirmReload) { <div class="notice"><p>Discard unsaved changes and reload the saved standalone workspace?</p><button @onclick="Reload">Discard changes and reload</button><button @onclick="@(() => _confirmReload = false)">Keep editing</button></div> }
+        @if (_message.Length > 0) { <p class="notice" role="status">@_message</p> }
+        <TraderOfferEditor Season="@_draft.Definition" Standalone="true" Changed="Dirty" TraderSelected="ChooseTrader" />
+    }
+    else { <p class="notice error">@_message</p> }
+</main>
+
+@code {
+    private StandaloneAssortDraft? _draft;
+    private bool _dirty, _confirmReload;
+    private string _trader = "", _message = "", _download = "";
+    private bool CanExport => _draft?.Definition.TraderAssorts.Any(a => a.TraderId == _trader && a.ReplaceExisting) == true;
+    protected override void OnInitialized() => Reload();
+    private void Reload()
+    {
+        try { _draft = Assorts.Open(); _dirty = _confirmReload = false; _message = _download = ""; }
+        catch (Exception e) when (e is IOException or InvalidDataException or JsonException) { _message = e.Message; }
+    }
+    private void Dirty() { _dirty = true; _download = ""; }
+    private void ChooseTrader(string trader) { _trader = trader; _download = ""; }
+    private bool SaveDraft()
+    {
+        if (_draft == null) return false;
+        try { var saved = Assorts.Save(_draft); _draft.Revision = saved.Revision; _dirty = false; _message = "Standalone draft saved."; return true; }
+        catch (Exception e) when (e is IOException or InvalidOperationException) { _message = e.Message; return false; }
+    }
+    private void Save() { SaveDraft(); }
+    private void PrepareExport()
+    {
+        if (!SaveDraft() || _draft == null) return;
+        try { Assorts.Export(_trader, _draft.Revision); _download = $"/wtt-campaigns/creator/assorts/{_trader}/download?revision={_draft.Revision}"; _message = "Assortment validated. Download assort.json to use with your trader mod. Client image verification remains separate from this export."; }
+        catch (Exception e) when (e is IOException or InvalidOperationException) { _message = e.Message; }
+    }
+    private void BeforeNavigate(LocationChangingContext context)
+    {
+        if (!_dirty) return;
+        context.PreventNavigation(); _message = "Save your draft or reload the saved draft before leaving.";
+    }
+}

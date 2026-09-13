@@ -50,6 +50,7 @@ internal static class GameplaySerialization
                 nameof(SeasonDefinition.UniversalUnavailableImage),
             },
             [typeof(StoryChapter)] = new() { nameof(StoryChapter.Name), nameof(StoryChapter.Image), nameof(StoryChapter.Icon) },
+            [typeof(CampaignTraderOffer)] = new() { nameof(CampaignTraderOffer.Name) },
             [typeof(StoryNote)] = new() { nameof(StoryNote.Text) },
             [typeof(StoryDialogLine)] = new()
             {

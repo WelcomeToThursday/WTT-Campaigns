@@ -13,6 +13,14 @@ namespace WTT.Campaigns.Server.Web.Pages;
 
 public partial class Creator
 {
+    private string _selectedTraderOffer = "";
+
+    private void OpenTraderOffer(string id)
+    {
+        _selectedTraderOffer = id;
+        NavigateWorkspace("Trader offers");
+    }
+
     private static readonly string[] Sections =
     [
         "Overview",
@@ -22,6 +30,7 @@ public partial class Creator
         "Battle pass",
         "Rewards",
         "Items and crates",
+        "Trader offers",
         "Quests",
         "Chapters",
         "Journal notes",
@@ -47,6 +56,7 @@ public partial class Creator
             "Battle pass" => "Arrange reward pages and set the requirements to unlock them.",
             "Rewards" => "Arrange the campaign reward grid and edit selected tiles below the grid.",
             "Items and crates" => "Reuse installed models and configure exchanges and weighted loot pools.",
+            "Trader offers" => "Choose a trader, enter edit mode, and edit, clear or replace their assortment for this campaign.",
             "Quests" => "Create and edit quests that do not belong to a story chapter.",
             "Chapters" => "Select a chapter to create and edit its quests in one workspace.",
             "Journal notes" => "Write the entries players discover, and connect related items, offers and crafts.",
@@ -868,6 +878,8 @@ public partial class Creator
         _focusChildId = "";
         _focusId = identity;
         var section = path.Split('/')[0];
+        if (section == "Trader offers")
+            _selectedTraderOffer = identity;
         _section = section switch
         {
             "Assets" => "Overview",

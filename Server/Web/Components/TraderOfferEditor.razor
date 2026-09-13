@@ -1,0 +1,320 @@
+@using WTT.Campaigns.Shared.Authoring
+@using WTT.Campaigns.Shared.Native
+@using WTT.Campaigns.Server.Web.Authoring
+@implements IDisposable
+@inject SeasonContentService Content
+@inject TraderOfferCatalogue Catalogue
+@inject ItemPreviewService Previews
+
+<section class="trader-offer-workspace">
+    @if (_trader.Length == 0)
+    {
+        <section class="editor-card"><h2>Choose a trader</h2><p>@(Standalone ? "Select an installed trader to make an independent assortment draft and export assort.json." : "Select a trader to change what they sell in this campaign.")</p>
+        <label>Find a trader<input type="search" @bind="_traderSearch" @bind:event="oninput" placeholder="Trader name…" /></label>
+        <div class="assort-traders">@foreach (var trader in Content.Choices("traders", _traderSearch).Where(t => Catalogue.HasTrader(t.Id))) { <button @key="trader.Id" @onclick="@(() => SelectTrader(trader.Id))"><TraderPortrait TraderId="@trader.Id" /><span class="trader-card-copy"><strong>@trader.Name</strong><span class="trader-card-status">@TraderSummary(trader.Id)</span></span></button> }</div>
+        <p class="field-help">Vanilla and installed modded traders are available. Fence’s generated inventory is not supported.</p></section>
+    }
+    else
+    {
+    <header class="assort-heading"><div><button class="subtle" @onclick="BackToTraders">← Choose another trader</button><h2>@Content.Name("traders", _trader)</h2><p>@(Standalone ? "Standalone assortment draft · export as assort.json" : "Campaign assortment · changes apply to this campaign’s characters")</p></div>
+    <div class="row">@if (!_editing) { <button class="primary" @onclick="BeginEditing">Edit assortment</button> } else { <button disabled="@(_undo.Count == 0)" @onclick="@(() => Undo(false))">Undo</button><button disabled="@(_redo.Count == 0)" @onclick="@(() => Undo(true))">Redo</button><button @onclick="@(() => { _editing = false; _builder = false; })">Finish editing</button> }</div></header>
+    @if (_message.Length > 0) { <p class="notice" role="status">@_message</p> }
+    @if (_confirm.Length > 0)
+    {
+        <section class="notice error"><h3>@(_confirm == "clear" ? "Clear this assortment?" : "Restore the installed assortment?")</h3><p>@(_confirm == "clear" ? "This removes every offer from this trader’s draft. You can then add your own items. Other traders are kept." : "This discards this trader’s draft changes and returns to their currently installed offers.") You can undo this change.</p><button class="danger" @onclick="ConfirmReset">@(_confirm == "clear" ? "Clear all offers" : "Restore assortment")</button><button @onclick='@(() => _confirm = "")'>Cancel</button></section>
+    }
+    <details class="editor-card assort-preview-settings"><summary>Item previews · @ConnectionStatus</summary>
+        <div class="row"><strong>Client item images</strong><span role="status">@ConnectionStatus</span></div>
+        <div class="inline-fields"><select aria-label="Image provider" value="@_client" @onchange="ChooseClient"><option value="">Use cached images</option>@foreach (var c in Previews.Clients()) { <option value="@c.Id">@c.Character · @(c.Ready ? "Main menu" : "Paused")</option> }</select><button disabled="@(Offer == null || _client.Length == 0)" @onclick="RefreshPreview">Refresh selected assembly</button></div>
+        <p class="field-help">Enable “Web item previews → Enable item authoring” in the game's WTT-Campaigns settings and stay at the main menu. Drafts can be edited offline. Publishing requires a verified assembly.</p>
+    </details>
+    @if (!_builder)
+    {
+        <section class="editor-card"><div class="row"><div><h3>Assortment <span class="library-count">@VisibleOffers.Count</span></h3><p>@(!_editing ? "Review what this trader sells, then enter edit mode to make changes." : "Edit an offer, remove it, add something new, or clear the assortment and start from empty.")</p></div>
+        @if (_editing) { <button class="primary" @onclick="StartNew">Add offer</button><button class="danger" @onclick='@(() => _confirm = "clear")'>Clear assortment…</button><button class="subtle" @onclick='@(() => _confirm = "restore")'>Restore installed…</button> }</div>
+        @if (Policy?.ReplaceExisting == true) { <p class="notice">@(Standalone ? "Independent copy: only the offers below are exported." : "Custom assortment: the installed offers are replaced by the offers below for this campaign.")</p> }
+        <label>Search this assortment<input type="search" @bind="_offerSearch" @bind:event="oninput" @bind:after="@(() => _page = 0)" placeholder="Item or offer name…" /></label>
+        <div class="assort-offer-list">@foreach (var row in FilteredOffers.Skip(_page * 24).Take(24))
+        {
+            var owned = Season.TraderOffers.Any(o => o.Id == row.Id && o.TraderId == _trader);
+            <article><ItemPreviewImage Items="@row.Items" Name="@row.Name" Client="@_client" Campaign="@Season.Id" InstalledOffer="@(!owned)" /><div><strong>@row.Name</strong><span>@(owned ? "Draft offer" : "Installed offer") · Loyalty @row.Loyalty</span><span>@Payment(row)</span><span>@(row.UnlimitedStock ? "Unlimited stock" : $"Stock: {row.Stock}")@(row.PurchaseLimit > 0 ? $" · Limit: {row.PurchaseLimit}" : "")</span></div>
+            @if (_editing) { <div class="row"><button @onclick="@(() => EditOffer(row))">Edit offer</button><button class="subtle" @onclick="@(() => RemoveOffer(row))">Remove offer</button></div> }</article>
+        }</div>
+        @if (VisibleOffers.Count == 0) { <div class="assort-empty"><h3>This assortment is empty</h3><p>@(_editing ? "Use Add offer to choose an item or weapon preset." : "Enter edit mode to add your first offer.")</p></div> }
+        else if (FilteredOffers.Count == 0) { <p>No offers match this search.</p> }
+        @if (FilteredOffers.Count > 24) { <div class="row"><button disabled="@(_page == 0)" @onclick="@(() => _page--)">Previous offers</button><span>Page @(_page + 1) of @((FilteredOffers.Count + 23) / 24)</span><button disabled="@((_page + 1) * 24 >= FilteredOffers.Count)" @onclick="@(() => _page++)">Next offers</button></div> }
+        </section>
+    }
+    else
+    {
+    <div class="assort-heading"><div><button class="subtle" @onclick="@(() => { _builder = false; _container = ""; })">← Back to assortment</button><h3>@(Offer?.Name ?? "Add an offer")</h3><p>@(Offer == null ? "Choose the item or weapon preset this trader will sell." : "Change the assembled item and its price, stock and loyalty requirements.")</p></div>@if (Offer is { } current) { <button class="danger" @onclick="@(() => RemoveOffer(current))">Delete offer</button> }</div>
+    <nav class="assort-tabs" aria-label="Offer workspace"><button @onclick='@(() => _tab = "catalogue")'>Catalogue</button><button @onclick='@(() => _tab = "assembly")'>Assembly</button><button @onclick='@(() => _tab = "settings")'>Offer settings</button></nav>
+    <div class="assort-columns @($"show-{_tab}")">
+        <section class="assort-catalogue editor-card"><h3>Installed content</h3>
+            <label>Find items, presets or offers<input @bind="_search" @bind:event="oninput" /></label>
+            <select aria-label="Catalogue source" @bind="_source"><option value="items">Items</option><option value="presets">Weapon presets</option><option value="offers">Trader offers</option></select>
+            @if (_source == "items")
+            {
+                <div class="assort-item-cards">
+                @foreach (var choice in Choices)
+                {
+                    <article draggable="true" @ondragstart="@(() => { _dragTemplate = choice.Id; _dragItem = ""; })">
+                        <ItemPreviewImage Items="@(Thumbnail(choice.Id))" Name="@choice.Name" Client="@_client" Campaign="@Season.Id" />
+                        <strong>@choice.Name</strong>@if (Container == null) { <button @onclick="@(() => NewItem(choice))">Use item for new offer</button> }
+                        @if (Offer != null && Container != null) { <button @onclick="@(() => AddItem(choice.Id))">Add to @Container.Id</button> }
+                    </article>
+                }
+                </div><p class="field-help">Showing up to 24 matches. Search to narrow the catalogue. Selecting a destination filters compatible items. Drag a card onto a slot or grid cell.</p>
+            }
+            else if (_source == "presets")
+            {
+                @foreach (var preset in Catalogue.Presets(_search)) { <button class="assort-source" @onclick="@(() => NewPreset(preset.Id, preset.Name))">@preset.Name</button> }
+            }
+            else
+            {
+                @foreach (var choice in _installed.Where(o => o.Name.Contains(_search, StringComparison.OrdinalIgnoreCase))) { <button class="assort-source" @onclick="@(() => DuplicateInstalled(choice))">Copy @choice.Name</button> }
+            }
+        </section>
+        <section class="assort-assembly editor-card"><h3>Item assembly</h3>
+        @if (Offer is { } offer)
+        {
+            var state = Previews.Get(offer.Items, Season.Id);
+            <div class="assort-root-preview">@if (state.HasImage) { <img src="@($"/wtt-campaigns/creator/item-previews/{state.Key}.png")" alt="@offer.Name" /> } else { <span>Assembly preview</span> }</div>
+            <p role="status">@state.Status</p>@foreach (var message in state.Messages) { <p class="notice">@message</p> }
+            <div class="assort-tree" role="tree" aria-label="Assembly items">
+            @foreach (var item in Tree(offer))
+            {
+                <button role="treeitem" aria-selected="@(Selected?.Id == item.Id)" class="@(Selected?.Id == item.Id ? "selected" : "")" style="@($"margin-left:{Depth(item) * 12}px")" draggable="@(item.Id != offer.Id)" @ondragstart="@(() => { _dragItem = item.Id; _dragTemplate = ""; })" @onclick="@(() => SelectItem(item.Id))">@(item.Id == offer.Id ? "◆" : "↳") @Content.Name("items", item.Template) <small>@item.SlotId</small></button>
+            }
+            </div>
+            @if (Selected is { } selected)
+            {
+                var descriptor = Catalogue.Item(selected.Template);
+                <h4>@Content.Name("items", selected.Template)</h4>
+                @if (selected.Id != offer.Id)
+                {
+                    <label>Quantity<input type="number" min="1" value="@(selected.Upd?.StackObjectsCount ?? 1)" @onchange="@(e => Change(() => (selected.Upd ??= new()).StackObjectsCount = Number(e)))" /></label>
+                    @if (selected.Location?.Grid != null) { <button @onclick="@(() => Change(() => selected.Location.Grid.Rotation = selected.Location.Grid.Rotation == "1" ? "0" : "1"))">Rotate item</button> }
+                    <button @onclick="@(() => Change(() => { TraderOfferAuthoring.Remove(offer, selected.Id); _selected = offer.Id; }))">Remove item and children</button>
+                }
+                @if (descriptor == null) { <p class="notice">This item template is unavailable. Install its dependency to edit slots or verify it.</p> }
+                else
+                {
+                    @foreach (var destination in descriptor.Containers)
+                    {
+                        <button class="assort-slot @(_container == destination.Id ? "selected" : "")" @ondragover:preventDefault @ondrop="@(() => Drop(destination, 0, 0))" @onclick="@(() => _container = destination.Id)">@destination.Id · @destination.Kind @(destination.Required ? "· Required" : "")</button>
+                    }
+                    @if (Container is { } container && container.Kind == "Grid")
+                    {
+                        <div class="assort-grid" style="@($"grid-template-columns:repeat({Math.Min(container.Width, 32)},36px)")">
+                        @for (var y = 0; y < Math.Min(container.Height, 32); y++)
+                        {
+                            @for (var x = 0; x < Math.Min(container.Width, 32); x++)
+                            {
+                                var cx = x; var cy = y;
+                                <button class="@(_x == x && _y == y ? "selected" : "")" aria-label="@($"Column {x + 1}, row {y + 1}")" @onclick="@(() => { _x = cx; _y = cy; })" @ondragover:preventDefault @ondrop="@(() => Drop(container, cx, cy))">·</button>
+                            }
+                        }
+                        @foreach (var child in offer.Items.Where(i => i.ParentId == selected.Id && i.SlotId == container.Id && i.Location?.Grid != null))
+                        {
+                            var position = child.Location!.Grid!; var size = ItemSize(child, state); var rotated = position.Rotation is "1" or "Vertical";
+                            <button class="assort-grid-item" title="@Content.Name("items", child.Template)" style="@($"left:{(position.X ?? 0) * 36}px;top:{(position.Y ?? 0) * 36}px;width:{(rotated ? size.Height : size.Width) * 36}px;height:{(rotated ? size.Width : size.Height) * 36}px")" draggable="true" @ondragstart="@(() => { _dragItem = child.Id; _dragTemplate = ""; })" @onclick="@(() => SelectItem(child.Id))"><ItemPreviewImage Items="@(Subtree(offer, child))" Name="@Content.Name("items", child.Template)" Client="@_client" Campaign="@Season.Id" /></button>
+                        }
+                        </div><p>New item position: column @(_x + 1), row @(_y + 1)</p><label class="check"><input type="checkbox" @bind="_rotated" />Rotate new item</label>
+                    }
+                }
+            }
+            @foreach (var issue in AssemblyIssues(offer)) { <p class="notice error">@issue</p> }
+        }
+        else { <p>Choose an item, preset or installed offer to begin.</p> }
+        </section>
+        <section class="assort-settings editor-card"><h3>Offer settings</h3>
+        @if (Offer is { } settings)
+        {
+            <label>Name<input @bind="settings.Name" @bind:after="Commit" /></label>
+            <p>Sold by <strong>@Content.Name("traders", _trader)</strong></p>
+            <label>Loyalty level<select @bind="settings.Loyalty" @bind:after="Commit">@for (var i = 1; i <= 4; i++) { <option value="@i">@i</option> }</select></label>
+            @if (!Standalone) { <label>Availability<select @bind="settings.RequiresUnlock" @bind:after="Commit"><option value="false">Available in this campaign</option><option value="true">Requires reward unlock</option></select></label><p class="field-help">Native trader access and loyalty still apply. Unlock-only offers also need a reward in Battle pass or Rewards.</p> }
+            <label class="check"><input type="checkbox" @bind="settings.UnlimitedStock" @bind:after="Commit" />Unlimited stock</label>
+            @if (!settings.UnlimitedStock) { <label>Stock per restock<input type="number" min="1" @bind="settings.Stock" @bind:after="Commit" /></label> }
+            <label>Per-player limit per restock<input type="number" min="0" @bind="settings.PurchaseLimit" @bind:after="Commit" /></label><p class="field-help">Zero means no per-player limit. Stock uses the trader's native restock schedule.</p>
+            <h4>Payment alternatives</h4><p class="field-help">Every row within an alternative is paid together for one purchase unit.</p>
+            @foreach (var scheme in settings.Barter.ToArray())
+            {
+                <div class="editor-card">
+                @foreach (var cost in scheme.ToArray())
+                {
+                    <ContentPicker Kind="items" Label="Currency or barter item" SearchProvider="@InventoryChoices" Value="@cost.Template" ValueChanged="@(v => Change(() => cost.Template = v))" />
+                    <label>Required quantity<input type="number" min="1" @bind="cost.Count" @bind:after="Commit" /></label><button @onclick="@(() => Change(() => scheme.Remove(cost)))">Remove cost</button>
+                }
+                <button @onclick="@(() => Change(() => scheme.Add(new NativeBarter { Template = "5449016a4bdc2d6f028b456f", Count = 1 })))">Add cost</button><button @onclick="@(() => Change(() => settings.Barter.Remove(scheme)))">Remove alternative</button>
+                </div>
+            }
+            <button @onclick="@(() => Change(() => settings.Barter.Add([new NativeBarter { Template = "5449016a4bdc2d6f028b456f", Count = 1000 }])))">Add payment alternative</button>
+        }
+        </section>
+    </div>
+    }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SeasonDefinition Season { get; set; } = new();
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public string SelectedOffer { get; set; } = "";
+    [Parameter] public bool Standalone { get; set; }
+    [Parameter] public EventCallback<string> TraderSelected { get; set; }
+    private string _trader = "", _traderSearch = "", _offerSearch = "", _confirm = "";
+    private bool _editing, _builder;
+    private int _page;
+    private List<CampaignTraderOffer> _installed = [];
+    private CampaignTraderAssort? Policy => Season.TraderAssorts.FirstOrDefault(a => a.TraderId == _trader);
+    private List<CampaignTraderOffer> VisibleOffers => Season.TraderOffers.Where(o => o.TraderId == _trader)
+        .Concat(_installed.Where(o => Policy?.AllowsInstalled(o.Id) != false)).OrderBy(o => o.Name).ToList();
+    private List<CampaignTraderOffer> FilteredOffers => VisibleOffers.Where(o => o.Name.Contains(_offerSearch, StringComparison.OrdinalIgnoreCase) || o.Id.Contains(_offerSearch, StringComparison.OrdinalIgnoreCase)).ToList();
+    private string TraderSummary(string trader) => Season.TraderAssorts.Any(a => a.TraderId == trader && a.ReplaceExisting) ? "Custom assortment" : Season.TraderOffers.Any(o => o.TraderId == trader) || Season.TraderAssorts.Any(a => a.TraderId == trader) ? "Draft changes" : "Installed assortment";
+    private string Payment(CampaignTraderOffer offer) => offer.Barter.Count == 0 ? "Set a price" : string.Join(" + ", offer.Barter[0].Select(b => $"{b.Count:N0} {Content.Name("items", b.Template)}")) + (offer.Barter.Count > 1 ? $" · {offer.Barter.Count} payment options" : "");
+    private IEnumerable<ContentChoice> InventoryChoices(string search) => Catalogue.Search(search).Select(i => new ContentChoice(i.Id, i.Name));
+    private string _offer = "", _selected = "", _container = "", _client = "", _search = "", _source = "items", _message = "", _tab = "catalogue", _dragTemplate = "", _dragItem = "", _identity = "";
+    private int _x, _y;
+    private bool _rotated;
+    private sealed class EditState
+    {
+        public List<CampaignTraderOffer> Offers { get; set; } = [];
+        public List<CampaignTraderAssort> Assorts { get; set; } = [];
+        public List<List<NativeReward>> Grants { get; set; } = [];
+        public int Format { get; set; }
+    }
+    private EditState Snapshot() => SeasonCompiler.Copy(new EditState { Offers = Season.TraderOffers, Assorts = Season.TraderAssorts, Grants = Season.AllRewards.Select(r => r.Grants).ToList(), Format = Season.FormatVersion });
+    private readonly Stack<EditState> _undo = new(), _redo = new();
+    private EditState _baseline = new();
+    private SeasonDefinition? _previousDefinition;
+    private readonly CancellationTokenSource _stop = new();
+    private CampaignTraderOffer? Offer => Season.TraderOffers.FirstOrDefault(o => o.Id == _offer && o.TraderId == _trader);
+    private NativeItem? Selected => Offer?.Items.FirstOrDefault(i => i.Id == _selected) ?? Offer?.Items.FirstOrDefault(i => i.Id == Offer.Id);
+    private OfferContainer? Container => Selected == null ? null : Catalogue.Item(Selected.Template)?.Containers.FirstOrDefault(c => c.Id == _container);
+    private string ConnectionStatus => _client.Length == 0 ? "Cached images" : Previews.Clients().FirstOrDefault(c => c.Id == _client) is { } c ? (c.Ready ? "Connected" : "Paused — return to main menu") : "Disconnected";
+    private List<ContentChoice> Choices => Catalogue.Search(_search, Container).Select(i => new ContentChoice(i.Id, i.Name))
+        .Concat(Container == null ? Season.Items.Select(i => new ContentChoice(i.Id, i.Name)).Concat(Season.ImportedItems.Select(i => new ContentChoice(i.Key, i.Value.Name ?? i.Key))).Where(i => _search.Length == 0 || i.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) || i.Id.Contains(_search, StringComparison.OrdinalIgnoreCase)) : [])
+        .DistinctBy(i => i.Id).ToList();
+    private static List<NativeItem> Thumbnail(string id) => [new() { Id = "000000000000000000000001", Template = id }];
+    private PreviewItemSize ItemSize(NativeItem item, PreviewState state)
+    {
+        var index = Offer?.Items.FindIndex(i => i.Id == item.Id) ?? -1;
+        if (state.Verified && index >= 0 && index < state.ItemSizes.Count) return state.ItemSizes[index];
+        var info = Catalogue.Item(item.Template); return new() { Width = info?.Width ?? 1, Height = info?.Height ?? 1 };
+    }
+    private static List<NativeItem> Subtree(CampaignTraderOffer offer, NativeItem root)
+    {
+        var keep = new HashSet<string> { root.Id };
+        while (true) { var count = keep.Count; foreach (var i in offer.Items) if (i.ParentId != null && keep.Contains(i.ParentId)) keep.Add(i.Id); if (count == keep.Count) break; }
+        return offer.Items.Where(i => keep.Contains(i.Id)).ToList();
+    }
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_previousDefinition, Season)) return;
+        _previousDefinition = Season;
+        var changedIdentity = _identity != Season.Id;
+        _identity = Season.Id;
+        if (changedIdentity) { _trader = ""; _offer = ""; _editing = _builder = false; }
+        if (SelectedOffer.Length > 0 && Season.TraderOffers.FirstOrDefault(o => o.Id == SelectedOffer) is { } target)
+        { _trader = target.TraderId; _offer = target.Id; _editing = _builder = true; _installed = Content.InstalledTraderOffers(_trader); }
+        _baseline = Snapshot(); _undo.Clear(); _redo.Clear();
+    }
+    protected override void OnInitialized() => _ = Refresh();
+    private async Task Refresh()
+    {
+        try { while (!_stop.IsCancellationRequested) { await Task.Delay(2000, _stop.Token); await InvokeAsync(() => { QueuePreview(); StateHasChanged(); }); } }
+        catch (OperationCanceledException) { }
+    }
+    private void QueuePreview(bool refresh = false)
+    {
+        if (!_builder || Offer == null || _client.Length == 0) return;
+        try { Previews.Request(_client, Season.Id + ":" + Offer.Id, Season.Id, Offer.Items, refresh); }
+        catch (InvalidOperationException e) { if (refresh) _message = e.Message; }
+    }
+    private void RefreshPreview() => QueuePreview(true);
+    private void ChooseClient(ChangeEventArgs e) { _client = e.Value?.ToString() ?? ""; QueuePreview(); }
+    private void SelectItem(string id) { _selected = id; _container = ""; _x = _y = 0; }
+    private void Commit()
+    {
+        _undo.Push(_baseline); _redo.Clear();
+        TraderOfferAuthoring.SynchronizeReferences(Season);
+        _baseline = Snapshot(); _ = Changed.InvokeAsync(); QueuePreview();
+    }
+    private void Change(Action action)
+    {
+        try { action(); _message = ""; Commit(); }
+        catch (InvalidOperationException e) { _message = e.Message; }
+    }
+    private void Undo(bool redo)
+    {
+        var from = redo ? _redo : _undo; var to = redo ? _undo : _redo;
+        if (from.Count == 0) return;
+        to.Push(Snapshot()); var state = from.Pop(); Season.TraderOffers = state.Offers; Season.TraderAssorts = state.Assorts; Season.FormatVersion = state.Format;
+        var rewards = Season.AllRewards.ToArray(); for (var i = 0; i < Math.Min(rewards.Length, state.Grants.Count); i++) rewards[i].Grants = state.Grants[i];
+        if (Offer == null) _builder = false;
+        _page = 0; TraderOfferAuthoring.SynchronizeReferences(Season); _baseline = Snapshot(); _ = Changed.InvokeAsync(); QueuePreview();
+    }
+    private void SelectTrader(string trader)
+    {
+        _trader = trader; _installed = Content.InstalledTraderOffers(trader); _offer = ""; _editing = _builder = false;
+        _page = 0; _offerSearch = _message = _confirm = ""; _ = TraderSelected.InvokeAsync(trader);
+    }
+    private void BackToTraders() { _trader = _offer = _confirm = ""; _builder = _editing = false; _ = TraderSelected.InvokeAsync(""); }
+    private void BeginEditing()
+    {
+        _editing = true;
+        if (Standalone && Policy?.ReplaceExisting != true) Change(() => TraderOfferAuthoring.ImportAssortment(Season, _trader, _installed));
+    }
+    private void StartNew() { _offer = _selected = _container = _search = ""; _builder = true; _source = "items"; _tab = "catalogue"; }
+    private void OpenOffer(CampaignTraderOffer offer) { _offer = offer.Id; SelectItem(offer.Id); _container = _search = ""; _builder = true; _tab = "assembly"; }
+    private void EditOffer(CampaignTraderOffer offer)
+    {
+        if (Season.TraderOffers.Any(o => o.Id == offer.Id && o.TraderId == _trader)) OpenOffer(offer);
+        else Change(() => OpenOffer(TraderOfferAuthoring.CopyInstalled(Season, offer, true)));
+    }
+    private void RemoveOffer(CampaignTraderOffer offer) => Change(() =>
+    {
+        if (Season.TraderOffers.Any(o => o.Id == offer.Id && o.TraderId == _trader)) TraderOfferAuthoring.Delete(Season, offer);
+        else TraderOfferAuthoring.RemoveInstalled(Season, _trader, offer.Id);
+        if (_offer == offer.Id) { _offer = ""; _builder = false; } _page = 0;
+    });
+    private void ConfirmReset() => Change(() =>
+    {
+        if (_confirm == "restore" && Standalone) TraderOfferAuthoring.ImportAssortment(Season, _trader, _installed);
+        else TraderOfferAuthoring.ClearAssortment(Season, _trader, _confirm == "restore");
+        _offer = _confirm = ""; _builder = false; _page = 0;
+    });
+    private void NewItem(ContentChoice choice) => Change(() => OpenOffer(TraderOfferAuthoring.Create(Season, Thumbnail(choice.Id), choice.Name, _trader)));
+    private void NewPreset(string id, string name) => Change(() => OpenOffer(TraderOfferAuthoring.Create(Season, Catalogue.Preset(id), name, _trader)));
+    private void DuplicateInstalled(CampaignTraderOffer source) => Change(() => OpenOffer(TraderOfferAuthoring.CopyInstalled(Season, source, false)));
+    private void AddItem(string template) { if (Container != null) Drop(Container, _x, _y, template); }
+    private void Drop(OfferContainer container, int x, int y, string? template = null) => Change(() =>
+    {
+        if (Offer == null || Selected == null) return;
+        template ??= _dragTemplate;
+        if (_dragItem.Length > 0 && template.Length == 0)
+        {
+            var item = Offer.Items.Single(i => i.Id == _dragItem);
+            if (item.ParentId != Selected.Id || item.SlotId != container.Id || container.Kind != "Grid") throw new InvalidOperationException("Move items within their current grid, or remove and re-add them to another container.");
+            item.Location = new(new NativeGridLocation { X = x, Y = y, Rotation = item.Location?.Grid?.Rotation ?? "0" });
+        }
+        else
+        {
+            if (!Catalogue.Compatible(container, template)) throw new InvalidOperationException("This item is incompatible with the selected container.");
+            TraderOfferAuthoring.Add(Offer, Selected.Id, container, template, x, y, _rotated);
+        }
+        _dragItem = _dragTemplate = "";
+    });
+    private IEnumerable<NativeItem> Tree(CampaignTraderOffer offer)
+    {
+        var seen = new HashSet<string>(); var pending = new Stack<NativeItem>();
+        var root = offer.Items.FirstOrDefault(i => i.Id == offer.Id); if (root == null) yield break; pending.Push(root);
+        while (pending.Count > 0) { var item = pending.Pop(); if (!seen.Add(item.Id)) continue; yield return item; foreach (var child in offer.Items.Where(i => i.ParentId == item.Id).Reverse()) pending.Push(child); }
+    }
+    private int Depth(NativeItem item) { var depth = 0; var seen = new HashSet<string>(); while (item.ParentId != null && seen.Add(item.Id) && Offer?.Items.FirstOrDefault(i => i.Id == item.ParentId) is { } parent) { depth++; item = parent; } return depth; }
+    private IEnumerable<string> AssemblyIssues(CampaignTraderOffer offer) { var result = new SeasonValidationResult(); var preview = Previews.Get(offer.Items, Season.Id); Catalogue.Validate(offer, result, preview.Verified ? preview.ItemSizes : null); return result.Issues.Select(i => i.Message).Distinct(); }
+    private static double Number(ChangeEventArgs e) => double.TryParse(e.Value?.ToString(), out var n) ? n : 1;
+    public void Dispose() { _stop.Cancel(); _stop.Dispose(); }
+}

@@ -68,6 +68,52 @@ internal static class AuthoringSocketCompatibility
             "Editor uses SPT's synchronized notification sender"
         );
         var sender = spt.MainModule.GetType("SPTarkov.Server.Core.Servers.Ws.SptWebSocketConnectionHandler");
+        var previewCalls = Calls(client.MainModule.GetType("WTT.Campaigns.Client.Authoring.ItemPreviewClient"));
+        Require(
+            previewCalls.Any(c => c.DeclaringType.Name == "AuthoringSocket" && c.Name == "Send"),
+            "Item previews use the existing authoring transport"
+        );
+        Require(
+            previewCalls.Any(c => c.DeclaringType.Name == "ItemViewFactory" && c.Name == "LoadItemIcon")
+                && !previewCalls.Any(c => c.Name == "GetItemSpriteAsync"),
+            "Item previews use the trader's cached icon path rather than uncached rendering"
+        );
+        var traderIconCalls = native
+            .MainModule.GetType("EFT.UI.DragAndDrop.ItemView")
+            .Methods.Single(m => m.Name == "RefreshIcon")
+            .Body.Instructions.Select(i => i.Operand)
+            .OfType<MethodReference>();
+        Require(
+            traderIconCalls.Any(c => c.DeclaringType.Name == "ItemViewFactory" && c.Name == "LoadItemIcon"),
+            "Preview and installed trader views share the same native icon entry point"
+        );
+        var iconCalls = Calls(native.MainModule.GetType("ItemIconCreator"));
+        Require(
+            iconCalls.Any(c => c.Name == "TryGetCachedIcon") && iconCalls.Any(c => c.Name == "LoadFromUserCacheAsync"),
+            "Native trader icon provider reuses both memory and disk caches"
+        );
+        foreach (var container in new[] { "Slot", "Grid" })
+            Require(
+                previewCalls.Any(c => c.DeclaringType.Name == container && c.Name == "Add"),
+                "Preview verifies native container placement: " + container
+            );
+        Require(
+            previewCalls.Any(c => c.DeclaringType.Name == "StackSlot" && c.Name == "FinalizeDeserialization"),
+            "Ammunition stacks are finalized through native capacity checks"
+        );
+        Require(
+            !previewCalls.Any(c => c.Name is "FlatItemsToTree" or "AddWithoutRestrictions" or "AddItemWithoutRestrictions"),
+            "Preview does not accept unrestricted deserialization as verification"
+        );
+        Require(
+            previewCalls.Any(c => c.Name == "ReleaseTemporary") && previewCalls.Any(c => c.Name == "Destroy"),
+            "Preview releases its own temporary graphics resources"
+        );
+        var restock = server.MainModule.GetType("WTT.Campaigns.Server.Patches.Trading.CampaignTraderRestockPatch");
+        Require(
+            Calls(restock).Any(c => c.Name == "RestockAuthoredOffers"),
+            "Authored stock restoration is attached to the native restock hook"
+        );
         Require(
             Calls(sender).Any(c => c.DeclaringType.FullName == "System.Threading.SemaphoreSlim" && c.Name == "WaitAsync"),
             "Installed SPT sender serializes socket writes"

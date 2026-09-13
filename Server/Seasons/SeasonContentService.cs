@@ -32,7 +32,9 @@ public sealed class SeasonContentService(
     HideoutTable hideout,
     JsonUtil json,
     ICloner cloner,
-    IReadOnlyList<SptMod> loadedMods
+    IReadOnlyList<SptMod> loadedMods,
+    TraderOfferCatalogue offerCatalogue,
+    ItemPreviewService itemPreviews
 ) : IOnLoad
 {
     public bool Ready { get; private set; }
@@ -162,6 +164,12 @@ public sealed class SeasonContentService(
             .ToList();
     }
 
+    public List<CampaignTraderOffer> InstalledTraderOffers(string trader)
+    {
+        var owned = repository.Playable.Values.SelectMany(p => p.Definition.TraderOffers).Select(o => o.Id).ToHashSet();
+        return offerCatalogue.InstalledOffers(trader).Where(o => !owned.Contains(o.Id)).ToList();
+    }
+
     public string Name(string kind, string id)
     {
         return AllChoices(kind).FirstOrDefault(c => c.Id == id)?.Name
@@ -251,6 +259,7 @@ public sealed class SeasonContentService(
 
     public SeasonValidationResult Validate(SeasonDefinition definition)
     {
+        _ = itemPreviews;
         var result = SeasonValidator.Validate(definition);
         if (!result.CanPublish)
         {
@@ -259,6 +268,49 @@ public sealed class SeasonContentService(
 
         try
         {
+            foreach (var assort in definition.TraderAssorts)
+            {
+                if (!offerCatalogue.HasTrader(assort.TraderId))
+                    result.Add("Trader offers/" + assort.TraderId, "Trader is not installed or has no fixed assortment.", "dependency");
+                else if (!assort.ReplaceExisting)
+                    foreach (var removed in assort.RemovedOffers)
+                        if (!offerCatalogue.HasOffer(assort.TraderId, removed))
+                            result.Add(
+                                "Trader offers/" + assort.TraderId,
+                                "An installed offer being replaced or removed is no longer present. Restore the installed assortment and reapply this edit: "
+                                    + removed,
+                                "dependency"
+                            );
+            }
+            foreach (var offer in definition.TraderOffers)
+            {
+                var preview = itemPreviews.Get(offer.Items, definition.Id);
+                offerCatalogue.Validate(offer, result, preview.Verified ? preview.ItemSizes : null);
+            }
+            var ownedOffers =
+                repository
+                    .Playable.GetValueOrDefault(definition.Id)
+                    ?.Definition.TraderOffers.SelectMany(o => o.Items)
+                    .Select(i => i.Id)
+                    .ToHashSet()
+                ?? [];
+            var installedOfferIds = traders.Values.SelectMany(t => t.Assort?.Items ?? []).Select(i => i.Id.ToString()).ToHashSet();
+            var otherCampaignIds = repository
+                .Playable.Values.Where(p => p.Definition.Id != definition.Id)
+                .SelectMany(p => p.Definition.TraderOffers)
+                .SelectMany(o => o.Items)
+                .Select(i => i.Id)
+                .ToHashSet();
+            foreach (var offer in definition.TraderOffers)
+                if (
+                    offer.Items.Any(i =>
+                        otherCampaignIds.Contains(i.Id) || (installedOfferIds.Contains(i.Id) && !ownedOffers.Contains(i.Id))
+                    )
+                )
+                    result.Add(
+                        "Trader offers/" + offer.Id,
+                        "Offer identities collide with installed content. Copy it as a new campaign offer."
+                    );
             var available = templates
                 .Items.Keys.Select(i => i.ToString())
                 .Concat(definition.Items.Select(i => i.Id))
@@ -380,7 +432,7 @@ public sealed class SeasonContentService(
                         result.Add(path, "Customization is not installed.", "dependency");
                     }
 
-                    if ((string?)grant.Type == "AssortmentUnlock")
+                    if ((string?)grant.Type == "AssortmentUnlock" && !definition.TraderOffers.Any(o => o.Id == grant.Target))
                     {
                         if (!traders.TryGetValue(new MongoId((string)grant.TraderId!), out var trader) || trader.Assort == null)
                         {

@@ -123,6 +123,7 @@ public sealed partial class HubGameplay(
         }
 
         ResolveOffers();
+        RegisterAuthoredOffers();
         _ready = true;
     }
 

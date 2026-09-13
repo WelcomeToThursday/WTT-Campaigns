@@ -53,6 +53,13 @@ public sealed class SeasonDefinition : ExtensibleJsonModel
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public StoryDefinition? Story { get; set; }
     public List<NativeOffer> Offers { get; set; } = new();
+    public List<CampaignTraderOffer> TraderOffers { get; set; } = new();
+    public List<CampaignTraderAssort> TraderAssorts { get; set; } = new();
+
+    public bool ShouldSerializeTraderAssorts() => TraderAssorts.Count > 0;
+
+    public bool ShouldSerializeTraderOffers() => TraderOffers.Count > 0;
+
     public Dictionary<string, NativeItemTemplate> ImportedItems { get; set; } = new();
     public SeasonStartingSetup Starting { get; set; } = new();
     public List<string> Dependencies { get; set; } = new();

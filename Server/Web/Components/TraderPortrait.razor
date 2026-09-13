@@ -1,0 +1,24 @@
+@inject WTT.Campaigns.Server.Web.Authoring.TraderPortraitService Portraits
+
+<span class="trader-portrait" aria-hidden="true">
+    @if (_url.Length > 0 && !_failed)
+    {
+        <img src="@_url" alt="" loading="lazy" decoding="async" @onerror="@(() => _failed = true)" />
+    }
+    else
+    {
+        <svg class="trader-portrait-placeholder" viewBox="0 0 64 64" fill="none" focusable="false"><circle cx="32" cy="23" r="10" /><path d="M13 55v-5c0-10 8-17 19-17s19 7 19 17v5" /></svg>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string TraderId { get; set; } = "";
+    private string _url = "";
+    private bool _failed;
+    protected override void OnParametersSet()
+    {
+        var portrait = Portraits.Find(TraderId);
+        var url = portrait == null ? "" : $"/wtt-campaigns/creator/trader-portraits/{TraderId}?v={portrait.Version}";
+        if (url != _url) { _url = url; _failed = false; }
+    }
+}

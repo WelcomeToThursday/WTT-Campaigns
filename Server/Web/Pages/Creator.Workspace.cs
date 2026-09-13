@@ -89,7 +89,7 @@ public partial class Creator
     private static readonly (string Name, string[] Sections)[] NavigationGroups =
     [
         ("Campaign setup", ["Overview", "Starting character", "Perks"]),
-        ("Rewards and economy", ["Documents", "Battle pass", "Rewards", "Items and crates"]),
+        ("Rewards and economy", ["Documents", "Battle pass", "Rewards", "Items and crates", "Trader offers"]),
         (
             "Quests and story",
             [

@@ -1,0 +1,25 @@
+@using WTT.Campaigns.Shared.Native
+@inject WTT.Campaigns.Server.Web.Authoring.ItemPreviewService Previews
+<div class="item-preview-image" title="@_state.Status">
+    @if (_state.HasImage) { <img loading="lazy" src="@($"/wtt-campaigns/creator/item-previews/{_state.Key}.png")" alt="@Name" /> }
+    else { <span class="item-preview-placeholder" aria-label="Image unavailable">◇</span> }
+</div>
+@code {
+    [Parameter] public List<NativeItem> Items { get; set; } = [];
+    [Parameter] public string Name { get; set; } = "Item";
+    [Parameter] public string Client { get; set; } = "";
+    [Parameter] public string Campaign { get; set; } = "";
+    [Parameter] public bool InstalledOffer { get; set; }
+    private WTT.Campaigns.Server.Web.Authoring.PreviewState _state = new();
+    protected override void OnParametersSet()
+    {
+        var items = Items;
+        try
+        {
+            if (InstalledOffer && items.Count > 0) items = WTT.Campaigns.Server.Web.Authoring.TraderOfferAuthoring.PreviewAssembly(items);
+            if (items.Count > 0 && Client.Length > 0) Previews.Request(Client, "thumbnail:" + Campaign + ":" + TraderOfferRules.AssemblyHash(items), Campaign, items);
+            _state = Previews.Get(items, Campaign);
+        }
+        catch (InvalidOperationException) { _state = Previews.Get(items, Campaign); }
+    }
+}

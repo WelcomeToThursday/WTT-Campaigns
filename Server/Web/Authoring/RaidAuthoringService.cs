@@ -285,7 +285,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 }
                 if (proposed.Zones.Count > 0 || proposed.Captures.Count > 0)
                 {
-                    proposed.FormatVersion = 2;
+                    proposed.FormatVersion = Math.Max(proposed.FormatVersion, 2);
                 }
 
                 foreach (

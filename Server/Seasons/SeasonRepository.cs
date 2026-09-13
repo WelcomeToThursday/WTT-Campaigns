@@ -354,6 +354,8 @@ public sealed class SeasonRepository
             definition.Quests = new();
             definition.Story = null;
             definition.Offers = new();
+            definition.TraderOffers = new();
+            definition.TraderAssorts = new();
             definition.Crates.Clear();
             definition.ExchangeCrate = "";
             definition.Documents = new() { document };
@@ -400,6 +402,7 @@ public sealed class SeasonRepository
                 .Select(t => t.Value)
         );
         owned.UnionWith(WTT.Campaigns.Shared.Story.StoryContent.OwnedIds(source.Story));
+        owned.UnionWith(source.TraderOffers.SelectMany(o => o.Items).Select(i => i.Id));
         owned.UnionWith(source.Zones.Select(z => z.Id));
         owned.UnionWith(source.Captures.Select(c => c.Id));
         var replacements = owned.ToDictionary(id => id, _ => NewId());
@@ -471,6 +474,8 @@ public sealed class SeasonRepository
         }
     }
 
+    public Action<SeasonDefinition>? VerifyTraderOfferPublication { get; set; }
+
     public string Publish(DraftEnvelope draft, SeasonValidationResult validation)
     {
         lock (_gate)
@@ -499,6 +504,12 @@ public sealed class SeasonRepository
             }
 
             var definition = SeasonCompiler.Copy(draft.Definition);
+            if (definition.TraderOffers.Count > 0)
+            {
+                if (VerifyTraderOfferPublication == null)
+                    throw new InvalidOperationException("Connect the item preview service before publishing trader offers.");
+                VerifyTraderOfferPublication(definition);
+            }
             CheckGameplay(definition);
             definition.Revision =
                 Packs().Where(p => p.Manifest.SeasonId == definition.Id).Select(p => p.Manifest.Revision).DefaultIfEmpty(0).Max() + 1;
@@ -542,7 +553,7 @@ public sealed class SeasonRepository
 
         var folder = Path.Combine(_root, "packs", CheckId(key));
         var manifest = Read<SeasonManifest>(Path.Combine(folder, "manifest.json"));
-        if (manifest.FormatVersion is not (1 or 2) || manifest.ProtocolVersion != 2 || !manifest.Files.ContainsKey("definition.json"))
+        if (manifest.FormatVersion is not (1 or 2 or 3) || manifest.ProtocolVersion != 2 || !manifest.Files.ContainsKey("definition.json"))
         {
             throw new InvalidDataException("Incompatible pack manifest.");
         }
@@ -657,7 +668,7 @@ public sealed class SeasonRepository
         return candidates.FirstOrDefault(File.Exists);
     }
 
-    public string AddImage(byte[] bytes)
+    public static void ValidateImage(byte[] bytes)
     {
         if (bytes.Length is < 24 or > 8388608 || !bytes.Take(8).SequenceEqual(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }))
         {
@@ -727,7 +738,11 @@ public sealed class SeasonRepository
         {
             throw new InvalidDataException("Incomplete PNG image.");
         }
+    }
 
+    public string AddImage(byte[] bytes)
+    {
+        ValidateImage(bytes);
         var id = Hash(bytes).Substring(0, 24);
         lock (_gate)
         {
@@ -821,7 +836,7 @@ public sealed class SeasonRepository
         }
         var manifest = JsonConvert.DeserializeObject<SeasonManifest>(Encoding.UTF8.GetString(Entry("manifest.json")))!;
         if (
-            manifest.FormatVersion is not (1 or 2)
+            manifest.FormatVersion is not (1 or 2 or 3)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
             || manifest.Files.Count != zip.Entries.Count - 1
@@ -915,6 +930,7 @@ public sealed class SeasonRepository
         var definition = new SeasonDefinition
         {
             Id = hub.SeasonId,
+            FormatVersion = gameplay.TraderOffers.Count > 0 || gameplay.TraderAssorts.Count > 0 ? 3 : 1,
             BattlePassId = hub.Id,
             Name = "Campaign One",
             Legacy = true,
@@ -945,6 +961,8 @@ public sealed class SeasonRepository
             CrateCost = gameplay.ItemExchange.RequiredDocuments,
             Quests = Data<List<NativeQuest>>("hub-quests.json"),
             Offers = SeasonCompiler.Copy(gameplay.Offers),
+            TraderOffers = SeasonCompiler.Copy(gameplay.TraderOffers),
+            TraderAssorts = SeasonCompiler.Copy(gameplay.TraderAssorts),
             ImportedItems = Data<Dictionary<string, NativeItemTemplate>>("season-items.json"),
             Rules = File.Exists(Path.Combine(ModDirectory, "config.json"))
                 ? Read<Rules>(Path.Combine(ModDirectory, "config.json"))

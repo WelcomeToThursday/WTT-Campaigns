@@ -8,12 +8,24 @@ public static class CreatorGuidance
         {
             "Chapters" => "Chapters and quests",
             "Quests" => "Non-story quests",
+            "Trader offers" => "Trader assortments",
             _ => section,
         };
     }
 
     public static readonly CreatorHelpTopic[] Topics =
     [
+        new(
+            "Trader offers",
+            "Choose a trader and enter edit mode to change their assortment.",
+            [
+                "Choose a trader, review their installed assortment, then select Edit assortment. Edit or remove existing offers, add new ones, or clear the assortment and start empty. Clear and restore actions can be undone.",
+                "New offers inherit the selected trader. Configure loyalty, payment, stock and purchase limits in the offer editor. Unlock-only offers also need an enabled reward that references them.",
+                "Enable Web item previews in the game, remain at the main menu and choose that client in the editor. Wait for a verified assembly before publishing.",
+                "Use cached images to keep editing offline. Refresh after repairing missing bundles. Prices and stock do not invalidate assembly verification.",
+            ],
+            "Campaign edits affect only that campaign. Open the standalone trader editor from the Creator header to edit and export assort.json independently. Native access, loyalty and restock rules still apply. Fence is not supported."
+        ),
         new(
             "Overview",
             "Give the campaign an identity and introduce it to players.",

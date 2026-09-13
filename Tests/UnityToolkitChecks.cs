@@ -48,6 +48,7 @@ internal static class UnityToolkitChecks
         var installedLinq = context.LoadFromAssemblyName(new AssemblyName("ZLinq"));
         Check(Path.GetDirectoryName(installedLinq.Location) == toolkitDir, "Runtime checks use the installed Unity ZLinq build");
         var assembly = context.LoadFromAssemblyPath(clientPath);
+        ItemTemplateFingerprintChecks.Run(assembly, Check);
         UniTaskChecks.Run(client, assembly, Check);
         var changesType = assembly.GetType("WTT.Campaigns.Client.Story.StoryChapterChanges")!;
         var changes = Activator.CreateInstance(changesType, nonPublic: true)!;

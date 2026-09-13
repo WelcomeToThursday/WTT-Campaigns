@@ -72,7 +72,7 @@ internal sealed class RaidEditorSession
         action(Definition);
         if (Definition.Zones.Count > 0 || Definition.Captures.Count > 0)
         {
-            Definition.FormatVersion = 2;
+            Definition.FormatVersion = Math.Max(Definition.FormatVersion, 2);
         }
 
         if (JToken.DeepEquals(JObject.FromObject(before), JObject.FromObject(Definition)))

@@ -47,7 +47,7 @@ public sealed class AuthoringSocketHandler(IServiceProvider services) : ISptWebS
             }
 
             var message = envelope.ToObject<AuthoringSocketMessage>();
-            if (message?.Request == null || message.Operation is not ("poll" or "submit"))
+            if (message?.Request == null || message.Operation is not ("poll" or "submit" or "preview"))
             {
                 throw new InvalidOperationException("Unsupported editor WebSocket operation.");
             }
@@ -58,11 +58,12 @@ public sealed class AuthoringSocketHandler(IServiceProvider services) : ISptWebS
             using var lease = seasons.Enter(root);
             var character = seasons.EffectiveId(root);
             response =
-                message.Operation == "poll"
-                    ? authoring.Poll(root, character, message.Request)
-                    : authoring.Submit(root, character, message.Request);
+                message.Operation == "preview"
+                    ? services.GetRequiredService<ItemPreviewService>().Exchange(root, character, message.Request)
+                : message.Operation == "poll" ? authoring.Poll(root, character, message.Request)
+                : authoring.Submit(root, character, message.Request);
         }
-        catch (Exception e) when (e is InvalidOperationException or ArgumentException or IOException or JsonException)
+        catch (Exception e) when (e is InvalidOperationException or ArgumentException or IOException or JsonException or FormatException)
         {
             response = new AuthoringResponse { Error = e.Message };
         }

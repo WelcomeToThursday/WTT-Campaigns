@@ -18,6 +18,7 @@
     [Parameter] public string Value { get; set; } = "";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public IEnumerable<ContentChoice>? Additional { get; set; }
+    [Parameter] public Func<string, IEnumerable<ContentChoice>>? SearchProvider { get; set; }
     [Parameter] public string? HelpText { get; set; }
     private string SelectedName => Additional?.FirstOrDefault(c => c.Id == Value)?.Name ?? Content.Name(Kind, Value);
     private string EffectiveHelp => !string.IsNullOrWhiteSpace(HelpText) ? HelpText : Kind switch
@@ -32,6 +33,6 @@
     private string _search = "";
     private string _previousKind = "";
     protected override void OnParametersSet() { if (_previousKind != Kind) { _search = ""; _previousKind = Kind; } }
-    private List<ContentChoice> Options => (Additional ?? []).Concat(Content.Choices(Kind, _search)).Where(c => _search.Length == 0 || c.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) || c.Id.Contains(_search, StringComparison.OrdinalIgnoreCase)).DistinctBy(c => c.Id).ToList();
+    private List<ContentChoice> Options => (Additional ?? []).Concat(SearchProvider?.Invoke(_search) ?? Content.Choices(Kind, _search)).Where(c => _search.Length == 0 || c.Name.Contains(_search, StringComparison.OrdinalIgnoreCase) || c.Id.Contains(_search, StringComparison.OrdinalIgnoreCase)).DistinctBy(c => c.Id).ToList();
     private Task Pick(ChangeEventArgs args) => ValueChanged.InvokeAsync(args.Value?.ToString() ?? "");
 }

@@ -1,6 +1,6 @@
 # WTT-Campaigns
 
-**0.6.1 — Beta maintenance release**
+**0.7.0 — Beta release**
 
 **[Documentation home](wiki/Home.md)** · [Player guides](wiki/Home.md#playing) · [Campaign creation](wiki/Home.md#creating-campaigns)
 

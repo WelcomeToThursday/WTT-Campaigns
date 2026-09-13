@@ -151,6 +151,8 @@ public static class SeasonCompiler
                 .AllRewards.Where(r => r.Enabled)
                 .ToDictionary(r => r.Id, r => new HubGameplayReward { Grants = Copy(r.Grants), Conditions = Copy(r.Conditions) }),
             Offers = Copy(season.Offers),
+            TraderOffers = Copy(season.TraderOffers),
+            TraderAssorts = Copy(season.TraderAssorts),
         };
     }
 

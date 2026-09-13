@@ -1,4 +1,55 @@
 /* Season Creator uses the SPT S.I.C. theme tokens supplied by BaseMudBlazorLayout. */
+.trader-offer-workspace { min-width: 0; }
+.assort-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+.assort-heading h2, .assort-heading h3 { margin: 10px 0 6px; }
+.assort-traders { display: grid; grid-template-columns: repeat(auto-fill,minmax(210px,1fr)); gap: 14px; margin: 22px 0; }
+.season-creator .assort-traders > button { display: flex; align-items: center; gap: 14px; padding: 14px; text-align: left; min-height: 110px; background: var(--surface); border: 1px solid var(--line); }
+.season-creator .assort-traders .trader-card-copy { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.season-creator .assort-traders strong { display: block; font-size: 17px; line-height: 1.25; color: var(--ink); overflow-wrap: anywhere; }
+.trader-card-status, .assort-offer-list span { display: block; color: var(--muted); font-size: 12px; }
+.season-creator .trader-portrait { display: flex; align-items: center; justify-content: center; width: 72px; height: 84px; flex: 0 0 72px; overflow: hidden; border-radius: 5px; background: #101217; border: 1px solid var(--line); }
+.trader-portrait img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center top; }
+.trader-portrait-placeholder { width: 48px; height: 48px; stroke: var(--muted); stroke-width: 2; opacity: .7; }
+.assort-offer-list { display: grid; grid-template-columns: repeat(auto-fill,minmax(300px,1fr)); gap: 12px; margin: 18px 0; }
+.assort-offer-list article { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+.assort-offer-list article > .item-preview-image { flex: 0 0 90px; width: 90px; }
+.assort-offer-list article > div:not(.item-preview-image):not(.row) { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 150px; }
+.assort-offer-list .row { width: 100%; justify-content: flex-end; }
+.assort-empty { padding: 42px 20px; text-align: center; }
+.assort-preview-settings { margin: 14px 0; }
+.assort-preview-settings > summary { cursor: pointer; }
+.assort-preview-settings[open] > summary { margin-bottom: 18px; }
+.standalone-assorts { max-width: 1500px; margin: auto; }
+.assort-columns { display: grid; grid-template-columns: minmax(190px, .8fr) minmax(260px, 1.2fr) minmax(210px, .9fr); gap: 14px; align-items: start; }
+.assort-columns > section { min-width: 0; }
+.assort-columns label { display: grid; gap: 6px; margin-bottom: 12px; }
+.assort-columns .check { display: flex; }
+.assort-tabs { display: none; gap: 8px; margin: 12px 0; }
+.assort-item-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-top: 12px; max-height: 680px; overflow: auto; }
+.assort-item-cards article { display: flex; flex-direction: column; gap: 6px; min-width: 0; padding: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.assort-item-cards strong { font-size: 12px; overflow-wrap: anywhere; flex: 1; }
+.season-creator .assort-item-cards button { min-width: 0; max-width: 100%; padding: 6px; font-size: 12px; white-space: normal; overflow-wrap: anywhere; }
+.item-preview-image { height: 76px; display: flex; align-items: center; justify-content: center; min-width: 0; }
+.item-preview-image img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.item-preview-placeholder { color: var(--muted); font-size: 30px; }
+.assort-root-preview { height: 210px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--line); border-radius: 8px; background: repeating-linear-gradient(0deg, transparent, transparent 31px, #ffffff06 32px), repeating-linear-gradient(90deg, transparent, transparent 31px, #ffffff06 32px), var(--surface); color: var(--muted); }
+.assort-root-preview img { max-width: 100%; max-height: 200px; object-fit: contain; }
+.assort-tree { display: flex; flex-direction: column; max-height: 300px; overflow: auto; margin: 12px 0; gap: 4px; }
+.assort-tree button { flex: 0 0 auto; text-align: left; overflow-wrap: anywhere; }
+.assort-tree small { display: block; color: var(--muted); }
+.assort-slot { display: block; margin: 5px 0; width: 100%; text-align: left; }
+.assort-grid { display: grid; position: relative; width: max-content; max-width: 100%; overflow: auto; margin-top: 12px; }
+.assort-grid > button { width: 36px; height: 36px; border-radius: 0; padding: 0; border: 1px solid var(--line); }
+.assort-grid > .assort-grid-item { position: absolute; padding: 2px; border: 1px solid var(--accent); background: var(--panel); z-index: 1; }
+.assort-grid-item .item-preview-image { width: 100%; height: 100%; pointer-events: none; }
+.assort-source { display: block; width: 100%; text-align: left; margin: 6px 0; }
+@media (max-width: 1500px) {
+    .assort-columns { display: block; }
+    .assort-tabs { display: flex; }
+    .assort-columns > section { display: none; }
+    .assort-columns.show-catalogue > .assort-catalogue, .assort-columns.show-assembly > .assort-assembly, .assort-columns.show-settings > .assort-settings { display: block; }
+    .assort-item-cards { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+}
 .season-creator {
     --panel: var(--spt-surface-strong, #18181b);
     --surface: var(--spt-surface, #09090b);

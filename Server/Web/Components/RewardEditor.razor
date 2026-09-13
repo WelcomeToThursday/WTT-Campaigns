@@ -25,7 +25,10 @@
     <div class="editor-card"><div class="row"><strong>@grant.Type</strong><button @onclick="@(() => Reward.Grants.Remove(grant))">Remove payload</button></div>
     @if ((string?)grant.Type == "Tarcoin") { <label>Amount<input type="number" min="1" value="@grant.Value" @onchange="@(e => grant.Value = int.TryParse(e.Value?.ToString(), out var n) ? n : 1)" /></label> }
     else if ((string?)grant.Type == "CustomizationDirect") { <ContentPicker Kind="customizations" Label="Customization" Value="@((string?)grant.Target ?? string.Empty)" ValueChanged="@(v => grant.Target = v)" /> }
-    else if ((string?)grant.Type == "AssortmentUnlock") { <ContentPicker Kind="offers" Label="Trader offer" Value="@((string?)grant.TraderId + "/" + (string?)grant.Target)" ValueChanged="@(v => ReplaceOffer(grant, v))" /> }
+    else if ((string?)grant.Type == "AssortmentUnlock") {
+        <ContentPicker Kind="offers" Label="Trader offer" Value="@((string?)grant.TraderId + "/" + (string?)grant.Target)" ValueChanged="@(v => ReplaceOffer(grant, v))" Additional="@(TraderOffers.Select(o => new ContentChoice(o.TraderId + "/" + o.Id, o.Name + " · Campaign offer")))" />
+        @if (TraderOffers.Any(o => o.Id == grant.Target)) { <button @onclick="@(() => OpenOffer.InvokeAsync(grant.Target!))">Edit campaign offer</button> }
+    }
     else if (grant.Items is { } items)
     {
         @foreach (var item in items)
@@ -58,8 +61,10 @@
     [Parameter] public IEnumerable<string> ArtAssets { get; set; } = [];
     [Parameter] public IEnumerable<ContentChoice> OwnedItems { get; set; } = [];
     [Parameter] public IEnumerable<ContentChoice> OwnedQuests { get; set; } = [];
+    [Parameter] public List<CampaignTraderOffer> TraderOffers { get; set; } = [];
+    [Parameter] public EventCallback<string> OpenOffer { get; set; }
     private string _grantKind = "Item";
-    private void ReplaceOffer(NativeReward grant, string value) { if (!string.IsNullOrEmpty(value)) Reward.Grants[Reward.Grants.IndexOf(grant)] = Content.Offer(value); }
+    private void ReplaceOffer(NativeReward grant, string value) { if (!string.IsNullOrEmpty(value)) Reward.Grants[Reward.Grants.IndexOf(grant)] = TraderOffers.FirstOrDefault(o => o.TraderId + "/" + o.Id == value)?.Reference() ?? Content.Offer(value); }
     private void AddGrant()
     {
         var grant = WTT.Campaigns.Server.Web.Authoring.NativeQuestAuthoring.Reward(_grantKind);

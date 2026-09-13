@@ -8,12 +8,12 @@
 @inject SeasonContentService Content
 
 <PageTitle>Campaign Creator</PageTitle>
-<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-story-workspace" /></HeadContent>
+<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-trader-portraits" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
 <main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
     <header class="creator-header">
-        <div><h1><span class="app-mark" aria-hidden="true">C</span>Campaign Creator</h1><p>Create and publish campaigns. Each campaign character chooses its own campaign.</p></div>
+        <div><h1><span class="app-mark" aria-hidden="true">C</span>Campaign Creator</h1><p>Create and publish campaigns. Each campaign character chooses its own campaign.</p><a href="/wtt-campaigns/creator/traders">Open standalone trader editor →</a></div>
         <div class="row"><a class="button subtle" href="/wtt-campaigns/docs">Documentation</a><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
     </header>
     @if (_showHelp) { <CreatorHelp HasDraft="@(_draft != null)" Navigate="OpenGuideSection" StartTutorial="StartTutorial" Close="@(() => _showHelp = false)" /> }
@@ -237,6 +237,9 @@
 
 </EditorSection>
                     break;
+                case "Trader offers":
+                    <TraderOfferEditor Season="S" Changed="Dirty" SelectedOffer="@_selectedTraderOffer" />
+                    break;
                 case "Documents":
                     <EditorSection Title="Collection rules" Description="Control raid placement, collection limits and the Classified bonus.">
 <div class="form-grid"><label>Documents per raid <HelpTip Text="Maximum ordinary documents placed in a campaign PMC raid, from zero to eight. Map overrides replace this cap; the remaining collection allowance can reduce it." /><input type="number" min="0" max="8" @bind="S.Collection.DocumentsPerRaid" /></label><label>Collection allowance <HelpTip Text="How many newly collected document units a character can pick up during one collection window. Splitting or merging a stack does not add allowance." /><input type="number" min="1" @bind="S.Collection.DocumentLimit" /></label><label>Collection window (seconds) <HelpTip Text="The collection allowance resets after this many seconds. The default 23-hour window is 82,800 seconds." /><input type="number" min="60" @bind="S.Collection.WindowSeconds" /></label><label>Classified chance (%) <HelpTip Text="Chance of earning a Classified bonus for a newly collected document extracted from a survived raid. The default is 5 percent." /><input type="number" min="0" max="100" @bind="S.Collection.ClassifiedChancePercent" /></label></div>
@@ -270,7 +273,7 @@
                     </div>
                     <div class="row"><button @onclick="AddReward">Add reward</button>@if (_reward != null && Tiles.Contains(_reward)) { <button @onclick="DuplicateReward">Duplicate reward</button><button @onclick="DeleteReward">Delete reward</button> }</div>
                     <section class="editor-section reward-selection"><div class="panel-heading"><h3>Selected reward</h3><HelpTip Text="Changes here apply to the selected tile. Save changes in the top bar to keep your edits." /></div>
-                    @if (_reward != null && Tiles.Contains(_reward)) { <p class="selection-name">@_reward.Name</p><RewardEditor @key="_reward.Id" Reward="_reward" Columns="Columns" Rows="Rows" Documents="S.Documents" ArtAssets="ArtAssets" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" /> }
+                    @if (_reward != null && Tiles.Contains(_reward)) { <p class="selection-name">@_reward.Name</p><RewardEditor @key="_reward.Id" Reward="_reward" Columns="Columns" Rows="Rows" Documents="S.Documents" ArtAssets="ArtAssets" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" TraderOffers="S.TraderOffers" OpenOffer="OpenTraderOffer" /> }
                     else { <div class="empty-selection"><span aria-hidden="true">▦</span><strong>No tile selected</strong><p>Select a reward in the grid to edit its artwork, size, costs and contents.</p></div> }
                     </section>
                     

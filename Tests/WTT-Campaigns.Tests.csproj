@@ -18,6 +18,8 @@
     <Compile Include="..\Server\Profiles\ProfileStateSerialization.cs" Link="Profiles\ProfileStateSerialization.cs" />
     <Compile Include="..\Server\Seasons\SeasonRepository.cs" Link="Storage\SeasonRepository.cs" />
     <Compile Include="..\Server\Seasons\SeasonItemBundles.cs" Link="Storage\SeasonItemBundles.cs" />
+    <Compile Include="..\Server\Seasons\TraderOfferCatalogue.cs" Link="Storage\TraderOfferCatalogue.cs" />
+    <Compile Include="..\Server\Seasons\CampaignTraderStock.cs" Link="Storage\CampaignTraderStock.cs" />
     <Compile Include="..\Client\UI\ImageRequestCache.cs" Link="Client\ImageRequestCache.cs" />
     <Compile Include="..\Client\Authoring\AuthoringSocket.cs" Link="Client\AuthoringSocket.cs" />
     <Compile Include="..\Client\Profiles\ProfileReconnect.cs" Link="Client\ProfileReconnect.cs" />

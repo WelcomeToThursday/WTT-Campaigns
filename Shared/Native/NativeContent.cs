@@ -99,6 +99,8 @@ public sealed class HubGameplayDefinition
     public List<HubGameplayDocument> Documents { get; set; } = new();
     public Dictionary<string, HubGameplayReward> Rewards { get; set; } = new();
     public List<NativeOffer> Offers { get; set; } = new();
+    public List<WTT.Campaigns.Shared.Seasons.CampaignTraderOffer> TraderOffers { get; set; } = new();
+    public List<WTT.Campaigns.Shared.Seasons.CampaignTraderAssort> TraderAssorts { get; set; } = new();
 }
 
 public sealed class HubItemExchange

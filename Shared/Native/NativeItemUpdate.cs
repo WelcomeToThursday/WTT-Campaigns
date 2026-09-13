@@ -5,6 +5,15 @@ namespace WTT.Campaigns.Shared.Native;
 
 public sealed class NativeItemUpdate : NativeModel
 {
+    [JsonProperty("UnlimitedCount", NullValueHandling = NullValueHandling.Ignore)]
+    public bool? UnlimitedCount { get; set; }
+
+    [JsonProperty("BuyRestrictionMax", NullValueHandling = NullValueHandling.Ignore)]
+    public int? BuyRestrictionMax { get; set; }
+
+    [JsonProperty("BuyRestrictionCurrent", NullValueHandling = NullValueHandling.Ignore)]
+    public int? BuyRestrictionCurrent { get; set; }
+
     [JsonProperty("StackObjectsCount", NullValueHandling = NullValueHandling.Ignore)]
     public double? StackObjectsCount { get; set; }
 

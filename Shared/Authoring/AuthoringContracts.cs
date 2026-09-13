@@ -14,6 +14,7 @@ public sealed class CaptureTask
 
 public class AuthoringRequest
 {
+    public ItemPreviewExchange? Preview { get; set; }
     public int Version { get; set; } = 1;
     public string ClientId { get; set; } = "";
     public string RaidId { get; set; } = "";
@@ -52,6 +53,7 @@ public sealed class DraftConflict
 
 public sealed class AuthoringResponse
 {
+    public ItemPreviewExchange? Preview { get; set; }
     public int Version { get; set; } = 1;
     public string? Error { get; set; }
     public string Grant { get; set; } = "";

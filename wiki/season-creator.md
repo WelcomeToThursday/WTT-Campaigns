@@ -14,6 +14,45 @@ Open **Help and tutorials** from the library or any draft for searchable instruc
 
 Hover or focus the **?** markers for explanations of point costs, collection windows, page gates, weighted crate contents and other settings. Tap a marker on touch devices; Escape dismisses focused help. Reward tiles show selection and disabled states. Select a tile to edit its contents and dimensions below the grid, then use **Save changes** in the top bar.
 
+## Trader assortments
+
+Open **Trader assortments** under **Rewards and economy** in a campaign draft. Choose a trader to see what they currently sell, then select **Edit assortment**. Vanilla and installed modded traders with fixed assortments are supported; Fence's generated inventory is not.
+
+- **Edit offer** opens an existing offer's assembly, price, loyalty and stock settings. Editing an installed offer creates a campaign replacement and keeps its reward links connected.
+- **Remove offer** removes it from this campaign's assortment.
+- **Add offer** starts from an item, weapon preset or a copy of an installed offer. The trader is already selected.
+- **Clear assortment…** removes all offers from this trader's campaign draft, so you can build it from empty.
+- **Restore installed…** discards this trader's draft changes and restores its installed assortment.
+
+Clear and restore actions show a review first and can be undone. Reward references must be removed before their offers can be deleted or the trader cleared. **Back to assortment** returns from an offer to the trader's offer list; **Choose another trader** returns to trader selection. **Finish editing** leaves edit mode; use the campaign's **Save changes** to persist the draft. Campaign changes take effect through normal validation and publishing, and affect only characters using that campaign. Installed trader files and other campaigns remain independent.
+
+Select an item in the assembly tree, then select one of its attachment slots, ammunition containers, or storage grids. The item catalogue filters compatible templates for that destination. Use **Add to** or drag an item onto a slot or grid cell. Grid contents can be moved within the grid and rotated. Removing an attachment also removes its children. Empty required slots produce incomplete-assembly warnings; incompatible items, overlapping grid contents, and invalid quantities must be repaired. Use **Undo** and **Redo** to revise edits. On narrower screens, the **Catalogue**, **Assembly**, and **Offer settings** tabs switch between working areas.
+
+In **Offer settings**, configure loyalty, stock, the per-player purchase limit, and currency or barter costs. A purchase requires every cost in its selected payment alternative. Zero purchase limit means unlimited purchases per player; finite stock and purchase limits follow that trader's native restock schedule. **Available in this campaign** uses ordinary trader access and loyalty gates. **Requires reward unlock** also requires an enabled Battle Pass or campaign reward with an **AssortmentUnlock** payload selecting this offer. Use **Edit campaign offer** in that reward to return to the assembly.
+
+### Standalone editing and export
+
+Use **Open standalone trader editor** in the Creator header, or open `/wtt-campaigns/creator/traders`. No campaign draft is needed. Choose a trader and select **Edit assortment** to copy their complete installed assortment into the standalone workspace. Edit, add, remove or clear offers using the same trader-first flow.
+
+**Save draft** keeps your independent workspace. **Prepare export** saves and validates the selected trader, then offers **Download assort.json**. The download is a native SPT assortment with complete item trees, barter alternatives, loyalty levels, stock and purchase limits. Empty assortments can be exported too. Exporting does not install the file or modify live traders; use the file in the appropriate trader mod. Campaign reward settings are omitted from this workflow.
+
+Existing offer and child IDs are preserved in standalone edits so external trader references keep working for retained offers. New or duplicated offers receive new IDs. The export contains only `assort.json`; if you remove offers referenced by your mod's `questassort.json` or code, update those references in that mod too.
+
+Standalone drafts are stored under the mod's `creator/assorts/` directory with a backup of the previous save. Stale saves from another tab are rejected; reload the saved draft to resolve the conflict. Client images and assembly checks remain available, but standalone export performs structural and installed-template validation without requiring a campaign publication receipt.
+
+### Client images and assembly verification
+
+1. Install matching WTT-Campaigns client and server components and manually restart the applications.
+2. In the game's WTT-Campaigns settings, enable **Web item previews → Enable item authoring** and remain at the main menu.
+3. Expand **Item previews** and choose that client under **Client item images**. The selected assembly and current page of offers or catalogue items are rendered on demand using the same cached icon path as the game's trader screen, including installed modded items.
+4. Wait for **Verified**, repair reported assembly errors, then **Save changes**, **Validate**, and **Publish pack**. Use **Refresh selected assembly** after repairing a missing bundle or stale image.
+
+Images are cached on the server, so drafts remain editable after the client disconnects. Publication requires a successful client verification of each authored assembly. Changes to the assembly, relevant templates, or the selected client's mod/bundle fingerprint require another check; changes to prices and stock do not. Draft-only templates that the client has not loaded remain unverified until their content is installed and available. A disconnected client, pending render, or missing image does not prevent saving a draft.
+
+The preview worker creates detached items and never changes a player inventory or performs a purchase. It pauses outside the main menu and shares the existing SPT notification connection with raid authoring. Each job is limited to 256 items, and previews to 1024 pixels and 1 MiB. The server keeps a bounded local cache in the mod's `user/item-preview-cache` folder; cached images and trusted verification receipts are not included in exported packs. A receiving author's installation must verify imported assemblies locally before republishing them.
+
+Campaigns containing these offers use format 3 and need a release that supports trader authoring. Existing format-1 and format-2 packs remain supported. As with other gameplay changes, duplicate a campaign already used by characters before changing its offers.
+
 ## Manage drafts
 
 The library starts with the most recently edited drafts. Use **Sort drafts** for oldest first or name order; existing drafts use their file date until their next edit. Dates are shown in the server's local time.

@@ -3,6 +3,8 @@ using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Ragfair;
+using WTT.Campaigns.Server.Seasons;
+using WTT.Campaigns.Shared.Seasons;
 
 namespace WTT.Campaigns.Server.Hub;
 
@@ -15,6 +17,8 @@ public sealed partial class HubGameplay
         foreach (var grant in _catalogue.Rewards.Values.SelectMany(r => r.Grants).Where(g => (string?)g.Type == "AssortmentUnlock"))
         {
             var target = (string)grant.Target!;
+            if (_catalogue.TraderOffers.Any(o => o.Id == target))
+                continue;
             var traderId = new MongoId((string)grant.TraderId!);
             if (!traders.TryGetValue(traderId, out var trader) || trader.Assort == null)
             {
@@ -155,6 +159,24 @@ public sealed partial class HubGameplay
         }
 
         var result = cloner.Clone(original)!;
+        if (
+            seasons.IsSeasonal(sessionId)
+            && seasons.SeasonIdFor(saves.GetProfile(new MongoId(sessionId)).CharacterData!.PmcData!) == _presentation.SeasonId
+        )
+        {
+            var policy = _catalogue.TraderAssorts.FirstOrDefault(a => a.TraderId == traderId);
+            if (policy != null)
+                CampaignTraderStock.FilterInstalled(result, policy, _catalogue.TraderOffers.Select(o => o.Id).ToHashSet());
+        }
+        foreach (var offer in _catalogue.TraderOffers.Where(o => o.TraderId == traderId))
+        {
+            if ((_manager ?? this).OfferAllowed(sessionId, offer.Id))
+                continue;
+            var remove = Descendants(result.Items, offer.Id);
+            result.Items.RemoveAll(i => remove.Contains(i.Id.ToString()));
+            result.BarterScheme.Remove(new MongoId(offer.Id));
+            result.LoyalLevelItems.Remove(new MongoId(offer.Id));
+        }
         foreach (
             var grant in _catalogue
                 .Rewards.Values.SelectMany(r => r.Grants)
@@ -179,9 +201,22 @@ public sealed partial class HubGameplay
     {
         if (_runtimes != null)
         {
+            var owner = _runtimes.Values.FirstOrDefault(r => r._catalogue.TraderOffers.Any(o => o.Id == offerId));
+            if (owner != null)
+                return owner.AuthoredOfferAllowed(sessionId, offerId);
+        }
+        else if (_catalogue.TraderOffers.Any(o => o.Id == offerId))
+            return AuthoredOfferAllowed(sessionId, offerId);
+        if (_runtimes != null)
+        {
             if (seasons.IsSeasonal(sessionId))
             {
                 var activePmc = saves.GetProfile(new MongoId(sessionId)).CharacterData!.PmcData!;
+                if (
+                    _runtimes.TryGetValue(seasons.SeasonIdFor(activePmc), out var policyOwner)
+                    && !policyOwner.InstalledOfferAllowed(offerId)
+                )
+                    return false;
                 if (_runtimes.TryGetValue(seasons.SeasonIdFor(activePmc), out var active) && active._offerIds.ContainsValue(offerId))
                 {
                     return active.OfferAllowed(sessionId, offerId);
@@ -194,6 +229,13 @@ public sealed partial class HubGameplay
         {
             return true;
         }
+        if (
+            _catalogue.TraderAssorts.Count > 0
+            && seasons.IsSeasonal(sessionId)
+            && seasons.SeasonIdFor(saves.GetProfile(new MongoId(sessionId)).CharacterData!.PmcData!) == _presentation.SeasonId
+            && !InstalledOfferAllowed(offerId)
+        )
+            return false;
         var targets = _offerIds.Where(p => p.Value == offerId).Select(p => p.Key).ToArray();
         if (targets.Length == 0)
         {
@@ -211,6 +253,24 @@ public sealed partial class HubGameplay
 
         var progress = Progress(pmc);
         return targets.Any(progress.UnlockedOffers.Contains);
+    }
+
+    private bool InstalledOfferAllowed(string offerId)
+    {
+        if (!SeasonValidator.IsId(offerId))
+            return false;
+        foreach (var policy in _catalogue.TraderAssorts)
+        {
+            if (policy.RemovedOffers.Contains(offerId))
+                return false;
+            if (
+                policy.ReplaceExisting
+                && traders.TryGetValue(new MongoId(policy.TraderId), out var trader)
+                && trader.Assort?.BarterScheme.ContainsKey(new MongoId(offerId)) == true
+            )
+                return false;
+        }
+        return true;
     }
 
     public void RestoreFallbackOffers(string traderId)
