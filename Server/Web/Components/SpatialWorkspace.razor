@@ -4,7 +4,7 @@
 <label>Find a record<input type="search" @bind="_search" @bind:event="oninput" /></label>
 @foreach (var record in Season.Zones.Cast<SpatialCapture>().Concat(Season.Captures).Where(r => r.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)))
 {
-    <details class="editor-card" @key="record.Id"><summary>@record.Name · @record.Location · @record.Scene@(record is SeasonZone zone ? " · " + ZoneScope(zone) : "")</summary>
+    <details class="editor-card" @key="record.Id"><summary>@record.Name · @record.Location · @record.Scene@(record is SeasonZone summaryZone ? " · " + ZoneScope(summaryZone) : "")</summary>
     <label>Name<input maxlength="120" @bind="record.Name" /></label><small>@record.Id</small>
     <SpatialVectorFields Value="record.Position" Changed="Changed" /><SpatialVectorFields Value="record.Rotation" Label="Rotation (degrees)" Changed="Changed" />
     @if (record is SeasonZone zone)
