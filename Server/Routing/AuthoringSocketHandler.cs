@@ -69,7 +69,7 @@ public sealed class AuthoringSocketHandler(IServiceProvider services) : ISptWebS
             if (
                 editor != null
                 && (
-                    message.Request.Version != 2
+                    message.Request.Version is not (2 or 3)
                     || !editor.Accepts(root, message.Request.EditorSessionId, DateTimeOffset.UtcNow)
                     || message.Request.Location != editor.Location
                 )

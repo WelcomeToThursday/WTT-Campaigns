@@ -115,71 +115,30 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
     internal void Fit()
     {
         var size = ((RectTransform)transform).rect.size;
-        _stage.localScale = Vector3.one * Mathf.Min(size.x / 1920, size.y / 1080);
+        _stage.localScale = Vector3.one * Mathf.Min(Mathf.Max(1, size.y / 1080), Mathf.Min(size.x / 1280, size.y / 720));
     }
 
     private void Build(DefaultUIButton source)
     {
         UiElements.Fill((RectTransform)transform, new Color(0, 0, 0, .48f), true);
-        _stage = UiElements.Rect("EditorSafeArea", transform, 1920, 1080);
+        _stage = UiElements.Rect("EditorSafeArea", transform, 1280, 720);
         _template = UnityEngine.Object.Instantiate(source, _stage, false);
         _template.name = "NativeButtonTemplate";
         _template.gameObject.SetActive(false);
 
-        Panel(_stage, "Header", 0, 0, 1920, 132, new Color(0, 0, 0, .6f));
-        Label("EditorBrand", "WTT / CAMPAIGNS", 16, 72, 27, 550, 24, UiElements.Muted);
-        Label("EditorTitle", "CAMPAIGN EDITOR", 38, 72, 56, 850, 54);
-        AddButton("EditorStartup", "STARTUP: NORMAL", 1448, 56, 400, 44);
-        Rule(72, 132, 1776);
-
-        Panel(_stage, "DraftPanel", 72, 180, 440, 714, new Color(0, 0, 0, .48f));
-        Label("DraftHeading", "CAMPAIGN DRAFT", 23, 96, 204, 390, 34);
-        AddButton("EditorDraft", "SELECT DRAFT", 96, 258, 392, 54);
-        Label("DraftHelp", "Choose the campaign you want to edit.", 18, 96, 332, 390, 60, UiElements.Muted);
-        AddButton("EditorRefresh", "REFRESH DRAFTS", 96, 410, 392, 44);
-        Rule(96, 494, 392);
-        Label("CreatorHeading", "CAMPAIGN CREATOR", 23, 96, 518, 390, 36);
-        Label(
-            "CreatorHelp",
-            "Create a draft and edit quests, dialogue, traders and rewards in the web Creator.",
-            19,
-            96,
-            572,
-            382,
-            110,
-            UiElements.Muted
-        );
-        AddButton("EditorWeb", "OPEN CREATOR", 96, 718, 392, 48);
-        Label("DraftSafety", "Draft changes stay with your campaign.", 17, 96, 807, 380, 56, UiElements.Muted);
-
-        Panel(_stage, "MapPanel", 552, 180, 1296, 714, new Color(0, 0, 0, .36f));
-        Label("MapHeading", "MAP WORKSPACE", 23, 588, 204, 1100, 34);
-        Label("EditorSelection", "Select a campaign draft to begin", 32, 588, 256, 1190, 62);
-        Rule(588, 342, 1224);
-        Label("LayoutHeading", "MISSION LAYOUT", 18, 588, 372, 420, 32, UiElements.Muted);
-        AddButton("EditorLayout", "NEW LAYOUT", 588, 418, 1224, 54);
-        Label("LocationHeading", "LOCATION", 18, 588, 504, 420, 32, UiElements.Muted);
-        AddButton("EditorMap", "SELECT LOCATION", 588, 550, 1224, 54);
-        Label("EditorMapHelp", "Choose a location for a new layout.", 18, 588, 620, 1190, 52, UiElements.Muted);
-        Rule(588, 700, 1224);
-        Label("WorkspaceHeading", "BUILD YOUR MISSION", 22, 588, 724, 1190, 34);
-        Label(
-            "WorkspaceHelp",
-            "Place routes, checkpoints and barriers. Adjust scenery, then walk through your layout.",
-            20,
-            588,
-            774,
-            1160,
-            64
-        );
-        Label("WorkspaceMode", "EDITOR SESSION  /  Gameplay and progression disabled", 17, 588, 847, 1190, 28, UiElements.Muted);
-
-        Panel(_stage, "Footer", 0, 922, 1920, 158, new Color(0, 0, 0, .75f));
-        Rule(72, 922, 1776);
-        AddButton("EditorReturn", "RETURN TO GAME", 72, 969, 350, 52);
-        Label("EditorHomeStatus", "Connecting to editor…", 19, 458, 950, 870, 90);
-        AddButton("EditorRetry", "RETRY CONNECTION", 1370, 970, 478, 54);
-        AddButton("EditorOpen", "OPEN MAP", 1370, 970, 478, 54);
+        foreach (var item in WTT.Campaigns.UI.Screens.EditorHomeComposition.Elements)
+        {
+            if (item.Kind == "Panel")
+            {
+                var panel = Panel(_stage, item.Id, item.X, item.Y, item.Width, item.Height,
+                    item.Id.EndsWith("TitleBar") ? EditorTarkovTheme.Container : EditorTarkovTheme.Surface);
+                EditorTarkovTheme.Frame(panel);
+            }
+            else if (item.Kind == "Button") AddButton(item.Id, item.Text, item.X, item.Y, item.Width, item.Height);
+            else Label(item.Id, item.Text, item.Size, item.X, item.Y, item.Width, item.Height, EditorTarkovTheme.Ink);
+        }
+        Panel(_stage, "ColumnRule", 438, 124, 1, 404, EditorTarkovTheme.Border);
+        Rule(124, 580, 1028);
     }
 
     private static RectTransform Place(Transform parent, string name, float x, float y, float width, float height)
@@ -226,7 +185,7 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
         button.SetTooltips("", "");
         button._minWidth = -1;
         button._useEllipsis = true;
-        button.SetRawText(text, 24);
+        button.SetRawText(text, 18);
         button._headerLabel.richText = false;
         if (button._sizeLabel)
             button._sizeLabel.richText = false;
@@ -271,7 +230,7 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
     internal void Caption(string name, string value)
     {
         if (_buttons[name].HeaderText != value)
-            _buttons[name].SetRawText(value, 24);
+            _buttons[name].SetRawText(value, 18);
     }
 
     internal bool DismissPicker()
@@ -287,17 +246,18 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
     internal void Choose(string title, IReadOnlyList<(string Id, string Name)> choices, string selected, Action<string> choose)
     {
         DismissPicker();
-        var shield = Panel(_stage, "ChoiceShield", 0, 0, 1920, 1080, new Color(0, 0, 0, .7f));
+        var shield = Panel(_stage, "ChoiceShield", 0, 0, 1280, 720, new Color(0, 0, 0, .7f));
         _picker = shield.gameObject;
         var dismiss = shield.gameObject.AddComponent<Button>();
         dismiss.onClick.AddListener(() => DismissPicker());
-        var panel = Panel(shield, "ChoicePanel", 540, 192, 840, 696, new Color(.045f, .045f, .04f, 1));
-        var heading = NativeButton(panel, "ChoiceHeading", title + "   /   CLOSE", 24, 20, 792, 50);
+        var panel = Panel(shield, "ChoicePanel", 280, 84, 720, 552, new Color(.045f, .045f, .04f, 1));
+        EditorTarkovTheme.Frame(panel);
+        var heading = NativeButton(panel, "ChoiceHeading", title + "   /   CLOSE", 12, 8, 696, 32);
         heading.OnClick.AddListener(() => DismissPicker());
-        var viewport = Place(panel, "ChoicesViewport", 24, 88, 792, 576);
+        var viewport = Place(panel, "ChoicesViewport", 12, 52, 696, 484);
         UiElements.Fill(viewport, Color.clear, true);
         viewport.gameObject.AddComponent<RectMask2D>();
-        var content = Place(viewport, "Choices", 0, 0, 768, Math.Max(576, choices.Count * 62));
+        var content = Place(viewport, "Choices", 0, 0, 680, Math.Max(484, choices.Count * 42));
         var scroll = viewport.gameObject.AddComponent<ScrollRect>();
         scroll.viewport = viewport;
         scroll.content = content;
@@ -307,7 +267,7 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
         for (var index = 0; index < choices.Count; index++)
         {
             var choice = choices[index];
-            var button = NativeButton(content, "Choice", (choice.Id == selected ? "•  " : "") + choice.Name, 0, index * 62, 768, 54);
+            var button = NativeButton(content, "Choice", (choice.Id == selected ? "•  " : "") + choice.Name, 0, index * 42, 680, 36);
             button.OnClick.AddListener(() =>
             {
                 DismissPicker();

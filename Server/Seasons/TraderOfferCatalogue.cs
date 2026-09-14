@@ -159,6 +159,37 @@ public sealed class TraderOfferCatalogue(
     public List<NativeItem> Preset(string id) =>
         JsonConvert.DeserializeObject<List<NativeItem>>(json.Serialize(globals.ItemPresets[new MongoId(id)].Items)!)!;
 
+    public SceneCatalogResponse SceneCatalog(SceneCatalogRequest request)
+    {
+        if (request.Page < 0 || request.Page > 10000 || request.Search == null || request.Search.Length > 120
+            || request.Category is not ("Items" or "Presets"))
+            throw new InvalidOperationException("Invalid catalog query.");
+        var locale = locales.GetLocaleDb("en");
+        var entries = request.Category == "Presets"
+            ? globals.ItemPresets.Values.Select(p => new SceneCatalogEntry { Id = p.Id.ToString(), Name = p.Name ?? p.Id.ToString() })
+            : templates.Items.Values.Where(t => IsInventoryItem(t.Id.ToString()))
+                .Select(t => new SceneCatalogEntry { Id = t.Id.ToString(), Name = locale.GetValueOrDefault(t.Id + " Name", t.Name ?? t.Id.ToString()) });
+        entries = entries.Where(e => e.Name.Contains(request.Search, StringComparison.OrdinalIgnoreCase)
+            || e.Id.Contains(request.Search, StringComparison.OrdinalIgnoreCase));
+        if (request.Id.Length > 0)
+            entries = entries.Where(e => e.Id == request.Id);
+        var sorted = entries.OrderBy(e => e.Name).ThenBy(e => e.Id).ToList();
+        var response = new SceneCatalogResponse { Total = sorted.Count, Entries = sorted.Skip(request.Page * 10).Take(10).ToList() };
+        foreach (var entry in response.Entries)
+        {
+            entry.Items = request.Category == "Presets"
+                ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id))
+                : [new NativeItem { Id = SeasonRepository.NewId(), Template = entry.Id }];
+            if (entry.Items.Any(i => !IsInventoryItem(i.Template)))
+                throw new InvalidOperationException("This preset contains unavailable inventory items.");
+            var validation = new SeasonValidationResult();
+            SeasonValidator.ItemTree(entry.Items, "Catalog item", validation);
+            if (!validation.CanPublish)
+                throw new InvalidOperationException(validation.Issues[0].Message);
+        }
+        return response;
+    }
+
     public List<List<NativeBarter>> OfferCosts(string composite)
     {
         var parts = composite.Split('/');

@@ -28,286 +28,304 @@ public sealed partial class RaidEditor
     private RaidEditorView BuildView()
     {
         var view = new RaidEditorView();
-        view.Button("CloseEditor", Close);
-        void Button(string name, Action action)
+        try
         {
-            view.Button(
-                name,
-                () =>
-                {
-                    try
+            BindEnvironment(view);
+            BindCameraControls(view);
+            view.Button("CloseEditor", Close);
+            void Button(string name, Action action)
+            {
+                view.Button(
+                    name,
+                    () =>
                     {
-                        action();
-                    }
-                    catch (Exception e)
-                    {
-                        _notice = e.Message;
-                        Plugin.Error(e);
-                    }
-                }
-            );
-        }
-
-        foreach (var mode in new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" })
-        {
-            var value = mode;
-            Button(
-                mode,
-                () =>
-                {
-                    _moduleSelection[_mode] = (_selected, _page);
-                    _mode = value;
-                    var previous = _moduleSelection.GetValueOrDefault(value);
-                    _selected = previous.Selection ?? "";
-                    _page = previous.Page;
-                    Refresh();
-                }
-            );
-        }
-        for (var i = 0; i < 10; i++)
-        {
-            var row = i;
-            Button("Row" + i, () => SelectRow(row));
-        }
-        view.Get<InputField>("Search")
-            .onValueChanged.AddListener(_ =>
-            {
-                _page = 0;
-                Refresh(false);
-            });
-        Button(
-            "Previous",
-            () =>
-            {
-                _page = Math.Max(0, _page - 1);
-                Refresh();
-            }
-        );
-        Button(
-            "Next",
-            () =>
-            {
-                if ((_page + 1) * 10 < _rows.Count)
-                {
-                    _page++;
-                }
-                Refresh();
-            }
-        );
-        Button(
-            "AddBox",
-            () =>
-            {
-                if (_mode == "Bindings")
-                {
-                    AddBinding("Trigger");
-                }
-                else
-                {
-                    AddZone("Box");
-                }
-            }
-        );
-        Button(
-            "AddSphere",
-            () =>
-            {
-                if (_mode == "Bindings")
-                {
-                    AddBinding("Interact");
-                }
-                else
-                {
-                    AddZone("Sphere");
-                }
-            }
-        );
-        Button("Capture", () => Capture(false));
-        Button(
-            "Pick",
-            () =>
-            {
-                _picking = true;
-                _notice = "Click a scene object. Use Select parent to choose its binding target.";
-            }
-        );
-        Button("Undo", () => _session?.Undo(false));
-        Button("Redo", () => _session?.Undo(true));
-        Button("Duplicate", Duplicate);
-        Button("Delete", Delete);
-        Button("AtFeet", () => Place(false));
-        Button("AtAim", () => Place(true));
-        Button(
-            "Parent",
-            () =>
-            {
-                if (_picked?.parent)
-                {
-                    _picked = _picked!.parent;
-                }
-                Refresh();
-            }
-        );
-        Button("UseObject", BindTarget);
-        foreach (var tool in new[] { "Move", "Rotate", "Scale" })
-        {
-            var value = tool;
-            Button(
-                tool,
-                () =>
-                {
-                    _tool = value;
-                    Refresh();
-                }
-            );
-        }
-        Button(
-            "Snap",
-            () =>
-            {
-                _snap = !_snap;
-                Refresh();
-            }
-        );
-        foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation" })
-        {
-            var value = use;
-            Button(
-                use,
-                () =>
-                    EditPoint(point =>
-                    {
-                        if (point is SeasonZone zone)
+                        try
                         {
-                            if (!zone.Uses.Remove(value))
-                            {
-                                zone.Uses.Add(value);
-                            }
+                            action();
                         }
-                    })
-            );
-        }
-        view.Input(
-            "Name",
-            value =>
-            {
-                if (string.IsNullOrWhiteSpace(value))
-                {
-                    return;
-                }
-                if (_mode == "Bindings" && Binding != null)
-                {
-                    var id = Binding.Id;
-                    _session?.Edit(s => s.Story!.RaidBindings.AsValueEnumerable().Single(b => b.Id == id).Name = value.Trim());
-                }
-                else
-                {
-                    EditPoint(point => point.Name = value.Trim());
-                }
-            }
-        );
-        Button(
-            "EventKind",
-            () =>
-            {
-                if (Binding == null)
-                {
-                    return;
-                }
-                var id = Binding.Id;
-                _session?.Edit(s =>
-                {
-                    var b = s.Story!.RaidBindings.AsValueEnumerable().Single(x => x.Id == id);
-                    var kinds = new[] { "Trigger", "Interact", "Shoot", "Cinematic" };
-                    b.Kind = kinds[(Array.IndexOf(kinds, b.Kind) + 1) % kinds.Length];
-                    if (b.Kind is "Interact" or "Shoot")
-                    {
-                        b.ZoneId = "";
+                        catch (Exception e)
+                        {
+                            _notice = e.Message;
+                            Plugin.Error(e);
+                        }
                     }
-                });
-            }
-        );
-        foreach (var group in new[] { "Position", "Rotation", "Size" })
-        {
-            for (var i = 0; i < 3; i++)
-            {
-                var property = group;
-                var axis = i;
-                view.Input(
-                    group + "XYZ"[i],
-                    value =>
-                        Number(
-                            value,
-                            number =>
-                                EditPoint(point =>
-                                {
-                                    var vector =
-                                        property == "Position" ? point.Position
-                                        : property == "Rotation" ? point.Rotation
-                                        : (point as SeasonZone)?.Size;
-                                    if (vector == null || property == "Size" && number <= 0)
-                                    {
-                                        return;
-                                    }
-
-                                    if (axis == 0)
-                                    {
-                                        vector.X = number;
-                                    }
-                                    else if (axis == 1)
-                                    {
-                                        vector.Y = number;
-                                    }
-                                    else
-                                    {
-                                        vector.Z = number;
-                                    }
-                                })
-                        )
                 );
             }
-        }
 
-        view.Input(
-            "Radius",
-            value =>
-                Number(
-                    value,
-                    number =>
-                    {
-                        if (number > 0)
-                        {
-                            EditPoint(p =>
-                            {
-                                if (p is SeasonZone z)
-                                {
-                                    z.Radius = number;
-                                }
-                            });
-                        }
-                    }
-                )
-        );
-        Button("Complete", CompleteTask);
-        Button(
-            "Cancel",
-            () =>
+            foreach (var mode in new[] { "Maps", "Routes", "Zones", "Bindings", "Captures", "Scene" })
             {
-                CancelDrag();
-                if (_task != null)
+                var value = mode;
+                Button(
+                    mode,
+                    () =>
+                    {
+                        CancelPlacement();
+                        _sceneRebindId = "";
+                        _picking = false;
+                        CancelDrag();
+                        _moduleSelection[_mode] = (_selected, _page);
+                        _mode = value;
+                        var previous = _moduleSelection.GetValueOrDefault(value);
+                        _selected = previous.Selection ?? "";
+                        _page = previous.Page;
+                        Refresh();
+                        view.Windows.BrowseCategory();
+                    }
+                );
+            }
+            for (var i = 0; i < 10; i++)
+            {
+                var binding = view.Get<Button>("Row" + i).gameObject.AddComponent<WTT.Campaigns.UI.Controls.EditorRowSelection>();
+                Button("Row" + i, () => SelectRow(binding.Consume()));
+            }
+            view.Get<InputField>("Search")
+                .onValueChanged.AddListener(_ =>
                 {
-                    _session?.TaskStatus(_task, "Cancelled");
+                    _page = 0;
+                    Refresh(false);
+                });
+            Button(
+                "Previous",
+                () =>
+                {
+                    _page = Math.Max(0, _page - 1);
+                    Refresh();
                 }
-                else
+            );
+            Button(
+                "Next",
+                () =>
                 {
-                    Close();
+                    if ((_page + 1) * 10 < LibraryTotal)
+                    {
+                        _page++;
+                    }
+                    Refresh();
+                }
+            );
+            Button(
+                "AddBox",
+                () =>
+                {
+                    if (_mode == "Bindings")
+                    {
+                        AddBinding("Trigger");
+                    }
+                    else
+                    {
+                        AddZone("Box");
+                    }
+                }
+            );
+            Button(
+                "AddSphere",
+                () =>
+                {
+                    if (_mode == "Bindings")
+                    {
+                        AddBinding("Interact");
+                    }
+                    else
+                    {
+                        AddZone("Sphere");
+                    }
+                }
+            );
+            Button("Capture", () => Capture(false));
+            Button(
+                "Pick",
+                () =>
+                {
+                    _picking = true;
+                    _notice = "Click a scene object. Use Select parent to choose its binding target.";
+                }
+            );
+            Button("Undo", () => { CancelDrag(); _session?.Undo(false); });
+            Button("Redo", () => { CancelDrag(); _session?.Undo(true); });
+            Button("Duplicate", Duplicate);
+            Button("Delete", Delete);
+            Button("AtFeet", () => Place(false));
+            Button("AtAim", () => Place(true));
+            Button(
+                "Parent",
+                () =>
+                {
+                    if (_picked?.parent)
+                    {
+                        _picked = _picked!.parent;
+                    }
+                    Refresh();
+                }
+            );
+            Button("UseObject", BindTarget);
+            foreach (var tool in new[] { "Move", "Rotate", "Scale" })
+            {
+                var value = tool;
+                Button(
+                    tool,
+                    () =>
+                    {
+                        CancelDrag();
+                        if (SceneWorkspace) SceneTransform(value);
+                        else _tool = value;
+                        Refresh();
+                    }
+                );
+            }
+            Button(
+                "Snap",
+                () =>
+                {
+                    _snap = !_snap;
+                    Refresh();
+                }
+            );
+            foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation" })
+            {
+                var value = use;
+                Button(
+                    use,
+                    () =>
+                        EditPoint(point =>
+                        {
+                            if (point is SeasonZone zone)
+                            {
+                                if (!zone.Uses.Remove(value))
+                                {
+                                    zone.Uses.Add(value);
+                                }
+                            }
+                        })
+                );
+            }
+            view.Input(
+                "Name",
+                value =>
+                {
+                    if (string.IsNullOrWhiteSpace(value))
+                    {
+                        return;
+                    }
+                    if (_mode == "Bindings" && Binding != null)
+                    {
+                        var id = Binding.Id;
+                        _session?.Edit(s => s.Story!.RaidBindings.AsValueEnumerable().Single(b => b.Id == id).Name = value.Trim());
+                    }
+                    else
+                    {
+                        EditPoint(point => point.Name = value.Trim());
+                    }
+                }
+            );
+            Button(
+                "EventKind",
+                () =>
+                {
+                    if (Binding == null)
+                    {
+                        return;
+                    }
+                    var id = Binding.Id;
+                    _session?.Edit(s =>
+                    {
+                        var b = s.Story!.RaidBindings.AsValueEnumerable().Single(x => x.Id == id);
+                        var kinds = new[] { "Trigger", "Interact", "Shoot", "Cinematic" };
+                        b.Kind = kinds[(Array.IndexOf(kinds, b.Kind) + 1) % kinds.Length];
+                        if (b.Kind is "Interact" or "Shoot")
+                        {
+                            b.ZoneId = "";
+                        }
+                    });
+                }
+            );
+            foreach (var group in new[] { "Position", "Rotation", "Size" })
+            {
+                for (var i = 0; i < 3; i++)
+                {
+                    var property = group;
+                    var axis = i;
+                    view.Input(
+                        group + "XYZ"[i],
+                        value =>
+                            Number(
+                                value,
+                                number =>
+                                    EditPoint(point =>
+                                    {
+                                        var vector =
+                                            property == "Position" ? point.Position
+                                            : property == "Rotation" ? point.Rotation
+                                            : (point as SeasonZone)?.Size;
+                                        if (vector == null || property == "Size" && number <= 0)
+                                        {
+                                            return;
+                                        }
+
+                                        if (axis == 0)
+                                        {
+                                            vector.X = number;
+                                        }
+                                        else if (axis == 1)
+                                        {
+                                            vector.Y = number;
+                                        }
+                                        else
+                                        {
+                                            vector.Z = number;
+                                        }
+                                    })
+                            )
+                    );
                 }
             }
-        );
-        Button("KeepLocal", () => _session?.Resolve(true));
-        Button("KeepRemote", () => _session?.Resolve(false));
-        BindMapControls(view);
-        return view;
+
+            view.Input(
+                "Radius",
+                value =>
+                    Number(
+                        value,
+                        number =>
+                        {
+                            if (number > 0)
+                            {
+                                EditPoint(p =>
+                                {
+                                    if (p is SeasonZone z)
+                                    {
+                                        z.Radius = number;
+                                    }
+                                });
+                            }
+                        }
+                    )
+            );
+            Button("Complete", CompleteTask);
+            Button(
+                "Cancel",
+                () =>
+                {
+                    CancelDrag();
+                    if (_task != null)
+                    {
+                        _session?.TaskStatus(_task, "Cancelled");
+                    }
+                    else
+                    {
+                        Close();
+                    }
+                }
+            );
+            Button("KeepLocal", () => _session?.Resolve(true));
+            Button("KeepRemote", () => _session?.Resolve(false));
+            BindMapControls(view);
+            BindSceneControls(view);
+            return view;
+        }
+        catch
+        {
+            view.Dispose();
+            throw;
+        }
     }
 
     private void Number(string text, Action<float> action)
@@ -324,11 +342,17 @@ public sealed partial class RaidEditor
 
     private void EditPoint(Action<SpatialCapture> action)
     {
+        if (SceneWorkspace && !CanTransformScene("Move")) return;
+        if (SceneWorkspace && MapPoint == null)
+        {
+            CommitSceneSelection(action);
+            return;
+        }
         var id = _selected;
         _session?.Edit(s =>
         {
             var point =
-                _mode == "Maps"
+                (MapWorkspace || SceneWorkspace)
                     ? s.MapLayouts.AsValueEnumerable().SelectMany(MapLayoutRules.Points).FirstOrDefault(p => p.Id == id)
                     : s.Zones.AsValueEnumerable().Cast<SpatialCapture>().Concat(s.Captures).FirstOrDefault(p => p.Id == id);
             if (point != null)
@@ -479,7 +503,7 @@ public sealed partial class RaidEditor
             Scene = sceneObject ? _picked!.gameObject.scene.name : PlayerScene(),
             Position = ZoneRuntime.Vector(sceneObject ? _picked!.position : _flyPosition),
             Rotation = ZoneRuntime.Vector(sceneObject ? _picked!.eulerAngles : _flyRotation.eulerAngles),
-            ObjectPath = sceneObject ? StoryRaidRuntime.ObjectPath(_picked!) : "",
+            ObjectPath = sceneObject ? PickedPath : "",
         };
         _session.Edit(s =>
         {
@@ -493,7 +517,7 @@ public sealed partial class RaidEditor
 
     private void Duplicate()
     {
-        if (_mode == "Maps")
+        if (MapWorkspace || SceneWorkspace)
         {
             DuplicateMapRecord();
             return;
@@ -537,7 +561,7 @@ public sealed partial class RaidEditor
 
     private void Delete()
     {
-        if (_mode == "Maps")
+        if (MapWorkspace || SceneWorkspace)
         {
             DeleteMapRecord();
             return;
@@ -570,47 +594,32 @@ public sealed partial class RaidEditor
         Refresh();
     }
 
-    private void IndexScene()
+    private void SelectRow(string id)
     {
-        _scene = Resources
-            .FindObjectsOfTypeAll<Transform>()
-            .AsValueEnumerable()
-            .Where(t =>
-                t
-                && t.gameObject.scene.IsValid()
-                && !t.name.StartsWith("Season", StringComparison.Ordinal)
-                && !t.GetComponentInParent<Canvas>()
-                && !t.GetComponentInParent<EFT.Player>()
-            )
-            .OrderBy(t => t.name)
-            .ToList();
-    }
-
-    private void SelectRow(int row)
-    {
-        var index = _page * 10 + row;
-        if (index >= _rows.Count)
-        {
-            return;
-        }
-
-        var id = _rows[index].Id;
-        if (_mode == "Maps")
+        if (id.Length == 0) return;
+        CancelDrag();
+        if (MapWorkspace)
         {
             if (_session?.Definition?.MapLayouts.AsValueEnumerable().Any(l => l.Id == id) == true)
                 _layoutId = id;
             _selected = id;
+            if (EditorMode.Ready && MapPoint is MapObjectEdit or MapLootPlacement)
+            {
+                EnterSceneSelection();
+                SelectSceneRow(id);
+            }
         }
         else if (_mode == "Scene")
         {
-            _picked = _scene[int.Parse(id, CultureInfo.InvariantCulture)];
+            if (SceneWorkspace) SelectSceneRow(id);
+            else _picked = _sceneIndex.Entries[int.Parse(id, CultureInfo.InvariantCulture)].Target;
         }
         else if (_mode == "Bindings")
         {
             _bindingTarget = id;
             _selected = "";
             var binding = Binding;
-            _picked = _scene.AsValueEnumerable().FirstOrDefault(t => t && StoryRaidRuntime.ObjectPath(t) == binding?.ObjectPath);
+            _picked = _sceneIndex.Unique(binding?.ObjectPath);
         }
         else
         {
@@ -618,10 +627,11 @@ public sealed partial class RaidEditor
             _picked = null;
             if (Selected?.ObjectPath is { Length: > 0 } path)
             {
-                _picked = _scene.AsValueEnumerable().FirstOrDefault(t => t && StoryRaidRuntime.ObjectPath(t) == path);
+                _picked = _sceneIndex.Unique(path);
             }
         }
         Refresh();
+        _view!.Windows.ShowPanel("Inspector", true);
     }
 
     private string ObjectError()
@@ -631,8 +641,10 @@ public sealed partial class RaidEditor
             return "Pick a scene target first.";
         }
 
-        var path = StoryRaidRuntime.ObjectPath(_picked!);
-        if (_scene.AsValueEnumerable().Count(t => t && StoryRaidRuntime.ObjectPath(t) == path) != 1)
+        var path = PickedPath;
+        if (!_sceneIndex.Complete || _sceneIndex.Limited)
+            return SceneIndexStatus;
+        if (_sceneIndex.Unique(path) != _picked)
         {
             return "This path is ambiguous. Select a uniquely named target.";
         }
@@ -647,7 +659,7 @@ public sealed partial class RaidEditor
             return "This event needs an existing trigger collider or an authored zone.";
         }
 
-        if (Binding?.Kind == "Interact" && !_picked!.GetComponentsInChildren<Collider>().AsValueEnumerable().Any())
+        if (Binding?.Kind == "Interact" && !_picked!.GetComponentInChildren<Collider>())
         {
             return "Interact targets need a raycastable collider.";
         }
@@ -697,7 +709,7 @@ public sealed partial class RaidEditor
         }
 
         var bindingId = Binding.Id;
-        var path = StoryRaidRuntime.ObjectPath(_picked!);
+        var path = PickedPath;
         _session.Edit(s =>
         {
             var binding = s.Story!.RaidBindings.AsValueEnumerable().Single(b => b.Id == bindingId);
@@ -737,66 +749,90 @@ public sealed partial class RaidEditor
         Refresh(true);
     }
 
+    private string _libraryKey = "";
+
     private void Refresh(bool geometry)
     {
+        using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.Presentation);
         if (_view?.Valid != true || !_open || _session == null)
         {
             return;
         }
 
         var view = _view;
-        view.Text("Connection", _session.Definition?.Name ?? "Waiting for a connected draft");
+        view.Text(
+            "Connection",
+            (_session.Definition?.Name ?? "Waiting for a connected draft")
+                + " / "
+                + _session.Location
+                + (EditorMode.Ready ? " / " + (Layout?.Name ?? "New layout") : "")
+        );
         view.Text(
             "Request",
             _task == null ? "RAID CONTINUES · Player remains in place" : "RAID CONTINUES · " + _task.Tool + " capture requested"
         );
         view.Text("Status", _session.Status + (_notice.Length > 0 ? "\n" + _notice : ""));
         view.Conflict(_session);
-        foreach (var mode in new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" })
+        // Do not repurpose or hide a row between pointer-down and pointer-up.
+        if (view.Root.GetComponentsInChildren<WTT.Campaigns.UI.Controls.EditorRowSelection>()
+            .AsValueEnumerable().Any(row => row.Pressed))
+        {
+            _passiveState = "";
+            return;
+        }
+        foreach (var mode in new[] { "Maps", "Routes", "Zones", "Bindings", "Captures", "Scene" })
             view.Highlight(mode, _mode == mode);
         var search = view.Get<InputField>("Search").text;
-        _rows.Clear();
-        if (_mode == "Maps" && _session.Definition != null)
-            MapRows();
-        else if (_mode == "Scene")
+        var libraryKey = $"{_mode}|{_sceneTab}|{_sceneFilter}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
+        if (_libraryKey != libraryKey)
         {
-            _scene
-                .AsValueEnumerable()
-                .Select((t, i) => (t, i))
-                .Where(x =>
-                    x.t && (search.Length == 0 || StoryRaidRuntime.ObjectPath(x.t).IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
-                )
-                .Select(x => (x.i.ToString(CultureInfo.InvariantCulture), x.t.name))
-                .CopyTo(_rows);
-        }
-        else if (_mode == "Bindings")
-        {
-            (_session.Definition?.Story?.RaidBindings ?? new())
-                .AsValueEnumerable()
-                .Where(b => b.Location.Length == 0 || b.Location == _session.Location)
-                .Select(b => (b.Id, b.Name + " · " + b.Kind + " · " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
-                .CopyTo(_rows);
-        }
-        else
-        {
-            IEnumerable<SpatialCapture>? records = _mode == "Zones" ? _session.Definition?.Zones : _session.Definition?.Captures;
-            if (records != null)
+            _libraryKey = libraryKey;
+            _rows.Clear();
+            if (MapWorkspace && _session.Definition != null)
+                MapRows();
+            else if (SceneWorkspace) SceneRows(search);
+            else if (_mode == "Scene")
             {
-                records.AsValueEnumerable().Where(r => r.Location == _session.Location).Select(r => (r.Id, r.Name)).CopyTo(_rows);
+                foreach (var entry in _sceneIndex.Search(search))
+                    if (entry.Target)
+                        _rows.Add((entry.Id, entry.Name));
             }
-        }
+            else if (_mode == "Bindings")
+            {
+                (_session.Definition?.Story?.RaidBindings ?? new())
+                    .AsValueEnumerable()
+                    .Where(b => b.Location.Length == 0 || b.Location == _session.Location)
+                    .Select(b => (b.Id, b.Name + " · " + b.Kind + " · " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
+                    .CopyTo(_rows);
+            }
+            else
+            {
+                IEnumerable<SpatialCapture>? records = _mode == "Zones" ? _session.Definition?.Zones : _session.Definition?.Captures;
+                if (records != null)
+                {
+                    records.AsValueEnumerable().Where(r => r.Location == _session.Location).Select(r => (r.Id, r.Name)).CopyTo(_rows);
+                }
+            }
 
-        if (_mode != "Scene")
-        {
-            _rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
-        }
+            if (_mode != "Scene")
+            {
+                _rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
+            }
 
-        _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / 10));
+            if (_mode == "Scene") _rows.Sort((a, b) =>
+            {
+                var order = StringComparer.OrdinalIgnoreCase.Compare(a.Label, b.Label);
+                return order != 0 ? order : StringComparer.Ordinal.Compare(a.Id, b.Id);
+            });
+        }
+        if (!RemoteCatalog) _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / 10));
         for (var i = 0; i < 10; i++)
         {
-            var index = _page * 10 + i;
+            var index = LibraryOffset + i;
+            view.Get<WTT.Campaigns.UI.Controls.EditorRowSelection>("Row" + i).Identity = index < _rows.Count ? _rows[index].Id : "";
             view.Caption("Row" + i, index < _rows.Count ? _rows[index].Label : "");
             view.Get<Button>("Row" + i).interactable = index < _rows.Count;
+            view.Visible("Row" + i, index < _rows.Count);
         }
         view.Caption("Snap", _snap ? "Snap: on" : "Snap: off");
         var point = Selected;
@@ -846,7 +882,7 @@ public sealed partial class RaidEditor
         if (_picked)
         {
             details =
-                StoryRaidRuntime.ObjectPath(_picked!)
+                PickedPath
                 + "\n"
                 + _picked!.GetComponents<Component>().AsValueEnumerable().Where(c => c).Select(c => c.GetType().Name).JoinToString(", ")
                 + "\n"
@@ -855,10 +891,8 @@ public sealed partial class RaidEditor
 
         view.Text("Details", details);
         view.Caption("UseObject", point is SeasonZone && Binding != null ? "Bind selected zone" : "Use scene target");
-        if (geometry)
-        {
-            DrawGeometry();
-        }
         RefreshMaps(geometry);
+        RefreshWorkspace();
+        PresentScene();
     }
 }

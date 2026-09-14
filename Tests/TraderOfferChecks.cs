@@ -243,6 +243,10 @@ internal static class TraderOfferChecks
             catalogue.Search("Root").Any(i => i.Id == Tpl) && catalogue.IsInventoryItem(ChildTpl),
             "Valid installed inventory items and attachments remain available without existing trader offers"
         );
+        var scenePage = catalogue.SceneCatalog(new WTT.Campaigns.Shared.Authoring.SceneCatalogRequest { Search = "Root" });
+        check(scenePage.Entries.Any(e => e.Id == Tpl && e.Items.Count == 1), "Scene catalog uses installed native item templates");
+        check(catalogue.SceneCatalog(new WTT.Campaigns.Shared.Authoring.SceneCatalogRequest { Search = "CircleOfCultists" }).Total == 0, "Scene catalog excludes hideout storage");
+        check(catalogue.SceneCatalog(new WTT.Campaigns.Shared.Authoring.SceneCatalogRequest { Page = 1 }).Entries.Count == 0, "Catalog paging does not repeat the first page");
         var invalidOffer = SeasonCompiler.Copy(offer);
         var blockedCatalogue = new TraderOfferCatalogue(
             table,

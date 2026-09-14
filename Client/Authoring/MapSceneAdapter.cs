@@ -9,16 +9,25 @@ using ZLinq;
 
 namespace WTT.Campaigns.Client.Authoring;
 
-internal sealed class MapSceneAdapter : IDisposable
+internal sealed partial class MapSceneAdapter : IDisposable
 {
     private readonly SceneEditTransaction _transaction = new();
     private readonly List<GameObject> _ghosts = new();
     private Material? _ghostMaterial;
     internal readonly List<string> TargetErrors = new();
 
+    internal static string ScaleRestriction(Transform target)
+    {
+        // Include disabled colliders: hiding a prop must not bypass its collision requirements.
+        foreach (var collider in target.GetComponentsInChildren<MeshCollider>(true))
+            if (collider.sharedMesh && !collider.sharedMesh.isReadable)
+                return "This prop retains its original size because its collision mesh does not support resizing.";
+        return "";
+    }
+
     internal static string PathOf(Transform t) => (t.parent ? PathOf(t.parent) + "/" : "") + t.name + "[" + t.GetSiblingIndex() + "]";
 
-    internal static string Supported(Transform? t, bool door = false)
+    internal static string Supported(Transform? t, bool door = false, bool copy = false)
     {
         if (!t || !t!.gameObject.scene.IsValid() || !t.parent)
             return "Select a loaded scenery object, not a scene root.";
@@ -28,8 +37,21 @@ internal sealed class MapSceneAdapter : IDisposable
             || t.name.StartsWith("CampaignEditor", StringComparison.Ordinal)
         )
             return "This object belongs to gameplay or editor infrastructure.";
+        if (!door && (t.GetComponent<LootItem>() || t.GetComponent<LootableContainer>()))
+            return NativeSupported(t);
         if (door)
             return t.GetComponent<Door>()?.GetType() == typeof(Door) ? "" : "Select a standard native door; special doors are unsupported.";
+        // Reject aggregate map branches before allocating component arrays for the whole hierarchy.
+        var pending = new Stack<Transform>();
+        pending.Push(t);
+        var nodes = 0;
+        while (pending.Count > 0)
+        {
+            var node = pending.Pop();
+            if (++nodes > 256 || node.childCount > 64)
+                return "Select an individual prop instead of an aggregate scene group.";
+            for (var i = 0; i < node.childCount; i++) pending.Push(node.GetChild(i));
+        }
         if (
             t.GetComponentsInParent<MonoBehaviour>(true)
                 .AsValueEnumerable()
@@ -51,16 +73,24 @@ internal sealed class MapSceneAdapter : IDisposable
         {
             if (!c)
                 return "The prop contains a missing component.";
-            if (c is Transform or MeshFilter or MeshRenderer or BoxCollider or SphereCollider or CapsuleCollider or MeshCollider)
+            if (c is Transform or MeshFilter or MeshRenderer or LODGroup or BoxCollider or SphereCollider or CapsuleCollider or MeshCollider)
                 continue;
             if (c.GetType().FullName == "EFT.Ballistics.BallisticCollider")
                 continue;
-            return "Unsupported scenery component: " + c.GetType().Name;
+            if (ScenePropSupport.PreservedComponent(c.GetType().FullName ?? ""))
+            {
+                if (copy) return "This original can be moved, rotated and resized, but copying " + c.GetType().Name + " is not supported.";
+                continue;
+            }
+            return ScenePropSupport.Restriction(c.GetType().FullName ?? c.GetType().Name);
         }
         if (t.GetComponentsInChildren<Renderer>(true).AsValueEnumerable().Any(r => r.isPartOfStaticBatch))
             return "Combined static geometry cannot be moved safely. Choose an independent prop.";
         if (t.GetComponentsInChildren<MeshFilter>(true).AsValueEnumerable().Any(f => !f.sharedMesh))
             return "The prop mesh is unavailable.";
+        var scale = t.lossyScale;
+        if (scale.x <= 0 || scale.y <= 0 || scale.z <= 0)
+            return "Mirrored or zero-scale geometry is available for inspection only.";
         return "";
     }
 
@@ -69,6 +99,8 @@ internal sealed class MapSceneAdapter : IDisposable
         var error = Supported(target, door);
         if (error.Length > 0)
             throw new InvalidOperationException(error);
+        if (!door && (target.GetComponent<LootItem>() || target.GetComponent<LootableContainer>()))
+            return CaptureNative(target);
         var shape = target
             .GetComponentsInChildren<Component>(true)
             .AsValueEnumerable()
@@ -94,6 +126,7 @@ internal sealed class MapSceneAdapter : IDisposable
 
     private static Transform Resolve(MapTarget target, bool door)
     {
+        if (target.Kind != "Prop") return ResolveNative(target);
         var matches = Resources
             .FindObjectsOfTypeAll<Transform>()
             .AsValueEnumerable()
@@ -109,102 +142,19 @@ internal sealed class MapSceneAdapter : IDisposable
 
     internal void Apply(MapLayout layout)
     {
-        if (!EditorMode.Ready || layout.Location != ZoneRuntime.Location)
-            throw new InvalidOperationException("Open this layout's map in Editor mode.");
+        Reconcile(layout);
+        FlushVisuals();
         var errors = MapLayoutRules.Errors(layout, true);
-        if (errors.Count > 0)
-            throw new InvalidOperationException(string.Join("\n", errors));
-        // Resolve everything before touching the scene.
-        var objects = layout.Objects.AsValueEnumerable().Select(e => (Edit: e, Target: Resolve(e.Target, false))).ToArray();
-        var doors = layout.Doors.AsValueEnumerable().Select(e => (Edit: e, Target: Resolve(e.Target, true).GetComponent<Door>())).ToArray();
-        try
+        errors.AddRange(TargetErrors);
+        if (Loading) errors.Add("Wait for item models to finish loading.");
+        if (errors.Count > 0) throw new InvalidOperationException(string.Join("\n", errors));
+        foreach (var barrier in layout.Barriers)
         {
-            foreach (var pair in objects)
-            {
-                var target = pair.Target;
-                if (pair.Edit.Operation == "Copy")
-                {
-                    GameObject? copy = null;
-                    _transaction.Apply(
-                        () =>
-                        {
-                            copy = CopyProp(target, true);
-                            Pose(copy.transform, pair.Edit, true);
-                        },
-                        () =>
-                        {
-                            if (copy)
-                                Remove(copy!);
-                        }
-                    );
-                    continue;
-                }
-                var position = target.position;
-                var rotation = target.rotation;
-                var active = target.gameObject.activeSelf;
-                _transaction.Apply(
-                    () =>
-                    {
-                        if (pair.Edit.Operation == "Hide")
-                            target.gameObject.SetActive(false);
-                        else
-                            Pose(target, pair.Edit, false);
-                    },
-                    () =>
-                    {
-                        if (target)
-                        {
-                            target.SetPositionAndRotation(position, rotation);
-                            target.gameObject.SetActive(active);
-                        }
-                    }
-                );
-            }
-            foreach (var pair in doors)
-            {
-                if (pair.Edit.State == "Unchanged")
-                    continue;
-                var door = pair.Target;
-                var state = door.DoorState;
-                var angle = door.CurrentAngle;
-                var next = (EDoorState)Enum.Parse(typeof(EDoorState), pair.Edit.State);
-                _transaction.Apply(
-                    () =>
-                        door.SetInitialSyncState(
-                            new WorldInteractiveObject.InteractiveObjectStatusInfo(door.Id, next, door.GetAngle(next))
-                        ),
-                    () =>
-                    {
-                        if (door)
-                        {
-                            door.SetInitialSyncState(new WorldInteractiveObject.InteractiveObjectStatusInfo(door.Id, state, angle));
-                            door.CurrentAngle = angle;
-                        }
-                    }
-                );
-            }
-            foreach (var barrier in layout.Barriers)
-            {
-                GameObject? go = null;
-                _transaction.Apply(
-                    () =>
-                    {
-                        go = Volume(barrier, false);
-                    },
-                    () =>
-                    {
-                        if (go)
-                            Remove(go!);
-                    }
-                );
-            }
-            Physics.SyncTransforms();
+            var go = Volume(barrier, false);
+            _transaction.Apply(() => { }, () => { if (go) Remove(go); });
         }
-        catch
-        {
-            _transaction.Dispose();
-            throw;
-        }
+        ClearGhosts();
+        Physics.SyncTransforms();
     }
 
     private static void Pose(Transform t, MapObjectEdit edit, bool scale)
@@ -216,18 +166,26 @@ internal sealed class MapSceneAdapter : IDisposable
 
     private static GameObject CopyProp(Transform source, bool collision)
     {
+        var error = Supported(source, copy: true);
+        if (error.Length > 0) throw new InvalidOperationException(error);
         var root = new GameObject("CampaignEditor prop");
         try
         {
+            var copies = new Dictionary<Transform, Transform>();
             void Copy(Transform from, Transform to)
             {
+                copies[from] = to;
                 to.gameObject.layer = from.gameObject.layer;
                 var mesh = from.GetComponent<MeshFilter>();
                 var renderer = from.GetComponent<MeshRenderer>();
                 if (mesh && renderer)
                 {
                     to.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh.sharedMesh;
-                    to.gameObject.AddComponent<MeshRenderer>().sharedMaterials = renderer.sharedMaterials;
+                    var copy = to.gameObject.AddComponent<MeshRenderer>();
+                    copy.sharedMaterials = renderer.sharedMaterials;
+                    copy.enabled = renderer.enabled;
+                    copy.shadowCastingMode = renderer.shadowCastingMode;
+                    copy.receiveShadows = renderer.receiveShadows;
                 }
                 if (collision)
                     foreach (var collider in from.GetComponents<Collider>())
@@ -273,6 +231,21 @@ internal sealed class MapSceneAdapter : IDisposable
                 }
             }
             Copy(source, root.transform);
+            foreach (var group in source.GetComponentsInChildren<LODGroup>(true))
+            {
+                var copy = copies[group.transform].gameObject.AddComponent<LODGroup>();
+                var lods = group.GetLODs();
+                for (var i = 0; i < lods.Length; i++)
+                    lods[i].renderers = lods[i].renderers.AsValueEnumerable()
+                        .Where(r => r && copies.ContainsKey(r.transform))
+                        .Select(r => copies[r.transform].GetComponent<Renderer>()).ToArray();
+                copy.SetLODs(lods);
+                copy.localReferencePoint = group.localReferencePoint;
+                copy.size = group.size;
+                copy.fadeMode = group.fadeMode;
+                copy.animateCrossFading = group.animateCrossFading;
+                copy.enabled = group.enabled;
+            }
             root.transform.SetPositionAndRotation(source.position, source.rotation);
             root.transform.localScale = source.lossyScale;
             return root;
@@ -318,7 +291,7 @@ internal sealed class MapSceneAdapter : IDisposable
     internal void Ghosts(MapLayout? layout)
     {
         ClearGhosts();
-        TargetErrors.Clear();
+
         if (layout == null)
             return;
         foreach (
@@ -328,38 +301,7 @@ internal sealed class MapSceneAdapter : IDisposable
                 .Concat(layout.Exit == null ? Array.Empty<MapVolume>() : new[] { layout.Exit })
         )
             _ghosts.Add(Volume(volume, true));
-        CheckDoors(layout);
-        foreach (var edit in layout.Objects)
-        {
-            try
-            {
-                var copy = CopyProp(Resolve(edit.Target, false), false);
-                _ghosts.Add(copy);
-                if (edit.Operation != "Hide")
-                    Pose(copy.transform, edit, edit.Operation == "Copy");
-                foreach (var renderer in copy.GetComponentsInChildren<Renderer>())
-                    renderer.sharedMaterials = renderer.sharedMaterials.AsValueEnumerable().Select(_ => GhostMaterial).ToArray();
-                foreach (var t in copy.GetComponentsInChildren<Transform>())
-                    t.gameObject.layer = 2;
-            }
-            catch (InvalidOperationException e)
-            {
-                TargetErrors.Add(e.Message);
-            }
-        }
-    }
 
-    internal void CheckDoors(MapLayout layout)
-    {
-        foreach (var door in layout.Doors)
-            try
-            {
-                Resolve(door.Target, true);
-            }
-            catch (InvalidOperationException e)
-            {
-                TargetErrors.Add(e.Message);
-            }
     }
 
     private static void Remove(GameObject value)
@@ -380,7 +322,8 @@ internal sealed class MapSceneAdapter : IDisposable
     {
         try
         {
-            _transaction.Dispose();
+            try { DisposeEdits(); }
+            finally { _transaction.Dispose(); }
         }
         finally
         {

@@ -1,0 +1,47 @@
+{
+  "source": "https://raw.githubusercontent.com/iconify/icon-sets/803f57204ad637e58f6687d150986d95f1c16a5e/json/material-symbols.json",
+  "sha256": "6e96c049169a54eaa9b0d948bb250449db634d4df6753617919b79a82788822a",
+  "author": {
+    "name": "Google",
+    "url": "https://github.com/google/material-design-icons"
+  },
+  "license": {
+    "title": "Apache 2.0",
+    "spdx": "Apache-2.0",
+    "url": "https://github.com/google/material-design-icons/blob/master/LICENSE"
+  },
+  "icons": [
+    "add-a-photo-outline-rounded",
+    "add-location-alt-outline-rounded",
+    "block-rounded",
+    "bolt-rounded",
+    "circle-outline-rounded",
+    "close-rounded",
+    "content-copy-rounded",
+    "deployed-code-outline-rounded",
+    "directions-walk-rounded",
+    "dock-to-right-rounded",
+    "door-front-outline-rounded",
+    "expand-content-rounded",
+    "flag-outline-rounded",
+    "forest-outline-rounded",
+    "grid-on-rounded",
+    "help-outline-rounded",
+    "location-on-outline-rounded",
+    "logout-rounded",
+    "map-outline-rounded",
+    "open-in-new-rounded",
+    "open-with-rounded",
+    "photo-camera-outline-rounded",
+    "redo-rounded",
+    "remove-rounded",
+    "restart-alt-rounded",
+    "rotate-right-rounded",
+    "touch-app-outline-rounded",
+    "tune-rounded",
+    "undo-rounded",
+    "view-sidebar-outline-rounded",
+    "visibility-off-outline-rounded"
+  ],
+  "changes": "White fill; rasterized to transparent 72px PNGs. Original SVG geometry retained."
+}

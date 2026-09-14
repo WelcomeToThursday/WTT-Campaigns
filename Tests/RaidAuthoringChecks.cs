@@ -177,6 +177,22 @@ internal static class RaidAuthoringChecks
             mapImport.Definition.FormatVersion == 4 && mapImport.Definition.MapLayouts[0].Checkpoints.Count == 2,
             "Format 4 map pack export/import preserves routes"
         );
+        var sceneDraft = repository.Create(true, mapDraft.Definition);
+        sceneDraft.Definition.FormatVersion = 5;
+        sceneDraft.Definition.MapLayouts[0].Loot.Add(new MapLootPlacement
+        {
+            Id = SeasonRepository.NewId(), Name = "Placed rifle", Scene = "woods_main", Location = "woods",
+            Items = new() { new NativeItem { Id = SeasonRepository.NewId(), Template = "5447a9cd4bdc2dbd208b4567" } },
+        });
+        sceneDraft = repository.Save(sceneDraft);
+        var scenePack = repository.Publish(sceneDraft, SeasonValidator.Validate(sceneDraft.Definition));
+        var sceneImport = repository.Import(repository.Export(scenePack));
+        check(sceneImport.Definition.FormatVersion == 5 && sceneImport.Definition.MapLayouts[0].Loot.Count == 1,
+            "Format 5 scene pack export/import preserves placed loot alongside existing spatial content");
+        var duplicateScene = SeasonRepository.Duplicate(sceneDraft.Definition);
+        check(!MapLayoutRules.OwnedIds(duplicateScene.MapLayouts[0]).Intersect(MapLayoutRules.OwnedIds(sceneDraft.Definition.MapLayouts[0])).Any(),
+            "Duplicating a scene campaign regenerates placement and native item tree IDs");
+        SceneCatalogChecks.Protocol(repository, sceneDraft, check);
         var oldClient = new AuthoringRequest
         {
             ClientId = Guid.NewGuid().ToString("N"),

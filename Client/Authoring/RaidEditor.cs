@@ -21,10 +21,12 @@ public sealed partial class RaidEditor : MonoBehaviour
         get { return _open; }
     }
 
+    private ConfigEntry<float> _cameraSpeed = null!;
     private ConfigEntry<bool> _enabled = null!;
     private ConfigEntry<KeyboardShortcut> _shortcut = null!;
     private RaidEditorSession? _session;
     private RaidEditorView? _view;
+    private readonly EditorOpenState _openState = new();
     private Player? _player;
     private float _nextPoll,
         _lastContact,
@@ -47,15 +49,14 @@ public sealed partial class RaidEditor : MonoBehaviour
         _notice = "";
     private int _page;
     private Transform? _picked;
-    private List<Transform> _scene = new();
     private CaptureTask? _task;
     private readonly List<(string Id, string Label)> _rows = new();
     private SpatialCapture? Selected
     {
         get
         {
-            if (_mode == "Maps")
-                return MapPoint;
+            if (MapWorkspace || SceneWorkspace)
+                return MapPoint ?? (SceneWorkspace && _sceneTab != "Catalog" ? _sceneSelectionPose : null);
             return _session
                 ?.Definition?.Zones.AsValueEnumerable()
                 .Cast<SpatialCapture>()
@@ -69,6 +70,9 @@ public sealed partial class RaidEditor : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        _cameraSpeed = Plugin.Instance.Config.Bind("Raid authoring", "Camera speed", 6f,
+            new ConfigDescription("Editor camera movement in metres per second. Shift boosts 4x; Ctrl slows to one quarter.",
+                new AcceptableValueRange<float>(.25f, 96f)));
         _enabled = Plugin.Instance.Config.Bind(
             "Raid authoring",
             "Enable authoring",
@@ -98,6 +102,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
     private static bool OtherEditor()
     {
+        using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.OtherEditor);
         foreach (var plugin in BepInEx.Bootstrap.Chainloader.PluginInfos.Values)
         {
             foreach (var component in plugin.Instance.GetComponents<MonoBehaviour>())
@@ -130,6 +135,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
     private void Update()
     {
+        using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.FrameUpdate);
         try
         {
             var player = Plugin.InRaid && Plugin.Player?.HealthController?.IsAlive == true ? Plugin.Player : null;
@@ -142,7 +148,9 @@ public sealed partial class RaidEditor : MonoBehaviour
                     _ = _session.Retire();
                     _session = null;
                 }
+                ClearSceneIndex();
                 _player = player;
+                _openState.Reset();
                 _task = null;
                 if (player && AuthoringEnabled && ZoneRuntime.Location.Length > 0)
                 {
@@ -154,7 +162,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                         _mode = "Maps";
                         _selected = _layoutId;
                     }
-                    else if (_mode == "Maps")
+                    else if (MapWorkspace)
                     {
                         _mode = "Zones";
                         _selected = "";
@@ -168,12 +176,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                         .Where(id => !string.IsNullOrEmpty(id))
                         .Distinct()
                         .ToList();
-                    _session.Scenes = ValueEnumerable
-                        .Range(0, UnityEngine.SceneManagement.SceneManager.sceneCount)
-                        .Select(UnityEngine.SceneManagement.SceneManager.GetSceneAt)
-                        .Where(s => s.isLoaded)
-                        .Select(s => s.name)
-                        .ToList();
+                    RefreshLoadedScenes();
                     _session.Changed += Refresh;
                     _lastContact = Time.realtimeSinceStartup;
                     _nextPoll = 0;
@@ -189,7 +192,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 EndWalkthrough();
                 return;
             }
-            if (_shortcut.Value.IsDown())
+            if (_shortcut.Value.IsDown() && _view?.Typing != true)
             {
                 if (_open)
                 {
@@ -197,7 +200,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 }
                 else if (!OtherModal && !Cursor.visible)
                 {
-                    Open();
+                    Open(true);
                 }
             }
             if (_open && OtherModal)
@@ -212,11 +215,15 @@ public sealed partial class RaidEditor : MonoBehaviour
             {
                 EndWalkthrough();
                 _notice = "Walkthrough restored while the editor connection recovers.";
+                return;
             }
-            UpdateWalkthrough();
+            // Escape belongs to the walkthrough for this entire frame. Reopening
+            // here would let the same key close the editor and consume its bookmark.
+            if (UpdateWalkthrough())
+                return;
             if (EditorMode.Ready && !_open && !_walking && !OtherModal && _session.Definition != null)
                 Open();
-            _session.Hold = _walking || _view?.Typing == true || _drag != null;
+            _session.Hold = _walking || _view?.Typing == true || _drag != null || _placementLifetime != null;
             if (!_session.Busy && Time.realtimeSinceStartup >= _nextPoll)
             {
                 _nextPoll = Time.realtimeSinceStartup + 1;
@@ -230,6 +237,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             if (
                 _task == null
                 && !_walking
+                && !_session.Hold
                 && !_session.Dirty
                 && _session.Conflict == null
                 && !_session.Busy
@@ -248,15 +256,28 @@ public sealed partial class RaidEditor : MonoBehaviour
                 return;
             }
 
+            AdvanceSceneIndex();
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (_drag != null)
+                if (_view!.Windows.DismissMenus())
+                    return;
+                if (_view.Typing)
+                {
+                    EventSystem.current?.SetSelectedGameObject(null);
+                    return;
+                }
+                if (_placementLifetime != null)
+                {
+                    CancelPlacement();
+                }
+                else if (_drag != null)
                 {
                     CancelDrag();
                 }
                 else if (_picking)
                 {
                     _picking = false;
+                    _sceneRebindId = "";
                 }
                 else
                 {
@@ -264,31 +285,36 @@ public sealed partial class RaidEditor : MonoBehaviour
                 }
                 return;
             }
-            if (!_view!.Typing && !_session.Busy && _session.Conflict == null)
+            if (!_view!.Typing && !_session.Retired && _session.Conflict == null && !_view.Windows.HasMenu)
             {
                 if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Z))
                 {
+                    CancelDrag();
                     _session.Undo(false);
                 }
 
                 if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Y))
                 {
+                    CancelDrag();
                     _session.Undo(true);
                 }
 
-                GeometryInput();
+                if (Input.GetKeyDown(KeyCode.F)) FrameSceneSelection();
+                if (!PlacementInput()) GeometryInput();
             }
             if (Time.realtimeSinceStartup >= _nextRefresh)
             {
                 _nextRefresh = Time.realtimeSinceStartup + .25f;
-                Refresh(false);
+                RefreshPassive();
             }
         }
         catch (Exception e)
         {
+            _openState.Fail();
             EndWalkthrough();
             _notice = e.Message;
             Plugin.Error(e);
+            Plugin.LogInfo("Editor automatic opening paused after an error. Press the editor shortcut to retry, or reopen the map.");
             Close();
         }
     }
@@ -296,6 +322,7 @@ public sealed partial class RaidEditor : MonoBehaviour
     private async void Poll()
     {
         var session = _session!;
+        RefreshLoadedScenes();
         await session.Tick();
         if (_session != session || session.Retired)
         {
@@ -316,14 +343,21 @@ public sealed partial class RaidEditor : MonoBehaviour
             _task = null;
             Close();
         }
+        if (_walkRequested)
+        {
+            _walkRequested = false;
+            if (_open && session.Grant.Length > 0 && session.Conflict == null) BeginWalkthrough();
+        }
     }
 
-    private void Open()
+    private void Open(bool requested = false)
     {
         if (_open || OtherModal || !_player)
         {
             return;
         }
+
+        if (!_openState.TryBegin(requested)) return;
 
         if (_view?.Valid != true)
         {
@@ -338,9 +372,14 @@ public sealed partial class RaidEditor : MonoBehaviour
 
         _savedPosition = _flyPosition = _camera!.transform.position;
         _savedRotation = _flyRotation = _camera.transform.rotation;
+        RestoreWalkCamera();
+        _camera.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
         _savedCursor = Cursor.visible;
         _savedLock = Cursor.lockState;
         _open = true;
+        _environment = new EditorEnvironment(_camera, target => _mapScene?.IsHidden(target) == true);
+        _environmentError = "";
+        _weatherError = "";
         foreach (var renderer in _camera.GetComponentsInChildren<Renderer>(true))
         {
             _renderers.Add((renderer, renderer.enabled));
@@ -358,6 +397,8 @@ public sealed partial class RaidEditor : MonoBehaviour
         _view.Root.SetActive(true);
         IndexScene();
         Refresh();
+        RefreshEnvironment();
+        RefreshWeather();
     }
 
     private void CameraPose(Camera camera)
@@ -365,11 +406,13 @@ public sealed partial class RaidEditor : MonoBehaviour
         if (_open && camera == _camera)
         {
             camera.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
+            _environment?.Pose(_flyPosition, _flyRotation);
         }
     }
 
     private void LateUpdate()
     {
+        using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.LateUpdate);
         if (!_open || !_camera)
         {
             return;
@@ -377,9 +420,11 @@ public sealed partial class RaidEditor : MonoBehaviour
 
         try
         {
-            if (_view?.Typing != true && _drag == null && _session?.Conflict == null)
+            if (_view?.Typing != true && _drag == null && _session?.Conflict == null && _view?.Windows.HasMenu != true)
             {
-                var look = Input.GetMouseButton(1);
+                var look =
+                    Input.GetMouseButton(1)
+                    && (Cursor.lockState == CursorLockMode.Locked || EventSystem.current?.IsPointerOverGameObject() != true);
                 Cursor.visible = !look;
                 Cursor.lockState = look ? CursorLockMode.Locked : CursorLockMode.None;
                 if (look)
@@ -395,13 +440,20 @@ public sealed partial class RaidEditor : MonoBehaviour
                     );
                     direction = _flyRotation * direction;
                     direction.y += (Input.GetKey(KeyCode.E) ? 1 : 0) - (Input.GetKey(KeyCode.Q) ? 1 : 0);
-                    _flyPosition += direction * Time.unscaledDeltaTime * (Input.GetKey(KeyCode.LeftShift) ? 24 : 6);
+                    _flyPosition += Vector3.ClampMagnitude(direction, 1) * Time.unscaledDeltaTime * CameraSpeed
+                        * (Input.GetKey(KeyCode.LeftShift) ? 4 : Input.GetKey(KeyCode.LeftControl) ? .25f : 1);
                 }
             }
             _camera!.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
+            _environment?.Pose(_flyPosition, _flyRotation);
+            // Refresh native rendering once at the final pose, after center-anchor corrections.
+            _mapScene?.FlushVisuals();
+            // Handles follow camera distance and pointer hover every frame, after scene poses reconcile.
+            DrawGeometry();
         }
         catch (Exception e)
         {
+            _openState.Fail();
             Plugin.Error(e);
             Close();
         }
@@ -409,6 +461,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
     private void Close()
     {
+        _walkRequested = false;
         if (!_open)
         {
             return;
@@ -418,6 +471,9 @@ public sealed partial class RaidEditor : MonoBehaviour
         {
             CancelDrag();
             _picking = false;
+            _sceneRebindId = "";
+            CancelPlacement();
+            _view?.Windows.DismissMenus();
             _session?.Persist();
         }
         finally
@@ -428,6 +484,8 @@ public sealed partial class RaidEditor : MonoBehaviour
             {
                 _camera!.transform.SetPositionAndRotation(_savedPosition, _savedRotation);
             }
+            _environment?.Dispose();
+            _environment = null;
 
             foreach (var entry in _renderers)
             {
@@ -471,6 +529,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             _ = _session.Retire();
         }
 
+        ClearSceneIndex();
         _view?.Dispose();
         if (Instance == this)
         {

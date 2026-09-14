@@ -266,7 +266,7 @@ public sealed class ItemPreviewClient : MonoBehaviour
         return icon.Sprite;
     }
 
-    private static Item Build(ItemPreviewJob job, List<string> warnings, out List<PreviewItemSize> sizes)
+    internal static Item Build(ItemPreviewJob job, List<string> warnings, out List<PreviewItemSize> sizes)
     {
         var validation = new SeasonValidationResult();
         SeasonValidator.ItemTree(job.Items, "Assembly", validation);

@@ -16,13 +16,17 @@ public sealed partial class RaidEditor
         public Vector2 Mouse,
             Direction;
         public int Axis;
+        public Vector3 Anchor, LocalAnchor;
+        public Transform? AnchorTarget;
+        public bool Centered, Transient, RotationPlane;
+        public Vector3 RotationStart;
         public float PixelsPerMetre;
     }
 
     private Drag? _drag;
     private bool _picking;
     private readonly List<LineRenderer> _lines = new();
-    private Material? _lineMaterial;
+    private Material? _lineMaterial, _handleMaterial;
     private int _lineIndex;
 
     private static Vector3 Axis(int i)
@@ -34,7 +38,7 @@ public sealed partial class RaidEditor
 
     private float HandleLength(SpatialCapture point)
     {
-        return Mathf.Clamp(Vector3.Distance(_flyPosition, ZoneRuntime.Vector(point.Position)) * .12f, 1, 10);
+        return _camera ? WTT.Campaigns.UI.Controls.SceneHandleMath.MetresPerPixel(_camera!, HandleOrigin(point)) * 90 : 1;
     }
 
     private void GeometryInput()
@@ -53,7 +57,15 @@ public sealed partial class RaidEditor
                 return;
             }
             var delta = Vector2.Dot(mouse - _drag.Mouse, _drag.Direction) / _drag.PixelsPerMetre;
-            var amount = _tool == "Rotate" ? delta * 30 : delta;
+            var pixels = Vector2.Dot(mouse - _drag.Mouse, _drag.Direction);
+            var amount = _tool == "Rotate" ? pixels : delta;
+            if (_tool == "Rotate" && _drag.RotationPlane)
+            {
+                var plane = new Plane(Axis(_drag.Axis), _drag.Anchor);
+                var ray = _camera!.ScreenPointToRay(mouse);
+                if (plane.Raycast(ray, out var distance))
+                    amount = Vector3.SignedAngle(_drag.RotationStart, ray.GetPoint(distance) - _drag.Anchor, Axis(_drag.Axis));
+            }
             if (_snap && !Input.GetKey(KeyCode.LeftAlt))
             {
                 amount = Mathf.Round(amount / (_tool == "Rotate" ? 5 : .05f)) * (_tool == "Rotate" ? 5 : .05f);
@@ -72,7 +84,7 @@ public sealed partial class RaidEditor
             }
             else if (_tool == "Rotate")
             {
-                point.Rotation = ZoneRuntime.Vector(ZoneRuntime.Vector(before.Rotation) + Axis(_drag.Axis) * amount);
+                point.Rotation = ZoneRuntime.Vector(WTT.Campaigns.UI.Controls.SceneSelectionGeometry.Rotation(Quaternion.Euler(ZoneRuntime.Vector(before.Rotation)), _drag.Axis, amount).eulerAngles);
             }
             else if (point is SeasonZone zone && before is SeasonZone original)
             {
@@ -98,12 +110,13 @@ public sealed partial class RaidEditor
                 }
                 volume.Size = ZoneRuntime.Vector(size);
             }
-            if (_tool == "Scale" && point is MapObjectEdit { Operation: "Copy" } obj && before is MapObjectEdit sourceObject)
+            if (_tool == "Scale" && point is MapObjectEdit { Target.Kind: "Prop" } obj && before is MapObjectEdit sourceObject)
             {
                 var scale = ZoneRuntime.Vector(sourceObject.Scale);
-                scale[_drag.Axis] = Mathf.Max(.05f, scale[_drag.Axis] + amount);
+                scale[_drag.Axis] = WTT.Campaigns.UI.Controls.SceneSelectionGeometry.Resize(scale[_drag.Axis], pixels, _snap && !Input.GetKey(KeyCode.LeftAlt));
                 obj.Scale = ZoneRuntime.Vector(scale);
             }
+            KeepDragAnchor(point, _drag);
             Refresh();
             return;
         }
@@ -114,6 +127,11 @@ public sealed partial class RaidEditor
 
         if (_picking)
         {
+            if (ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
+            {
+                _picking = _sceneRebindId.Length > 0;
+                return;
+            }
             if (Physics.Raycast(_camera!.ScreenPointToRay(Input.mousePosition), out var hit, 1000, ~0, QueryTriggerInteraction.Collide))
             {
                 _picked = hit.transform;
@@ -123,43 +141,38 @@ public sealed partial class RaidEditor
             }
             return;
         }
-        if (Selected is { } selected)
+        if (Selected is { } selected && CanUseHandle(selected))
         {
-            var origin = _camera!.WorldToScreenPoint(ZoneRuntime.Vector(selected.Position));
-            if (origin.z > 0)
+            var axis = HoverHandle(selected);
+            if (axis >= 0)
             {
-                for (var axis = 0; axis < 3; axis++)
+                var world = HandleOrigin(selected);
+                var origin = _camera!.WorldToScreenPoint(world);
+                var length = HandleLength(selected);
+                var end = _camera.WorldToScreenPoint(world + HandleAxis(selected, axis) * length);
+                var direction = (Vector2)(end - origin);
+                if (_tool == "Rotate") direction = HoverTangent(selected, axis);
+                _drag = new Drag
                 {
-                    var length = HandleLength(selected);
-                    var end = _camera.WorldToScreenPoint(ZoneRuntime.Vector(selected.Position) + Axis(axis) * length);
-                    var direction = (Vector2)(end - origin);
-                    if (direction.magnitude < 12)
-                    {
-                        continue;
-                    }
-
-                    var along = Vector2.Dot(mouse - (Vector2)origin, direction.normalized);
-                    var distance = Vector2.Distance(
-                        mouse,
-                        (Vector2)origin + direction.normalized * Mathf.Clamp(along, 0, direction.magnitude)
-                    );
-                    if (along < 15 || distance > 12)
-                    {
-                        continue;
-                    }
-
-                    _drag = new Drag
-                    {
-                        Before = CopyPoint(selected),
-                        Axis = axis,
-                        Mouse = mouse,
-                        Direction = direction.normalized,
-                        PixelsPerMetre = direction.magnitude / length,
-                    };
-                    return;
+                    Before = CopyPoint(selected), Axis = axis, Mouse = mouse,
+                    Direction = direction.normalized, PixelsPerMetre = direction.magnitude / length,
+                    Anchor = world, Centered = SceneWorkspace && _centerAnchor,
+                    AnchorTarget = SceneWorkspace ? SceneSelectionTarget : null,
+                    LocalAnchor = SceneWorkspace && SceneSelectionTarget ? SceneSelectionTarget!.InverseTransformPoint(world) : Vector3.zero,
+                    Transient = SceneWorkspace && MapPoint == null,
+                };
+                if (_tool == "Rotate")
+                {
+                    var ray = _camera.ScreenPointToRay(mouse);
+                    var plane = new Plane(Axis(axis), world);
+                    _drag.RotationPlane = plane.Raycast(ray, out var distance);
+                    if (_drag.RotationPlane) _drag.RotationStart = (ray.GetPoint(distance) - world).normalized;
                 }
+                _session.Hold = true;
+                return;
             }
         }
+        if (ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene)) return;
         var closest = _session
             .Definition.Zones.AsValueEnumerable()
             .Where(z => z.Location == _session.Location)
@@ -182,6 +195,7 @@ public sealed partial class RaidEditor
             SeasonZone zone => RaidEditorSession.Copy(zone),
             MapVolume volume => RaidEditorSession.Copy(volume),
             MapObjectEdit edit => RaidEditorSession.Copy(edit),
+            MapLootPlacement loot => RaidEditorSession.Copy(loot),
             _ => RaidEditorSession.Copy(point),
         };
 
@@ -213,7 +227,9 @@ public sealed partial class RaidEditor
         var point = Selected;
         var after = CopyPoint(point);
         RestorePoint(point, _drag.Before);
+        var transient = _drag.Transient;
         _drag = null;
+        if (transient) _mapScene?.Reconcile(Layout);
         EditPoint(p => RestorePoint(p, after));
     }
 
@@ -244,6 +260,7 @@ public sealed partial class RaidEditor
 
     private void DrawGeometry()
     {
+        using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.Geometry);
         if (!_open || _session?.Definition == null)
         {
             return;
@@ -305,7 +322,7 @@ public sealed partial class RaidEditor
             Line(new[] { center - Vector3.right * .15f, center + Vector3.right * .15f }, color);
             Line(new[] { center - Vector3.up * .15f, center + Vector3.up * .15f }, color);
         }
-        if (Layout != null && _mode == "Maps")
+        if (Layout != null && _mode == "Routes")
         {
             var route = new List<Vector3>();
             if (Layout.Start != null)
@@ -317,18 +334,24 @@ public sealed partial class RaidEditor
             if (route.Count > 1)
                 Line(route.ToArray(), Color.cyan);
         }
-        if (Selected is { } selected)
+        DrawSelectionBounds();
+        if (Selected is { } selected && CanUseHandle(selected) && _camera
+            && _camera!.WorldToScreenPoint(HandleOrigin(selected)).z > _camera.nearClipPlane)
         {
+            var hover = _drag?.Axis ?? HoverHandle(selected);
+            var center = HandleOrigin(selected);
+            var length = HandleLength(selected);
+            var pixel = WTT.Campaigns.UI.Controls.SceneHandleMath.MetresPerPixel(_camera, center);
             for (var axis = 0; axis < 3; axis++)
             {
-                var center = ZoneRuntime.Vector(selected.Position);
-                Line(
-                    new[] { center, center + Axis(axis) * HandleLength(selected) },
-                    axis == 0 ? Color.red
-                        : axis == 1 ? Color.green
-                        : Color.cyan,
-                    .04f
-                );
+                var color = hover == axis ? Color.yellow : axis == 0 ? Color.red : axis == 1 ? Color.green : Color.cyan;
+                var end = center + HandleAxis(selected, axis) * length;
+                Line(HandlePoints(selected, axis), color, pixel * (hover == axis ? 4 : 3), true);
+                if (_tool == "Rotate") continue;
+                // A camera-facing endpoint remains identifiable on large and tiny objects.
+                var right = _camera.transform.right * pixel * 5;
+                var up = _camera.transform.up * pixel * 5;
+                Line(new[] { end - right - up, end + right - up, end + right + up, end - right + up, end - right - up }, color, pixel * 2, true);
             }
         }
 
@@ -338,14 +361,12 @@ public sealed partial class RaidEditor
         }
     }
 
-    private void Line(Vector3[] points, Color color, float width = .025f)
+    private void Line(Vector3[] points, Color color, float width = .025f, bool overlay = false)
     {
         if (!_lineMaterial)
         {
-            _lineMaterial = new Material(Shader.Find("Hidden/Internal-Colored") ?? Shader.Find("Sprites/Default"));
-            _lineMaterial.SetInt("_SrcBlend", (int)BlendMode.SrcAlpha);
-            _lineMaterial.SetInt("_DstBlend", (int)BlendMode.OneMinusSrcAlpha);
-            _lineMaterial.SetInt("_ZWrite", 0);
+            _lineMaterial = WTT.Campaigns.UI.Controls.SceneHandleMath.LineMaterial(false);
+            _handleMaterial = WTT.Campaigns.UI.Controls.SceneHandleMath.LineMaterial(true);
         }
         if (_lineIndex == _lines.Count)
         {
@@ -358,6 +379,7 @@ public sealed partial class RaidEditor
             _lines.Add(line);
         }
         var renderer = _lines[_lineIndex++];
+        renderer.sharedMaterial = overlay ? _handleMaterial : _lineMaterial;
         renderer.gameObject.SetActive(true);
         renderer.positionCount = points.Length;
         renderer.SetPositions(points);
@@ -378,6 +400,8 @@ public sealed partial class RaidEditor
             Destroy(_lineMaterial);
         }
 
+        if (_handleMaterial) Destroy(_handleMaterial);
+        _handleMaterial = null;
         _lineMaterial = null;
     }
 }

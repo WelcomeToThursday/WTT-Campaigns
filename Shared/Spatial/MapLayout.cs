@@ -1,4 +1,5 @@
 using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Native;
 
 namespace WTT.Campaigns.Shared.Spatial;
 
@@ -8,6 +9,7 @@ public sealed class MapLayout
     public string Name { get; set; } = "New map layout";
     public string Location { get; set; } = "";
     public List<MapObjectEdit> Objects { get; set; } = new();
+    public List<MapLootPlacement> Loot { get; set; } = new();
     public List<MapDoorEdit> Doors { get; set; } = new();
     public List<MapVolume> Barriers { get; set; } = new();
     public SpatialCapture? Start { get; set; }
@@ -17,10 +19,34 @@ public sealed class MapLayout
 
 public sealed class MapTarget
 {
+    public string Kind { get; set; } = "Prop";
+    public string Template { get; set; } = "";
+    public SpatialVector Origin { get; set; } = new();
     public string Scene { get; set; } = "";
     public string Path { get; set; } = "";
     public string Fingerprint { get; set; } = "";
     public string NativeId { get; set; } = "";
+}
+
+public sealed class MapLootPlacement : SpatialCapture
+{
+    public List<NativeItem> Items { get; set; } = new();
+}
+
+public static class SceneTargetRules
+{
+    public static bool Matches(MapTarget saved, MapTarget actual)
+    {
+        if (saved.Kind != actual.Kind || saved.Scene != actual.Scene || saved.Template != actual.Template
+            || saved.Fingerprint != actual.Fingerprint) return false;
+        if (saved.NativeId.Length > 0) return saved.NativeId == actual.NativeId;
+        if (saved.Kind != "Loot") return saved.Path == actual.Path;
+        if (saved.Origin?.Finite != true || actual.Origin?.Finite != true) return false;
+        var x = saved.Origin.X - actual.Origin.X;
+        var y = saved.Origin.Y - actual.Origin.Y;
+        var z = saved.Origin.Z - actual.Origin.Z;
+        return x * x + y * y + z * z < .15f * .15f;
+    }
 }
 
 public sealed class MapObjectEdit : SpatialCapture
@@ -59,16 +85,20 @@ public sealed class MapVolume : SpatialCapture
 
 public static class MapLayoutRules
 {
+    public static bool NeedsFormat5(MapLayout layout) => layout.Loot?.Count > 0 || layout.Objects?.Any(o => o?.Target?.Kind != "Prop") == true;
+    public static int Format(IEnumerable<MapLayout> layouts) => layouts.Any(NeedsFormat5) ? 5 : 4;
     public static IEnumerable<SpatialCapture> Points(MapLayout layout) =>
         layout
             .Objects.Cast<SpatialCapture>()
+            .Concat(layout.Loot)
             .Concat(layout.Barriers)
             .Concat(layout.Checkpoints)
             .Concat(layout.Start == null ? Array.Empty<SpatialCapture>() : new[] { layout.Start })
             .Concat(layout.Exit == null ? Array.Empty<SpatialCapture>() : new[] { layout.Exit });
 
     public static IEnumerable<string> OwnedIds(MapLayout layout) =>
-        new[] { layout.Id }.Concat(Points(layout).Select(p => p.Id)).Concat(layout.Doors.Select(d => d.Id));
+        new[] { layout.Id }.Concat(Points(layout).Select(p => p.Id)).Concat(layout.Doors.Select(d => d.Id))
+            .Concat(layout.Loot.SelectMany(l => l.Items ?? new()).Select(i => i.Id));
 
     public static bool Positive(SpatialVector? v) => v?.Finite == true && v.X > 0 && v.Y > 0 && v.Z > 0;
 
@@ -84,7 +114,9 @@ public static class MapLayoutRules
         Need(!string.IsNullOrWhiteSpace(layout.Name) && layout.Name.Length <= 120, "Name is required (up to 120 characters).");
         Need(!string.IsNullOrWhiteSpace(layout.Location) && layout.Location.Length <= 120, "Choose a map.");
         if (
-            layout.Objects == null
+            layout.Loot == null
+            || layout.Loot.Any(x => x == null)
+            || layout.Objects == null
             || layout.Doors == null
             || layout.Barriers == null
             || layout.Checkpoints == null
@@ -118,7 +150,16 @@ public static class MapLayoutRules
         foreach (var edit in layout.Objects)
         {
             Need(edit.Operation is "Move" or "Hide" or "Copy", "Unknown object operation: " + edit.Name);
+            Need(edit.Target != null && edit.Target.Kind is "Prop" or "Loot" or "Container", "Unknown scene target kind.");
+            Need(edit.Operation != "Copy" || edit.Target?.Kind == "Prop", "Only static props can be copied.");
             Need(Positive(edit.Scale), "Invalid object scale: " + edit.Name);
+        }
+        foreach (var loot in layout.Loot)
+        {
+            var validation = new SeasonValidationResult();
+            SeasonValidator.ItemTree(loot.Items, "Placed loot", validation);
+            foreach (var issue in validation.Issues)
+                errors.Add(issue.Message);
         }
         foreach (var door in layout.Doors)
             Need(door.State is "Unchanged" or "Open" or "Shut" or "Locked", "Unknown door state: " + door.Name);
@@ -130,6 +171,12 @@ public static class MapLayoutRules
                     && target.Fingerprint?.Length == 64,
                 "Capture or rebind the scene target."
             );
+        foreach (var target in layout.Objects.Select(o => o.Target).Where(t => t != null && t.Kind != "Prop"))
+        {
+            Need(target.Origin?.Finite == true, "Invalid original loot position.");
+            Need(target.Template != null && target.Template.Length <= 120 && target.NativeId != null && target.NativeId.Length <= 256, "Invalid native target identity.");
+            Need(target.Kind != "Container" || !string.IsNullOrWhiteSpace(target.NativeId), "Containers require a stable native identity.");
+        }
         var targets = layout
             .Objects.Where(o => o.Operation != "Copy" && o.Target != null)
             .Select(o => o.Target.Scene + "/" + o.Target.Path)

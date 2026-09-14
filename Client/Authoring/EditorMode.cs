@@ -29,6 +29,7 @@ public sealed class EditorMode : MonoBehaviour
         && Instance._session?.SessionId.Length > 0
         && Plugin.App?.Session?.Profile?.Id == Instance._session.ProfileId;
     internal static bool Returning => Instance && Instance._returning;
+    internal static bool LoadingMap => Authenticated && Instance._mapLoading && !Returning;
     internal static bool Unloading;
     internal static string SessionId => Instance?._session?.SessionId ?? "";
     internal static string DraftId => Instance?._session?.DraftId ?? "";
@@ -51,7 +52,9 @@ public sealed class EditorMode : MonoBehaviour
         _connectionFailed;
     internal static string SelectedLayout => Instance?._session?.LayoutId ?? "";
     private float _nextHeartbeat;
-    private readonly Dictionary<Canvas, CanvasGroup> _hud = new();
+    private readonly EditorHud _hud = new();
+    private bool _hudError;
+    private ConfigEntry<bool> _memoryDiagnostics = null!;
 
     private void Awake()
     {
@@ -63,7 +66,15 @@ public sealed class EditorMode : MonoBehaviour
             "Open the restricted editor workspace after launcher authentication."
         );
         _requested = _startup.Value == StartupMode.Editor;
+        _memoryDiagnostics = Plugin.Instance.Config.Bind("Campaign editor", "Memory diagnostics", false,
+            "Record read-only memory and frame timings for the first three minutes in an editor map, every five seconds.");
         EditorRestrictions.Enable();
+        EditorDeployment.Enable();
+        // Install before map loading can JIT/in-line the native culling methods.
+        EditorSceneVisibility.Enable();
+        EditorMemory.Enable();
+        EditorRenderGuard.Enable();
+        Canvas.willRenderCanvases += UpdateHud;
     }
 
     internal static bool PrepareBackend()
@@ -397,6 +408,9 @@ public sealed class EditorMode : MonoBehaviour
             app.CurrentRaidSettings.BotSettings = new BotControllerSettings(false, EBotAmount.NoBots);
             app.CurrentRaidSettings.Side = ESideType.Pmc;
             app.CurrentRaidSettings.IsPveOffline = false;
+            // Editor entry bypasses StartSearchingForGame, which normally starts
+            // the loading screen's elapsed clock. Reset it for every map load.
+            app.Matchmaker.MatchingStartTime = DateTimeExtensions.Now;
             await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
             if (!Plugin.InRaid)
                 throw new InvalidOperationException("Map loading did not create an editor world.");
@@ -493,23 +507,10 @@ public sealed class EditorMode : MonoBehaviour
 
     private void Update()
     {
-        if (Active && Plugin.InRaid && MonoBehaviourSingleton<EFT.UI.GameUI>.Instantiated)
-        {
-            foreach (var canvas in MonoBehaviourSingleton<EFT.UI.GameUI>.Instance.GetComponentsInChildren<Canvas>(true))
-            {
-                // Native timer scripts still measure TMP text. Disabling their canvas
-                // invalidates TMP's cached canvas even though those scripts keep updating.
-                if (!_hud.TryGetValue(canvas, out var group) || !group)
-                    _hud[canvas] = group = canvas.gameObject.AddComponent<CanvasGroup>();
-                group.alpha = 0;
-                group.interactable = false;
-                group.blocksRaycasts = false;
-            }
-        }
-        else if (_hud.Count > 0)
-        {
-            RestoreHud();
-        }
+        EditorDiagnostics.Enabled = _memoryDiagnostics.Value;
+        EditorMemory.Tick(Active && Plugin.InRaid);
+        EditorDiagnostics.Tick(Active && Plugin.InRaid);
+        if (!Active || !Plugin.InRaid) RestoreHud();
         if (!Active)
             return;
         try
@@ -574,24 +575,38 @@ public sealed class EditorMode : MonoBehaviour
         }
     }
 
-    private void RestoreHud()
+    private void UpdateHud()
     {
-        foreach (var group in _hud.Values)
+        using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.Hud);
+        try
         {
-            if (!group)
-                continue;
-            // Restore immediately; Destroy is deferred until the end of the frame.
-            // Only remove our own groups, preserving native visibility/input settings.
-            group.alpha = 1;
-            group.interactable = true;
-            group.blocksRaycasts = true;
-            Destroy(group);
+            if (!Active || !Plugin.InRaid)
+            {
+                RestoreHud();
+                return;
+            }
+            if (MonoBehaviourSingleton<GameUI>.Instantiated)
+                _hud.Suppress(MonoBehaviourSingleton<GameUI>.Instance);
+            // Quick slots and stance/stamina belong to CommonUI, not GameUI.
+            if (MonoBehaviourSingleton<CommonUI>.Instantiated)
+                _hud.Suppress(MonoBehaviourSingleton<CommonUI>.Instance.EftBattleUIScreen);
+            _hudError = false;
         }
-        _hud.Clear();
+        catch (Exception e)
+        {
+            // Presentation must never interrupt session heartbeats or map maintenance.
+            if (!_hudError) Plugin.Error(e);
+            _hudError = true;
+        }
     }
+
+    private void RestoreHud() => _hud.Dispose();
 
     private void OnDestroy()
     {
+        EditorMemory.Tick(false);
+        EditorDiagnostics.Stop();
+        Canvas.willRenderCanvases -= UpdateHud;
         RestoreHud();
         if (_home)
             Destroy(_home!.gameObject);

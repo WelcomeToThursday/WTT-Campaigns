@@ -134,7 +134,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         {
             Expire();
             if (
-                r.Version is not (1 or 2)
+                r.Version is not (1 or 2 or 3)
                 || !Guid.TryParseExact(r.ClientId, "N", out _)
                 || !Guid.TryParseExact(r.RaidId, "N", out _)
                 || r.Location.Length is 0 or > 120
@@ -226,7 +226,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         {
             Expire();
             if (
-                r.Version is not (1 or 2)
+                r.Version is not (1 or 2 or 3)
                 || !_clients.TryGetValue(r.ClientId, out var c)
                 || c.Owner != owner
                 || c.Client.CharacterId != character
@@ -288,11 +288,13 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 proposed.Zones = Copy(r.Definition.Zones);
                 proposed.Captures = Copy(r.Definition.Captures);
                 if (
-                    r.Version == 2
+                    r.Version >= 2
                     && Editor.EditorSessionRegistry.Find(character) is { Ready: true } editor
                     && editor.Id == r.EditorSessionId
                 )
                 {
+                    if (r.Version < 3 && (baseline.MapLayouts.Any(MapLayoutRules.NeedsFormat5) || draft.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat5)))
+                        throw new InvalidOperationException("Update the client before editing layouts with scene catalog records.");
                     proposed.MapLayouts = Copy(r.Definition.MapLayouts);
                     foreach (
                         var layout in proposed.MapLayouts.Where(l =>
@@ -320,7 +322,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                     )
                         throw new InvalidOperationException("Map layouts require unique record identities (at most 128 layouts).");
                     if (proposed.MapLayouts.Count > 0)
-                        proposed.FormatVersion = 4;
+                        proposed.FormatVersion = Math.Max(proposed.FormatVersion, MapLayoutRules.Format(proposed.MapLayouts));
                 }
                 if (r.Definition.Story != null)
                 {
