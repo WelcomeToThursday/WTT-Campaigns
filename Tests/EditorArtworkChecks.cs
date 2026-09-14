@@ -9,7 +9,8 @@ internal static class EditorArtworkChecks
     internal static void Run(string path)
     {
         using var assembly = AssemblyDefinition.ReadAssembly(path);
-        var theme = assembly.MainModule.GetType("WTT.Campaigns.UI.Controls.EditorTarkovTheme")
+        var theme =
+            assembly.MainModule.GetType("WTT.Campaigns.UI.Controls.EditorTarkovTheme")
             ?? throw new InvalidOperationException("EditorTarkovTheme is missing from the UI assembly.");
         var mappings = ReadIconMappings(theme);
         var literalLoads = ReadLiteralLoads(assembly);
@@ -19,8 +20,8 @@ internal static class EditorArtworkChecks
         foreach (var name in literalLoads)
             names.Add(name);
 
-        var resources = assembly.MainModule.Resources
-            .OfType<EmbeddedResource>()
+        var resources = assembly
+            .MainModule.Resources.OfType<EmbeddedResource>()
             .ToDictionary(resource => resource.Name, StringComparer.Ordinal);
         var missing = new List<string>();
         var invalid = new List<string>();
@@ -56,17 +57,20 @@ internal static class EditorArtworkChecks
 
     private static List<(string Key, string Value)> ReadIconMappings(TypeDefinition theme)
     {
-        var initializer = theme.Methods.SingleOrDefault(method => method.Name == ".cctor")
+        var initializer =
+            theme.Methods.SingleOrDefault(method => method.Name == ".cctor")
             ?? throw new InvalidOperationException("EditorTarkovTheme has no static initializer.");
         var instructions = initializer.Body.Instructions;
         var mappings = new List<(string Key, string Value)>();
         for (var index = 2; index < instructions.Count; index++)
         {
-            if (instructions[index].Operand is not MethodReference method
+            if (
+                instructions[index].Operand is not MethodReference method
                 || method.Name != "set_Item"
                 || method.DeclaringType.Name != "Dictionary`2"
                 || instructions[index - 2].Operand is not string key
-                || instructions[index - 1].Operand is not string value)
+                || instructions[index - 1].Operand is not string value
+            )
                 continue;
             mappings.Add((key, value));
         }
@@ -88,10 +92,12 @@ internal static class EditorArtworkChecks
                 var instructions = method.Body.Instructions;
                 for (var index = 1; index < instructions.Count; index++)
                 {
-                    if (instructions[index].Operand is MethodReference called
+                    if (
+                        instructions[index].Operand is MethodReference called
                         && called.Name == "Load"
                         && called.DeclaringType.FullName == "WTT.Campaigns.UI.Media.EditorMaterialArtwork"
-                        && instructions[index - 1].Operand is string name)
+                        && instructions[index - 1].Operand is string name
+                    )
                         loads.Add(name);
                 }
             }

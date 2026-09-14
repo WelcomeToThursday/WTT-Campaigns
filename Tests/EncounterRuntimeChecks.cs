@@ -180,7 +180,14 @@ internal static class EncounterRuntimeChecks
         {
             Id = Id(),
             Trigger = new() { Type = MapEncounterTrigger.Event, EventId = "manual" },
-            Waves = new() { new MapEncounterWave { Id = Id(), Roster = new() { roster } } },
+            Waves = new()
+            {
+                new MapEncounterWave
+                {
+                    Id = Id(),
+                    Roster = new() { roster },
+                },
+            },
         };
         foreach (var withPatrol in new[] { false, true })
         {

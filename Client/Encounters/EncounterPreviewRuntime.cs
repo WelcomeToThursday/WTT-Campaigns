@@ -174,11 +174,16 @@ internal sealed class EncounterPreviewRuntime
             if (!state.IsActivated)
             {
                 var trigger = state.Encounter.Trigger;
-                details.Add(name + (trigger.Type == MapEncounterTrigger.Event
-                    ? " · Waiting for event: " + trigger.EventId + ". Select its encounter, wave or roster and use Simulate."
-                    : trigger.Type == MapEncounterTrigger.PlayerEntry
-                        ? " · Waiting for player entry. Select its encounter, wave or roster and use Simulate."
-                        : " · Waiting for mission start."));
+                details.Add(
+                    name
+                        + (
+                            trigger.Type == MapEncounterTrigger.Event
+                                ? " · Waiting for event: " + trigger.EventId + ". Select its encounter, wave or roster and use Simulate."
+                            : trigger.Type == MapEncounterTrigger.PlayerEntry
+                                ? " · Waiting for player entry. Select its encounter, wave or roster and use Simulate."
+                            : " · Waiting for mission start."
+                        )
+                );
             }
             else if (state.Waves.AsValueEnumerable().Any(w => w.Status is EncounterWaveStatus.Generating or EncounterWaveStatus.Ready))
                 details.Add(name + " · Spawning bots…");
@@ -187,10 +192,14 @@ internal sealed class EncounterPreviewRuntime
             else if (state.Waves.AsValueEnumerable().Any(w => w.Status == EncounterWaveStatus.Pending))
                 details.Add(name + " · Waiting for wave delay or previous wave.");
         }
-        Status = "AI preview · " + _bots.AsValueEnumerable().Count(b => !b.Finished) + " bots · "
+        Status =
+            "AI preview · "
+            + _bots.AsValueEnumerable().Count(b => !b.Finished)
+            + " bots · "
             + (_patrol?.Status ?? "No patrols")
             + (details.Count == 0 ? "" : "\n" + string.Join("\n", details));
     }
+
     private async Task SpawnWave(EncounterWaveStateMachine state, int waveIndex)
     {
         var generation = Guid.NewGuid().ToString("N");
@@ -305,11 +314,7 @@ internal sealed class EncounterPreviewRuntime
         catch (Exception error)
         {
             var message = error.GetBaseException().Message;
-            state.FailGeneration(
-                waveIndex,
-                generation,
-                string.IsNullOrWhiteSpace(message) ? error.Message : message
-            );
+            state.FailGeneration(waveIndex, generation, string.IsNullOrWhiteSpace(message) ? error.Message : message);
             Plugin.Error(error);
         }
         finally

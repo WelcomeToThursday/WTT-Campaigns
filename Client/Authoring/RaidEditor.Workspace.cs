@@ -74,8 +74,12 @@ public sealed partial class RaidEditor
         view.Text(
             "LibraryCount",
             treeMode
-                ? view.TreeRecordCount == 0 || view.TreeVisibleCount == 0 ? "No matching records" : $"{view.TreeRecordCount} records"
-                : _rows.Count == 0 ? "No matching records" : $"{_rows.Count} records · Page {_page + 1} / {(LibraryTotal + 9) / 10}"
+                ? view.TreeRecordCount == 0 || view.TreeVisibleCount == 0
+                    ? "No matching records"
+                    : $"{view.TreeRecordCount} records"
+                : _rows.Count == 0
+                    ? "No matching records"
+                    : $"{_rows.Count} records · Page {_page + 1} / {(LibraryTotal + 9) / 10}"
         );
         if (_mode == "Scene" && SceneIndexStatus.Length > 0)
             view.Text("LibraryCount", _sceneIndex.Count + " records · " + (!_sceneIndex.Complete ? "Indexing…" : "Limit reached"));

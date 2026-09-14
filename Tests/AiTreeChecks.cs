@@ -32,7 +32,12 @@ internal static class AiTreeChecks
                             Name = "First wave",
                             Roster = new()
                             {
-                                new MapEncounterRosterEntry { Id = "roster-a", Role = "pmcUSEC", Count = 2 },
+                                new MapEncounterRosterEntry
+                                {
+                                    Id = "roster-a",
+                                    Role = "pmcUSEC",
+                                    Count = 2,
+                                },
                             },
                         },
                         new MapEncounterWave
@@ -41,13 +46,21 @@ internal static class AiTreeChecks
                             Name = "Second wave",
                             Roster = new()
                             {
-                                new MapEncounterRosterEntry { Id = "roster-b", Role = "assault", Count = 3 },
+                                new MapEncounterRosterEntry
+                                {
+                                    Id = "roster-b",
+                                    Role = "assault",
+                                    Count = 3,
+                                },
                             },
                         },
                     },
                 },
             },
-            SpawnPoints = new() { new SpatialCapture { Id = "spawn-a", Name = "Bridge spawn" } },
+            SpawnPoints = new()
+            {
+                new SpatialCapture { Id = "spawn-a", Name = "Bridge spawn" },
+            },
             PatrolRoutes = new()
             {
                 new MapPatrolRoute
@@ -67,7 +80,10 @@ internal static class AiTreeChecks
             Id = "layout-b",
             Name = "Factory encounter layout",
             Location = "factory4_day",
-            Encounters = new() { new MapEncounter { Id = "enc-b", Name = "Factory alarm" } },
+            Encounters = new()
+            {
+                new MapEncounter { Id = "enc-b", Name = "Factory alarm" },
+            },
         };
 
         var collapsed = new HashSet<string>(StringComparer.Ordinal);
@@ -86,23 +102,24 @@ internal static class AiTreeChecks
         expanded.Add("route:patrol-a");
         var full = RaidEditorAiTree.Build(layout, "", expanded);
         check(
-            full.Visible.Select(node => node.Id).SequenceEqual(
-                new[]
-                {
-                    "",
-                    "enc:enc-a",
-                    "trigger:enc-a",
-                    "wave:enc-a:wave-a",
-                    "roster:enc-a:wave-a:roster-a",
-                    "wave:enc-a:wave-b",
-                    "",
-                    "spawn:spawn-a",
-                    "",
-                    "route:patrol-a",
-                    "waypoint:patrol-a:waypoint-a",
-                    "waypoint:patrol-a:waypoint-b",
-                }
-            ),
+            full.Visible.Select(node => node.Id)
+                .SequenceEqual(
+                    new[]
+                    {
+                        "",
+                        "enc:enc-a",
+                        "trigger:enc-a",
+                        "wave:enc-a:wave-a",
+                        "roster:enc-a:wave-a:roster-a",
+                        "wave:enc-a:wave-b",
+                        "",
+                        "spawn:spawn-a",
+                        "",
+                        "route:patrol-a",
+                        "waypoint:patrol-a:waypoint-a",
+                        "waypoint:patrol-a:waypoint-b",
+                    }
+                ),
             "AI tree preserves trigger, wave, roster and ordered waypoint nesting"
         );
         check(
@@ -113,9 +130,9 @@ internal static class AiTreeChecks
         var search = new HashSet<string>(StringComparer.Ordinal);
         var searchModel = RaidEditorAiTree.Build(layout, "roster-a", search);
         check(
-            searchModel.Visible.Select(node => node.Id).SequenceEqual(
-                new[] { "", "enc:enc-a", "wave:enc-a:wave-a", "roster:enc-a:wave-a:roster-a" }
-            ),
+            searchModel
+                .Visible.Select(node => node.Id)
+                .SequenceEqual(new[] { "", "enc:enc-a", "wave:enc-a:wave-a", "roster:enc-a:wave-a:roster-a" }),
             "AI search reveals matching descendants with their collapsed ancestors"
         );
         check(search.Count == 0, "AI search does not mutate persisted foldout state");
@@ -133,7 +150,10 @@ internal static class AiTreeChecks
 
         var selectionExpanded = new HashSet<string>(StringComparer.Ordinal);
         var selectionModel = RaidEditorAiTree.Build(layout, "", selectionExpanded);
-        check(EditorTreeModel.ExpandForSelection(selectionModel, "roster:enc-a:wave-a:roster-a", selectionExpanded), "External AI child selection finds its path");
+        check(
+            EditorTreeModel.ExpandForSelection(selectionModel, "roster:enc-a:wave-a:roster-a", selectionExpanded),
+            "External AI child selection finds its path"
+        );
         check(
             RaidEditorAiTree.Build(layout, "", selectionExpanded).Visible.Any(node => node.Id == "roster:enc-a:wave-a:roster-a"),
             "External AI child selection expands its encounter and wave ancestors"

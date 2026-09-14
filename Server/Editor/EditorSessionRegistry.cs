@@ -104,8 +104,8 @@ public class EditorSessionRegistry
         if (IsScratch(transportIdentity) && Find(transportIdentity) == null)
             return new(null, ResolutionStatus.RetiredScratch);
 
-        var matches = Profiles.Values
-            .Where(s =>
+        var matches = Profiles
+            .Values.Where(s =>
                 Find(s.Profile) == s
                 && (s.Profile == transportIdentity || s.Owner == transportIdentity || s.ReturnProfile == transportIdentity)
             )

@@ -105,8 +105,5 @@ public sealed class AuthoringSocketHandler(IServiceProvider services) : ISptWebS
         string owner,
         AuthoringRequest request,
         DateTimeOffset now
-    ) =>
-        request.Version is 2 or 3 or 4
-        && editor.Accepts(owner, request.EditorSessionId, now)
-        && request.Location == editor.Location;
+    ) => request.Version is 2 or 3 or 4 && editor.Accepts(owner, request.EditorSessionId, now) && request.Location == editor.Location;
 }

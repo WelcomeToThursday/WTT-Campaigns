@@ -27,11 +27,7 @@ internal sealed class RaidLoadRecoveryPatch : ModulePatch
     [PatchPrefix]
     private static void Prefix(out LoadState __state)
     {
-        __state = new LoadState
-        {
-            CharacterId = Plugin.SessionId,
-            EditorMapLoad = EditorMode.MapLoadActive,
-        };
+        __state = new LoadState { CharacterId = Plugin.SessionId, EditorMapLoad = EditorMode.MapLoadActive };
     }
 
     [PatchPostfix]

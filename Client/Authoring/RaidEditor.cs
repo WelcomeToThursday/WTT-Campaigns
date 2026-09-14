@@ -147,9 +147,7 @@ public sealed partial class RaidEditor : MonoBehaviour
         try
         {
             var player =
-                Plugin.InRaid
-                    && (!EditorMode.Active || EditorMode.MapReady)
-                    && Plugin.Player?.HealthController?.IsAlive == true
+                Plugin.InRaid && (!EditorMode.Active || EditorMode.MapReady) && Plugin.Player?.HealthController?.IsAlive == true
                     ? Plugin.Player
                     : null;
             if (player != _player || !AuthoringEnabled || player && AuthoringEnabled && _session == null)

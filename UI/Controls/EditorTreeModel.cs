@@ -7,14 +7,7 @@ namespace WTT.Campaigns.UI.Controls;
 // domain records; the renderer only needs ordered children and stable keys.
 public sealed class EditorTreeNode
 {
-    public EditorTreeNode(
-        string key,
-        string label,
-        string id = "",
-        bool selectable = false,
-        int depth = 0,
-        string? path = null
-    )
+    public EditorTreeNode(string key, string label, string id = "", bool selectable = false, int depth = 0, string? path = null)
     {
         Key = key;
         Label = label;
@@ -34,7 +27,8 @@ public sealed class EditorTreeNode
     public bool HasChildren => Children.Count > 0;
 
     public bool Matches(string search) =>
-        search.Length == 0 || Path.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+        search.Length == 0
+        || Path.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
         || Id.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
 }
 
@@ -104,12 +98,7 @@ public sealed class EditorTreeModel
         return found;
     }
 
-    private static void AppendVisible(
-        EditorTreeNode node,
-        string search,
-        ISet<string>? expanded,
-        List<EditorTreeNode> visible
-    )
+    private static void AppendVisible(EditorTreeNode node, string search, ISet<string>? expanded, List<EditorTreeNode> visible)
     {
         var searchMode = search.Length > 0;
         if (searchMode && !HasMatch(node, search))

@@ -57,7 +57,9 @@ internal static class EditorOpenChecks
         check(
             aiSelection
                 .Methods.Single(m => m.Name == "get_Valid")
-                .Body.Instructions.Any(i => i.Operand is MethodReference m && m.DeclaringType.FullName == "System.String" && m.Name == "IsNullOrEmpty"),
+                .Body.Instructions.Any(i =>
+                    i.Operand is MethodReference m && m.DeclaringType.FullName == "System.String" && m.Name == "IsNullOrEmpty"
+                ),
             "An empty AI selection remains safe before a layout or record is selected"
         );
     }

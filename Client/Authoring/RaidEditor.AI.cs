@@ -68,6 +68,7 @@ public sealed partial class RaidEditor
                 : ""
             )
             ?? "";
+
         // The default struct is used when the active layout has no matching
         // selection. Its auto-property backing field is null until a value is
         // assigned, so validity must tolerate the default value.
@@ -855,7 +856,10 @@ public sealed partial class RaidEditor
         _view.Get<Button>("AiObserve").interactable = !AiPreviewBusy;
         _view.Get<Button>("AiPlaytest").interactable = !AiPreviewBusy;
         _view.Get<Button>("AiSimulate").interactable = _aiPreview;
-        _view.Windows.SetTooltip("AiSimulate", "Select an encounter, wave or roster to simulate its trigger. A patrol route controls movement after spawning; it does not activate an encounter.");
+        _view.Windows.SetTooltip(
+            "AiSimulate",
+            "Select an encounter, wave or roster to simulate its trigger. A patrol route controls movement after spawning; it does not activate an encounter."
+        );
         var editable = !AiPreviewBusy && _session?.Conflict == null && _session?.Definition != null && !_session.Previewing;
         foreach (
             var name in new[]

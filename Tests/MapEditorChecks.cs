@@ -254,7 +254,10 @@ internal sealed class MapEditorChecks : EditorSessionRegistry
             foreach (var identity in new[] { owner, normal, profile })
             {
                 var resolved = Resolve(identity, session.Id, now);
-                check(resolved.Accepted && ReferenceEquals(resolved.Session, session), "Authenticated editor identity resolves " + identity);
+                check(
+                    resolved.Accepted && ReferenceEquals(resolved.Session, session),
+                    "Authenticated editor identity resolves " + identity
+                );
             }
             var foreign = Resolve(SeasonRepository.NewId(), session.Id, now);
             check(
@@ -262,13 +265,19 @@ internal sealed class MapEditorChecks : EditorSessionRegistry
                 "A foreign transport identity cannot use a matching editor token"
             );
             session.Ready = false;
-            check(Resolve(owner, session.Id, now).Status == ResolutionStatus.NotReady, "Unready editor sessions cannot authorize playtests");
+            check(
+                Resolve(owner, session.Id, now).Status == ResolutionStatus.NotReady,
+                "Unready editor sessions cannot authorize playtests"
+            );
             session.Ready = true;
             session.Contact = now.AddMinutes(-2);
             check(Resolve(owner, session.Id, now).Status == ResolutionStatus.Expired, "Expired editor sessions cannot authorize playtests");
             session.Contact = now;
             session.UnloadMap();
-            check(Resolve(owner, session.Id, now).Status == ResolutionStatus.MissingMap, "An unloaded editor map cannot authorize playtests");
+            check(
+                Resolve(owner, session.Id, now).Status == ResolutionStatus.MissingMap,
+                "An unloaded editor map cannot authorize playtests"
+            );
             session.OpenMap("woods");
             check(
                 Resolve(owner, Guid.NewGuid().ToString("N"), now).Status == ResolutionStatus.MismatchedToken,

@@ -67,8 +67,8 @@ public sealed class EditorTreeView : IDisposable
             _normalRowStates.Add(row.gameObject.activeSelf);
         }
 
-        _template = _content.Find("Row0")?.gameObject
-            ?? throw new InvalidOperationException("The library tree is missing its row template.");
+        _template =
+            _content.Find("Row0")?.gameObject ?? throw new InvalidOperationException("The library tree is missing its row template.");
         EnsurePool();
 
         _scrollChanged = _ => RenderVisible();
@@ -91,13 +91,7 @@ public sealed class EditorTreeView : IDisposable
             BindTooltip(row);
     }
 
-    public void Refresh(
-        string contextId,
-        long revision,
-        string search,
-        string selection,
-        Func<ISet<string>, EditorTreeModel> build
-    )
+    public void Refresh(string contextId, long revision, string search, string selection, Func<ISet<string>, EditorTreeModel> build)
     {
         if (_disposed)
             return;
@@ -109,13 +103,7 @@ public sealed class EditorTreeView : IDisposable
         selection ??= "";
         var contextChanged = _contextId != contextId;
         var selectionChanged = contextChanged || _selection != selection;
-        if (
-            !_dirty
-            && !contextChanged
-            && _revision == revision
-            && _search == search
-            && _selection == selection
-        )
+        if (!_dirty && !contextChanged && _revision == revision && _search == search && _selection == selection)
             return;
 
         _contextId = contextId;
@@ -345,17 +333,16 @@ public sealed class EditorTreeView : IDisposable
         row.Button.onClick.RemoveAllListeners();
         if (node.Selectable)
         {
-            row.Button.onClick.AddListener(
-                () =>
-                {
-                    var id = row.Selection.Consume();
-                    if (id.Length > 0)
-                        _select?.Invoke(id);
-                }
-            );
+            row.Button.onClick.AddListener(() =>
+            {
+                var id = row.Selection.Consume();
+                if (id.Length > 0)
+                    _select?.Invoke(id);
+            });
         }
         row.Button.interactable = node.Selectable;
-        row.Button.targetGraphic.color = node.Selectable && node.Id == _selection ? EditorTarkovTheme.Selected : EditorTarkovTheme.Container;
+        row.Button.targetGraphic.color =
+            node.Selectable && node.Id == _selection ? EditorTarkovTheme.Selected : EditorTarkovTheme.Container;
         row.Label.text = node.Label;
         row.Label.color = node.Selectable ? EditorTarkovTheme.Ink : EditorTarkovTheme.Muted;
         row.Label.alignment = TextAnchor.MiddleLeft;
@@ -377,7 +364,9 @@ public sealed class EditorTreeView : IDisposable
         row.Disclosure.Button.targetGraphic.color = Color.clear;
         row.Disclosure.Label.text = expanded ? "v" : ">";
         row.Disclosure.Label.color = node.HasChildren
-            ? expanded ? EditorTarkovTheme.Ink : EditorTarkovTheme.Muted
+            ? expanded
+                ? EditorTarkovTheme.Ink
+                : EditorTarkovTheme.Muted
             : Color.clear;
         if (node.HasChildren)
         {
@@ -400,7 +389,8 @@ public sealed class EditorTreeView : IDisposable
         var rowTooltip = row.GameObject.GetComponent<EditorControlTooltip>() ?? row.GameObject.AddComponent<EditorControlTooltip>();
         rowTooltip.Enter = () => _showTooltip?.Invoke(row.GameObject.name, row.Tooltip);
         rowTooltip.Exit = () => _hideTooltip?.Invoke();
-        var disclosureTooltip = row.Disclosure.Button.gameObject.GetComponent<EditorControlTooltip>()
+        var disclosureTooltip =
+            row.Disclosure.Button.gameObject.GetComponent<EditorControlTooltip>()
             ?? row.Disclosure.Button.gameObject.AddComponent<EditorControlTooltip>();
         disclosureTooltip.Enter = () => _showTooltip?.Invoke(row.Disclosure.Button.name, row.Disclosure.Tooltip);
         disclosureTooltip.Exit = () => _hideTooltip?.Invoke();

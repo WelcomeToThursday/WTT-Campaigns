@@ -964,9 +964,7 @@ public sealed partial class RaidEditor
         foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene", "AI" })
             view.Highlight(mode, _mode == mode);
         var search = view.Get<InputField>("Search").text;
-        var treeMode =
-            _mode == "AI"
-            || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
+        var treeMode = _mode == "AI" || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
         var libraryKey =
             $"{_mode}|{_sceneTab}|{_sceneFilter}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
         if (_libraryKey != libraryKey)

@@ -20,8 +20,9 @@ internal static class EditorLibraryTrees
             void Add(SpatialCapture? point, string caption)
             {
                 if (point != null)
-                    root.Children.Add(new EditorTreeNode(
-                        "marker:" + layout.Id + ":" + point.Id, caption, point.Id, true, 1, label + " / " + caption));
+                    root.Children.Add(
+                        new EditorTreeNode("marker:" + layout.Id + ":" + point.Id, caption, point.Id, true, 1, label + " / " + caption)
+                    );
             }
             Add(layout.Start, "START · " + layout.Start?.Name);
             for (var i = 0; i < layout.Checkpoints.Count; i++)
@@ -71,8 +72,7 @@ internal static class EditorLibraryTrees
                 owners.Add(ownerId, owner);
                 roots.Add(owner);
             }
-            owner.Children.Add(new EditorTreeNode("zone:" + zone.Id, zone.Name, zone.Id, true, 1,
-                owner.Label + " / " + zone.Name));
+            owner.Children.Add(new EditorTreeNode("zone:" + zone.Id, zone.Name, zone.Id, true, 1, owner.Label + " / " + zone.Name));
         }
         return roots;
     }

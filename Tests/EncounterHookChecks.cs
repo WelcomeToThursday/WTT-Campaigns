@@ -616,10 +616,7 @@ internal static class EncounterHookChecks
         var steering = RequireType(native, "BotSteering");
         var moving = RequireMethod(steering, "LookToMovingDirection", "System.Void");
         Require(Calls(moving, "LookToMovingDirection"), "Native movement-facing overload uses configured rotation speed");
-        Require(
-            Calls(RequireMethod(steering, "Steering"), "get_DirCurPoint"),
-            "Native movement steering follows the current path segment"
-        );
+        Require(Calls(RequireMethod(steering, "Steering"), "get_DirCurPoint"), "Native movement steering follows the current path segment");
 
         var runtime = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
         var face = RequireMethod(runtime, "FaceMovement");

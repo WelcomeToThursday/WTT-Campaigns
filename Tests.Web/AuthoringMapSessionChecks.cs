@@ -11,7 +11,13 @@ internal static class AuthoringMapSessionChecks
     {
         var validate = typeof(AuthoringSocketHandler).GetMethod("AcceptsMapRequest", BindingFlags.NonPublic | BindingFlags.Static)!;
         var now = DateTimeOffset.UtcNow;
-        var session = new EditorSessionRegistry.Session { Owner = "owner", Ready = true, Location = "woods", Contact = now };
+        var session = new EditorSessionRegistry.Session
+        {
+            Owner = "owner",
+            Ready = true,
+            Location = "woods",
+            Contact = now,
+        };
         var request = new AuthoringRequest { EditorSessionId = session.Id, Location = session.Location };
         bool Accepts(string owner = "owner")
         {
