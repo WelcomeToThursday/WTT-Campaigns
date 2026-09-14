@@ -47,8 +47,11 @@ internal static class EditorSceneVisibilityChecks
         Require(
             advance.Any(i => i.Operand is MethodReference { Name: "get_frameCount" })
                 && advance.Any(i => i.Operand is MethodReference { Name: "Advance", DeclaringType.Name: "EditorTriggerVisibility" })
-                && environment.Methods.Single(m => m.Name == "Sync").Body.Instructions.Any(i =>
-                    i.Operand is MethodReference { Name: "Advance", DeclaringType.Name: "EditorSceneVisibility" }),
+                && environment
+                    .Methods.Single(m => m.Name == "Sync")
+                    .Body.Instructions.Any(i =>
+                        i.Operand is MethodReference { Name: "Advance", DeclaringType.Name: "EditorSceneVisibility" }
+                    ),
             "Visibility discovery advances under a shared per-frame budget across native camera callbacks."
         );
         Require(

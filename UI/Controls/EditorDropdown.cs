@@ -16,8 +16,10 @@ public sealed class EditorDropdown : Dropdown
     {
         ((RectTransform)transform).GetWorldCorners(_corners);
         template.position = _corners[0];
-        template.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal,
-            Vector3.Distance(_corners[0], _corners[3]) / template.lossyScale.x);
+        template.SetSizeWithCurrentAnchors(
+            RectTransform.Axis.Horizontal,
+            Vector3.Distance(_corners[0], _corners[3]) / template.lossyScale.x
+        );
     }
 
     public override void OnPointerClick(PointerEventData eventData)

@@ -48,9 +48,9 @@ public sealed partial class RaidEditor
             : point is SeasonZone zone ? zone.Shape
             : MapPoint is MapObjectEdit obj ? obj.Operation
             : MapPoint is MapVolume volume
-                ? Layout!.Barriers.AsValueEnumerable().Any(b => b.Id == volume.Id)
-                    ? "Barrier"
-                    : Layout!.Checkpoints.AsValueEnumerable().Any(p => p.Id == volume.Id) ? "Checkpoint" : "Volume"
+                ? Layout!.Barriers.AsValueEnumerable().Any(b => b.Id == volume.Id) ? "Barrier"
+                    : Layout!.Checkpoints.AsValueEnumerable().Any(p => p.Id == volume.Id) ? "Checkpoint"
+                    : "Volume"
             : MapDoor != null ? "Door"
             : maps && MapPoint == null ? "Layout"
             : "Point";

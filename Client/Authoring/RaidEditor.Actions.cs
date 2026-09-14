@@ -25,6 +25,7 @@ public sealed partial class RaidEditor
     private string _bindingTarget = "";
     private readonly Dictionary<string, (string Selection, int Page)> _moduleSelection = new();
     private readonly List<string> _zoneScopeIds = new();
+
     // Shared is an explicit choice; the other scope always follows the current
     // layout so changing layouts cannot create an invisible zone under an old
     // owner.
@@ -1017,7 +1018,8 @@ public sealed partial class RaidEditor
         }
 
         var details = point is SeasonZone z
-            ? "Ownership: " + ownerName
+            ? "Ownership: "
+                + ownerName
                 + "\n"
                 + z.Shape
                 + " Ã‚Â· "
@@ -1049,12 +1051,12 @@ public sealed partial class RaidEditor
         if (string.IsNullOrEmpty(zone.LayoutId))
             return "Shared";
 
-        return _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == zone.LayoutId)?.Name
-            ?? zone.LayoutId;
+        return _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == zone.LayoutId)?.Name ?? zone.LayoutId;
     }
 
     private string ZoneScopeName(string layoutId) =>
-        string.IsNullOrEmpty(layoutId) ? "Shared"
+        string.IsNullOrEmpty(layoutId)
+            ? "Shared"
             : _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == layoutId)?.Name ?? layoutId;
 
     private void RefreshZoneScope(RaidEditorView view, SeasonZone? zone)
