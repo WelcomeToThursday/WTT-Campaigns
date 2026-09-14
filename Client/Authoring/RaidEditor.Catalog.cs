@@ -34,13 +34,22 @@ public sealed partial class RaidEditor
     private SceneCatalogEntry? _placementLoot;
     private CancellationTokenSource? _placementLifetime;
     private bool _placementPooled;
+
     private sealed class ThumbnailImage
     {
         internal Texture Texture = null!;
         internal Rect Uv;
         internal bool Owned;
     }
-    private readonly ScenePreviewCache<ThumbnailImage> _previews = new(64, image => { if (image.Owned && image.Texture) Destroy(image.Texture); });
+
+    private readonly ScenePreviewCache<ThumbnailImage> _previews = new(
+        64,
+        image =>
+        {
+            if (image.Owned && image.Texture)
+                Destroy(image.Texture);
+        }
+    );
     private readonly List<ThumbnailJob> _thumbnailQueue = new();
     private bool _thumbnailWorker;
     private CancellationTokenSource _thumbnailLifetime = new();
@@ -68,7 +77,11 @@ public sealed partial class RaidEditor
             _sceneRoots.Remove(root.GetInstanceID().ToString());
             return;
         }
-        if (root.GetComponent<LootItem>() || root.GetComponent<LootableContainer>() || MapSceneAdapter.Supported(root, copy: true).Length > 0)
+        if (
+            root.GetComponent<LootItem>()
+            || root.GetComponent<LootableContainer>()
+            || MapSceneAdapter.Supported(root, copy: true).Length > 0
+        )
             return;
         // Asset identities are session-local; saved copies retain their concrete source binding.
         var signature =
@@ -131,12 +144,16 @@ public sealed partial class RaidEditor
         Button("ScenePreviewRetry", RetryThumbnail);
         // These actions must not cancel an active transform or placement.
         view.Button("SceneFrame", FrameSceneSelection);
-        view.Button("SceneAnchor", () =>
-        {
-            if (_drag != null || _placementLifetime != null || _walking) return;
-            _centerAnchor = !_centerAnchor;
-            Refresh();
-        });
+        view.Button(
+            "SceneAnchor",
+            () =>
+            {
+                if (_drag != null || _placementLifetime != null || _walking)
+                    return;
+                _centerAnchor = !_centerAnchor;
+                Refresh();
+            }
+        );
         foreach (var filter in new[] { "Props", "Loot", "Presets" })
         {
             var value = filter;
@@ -298,7 +315,8 @@ public sealed partial class RaidEditor
             _picked = null;
             _sceneSelectionPose = null;
             _sceneSelectionError = "";
-            if (_tool == "Scale" && !CanTransformScene("Scale")) _tool = "Move";
+            if (_tool == "Scale" && !CanTransformScene("Scale"))
+                _tool = "Move";
         }
     }
 
@@ -317,7 +335,8 @@ public sealed partial class RaidEditor
             _selected = authored;
             _picked = null;
             _sceneTab = "Existing";
-            if (_tool == "Scale" && !CanTransformScene("Scale")) _tool = "Move";
+            if (_tool == "Scale" && !CanTransformScene("Scale"))
+                _tool = "Move";
             Refresh();
             _view?.Windows.ShowPanel("Inspector", true);
             return;
@@ -365,7 +384,11 @@ public sealed partial class RaidEditor
         var record = Layout
             ?.Objects.AsValueEnumerable()
             .FirstOrDefault(o =>
-                binding != null && o.Operation != "Copy" && o.Target.Kind == binding.Kind && o.Target.Path == binding.Path && o.Target.Scene == binding.Scene
+                binding != null
+                && o.Operation != "Copy"
+                && o.Target.Kind == binding.Kind
+                && o.Target.Path == binding.Path
+                && o.Target.Scene == binding.Scene
             );
         if (record != null)
             _selected = record.Id;
@@ -380,19 +403,15 @@ public sealed partial class RaidEditor
     {
         if (!CanSceneEdit)
             return;
-        if (!CanTransformScene(tool)) return;
+        if (!CanTransformScene(tool))
+            return;
         if (MapPoint is MapObjectEdit { Operation: "Hide" })
             return;
         _tool = tool;
     }
 
     private bool CanSceneEdit =>
-        EditorMode.Ready
-        && !_walking
-        && Layout != null
-        && _session?.Definition != null
-        && _session.Conflict == null
-        && !_session.Retired;
+        EditorMode.Ready && !_walking && Layout != null && _session?.Definition != null && _session.Conflict == null && !_session.Retired;
 
     private void RemoveSceneObject()
     {
@@ -596,6 +615,5 @@ public sealed partial class RaidEditor
         _previews.Clear();
         _thumbnailWorker = false;
         _thumbnailQueue.Clear();
-
     }
 }

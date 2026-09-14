@@ -12,7 +12,8 @@ public sealed class EditorWindowDrag : MonoBehaviour, IBeginDragHandler, IDragHa
     public bool Movable = true;
     public float BottomInset = 40;
     public bool Dragging { get; private set; }
-    public Action? Completed, Focus;
+    public Action? Completed,
+        Focus;
     private Vector2 _pointer,
         _position;
 
@@ -42,7 +43,8 @@ public sealed class EditorWindowDrag : MonoBehaviour, IBeginDragHandler, IDragHa
 
     public void OnEndDrag(PointerEventData e)
     {
-        if (!Dragging) return;
+        if (!Dragging)
+            return;
         Dragging = false;
         Completed?.Invoke();
     }
@@ -57,7 +59,11 @@ public sealed class EditorWindowDrag : MonoBehaviour, IBeginDragHandler, IDragHa
         var bounds = Boundary.rect;
         var position = Window.anchoredPosition;
         position.x = Mathf.Clamp(position.x, bounds.xMin + half.x + 8, Mathf.Max(bounds.xMin + half.x + 8, bounds.xMax - half.x - 8));
-        position.y = Mathf.Clamp(position.y, bounds.yMin + half.y + BottomInset, Mathf.Max(bounds.yMin + half.y + BottomInset, bounds.yMax - half.y - 92));
+        position.y = Mathf.Clamp(
+            position.y,
+            bounds.yMin + half.y + BottomInset,
+            Mathf.Max(bounds.yMin + half.y + BottomInset, bounds.yMax - half.y - 92)
+        );
         Window.anchoredPosition = position;
     }
 }

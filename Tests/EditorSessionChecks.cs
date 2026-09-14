@@ -18,9 +18,21 @@ internal static class EditorSessionChecks
         AuthoringSocket.Shared.Attach(socket, socket);
         try
         {
-            var baseline = new SeasonDefinition { Id = "offline", Name = "Original", FormatVersion = 2 };
+            var baseline = new SeasonDefinition
+            {
+                Id = "offline",
+                Name = "Original",
+                FormatVersion = 2,
+            };
             for (var i = 0; i < 20; i++)
-                baseline.Zones.Add(new() { Id = "zone" + i, Name = "Test zone " + i, Location = "interchange" });
+                baseline.Zones.Add(
+                    new()
+                    {
+                        Id = "zone" + i,
+                        Name = "Test zone " + i,
+                        Location = "interchange",
+                    }
+                );
             var session = new RaidEditorSession("interchange") { Hold = true };
             var notifications = 0;
             session.Changed += () => notifications++;
@@ -30,7 +42,8 @@ internal static class EditorSessionChecks
 
             socket.Reply = _ => Response();
             var previous = notifications;
-            for (var i = 0; i < 20; i++) await session.Tick();
+            for (var i = 0; i < 20; i++)
+                await session.Tick();
             check(notifications == previous, "Unchanged one-second polls do not rebuild editor UI or scene geometry.");
             session.Edit(d => d.Name = "Original");
             check(!session.Dirty && notifications == previous, "No-op edits preserve clean state without rebuilding presentation.");
@@ -38,14 +51,19 @@ internal static class EditorSessionChecks
             // Measure the removed operation against the same draft and exact legacy expression.
             _ = LegacyDirty(session);
             var start = GC.GetAllocatedBytesForCurrentThread();
-            for (var i = 0; i < 60; i++) _ = LegacyDirty(session);
+            for (var i = 0; i < 60; i++)
+                _ = LegacyDirty(session);
             var legacy = GC.GetAllocatedBytesForCurrentThread() - start;
             start = GC.GetAllocatedBytesForCurrentThread();
             var dirtyReads = 0;
-            for (var i = 0; i < 36000; i++) if (session.Dirty) dirtyReads++;
+            for (var i = 0; i < 36000; i++)
+                if (session.Dirty)
+                    dirtyReads++;
             var current = GC.GetAllocatedBytesForCurrentThread() - start;
             check(current == 0 && dirtyReads == 0, "Ten minutes of idle dirty-state reads at 60 FPS allocate zero bytes.");
-            Console.WriteLine($"Editor allocation regression: legacy 60 reads = {legacy:N0} bytes; cached 36,000 reads = {current} bytes (20-zone fixture).");
+            Console.WriteLine(
+                $"Editor allocation regression: legacy 60 reads = {legacy:N0} bytes; cached 36,000 reads = {current} bytes (20-zone fixture)."
+            );
 
             session.Edit(d => d.Name = "Changed");
             check(session.Dirty, "An edit marks the committed draft dirty.");
@@ -53,7 +71,14 @@ internal static class EditorSessionChecks
             check(!session.Dirty && session.Definition!.Name == "Original", "Undoing to the baseline clears dirty state.");
             session.Undo(true);
             check(session.Dirty && session.Definition!.Name == "Changed", "Redo restores dirty state.");
-            try { session.Edit(d => { d.Name = "Partial"; throw new InvalidOperationException("rollback"); }); }
+            try
+            {
+                session.Edit(d =>
+                {
+                    d.Name = "Partial";
+                    throw new InvalidOperationException("rollback");
+                });
+            }
             catch (InvalidOperationException) { }
             check(session.Dirty && session.Definition!.Name == "Changed", "Failed edits restore content and preserve dirty state.");
 
@@ -79,12 +104,23 @@ internal static class EditorSessionChecks
             check(session.Conflict != null && session.Dirty, "Conflicting edits retain unsynchronized changes.");
             session.Resolve(true);
             check(session.Dirty && session.Definition!.Name == "Local conflict", "Keeping local conflict content remains dirty.");
-            session.Conflict = new() { Definition = remote, Candidate = session.Definition, RemoteCandidate = remote, Revision = 4 };
+            session.Conflict = new()
+            {
+                Definition = remote,
+                Candidate = session.Definition,
+                RemoteCandidate = remote,
+                Revision = 4,
+            };
             session.Resolve(false);
             check(!session.Dirty && session.Definition!.Name == "Remote conflict", "Keeping remote conflict content clears dirty state.");
 
             var task = new CaptureTask { Id = "capture" };
-            socket.Reply = _ => { var r = Response(null, 4); r.Tasks.Add(task); return r; };
+            socket.Reply = _ =>
+            {
+                var r = Response(null, 4);
+                r.Tasks.Add(task);
+                return r;
+            };
             previous = notifications;
             await session.Tick();
             check(notifications > previous, "New capture tasks still refresh presentation.");
@@ -107,18 +143,27 @@ internal static class EditorSessionChecks
         finally
         {
             AuthoringSocket.Shared.Detach(socket, socket);
-            if (Directory.Exists(folder)) Directory.Delete(folder, true);
+            if (Directory.Exists(folder))
+                Directory.Delete(folder, true);
             BepInEx.Paths.ConfigPath = "";
         }
     }
 
-    private static bool LegacyDirty(RaidEditorSession session) => session.Definition != null
-        && !JToken.DeepEquals(JObject.FromObject(session.Definition), session.Baseline == null ? null : JObject.FromObject(session.Baseline));
+    private static bool LegacyDirty(RaidEditorSession session) =>
+        session.Definition != null
+        && !JToken.DeepEquals(
+            JObject.FromObject(session.Definition),
+            session.Baseline == null ? null : JObject.FromObject(session.Baseline)
+        );
 
-    private static AuthoringResponse Response(SeasonDefinition? definition = null, long revision = 1) => new()
-    {
-        Grant = "offline-grant", DraftId = "offline", Definition = definition, Revision = revision,
-    };
+    private static AuthoringResponse Response(SeasonDefinition? definition = null, long revision = 1) =>
+        new()
+        {
+            Grant = "offline-grant",
+            DraftId = "offline",
+            Definition = definition,
+            Revision = revision,
+        };
 
     private sealed class ReplySocket : WebSocket
     {
@@ -127,17 +172,34 @@ internal static class EditorSessionChecks
         public override string? CloseStatusDescription => null;
         public override WebSocketState State => WebSocketState.Open;
         public override string? SubProtocol => null;
+
         public override void Abort() => throw new NotSupportedException();
+
         public override void Dispose() { }
-        public override Task CloseAsync(WebSocketCloseStatus status, string? description, CancellationToken token) => throw new NotSupportedException();
-        public override Task CloseOutputAsync(WebSocketCloseStatus status, string? description, CancellationToken token) => throw new NotSupportedException();
-        public override Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken token) => throw new NotSupportedException();
+
+        public override Task CloseAsync(WebSocketCloseStatus status, string? description, CancellationToken token) =>
+            throw new NotSupportedException();
+
+        public override Task CloseOutputAsync(WebSocketCloseStatus status, string? description, CancellationToken token) =>
+            throw new NotSupportedException();
+
+        public override Task<WebSocketReceiveResult> ReceiveAsync(ArraySegment<byte> buffer, CancellationToken token) =>
+            throw new NotSupportedException();
+
         public override Task SendAsync(ArraySegment<byte> buffer, WebSocketMessageType type, bool end, CancellationToken token)
         {
-            var message = JsonConvert.DeserializeObject<AuthoringSocketMessage>(Encoding.UTF8.GetString(buffer.Array!, buffer.Offset, buffer.Count))!;
+            var message = JsonConvert.DeserializeObject<AuthoringSocketMessage>(
+                Encoding.UTF8.GetString(buffer.Array!, buffer.Offset, buffer.Count)
+            )!;
             var response = new AuthoringSocketReply { RequestId = message.RequestId, Response = Reply(message) };
-            AuthoringSocket.Shared.Receive(this, Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(
-                new Dictionary<string, string> { [AuthoringSocketMessage.ChannelName] = JsonConvert.SerializeObject(response) })));
+            AuthoringSocket.Shared.Receive(
+                this,
+                Encoding.UTF8.GetBytes(
+                    JsonConvert.SerializeObject(
+                        new Dictionary<string, string> { [AuthoringSocketMessage.ChannelName] = JsonConvert.SerializeObject(response) }
+                    )
+                )
+            );
             return Task.CompletedTask;
         }
     }

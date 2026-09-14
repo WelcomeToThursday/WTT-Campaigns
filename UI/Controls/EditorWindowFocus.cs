@@ -8,11 +8,16 @@ public sealed class EditorWindowFocus : MonoBehaviour, IPointerEnterHandler, IPo
 {
     public Action? Focus;
     private bool _over;
+
     public void OnPointerEnter(PointerEventData e) => _over = true;
+
     public void OnPointerExit(PointerEventData e) => _over = false;
+
     private void Update()
     {
-        if (_over && Input.GetMouseButtonDown(0)) Focus?.Invoke();
+        if (_over && Input.GetMouseButtonDown(0))
+            Focus?.Invoke();
     }
+
     private void OnDisable() => _over = false;
 }

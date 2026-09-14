@@ -238,7 +238,8 @@ public static partial class RaidEditorLayout
             status.rectTransform.anchoredPosition = new Vector2(24, 0);
             status.alignment = TextAnchor.MiddleCenter;
             status.gameObject.SetActive(false);
-            if (i > 0) row.gameObject.SetActive(false);
+            if (i > 0)
+                row.gameObject.SetActive(false);
         }
         var paging = Edge(panel, "Paging", 0, 0, 0, 42);
         paging.anchorMin = Vector2.zero;

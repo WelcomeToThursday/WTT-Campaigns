@@ -17,13 +17,17 @@ internal static class ScenePreviewChecks
         cache.Complete(generation, "crate", "crate texture", "crate");
         cache.Complete(generation, "loot", "native icon lease", "crate");
         cache.Complete(generation, "barrel", "barrel texture", "crate");
-        check(cache.Get("crate") != null && cache.Get("barrel") != null && cache.Get("loot") == null,
-            "Cache eviction retains the selected preview");
+        check(
+            cache.Get("crate") != null && cache.Get("barrel") != null && cache.Get("loot") == null,
+            "Cache eviction retains the selected preview"
+        );
         check(released.SequenceEqual(new[] { "native icon lease" }), "Eviction releases exactly one result");
         cache.Request("pending");
         cache.Clear();
-        check(!cache.Complete(generation, "pending", "late texture", "") && cache.Get("pending") == null,
-            "Late preview cannot attach to the next map");
+        check(
+            !cache.Complete(generation, "pending", "late texture", "") && cache.Get("pending") == null,
+            "Late preview cannot attach to the next map"
+        );
         cache.Fail(generation, "pending", "stale error");
         check(cache.Error("pending") == "" && cache.Request("pending"), "Stale failure cannot poison the next map");
         cache.Abandon("pending");

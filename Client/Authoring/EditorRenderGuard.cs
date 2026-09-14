@@ -28,10 +28,12 @@ internal static class EditorRenderGuard
             var method =
                 AccessTools.DeclaredMethod(type, "OnRenderImage", new[] { typeof(RenderTexture), typeof(RenderTexture) })
                 ?? throw new MissingMethodException(name, "OnRenderImage");
-            harmony.Patch(method,
+            harmony.Patch(
+                method,
                 prefix: new HarmonyMethod(typeof(EditorRenderGuard), nameof(BeforeEffect)),
                 postfix: new HarmonyMethod(typeof(EditorRenderGuard), nameof(AfterEffect)),
-                transpiler: new HarmonyMethod(typeof(EditorRenderGuard), nameof(Transpiler)));
+                transpiler: new HarmonyMethod(typeof(EditorRenderGuard), nameof(Transpiler))
+            );
         }
     }
 

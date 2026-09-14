@@ -8,7 +8,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
-    <EmbeddedResource Include="Resources\Editor\*.png;Resources\Editor\LICENSE" LogicalName="WTT.Campaigns.Editor.%(Filename)%(Extension)" />
+    <EmbeddedResource
+      Include="Resources\Editor\*.png;Resources\Editor\LICENSE"
+      LogicalName="WTT.Campaigns.Editor.%(Filename)%(Extension)"
+    />
     <EmbeddedResource Include="Resources\Hub\*.png" LogicalName="WTT.Campaigns.Hub.%(Filename)%(Extension)" />
     <EmbeddedResource
       Include="Resources\Story\*.png"

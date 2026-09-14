@@ -70,9 +70,15 @@ public sealed partial class RaidEditor : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-        _cameraSpeed = Plugin.Instance.Config.Bind("Raid authoring", "Camera speed", 6f,
-            new ConfigDescription("Editor camera movement in metres per second. Shift boosts 4x; Ctrl slows to one quarter.",
-                new AcceptableValueRange<float>(.25f, 96f)));
+        _cameraSpeed = Plugin.Instance.Config.Bind(
+            "Raid authoring",
+            "Camera speed",
+            6f,
+            new ConfigDescription(
+                "Editor camera movement in metres per second. Shift boosts 4x; Ctrl slows to one quarter.",
+                new AcceptableValueRange<float>(.25f, 96f)
+            )
+        );
         _enabled = Plugin.Instance.Config.Bind(
             "Raid authoring",
             "Enable authoring",
@@ -299,8 +305,10 @@ public sealed partial class RaidEditor : MonoBehaviour
                     _session.Undo(true);
                 }
 
-                if (Input.GetKeyDown(KeyCode.F)) FrameSceneSelection();
-                if (!PlacementInput()) GeometryInput();
+                if (Input.GetKeyDown(KeyCode.F))
+                    FrameSceneSelection();
+                if (!PlacementInput())
+                    GeometryInput();
             }
             if (Time.realtimeSinceStartup >= _nextRefresh)
             {
@@ -346,7 +354,8 @@ public sealed partial class RaidEditor : MonoBehaviour
         if (_walkRequested)
         {
             _walkRequested = false;
-            if (_open && session.Grant.Length > 0 && session.Conflict == null) BeginWalkthrough();
+            if (_open && session.Grant.Length > 0 && session.Conflict == null)
+                BeginWalkthrough();
         }
     }
 
@@ -357,7 +366,8 @@ public sealed partial class RaidEditor : MonoBehaviour
             return;
         }
 
-        if (!_openState.TryBegin(requested)) return;
+        if (!_openState.TryBegin(requested))
+            return;
 
         if (_view?.Valid != true)
         {
@@ -440,8 +450,15 @@ public sealed partial class RaidEditor : MonoBehaviour
                     );
                     direction = _flyRotation * direction;
                     direction.y += (Input.GetKey(KeyCode.E) ? 1 : 0) - (Input.GetKey(KeyCode.Q) ? 1 : 0);
-                    _flyPosition += Vector3.ClampMagnitude(direction, 1) * Time.unscaledDeltaTime * CameraSpeed
-                        * (Input.GetKey(KeyCode.LeftShift) ? 4 : Input.GetKey(KeyCode.LeftControl) ? .25f : 1);
+                    _flyPosition +=
+                        Vector3.ClampMagnitude(direction, 1)
+                        * Time.unscaledDeltaTime
+                        * CameraSpeed
+                        * (
+                            Input.GetKey(KeyCode.LeftShift) ? 4
+                            : Input.GetKey(KeyCode.LeftControl) ? .25f
+                            : 1
+                        );
                 }
             }
             _camera!.transform.SetPositionAndRotation(_flyPosition, _flyRotation);

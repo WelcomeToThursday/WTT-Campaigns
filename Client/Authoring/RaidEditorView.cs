@@ -17,7 +17,8 @@ internal sealed class RaidEditorView : IDisposable
     private static int _bundleUsers;
     private bool _disposed;
     internal bool Valid => !_disposed && Root;
-    internal Shader PreviewShader => _bundle.LoadAsset<Shader>("assets/mods/wtt-campaigns.assets/raideditor/campaignscenepreview.shader")
+    internal Shader PreviewShader =>
+        _bundle.LoadAsset<Shader>("assets/mods/wtt-campaigns.assets/raideditor/campaignscenepreview.shader")
         ?? throw new InvalidOperationException("Install the matching scene preview shader bundle.");
 
     internal RaidEditorView()
@@ -59,7 +60,8 @@ internal sealed class RaidEditorView : IDisposable
                 UnityEngine.Object.Destroy(Root);
             }
             // A failed constructor never registered a shared-bundle user.
-            if (!borrowed) _bundle.Unload(true);
+            if (!borrowed)
+                _bundle.Unload(true);
             throw;
         }
         _sharedBundle = _bundle;
@@ -75,26 +77,30 @@ internal sealed class RaidEditorView : IDisposable
     internal void Visible(string name, bool visible)
     {
         var go = _controls[name].gameObject;
-        if (go.activeSelf != visible) go.SetActive(visible);
+        if (go.activeSelf != visible)
+            go.SetActive(visible);
     }
 
     internal void Text(string name, string value)
     {
         var label = Get<Text>(name);
-        if (label.text != value) label.text = value;
+        if (label.text != value)
+            label.text = value;
     }
 
     internal void Caption(string name, string value)
     {
         var label = Get<Button>(name).GetComponentInChildren<Text>(true);
-        if (label.text != value) label.text = value;
+        if (label.text != value)
+            label.text = value;
     }
 
     internal void Highlight(string name, bool selected)
     {
         var graphic = Get<Button>(name).targetGraphic;
         var color = selected ? new Color(.36f, .33f, .23f) : new Color(.18f, .18f, .15f);
-        if (graphic.color != color) graphic.color = color;
+        if (graphic.color != color)
+            graphic.color = color;
     }
 
     internal void Button(string name, Action action)
@@ -120,10 +126,13 @@ internal sealed class RaidEditorView : IDisposable
     {
         get
         {
-            if (!Valid) return false;
-            if (Windows.Interacting) return true;
+            if (!Valid)
+                return false;
+            if (Windows.Interacting)
+                return true;
             foreach (var input in _inputs)
-                if (input && input.gameObject.activeInHierarchy && input.isFocused) return true;
+                if (input && input.gameObject.activeInHierarchy && input.isFocused)
+                    return true;
             return false;
         }
     }

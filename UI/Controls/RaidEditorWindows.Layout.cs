@@ -8,9 +8,13 @@ namespace WTT.Campaigns.UI.Controls;
 public sealed partial class RaidEditorWindows
 {
     public Action? LayoutChanged;
-    private bool _recordDetails, _mapDetails, _recordAvailable, _identityAvailable;
+    private bool _recordDetails,
+        _mapDetails,
+        _recordAvailable,
+        _identityAvailable;
     private readonly List<(RectTransform Rect, Vector2 Position, Vector2 Size, RectTransform Row)> _propertyGeometry = new();
-    private float _contentWidth = -1, _propertyWidth = -1;
+    private float _contentWidth = -1,
+        _propertyWidth = -1;
     private int _contentMask = -1;
     private readonly string[] _categories = { "Maps", "Routes", "Zones", "Bindings", "Captures", "Scene" };
 
@@ -19,14 +23,20 @@ public sealed partial class RaidEditorWindows
         get
         {
             foreach (var panel in _panels.Values)
-                if (panel.Drag.Dragging || panel.Resize.Dragging) return true;
+                if (panel.Drag.Dragging || panel.Resize.Dragging)
+                    return true;
             return false;
         }
     }
 
     private void RegisterWindow(string id, string title, string close, Vector2 minimum)
     {
-        var panel = new Panel { Rect = (RectTransform)_controls[id], Minimum = minimum, Floating = true };
+        var panel = new Panel
+        {
+            Rect = (RectTransform)_controls[id],
+            Minimum = minimum,
+            Floating = true,
+        };
         panel.Drag = _controls[title].gameObject.AddComponent<EditorWindowDrag>();
         panel.Drag.Window = panel.Rect;
         panel.Drag.Boundary = _root;
@@ -54,7 +64,8 @@ public sealed partial class RaidEditorWindows
 
     private void FocusWindow(RectTransform panel)
     {
-        if (_controls["ConflictShield"].gameObject.activeSelf) return;
+        if (_controls["ConflictShield"].gameObject.activeSelf)
+            return;
         panel.SetAsLastSibling();
         _controls["MenuLayer"].SetAsLastSibling();
         _controls["EditorTooltip"].SetAsLastSibling();
@@ -76,9 +87,12 @@ public sealed partial class RaidEditorWindows
             var panel = entry.Value;
             result.Windows[index++] = new EditorWindowPlacement
             {
-                Id = entry.Key, X = panel.Rect.anchoredPosition.x / _root.rect.width,
+                Id = entry.Key,
+                X = panel.Rect.anchoredPosition.x / _root.rect.width,
                 Y = panel.Rect.anchoredPosition.y / _root.rect.height,
-                Width = panel.Rect.sizeDelta.x, Height = panel.Rect.sizeDelta.y, Visible = panel.Visible,
+                Width = panel.Rect.sizeDelta.x,
+                Height = panel.Rect.sizeDelta.y,
+                Visible = panel.Visible,
             };
         }
         return result;
@@ -86,10 +100,12 @@ public sealed partial class RaidEditorWindows
 
     public void RestoreLayout(EditorWindowLayout? layout)
     {
-        if (layout == null || layout.Version != 1 || layout.Windows == null) return;
+        if (layout == null || layout.Version != 1 || layout.Windows == null)
+            return;
         foreach (var saved in layout.Windows)
         {
-            if (saved == null || saved.Id == null || !_panels.TryGetValue(saved.Id, out var panel)) continue;
+            if (saved == null || saved.Id == null || !_panels.TryGetValue(saved.Id, out var panel))
+                continue;
             ApplyPlacement(panel, EditorWindowPlacement.Fit(saved, _root.rect.width, _root.rect.height, panel.Minimum.x, panel.Minimum.y));
         }
         FitContents();
@@ -107,11 +123,25 @@ public sealed partial class RaidEditorWindows
     {
         var rect = panel.Rect;
         panel.Drag.BottomInset = panel.Resize.BottomInset = _capture ? 88 : 40;
-        ApplyPlacement(panel, EditorWindowPlacement.Fit(new EditorWindowPlacement
-        {
-            Id = id, Width = rect.sizeDelta.x, Height = rect.sizeDelta.y, Visible = panel.Visible,
-            X = rect.anchoredPosition.x / _root.rect.width, Y = rect.anchoredPosition.y / _root.rect.height,
-        }, _root.rect.width, _root.rect.height, panel.Minimum.x, panel.Minimum.y, panel.Drag.BottomInset));
+        ApplyPlacement(
+            panel,
+            EditorWindowPlacement.Fit(
+                new EditorWindowPlacement
+                {
+                    Id = id,
+                    Width = rect.sizeDelta.x,
+                    Height = rect.sizeDelta.y,
+                    Visible = panel.Visible,
+                    X = rect.anchoredPosition.x / _root.rect.width,
+                    Y = rect.anchoredPosition.y / _root.rect.height,
+                },
+                _root.rect.width,
+                _root.rect.height,
+                panel.Minimum.x,
+                panel.Minimum.y,
+                panel.Drag.BottomInset
+            )
+        );
     }
 
     private void Place(string id, float x, float y, float width, float height)
@@ -131,16 +161,26 @@ public sealed partial class RaidEditorWindows
         Place("Connection", 198, 4, width - 608, 32);
         _controls["Connection"].GetComponent<Text>().horizontalOverflow = HorizontalWrapMode.Wrap;
         var x = width - 396;
-        foreach (var item in new[] { ("ContextToggle", "Session", 100), ("WindowsToggle", "Windows", 110), ("HelpToggle", "Help", 76), ("CloseEditor", "Close", 80) })
+        foreach (
+            var item in new[]
+            {
+                ("ContextToggle", "Session", 100),
+                ("WindowsToggle", "Windows", 110),
+                ("HelpToggle", "Help", 76),
+                ("CloseEditor", "Close", 80),
+            }
+        )
         {
-            Place(item.Item1, x, 7, item.Item3, 26); x += item.Item3 + 6;
+            Place(item.Item1, x, 7, item.Item3, 26);
+            x += item.Item3 + 6;
             _controls[item.Item1].GetComponentInChildren<Text>(true).text = item.Item2;
         }
         Place("TransformToolbar", 0, 40, width, 40);
         x = 6;
         foreach (var item in new[] { ("Undo", 80), ("Redo", 80), ("Move", 80), ("Rotate", 84), ("Scale", 84), ("Snap", 108) })
         {
-            Place(item.Item1, x, 3, item.Item2, 30); x += item.Item2 + 6;
+            Place(item.Item1, x, 3, item.Item2, 30);
+            x += item.Item2 + 6;
         }
         Place("CameraSpeedLabel", x + 8, 3, 62, 30);
         Place("CameraSlower", x + 72, 3, 26, 30);
@@ -167,13 +207,13 @@ public sealed partial class RaidEditorWindows
     private void CachePropertyGeometry()
     {
         foreach (var id in new[] { "RecordInspector", "MapInspector", "SceneInspector" })
-            foreach (Transform row in _controls[id])
-                foreach (Transform child in row)
-                {
-                    var rect = child as RectTransform;
-                    if (rect && !(child.GetComponent<RawImage>()) && rect!.anchorMin == rect.anchorMax)
-                        _propertyGeometry.Add((rect, rect.anchoredPosition, rect.sizeDelta, (RectTransform)row));
-                }
+        foreach (Transform row in _controls[id])
+        foreach (Transform child in row)
+        {
+            var rect = child as RectTransform;
+            if (rect && !(child.GetComponent<RawImage>()) && rect!.anchorMin == rect.anchorMax)
+                _propertyGeometry.Add((rect, rect.anchoredPosition, rect.sizeDelta, (RectTransform)row));
+        }
     }
 
     private void UpdateDetails()
@@ -187,7 +227,8 @@ public sealed partial class RaidEditorWindows
 
     private void FitContents()
     {
-        if (_panels.Count == 0) return;
+        if (_panels.Count == 0)
+            return;
         var help = _controls["Help"].GetComponent<Text>();
         var helpWidth = _panels["Controls"].Rect.rect.width - 46;
         if (help.rectTransform.sizeDelta.x != helpWidth)
@@ -210,18 +251,28 @@ public sealed partial class RaidEditorWindows
             }
         }
         var width = _panels["Library"].Rect.rect.width;
-        var mask = 0; var count = 0; var bit = 1;
+        var mask = 0;
+        var count = 0;
+        var bit = 1;
         foreach (Transform child in _controls["CreationTools"])
         {
-            if (child.gameObject.activeSelf) { count++; mask |= bit; }
+            if (child.gameObject.activeSelf)
+            {
+                count++;
+                mask |= bit;
+            }
             bit <<= 1;
         }
         var scene = _controls["SceneTabs"].gameObject.activeSelf;
         var filters = _controls["SceneFilters"].gameObject.activeSelf;
-        if (scene) mask |= 1 << 24;
-        if (filters) mask |= 1 << 25;
-        if (_contentWidth == width && _contentMask == mask) return;
-        _contentWidth = width; _contentMask = mask;
+        if (scene)
+            mask |= 1 << 24;
+        if (filters)
+            mask |= 1 << 25;
+        if (_contentWidth == width && _contentMask == mask)
+            return;
+        _contentWidth = width;
+        _contentMask = mask;
         var inner = width - 16;
         Place("CategoryRail", 8, 36, inner, 60);
         for (var i = 0; i < _categories.Length; i++)
@@ -235,27 +286,44 @@ public sealed partial class RaidEditorWindows
         var rows = (count + 2) / 3;
         var height = rows * 34;
         var actions = (RectTransform)_controls["CreationTools"];
-        actions.anchorMin = new Vector2(0, 0); actions.anchorMax = new Vector2(1, 0); actions.pivot = new Vector2(.5f, 0);
-        actions.sizeDelta = new Vector2(-16, height); actions.anchoredPosition = new Vector2(0, 68);
+        actions.anchorMin = new Vector2(0, 0);
+        actions.anchorMax = new Vector2(1, 0);
+        actions.pivot = new Vector2(.5f, 0);
+        actions.sizeDelta = new Vector2(-16, height);
+        actions.anchoredPosition = new Vector2(0, 68);
         var index = 0;
         foreach (Transform child in actions)
         {
-            if (!child.gameObject.activeSelf) continue;
+            if (!child.gameObject.activeSelf)
+                continue;
             var rect = (RectTransform)child;
-            rect.anchorMin = rect.anchorMax = new Vector2(0, 1); rect.pivot = new Vector2(.5f, .5f);
+            rect.anchorMin = rect.anchorMax = new Vector2(0, 1);
+            rect.pivot = new Vector2(.5f, .5f);
             var buttonWidth = (inner - 8) / 3;
             rect.sizeDelta = new Vector2(buttonWidth, 30);
             rect.anchoredPosition = new Vector2(index % 3 * (buttonWidth + 4) + buttonWidth / 2, -(index / 3 * 34 + 15));
             index++;
         }
-        UiElements.Stretch((RectTransform)_controls["LibraryScroll"], 8, 8, filters ? 218 : scene ? 182 : 146, 78 + height);
+        UiElements.Stretch(
+            (RectTransform)_controls["LibraryScroll"],
+            8,
+            8,
+            filters ? 218
+                : scene ? 182
+                : 146,
+            78 + height
+        );
         var paging = (RectTransform)_controls["Paging"];
-        paging.anchorMin = Vector2.zero; paging.anchorMax = new Vector2(1, 0);
-        paging.pivot = new Vector2(.5f, 0); paging.sizeDelta = new Vector2(0, 38); paging.anchoredPosition = new Vector2(0, 8);
+        paging.anchorMin = Vector2.zero;
+        paging.anchorMax = new Vector2(1, 0);
+        paging.pivot = new Vector2(.5f, 0);
+        paging.sizeDelta = new Vector2(0, 38);
+        paging.anchoredPosition = new Vector2(0, 8);
         Place("Previous", 8, 2, (inner - 4) / 2, 30);
         Place("Next", 12 + (inner - 4) / 2, 2, (inner - 4) / 2, 30);
         var counter = (RectTransform)_controls["LibraryCount"];
-        counter.anchorMin = counter.anchorMax = new Vector2(.5f, 0); counter.anchoredPosition = new Vector2(0, 56);
+        counter.anchorMin = counter.anchorMax = new Vector2(.5f, 0);
+        counter.anchoredPosition = new Vector2(0, 56);
         counter.sizeDelta = new Vector2(inner, 22);
         counter.GetComponent<Text>().alignment = TextAnchor.MiddleCenter;
     }

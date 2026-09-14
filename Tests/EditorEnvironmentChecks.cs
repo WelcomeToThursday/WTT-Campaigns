@@ -67,15 +67,21 @@ internal static class EditorEnvironmentChecks
             "Sky preview can hold time without changing the raid clock."
         );
         var environment = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorEnvironment");
-        Require(Calls(types["DisablerTerrainCullingObject"].Methods.Single(m => m.Name == "SetComponentsEnabled"), "set_drawHeightmap")
-            && Calls(types["DisablerCullingObjectBase"].Methods.Single(m => m.Name == "ManualUpdate"), "get_HasEntered"),
-            "Installed terrain visibility is controlled by player triggers separately from camera culling.");
-        Require(Calls(types["TerrainLod"].Methods.Single(m => m.Name == "set_TerrainIsVisible"), "SetActive")
-            && types["TerrainLod"].Fields.Single(f => f.Name == "_terrainLod").IsPublic,
-            "Terrain visibility must switch its native proxy as well as heightmap drawing.");
-        Require(Calls(environment.Methods.Single(m => m.Name == "Sync"), "set_useOcclusionCulling")
-            && Calls(environment.Methods.Single(m => m.Name == "Sync"), "Show"),
-            "Every editor sampling pass must restore camera occlusion and terrain visibility.");
+        Require(
+            Calls(types["DisablerTerrainCullingObject"].Methods.Single(m => m.Name == "SetComponentsEnabled"), "set_drawHeightmap")
+                && Calls(types["DisablerCullingObjectBase"].Methods.Single(m => m.Name == "ManualUpdate"), "get_HasEntered"),
+            "Installed terrain visibility is controlled by player triggers separately from camera culling."
+        );
+        Require(
+            Calls(types["TerrainLod"].Methods.Single(m => m.Name == "set_TerrainIsVisible"), "SetActive")
+                && types["TerrainLod"].Fields.Single(f => f.Name == "_terrainLod").IsPublic,
+            "Terrain visibility must switch its native proxy as well as heightmap drawing."
+        );
+        Require(
+            Calls(environment.Methods.Single(m => m.Name == "Sync"), "set_useOcclusionCulling")
+                && Calls(environment.Methods.Single(m => m.Name == "Sync"), "Show"),
+            "Every editor sampling pass must restore camera occlusion and terrain visibility."
+        );
         Require(
             Calls(environment.Methods.Single(m => m.Name == "RestoreTime"), "CalculateTaxonomyDate"),
             "Reset returns to current native raid time."

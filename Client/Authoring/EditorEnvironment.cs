@@ -37,7 +37,8 @@ internal sealed partial class EditorEnvironment : IDisposable
         SceneManager.sceneLoaded += SceneLoaded;
         try
         {
-            if (EditorMode.Ready) _sceneVisibility = new EditorSceneVisibility(hidden);
+            if (EditorMode.Ready)
+                _sceneVisibility = new EditorSceneVisibility(hidden);
             Sync();
         }
         catch
@@ -173,13 +174,24 @@ internal sealed partial class EditorEnvironment : IDisposable
         );
         harmony.Patch(
             AccessTools.Method(typeof(PerfectCullingCrossSceneSampler), nameof(PerfectCullingCrossSceneSampler.Update)),
-            prefix: before, postfix: after
+            prefix: before,
+            postfix: after
         );
-        harmony.Patch(AccessTools.Method(typeof(PerfectCullingCamera), nameof(PerfectCullingCamera.CamPreCull)), prefix: before, postfix: after);
+        harmony.Patch(
+            AccessTools.Method(typeof(PerfectCullingCamera), nameof(PerfectCullingCamera.CamPreCull)),
+            prefix: before,
+            postfix: after
+        );
         harmony.Patch(AccessTools.Method(typeof(CullingManager), nameof(CullingManager.CameraRender)), prefix: before, postfix: after);
-        harmony.Patch(AccessTools.Method(typeof(CullingManager), nameof(CullingManager.ScheduleCullingJobs)), prefix: before, postfix: after);
-        harmony.Patch(AccessTools.Method(typeof(OcclusionCullingSwitcher), nameof(OcclusionCullingSwitcher.UpdateCameraSettings)),
-            postfix: new HarmonyMethod(typeof(EditorEnvironment), nameof(AfterCameraSettings)));
+        harmony.Patch(
+            AccessTools.Method(typeof(CullingManager), nameof(CullingManager.ScheduleCullingJobs)),
+            prefix: before,
+            postfix: after
+        );
+        harmony.Patch(
+            AccessTools.Method(typeof(OcclusionCullingSwitcher), nameof(OcclusionCullingSwitcher.UpdateCameraSettings)),
+            postfix: new HarmonyMethod(typeof(EditorEnvironment), nameof(AfterCameraSettings))
+        );
         harmony.Patch(
             AccessTools.Method(typeof(PerfectCullingCamera), nameof(PerfectCullingCamera.Update)),
             postfix: new HarmonyMethod(typeof(EditorEnvironment), nameof(AfterObserver))

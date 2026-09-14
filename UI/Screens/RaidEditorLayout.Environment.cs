@@ -11,7 +11,8 @@ public static partial class RaidEditorLayout
     {
         // Environment may already be a floating tool instead of a menu child.
         foreach (var child in root.GetComponentsInChildren<Transform>(true))
-            if (child.name == "EnvironmentMenu") return;
+            if (child.name == "EnvironmentMenu")
+                return;
         var menus = root.transform.Find("MenuLayer");
         var session = (RectTransform)menus.Find("ContextMenu");
         session.sizeDelta = new Vector2(310, 106);

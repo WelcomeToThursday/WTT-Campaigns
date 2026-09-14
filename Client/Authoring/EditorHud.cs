@@ -8,7 +8,10 @@ internal sealed class EditorHud : IDisposable
     private sealed class State
     {
         internal readonly CanvasGroup Group;
-        private readonly bool _owned, _interactable, _raycasts, _ignoreParents;
+        private readonly bool _owned,
+            _interactable,
+            _raycasts,
+            _ignoreParents;
         private readonly float _alpha;
 
         internal State(CanvasGroup group, bool owned)
@@ -23,7 +26,8 @@ internal sealed class EditorHud : IDisposable
 
         internal void Hide()
         {
-            if (!Group) return;
+            if (!Group)
+                return;
             Group.alpha = 0;
             Group.interactable = false;
             Group.blocksRaycasts = false;
@@ -32,12 +36,14 @@ internal sealed class EditorHud : IDisposable
 
         internal void Restore()
         {
-            if (!Group) return;
+            if (!Group)
+                return;
             Group.alpha = _alpha;
             Group.interactable = _interactable;
             Group.blocksRaycasts = _raycasts;
             Group.ignoreParentGroups = _ignoreParents;
-            if (_owned) UnityEngine.Object.Destroy(Group);
+            if (_owned)
+                UnityEngine.Object.Destroy(Group);
         }
     }
 
@@ -46,26 +52,31 @@ internal sealed class EditorHud : IDisposable
 
     internal void Suppress(Component root)
     {
-        if (!root) return;
+        if (!root)
+            return;
         SuppressObject(root.gameObject);
         root.GetComponentsInChildren(true, _groups);
         // Include children that otherwise ignore their hidden parent's CanvasGroup.
         foreach (var group in _groups)
-            if (group) SuppressObject(group.gameObject);
+            if (group)
+                SuppressObject(group.gameObject);
         _groups.Clear();
     }
 
     private void SuppressObject(GameObject target)
     {
-        if (!target) return;
+        if (!target)
+            return;
         if (!_states.TryGetValue(target, out var state) || !state.Group)
         {
             // Reuse the native group. AddComponent can return null; never dereference
             // it unchecked or repeatedly add groups to an already animated panel.
             var group = target.GetComponent<CanvasGroup>();
             var owned = !group;
-            if (owned) group = target.AddComponent<CanvasGroup>();
-            if (!group) return;
+            if (owned)
+                group = target.AddComponent<CanvasGroup>();
+            if (!group)
+                return;
             _states[target] = state = new State(group, owned);
         }
         state.Hide();
@@ -73,7 +84,8 @@ internal sealed class EditorHud : IDisposable
 
     public void Dispose()
     {
-        foreach (var state in _states.Values) state.Restore();
+        foreach (var state in _states.Values)
+            state.Restore();
         _states.Clear();
         _groups.Clear();
     }

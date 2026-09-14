@@ -24,7 +24,8 @@ internal sealed class EditorTriggerVisibility : IDisposable
 
     internal void Observe(DisablerCullingObject owner)
     {
-        if (!owner || _applying) return;
+        if (!owner || _applying)
+            return;
         _applying = true;
         try
         {
@@ -35,10 +36,12 @@ internal sealed class EditorTriggerVisibility : IDisposable
             Stop(owner, InverseWorker);
             Capture(owner._componentsToTurnOff);
             Capture(owner._compsToTurnOffWhoIgnoreInversedColliders);
-            if (owner._gameObjectsToTurnOff == null) return;
+            if (owner._gameObjectsToTurnOff == null)
+                return;
             foreach (var target in owner._gameObjectsToTurnOff)
             {
-                if (!target || _objects.ContainsKey(target)) continue;
+                if (!target || _objects.ContainsKey(target))
+                    continue;
                 _objects.Add(target, target.activeSelf);
                 if (!target.activeSelf && !_hidden(target))
                 {
@@ -47,7 +50,10 @@ internal sealed class EditorTriggerVisibility : IDisposable
                 }
             }
         }
-        finally { _applying = false; }
+        finally
+        {
+            _applying = false;
+        }
     }
 
     private static FieldInfo WorkerField(string name) =>
@@ -56,20 +62,24 @@ internal sealed class EditorTriggerVisibility : IDisposable
 
     private static void Stop(DisablerCullingObject owner, FieldInfo field)
     {
-        if (field.GetValue(owner) is not IEnumerator worker) return;
+        if (field.GetValue(owner) is not IEnumerator worker)
+            return;
         owner.StopCoroutine(worker);
         field.SetValue(owner, null);
     }
 
     private void Capture(List<Component>? targets)
     {
-        if (targets == null) return;
+        if (targets == null)
+            return;
         foreach (var target in targets)
         {
-            if (!target || _components.ContainsKey(target)) continue;
+            if (!target || _components.ContainsKey(target))
+                continue;
             var enabled = target.IsEnabledUniversal();
             _components.Add(target, enabled);
-            if (!enabled && target.SetEnabledUniversal(true)) RevealedCount++;
+            if (!enabled && target.SetEnabledUniversal(true))
+                RevealedCount++;
         }
     }
 
@@ -79,14 +89,27 @@ internal sealed class EditorTriggerVisibility : IDisposable
         // renderer decision when both systems own the same renderer.
         foreach (var entry in _components)
             if (entry.Key)
-                try { entry.Key.SetEnabledUniversal(entry.Value); }
-                catch (Exception error) { Plugin.Error(error); }
+                try
+                {
+                    entry.Key.SetEnabledUniversal(entry.Value);
+                }
+                catch (Exception error)
+                {
+                    Plugin.Error(error);
+                }
         foreach (var entry in _objects)
             if (entry.Key && !_hidden(entry.Key))
-                try { entry.Key.SetActive(entry.Value); }
-                catch (Exception error) { Plugin.Error(error); }
+                try
+                {
+                    entry.Key.SetActive(entry.Value);
+                }
+                catch (Exception error)
+                {
+                    Plugin.Error(error);
+                }
         foreach (var owner in _switches)
-            if (owner) owner.ForceUpdate();
+            if (owner)
+                owner.ForceUpdate();
         _components.Clear();
         _objects.Clear();
         _switches.Clear();

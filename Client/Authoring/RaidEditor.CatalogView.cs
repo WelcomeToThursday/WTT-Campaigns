@@ -29,7 +29,13 @@ public sealed partial class RaidEditor
             {
                 view.Visible("SceneIcon" + i, false);
                 view.Visible("SceneIconStatus" + i, false);
-                WTT.Campaigns.UI.Controls.UiElements.Stretch(view.Get<Button>("Row" + i).GetComponentInChildren<Text>(true).rectTransform, 8, 8, 2, 2);
+                WTT.Campaigns.UI.Controls.UiElements.Stretch(
+                    view.Get<Button>("Row" + i).GetComponentInChildren<Text>(true).rectTransform,
+                    8,
+                    8,
+                    2,
+                    2
+                );
             }
             return;
         }
@@ -47,10 +53,13 @@ public sealed partial class RaidEditor
         view.Get<Button>("SceneRestore").interactable = CanSceneEdit && MapPoint is MapObjectEdit { Operation: "Move" or "Hide" };
         view.Get<Button>("SceneRebind").interactable = CanSceneEdit && MapPoint is MapObjectEdit;
         foreach (var tool in new[] { "Move", "Rotate", "Scale" })
-            view.Get<Button>(tool).interactable =
-                CanTransformScene(tool);
+            view.Get<Button>(tool).interactable = CanTransformScene(tool);
         var name = catalog
-            ? (_sceneFilter == "Props" && _sceneRoots.TryGetValue(_catalogSelection, out var source) && source ? source.name : _selectedCatalogEntry?.Name) ?? "Select an item"
+            ? (
+                _sceneFilter == "Props" && _sceneRoots.TryGetValue(_catalogSelection, out var source) && source
+                    ? source.name
+                    : _selectedCatalogEntry?.Name
+            ) ?? "Select an item"
             : point?.Name ?? (_picked ? _picked!.name : "Select an object");
         view.Text("SceneHeading", name);
         view.Text(
@@ -105,19 +114,22 @@ public sealed partial class RaidEditor
 
     private sealed class ThumbnailJob
     {
-        internal string Id = "", Key = "";
+        internal string Id = "",
+            Key = "";
         internal Transform? Source;
         internal WTT.Campaigns.Shared.Authoring.SceneCatalogEntry? Entry;
     }
 
     private void PresentSceneThumbnails()
     {
-        if (_view?.Valid != true || !SceneWorkspace) return;
+        if (_view?.Valid != true || !SceneWorkspace)
+            return;
         var view = _view;
         var catalog = _sceneTab == "Catalog";
         var wanted = new HashSet<string> { _sceneFilter + ":" + _catalogSelection };
         if (catalog)
-            for (var i = LibraryOffset; i < Math.Min(_rows.Count, LibraryOffset + 10); i++) wanted.Add(_sceneFilter + ":" + _rows[i].Id);
+            for (var i = LibraryOffset; i < Math.Min(_rows.Count, LibraryOffset + 10); i++)
+                wanted.Add(_sceneFilter + ":" + _rows[i].Id);
         for (var i = _thumbnailQueue.Count - 1; i >= 0; i--)
             if (!catalog || !wanted.Contains(_thumbnailQueue[i].Key))
             {
@@ -145,7 +157,10 @@ public sealed partial class RaidEditor
             SetThumbnail(view.Get<RawImage>("SceneIcon" + i), key);
             view.Text("SceneIconStatus" + i, _previews.Error(key).Length > 0 ? "N/A" : "…");
             view.Visible("SceneIconStatus" + i, _previews.Get(key) == null);
-            view.Windows.SetTooltip("Row" + i, _rows[index].Label + (_previews.Error(key) is { Length: > 0 } error ? "\nPreview unavailable: " + error : ""));
+            view.Windows.SetTooltip(
+                "Row" + i,
+                _rows[index].Label + (_previews.Error(key) is { Length: > 0 } error ? "\nPreview unavailable: " + error : "")
+            );
         }
         var selectedKey = _sceneFilter + ":" + _catalogSelection;
         SetThumbnail(view.Get<RawImage>("ScenePreview"), selectedKey);
@@ -158,7 +173,8 @@ public sealed partial class RaidEditor
     private void RetryThumbnail()
     {
         var key = _sceneFilter + ":" + _catalogSelection;
-        if (_previews.Error(key).Length == 0) return;
+        if (_previews.Error(key).Length == 0)
+            return;
         _previews.Retry(key);
         RequestThumbnail(_catalogSelection, key);
         PresentSceneThumbnails();
@@ -166,13 +182,19 @@ public sealed partial class RaidEditor
 
     private void RequestThumbnail(string id, string key)
     {
-        if (!_previews.Request(key)) return;
+        if (!_previews.Request(key))
+            return;
         var job = new ThumbnailJob { Id = id, Key = key };
-        if (_sceneFilter == "Props") _sceneRoots.TryGetValue(id, out job.Source);
+        if (_sceneFilter == "Props")
+            _sceneRoots.TryGetValue(id, out job.Source);
         else
         {
-            var entry = _selectedCatalogEntry?.Id == id ? _selectedCatalogEntry : _catalog?.Entries.AsValueEnumerable().FirstOrDefault(e => e.Id == id);
-            if (entry != null) job.Entry = RaidEditorSession.Copy(entry);
+            var entry =
+                _selectedCatalogEntry?.Id == id
+                    ? _selectedCatalogEntry
+                    : _catalog?.Entries.AsValueEnumerable().FirstOrDefault(e => e.Id == id);
+            if (entry != null)
+                job.Entry = RaidEditorSession.Copy(entry);
         }
         if (!job.Source && job.Entry == null)
         {
@@ -180,7 +202,8 @@ public sealed partial class RaidEditor
             return;
         }
         _thumbnailQueue.Add(job);
-        if (!_thumbnailWorker) _ = RunThumbnailQueue();
+        if (!_thumbnailWorker)
+            _ = RunThumbnailQueue();
     }
 
     private async Task RunThumbnailQueue()
@@ -194,10 +217,12 @@ public sealed partial class RaidEditor
             {
                 // At most one prop render in a frame, regardless of how many rows requested it.
                 await UniTask.NextFrame(cancellationToken: token);
-                if (_thumbnailQueue.Count == 0) break;
+                if (_thumbnailQueue.Count == 0)
+                    break;
                 var selected = _sceneFilter + ":" + _catalogSelection;
                 var index = _thumbnailQueue.FindIndex(j => j.Key == selected);
-                if (index < 0) index = 0;
+                if (index < 0)
+                    index = 0;
                 var job = _thumbnailQueue[index];
                 _thumbnailQueue.RemoveAt(index);
                 Texture? texture = null;
@@ -220,30 +245,52 @@ public sealed partial class RaidEditor
                         {
                             texture = icon.Sprite.texture;
                             var rect = icon.Sprite.textureRect;
-                            uv = new Rect(rect.x / texture.width, rect.y / texture.height, rect.width / texture.width, rect.height / texture.height);
+                            uv = new Rect(
+                                rect.x / texture.width,
+                                rect.y / texture.height,
+                                rect.width / texture.width,
+                                rect.height / texture.height
+                            );
                         }
                     }
                     token.ThrowIfCancellationRequested();
-                    if (!texture) throw new InvalidOperationException("No visible image was returned. Retry when the object is loaded.");
-                    _previews.Complete(epoch, job.Key, new ThumbnailImage { Texture = texture!, Uv = uv, Owned = owned }, selected);
+                    if (!texture)
+                        throw new InvalidOperationException("No visible image was returned. Retry when the object is loaded.");
+                    _previews.Complete(
+                        epoch,
+                        job.Key,
+                        new ThumbnailImage
+                        {
+                            Texture = texture!,
+                            Uv = uv,
+                            Owned = owned,
+                        },
+                        selected
+                    );
                     owned = false;
                 }
-                catch (OperationCanceledException) { throw; }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
                 catch (Exception e)
                 {
                     _previews.Fail(epoch, job.Key, e.Message);
                 }
                 finally
                 {
-                    if (owned && texture) Destroy(texture);
+                    if (owned && texture)
+                        Destroy(texture);
                 }
-                if (epoch == _previews.Generation) PresentSceneThumbnails();
+                if (epoch == _previews.Generation)
+                    PresentSceneThumbnails();
             }
         }
         catch (OperationCanceledException) { }
         finally
         {
-            if (epoch == _previews.Generation) _thumbnailWorker = false;
+            if (epoch == _previews.Generation)
+                _thumbnailWorker = false;
         }
     }
 
@@ -259,9 +306,12 @@ public sealed partial class RaidEditor
         {
             model.transform.SetPositionAndRotation(new Vector3(0, -10000, 0), Quaternion.identity);
             foreach (var lod in model.GetComponentsInChildren<LODGroup>(true))
-                if (lod && lod.enabled && lod.gameObject.activeInHierarchy) lod.ForceLOD(0);
-            foreach (var t in model.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = 31;
-            if (!SceneBounds.TryGet(model.transform, out var bounds)) throw new InvalidOperationException("Prop has no visible mesh.");
+                if (lod && lod.enabled && lod.gameObject.activeInHierarchy)
+                    lod.ForceLOD(0);
+            foreach (var t in model.GetComponentsInChildren<Transform>(true))
+                t.gameObject.layer = 31;
+            if (!SceneBounds.TryGet(model.transform, out var bounds))
+                throw new InvalidOperationException("Prop has no visible mesh.");
             foreach (var renderer in model.GetComponentsInChildren<Renderer>())
             {
                 var originals = renderer.sharedMaterials;
@@ -304,7 +354,8 @@ public sealed partial class RaidEditor
         }
         catch
         {
-            if (texture) Destroy(texture);
+            if (texture)
+                Destroy(texture);
             throw;
         }
         finally
@@ -314,7 +365,8 @@ public sealed partial class RaidEditor
             rig.SetActive(false);
             Destroy(model);
             Destroy(rig);
-            foreach (var material in materials) Destroy(material);
+            foreach (var material in materials)
+                Destroy(material);
             rt.Release();
             Destroy(rt);
         }

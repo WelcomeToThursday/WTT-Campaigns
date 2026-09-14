@@ -12,10 +12,13 @@ public sealed partial class RaidEditor
 {
     private int _presentedIndexCount = -1;
     private string _passiveState = "";
+
     private void RefreshPassive()
     {
-        if (_view?.Valid != true || _session == null) return;
-        var state = $"{_session.ContentVersion}|{_session.Status}|{_notice}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{_placementLifetime != null}|{_view.Windows.HasMenu}";
+        if (_view?.Valid != true || _session == null)
+            return;
+        var state =
+            $"{_session.ContentVersion}|{_session.Status}|{_notice}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{_placementLifetime != null}|{_view.Windows.HasMenu}";
         if (_presentedIndexCount != _sceneIndex.Count || state != _passiveState)
         {
             _presentedIndexCount = _sceneIndex.Count;
@@ -58,7 +61,8 @@ public sealed partial class RaidEditor
             point is SeasonZone && Binding != null,
             SceneWorkspace
         );
-        if (!SceneWorkspace) view.Windows.Select(_mode, selection);
+        if (!SceneWorkspace)
+            view.Windows.Select(_mode, selection);
         view.Text(
             "LibraryCount",
             _rows.Count == 0 ? "No matching records" : $"{_rows.Count} records · Page {_page + 1} / {(LibraryTotal + 9) / 10}"
@@ -92,9 +96,10 @@ public sealed partial class RaidEditor
         foreach (var tool in new[] { "Move", "Rotate", "Scale" })
         {
             view.Highlight(tool, _tool == tool);
-            if (!SceneWorkspace) view.Get<Button>(tool).interactable =
-                point != null
-                && (tool != "Scale" || point is SeasonZone || point is MapVolume || point is MapObjectEdit { Operation: "Copy" });
+            if (!SceneWorkspace)
+                view.Get<Button>(tool).interactable =
+                    point != null
+                    && (tool != "Scale" || point is SeasonZone || point is MapVolume || point is MapObjectEdit { Operation: "Copy" });
         }
         view.Highlight("Snap", _snap);
         view.Get<Button>("Parent").interactable = _picked && _picked!.parent;
@@ -146,7 +151,8 @@ public sealed partial class RaidEditor
                 "Redo",
             }
         )
-            if (!SceneWorkspace || name != "MapAtPlayer") view.Get<Button>(name).interactable = canEdit;
+            if (!SceneWorkspace || name != "MapAtPlayer")
+                view.Get<Button>(name).interactable = canEdit;
         foreach (
             var name in new[]
             {
@@ -168,7 +174,7 @@ public sealed partial class RaidEditor
         view.Get<Button>("MapLater").interactable = canEdit && routeIndex >= 0 && routeIndex < Layout!.Checkpoints.Count - 1;
         if (_mode == "Routes")
             view.Get<Button>("MapCopy").interactable = canEdit && routeIndex >= 0;
-        view.Get<Button>("EditorWalk").interactable = canEdit && Layout != null && !_walkRequested
-            && MapLayoutRules.Errors(Layout, true).Count == 0;
+        view.Get<Button>("EditorWalk").interactable =
+            canEdit && Layout != null && !_walkRequested && MapLayoutRules.Errors(Layout, true).Count == 0;
     }
 }

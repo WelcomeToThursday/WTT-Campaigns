@@ -50,7 +50,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
             var node = pending.Pop();
             if (++nodes > 256 || node.childCount > 64)
                 return "Select an individual prop instead of an aggregate scene group.";
-            for (var i = 0; i < node.childCount; i++) pending.Push(node.GetChild(i));
+            for (var i = 0; i < node.childCount; i++)
+                pending.Push(node.GetChild(i));
         }
         if (
             t.GetComponentsInParent<MonoBehaviour>(true)
@@ -73,13 +74,16 @@ internal sealed partial class MapSceneAdapter : IDisposable
         {
             if (!c)
                 return "The prop contains a missing component.";
-            if (c is Transform or MeshFilter or MeshRenderer or LODGroup or BoxCollider or SphereCollider or CapsuleCollider or MeshCollider)
+            if (
+                c is Transform or MeshFilter or MeshRenderer or LODGroup or BoxCollider or SphereCollider or CapsuleCollider or MeshCollider
+            )
                 continue;
             if (c.GetType().FullName == "EFT.Ballistics.BallisticCollider")
                 continue;
             if (ScenePropSupport.PreservedComponent(c.GetType().FullName ?? ""))
             {
-                if (copy) return "This original can be moved, rotated and resized, but copying " + c.GetType().Name + " is not supported.";
+                if (copy)
+                    return "This original can be moved, rotated and resized, but copying " + c.GetType().Name + " is not supported.";
                 continue;
             }
             return ScenePropSupport.Restriction(c.GetType().FullName ?? c.GetType().Name);
@@ -126,7 +130,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
     private static Transform Resolve(MapTarget target, bool door)
     {
-        if (target.Kind != "Prop") return ResolveNative(target);
+        if (target.Kind != "Prop")
+            return ResolveNative(target);
         var matches = Resources
             .FindObjectsOfTypeAll<Transform>()
             .AsValueEnumerable()
@@ -146,12 +151,21 @@ internal sealed partial class MapSceneAdapter : IDisposable
         FlushVisuals();
         var errors = MapLayoutRules.Errors(layout, true);
         errors.AddRange(TargetErrors);
-        if (Loading) errors.Add("Wait for item models to finish loading.");
-        if (errors.Count > 0) throw new InvalidOperationException(string.Join("\n", errors));
+        if (Loading)
+            errors.Add("Wait for item models to finish loading.");
+        if (errors.Count > 0)
+            throw new InvalidOperationException(string.Join("\n", errors));
         foreach (var barrier in layout.Barriers)
         {
             var go = Volume(barrier, false);
-            _transaction.Apply(() => { }, () => { if (go) Remove(go); });
+            _transaction.Apply(
+                () => { },
+                () =>
+                {
+                    if (go)
+                        Remove(go);
+                }
+            );
         }
         ClearGhosts();
         Physics.SyncTransforms();
@@ -167,7 +181,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
     private static GameObject CopyProp(Transform source, bool collision)
     {
         var error = Supported(source, copy: true);
-        if (error.Length > 0) throw new InvalidOperationException(error);
+        if (error.Length > 0)
+            throw new InvalidOperationException(error);
         var root = new GameObject("CampaignEditor prop");
         try
         {
@@ -236,9 +251,11 @@ internal sealed partial class MapSceneAdapter : IDisposable
                 var copy = copies[group.transform].gameObject.AddComponent<LODGroup>();
                 var lods = group.GetLODs();
                 for (var i = 0; i < lods.Length; i++)
-                    lods[i].renderers = lods[i].renderers.AsValueEnumerable()
+                    lods[i].renderers = lods[i]
+                        .renderers.AsValueEnumerable()
                         .Where(r => r && copies.ContainsKey(r.transform))
-                        .Select(r => copies[r.transform].GetComponent<Renderer>()).ToArray();
+                        .Select(r => copies[r.transform].GetComponent<Renderer>())
+                        .ToArray();
                 copy.SetLODs(lods);
                 copy.localReferencePoint = group.localReferencePoint;
                 copy.size = group.size;
@@ -301,7 +318,6 @@ internal sealed partial class MapSceneAdapter : IDisposable
                 .Concat(layout.Exit == null ? Array.Empty<MapVolume>() : new[] { layout.Exit })
         )
             _ghosts.Add(Volume(volume, true));
-
     }
 
     private static void Remove(GameObject value)
@@ -322,8 +338,14 @@ internal sealed partial class MapSceneAdapter : IDisposable
     {
         try
         {
-            try { DisposeEdits(); }
-            finally { _transaction.Dispose(); }
+            try
+            {
+                DisposeEdits();
+            }
+            finally
+            {
+                _transaction.Dispose();
+            }
         }
         finally
         {

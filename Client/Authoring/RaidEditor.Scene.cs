@@ -9,12 +9,14 @@ public sealed partial class RaidEditor
 {
     private void RefreshLoadedScenes()
     {
-        if (_session == null) return;
+        if (_session == null)
+            return;
         var scenes = new HashSet<string>(StringComparer.Ordinal);
         for (var i = 0; i < SceneManager.sceneCount; i++)
         {
             var scene = SceneManager.GetSceneAt(i);
-            if (scene.isLoaded) scenes.Add(scene.name);
+            if (scene.isLoaded)
+                scenes.Add(scene.name);
         }
         // EFT pools raid geometry in the persistent scene, which SceneManager's
         // ordinary scene enumeration omits. Include it only from a live raid object.
@@ -133,7 +135,8 @@ public sealed partial class RaidEditor
                 if (node)
                 {
                     var renderer = node.GetComponent<Renderer>();
-                    if (renderer && renderer is MeshRenderer or SkinnedMeshRenderer) _sceneRenderers.Add(renderer);
+                    if (renderer && renderer is MeshRenderer or SkinnedMeshRenderer)
+                        _sceneRenderers.Add(renderer);
                     DiscoverSceneNode(node);
                 }
                 if (node && !_sceneIndex.Add(node, node.name))

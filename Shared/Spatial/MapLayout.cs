@@ -1,5 +1,5 @@
-using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Native;
+using WTT.Campaigns.Shared.Seasons;
 
 namespace WTT.Campaigns.Shared.Spatial;
 
@@ -37,11 +37,19 @@ public static class SceneTargetRules
 {
     public static bool Matches(MapTarget saved, MapTarget actual)
     {
-        if (saved.Kind != actual.Kind || saved.Scene != actual.Scene || saved.Template != actual.Template
-            || saved.Fingerprint != actual.Fingerprint) return false;
-        if (saved.NativeId.Length > 0) return saved.NativeId == actual.NativeId;
-        if (saved.Kind != "Loot") return saved.Path == actual.Path;
-        if (saved.Origin?.Finite != true || actual.Origin?.Finite != true) return false;
+        if (
+            saved.Kind != actual.Kind
+            || saved.Scene != actual.Scene
+            || saved.Template != actual.Template
+            || saved.Fingerprint != actual.Fingerprint
+        )
+            return false;
+        if (saved.NativeId.Length > 0)
+            return saved.NativeId == actual.NativeId;
+        if (saved.Kind != "Loot")
+            return saved.Path == actual.Path;
+        if (saved.Origin?.Finite != true || actual.Origin?.Finite != true)
+            return false;
         var x = saved.Origin.X - actual.Origin.X;
         var y = saved.Origin.Y - actual.Origin.Y;
         var z = saved.Origin.Z - actual.Origin.Z;
@@ -85,8 +93,11 @@ public sealed class MapVolume : SpatialCapture
 
 public static class MapLayoutRules
 {
-    public static bool NeedsFormat5(MapLayout layout) => layout.Loot?.Count > 0 || layout.Objects?.Any(o => o?.Target?.Kind != "Prop") == true;
+    public static bool NeedsFormat5(MapLayout layout) =>
+        layout.Loot?.Count > 0 || layout.Objects?.Any(o => o?.Target?.Kind != "Prop") == true;
+
     public static int Format(IEnumerable<MapLayout> layouts) => layouts.Any(NeedsFormat5) ? 5 : 4;
+
     public static IEnumerable<SpatialCapture> Points(MapLayout layout) =>
         layout
             .Objects.Cast<SpatialCapture>()
@@ -97,7 +108,9 @@ public static class MapLayoutRules
             .Concat(layout.Exit == null ? Array.Empty<SpatialCapture>() : new[] { layout.Exit });
 
     public static IEnumerable<string> OwnedIds(MapLayout layout) =>
-        new[] { layout.Id }.Concat(Points(layout).Select(p => p.Id)).Concat(layout.Doors.Select(d => d.Id))
+        new[] { layout.Id }
+            .Concat(Points(layout).Select(p => p.Id))
+            .Concat(layout.Doors.Select(d => d.Id))
             .Concat(layout.Loot.SelectMany(l => l.Items ?? new()).Select(i => i.Id));
 
     public static bool Positive(SpatialVector? v) => v?.Finite == true && v.X > 0 && v.Y > 0 && v.Z > 0;
@@ -174,7 +187,10 @@ public static class MapLayoutRules
         foreach (var target in layout.Objects.Select(o => o.Target).Where(t => t != null && t.Kind != "Prop"))
         {
             Need(target.Origin?.Finite == true, "Invalid original loot position.");
-            Need(target.Template != null && target.Template.Length <= 120 && target.NativeId != null && target.NativeId.Length <= 256, "Invalid native target identity.");
+            Need(
+                target.Template != null && target.Template.Length <= 120 && target.NativeId != null && target.NativeId.Length <= 256,
+                "Invalid native target identity."
+            );
             Need(target.Kind != "Container" || !string.IsNullOrWhiteSpace(target.NativeId), "Containers require a stable native identity.");
         }
         var targets = layout

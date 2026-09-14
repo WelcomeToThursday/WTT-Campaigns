@@ -19,16 +19,27 @@ internal static class EditorHudChecks
         native.ignoreParentGroups = true;
         using var hud = new EditorHud();
         hud.Suppress(root.Transform);
-        check(child.AddAttempts == 1 && root.AddAttempts == 1, "Existing animated HUD groups are reused without duplicate AddComponent calls");
-        check(native.alpha == 0 && !native.blocksRaycasts && !native.ignoreParentGroups, "Independent HUD panels inherit editor suppression");
+        check(
+            child.AddAttempts == 1 && root.AddAttempts == 1,
+            "Existing animated HUD groups are reused without duplicate AddComponent calls"
+        );
+        check(
+            native.alpha == 0 && !native.blocksRaycasts && !native.ignoreParentGroups,
+            "Independent HUD panels inherit editor suppression"
+        );
         native.alpha = 1; // Native animation between rendering passes.
         native.ignoreParentGroups = true;
         hud.Suppress(root.Transform);
-        check(native.alpha == 0 && !native.ignoreParentGroups && child.AddAttempts == 1, "Native animation cannot reveal HUD on the next render pass");
+        check(
+            native.alpha == 0 && !native.ignoreParentGroups && child.AddAttempts == 1,
+            "Native animation cannot reveal HUD on the next render pass"
+        );
         var owned = root.GetComponent<CanvasGroup>();
         hud.Dispose();
-        check(native && native.alpha == .35f && !native.interactable && native.blocksRaycasts && native.ignoreParentGroups,
-            "Closing restores the exact original native HUD state and retains its component");
+        check(
+            native && native.alpha == .35f && !native.interactable && native.blocksRaycasts && native.ignoreParentGroups,
+            "Closing restores the exact original native HUD state and retains its component"
+        );
         check(!owned, "Closing removes only editor-created groups");
         hud.Dispose();
         check(native && native.alpha == .35f, "Repeated cleanup does not change restored native state");
@@ -41,7 +52,10 @@ internal static class EditorHudChecks
         check(rejected.GetComponent<CanvasGroup>().alpha == 0, "A later valid HUD target recovers after an unavailable component");
         UnityEngine.Object.Destroy(rejected.GetComponent<CanvasGroup>());
         hud.Suppress(rejected.Transform);
-        check(rejected.GetComponent<CanvasGroup>().alpha == 0, "A recreated native HUD component is tracked instead of dereferencing a destroyed one");
+        check(
+            rejected.GetComponent<CanvasGroup>().alpha == 0,
+            "A recreated native HUD component is tracked instead of dereferencing a destroyed one"
+        );
         UnityEngine.Object.Destroy(rejected);
         hud.Suppress(rejected.Transform);
         hud.Dispose();

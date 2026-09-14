@@ -140,8 +140,22 @@ public sealed partial class RaidEditor
                     _notice = "Click a scene object. Use Select parent to choose its binding target.";
                 }
             );
-            Button("Undo", () => { CancelDrag(); _session?.Undo(false); });
-            Button("Redo", () => { CancelDrag(); _session?.Undo(true); });
+            Button(
+                "Undo",
+                () =>
+                {
+                    CancelDrag();
+                    _session?.Undo(false);
+                }
+            );
+            Button(
+                "Redo",
+                () =>
+                {
+                    CancelDrag();
+                    _session?.Undo(true);
+                }
+            );
             Button("Duplicate", Duplicate);
             Button("Delete", Delete);
             Button("AtFeet", () => Place(false));
@@ -166,8 +180,10 @@ public sealed partial class RaidEditor
                     () =>
                     {
                         CancelDrag();
-                        if (SceneWorkspace) SceneTransform(value);
-                        else _tool = value;
+                        if (SceneWorkspace)
+                            SceneTransform(value);
+                        else
+                            _tool = value;
                         Refresh();
                     }
                 );
@@ -342,7 +358,8 @@ public sealed partial class RaidEditor
 
     private void EditPoint(Action<SpatialCapture> action)
     {
-        if (SceneWorkspace && !CanTransformScene("Move")) return;
+        if (SceneWorkspace && !CanTransformScene("Move"))
+            return;
         if (SceneWorkspace && MapPoint == null)
         {
             CommitSceneSelection(action);
@@ -596,7 +613,8 @@ public sealed partial class RaidEditor
 
     private void SelectRow(string id)
     {
-        if (id.Length == 0) return;
+        if (id.Length == 0)
+            return;
         CancelDrag();
         if (MapWorkspace)
         {
@@ -611,8 +629,10 @@ public sealed partial class RaidEditor
         }
         else if (_mode == "Scene")
         {
-            if (SceneWorkspace) SelectSceneRow(id);
-            else _picked = _sceneIndex.Entries[int.Parse(id, CultureInfo.InvariantCulture)].Target;
+            if (SceneWorkspace)
+                SelectSceneRow(id);
+            else
+                _picked = _sceneIndex.Entries[int.Parse(id, CultureInfo.InvariantCulture)].Target;
         }
         else if (_mode == "Bindings")
         {
@@ -774,8 +794,7 @@ public sealed partial class RaidEditor
         view.Text("Status", _session.Status + (_notice.Length > 0 ? "\n" + _notice : ""));
         view.Conflict(_session);
         // Do not repurpose or hide a row between pointer-down and pointer-up.
-        if (view.Root.GetComponentsInChildren<WTT.Campaigns.UI.Controls.EditorRowSelection>()
-            .AsValueEnumerable().Any(row => row.Pressed))
+        if (view.Root.GetComponentsInChildren<WTT.Campaigns.UI.Controls.EditorRowSelection>().AsValueEnumerable().Any(row => row.Pressed))
         {
             _passiveState = "";
             return;
@@ -783,14 +802,16 @@ public sealed partial class RaidEditor
         foreach (var mode in new[] { "Maps", "Routes", "Zones", "Bindings", "Captures", "Scene" })
             view.Highlight(mode, _mode == mode);
         var search = view.Get<InputField>("Search").text;
-        var libraryKey = $"{_mode}|{_sceneTab}|{_sceneFilter}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
+        var libraryKey =
+            $"{_mode}|{_sceneTab}|{_sceneFilter}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
         if (_libraryKey != libraryKey)
         {
             _libraryKey = libraryKey;
             _rows.Clear();
             if (MapWorkspace && _session.Definition != null)
                 MapRows();
-            else if (SceneWorkspace) SceneRows(search);
+            else if (SceneWorkspace)
+                SceneRows(search);
             else if (_mode == "Scene")
             {
                 foreach (var entry in _sceneIndex.Search(search))
@@ -819,13 +840,17 @@ public sealed partial class RaidEditor
                 _rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
             }
 
-            if (_mode == "Scene") _rows.Sort((a, b) =>
-            {
-                var order = StringComparer.OrdinalIgnoreCase.Compare(a.Label, b.Label);
-                return order != 0 ? order : StringComparer.Ordinal.Compare(a.Id, b.Id);
-            });
+            if (_mode == "Scene")
+                _rows.Sort(
+                    (a, b) =>
+                    {
+                        var order = StringComparer.OrdinalIgnoreCase.Compare(a.Label, b.Label);
+                        return order != 0 ? order : StringComparer.Ordinal.Compare(a.Id, b.Id);
+                    }
+                );
         }
-        if (!RemoteCatalog) _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / 10));
+        if (!RemoteCatalog)
+            _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / 10));
         for (var i = 0; i < 10; i++)
         {
             var index = LibraryOffset + i;

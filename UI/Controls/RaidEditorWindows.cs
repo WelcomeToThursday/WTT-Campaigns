@@ -40,7 +40,6 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
 
     private readonly EditorTarkovTheme _theme = new EditorTarkovTheme();
 
-
     private readonly string[] _menus = { "WindowsMenu", "ContextMenu" };
 
     public void Initialize()
@@ -66,8 +65,22 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         Bind("HelpToggle", () => ToggleWindow("Controls"));
         Bind("HelpWindowToggle", () => ToggleWindow("Controls"));
         Bind("ResetLayout", ResetLayout);
-        Bind("RecordDetailsToggle", () => { _recordDetails = !_recordDetails; UpdateDetails(); });
-        Bind("MapDetailsToggle", () => { _mapDetails = !_mapDetails; UpdateDetails(); });
+        Bind(
+            "RecordDetailsToggle",
+            () =>
+            {
+                _recordDetails = !_recordDetails;
+                UpdateDetails();
+            }
+        );
+        Bind(
+            "MapDetailsToggle",
+            () =>
+            {
+                _mapDetails = !_mapDetails;
+                UpdateDetails();
+            }
+        );
         CachePropertyGeometry();
 
         foreach (var button in GetComponentsInChildren<Button>(true))
@@ -146,11 +159,14 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         );
         var x = point.x + 14;
         var y = point.y - 18;
-        if (x + width > _root.rect.xMax - 8) x = point.x - width - 14;
-        if (y - height < _root.rect.yMin + 8) y = point.y + height + 18;
+        if (x + width > _root.rect.xMax - 8)
+            x = point.x - width - 14;
+        if (y - height < _root.rect.yMin + 8)
+            y = point.y + height + 18;
         rect.anchoredPosition = new Vector2(
             Mathf.Clamp(x, _root.rect.xMin + 8, _root.rect.xMax - width - 8),
-            Mathf.Clamp(y, _root.rect.yMin + height + 8, _root.rect.yMax - 8));
+            Mathf.Clamp(y, _root.rect.yMin + height + 8, _root.rect.yMax - 8)
+        );
         rect.gameObject.SetActive(true);
         rect.SetAsLastSibling();
     }
@@ -194,7 +210,8 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         _panels[id].Visible = visible;
 
         ApplyVisibility();
-        if (visible) FocusWindow(_panels[id].Rect);
+        if (visible)
+            FocusWindow(_panels[id].Rect);
         LayoutChanged?.Invoke();
     }
 
@@ -203,10 +220,20 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
     private void Visible(string name, bool value)
     {
         var go = _controls[name].gameObject;
-        if (go.activeSelf != value) go.SetActive(value);
+        if (go.activeSelf != value)
+            go.SetActive(value);
     }
 
-    public void Present(string mode, string kind, bool hasSelection, bool capture, bool picked, bool mapReady, bool bindZone, bool sceneWorkspace = false)
+    public void Present(
+        string mode,
+        string kind,
+        bool hasSelection,
+        bool capture,
+        bool picked,
+        bool mapReady,
+        bool bindZone,
+        bool sceneWorkspace = false
+    )
     {
         var routes = mode == "Routes" && mapReady;
         var maps = (mode == "Maps" || routes) && mapReady;
@@ -289,8 +316,7 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
                 "MapDoor",
             }
         )
-            Visible(name, name == "MapStart" || name == "MapCheckpoint" || name == "MapExit"
-                ? routes : maps && !routes);
+            Visible(name, name == "MapStart" || name == "MapCheckpoint" || name == "MapExit" ? routes : maps && !routes);
 
         Visible("CaptureTask", capture);
 
@@ -327,16 +353,27 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
 
     public void BrowseCategory() => ShowPanel("Library", true);
 
-    public void PresentScene(bool enabled, string tab, string kind, bool selected, bool hasPoint, bool canEdit, bool picked, bool hasSavedPoint = true)
+    public void PresentScene(
+        bool enabled,
+        string tab,
+        string kind,
+        bool selected,
+        bool hasPoint,
+        bool canEdit,
+        bool picked,
+        bool hasSavedPoint = true
+    )
     {
         var catalog = tab == "Catalog";
         var removed = kind == "Hide";
         Visible("SceneTabs", enabled);
         Visible("SceneFilters", enabled && catalog);
         Visible("SceneInspector", enabled);
-        if (enabled) Visible("MapWalkGroup", false);
+        if (enabled)
+            Visible("MapWalkGroup", false);
         FitContents();
-        if (!enabled) return;
+        if (!enabled)
+            return;
         Visible("RecordInspector", false);
         Visible("MapInspector", !catalog && hasPoint);
         Visible("MapRecordActions", false);
@@ -369,11 +406,13 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
             panel.Rect.SetParent(_dock, false);
             panel.Rect.anchorMin = panel.Rect.anchorMax = new Vector2(.5f, .5f);
             panel.Rect.pivot = new Vector2(.5f, .5f);
-            panel.Rect.sizeDelta = entry.Key == "Library" ? new Vector2(440, 620)
+            panel.Rect.sizeDelta =
+                entry.Key == "Library" ? new Vector2(440, 620)
                 : entry.Key == "Inspector" ? new Vector2(380, 620)
-                : entry.Key == "Controls" ? new Vector2(560, 270) : new Vector2(360, 580);
-            panel.Rect.anchoredPosition = entry.Key == "Library"
-                ? new Vector2(-_root.rect.width / 2 + 232, _root.rect.height / 2 - 410)
+                : entry.Key == "Controls" ? new Vector2(560, 270)
+                : new Vector2(360, 580);
+            panel.Rect.anchoredPosition =
+                entry.Key == "Library" ? new Vector2(-_root.rect.width / 2 + 232, _root.rect.height / 2 - 410)
                 : entry.Key == "Inspector" ? new Vector2(_root.rect.width / 2 - 202, _root.rect.height / 2 - 410)
                 : new Vector2(index++ * 24, 0);
             panel.Visible = entry.Key == "Library" || entry.Key == "Inspector" && _selection.Length > 0;
@@ -450,7 +489,8 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
 
     private void FitPanels()
     {
-        foreach (var entry in _panels) FitPanel(entry.Key, entry.Value);
+        foreach (var entry in _panels)
+            FitPanel(entry.Key, entry.Value);
         FitContents();
     }
 

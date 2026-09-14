@@ -11,7 +11,8 @@ public static partial class RaidEditorLayout
     {
         // Modern bundles have already moved the rail into the Browser window.
         foreach (var child in root.GetComponentsInChildren<Transform>(true))
-            if (child.name == "Routes") return;
+            if (child.name == "Routes")
+                return;
         var workspace = root.transform.Find("Workspace");
         var rail = workspace.Find("CategoryRail");
         Button(ui, rail, "Routes", "Routes", 68, 0, 0, 48);
@@ -31,7 +32,11 @@ public static partial class RaidEditorLayout
 
         Transform map = null!;
         foreach (var child in root.GetComponentsInChildren<Transform>(true))
-            if (child.name == "MapInspector") { map = child; break; }
+            if (child.name == "MapInspector")
+            {
+                map = child;
+                break;
+            }
         var guide = Row(map, "RouteGuideGroup", 96);
         guide.SetAsFirstSibling();
         var text = ui.Label(guide, "RouteGuide", "", 15, 318, 96);

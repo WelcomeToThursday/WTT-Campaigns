@@ -4,11 +4,15 @@ namespace WTT.Campaigns.Client.Authoring;
 internal sealed class EditorOpenState
 {
     private bool _failed;
+
     internal bool TryBegin(bool requested)
     {
-        if (requested) _failed = false;
+        if (requested)
+            _failed = false;
         return !_failed;
     }
+
     internal void Fail() => _failed = true;
+
     internal void Reset() => _failed = false;
 }

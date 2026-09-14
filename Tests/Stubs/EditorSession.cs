@@ -12,6 +12,7 @@ namespace WTT.Campaigns.Client
     internal static class Plugin
     {
         internal static void LogInfo(string message) { }
+
         internal static void Error(Exception error) => throw new InvalidOperationException("Session callback failed", error);
     }
 }

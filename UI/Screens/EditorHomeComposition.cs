@@ -5,10 +5,26 @@ public static class EditorHomeComposition
 {
     public sealed class Element
     {
-        public string Id, Text, Kind;
-        public int X, Y, Width, Height, Size;
+        public string Id,
+            Text,
+            Kind;
+        public int X,
+            Y,
+            Width,
+            Height,
+            Size;
+
         public Element(string kind, string id, string text, int x, int y, int width, int height, int size = 17)
-        { Kind = kind; Id = id; Text = text; X = x; Y = y; Width = width; Height = height; Size = size; }
+        {
+            Kind = kind;
+            Id = id;
+            Text = text;
+            X = x;
+            Y = y;
+            Width = width;
+            Height = height;
+            Size = size;
+        }
     }
 
     public static readonly Element[] Elements =

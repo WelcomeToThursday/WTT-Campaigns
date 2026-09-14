@@ -17,11 +17,15 @@ internal sealed partial class MapSceneAdapter
     {
         internal Transform Target = null!;
         internal MapTarget Binding = null!;
-        internal Vector3 Position, LocalScale, WorldScale;
+        internal Vector3 Position,
+            LocalScale,
+            WorldScale;
         internal Quaternion Rotation;
         internal bool Active;
         internal readonly List<SceneBodyState> Bodies = new();
-        internal bool Applied, VisualsDirty, Hidden;
+        internal bool Applied,
+            VisualsDirty,
+            Hidden;
         internal HotObject[] Heat = Array.Empty<HotObject>();
         internal StaticDeferredDecal[] Decals = Array.Empty<StaticDeferredDecal>();
         internal StencilShadow[] Shadows = Array.Empty<StencilShadow>();
@@ -29,9 +33,12 @@ internal sealed partial class MapSceneAdapter
         internal void RefreshVisuals()
         {
             VisualsDirty = false;
-            foreach (var heat in Heat) if (heat) heat.SyncPosition();
+            foreach (var heat in Heat)
+                if (heat)
+                    heat.SyncPosition();
             foreach (var shadow in Shadows)
-                if (shadow && shadow.Renderer) shadow.Bounds = shadow.Renderer.bounds;
+                if (shadow && shadow.Renderer)
+                    shadow.Bounds = shadow.Renderer.bounds;
             var renderer = StaticDeferredDecalRenderer.Instance;
             if (renderer)
                 foreach (var decal in Decals)
@@ -53,7 +60,8 @@ internal sealed partial class MapSceneAdapter
             Target.SetPositionAndRotation(Position, Rotation);
             Target.localScale = LocalScale;
             Target.gameObject.SetActive(Active);
-            foreach (var state in Bodies) state.Restore();
+            foreach (var state in Bodies)
+                state.Restore();
             if (Target.GetComponent<LootItem>() is { } loot)
                 loot.RegisterInCullingObject();
             RefreshVisuals();
@@ -197,29 +205,35 @@ internal sealed partial class MapSceneAdapter
     {
         foreach (var spawn in _spawns.Values)
             if (spawn.Model)
-                foreach (var renderer in spawn.Model!.GetComponentsInChildren<Renderer>()) yield return renderer;
+                foreach (var renderer in spawn.Model!.GetComponentsInChildren<Renderer>())
+                    yield return renderer;
     }
 
-    internal Transform? OriginalFor(MapTarget binding) =>
-        _originals.TryGetValue(Key(binding), out var original) ? original.Target : null;
+    internal Transform? OriginalFor(MapTarget binding) => _originals.TryGetValue(Key(binding), out var original) ? original.Target : null;
 
     internal void RefreshVisuals(Transform target)
     {
         foreach (var original in _originals.Values)
-            if (original.Target == target) { original.VisualsDirty = true; return; }
+            if (original.Target == target)
+            {
+                original.VisualsDirty = true;
+                return;
+            }
     }
 
     internal void FlushVisuals()
     {
         foreach (var original in _originals.Values)
-            if (original.Target && original.VisualsDirty) original.RefreshVisuals();
+            if (original.Target && original.VisualsDirty)
+                original.RefreshVisuals();
     }
 
     internal GameObject CopyForPlacement(Transform t) => CopyProp(t, false);
 
     internal Transform? TargetFor(string id, MapObjectEdit? edit)
     {
-        if (_spawns.TryGetValue(id, out var spawn) && spawn.Model) return spawn.Model!.transform;
+        if (_spawns.TryGetValue(id, out var spawn) && spawn.Model)
+            return spawn.Model!.transform;
         if (edit != null && _originals.TryGetValue(Key(edit.Target), out var original) && original.Target)
             return original.Target;
         return null;
@@ -231,7 +245,8 @@ internal sealed partial class MapSceneAdapter
             return;
         TargetErrors.Clear();
         var edits = layout?.Objects.AsValueEnumerable().ToList() ?? new List<MapObjectEdit>();
-        if (preview != null) edits.Add(preview);
+        if (preview != null)
+            edits.Add(preview);
         var bindings = edits.AsValueEnumerable().Select(e => Key(e.Target)).ToHashSet();
         foreach (var old in _originals.Keys.AsValueEnumerable().Where(k => !bindings.Contains(k)).ToArray())
         {
@@ -270,9 +285,12 @@ internal sealed partial class MapSceneAdapter
                     if (!original.Target)
                         throw new InvalidOperationException("Target was unloaded; rebind " + edit.Name);
                     // Reject saved/remote edits too, before spawning, activating or changing any transform.
-                    if (edit.Operation != "Hide" && edit.Target.Kind == "Prop"
+                    if (
+                        edit.Operation != "Hide"
+                        && edit.Target.Kind == "Prop"
                         && ZoneRuntime.Vector(edit.Scale) != original.WorldScale
-                        && ScaleRestriction(original.Target) is { Length: > 0 } scaleError)
+                        && ScaleRestriction(original.Target) is { Length: > 0 } scaleError
+                    )
                         throw new InvalidOperationException(scaleError);
                     if (edit.Operation == "Copy")
                     {
@@ -294,7 +312,8 @@ internal sealed partial class MapSceneAdapter
                             loot.UnregisterFromCullingObject();
                         original.Applied = true;
                         original.Hidden = edit.Operation == "Hide";
-                        foreach (var body in original.Bodies) body.Freeze();
+                        foreach (var body in original.Bodies)
+                            body.Freeze();
                         original.Target.gameObject.SetActive(edit.Operation != "Hide" && original.Active);
                         if (edit.Operation == "Move")
                         {
@@ -303,8 +322,15 @@ internal sealed partial class MapSceneAdapter
                             var scale = original.Target.lossyScale;
                             Pose(original.Target, edit, false);
                             if (edit.Target.Kind == "Prop" && ScaleRestriction(original.Target).Length == 0)
-                                WTT.Campaigns.UI.Controls.SceneSelectionGeometry.WorldScale(original.Target, ZoneRuntime.Vector(edit.Scale));
-                            if (position != original.Target.position || rotation != original.Target.rotation || scale != original.Target.lossyScale)
+                                WTT.Campaigns.UI.Controls.SceneSelectionGeometry.WorldScale(
+                                    original.Target,
+                                    ZoneRuntime.Vector(edit.Scale)
+                                );
+                            if (
+                                position != original.Target.position
+                                || rotation != original.Target.rotation
+                                || scale != original.Target.lossyScale
+                            )
                                 original.VisualsDirty = true;
                         }
                     }

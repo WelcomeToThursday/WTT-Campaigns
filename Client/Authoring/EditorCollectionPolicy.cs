@@ -10,7 +10,8 @@ internal sealed class EditorCollectionPolicy
 
     internal GarbageCollector.Mode? Transition(bool active, GarbageCollector.Mode current)
     {
-        if (active == _active) return null;
+        if (active == _active)
+            return null;
         _active = active;
         if (active)
         {
@@ -22,7 +23,8 @@ internal sealed class EditorCollectionPolicy
 
     internal GarbageCollector.Mode Filter(GarbageCollector.Mode requested)
     {
-        if (!_active) return requested;
+        if (!_active)
+            return requested;
         _restore = requested;
         return GarbageCollector.Mode.Enabled;
     }

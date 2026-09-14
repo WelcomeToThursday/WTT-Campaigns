@@ -5,21 +5,26 @@ namespace UnityEngine;
 internal class Object
 {
     internal bool Destroyed;
-    public static implicit operator bool(Object? value) => value != null && !value.Destroyed
-        && (value is not Component component || component.gameObject);
+
+    public static implicit operator bool(Object? value) =>
+        value != null && !value.Destroyed && (value is not Component component || component.gameObject);
+
     public static void Destroy(Object value) => value.Destroyed = true;
 }
 
 internal class Component : Object
 {
     public GameObject gameObject = null!;
-    public void GetComponentsInChildren<T>(bool includeInactive, List<T> results) where T : Component
+
+    public void GetComponentsInChildren<T>(bool includeInactive, List<T> results)
+        where T : Component
     {
         results.Clear();
         void Visit(GameObject node)
         {
             results.AddRange(node.Components.OfType<T>().Where(c => c));
-            foreach (var child in node.Children) Visit(child);
+            foreach (var child in node.Children)
+                Visit(child);
         }
         Visit(gameObject);
     }
@@ -33,13 +38,20 @@ internal sealed class GameObject : Object
     internal bool RejectAdd;
     internal int AddAttempts;
     public bool activeSelf = true;
+
     public void SetActive(bool active) => activeSelf = active;
+
     internal GameObject() => Transform = new Component { gameObject = this };
-    public T GetComponent<T>() where T : Component => Components.OfType<T>().FirstOrDefault(c => c)!;
-    public T AddComponent<T>() where T : Component, new()
+
+    public T GetComponent<T>()
+        where T : Component => Components.OfType<T>().FirstOrDefault(c => c)!;
+
+    public T AddComponent<T>()
+        where T : Component, new()
     {
         AddAttempts++;
-        if (RejectAdd || GetComponent<T>()) return null!;
+        if (RejectAdd || GetComponent<T>())
+            return null!;
         var component = new T { gameObject = this };
         Components.Add(component);
         return component;
@@ -49,10 +61,13 @@ internal sealed class GameObject : Object
 internal sealed class CanvasGroup : Component
 {
     public float alpha = 1;
-    public bool interactable = true, blocksRaycasts = true, ignoreParentGroups;
+    public bool interactable = true,
+        blocksRaycasts = true,
+        ignoreParentGroups;
 }
 
 internal sealed class Terrain : Component
 {
-    public bool drawHeightmap = true, drawTreesAndFoliage = true;
+    public bool drawHeightmap = true,
+        drawTreesAndFoliage = true;
 }

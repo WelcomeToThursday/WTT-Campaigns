@@ -10,14 +10,19 @@ internal sealed class DisablerCullingObject : Component
     public List<GameObject> _gameObjectsToTurnOff = new();
     private IEnumerator? _setComponentsEnabledWorker;
     private IEnumerator? _setComponentsEnabledWorker2;
-    internal int Stopped, Refreshed;
+    internal int Stopped,
+        Refreshed;
+
     internal void Workers(IEnumerator first, IEnumerator second)
     {
         _setComponentsEnabledWorker = first;
         _setComponentsEnabledWorker2 = second;
     }
+
     internal bool Pending => _setComponentsEnabledWorker != null || _setComponentsEnabledWorker2 != null;
+
     public void StopCoroutine(IEnumerator worker) => Stopped++;
+
     public void ForceUpdate() => Refreshed++;
 }
 
@@ -29,6 +34,7 @@ internal sealed class CullingComponent : Component
 internal static class ComponentExtensions
 {
     public static bool IsEnabledUniversal(this Component component) => ((CullingComponent)component).Enabled;
+
     public static bool SetEnabledUniversal(this Component component, bool value)
     {
         var target = (CullingComponent)component;

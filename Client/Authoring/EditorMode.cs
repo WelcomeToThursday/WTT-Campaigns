@@ -66,8 +66,12 @@ public sealed class EditorMode : MonoBehaviour
             "Open the restricted editor workspace after launcher authentication."
         );
         _requested = _startup.Value == StartupMode.Editor;
-        _memoryDiagnostics = Plugin.Instance.Config.Bind("Campaign editor", "Memory diagnostics", false,
-            "Record read-only memory and frame timings for the first three minutes in an editor map, every five seconds.");
+        _memoryDiagnostics = Plugin.Instance.Config.Bind(
+            "Campaign editor",
+            "Memory diagnostics",
+            false,
+            "Record read-only memory and frame timings for the first three minutes in an editor map, every five seconds."
+        );
         EditorRestrictions.Enable();
         EditorDeployment.Enable();
         // Install before map loading can JIT/in-line the native culling methods.
@@ -510,7 +514,8 @@ public sealed class EditorMode : MonoBehaviour
         EditorDiagnostics.Enabled = _memoryDiagnostics.Value;
         EditorMemory.Tick(Active && Plugin.InRaid);
         EditorDiagnostics.Tick(Active && Plugin.InRaid);
-        if (!Active || !Plugin.InRaid) RestoreHud();
+        if (!Active || !Plugin.InRaid)
+            RestoreHud();
         if (!Active)
             return;
         try
@@ -595,7 +600,8 @@ public sealed class EditorMode : MonoBehaviour
         catch (Exception e)
         {
             // Presentation must never interrupt session heartbeats or map maintenance.
-            if (!_hudError) Plugin.Error(e);
+            if (!_hudError)
+                Plugin.Error(e);
             _hudError = true;
         }
     }

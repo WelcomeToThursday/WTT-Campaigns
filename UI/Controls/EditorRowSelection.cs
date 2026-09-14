@@ -9,18 +9,30 @@ public sealed class EditorRowSelection : MonoBehaviour, IPointerDownHandler, IPo
     public string Identity = "";
     private string? _pressed;
     public bool Pressed { get; private set; }
+
     public string Consume()
     {
         var id = _pressed ?? Identity;
         _pressed = null;
         return id;
     }
+
     public void OnPointerDown(PointerEventData data)
     {
-        if (data.button != PointerEventData.InputButton.Left) return;
+        if (data.button != PointerEventData.InputButton.Left)
+            return;
         _pressed = Identity;
         Pressed = true;
     }
-    public void OnPointerUp(PointerEventData data) { Pressed = false; }
-    private void OnDisable() { Pressed = false; _pressed = null; }
+
+    public void OnPointerUp(PointerEventData data)
+    {
+        Pressed = false;
+    }
+
+    private void OnDisable()
+    {
+        Pressed = false;
+        _pressed = null;
+    }
 }

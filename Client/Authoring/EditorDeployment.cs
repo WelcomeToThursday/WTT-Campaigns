@@ -13,10 +13,13 @@ internal static class EditorDeployment
     internal static void Enable()
     {
         var routine = AccessTools.DeclaredMethod(typeof(LocalGame), nameof(LocalGame.vmethod_2));
-        var machine = routine.GetCustomAttribute<IteratorStateMachineAttribute>()?.StateMachineType
+        var machine =
+            routine.GetCustomAttribute<IteratorStateMachineAttribute>()?.StateMachineType
             ?? throw new InvalidOperationException("Missing native local deployment coroutine.");
-        new Harmony("com.wtt.campaigns.editor.deployment").Patch(AccessTools.DeclaredMethod(machine, "MoveNext"),
-            transpiler: new HarmonyMethod(typeof(EditorDeployment), nameof(Transpiler)));
+        new Harmony("com.wtt.campaigns.editor.deployment").Patch(
+            AccessTools.DeclaredMethod(machine, "MoveNext"),
+            transpiler: new HarmonyMethod(typeof(EditorDeployment), nameof(Transpiler))
+        );
     }
 
     // Preserve the native audio, UI initialization and coroutine completion.
@@ -28,16 +31,28 @@ internal static class EditorDeployment
         var show = typeof(MatchmakerFinalCountdown.FinalCountdownScreenController).GetMethod("ShowScreen", new[] { typeof(EScreenState) });
         foreach (var instruction in instructions)
         {
-            if (instruction.opcode == OpCodes.Ldfld && instruction.operand is FieldInfo field
-                && field.DeclaringType == typeof(GlobalConfiguration) && field.Name == nameof(GlobalConfiguration.TimeBeforeDeployLocal))
+            if (
+                instruction.opcode == OpCodes.Ldfld
+                && instruction.operand is FieldInfo field
+                && field.DeclaringType == typeof(GlobalConfiguration)
+                && field.Name == nameof(GlobalConfiguration.TimeBeforeDeployLocal)
+            )
             {
                 delay++;
                 yield return instruction;
-                yield return new CodeInstruction(OpCodes.Call, typeof(EditorDeployment).GetMethod(nameof(Delay), BindingFlags.NonPublic | BindingFlags.Static));
+                yield return new CodeInstruction(
+                    OpCodes.Call,
+                    typeof(EditorDeployment).GetMethod(nameof(Delay), BindingFlags.NonPublic | BindingFlags.Static)
+                );
                 continue;
             }
-            if (instruction.operand is MethodInfo method && show != null
-                && method.Module == show.Module && method.MetadataToken == show.MetadataToken && method.DeclaringType == show.DeclaringType)
+            if (
+                instruction.operand is MethodInfo method
+                && show != null
+                && method.Module == show.Module
+                && method.MetadataToken == show.MetadataToken
+                && method.DeclaringType == show.DeclaringType
+            )
             {
                 screen++;
                 instruction.opcode = OpCodes.Call;
@@ -46,7 +61,9 @@ internal static class EditorDeployment
             yield return instruction;
         }
         if (delay != 1 || screen != 1)
-            throw new InvalidOperationException($"Expected one native deployment delay and screen transition; found {delay} delays and {screen} transitions.");
+            throw new InvalidOperationException(
+                $"Expected one native deployment delay and screen transition; found {delay} delays and {screen} transitions."
+            );
     }
 
     private static int Delay(int seconds) => EditorMode.LoadingMap ? 0 : seconds;
@@ -61,6 +78,7 @@ internal static class EditorDeployment
         // The countdown normally closes the loading screen through navigation.
         // Keep that cleanup when skipping it, before MenuUI is destroyed.
         var current = EftScreenManager.Instance.CurrentScreenController;
-        if (current is MatchmakerTimeHasCome.TimeHasComeScreenController loading) loading.CloseScreen();
+        if (current is MatchmakerTimeHasCome.TimeHasComeScreenController loading)
+            loading.CloseScreen();
     }
 }

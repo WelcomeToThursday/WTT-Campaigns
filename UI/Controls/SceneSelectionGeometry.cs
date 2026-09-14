@@ -22,10 +22,13 @@ public static class SceneSelectionGeometry
             {
                 var child = pending.Pop();
                 visible |= child.GetComponent<Renderer>();
-                for (var i = 0; i < child.childCount && pending.Count <= 256; i++) pending.Push(child.GetChild(i));
+                for (var i = 0; i < child.childCount && pending.Count <= 256; i++)
+                    pending.Push(child.GetChild(i));
             }
-            if (count > 256 || pending.Count > 0) break;
-            if (visible) return node;
+            if (count > 256 || pending.Count > 0)
+                break;
+            if (visible)
+                return node;
         }
         return hit;
     }
@@ -36,7 +39,8 @@ public static class SceneSelectionGeometry
         var local = target.localScale;
         for (var axis = 0; axis < 3; axis++)
         {
-            if (Mathf.Abs(world[axis]) < .00001f) throw new System.InvalidOperationException("The object's parent has zero scale.");
+            if (Mathf.Abs(world[axis]) < .00001f)
+                throw new System.InvalidOperationException("The object's parent has zero scale.");
             local[axis] *= desired[axis] / world[axis];
         }
         target.localScale = local;
@@ -47,13 +51,20 @@ public static class SceneSelectionGeometry
         posedTarget.position + (anchor - posedTarget.TransformPoint(localAnchor));
 
     public static Quaternion Rotation(Quaternion before, int axis, float degrees) =>
-        Quaternion.AngleAxis(degrees, axis == 0 ? Vector3.right : axis == 1 ? Vector3.up : Vector3.forward) * before;
+        Quaternion.AngleAxis(
+            degrees,
+            axis == 0 ? Vector3.right
+                : axis == 1 ? Vector3.up
+                : Vector3.forward
+        ) * before;
 
     public static float Resize(float original, float pixels, bool snap)
     {
-        if (Mathf.Abs(pixels) < .0001f) return original;
+        if (Mathf.Abs(pixels) < .0001f)
+            return original;
         var value = original * Mathf.Pow(2, pixels / 90f);
-        if (snap) value = Mathf.Round(value / .05f) * .05f;
+        if (snap)
+            value = Mathf.Round(value / .05f) * .05f;
         return Mathf.Clamp(value, .05f, 1000);
     }
 }

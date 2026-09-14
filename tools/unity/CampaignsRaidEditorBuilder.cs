@@ -2,8 +2,8 @@ using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using WTT.Campaigns.UI.Controls;
 using WTT.Campaigns.UI.Screens;
 
@@ -36,7 +36,11 @@ public static class CampaignsRaidEditorBuilder
             output,
             new[]
             {
-                new AssetBundleBuild { assetBundleName = "wtt_campaigns_raid_editor.bundle", assetNames = new[] { prefab, Root + "/RaidEditor/CampaignScenePreview.shader" } },
+                new AssetBundleBuild
+                {
+                    assetBundleName = "wtt_campaigns_raid_editor.bundle",
+                    assetNames = new[] { prefab, Root + "/RaidEditor/CampaignScenePreview.shader" },
+                },
             },
             BuildAssetBundleOptions.ForceRebuildAssetBundle,
             BuildTarget.StandaloneWindows64
@@ -49,7 +53,9 @@ public static class CampaignsRaidEditorBuilder
         var bundle = AssetBundle.LoadFromFile(Path.Combine(output, "wtt_campaigns_raid_editor.bundle"));
         if (!bundle)
             throw new Exception("Cannot reload editor bundle.");
-        var previewCheck = RenderPreviewFixture(bundle.LoadAsset<Shader>((Root + "/RaidEditor/CampaignScenePreview.shader").ToLowerInvariant()));
+        var previewCheck = RenderPreviewFixture(
+            bundle.LoadAsset<Shader>((Root + "/RaidEditor/CampaignScenePreview.shader").ToLowerInvariant())
+        );
         UnityEngine.Object.DestroyImmediate(previewCheck);
         var loaded = UnityEngine.Object.Instantiate(bundle.LoadAsset<GameObject>(prefab.ToLowerInvariant()));
         Validate(loaded);
@@ -81,8 +87,10 @@ public static class CampaignsRaidEditorBuilder
         var beforePrepare = root.GetComponentsInChildren<Transform>(true).Length;
         RaidEditorLayout.Prepare(root);
         RaidEditorLayout.Prepare(root);
-        Check(root.GetComponentsInChildren<Transform>(true).Length == beforePrepare,
-            "Client startup duplicated controls in a modern tool-window bundle.");
+        Check(
+            root.GetComponentsInChildren<Transform>(true).Length == beforePrepare,
+            "Client startup duplicated controls in a modern tool-window bundle."
+        );
         Check(root.transform.Find("ToolWindows/Library/CategoryRail/Routes"), "Routes must remain in the floating Browser.");
         Check(root.transform.Find("ToolWindows/EnvironmentMenu"), "Environment must remain a floating window after client startup.");
         foreach (
@@ -96,7 +104,12 @@ public static class CampaignsRaidEditorBuilder
                 "EditorWalk",
                 "MapNew",
                 "MapRebind",
-                "SceneTabs", "SceneInspector", "LibraryScroll", "ScenePlace", "SceneRemove", "SceneRestore",
+                "SceneTabs",
+                "SceneInspector",
+                "LibraryScroll",
+                "ScenePlace",
+                "SceneRemove",
+                "SceneRestore",
             }
         )
             Check(
@@ -169,7 +182,23 @@ public static class CampaignsRaidEditorBuilder
         Canvas.ForceUpdateCanvases();
         var host = root.AddComponent<RaidEditorWindows>();
         host.Initialize();
-        foreach (var id in new[] { "Maps", "Routes", "Zones", "Bindings", "Captures", "Scene", "Undo", "Redo", "Move", "Rotate", "Scale", "Snap" })
+        foreach (
+            var id in new[]
+            {
+                "Maps",
+                "Routes",
+                "Zones",
+                "Bindings",
+                "Captures",
+                "Scene",
+                "Undo",
+                "Redo",
+                "Move",
+                "Rotate",
+                "Scale",
+                "Snap",
+            }
+        )
         {
             var button = Array.Find(controls, t => t.name == id);
             Check(button.Find("ToolIcon") && button.Find("ToolIcon").GetComponent<Image>().sprite, "Tool icon was not preserved: " + id);
@@ -195,7 +224,10 @@ public static class CampaignsRaidEditorBuilder
             var corners = new Vector3[4];
             ((RectTransform)panel).GetWorldCorners(corners);
             foreach (var corner in corners)
-                Check(((RectTransform)root.transform).rect.Contains(root.transform.InverseTransformPoint(corner) * .999f), "Window left canvas bounds.");
+                Check(
+                    ((RectTransform)root.transform).rect.Contains(root.transform.InverseTransformPoint(corner) * .999f),
+                    "Window left canvas bounds."
+                );
             var resize = panel.GetComponentInChildren<EditorWindowResize>();
             Check(resize && resize.Minimum.x >= 360, "Window has no bounded resize handle.");
             host.ResetLayout();
@@ -203,14 +235,29 @@ public static class CampaignsRaidEditorBuilder
             var initialSize = ((RectTransform)panel).sizeDelta;
             var eventObject = new GameObject("Window resize checks");
             var eventSystem = eventObject.AddComponent<EventSystem>();
-            var pointer = new PointerEventData(eventSystem) { button = PointerEventData.InputButton.Left,
-                position = RectTransformUtility.WorldToScreenPoint(null, resize.transform.position) };
+            var pointer = new PointerEventData(eventSystem)
+            {
+                button = PointerEventData.InputButton.Left,
+                position = RectTransformUtility.WorldToScreenPoint(null, resize.transform.position),
+            };
             resize.OnBeginDrag(pointer);
             Check(host.Interacting, "Resizing must suspend scene keyboard/camera input.");
             pointer.position += new Vector2(-24, 32);
             resize.OnDrag(pointer);
             resize.OnEndDrag(pointer);
-            Check(!host.Interacting && ((RectTransform)panel).sizeDelta != initialSize, "Resize did not change dimensions or release input: " + module + " initial=" + initialSize + " after=" + ((RectTransform)panel).sizeDelta + " root=" + ((RectTransform)root.transform).rect + " busy=" + host.Interacting);
+            Check(
+                !host.Interacting && ((RectTransform)panel).sizeDelta != initialSize,
+                "Resize did not change dimensions or release input: "
+                    + module
+                    + " initial="
+                    + initialSize
+                    + " after="
+                    + ((RectTransform)panel).sizeDelta
+                    + " root="
+                    + ((RectTransform)root.transform).rect
+                    + " busy="
+                    + host.Interacting
+            );
             Check(field.text == "Unsaved draft 42", "Resizing lost the active draft value.");
             UnityEngine.Object.DestroyImmediate(eventObject);
             host.ResetLayout();
@@ -292,7 +339,8 @@ public static class CampaignsRaidEditorBuilder
 
     private static Texture2D RenderPreviewFixture(Shader shader)
     {
-        if (!shader || !shader.isSupported) throw new Exception("Bundled prop preview shader is unavailable.");
+        if (!shader || !shader.isSupported)
+            throw new Exception("Bundled prop preview shader is unavailable.");
         var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         var rig = new GameObject("Preview fixture camera");
         var material = new Material(shader);
@@ -329,7 +377,8 @@ public static class CampaignsRaidEditorBuilder
             Read();
             var pixels = image.GetPixels();
             var visible = Array.FindAll(pixels, c => c.g > c.r * 1.25f && c.g > .15f).Length;
-            if (visible < 1000) throw new Exception("Prop preview shader produced a blank or unreadable image.");
+            if (visible < 1000)
+                throw new Exception("Prop preview shader produced a blank or unreadable image.");
 
             var lines = new GameObject("Occluded handle fixture");
             lines.transform.SetParent(rig.transform, false);
@@ -351,10 +400,16 @@ public static class CampaignsRaidEditorBuilder
                 throw new Exception("Overlay handle failed the occluded-object render check.");
             lines.SetActive(false);
             Read();
-            Debug.Log("Scene rendering: bundled prop shader has visible geometry; overlay handles render through an occluder while depth-tested lines stay hidden.");
+            Debug.Log(
+                "Scene rendering: bundled prop shader has visible geometry; overlay handles render through an occluder while depth-tested lines stay hidden."
+            );
             return image;
         }
-        catch { UnityEngine.Object.DestroyImmediate(image); throw; }
+        catch
+        {
+            UnityEngine.Object.DestroyImmediate(image);
+            throw;
+        }
         finally
         {
             RenderTexture.active = previous;
@@ -368,7 +423,12 @@ public static class CampaignsRaidEditorBuilder
         }
     }
 
-    private static void ValidateSceneWorkflow(GameObject root, RaidEditorWindows host, Func<string, Transform> find, Action<bool, string> check)
+    private static void ValidateSceneWorkflow(
+        GameObject root,
+        RaidEditorWindows host,
+        Func<string, Transform> find,
+        Action<bool, string> check
+    )
     {
         var events = new GameObject("Scene editor check events").AddComponent<EventSystem>();
         try
@@ -379,7 +439,10 @@ public static class CampaignsRaidEditorBuilder
             var button = find("SceneMove").GetComponent<Button>();
             var pointer = new PointerEventData(events) { button = PointerEventData.InputButton.Left };
             button.OnPointerDown(pointer);
-            var pressed = typeof(Selectable).GetMethod("IsPressed", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            var pressed = typeof(Selectable).GetMethod(
+                "IsPressed",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic
+            );
             check((bool)pressed.Invoke(button, null), "Scene move did not receive pointer-down.");
             for (var i = 0; i < 20; i++)
             {
@@ -406,8 +469,10 @@ public static class CampaignsRaidEditorBuilder
                 host.PresentScene(true, "Existing", "Copy", true, true, true, false);
                 host.Select("Scene/Existing", "crate");
             }
-            check(events.currentSelectedGameObject == field.gameObject && field.text == "123. unfinished",
-                "Unchanged scene refresh lost field selection or unfinished text.");
+            check(
+                events.currentSelectedGameObject == field.gameObject && field.text == "123. unfinished",
+                "Unchanged scene refresh lost field selection or unfinished text."
+            );
             check(Mathf.Abs(scroll.verticalNormalizedPosition - .4f) < .001f, "Refresh reset inspector scroll.");
             events.SetSelectedGameObject(null);
             host.ShowPanel("Library", true);
@@ -422,8 +487,10 @@ public static class CampaignsRaidEditorBuilder
             var label = find("Row0").GetComponentInChildren<Text>(true);
             UiElements.Stretch(label.rectTransform, 54, 8, 2, 2);
             Canvas.ForceUpdateCanvases();
-            check(label.rectTransform.rect.width > 100 && label.rectTransform.rect.height >= 40,
-                "Icon margins collapsed the library label.");
+            check(
+                label.rectTransform.rect.width > 100 && label.rectTransform.rect.height >= 40,
+                "Icon margins collapsed the library label."
+            );
 
             var position = new Vector3(10, 2, -5);
             var rotation = Quaternion.Euler(20, 35, 10);
@@ -433,10 +500,17 @@ public static class CampaignsRaidEditorBuilder
             var nextRotation = Quaternion.Euler(-5, 90, 40);
             var nextScale = new Vector3(4, 1, 2);
             var result = SceneHandleMath.PositionAroundAnchor(position, rotation, scale, nextRotation, nextScale, anchor);
-            check(Vector3.Distance(result + nextRotation * Vector3.Scale(nextScale, localCenter), anchor) < .0001f,
-                "Center rotation/scaling moved the visible anchor.");
-            check(Vector3.Distance(SceneHandleMath.PositionAroundAnchor(position, rotation, scale, nextRotation, nextScale, position), position) < .0001f,
-                "Pivot mode changed the original origin.");
+            check(
+                Vector3.Distance(result + nextRotation * Vector3.Scale(nextScale, localCenter), anchor) < .0001f,
+                "Center rotation/scaling moved the visible anchor."
+            );
+            check(
+                Vector3.Distance(
+                    SceneHandleMath.PositionAroundAnchor(position, rotation, scale, nextRotation, nextScale, position),
+                    position
+                ) < .0001f,
+                "Pivot mode changed the original origin."
+            );
             var camera = events.gameObject.AddComponent<Camera>();
             camera.enabled = false;
             var near = SceneHandleMath.MetresPerPixel(camera, camera.transform.forward * 10);
@@ -444,20 +518,32 @@ public static class CampaignsRaidEditorBuilder
             check(Mathf.Abs(far / near - 10) < .001f, "Handle screen size changes with distance.");
             host.PresentScene(true, "Existing", "Move", true, true, true, true, false);
             host.ShowPanel("Inspector", true);
-            check(find("MapInspector").gameObject.activeInHierarchy && find("MapPositionGroup").gameObject.activeInHierarchy
-                && find("MapRotationGroup").gameObject.activeInHierarchy && find("MapSizeGroup").gameObject.activeInHierarchy,
-                "An original selection must expose transform properties before its first saved edit.");
+            check(
+                find("MapInspector").gameObject.activeInHierarchy
+                    && find("MapPositionGroup").gameObject.activeInHierarchy
+                    && find("MapRotationGroup").gameObject.activeInHierarchy
+                    && find("MapSizeGroup").gameObject.activeInHierarchy,
+                "An original selection must expose transform properties before its first saved edit."
+            );
             field.readOnly = true;
             events.SetSelectedGameObject(field.gameObject);
-            for (var i = 0; i < 20; i++) host.PresentScene(true, "Existing", "Move", true, true, false, true, false);
-            check(field.readOnly && field.interactable && events.currentSelectedGameObject == field.gameObject,
-                "Restricted objects must retain selectable read-only properties.");
+            for (var i = 0; i < 20; i++)
+                host.PresentScene(true, "Existing", "Move", true, true, false, true, false);
+            check(
+                field.readOnly && field.interactable && events.currentSelectedGameObject == field.gameObject,
+                "Restricted objects must retain selectable read-only properties."
+            );
             field.readOnly = false;
             events.SetSelectedGameObject(null);
             ValidateScenePickingAndTransforms(check, camera);
-            Debug.Log("Scene workflow: Maps/Scene world-click routing, original physics restoration, pointer/focus retention, row identity, selection before edits, read-only inspection, trigger-transparent picking, collider-free placements, rotation rings, parent scale and center/pivot math passed.");
+            Debug.Log(
+                "Scene workflow: Maps/Scene world-click routing, original physics restoration, pointer/focus retention, row identity, selection before edits, read-only inspection, trigger-transparent picking, collider-free placements, rotation rings, parent scale and center/pivot math passed."
+            );
         }
-        finally { UnityEngine.Object.DestroyImmediate(events.gameObject); }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(events.gameObject);
+        }
     }
 
     private static void ValidateScenePickingAndTransforms(Action<bool, string> check, Camera camera)
@@ -474,12 +560,18 @@ public static class CampaignsRaidEditorBuilder
             body.velocity = new Vector3(1, 2, 3);
             body.angularVelocity = new Vector3(0, 2, 0);
             var bodyState = new WTT.Campaigns.Client.Authoring.SceneBodyState(body);
-            for (var i = 0; i < 20; i++) bodyState.Freeze();
+            for (var i = 0; i < 20; i++)
+                bodyState.Freeze();
             check(body.isKinematic && !body.useGravity, "Original physics prop did not stay frozen during editing.");
             solid.transform.position += Vector3.right * 3;
             bodyState.Restore();
-            check(!body.isKinematic && body.useGravity && Vector3.Distance(body.velocity, new Vector3(1, 2, 3)) < .001f
-                && Vector3.Distance(body.angularVelocity, new Vector3(0, 2, 0)) < .001f, "Restoring an original prop lost native physics state.");
+            check(
+                !body.isKinematic
+                    && body.useGravity
+                    && Vector3.Distance(body.velocity, new Vector3(1, 2, 3)) < .001f
+                    && Vector3.Distance(body.angularVelocity, new Vector3(0, 2, 0)) < .001f,
+                "Restoring an original prop lost native physics state."
+            );
             solid.transform.localPosition = Vector3.forward * 10;
             UnityEngine.Object.DestroyImmediate(body);
             bodyState.Restore(); // Destroyed objects are harmless during map teardown.
@@ -492,54 +584,82 @@ public static class CampaignsRaidEditorBuilder
             {
                 Transform picked = null;
                 var calls = 0;
-                check(WTT.Campaigns.Client.Authoring.ScenePicking.Dispatch(true, mode, () =>
-                {
-                    calls++;
-                    picked = WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, Array.Empty<Renderer>());
-                }) && calls == 1 && picked == solid.transform,
-                    mode + " world click must select the visible object without requiring a category switch or armed picker.");
+                check(
+                    WTT.Campaigns.Client.Authoring.ScenePicking.Dispatch(
+                        true,
+                        mode,
+                        () =>
+                        {
+                            calls++;
+                            picked = WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, Array.Empty<Renderer>());
+                        }
+                    )
+                        && calls == 1
+                        && picked == solid.transform,
+                    mode + " world click must select the visible object without requiring a category switch or armed picker."
+                );
             }
             foreach (var mode in new[] { "Maps", "Scene", "Zones", "Bindings", "Captures" })
             {
                 var calls = 0;
-                check(!WTT.Campaigns.Client.Authoring.ScenePicking.Dispatch(false, mode, () => calls++) && calls == 0,
-                    "Scene editing must not take over ordinary raid capture input: " + mode);
+                check(
+                    !WTT.Campaigns.Client.Authoring.ScenePicking.Dispatch(false, mode, () => calls++) && calls == 0,
+                    "Scene editing must not take over ordinary raid capture input: " + mode
+                );
                 if (mode != "Maps" && mode != "Scene")
-                    check(!WTT.Campaigns.Client.Authoring.ScenePicking.Dispatch(true, mode, () => calls++) && calls == 0,
-                        "Scene picking must preserve the other authoring tools: " + mode);
+                    check(
+                        !WTT.Campaigns.Client.Authoring.ScenePicking.Dispatch(true, mode, () => calls++) && calls == 0,
+                        "Scene picking must preserve the other authoring tools: " + mode
+                    );
             }
-            check(WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, Array.Empty<Renderer>()) == solid.transform,
-                "A trigger volume blocked selection of a visible prop.");
+            check(
+                WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, Array.Empty<Renderer>()) == solid.transform,
+                "A trigger volume blocked selection of a visible prop."
+            );
             var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
             visual.name = "CampaignEditor prop";
             visual.transform.SetParent(fixture.transform, false);
             visual.transform.localPosition = Vector3.forward * 5;
             UnityEngine.Object.DestroyImmediate(visual.GetComponent<Collider>());
             var renderer = visual.GetComponent<MeshRenderer>();
-            check(WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }) == solid.transform,
-                "An unowned editor helper was pickable.");
-            check(WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }, t => t == visual.transform) == visual.transform,
-                "A placed prop without colliders could not be selected.");
+            check(
+                WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }) == solid.transform,
+                "An unowned editor helper was pickable."
+            );
+            check(
+                WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }, t => t == visual.transform) == visual.transform,
+                "A placed prop without colliders could not be selected."
+            );
             visual.name = "Independent renderer-only scenery";
-            check(WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }) == visual.transform,
-                "Renderer-only scenery was not selectable for inspection.");
+            check(
+                WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }) == visual.transform,
+                "Renderer-only scenery was not selectable for inspection."
+            );
             renderer.enabled = false;
-            check(WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }) == solid.transform,
-                "An invisible renderer stole a click.");
+            check(
+                WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }) == solid.transform,
+                "An invisible renderer stole a click."
+            );
             renderer.enabled = true;
             visual.transform.localPosition = Vector3.forward * 15;
-            check(WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }) == solid.transform,
-                "Renderer fallback selected scenery behind a nearer solid object.");
+            check(
+                WTT.Campaigns.Client.Authoring.ScenePicking.Pick(ray, new[] { renderer }) == solid.transform,
+                "Renderer fallback selected scenery behind a nearer solid object."
+            );
             var collision = new GameObject("Collision only child");
             collision.transform.SetParent(solid.transform, false);
-            check(SceneSelectionGeometry.VisualRoot(collision.transform) == solid.transform,
-                "Collision-only child did not resolve to its visible parent.");
+            check(
+                SceneSelectionGeometry.VisualRoot(collision.transform) == solid.transform,
+                "Collision-only child did not resolve to its visible parent."
+            );
             var lodRoot = new GameObject("LOD prop");
             lodRoot.transform.SetParent(fixture.transform, false);
             solid.transform.SetParent(lodRoot.transform, true);
             lodRoot.AddComponent<LODGroup>().SetLODs(new[] { new LOD(.01f, new[] { solid.GetComponent<Renderer>() }) });
-            check(SceneSelectionGeometry.VisualRoot(solid.transform) == lodRoot.transform,
-                "Clicking a LOD mesh selected only one detail level.");
+            check(
+                SceneSelectionGeometry.VisualRoot(solid.transform) == lodRoot.transform,
+                "Clicking a LOD mesh selected only one detail level."
+            );
             lodRoot.transform.localScale = new Vector3(2, 3, 4);
             solid.transform.localScale = new Vector3(.5f, .75f, 1.25f);
             solid.transform.localRotation = Quaternion.Euler(20, 30, 10);
@@ -550,38 +670,67 @@ public static class CampaignsRaidEditorBuilder
             solid.transform.rotation = nextRotation;
             SceneSelectionGeometry.WorldScale(solid.transform, nextScale);
             solid.transform.position = SceneSelectionGeometry.PositionForAnchor(solid.transform, localCenter, selectedCenter);
-            check(Vector3.Distance(solid.transform.TransformPoint(localCenter), selectedCenter) < .005f,
-                "Center rotation and resize drifted under a nonuniformly scaled parent: " + (solid.transform.TransformPoint(localCenter) - selectedCenter).ToString("F6") + "; scale " + solid.transform.lossyScale.ToString("F6"));
+            check(
+                Vector3.Distance(solid.transform.TransformPoint(localCenter), selectedCenter) < .005f,
+                "Center rotation and resize drifted under a nonuniformly scaled parent: "
+                    + (solid.transform.TransformPoint(localCenter) - selectedCenter).ToString("F6")
+                    + "; scale "
+                    + solid.transform.lossyScale.ToString("F6")
+            );
             var localBefore = solid.transform.localScale;
             var worldBefore = solid.transform.lossyScale;
             var desired = new Vector3(4, 5, 6);
             SceneSelectionGeometry.WorldScale(solid.transform, desired);
             check(Vector3.Distance(solid.transform.lossyScale, desired) < .0001f, "Original prop resize ignored parent scaling.");
             solid.transform.localScale = localBefore;
-            check(Vector3.Distance(solid.transform.lossyScale, worldBefore) < .0001f, "Cancelling resize did not restore parent-relative scale.");
-            check(Mathf.Abs(SceneSelectionGeometry.Resize(2.34f, 0, true) - 2.34f) < .0001f,
-                "Clicking a resize handle without dragging changed the object's size.");
+            check(
+                Vector3.Distance(solid.transform.lossyScale, worldBefore) < .0001f,
+                "Cancelling resize did not restore parent-relative scale."
+            );
+            check(
+                Mathf.Abs(SceneSelectionGeometry.Resize(2.34f, 0, true) - 2.34f) < .0001f,
+                "Clicking a resize handle without dragging changed the object's size."
+            );
             var before = Quaternion.Euler(20, 30, 40);
             var turned = SceneSelectionGeometry.Rotation(before, 1, 90);
-            check(Vector3.Distance(turned * Vector3.forward, Quaternion.AngleAxis(90, Vector3.up) * (before * Vector3.forward)) < .0001f,
-                "Rotation ring did not rotate around its displayed world axis.");
-            check(Mathf.Abs(SceneSelectionGeometry.Resize(2, 90, false) - 4) < .0001f
-                && Mathf.Abs(SceneSelectionGeometry.Resize(2, -90, false) - 1) < .0001f,
-                "Resize must respond equally to screen movement on tiny and large objects.");
+            check(
+                Vector3.Distance(turned * Vector3.forward, Quaternion.AngleAxis(90, Vector3.up) * (before * Vector3.forward)) < .0001f,
+                "Rotation ring did not rotate around its displayed world axis."
+            );
+            check(
+                Mathf.Abs(SceneSelectionGeometry.Resize(2, 90, false) - 4) < .0001f
+                    && Mathf.Abs(SceneSelectionGeometry.Resize(2, -90, false) - 1) < .0001f,
+                "Resize must respond equally to screen movement on tiny and large objects."
+            );
             var ring = new Vector3[65];
             for (var i = 0; i < ring.Length; i++)
             {
                 var angle = i / 64f * Mathf.PI * 2;
-                ring[i] = camera.transform.position + camera.transform.forward * 10
-                    + camera.transform.right * Mathf.Cos(angle) + camera.transform.up * Mathf.Sin(angle);
+                ring[i] =
+                    camera.transform.position
+                    + camera.transform.forward * 10
+                    + camera.transform.right * Mathf.Cos(angle)
+                    + camera.transform.up * Mathf.Sin(angle);
             }
             var mouse = (Vector2)camera.WorldToScreenPoint(ring[8]);
-            check(SceneHandleMath.HitPath(camera, ring, mouse, out var tangent) < .01f && tangent.sqrMagnitude > .99f,
-                "Displayed rotation ring did not match its screen hit target.");
-            check(SceneHandleMath.HitPath(camera, ring, camera.WorldToScreenPoint(camera.transform.position + camera.transform.forward * 10), out _) > 12,
-                "Rotation ring captured clicks far from the displayed handle.");
+            check(
+                SceneHandleMath.HitPath(camera, ring, mouse, out var tangent) < .01f && tangent.sqrMagnitude > .99f,
+                "Displayed rotation ring did not match its screen hit target."
+            );
+            check(
+                SceneHandleMath.HitPath(
+                    camera,
+                    ring,
+                    camera.WorldToScreenPoint(camera.transform.position + camera.transform.forward * 10),
+                    out _
+                ) > 12,
+                "Rotation ring captured clicks far from the displayed handle."
+            );
         }
-        finally { UnityEngine.Object.DestroyImmediate(fixture); }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(fixture);
+        }
     }
 
     [MenuItem("SDK/WTT-Campaigns/Preview raid editor")]
@@ -628,7 +777,15 @@ public static class CampaignsRaidEditorBuilder
                     "events",
                     "captures",
                     "scene",
-                    "scene-catalog", "scene-empty", "scene-loading", "scene-removed", "scene-failed", "scene-popout", "scene-edit", "scene-picked", "scene-readonly",
+                    "scene-catalog",
+                    "scene-empty",
+                    "scene-loading",
+                    "scene-removed",
+                    "scene-failed",
+                    "scene-popout",
+                    "scene-edit",
+                    "scene-picked",
+                    "scene-readonly",
                     "maps",
                     "map-door",
                     "popout",
@@ -636,7 +793,9 @@ public static class CampaignsRaidEditorBuilder
                     "conflict",
                     "home",
                     "walkthrough",
-                    "environment", "help", "resized",
+                    "environment",
+                    "help",
+                    "resized",
                 }
             )
             {
@@ -656,12 +815,34 @@ public static class CampaignsRaidEditorBuilder
                     : state == "map-door" ? "Door"
                     : "Box";
                 var selected = state != "browser";
-                host.Present(mode, kind, selected, state == "capture-request", mode == "Scene" || mode == "Maps", true, false, state.StartsWith("scene-"));
+                host.Present(
+                    mode,
+                    kind,
+                    selected,
+                    state == "capture-request",
+                    mode == "Scene" || mode == "Maps",
+                    true,
+                    false,
+                    state.StartsWith("scene-")
+                );
                 host.Select(mode, selected ? "preview-record" : "");
                 host.ResetLayout();
                 var picked = state == "scene-picked" || state == "scene-readonly";
-                host.PresentScene(state.StartsWith("scene-"), state == "scene-removed" ? "Changes" : state == "scene-edit" || picked ? "Existing" : "Catalog",
-                    state == "scene-removed" ? "Hide" : picked ? "Move" : state == "scene-edit" ? "Copy" : "Loot", state != "scene-empty", state == "scene-removed" || state == "scene-edit" || picked, state != "scene-readonly", picked, !picked);
+                host.PresentScene(
+                    state.StartsWith("scene-"),
+                    state == "scene-removed" ? "Changes"
+                        : state == "scene-edit" || picked ? "Existing"
+                        : "Catalog",
+                    state == "scene-removed" ? "Hide"
+                        : picked ? "Move"
+                        : state == "scene-edit" ? "Copy"
+                        : "Loot",
+                    state != "scene-empty",
+                    state == "scene-removed" || state == "scene-edit" || picked,
+                    state != "scene-readonly",
+                    picked,
+                    !picked
+                );
                 if (state.StartsWith("scene-"))
                 {
                     var ready = state == "scene-catalog" || state == "scene-popout";
@@ -672,13 +853,22 @@ public static class CampaignsRaidEditorBuilder
                     Find("ScenePreviewStatus").gameObject.SetActive(!ready);
                     Text("ScenePreviewStatus", state == "scene-failed" ? "Preview unavailable" : "Loading preview…");
                     Find("ScenePreviewRetryGroup").gameObject.SetActive(state == "scene-failed");
-                    Text("SceneHeading", state == "scene-removed" ? "Weapon box — removed" : ready || state == "scene-edit" ? "Storage crate — preview fixture" : "Kalashnikov AK-74M 5.45x39 assault rifle with long installed preset name");
-                    Text("SceneInfo", state == "scene-loading" ? "Loading installed item models…"
-                        : state == "scene-failed" ? "Missing item model. Install the required content and reload the map."
-                        : state == "scene-removed" ? "Removed from this layout. Restore original returns the object."
-                        : "Place on a surface, then refine with the transform handles. Escape cancels.");
+                    Text(
+                        "SceneHeading",
+                        state == "scene-removed" ? "Weapon box — removed"
+                            : ready || state == "scene-edit" ? "Storage crate — preview fixture"
+                            : "Kalashnikov AK-74M 5.45x39 assault rifle with long installed preset name"
+                    );
+                    Text(
+                        "SceneInfo",
+                        state == "scene-loading" ? "Loading installed item models…"
+                            : state == "scene-failed" ? "Missing item model. Install the required content and reload the map."
+                            : state == "scene-removed" ? "Removed from this layout. Restore original returns the object."
+                            : "Place on a surface, then refine with the transform handles. Escape cancels."
+                    );
                     host.ShowPanel("Library", true);
-                    if (size.x >= 1600) host.ShowPanel("Inspector", true);
+                    if (size.x >= 1600)
+                        host.ShowPanel("Inspector", true);
                 }
                 Text("Connection", "Operation Northwind / Customs / Warehouse approach");
                 Text("Status", "Connected · All changes saved");
@@ -726,39 +916,63 @@ public static class CampaignsRaidEditorBuilder
                 }
                 if (state.StartsWith("scene-"))
                 {
-                    Text("LibraryCount", state == "scene-empty" ? "No matching objects" : state == "scene-loading" ? "Loading catalog…" : "4 objects · 1 / 1");
+                    Text(
+                        "LibraryCount",
+                        state == "scene-empty" ? "No matching objects"
+                            : state == "scene-loading" ? "Loading catalog…"
+                            : "4 objects · 1 / 1"
+                    );
                     for (var i = 0; i < 10; i++)
                     {
                         Find("Row" + i).gameObject.SetActive(state != "scene-empty" && i < 4);
-                        if (i < 4) Find("Row" + i).GetComponentInChildren<Text>().text = new[] { "AK-74M 5.45x39 assault rifle — installed preset", "Salewa first aid kit", "Corrugated warehouse storage crate", "Weapon repair kit" }[i];
+                        if (i < 4)
+                            Find("Row" + i).GetComponentInChildren<Text>().text = new[]
+                            {
+                                "AK-74M 5.45x39 assault rifle — installed preset",
+                                "Salewa first aid kit",
+                                "Corrugated warehouse storage crate",
+                                "Weapon repair kit",
+                            }[i];
                         var icon = Find("SceneIcon" + i).GetComponent<RawImage>();
                         var catalogRow = state != "scene-removed" && state != "scene-edit" && !picked;
                         var ready = i == 0 && (state == "scene-catalog" || state == "scene-popout");
                         icon.gameObject.SetActive(i < 4 && catalogRow);
                         icon.texture = ready ? propPreview : null;
                         icon.color = ready ? Color.white : Color.clear;
-                        if (ready) Find("Row0").GetComponentInChildren<Text>().text = "Storage crate — preview fixture";
+                        if (ready)
+                            Find("Row0").GetComponentInChildren<Text>().text = "Storage crate — preview fixture";
                         Find("SceneIconStatus" + i).gameObject.SetActive(i < 4 && catalogRow && !ready);
                         Text("SceneIconStatus" + i, state == "scene-failed" ? "N/A" : "…");
                         UiElements.Stretch(Find("Row" + i).GetComponentInChildren<Text>(true).rectTransform, catalogRow ? 54 : 8, 8, 2, 2);
                     }
-                    if (state == "scene-popout") host.ToggleDock("Library");
+                    if (state == "scene-popout")
+                        host.ToggleDock("Library");
                     if (picked)
                     {
-                        Text("SceneHeading", state == "scene-readonly" ? "Warehouse structural wall" : "Corrugated warehouse storage crate");
-                        Text("SceneInfo", state == "scene-readonly"
-                            ? "Selected for inspection. Combined static geometry cannot be moved safely. Choose an independent prop."
-                            : "Drag a handle or edit a property. Changes are saved only when you edit; Esc cancels a drag.");
+                        Text(
+                            "SceneHeading",
+                            state == "scene-readonly" ? "Warehouse structural wall" : "Corrugated warehouse storage crate"
+                        );
+                        Text(
+                            "SceneInfo",
+                            state == "scene-readonly"
+                                ? "Selected for inspection. Combined static geometry cannot be moved safely. Choose an independent prop."
+                                : "Drag a handle or edit a property. Changes are saved only when you edit; Esc cancels a drag."
+                        );
                         Text("MapDetails", "Customs:/Warehouse/Storage/crate\nTransform, MeshFilter, MeshRenderer, BoxCollider, LODGroup");
                         Input("MapName", state == "scene-readonly" ? "Warehouse structural wall" : "Corrugated warehouse storage crate");
-                        foreach (var action in new[] { "Move", "Rotate", "Scale", "SceneMove", "SceneRotate", "SceneRemove", "MapAtPlayer" })
+                        foreach (
+                            var action in new[] { "Move", "Rotate", "Scale", "SceneMove", "SceneRotate", "SceneRemove", "MapAtPlayer" }
+                        )
                             Find(action).GetComponent<Button>().interactable = state != "scene-readonly";
                         foreach (var group in new[] { "Position", "Rotation", "Size" })
-                        foreach (var axis in "XYZ") Find("Map" + group + axis).GetComponent<InputField>().readOnly = state == "scene-readonly";
+                        foreach (var axis in "XYZ")
+                            Find("Map" + group + axis).GetComponent<InputField>().readOnly = state == "scene-readonly";
                         Find("SceneRestore").GetComponent<Button>().interactable = false;
                         Find("SceneRebind").GetComponent<Button>().interactable = false;
                         host.ShowPanel("Inspector", true);
-                        if (state == "scene-readonly") host.ToggleDock("Inspector");
+                        if (state == "scene-readonly")
+                            host.ToggleDock("Inspector");
                     }
                 }
                 foreach (var category in new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" })
@@ -780,7 +994,8 @@ public static class CampaignsRaidEditorBuilder
                 }
                 if (state == "walkthrough")
                     host.SetWalkthrough(true);
-                if (state == "help") Find("HelpToggle").GetComponent<Button>().onClick.Invoke();
+                if (state == "help")
+                    Find("HelpToggle").GetComponent<Button>().onClick.Invoke();
                 if (state == "resized")
                 {
                     var layout = host.CaptureLayout();
@@ -802,7 +1017,8 @@ public static class CampaignsRaidEditorBuilder
                         throw new Exception("Environment must initially show its time-of-day controls.");
                     Input("EnvironmentHour", "18:30");
                     Text("EnvironmentStatus", "Preview time held. Closing restores raid time.");
-                    foreach (var field in new[] { "Clouds", "Rain", "Fog", "Wind", "Thunder" }) Input("Weather" + field, "50");
+                    foreach (var field in new[] { "Clouds", "Rain", "Fog", "Wind", "Thunder" })
+                        Input("Weather" + field, "50");
                     Text("WeatherStatus", "Weather preview active. Closing restores raid weather.");
                     Canvas.ForceUpdateCanvases();
                     var menu = (RectTransform)Find("EnvironmentMenu");
@@ -830,15 +1046,20 @@ public static class CampaignsRaidEditorBuilder
                         if (Mathf.Abs(left - rootRect.rect.xMin) > .1f || Mathf.Abs(right - rootRect.rect.xMax) > .1f)
                             throw new Exception(size + " bar does not span the viewport: " + id);
                         var frame = bar.Find("ToolFrame");
-                        if (!frame) continue;
+                        if (!frame)
+                            continue;
                         foreach (RectTransform edge in frame)
                         {
                             edge.GetWorldCorners(barCorners);
                             foreach (var corner in barCorners)
                             {
                                 var point = bar.InverseTransformPoint(corner);
-                                if (point.x < bar.rect.xMin - .1f || point.x > bar.rect.xMax + .1f
-                                    || point.y < bar.rect.yMin - .1f || point.y > bar.rect.yMax + .1f)
+                                if (
+                                    point.x < bar.rect.xMin - .1f
+                                    || point.x > bar.rect.xMax + .1f
+                                    || point.y < bar.rect.yMin - .1f
+                                    || point.y > bar.rect.yMax + .1f
+                                )
                                     throw new Exception(size + " border extends beyond bar: " + id);
                             }
                         }
@@ -864,7 +1085,6 @@ public static class CampaignsRaidEditorBuilder
                         if (label && label.preferredHeight > label.rectTransform.rect.height + 1)
                             throw new Exception(size + " " + state + " clipped button label: " + button.name);
                     }
-
                 }
                 camera.Render();
                 var previous = RenderTexture.active;

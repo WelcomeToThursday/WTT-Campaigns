@@ -2,5 +2,10 @@ namespace UnityEngine.Scripting;
 
 internal static class GarbageCollector
 {
-    public enum Mode { Disabled, Enabled, Manual }
+    public enum Mode
+    {
+        Disabled,
+        Enabled,
+        Manual,
+    }
 }

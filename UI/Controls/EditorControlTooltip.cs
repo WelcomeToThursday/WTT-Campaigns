@@ -21,7 +21,8 @@ public sealed class EditorControlTooltip : MonoBehaviour, IPointerEnterHandler, 
 
     private void Update()
     {
-        if (!_pending || Time.unscaledTime < _showAt) return;
+        if (!_pending || Time.unscaledTime < _showAt)
+            return;
         _pending = false;
         Enter?.Invoke();
     }

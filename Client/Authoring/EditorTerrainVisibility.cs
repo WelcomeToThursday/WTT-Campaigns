@@ -17,7 +17,8 @@ internal sealed class EditorTerrainVisibility : IDisposable
 
     internal void Observe(TerrainLod lod)
     {
-        if (!lod || !lod._terrain || !lod._terrainLod || _lods.ContainsKey(lod)) return;
+        if (!lod || !lod._terrain || !lod._terrainLod || _lods.ContainsKey(lod))
+            return;
         Observe(lod._terrain);
         _lods.Add(lod, (lod.TerrainIsVisible, lod._terrainLod.activeSelf));
     }
@@ -28,7 +29,8 @@ internal sealed class EditorTerrainVisibility : IDisposable
             if (lod && lod._terrain && lod._terrainLod && !lod.TerrainIsVisible)
                 lod.TerrainIsVisible = true;
         foreach (var terrain in _terrains.Keys)
-            if (terrain && !terrain.drawHeightmap) terrain.drawHeightmap = true;
+            if (terrain && !terrain.drawHeightmap)
+                terrain.drawHeightmap = true;
     }
 
     public void Dispose()

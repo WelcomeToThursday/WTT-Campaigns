@@ -130,12 +130,21 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
         {
             if (item.Kind == "Panel")
             {
-                var panel = Panel(_stage, item.Id, item.X, item.Y, item.Width, item.Height,
-                    item.Id.EndsWith("TitleBar") ? EditorTarkovTheme.Container : EditorTarkovTheme.Surface);
+                var panel = Panel(
+                    _stage,
+                    item.Id,
+                    item.X,
+                    item.Y,
+                    item.Width,
+                    item.Height,
+                    item.Id.EndsWith("TitleBar") ? EditorTarkovTheme.Container : EditorTarkovTheme.Surface
+                );
                 EditorTarkovTheme.Frame(panel);
             }
-            else if (item.Kind == "Button") AddButton(item.Id, item.Text, item.X, item.Y, item.Width, item.Height);
-            else Label(item.Id, item.Text, item.Size, item.X, item.Y, item.Width, item.Height, EditorTarkovTheme.Ink);
+            else if (item.Kind == "Button")
+                AddButton(item.Id, item.Text, item.X, item.Y, item.Width, item.Height);
+            else
+                Label(item.Id, item.Text, item.Size, item.X, item.Y, item.Width, item.Height, EditorTarkovTheme.Ink);
         }
         Panel(_stage, "ColumnRule", 438, 124, 1, 404, EditorTarkovTheme.Border);
         Rule(124, 580, 1028);

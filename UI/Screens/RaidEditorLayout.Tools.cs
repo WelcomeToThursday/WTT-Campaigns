@@ -18,10 +18,12 @@ public static partial class RaidEditorLayout
     // Migrate bundled uGUI controls in place before the client indexes them.
     public static void EnsureTools(GameObject root, UiElements ui)
     {
-        if (root.transform.Find("ToolWindows")) return;
+        if (root.transform.Find("ToolWindows"))
+            return;
         var controls = new Dictionary<string, Transform>();
         foreach (var child in root.GetComponentsInChildren<Transform>(true))
-            if (!controls.ContainsKey(child.name)) controls.Add(child.name, child);
+            if (!controls.ContainsKey(child.name))
+                controls.Add(child.name, child);
         Transform C(string id) => controls[id];
         var windows = UiElements.Rect("ToolWindows", root.transform, 0, 0);
         UiElements.Stretch(windows);
@@ -31,7 +33,8 @@ public static partial class RaidEditorLayout
             panel.SetParent(windows, false);
             var bar = (RectTransform)C(id + "TitleBar");
             UiElements.Stretch(bar, 0, 0, 0, 0);
-            bar.anchorMin = new Vector2(0, 1); bar.sizeDelta = new Vector2(0, 30);
+            bar.anchorMin = new Vector2(0, 1);
+            bar.sizeDelta = new Vector2(0, 30);
             bar.anchoredPosition = new Vector2(0, -15);
             var title = C(id + "Heading").GetComponent<Text>();
             title.text = id == "Library" ? "BROWSER" : "PROPERTIES";
@@ -40,7 +43,8 @@ public static partial class RaidEditorLayout
             C(id + "Popout").gameObject.SetActive(false);
             var close = (RectTransform)C(id + "Collapse");
             close.anchorMin = close.anchorMax = new Vector2(1, .5f);
-            close.sizeDelta = new Vector2(26, 22); close.anchoredPosition = new Vector2(-17, 0);
+            close.sizeDelta = new Vector2(26, 22);
+            close.anchoredPosition = new Vector2(-17, 0);
             close.GetComponentInChildren<Text>().text = "×";
             EditorTarkovTheme.Frame(panel);
         }
@@ -93,7 +97,8 @@ public static partial class RaidEditorLayout
         rect.anchorMin = rect.anchorMax = new Vector2(.5f, .5f);
         rect.sizeDelta = new Vector2(width, height);
         var children = new List<Transform>();
-        foreach (Transform child in panel) children.Add(child);
+        foreach (Transform child in panel)
+            children.Add(child);
         var scroll = ui.Scroll(panel, panel.name + "Scroll", width - 16, height - 42, 0, -15);
         UiElements.Stretch((RectTransform)scroll.transform, 8, 8, 36, 10);
         scroll.GetComponent<Image>().color = Color.clear;
@@ -101,9 +106,11 @@ public static partial class RaidEditorLayout
         layout.enabled = false;
         scroll.content.GetComponent<ContentSizeFitter>().enabled = false;
         scroll.content.sizeDelta = new Vector2(0, title == "ENVIRONMENT" ? 638 : 210);
-        foreach (var child in children) child.SetParent(scroll.content, false);
+        foreach (var child in children)
+            child.SetParent(scroll.content, false);
         var bar = UiElements.Rect(panel.name + "TitleBar", panel, 0, 30);
-        bar.anchorMin = new Vector2(0, 1); bar.anchorMax = Vector2.one;
+        bar.anchorMin = new Vector2(0, 1);
+        bar.anchorMax = Vector2.one;
         bar.anchoredPosition = new Vector2(0, -15);
         UiElements.Fill(bar, EditorTarkovTheme.Container, true);
         var label = ui.Label(bar, panel.name + "Title", title, 17, width - 52, 28);

@@ -10,8 +10,8 @@ internal static class PlayerRoute
         layout.Checkpoints.Insert(after < 0 ? layout.Checkpoints.Count : after + 1, checkpoint);
     }
 
-    internal static string Progress(MapLayout layout, int reached) => reached > layout.Checkpoints.Count
-        ? "Route complete"
+    internal static string Progress(MapLayout layout, int reached) =>
+        reached > layout.Checkpoints.Count ? "Route complete"
         : reached == layout.Checkpoints.Count ? "Head to exit · " + layout.Exit?.Name
         : $"Checkpoint {reached + 1} / {layout.Checkpoints.Count} · {layout.Checkpoints[reached].Name}";
 }

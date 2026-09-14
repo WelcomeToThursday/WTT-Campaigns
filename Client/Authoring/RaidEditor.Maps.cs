@@ -29,6 +29,7 @@ public sealed partial class RaidEditor
         _walkCameraPosition = null;
         _walkCameraRaid = "";
     }
+
     private MapSceneAdapter? _mapScene;
     private MapLayout? _walkLayout;
     private bool MapWorkspace => _mode == "Maps" || _mode == "Routes";
@@ -158,14 +159,18 @@ public sealed partial class RaidEditor
                 });
             }
         );
-        Button("RouteFrame", () =>
-        {
-            if (MapPoint is not { } point) return;
-            var center = ZoneRuntime.Vector(point.Position) + Vector3.up;
-            var distance = point is MapVolume volume ? Mathf.Max(5, ZoneRuntime.Vector(volume.Size).magnitude * 1.5f) : 5;
-            _flyRotation = Quaternion.Euler(25, point.Rotation.Y, 0);
-            _flyPosition = center - _flyRotation * Vector3.forward * distance;
-        });
+        Button(
+            "RouteFrame",
+            () =>
+            {
+                if (MapPoint is not { } point)
+                    return;
+                var center = ZoneRuntime.Vector(point.Position) + Vector3.up;
+                var distance = point is MapVolume volume ? Mathf.Max(5, ZoneRuntime.Vector(volume.Size).magnitude * 1.5f) : 5;
+                _flyRotation = Quaternion.Euler(25, point.Rotation.Y, 0);
+                _flyPosition = center - _flyRotation * Vector3.forward * distance;
+            }
+        );
         Button("MapEarlier", () => ReorderCheckpoint(-1));
         Button("MapLater", () => ReorderCheckpoint(1));
         Button(
@@ -264,8 +269,14 @@ public sealed partial class RaidEditor
 
     private static bool TryRouteFloor(Vector3 origin, float distance, out RaycastHit floor)
     {
-        floor = Physics.RaycastAll(origin, Vector3.down, distance,
-                Physics.DefaultRaycastLayers & ~(1 << LayerMask.NameToLayer("Triggers")), QueryTriggerInteraction.Ignore)
+        floor = Physics
+            .RaycastAll(
+                origin,
+                Vector3.down,
+                distance,
+                Physics.DefaultRaycastLayers & ~(1 << LayerMask.NameToLayer("Triggers")),
+                QueryTriggerInteraction.Ignore
+            )
             .AsValueEnumerable()
             .Where(hit => hit.collider && !hit.collider.GetComponentInParent<EFT.Player>())
             .OrderBy(hit => hit.distance)
@@ -294,7 +305,8 @@ public sealed partial class RaidEditor
         if (operation == "Copy")
         {
             var error = MapSceneAdapter.Supported(_picked, copy: true);
-            if (error.Length > 0) throw new InvalidOperationException(error);
+            if (error.Length > 0)
+                throw new InvalidOperationException(error);
         }
         var target = (_mapScene ??= new()).CaptureOriginal(_picked!);
         MapEdit(l =>
@@ -369,7 +381,8 @@ public sealed partial class RaidEditor
             copy.Name += " copy";
             foreach (var p in MapLayoutRules.Points(copy))
                 p.Id = MapId();
-            foreach (var loot in copy.Loot) loot.Items = FreshItems(loot.Items);
+            foreach (var loot in copy.Loot)
+                loot.Items = FreshItems(loot.Items);
             foreach (var d in copy.Doors)
                 d.Id = MapId();
             _session!.Edit(s => s.MapLayouts.Add(copy));
@@ -381,14 +394,18 @@ public sealed partial class RaidEditor
                 var point = MapLayoutRules.Points(l).AsValueEnumerable().FirstOrDefault(p => p.Id == _selected);
                 if (point is MapLootPlacement loot)
                 {
-                    var copy = RaidEditorSession.Copy(loot); copy.Id = MapId(); copy.Items = FreshItems(copy.Items);
-                    l.Loot.Add(copy); _selected = copy.Id;
+                    var copy = RaidEditorSession.Copy(loot);
+                    copy.Id = MapId();
+                    copy.Items = FreshItems(copy.Items);
+                    l.Loot.Add(copy);
+                    _selected = copy.Id;
                 }
                 else if (point is MapObjectEdit edit && edit.Target.Kind == "Prop")
                 {
                     var target = _mapScene?.OriginalFor(edit.Target);
                     var error = MapSceneAdapter.Supported(target, copy: true);
-                    if (error.Length > 0) throw new InvalidOperationException(error);
+                    if (error.Length > 0)
+                        throw new InvalidOperationException(error);
                     var copy = RaidEditorSession.Copy(edit);
                     copy.Id = MapId();
                     copy.Operation = "Copy";
@@ -443,17 +460,23 @@ public sealed partial class RaidEditor
                 continue;
             if (_mode == "Routes")
             {
-                if (layout.Start != null) _rows.Add((layout.Start.Id, "START · " + layout.Start.Name));
+                if (layout.Start != null)
+                    _rows.Add((layout.Start.Id, "START · " + layout.Start.Name));
                 for (var i = 0; i < layout.Checkpoints.Count; i++)
                     _rows.Add((layout.Checkpoints[i].Id, $"{i + 1}. {layout.Checkpoints[i].Name}"));
-                if (layout.Exit != null) _rows.Add((layout.Exit.Id, "EXIT · " + layout.Exit.Name));
+                if (layout.Exit != null)
+                    _rows.Add((layout.Exit.Id, "EXIT · " + layout.Exit.Name));
             }
             else
             {
-                foreach (var o in layout.Objects) _rows.Add((o.Id, o.Operation + " · " + o.Name));
-                foreach (var loot in layout.Loot) _rows.Add((loot.Id, "Loot · " + loot.Name));
-                foreach (var d in layout.Doors) _rows.Add((d.Id, "Door · " + d.Name + " · " + d.State));
-                foreach (var b in layout.Barriers) _rows.Add((b.Id, "Barrier · " + b.Name));
+                foreach (var o in layout.Objects)
+                    _rows.Add((o.Id, o.Operation + " · " + o.Name));
+                foreach (var loot in layout.Loot)
+                    _rows.Add((loot.Id, "Loot · " + loot.Name));
+                foreach (var d in layout.Doors)
+                    _rows.Add((d.Id, "Door · " + d.Name + " · " + d.State));
+                foreach (var b in layout.Barriers)
+                    _rows.Add((b.Id, "Barrier · " + b.Name));
             }
         }
     }
@@ -473,10 +496,19 @@ public sealed partial class RaidEditor
         {
             _mapScene ??= new();
             _mapScene.Reconcile(Layout, _drag?.Transient == true ? _sceneSelectionPose : null);
-            if (_drag is { Centered: true } drag && drag.AnchorTarget && _tool != "Move"
-                && Selected is { } dragged && _mapScene.TargetErrors.Count == 0)
+            if (
+                _drag is { Centered: true } drag
+                && drag.AnchorTarget
+                && _tool != "Move"
+                && Selected is { } dragged
+                && _mapScene.TargetErrors.Count == 0
+            )
             {
-                var position = WTT.Campaigns.UI.Controls.SceneSelectionGeometry.PositionForAnchor(drag.AnchorTarget!, drag.LocalAnchor, drag.Anchor);
+                var position = WTT.Campaigns.UI.Controls.SceneSelectionGeometry.PositionForAnchor(
+                    drag.AnchorTarget!,
+                    drag.LocalAnchor,
+                    drag.Anchor
+                );
                 if (drag.AnchorTarget!.position != position)
                 {
                     drag.AnchorTarget.position = position;
@@ -491,18 +523,19 @@ public sealed partial class RaidEditor
                 SetSceneSelectionPose(_picked!, error.Length == 0 ? _mapScene.CaptureOriginal(_picked!) : null, error);
             }
         }
-        if (!maps) return;
+        if (!maps)
+            return;
         view.Value("MapName", MapPoint?.Name ?? MapDoor?.Name ?? Layout?.Name ?? "");
         if (!SceneWorkspace)
         {
             view.Get<InputField>("MapName").interactable = true;
             view.Get<InputField>("MapName").readOnly = false;
             foreach (var group in new[] { "Position", "Rotation", "Size" })
-                foreach (var axis in "XYZ")
-                {
-                    view.Get<InputField>("Map" + group + axis).interactable = true;
-                    view.Get<InputField>("Map" + group + axis).readOnly = false;
-                }
+            foreach (var axis in "XYZ")
+            {
+                view.Get<InputField>("Map" + group + axis).interactable = true;
+                view.Get<InputField>("Map" + group + axis).readOnly = false;
+            }
         }
         foreach (var group in new[] { "Position", "Rotation", "Size" })
         {
@@ -530,15 +563,29 @@ public sealed partial class RaidEditor
         if (_mode == "Routes")
         {
             var index = Layout?.Checkpoints.FindIndex(p => p.Id == _selected) ?? -1;
-            view.Text("RouteGuide", Layout == null ? "Choose a layout here, or create one in Maps."
-                : "PLAYER ROUTE · " + Layout.Checkpoints.Count + " checkpoints\n"
-                + (index >= 0 ? $"Checkpoint {index + 1} of {Layout.Checkpoints.Count} · new points insert after this one."
-                    : "Set start → add checkpoints → set exit.")
-                + "\nPlace markers on the floor beneath the camera.");
+            view.Text(
+                "RouteGuide",
+                Layout == null
+                    ? "Choose a layout here, or create one in Maps."
+                    : "PLAYER ROUTE · "
+                        + Layout.Checkpoints.Count
+                        + " checkpoints\n"
+                        + (
+                            index >= 0
+                                ? $"Checkpoint {index + 1} of {Layout.Checkpoints.Count} · new points insert after this one."
+                                : "Set start → add checkpoints → set exit."
+                        )
+                        + "\nPlace markers on the floor beneath the camera."
+            );
         }
         var errors =
             Layout == null
-                ? new List<string> { _mode == "Routes" ? "Create a layout in Maps, then select it here." : "Create or select a layout. Use Routes for player waypoints." }
+                ? new List<string>
+                {
+                    _mode == "Routes"
+                        ? "Create a layout in Maps, then select it here."
+                        : "Create or select a layout. Use Routes for player waypoints.",
+                }
                 : MapLayoutRules.Errors(Layout, _mode == "Routes");
         if (geometry && !_walking)
         {
@@ -569,6 +616,7 @@ public sealed partial class RaidEditor
     }
 
     private bool _walkRequested;
+
     private void RequestWalkthrough()
     {
         if (_session?.Busy == true)
@@ -646,10 +694,7 @@ public sealed partial class RaidEditor
         if (target != null && _checkpoint <= route.Checkpoints.Count && Inside(ToZone(target), _player!.Transform.position))
             _checkpoint++;
         if (_view?.Valid == true)
-            _view.Text(
-                "EditorWalkStatus",
-                PlayerRoute.Progress(route, _checkpoint) + " · Esc to return to editing"
-            );
+            _view.Text("EditorWalkStatus", PlayerRoute.Progress(route, _checkpoint) + " · Esc to return to editing");
         return false;
     }
 
