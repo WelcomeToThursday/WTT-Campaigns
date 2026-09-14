@@ -69,6 +69,33 @@ internal static class MapLayoutUiChecks
                 "Deleting a layout keeps the independent copy and signals persistence"
             );
         });
+
+        var zone = new SeasonZone
+        {
+            Id = SeasonRepository.NewId(),
+            Name = "Shared doorway",
+            Location = "woods",
+            Scene = "woods_main",
+            LayoutId = season.MapLayouts[0].Id,
+        };
+        season.Zones.Add(zone);
+        var spatialHost = new SpatialHost(season);
+        await using var spatialRenderer = new EditorRenderer(services);
+        await spatialRenderer.Dispatcher.InvokeAsync(async () =>
+        {
+            await spatialRenderer.Mount(spatialHost);
+            var component = spatialRenderer.Components<SpatialWorkspace>().Single();
+            check(spatialRenderer.Text(component.Id).Contains("Hallway escape copy"), "Zone list shows its layout scope");
+            await spatialRenderer.DispatchEventAsync(
+                spatialRenderer.Event(component.Id, "select", "", "onchange"),
+                null,
+                new ChangeEventArgs { Value = "" }
+            );
+            check(
+                zone.LayoutId.Length == 0 && spatialHost.Changes == 1 && spatialRenderer.Text(component.Id).Contains("Shared"),
+                "Changing zone scope updates the list summary immediately"
+            );
+        });
     }
 
     private sealed class MapHost(SeasonDefinition season) : ComponentBase
@@ -78,6 +105,19 @@ internal static class MapLayoutUiChecks
         protected override void BuildRenderTree(RenderTreeBuilder builder)
         {
             builder.OpenComponent<MapLayoutWorkspace>(0);
+            builder.AddAttribute(1, "Season", season);
+            builder.AddAttribute(2, "Changed", EventCallback.Factory.Create(this, () => Changes++));
+            builder.CloseComponent();
+        }
+    }
+
+    private sealed class SpatialHost(SeasonDefinition season) : ComponentBase
+    {
+        internal int Changes;
+
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<SpatialWorkspace>(0);
             builder.AddAttribute(1, "Season", season);
             builder.AddAttribute(2, "Changed", EventCallback.Factory.Create(this, () => Changes++));
             builder.CloseComponent();

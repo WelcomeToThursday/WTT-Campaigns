@@ -19,12 +19,15 @@ public sealed partial class RaidEditor
         CanSceneEdit
         && _sceneTab != "Catalog"
         && ScenePoint != null
-        && SceneSelectionTarget
+        && (ScenePoint is MapVolume || SceneSelectionTarget)
         && _sceneSelectionError.Length == 0
         && ScenePoint is not MapObjectEdit { Operation: "Hide" }
         && (
             tool != "Scale"
-            || ScenePoint is MapObjectEdit { Target.Kind: "Prop" } && MapSceneAdapter.ScaleRestriction(SceneSelectionTarget!).Length == 0
+            || ScenePoint is MapVolume
+            || ScenePoint is MapObjectEdit { Target.Kind: "Prop" }
+                && SceneSelectionTarget
+                && MapSceneAdapter.ScaleRestriction(SceneSelectionTarget!).Length == 0
         );
 
     private void SetSceneSelectionPose(Transform target, MapTarget? binding, string error)
@@ -163,7 +166,31 @@ public sealed partial class RaidEditor
             return;
         var point = ScenePoint;
         if (point == null)
+        {
+            if (MapDoor is not { } door)
+                return;
+            var doorView = _view!;
+            doorView.Value("MapName", door.Name);
+            doorView.Get<InputField>("MapName").readOnly = !CanSceneEdit;
+            foreach (var group in new[] { "Position", "Rotation", "Size" })
+            foreach (var axis in "XYZ")
+            {
+                doorView.Get<InputField>("Map" + group + axis).readOnly = true;
+                doorView.Value("Map" + group + axis, "0");
+            }
+            doorView.Get<Button>("MapAtPlayer").interactable = false;
+            doorView.Text(
+                "MapDetails",
+                "Door state: "
+                    + door.State
+                    + "\n"
+                    + door.Target.Scene
+                    + ":"
+                    + door.Target.Path
+                    + "\nUse Door state to cycle this layout's saved state."
+            );
             return;
+        }
         var view = _view!;
         var editable = CanTransformScene("Move");
         view.Value("MapName", point.Name);
@@ -173,6 +200,7 @@ public sealed partial class RaidEditor
             var v =
                 group == "Position" ? point.Position
                 : group == "Rotation" ? point.Rotation
+                : point is MapVolume volume ? volume.Size
                 : (point as MapObjectEdit)?.Scale;
             for (var i = 0; i < 3; i++)
             {

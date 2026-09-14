@@ -16,7 +16,7 @@ public sealed partial class RaidEditorWindows
     private float _contentWidth = -1,
         _propertyWidth = -1;
     private int _contentMask = -1;
-    private readonly string[] _categories = { "Maps", "Routes", "Zones", "Bindings", "Captures", "Scene" };
+    private readonly string[] _categories = { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene" };
 
     public bool Interacting
     {

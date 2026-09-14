@@ -59,6 +59,23 @@ internal static class EditorRouteChecks
             end.Next.OpCode.Code == Code.Ldc_I4_1 && end.Next.Next.OpCode.Code == Code.Ret,
             "Ending a walkthrough must report that the frame's input was consumed."
         );
+        Require(
+            end.Previous.OpCode.Code == Code.Ldc_I4_1,
+            "Walkthrough exit must request camera restoration in the same frame, before consuming input."
+        );
+        var endWalkthrough = editor.Methods.Single(m => m.Name == "EndWalkthrough");
+        Require(
+            endWalkthrough.Parameters.Count == 1 && Equals(endWalkthrough.Parameters[0].Constant, false),
+            "Walkthrough teardown must default to cleanup without reopening the editor."
+        );
+        var reopen = endWalkthrough.Body.Instructions.Single(i => i.Operand is MethodReference { Name: "Open" });
+        Require(
+            endWalkthrough.Body.ExceptionHandlers.All(h => h.HandlerEnd.Offset <= reopen.Offset)
+                && Reads(endWalkthrough, "_session")
+                && Calls(endWalkthrough, "get_Ready")
+                && Calls(endWalkthrough, "get_AuthoringEnabled"),
+            "Same-frame editor reopening must happen after walkthrough cleanup and require an active editor session."
+        );
         // Reproduce the old fallthrough: a consumed Escape continues into Open.
         // The guard must reject that path, not merely check that a bookmark exists.
         var fallthrough = new MethodDefinition("OldWalkthroughFallthrough", MethodAttributes.Static, client.MainModule.TypeSystem.Void);

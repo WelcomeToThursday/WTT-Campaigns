@@ -24,6 +24,11 @@ public sealed partial class RaidEditor
 
     private string _bindingTarget = "";
     private readonly Dictionary<string, (string Selection, int Page)> _moduleSelection = new();
+    private readonly List<string> _zoneScopeIds = new();
+    // Shared is an explicit choice; the other scope always follows the current
+    // layout so changing layouts cannot create an invisible zone under an old
+    // owner.
+    private bool _zoneCreateShared;
 
     private RaidEditorView BuildView()
     {
@@ -52,7 +57,26 @@ public sealed partial class RaidEditor
                 );
             }
 
-            foreach (var mode in new[] { "Maps", "Routes", "Zones", "Bindings", "Captures", "Scene" })
+            void Dropdown(string name, Action<int> action)
+            {
+                view.Dropdown(
+                    name,
+                    value =>
+                    {
+                        try
+                        {
+                            action(value);
+                        }
+                        catch (Exception e)
+                        {
+                            _notice = e.Message;
+                            Plugin.Error(e);
+                        }
+                    }
+                );
+            }
+
+            foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene" })
             {
                 var value = mode;
                 Button(
@@ -67,6 +91,17 @@ public sealed partial class RaidEditor
                         _mode = value;
                         var previous = _moduleSelection.GetValueOrDefault(value);
                         _selected = previous.Selection ?? "";
+                        if (value == "Layouts" && _session?.Definition != null)
+                        {
+                            // Layouts owns layout records. Returning from Scene
+                            // or Routes always follows the active layout.
+                            _selected = _layoutId;
+                        }
+                        if (value == "Zones" && EditorMode.Ready && _session?.Definition != null)
+                        {
+                            if (!FilterZonesForLayout(_layoutId).AsValueEnumerable().Any(z => z.Id == _selected))
+                                _selected = "";
+                        }
                         _page = previous.Page;
                         Refresh();
                         view.Windows.BrowseCategory();
@@ -129,6 +164,15 @@ public sealed partial class RaidEditor
                     {
                         AddZone("Sphere");
                     }
+                }
+            );
+            Dropdown("ZoneCreateScope", value => SetZoneScope(shared: value == 0, applyToSelection: false));
+            Dropdown(
+                "ZoneScope",
+                value =>
+                {
+                    if (value >= 0 && value < _zoneScopeIds.Count)
+                        SetSelectedZoneScope(_zoneScopeIds[value]);
                 }
             );
             Button("Capture", () => Capture(false));
@@ -419,6 +463,13 @@ public sealed partial class RaidEditor
             scene = PlayerScene();
         }
 
+        var layoutId = !_zoneCreateShared && EditorMode.Ready ? _layoutId : "";
+        if (!_zoneCreateShared && EditorMode.Ready && Layout == null)
+        {
+            _notice = "Select a layout in Layouts before creating a layout-owned zone.";
+            Refresh();
+            return;
+        }
         _session.Edit(s =>
             s.Zones.Add(
                 new SeasonZone
@@ -429,11 +480,63 @@ public sealed partial class RaidEditor
                     Location = _session.Location,
                     Scene = scene,
                     Position = ZoneRuntime.Vector(position),
+                    LayoutId = layoutId,
                 }
             )
         );
         _selected = id;
         _mode = "Zones";
+        Refresh();
+    }
+
+    private void SetZoneScope(bool shared, bool applyToSelection)
+    {
+        if (_session?.Definition == null)
+            return;
+        if (!shared && (!EditorMode.Ready || Layout == null))
+        {
+            _notice = "Select a layout in Layouts before assigning layout ownership.";
+            Refresh();
+            return;
+        }
+
+        if (applyToSelection && Selected is SeasonZone zone)
+        {
+            var layoutId = shared ? "" : _layoutId;
+            if (!SetZoneLayout(zone.Id, layoutId, out var error))
+            {
+                _notice = error;
+                Refresh();
+                return;
+            }
+        }
+
+        _zoneCreateShared = shared;
+        _notice = shared
+            ? "New zones will be Shared across layouts."
+            : "New zones will belong to " + (Layout?.Name ?? "the selected layout") + ".";
+        Refresh();
+    }
+
+    private void SetSelectedZoneScope(string layoutId)
+    {
+        if (Selected is not SeasonZone zone)
+            return;
+
+        if (!SetZoneLayout(zone.Id, layoutId, out var error))
+        {
+            _notice = error;
+            Refresh();
+            return;
+        }
+
+        if (!string.IsNullOrEmpty(layoutId))
+            _layoutId = layoutId;
+        _libraryKey = "";
+        var owner = string.IsNullOrEmpty(layoutId)
+            ? "Shared"
+            : _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == layoutId)?.Name ?? layoutId;
+        _notice = "Zone scope changed to " + owner + ".";
         Refresh();
     }
 
@@ -789,7 +892,7 @@ public sealed partial class RaidEditor
         );
         view.Text(
             "Request",
-            _task == null ? "RAID CONTINUES · Player remains in place" : "RAID CONTINUES · " + _task.Tool + " capture requested"
+            _task == null ? "RAID CONTINUES Ã‚Â· Player remains in place" : "RAID CONTINUES Ã‚Â· " + _task.Tool + " capture requested"
         );
         view.Text("Status", _session.Status + (_notice.Length > 0 ? "\n" + _notice : ""));
         view.Conflict(_session);
@@ -799,7 +902,7 @@ public sealed partial class RaidEditor
             _passiveState = "";
             return;
         }
-        foreach (var mode in new[] { "Maps", "Routes", "Zones", "Bindings", "Captures", "Scene" })
+        foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene" })
             view.Highlight(mode, _mode == mode);
         var search = view.Get<InputField>("Search").text;
         var libraryKey =
@@ -823,15 +926,24 @@ public sealed partial class RaidEditor
                 (_session.Definition?.Story?.RaidBindings ?? new())
                     .AsValueEnumerable()
                     .Where(b => b.Location.Length == 0 || b.Location == _session.Location)
-                    .Select(b => (b.Id, b.Name + " · " + b.Kind + " · " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
+                    .Select(b => (b.Id, b.Name + " Ã‚Â· " + b.Kind + " Ã‚Â· " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
                     .CopyTo(_rows);
             }
             else
             {
-                IEnumerable<SpatialCapture>? records = _mode == "Zones" ? _session.Definition?.Zones : _session.Definition?.Captures;
-                if (records != null)
+                if (_mode == "Zones" && EditorMode.Ready)
                 {
-                    records.AsValueEnumerable().Where(r => r.Location == _session.Location).Select(r => (r.Id, r.Name)).CopyTo(_rows);
+                    FilterZonesForLayout(_layoutId)
+                        .AsValueEnumerable()
+                        .Where(r => r.Location == _session.Location)
+                        .Select(r => (r.Id, r.Name + " Ã‚Â· " + ZoneOwnerName(r)))
+                        .CopyTo(_rows);
+                }
+                else
+                {
+                    IEnumerable<SpatialCapture>? records = _mode == "Zones" ? _session.Definition?.Zones : _session.Definition?.Captures;
+                    if (records != null)
+                        records.AsValueEnumerable().Where(r => r.Location == _session.Location).Select(r => (r.Id, r.Name)).CopyTo(_rows);
                 }
             }
 
@@ -863,12 +975,21 @@ public sealed partial class RaidEditor
         var point = Selected;
         view.Caption("AddBox", _mode == "Bindings" ? "+ Trigger" : "+ Box");
         view.Caption("AddSphere", _mode == "Bindings" ? "+ Interaction" : "+ Sphere");
+        var zone = point as SeasonZone;
+        RefreshZoneScope(view, zone);
+        var ownerName = zone == null ? "Shared" : ZoneOwnerName(zone);
+        if (!EditorMode.Ready || Layout == null)
+            _zoneCreateShared = true;
+        var creationScopes = new List<Dropdown.OptionData> { new("New: Shared") };
+        if (EditorMode.Ready && Layout != null)
+            creationScopes.Add(new Dropdown.OptionData("New: Layout"));
+        view.SetDropdown("ZoneCreateScope", creationScopes, _zoneCreateShared ? 0 : creationScopes.Count - 1);
         view.Get<Button>("EventKind").gameObject.SetActive(_mode == "Bindings" && Binding != null);
         view.Get<UnityEngine.UI.Text>("Identity").gameObject.SetActive(_mode != "Bindings" || Binding == null);
         view.Get<Button>("Complete").interactable = _task != null && !_session.Busy && _session.Conflict == null;
         view.Caption("EventKind", "Event kind: " + (Binding?.Kind ?? "Trigger"));
         view.Value("Name", point?.Name ?? (_mode == "Bindings" ? Binding?.Name : "") ?? "");
-        view.Text("Identity", point == null ? Binding?.Id ?? "Select a record" : point.Id + " · " + point.Scene);
+        view.Text("Identity", point == null ? Binding?.Id ?? "Select a record" : point.Id + " Ã‚Â· " + point.Scene);
         foreach (var group in new[] { "Position", "Rotation", "Size" })
         {
             var vector =
@@ -886,7 +1007,7 @@ public sealed partial class RaidEditor
         {
             view.Caption(
                 use,
-                ((point as SeasonZone)?.Uses.Contains(use) == true ? "✓ " : "")
+                ((point as SeasonZone)?.Uses.Contains(use) == true ? "Ã¢Å“â€œ " : "")
                     + (
                         use == "InZone" ? "In zone"
                         : use == "VisitPlace" ? "Visit"
@@ -896,14 +1017,16 @@ public sealed partial class RaidEditor
         }
 
         var details = point is SeasonZone z
-            ? z.Shape
-                + " · "
+            ? "Ownership: " + ownerName
+                + "\n"
+                + z.Shape
+                + " Ã‚Â· "
                 + (Inside(z, _player!.Transform.position) ? "Player inside" : "Player outside")
-                + "\nPreview only · "
+                + "\nPreview only Ã‚Â· "
                 + _tool
                 + " handles\n"
                 + string.Join(", ", SpatialRules.Uses(_session.Definition!, z.Id))
-            : "Preview only · no gameplay changes";
+            : "Preview only Ã‚Â· no gameplay changes";
         if (_picked)
         {
             details =
@@ -919,5 +1042,42 @@ public sealed partial class RaidEditor
         RefreshMaps(geometry);
         RefreshWorkspace();
         PresentScene();
+    }
+
+    private string ZoneOwnerName(SeasonZone zone)
+    {
+        if (string.IsNullOrEmpty(zone.LayoutId))
+            return "Shared";
+
+        return _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == zone.LayoutId)?.Name
+            ?? zone.LayoutId;
+    }
+
+    private string ZoneScopeName(string layoutId) =>
+        string.IsNullOrEmpty(layoutId) ? "Shared"
+            : _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == layoutId)?.Name ?? layoutId;
+
+    private void RefreshZoneScope(RaidEditorView view, SeasonZone? zone)
+    {
+        _zoneScopeIds.Clear();
+        var options = new List<Dropdown.OptionData> { new("Shared") };
+        _zoneScopeIds.Add("");
+        var layouts =
+            _session?.Definition?.MapLayouts.AsValueEnumerable().Where(l => l.Location == _session.Location).ToArray()
+            ?? Array.Empty<MapLayout>();
+        foreach (var layout in layouts)
+        {
+            _zoneScopeIds.Add(layout.Id);
+            options.Add(new Dropdown.OptionData(layout.Name.Length == 0 ? layout.Id : layout.Name));
+        }
+
+        if (zone != null && !string.IsNullOrEmpty(zone.LayoutId) && !_zoneScopeIds.Contains(zone.LayoutId))
+        {
+            _zoneScopeIds.Add(zone.LayoutId);
+            options.Add(new Dropdown.OptionData("Missing layout Ã‚Â· " + zone.LayoutId));
+        }
+
+        var selected = zone == null ? 0 : _zoneScopeIds.IndexOf(zone.LayoutId ?? "");
+        view.SetDropdown("ZoneScope", options, selected < 0 ? 0 : selected);
     }
 }

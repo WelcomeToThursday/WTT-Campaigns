@@ -90,6 +90,12 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
             tip.Enter = () => ShowTooltip(control.name, control.GetComponentInChildren<Text>().text);
             tip.Exit = () => Visible("EditorTooltip", false);
         }
+        foreach (var id in new[] { "ZoneScope", "ZoneCreateScope" })
+        {
+            var scopeDropdown = _controls[id].gameObject.AddComponent<EditorControlTooltip>();
+            scopeDropdown.Enter = () => ShowTooltip(id, _controls[id].GetComponentInChildren<Text>().text);
+            scopeDropdown.Exit = () => Visible("EditorTooltip", false);
+        }
         foreach (var name in new[] { "Connection", "Status" })
         {
             var label = _controls[name].GetComponent<Text>();
@@ -98,20 +104,27 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
             tip.Enter = () => ShowTooltip(name, label.text);
             tip.Exit = () => Visible("EditorTooltip", false);
         }
-        SetTooltip("Maps", "Mission layouts, barriers and scenery edits");
+        SetTooltip("Layouts", "Create, select and manage mission layouts");
         SetTooltip("Routes", "Player start, ordered checkpoints and exit for the selected layout");
-        SetTooltip("CameraSlower", "Halve camera speed · Shift: 4x boost · Ctrl: precision movement");
-        SetTooltip("CameraFaster", "Double camera speed · Enter 0.25–96 metres per second in the field");
+        SetTooltip("CameraSlower", "Halve camera speed Ã‚Â· Shift: 4x boost Ã‚Â· Ctrl: precision movement");
+        SetTooltip("CameraFaster", "Double camera speed Ã‚Â· Enter 0.25Ã¢â‚¬â€œ96 metres per second in the field");
         SetTooltip("MapCheckpoint", "Place on the floor beneath the camera; insert after the selected checkpoint");
         SetTooltip("MapStart", "Set the player start on the floor beneath the camera, facing the camera heading");
         SetTooltip("MapExit", "Set the route exit on the floor beneath the camera");
         SetTooltip("MapAtPlayer", "Move the selected marker to the floor beneath the camera");
+        SetTooltip("MapBarrier", "Place an invisible collision barrier on the floor beneath the camera");
+        SetTooltip("MapMoveObject", "Save a moved prop in the selected layout");
+        SetTooltip("MapCopyObject", "Copy a supported prop into the selected layout");
+        SetTooltip("MapHideObject", "Hide a prop in the selected layout");
+        SetTooltip("MapDoor", "Capture a native door and cycle its saved state");
+        SetTooltip("ZoneCreateScope", "Scope for new zones; edit the selected zone's scope in Properties");
+        SetTooltip("ZoneScope", "Choose Shared or any layout on this map for the selected zone");
         SetTooltip("Zones", "Quest and story volumes for this location");
         SetTooltip("Bindings", "Raid events: trigger, interaction and scene targets");
         SetTooltip("Captures", "Named camera transforms and scene references");
         SetTooltip("Scene", "Search or pick existing scenery for a binding or map edit");
-        SetTooltip("Undo", "Ctrl+Z · Undo the last draft edit");
-        SetTooltip("Redo", "Ctrl+Y · Redo the last undone draft edit");
+        SetTooltip("Undo", "Ctrl+Z Ã‚Â· Undo the last draft edit");
+        SetTooltip("Redo", "Ctrl+Y Ã‚Â· Redo the last undone draft edit");
         SetTooltip("Move", "Move the selected record with the axis handles");
         SetTooltip("Rotate", "Drag a colored rotation ring, or enter rotation in Properties");
         SetTooltip("Scale", "Resize a selected static prop or volume. Native loot and containers retain their original size.");
@@ -236,7 +249,8 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
     )
     {
         var routes = mode == "Routes" && mapReady;
-        var maps = (mode == "Maps" || routes) && mapReady;
+        var layouts = (mode == "Layouts" || mode == "Maps") && mapReady;
+        var maps = layouts || routes;
         Visible("RouteGuideGroup", routes);
         Visible("RouteFrameGroup", routes && hasSelection && kind != "Layout");
         Visible("MapWalkGroup", routes);
@@ -268,6 +282,7 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
 
         Visible("PlacementGroup", point);
         Visible("ZoneUsesGroup", zone);
+        Visible("ZoneScopeGroup", zone && mapReady);
 
         Visible("SceneActionsGroup", picked || bindZone);
 
@@ -300,7 +315,7 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         Visible("AddSphere", mode == "Zones" || mode == "Bindings");
 
         Visible("Capture", mode == "Captures");
-        Visible("Pick", mode == "Scene" || mode == "Captures" || mode == "Bindings" || mode == "Maps");
+        Visible("Pick", mode == "Scene" || mode == "Captures" || mode == "Bindings");
 
         foreach (
             var name in new[]
@@ -314,9 +329,16 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
                 "MapCopyObject",
                 "MapHideObject",
                 "MapDoor",
+                "ZoneCreateScope",
             }
         )
-            Visible(name, name == "MapStart" || name == "MapCheckpoint" || name == "MapExit" ? routes : maps && !routes);
+            Visible(
+                name,
+                name == "MapNew" ? layouts && !routes
+                : name == "MapStart" || name == "MapCheckpoint" || name == "MapExit" ? routes
+                : name == "ZoneCreateScope" ? mode == "Zones"
+                : sceneWorkspace
+            );
 
         Visible("CaptureTask", capture);
 
@@ -379,10 +401,10 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         Visible("MapRecordActions", false);
         Visible("MapPositionGroup", !removed);
         Visible("MapRotationGroup", !removed);
-        Visible("MapSizeGroup", kind == "Copy" || kind == "Move");
+        Visible("MapSizeGroup", kind == "Copy" || kind == "Move" || kind == "Barrier" || kind == "Volume");
         Visible("MapPlacementGroup", !removed);
         Visible("MapAtPlayer", !removed);
-        Visible("MapShapeGroup", false);
+        Visible("MapShapeGroup", kind == "Barrier" || kind == "Volume");
         Visible("MapOrderGroup", false);
         Visible("MapRebind", false);
         Visible("ScenePreviewGroup", catalog && selected);

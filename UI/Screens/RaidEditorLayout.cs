@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using UnityEngine;
 using UnityEngine.UI;
@@ -57,7 +58,7 @@ public static partial class RaidEditorLayout
         rail.anchorMax = new Vector2(0, 1);
         rail.offsetMax = new Vector2(72, -80);
         UiElements.Fill(rail, new Color(.065f, .07f, .065f, .98f), true);
-        var modes = new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" };
+        var modes = new[] { "Layouts", "Zones", "Bindings", "Captures", "Scene" };
         for (var i = 0; i < modes.Length; i++)
         {
             Button(ui, rail, modes[i], modes[i] == "Bindings" ? "Events" : modes[i], 68, 0, 0, 48);
@@ -78,7 +79,7 @@ public static partial class RaidEditorLayout
                 width - 145,
                 36
             );
-            RightButton(ui, bar, id + "Collapse", "–", 32, 6);
+            RightButton(ui, bar, id + "Collapse", "â€“", 32, 6);
             RightButton(ui, bar, id + "Popout", "Detach", 72, 44);
             if (id == "Library")
                 BuildLibrary(ui, panel);
@@ -110,6 +111,8 @@ public static partial class RaidEditorLayout
                 ("MapCopyObject", "Copy prop", 114),
                 ("MapHideObject", "Hide prop", 114),
                 ("MapDoor", "Door state", 126),
+                ("ZoneCreateShared", "New shared zone", 132),
+                ("ZoneCreateLayout", "New layout zone", 132),
             }
         )
         {
@@ -127,8 +130,8 @@ public static partial class RaidEditorLayout
         status.anchorMax = new Vector2(1, 0);
         status.pivot = new Vector2(.5f, 0);
         UiElements.Fill(status, new Color(.025f, .03f, .026f, .98f), true);
-        Place(ui.Label(status, "Status", "Connecting…", 14, 700, 24).rectTransform, 12, 0, 700, 24);
-        var request = ui.Label(status, "Request", "RAID CONTINUES · RMB fly · Ctrl+F8 close", 14, 570, 24).rectTransform;
+        Place(ui.Label(status, "Status", "Connectingâ€¦", 14, 700, 24).rectTransform, 12, 0, 700, 24);
+        var request = ui.Label(status, "Request", "RAID CONTINUES Â· RMB fly Â· Ctrl+F8 close", 14, 570, 24).rectTransform;
         request.anchorMin = request.anchorMax = new Vector2(1, .5f);
         request.anchoredPosition = new Vector2(-293, 0);
         var menus = UiElements.Rect("MenuLayer", root.transform, 0, 0);
@@ -145,7 +148,7 @@ public static partial class RaidEditorLayout
             ui.Label(
                 help,
                 "Help",
-                "RMB + WASD: fly · Q / E: elevation\nFly m/s: camera speed · Shift: 4x · Ctrl: ¼ speed\nDrag handles · Alt: bypass snapping · Ctrl+Z/Y: undo/redo\nEscape dismisses menus, cancels a tool, then closes.\nDetach a panel to move it. Windows restores hidden panels.",
+                "RMB + WASD: fly Â· Q / E: elevation\nFly m/s: camera speed Â· Shift: 4x Â· Ctrl: Â¼ speed\nDrag handles Â· Alt: bypass snapping Â· Ctrl+Z/Y: undo/redo\nEscape dismisses menus, cancels a tool, then closes.\nDetach a panel to move it. Windows restores hidden panels.",
                 17,
                 532,
                 152
@@ -233,7 +236,7 @@ public static partial class RaidEditorLayout
             icon.rectTransform.anchoredPosition = new Vector2(24, 0);
             icon.raycastTarget = false;
             icon.gameObject.SetActive(false);
-            var status = ui.Label(row, "SceneIconStatus" + i, "…", 12, 40, 40);
+            var status = ui.Label(row, "SceneIconStatus" + i, "â€¦", 12, 40, 40);
             status.rectTransform.anchorMin = status.rectTransform.anchorMax = new Vector2(0, .5f);
             status.rectTransform.anchoredPosition = new Vector2(24, 0);
             status.alignment = TextAnchor.MiddleCenter;
@@ -269,7 +272,7 @@ public static partial class RaidEditorLayout
         var image = UiElements.Rect("ScenePreview", preview, 300, 180).gameObject.AddComponent<RawImage>();
         image.raycastTarget = false;
         image.color = Color.clear;
-        var previewStatus = ui.Label(preview, "ScenePreviewStatus", "Loading preview…", 16, 300, 180);
+        var previewStatus = ui.Label(preview, "ScenePreviewStatus", "Loading previewâ€¦", 16, 300, 180);
         previewStatus.alignment = TextAnchor.MiddleCenter;
         var heading = Row(scene, "SceneHeadingGroup", 64);
         ui.Label(heading, "SceneHeading", "Select an object", 18, 318, 64);
@@ -279,27 +282,86 @@ public static partial class RaidEditorLayout
         ActionRow(ui, scene, "SceneEditGroup", ("SceneMove", "Move"), ("SceneRotate", "Rotate"), ("SceneRemove", "Remove"));
         ActionRow(ui, scene, "SceneRestoreGroup", ("SceneRestore", "Restore original"), ("SceneRebind", "Rebind to picked"));
         var info = Row(scene, "SceneInfoGroup", 100);
-        ui.Label(info, "SceneInfo", "Choose a layout in Maps, then browse the catalog.", 15, 318, 100);
+        ui.Label(info, "SceneInfo", "Choose a layout in Layouts, then browse the catalog.", 15, 318, 100);
         scene.gameObject.SetActive(false);
         var common = Stack(scroll.content, "RecordInspector");
         Field(ui, common, "Name", "Name");
         var identity = Row(common, "IdentityGroup", 56);
         ui.Label(identity, "Identity", "Select a record", 14, 318, 56);
         ActionRow(ui, common, "EventKindGroup", ("EventKind", "Event kind: Trigger"));
-        Vectors(ui, common, "Position", "POSITION · metres");
-        Vectors(ui, common, "Rotation", "ROTATION · degrees");
-        Vectors(ui, common, "Size", "BOX DIMENSIONS · metres");
+        Vectors(ui, common, "Position", "POSITION Â· metres");
+        Vectors(ui, common, "Rotation", "ROTATION Â· degrees");
+        Vectors(ui, common, "Size", "BOX DIMENSIONS Â· metres");
         var radius = Row(common, "RadiusGroup", 62);
-        ui.Label(radius, "RadiusLabel", "SPHERE RADIUS · metres", 15, 318, 24, 0, 19);
+        ui.Label(radius, "RadiusLabel", "SPHERE RADIUS Â· metres", 15, 318, 24, 0, 19);
         ui.Input(radius, "Radius", "Radius", 318, 0, -16);
         ActionRow(ui, common, "PlacementGroup", ("AtFeet", "At player"), ("AtAim", "At aim point"));
         ActionRow(ui, common, "ZoneUsesGroup", ("InZone", "In zone"), ("VisitPlace", "Visit"), ("LeaveItemAtLocation", "Place item"));
+        DropdownField(ui, common, "ZoneScope", "ZONE SCOPE", panel.root);
         ActionRow(ui, common, "SceneActionsGroup", ("Parent", "Select parent"), ("UseObject", "Use scene target"));
         ActionRow(ui, common, "RecordActionsGroup", ("Duplicate", "Duplicate"), ("Delete", "Delete"));
         var details = Row(common, "DetailsGroup", 190);
         var label = ui.Label(details, "Details", "Draft previews never execute story actions.", 15, 318, 190);
         label.alignment = TextAnchor.UpperLeft;
         BuildMapInspector(ui, scroll.content);
+    }
+
+    private static EditorDropdown DropdownField(UiElements ui, Transform parent, string name, string caption, Transform popupParent)
+    {
+        var row = Row(parent, name + "Group", 68);
+        ui.Label(row, name + "Label", caption, 15, 318, 24, 0, 20);
+        var rect = UiElements.Rect(name, row, 318, 42, 0, -17);
+        var dropdown = rect.gameObject.AddComponent<EditorDropdown>();
+        dropdown.targetGraphic = UiElements.Fill(rect, EditorTarkovTheme.Surface, true);
+        var captionText = ui.Label(rect, name + "Caption", "Shared", 16, 278, 36, 0, 0);
+        UiElements.Stretch(captionText.rectTransform, 10, 30, 3, 3);
+        captionText.raycastTarget = false;
+        var arrow = ui.Label(rect, name + "Arrow", "â–¾", 17, 24, 36, 0, 0);
+        arrow.rectTransform.anchorMin = arrow.rectTransform.anchorMax = new Vector2(1, .5f);
+        arrow.rectTransform.anchoredPosition = new Vector2(-15, 0);
+        arrow.alignment = TextAnchor.MiddleCenter;
+
+        var template = UiElements.Rect(name + "Template", popupParent, 318, 200);
+        template.pivot = new Vector2(0, 1);
+        UiElements.Fill(template, EditorTarkovTheme.Surface, true);
+        var scroll = template.gameObject.AddComponent<ScrollRect>();
+        var viewport = UiElements.Rect("Viewport", template, 0, 0);
+        UiElements.Stretch(viewport, 1, 1, 1, 1);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        var content = UiElements.Rect("Content", viewport, 0, 0);
+        content.anchorMin = new Vector2(0, 1);
+        content.anchorMax = new Vector2(1, 1);
+        content.pivot = new Vector2(.5f, 1);
+        content.sizeDelta = new Vector2(0, 34);
+        var item = UiElements.Rect("Item", content, 0, 34);
+        item.anchorMin = new Vector2(0, .5f);
+        item.anchorMax = new Vector2(1, .5f);
+        var itemBackground = UiElements.Fill(item, EditorTarkovTheme.Container, true);
+        var toggle = item.gameObject.AddComponent<Toggle>();
+        toggle.targetGraphic = itemBackground;
+        var checkmark = UiElements.Rect("Item Checkmark", item, 18, 18, 0, 0).gameObject.AddComponent<Image>();
+        checkmark.color = EditorTarkovTheme.Selected;
+        checkmark.raycastTarget = false;
+        checkmark.rectTransform.anchorMin = checkmark.rectTransform.anchorMax = new Vector2(1, .5f);
+        checkmark.rectTransform.anchoredPosition = new Vector2(-12, 0);
+        toggle.graphic = checkmark;
+        var itemText = ui.Label(item, "Item Label", "Shared", 16, 278, 34, 0, 0);
+        UiElements.Stretch(itemText.rectTransform, 10, 34, 1, 1);
+        itemText.raycastTarget = false;
+        scroll.viewport = viewport;
+        scroll.content = content;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+        template.gameObject.SetActive(false);
+
+        dropdown.template = template;
+        dropdown.captionText = captionText;
+        dropdown.itemText = itemText;
+        dropdown.options = new List<Dropdown.OptionData> { new("Shared") };
+        dropdown.SetValueWithoutNotify(0);
+        dropdown.RefreshShownValue();
+        return dropdown;
     }
 
     private static RectTransform Stack(Transform parent, string name)

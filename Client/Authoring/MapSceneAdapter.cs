@@ -3,6 +3,7 @@ using System.Text;
 using EFT;
 using EFT.Interactive;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
@@ -14,6 +15,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
     private readonly SceneEditTransaction _transaction = new();
     private readonly List<GameObject> _ghosts = new();
     private Material? _ghostMaterial;
+    private Material? _checkpointGhostMaterial;
+    private Material? _exitGhostMaterial;
     internal readonly List<string> TargetErrors = new();
 
     internal static string ScaleRestriction(Transform target)
@@ -155,15 +158,24 @@ internal sealed partial class MapSceneAdapter : IDisposable
             errors.Add("Wait for item models to finish loading.");
         if (errors.Count > 0)
             throw new InvalidOperationException(string.Join("\n", errors));
+
+        // Apply may be requested more than once while the walkthrough is being
+        // prepared.  The previous transaction owns the old invisible volumes;
+        // release them before creating this snapshot so blockers never stack.
+        _transaction.Dispose();
         foreach (var barrier in layout.Barriers)
         {
-            var go = Volume(barrier, false);
+            GameObject? go = null;
             _transaction.Apply(
-                () => { },
+                () =>
+                {
+                    go = Volume(barrier, false);
+                },
                 () =>
                 {
                     if (go)
-                        Remove(go);
+                        Remove(go!);
+                    go = null;
                 }
             );
         }
@@ -290,19 +302,110 @@ internal sealed partial class MapSceneAdapter : IDisposable
         }
     }
 
-    private GameObject Volume(MapVolume volume, bool ghost)
+    private Material RouteGhostMaterial(bool exit)
     {
-        var go = GameObject.CreatePrimitive(volume.Shape == "Sphere" ? PrimitiveType.Sphere : PrimitiveType.Cube);
-        go.name = "CampaignEditor " + volume.Name;
-        go.transform.SetPositionAndRotation(ZoneRuntime.Vector(volume.Position), Quaternion.Euler(ZoneRuntime.Vector(volume.Rotation)));
-        go.transform.localScale = volume.Shape == "Sphere" ? Vector3.one * volume.Radius * 2 : ZoneRuntime.Vector(volume.Size);
-        if (ghost)
+        ref var material = ref (exit ? ref _exitGhostMaterial : ref _checkpointGhostMaterial);
+        if (!material)
         {
-            UnityEngine.Object.Destroy(go.GetComponent<Collider>());
-            go.layer = 2;
-            go.GetComponent<Renderer>().sharedMaterial = GhostMaterial;
+            material = new Material(GhostMaterial);
+            var color = RouteOverlay.RoleColor(exit ? RouteRole.End : RouteRole.Checkpoint);
+            color.a = .25f;
+            material.color = color;
         }
-        return go;
+        return material!;
+    }
+
+    private static Scene LoadedScene(string sceneName)
+    {
+        if (string.IsNullOrWhiteSpace(sceneName))
+            throw new InvalidOperationException("Barrier has no captured scene.");
+
+        // Normal raid scenes are reported by SceneManager.  Check the scene
+        // handle rather than only its name so a map transition cannot receive
+        // a collider in a scene that is still unloading.
+        var named = SceneManager.GetSceneByName(sceneName);
+        if (named.IsValid() && named.isLoaded)
+            return named;
+        for (var i = 0; i < SceneManager.sceneCount; i++)
+        {
+            var scene = SceneManager.GetSceneAt(i);
+            if (scene.IsValid() && scene.isLoaded && scene.name == sceneName)
+                return scene;
+        }
+
+        // EFT can keep raid geometry in the persistent scene, which Unity does
+        // not always expose through sceneCount.  A live transform provides the
+        // loaded Scene handle without creating or moving a placeholder object.
+        foreach (var transform in Resources.FindObjectsOfTypeAll<Transform>())
+        {
+            if (
+                transform
+                && transform.gameObject.scene.IsValid()
+                && transform.gameObject.scene.isLoaded
+                && transform.gameObject.scene.name == sceneName
+            )
+                return transform.gameObject.scene;
+        }
+
+        throw new InvalidOperationException("Barrier scene is not loaded: " + sceneName);
+    }
+
+    private GameObject Volume(MapVolume volume, bool ghost, Material? material = null)
+    {
+        GameObject? go = null;
+        try
+        {
+            if (ghost)
+            {
+                // The editor representation is deliberately a render-only
+                // primitive.  Disable before destroying the default collider so
+                // it cannot participate in this frame's scene picking/physics.
+                go = GameObject.CreatePrimitive(volume.Shape == "Sphere" ? PrimitiveType.Sphere : PrimitiveType.Cube);
+                go.name = "CampaignEditor " + volume.Name;
+                go.transform.SetPositionAndRotation(
+                    ZoneRuntime.Vector(volume.Position),
+                    Quaternion.Euler(ZoneRuntime.Vector(volume.Rotation))
+                );
+                go.transform.localScale = volume.Shape == "Sphere" ? Vector3.one * volume.Radius * 2 : ZoneRuntime.Vector(volume.Size);
+                var collider = go.GetComponent<Collider>();
+                if (collider)
+                    collider.enabled = false;
+                UnityEngine.Object.Destroy(collider);
+                go.layer = 2;
+                go.GetComponent<Renderer>().sharedMaterial = material ? material : GhostMaterial;
+                return go;
+            }
+
+            var lowPolyLayer = LayerMask.NameToLayer("LowPolyCollider");
+            if (lowPolyLayer < 0)
+                throw new InvalidOperationException("The LowPolyCollider layer is unavailable; barriers cannot be applied.");
+            var scene = LoadedScene(volume.Scene);
+            go = new GameObject("CampaignEditor " + volume.Name);
+            go.layer = lowPolyLayer;
+            go.transform.SetPositionAndRotation(ZoneRuntime.Vector(volume.Position), Quaternion.Euler(ZoneRuntime.Vector(volume.Rotation)));
+            if (volume.Shape == "Sphere")
+            {
+                var collider = go.AddComponent<SphereCollider>();
+                collider.isTrigger = false;
+                collider.radius = volume.Radius;
+            }
+            else if (volume.Shape == "Box")
+            {
+                var collider = go.AddComponent<BoxCollider>();
+                collider.isTrigger = false;
+                collider.size = ZoneRuntime.Vector(volume.Size);
+            }
+            else
+                throw new InvalidOperationException("Barrier shape is unsupported: " + volume.Shape);
+            SceneManager.MoveGameObjectToScene(go, scene);
+            return go;
+        }
+        catch
+        {
+            if (go)
+                Remove(go!);
+            throw;
+        }
     }
 
     internal void Ghosts(MapLayout? layout)
@@ -311,13 +414,12 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
         if (layout == null)
             return;
-        foreach (
-            var volume in layout
-                .Barriers.AsValueEnumerable()
-                .Concat(layout.Checkpoints)
-                .Concat(layout.Exit == null ? Array.Empty<MapVolume>() : new[] { layout.Exit })
-        )
+        foreach (var volume in layout.Barriers)
             _ghosts.Add(Volume(volume, true));
+        foreach (var volume in layout.Checkpoints)
+            _ghosts.Add(Volume(volume, true, RouteGhostMaterial(false)));
+        if (layout.Exit != null)
+            _ghosts.Add(Volume(layout.Exit, true, RouteGhostMaterial(true)));
     }
 
     private static void Remove(GameObject value)
@@ -353,6 +455,12 @@ internal sealed partial class MapSceneAdapter : IDisposable
             if (_ghostMaterial)
                 UnityEngine.Object.Destroy(_ghostMaterial);
             _ghostMaterial = null;
+            if (_checkpointGhostMaterial)
+                UnityEngine.Object.Destroy(_checkpointGhostMaterial);
+            if (_exitGhostMaterial)
+                UnityEngine.Object.Destroy(_exitGhostMaterial);
+            _checkpointGhostMaterial = null;
+            _exitGhostMaterial = null;
             Physics.SyncTransforms();
         }
     }

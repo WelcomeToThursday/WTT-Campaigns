@@ -12,9 +12,12 @@ internal sealed class EditorSceneVisibility : IDisposable
     private static EditorSceneVisibility? _active;
     private static volatile bool _editing; // TestAABB is also called by native worker jobs.
     private static bool _patched;
+    private static DisablerCullingObject[]? _knownSwitches;
     private readonly Dictionary<PerfectCullingCrossSceneGroup, PerfectCullingBakeGroup[]> _owners = new();
     private readonly HashSet<PerfectCullingBakeGroup> _groups = new();
     private readonly EditorTriggerVisibility _triggers;
+    private int _lastAdvanceFrame = -1;
+    private bool _reportDiscovery;
 
     internal EditorSceneVisibility(Func<GameObject, bool> hidden)
     {
@@ -27,12 +30,26 @@ internal sealed class EditorSceneVisibility : IDisposable
 
     internal void Discover()
     {
-        foreach (var owner in Resources.FindObjectsOfTypeAll<DisablerCullingObject>())
+        foreach (var owner in _knownSwitches ??= Resources.FindObjectsOfTypeAll<DisablerCullingObject>())
             if (owner && owner.gameObject.scene.IsValid() && owner.gameObject.scene.isLoaded)
                 _triggers.Observe(owner);
         foreach (var owner in PerfectCullingCrossSceneGroup.AllCrossGroups)
             Observe(owner);
         RefreshGrid();
+        _reportDiscovery = true;
+    }
+
+    internal void Advance()
+    {
+        // Sync also runs from native culling and pre-render callbacks. Share one
+        // budget across all of them so visibility work cannot stall a frame.
+        if (_lastAdvanceFrame == Time.frameCount)
+            return;
+        _lastAdvanceFrame = Time.frameCount;
+        _triggers.Advance();
+        if (!_reportDiscovery || _triggers.Pending)
+            return;
+        _reportDiscovery = false;
         Plugin.LogInfo(
             $"Editor visibility: {_owners.Count} baked owners, {_groups.Count} baked groups; "
                 + $"{_triggers.SwitchCount} trigger switches, {_triggers.ComponentCount} components, {_triggers.ObjectCount} objects; "
@@ -108,6 +125,8 @@ internal sealed class EditorSceneVisibility : IDisposable
     {
         if (_patched)
             return;
+        UnityEngine.SceneManagement.SceneManager.sceneLoaded += (_, _) => _knownSwitches = null;
+        UnityEngine.SceneManagement.SceneManager.sceneUnloaded += _ => _knownSwitches = null;
         var harmony = new Harmony("com.wtt.campaigns.editor.scene-visibility");
         harmony.Patch(
             AccessTools.Method(typeof(DisablerCullingObject), nameof(DisablerCullingObject.SetComponentsEnabled)),

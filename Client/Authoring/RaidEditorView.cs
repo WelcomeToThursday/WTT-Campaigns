@@ -12,10 +12,12 @@ internal sealed class RaidEditorView : IDisposable
     internal readonly RaidEditorWindows Windows;
     private readonly Dictionary<string, Transform> _controls;
     private readonly InputField[] _inputs;
+    private readonly EditorDropdown[] _dropdowns;
     private readonly AssetBundle _bundle;
     private static AssetBundle? _sharedBundle;
     private static int _bundleUsers;
     private bool _disposed;
+    private RouteOverlay? _routeOverlay;
     internal bool Valid => !_disposed && Root;
     internal Shader PreviewShader =>
         _bundle.LoadAsset<Shader>("assets/mods/wtt-campaigns.assets/raideditor/campaignscenepreview.shader")
@@ -49,6 +51,7 @@ internal sealed class RaidEditorView : IDisposable
             Windows.Initialize();
             EditorLayoutPreferences.Attach(Windows);
             _inputs = Root.GetComponentsInChildren<InputField>(true);
+            _dropdowns = Root.GetComponentsInChildren<EditorDropdown>(true);
 
             Root.SetActive(false);
         }
@@ -113,6 +116,32 @@ internal sealed class RaidEditorView : IDisposable
         Get<InputField>(name).onEndEdit.AddListener(value => action(value));
     }
 
+    internal void Dropdown(string name, Action<int> action)
+    {
+        Get<EditorDropdown>(name).onValueChanged.AddListener(value => action(value));
+    }
+
+    internal void SetDropdown(string name, List<Dropdown.OptionData> options, int value)
+    {
+        var dropdown = Get<EditorDropdown>(name);
+        dropdown.options = options;
+        dropdown.SetValueWithoutNotify(Mathf.Clamp(value, 0, Math.Max(0, options.Count - 1)));
+        dropdown.RefreshShownValue();
+    }
+
+    internal bool DismissDropdowns()
+    {
+        var dismissed = false;
+        foreach (var dropdown in _dropdowns)
+        {
+            if (!dropdown || !dropdown.IsOpen)
+                continue;
+            dropdown.Dismiss();
+            dismissed = true;
+        }
+        return dismissed;
+    }
+
     internal void Value(string name, string value)
     {
         var field = Get<InputField>(name);
@@ -130,6 +159,9 @@ internal sealed class RaidEditorView : IDisposable
                 return false;
             if (Windows.Interacting)
                 return true;
+            foreach (var dropdown in _dropdowns)
+                if (dropdown && dropdown.gameObject.activeInHierarchy && dropdown.IsOpen)
+                    return true;
             foreach (var input in _inputs)
                 if (input && input.gameObject.activeInHierarchy && input.isFocused)
                     return true;
@@ -150,6 +182,35 @@ internal sealed class RaidEditorView : IDisposable
         Text("ConflictPath", conflict.Conflicts.AsValueEnumerable().Select(c => c.Path).JoinToString("\n"));
         Value("LocalConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Local).JoinToString("\n\n"));
         Value("RemoteConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Remote).JoinToString("\n\n"));
+    }
+
+    internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected)
+    {
+        if (layout == null || !camera)
+        {
+            HideRoute();
+            return;
+        }
+        if (!_routeOverlay)
+        {
+            var overlay = new GameObject("Route overlay", typeof(RectTransform), typeof(CanvasRenderer), typeof(RouteOverlay));
+            overlay.transform.SetParent(_controls["Workspace"], false);
+            overlay.transform.SetAsFirstSibling();
+            var rect = (RectTransform)overlay.transform;
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = rect.offsetMax = Vector2.zero;
+            _routeOverlay = overlay.GetComponent<RouteOverlay>();
+            _routeOverlay.Initialize(Root.GetComponentInChildren<Text>(true).font);
+        }
+        _routeOverlay!.gameObject.SetActive(true);
+        _routeOverlay.Refresh(layout, camera!, selected);
+    }
+
+    internal void HideRoute()
+    {
+        if (_routeOverlay)
+            _routeOverlay!.gameObject.SetActive(false);
     }
 
     public void Dispose()

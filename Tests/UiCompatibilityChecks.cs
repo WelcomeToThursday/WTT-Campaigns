@@ -264,6 +264,7 @@ internal static class UiCompatibilityChecks
             EditorDiagnosticChecks.Native(assembly, client);
             EditorMemoryChecks.Native(assembly, client);
             EditorRouteChecks.Native(assembly, client);
+            EditorBarrierChecks.Native(assembly, client);
             EditorLoadingChecks.Native(assembly, client);
             EditorSceneVisibilityChecks.Native(assembly, client);
             var faceIcon = client

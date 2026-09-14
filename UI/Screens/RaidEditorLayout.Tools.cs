@@ -19,7 +19,10 @@ public static partial class RaidEditorLayout
     public static void EnsureTools(GameObject root, UiElements ui)
     {
         if (root.transform.Find("ToolWindows"))
+        {
+            EnsureZoneControls(root, ui);
             return;
+        }
         var controls = new Dictionary<string, Transform>();
         foreach (var child in root.GetComponentsInChildren<Transform>(true))
             if (!controls.ContainsKey(child.name))
@@ -88,6 +91,51 @@ public static partial class RaidEditorLayout
         // Frames on the floating toolbar preserve the native, unobtrusive tool-window treatment.
         EditorTarkovTheme.Frame((RectTransform)C("WorkspaceTitleBar"));
         EditorTarkovTheme.Frame((RectTransform)C("TransformToolbar"));
+        EnsureZoneControls(root, ui);
+    }
+
+    private static void EnsureZoneControls(GameObject root, UiElements ui)
+    {
+        Transform? Find(string id)
+        {
+            foreach (var child in root.GetComponentsInChildren<Transform>(true))
+                if (child.name == id)
+                    return child;
+            return null;
+        }
+
+        var creation = Find("CreationTools");
+        if (creation != null)
+        {
+            foreach (var id in new[] { "ZoneCreateShared", "ZoneCreateLayout" })
+                if (Find(id) is Transform legacyButton)
+                    UnityEngine.Object.DestroyImmediate(legacyButton.gameObject);
+            if (Find("ZoneCreateScope") == null)
+            {
+                var dropdown = DropdownField(ui, creation, "ZoneCreateScope", "NEW ZONE SCOPE", root.transform);
+                var row = dropdown.transform.parent;
+                dropdown.transform.SetParent(creation, false);
+                UnityEngine.Object.DestroyImmediate(row.gameObject);
+                Fixed(dropdown.gameObject, 200, 32);
+            }
+        }
+
+        var inspector = Find("RecordInspector");
+        if (inspector != null && Find("ZoneScope") == null)
+        {
+            var legacy = Find("ZoneLayoutGroup");
+            if (legacy != null)
+                UnityEngine.Object.DestroyImmediate(legacy.gameObject);
+            DropdownField(ui, inspector, "ZoneScope", "ZONE SCOPE", root.transform);
+        }
+    }
+
+    private static void AddCreationButton(Transform parent, UiElements ui, string id, string caption, float width)
+    {
+        if (parent.Find(id) != null)
+            return;
+        Button(ui, parent, id, caption, width, 0, 0, 32);
+        Fixed(parent.Find(id)!.gameObject, width, 32);
     }
 
     private static void MakeTool(Transform panel, string title, string closeId, Transform windows, UiElements ui, float width, float height)

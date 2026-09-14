@@ -47,7 +47,10 @@ public sealed partial class RaidEditor
             point == null && _picked && !maps && (_mode == "Scene" || _mode == "Captures" || Binding == null) ? "Scene"
             : point is SeasonZone zone ? zone.Shape
             : MapPoint is MapObjectEdit obj ? obj.Operation
-            : MapPoint is MapVolume ? (Layout!.Checkpoints.AsValueEnumerable().Any(p => p.Id == _selected) ? "Checkpoint" : "Volume")
+            : MapPoint is MapVolume volume
+                ? Layout!.Barriers.AsValueEnumerable().Any(b => b.Id == volume.Id)
+                    ? "Barrier"
+                    : Layout!.Checkpoints.AsValueEnumerable().Any(p => p.Id == volume.Id) ? "Checkpoint" : "Volume"
             : MapDoor != null ? "Door"
             : maps && MapPoint == null ? "Layout"
             : "Point";
@@ -166,7 +169,17 @@ public sealed partial class RaidEditor
                 "MapDoor",
             }
         )
-            view.Get<Button>(name).interactable = canEdit && Layout != null;
+            view.Get<Button>(name).interactable =
+                canEdit
+                && Layout != null
+                && (
+                    name == "MapStart" || name == "MapCheckpoint" || name == "MapExit"
+                        ? _mode == "Routes"
+                        : _mode == "Scene" && (name == "MapBarrier" || name == "MapDoor" || _picked)
+                );
+        view.Get<WTT.Campaigns.UI.Controls.EditorDropdown>("ZoneCreateScope").interactable = canEdit && _mode == "Zones";
+        view.Get<WTT.Campaigns.UI.Controls.EditorDropdown>("ZoneScope").interactable =
+            canEdit && _mode == "Zones" && EditorMode.Ready && point is SeasonZone;
         view.Get<Button>("UseObject").interactable =
             canEdit && (point is SeasonZone && Binding != null || _picked && _sceneIndex.Complete && !_sceneIndex.Limited);
         var routeIndex = Layout?.Checkpoints.FindIndex(p => p.Id == _selected) ?? -1;

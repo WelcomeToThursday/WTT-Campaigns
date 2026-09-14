@@ -165,7 +165,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     if (EditorMode.Ready)
                     {
                         _layoutId = EditorMode.SelectedLayout;
-                        _mode = "Maps";
+                        _mode = "Layouts";
                         _selected = _layoutId;
                     }
                     else if (MapWorkspace)
@@ -195,7 +195,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
             if (_walking && _shortcut.Value.IsDown())
             {
-                EndWalkthrough();
+                EndWalkthrough(returnToEditor: true);
                 return;
             }
             if (_shortcut.Value.IsDown() && _view?.Typing != true)
@@ -219,7 +219,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             // reconnects. Only the applied physical walkthrough needs to stop.
             if (_walking && Time.realtimeSinceStartup - _lastContact > 20)
             {
-                EndWalkthrough();
+                EndWalkthrough(returnToEditor: true);
                 _notice = "Walkthrough restored while the editor connection recovers.";
                 return;
             }
@@ -266,6 +266,8 @@ public sealed partial class RaidEditor : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Escape))
             {
                 if (_view!.Windows.DismissMenus())
+                    return;
+                if (_view.DismissDropdowns())
                     return;
                 if (_view.Typing)
                 {
@@ -569,13 +571,21 @@ public sealed partial class RaidEditor : MonoBehaviour
         if (task.Tool == "MapLayout")
         {
             _layoutId = _selected = task.RecordId;
-            _mode = "Maps";
+            _mode = "Layouts";
             _task = null;
             _session!.TaskStatus(task, "Completed", task.RecordId);
             Refresh();
             return;
         }
         _task = task;
+        if (
+            task.Tool == "Zone"
+            && EditorMode.Ready
+            && _session?.Definition?.Zones.AsValueEnumerable().FirstOrDefault(z => z.Id == task.RecordId) is { } taskZone
+            && !string.IsNullOrEmpty(taskZone.LayoutId)
+            && _session.Definition.MapLayouts.AsValueEnumerable().Any(l => l.Id == taskZone.LayoutId)
+        )
+            _layoutId = taskZone.LayoutId;
         _selected = task.RecordId;
         _mode = task.Tool == "Zone" ? "Zones" : "Captures";
         _notice =

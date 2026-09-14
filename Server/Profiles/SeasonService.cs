@@ -251,7 +251,7 @@ public sealed class SeasonService(
             Unavailable = Unsupported(definition.Perks),
             Rules = definition.Rules,
             HasStory = definition.Story != null,
-            Zones = definition.Zones,
+            Zones = definition.Zones.Where(WTT.Campaigns.Shared.Spatial.ZoneLayoutRules.IsShared).ToList(),
             ActiveMode = link.Mode,
             EffectiveProfileId = EffectiveId(root),
             State = seasonal == null ? new PerkState() : State(seasonal),

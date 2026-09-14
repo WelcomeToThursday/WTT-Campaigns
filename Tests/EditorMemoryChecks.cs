@@ -70,13 +70,17 @@ internal static class EditorMemoryChecks
             .ToArray();
         if (syncCalls.Any(m => m.DeclaringType.Name == "Time"))
             throw new Exception("Terrain discovery must not poll on a timer.");
-        foreach (var (method, call) in new[] { (".ctor", "add_sceneLoaded"), ("Dispose", "remove_sceneLoaded") })
+        foreach (var call in new[] { "add_sceneLoaded", "add_sceneUnloaded" })
             if (
                 !environment
-                    .Methods.Single(m => m.Name == method)
+                    .Methods.Single(m => m.Name == "Enable")
                     .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == call)
             )
                 throw new Exception("Terrain discovery must follow scene lifecycle: " + call);
+        var invalidation = environment.Methods.Single(m => m.Name == "InvalidateDiscovery").Body.Instructions;
+        foreach (var field in new[] { "_knownTerrains", "_knownTerrainLods" })
+            if (!invalidation.Any(i => i.Operand is FieldReference f && f.Name == field))
+                throw new Exception("Scene changes must invalidate retained terrain discovery: " + field);
         Console.WriteLine(
             "Editor memory: native GC wrapper, no forced collections, and scene-triggered terrain discovery verified offline."
         );

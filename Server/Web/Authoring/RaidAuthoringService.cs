@@ -286,6 +286,20 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 // Client writes only spatial authoring records and bindings. Other season settings stay on the server.
                 var proposed = Copy(baseline);
                 proposed.Zones = Copy(r.Definition.Zones);
+                if (!r.SupportsZoneLayouts)
+                {
+                    // Older raid authoring clients do not know LayoutId. Keep the server's
+                    // existing ownership when they round-trip a draft so a normal raid cannot
+                    // silently turn layout zones into Shared zones.
+                    foreach (var zone in proposed.Zones)
+                    {
+                        var original = baseline.Zones.FirstOrDefault(z => z.Id == zone.Id);
+                        if (!string.IsNullOrEmpty(original?.LayoutId) && string.IsNullOrEmpty(zone.LayoutId))
+                        {
+                            zone.LayoutId = original.LayoutId;
+                        }
+                    }
+                }
                 proposed.Captures = Copy(r.Definition.Captures);
                 if (
                     r.Version >= 2

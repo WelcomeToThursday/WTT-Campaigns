@@ -17,7 +17,7 @@ public sealed class EditorTarkovTheme
         ["Snap"] = "grid-on-rounded",
         ["EditorWalk"] = "directions-walk-rounded",
         ["EditorReset"] = "restart-alt-rounded",
-        ["Maps"] = "map-outline-rounded",
+        ["Layouts"] = "map-outline-rounded",
         ["Routes"] = "directions-walk-rounded",
         ["Zones"] = "deployed-code-outline-rounded",
         ["Bindings"] = "bolt-rounded",

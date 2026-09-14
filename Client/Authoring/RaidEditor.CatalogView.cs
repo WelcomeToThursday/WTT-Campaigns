@@ -13,12 +13,18 @@ public sealed partial class RaidEditor
     {
         var view = _view!;
         var scene = SceneWorkspace;
+        var sceneKind =
+            ScenePoint is MapObjectEdit objectEdit ? objectEdit.Operation
+            : ScenePoint is MapVolume volume && Layout?.Barriers.AsValueEnumerable().Any(b => b.Id == volume.Id) == true ? "Barrier"
+            : ScenePoint is MapVolume ? "Volume"
+            : MapDoor != null ? "Door"
+            : "Loot";
         view.Windows.PresentScene(
             scene,
             _sceneTab,
-            (ScenePoint as MapObjectEdit)?.Operation ?? "Loot",
-            _sceneTab == "Catalog" ? _catalogSelection.Length > 0 : MapPoint != null || _picked,
-            ScenePoint != null,
+            sceneKind,
+            _sceneTab == "Catalog" ? _catalogSelection.Length > 0 : MapPoint != null || MapDoor != null || _picked,
+            ScenePoint != null || MapDoor != null,
             CanSceneEdit,
             _picked,
             MapPoint != null
@@ -45,11 +51,14 @@ public sealed partial class RaidEditor
             view.Highlight("Scene" + filter, _sceneFilter == filter);
         var point = ScenePoint;
         var catalog = _sceneTab == "Catalog";
-        var removed = point is MapObjectEdit { Operation: "Hide" };
-        var selected = catalog ? _catalogSelection.Length > 0 : point != null || _picked;
+        var removed = sceneKind == "Hide";
+        var selected = catalog ? _catalogSelection.Length > 0 : point != null || MapDoor != null || _picked;
         view.Get<Button>("ScenePlace").interactable = CanSceneEdit && selected && _placementLifetime == null;
-        foreach (var action in new[] { "SceneMove", "SceneRotate", "SceneRemove" })
-            view.Get<Button>(action).interactable = CanSceneEdit && selected && _sceneSelectionError.Length == 0;
+        view.Get<Button>("SceneMove").interactable =
+            CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
+        view.Get<Button>("SceneRotate").interactable =
+            CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
+        view.Get<Button>("SceneRemove").interactable = CanSceneEdit && selected && _sceneSelectionError.Length == 0;
         view.Get<Button>("SceneRestore").interactable = CanSceneEdit && MapPoint is MapObjectEdit { Operation: "Move" or "Hide" };
         view.Get<Button>("SceneRebind").interactable = CanSceneEdit && MapPoint is MapObjectEdit;
         foreach (var tool in new[] { "Move", "Rotate", "Scale" })
@@ -60,13 +69,14 @@ public sealed partial class RaidEditor
                     ? source.name
                     : _selectedCatalogEntry?.Name
             ) ?? "Select an item"
-            : point?.Name ?? (_picked ? _picked!.name : "Select an object");
+            : point?.Name ?? MapDoor?.Name ?? (_picked ? _picked!.name : "Select an object");
         view.Text("SceneHeading", name);
         view.Text(
             "SceneInfo",
-            Layout == null ? "Select or create a layout in Maps first."
+            Layout == null ? "Select or create a layout in Layouts first."
                 : removed ? "Removed from this layout. Restore original returns it to its original position."
                 : catalog ? "Place on a surface, then refine with the transform handles. Escape cancels."
+                : sceneKind == "Door" ? "Use Door state to cycle the saved native state. Remove clears it from this layout."
                 : point == null ? "Choose Move or Rotate to edit this object. Remove hides it in this layout."
                 : "Saved in " + Layout.Name + ". Undo and redo restore scene changes."
         );
@@ -81,7 +91,7 @@ public sealed partial class RaidEditor
             selected
                 ? catalog
                     ? _catalogSelection
-                    : MapPoint?.Id ?? (_picked ? _picked!.GetInstanceID().ToString() : "")
+                    : MapPoint?.Id ?? MapDoor?.Id ?? (_picked ? _picked!.GetInstanceID().ToString() : "")
                 : ""
         );
         view.Get<Button>("SceneFrame").interactable = CanFrameScene;

@@ -66,7 +66,11 @@ public sealed class ZoneRuntime : MonoBehaviour
                 .Where(static t => t.gameObject.scene.IsValid())
                 .Select(t => t.Id)
                 .ToHashSet();
-            foreach (var zone in Plugin.Current!.Zones.AsValueEnumerable().Where(z => z.Location == Location))
+            // Layout-owned zones are authoring content until a layout runtime exists.
+            // Shared zones retain the ordinary raid behavior used by legacy campaigns.
+            foreach (
+                var zone in Plugin.Current!.Zones.AsValueEnumerable().Where(z => z.Location == Location && ZoneLayoutRules.IsShared(z))
+            )
             {
                 if (existing.Contains(zone.Id))
                 {

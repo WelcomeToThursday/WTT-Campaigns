@@ -51,7 +51,7 @@ public static partial class RaidEditorLayout
         ui.Label(
             details,
             "MapDetails",
-            "Pick scenery in Scene, then return to Maps.\nAll map edits belong to the selected layout.",
+            "Pick scenery in Scene, then return to Layouts.\nAll map edits belong to the selected layout.",
             15,
             318,
             170

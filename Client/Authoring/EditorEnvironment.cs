@@ -12,6 +12,8 @@ internal sealed partial class EditorEnvironment : IDisposable
 {
     private static EditorEnvironment? _active;
     private static bool _patched;
+    private static Terrain[]? _knownTerrains;
+    private static TerrainLod[]? _knownTerrainLods;
     private readonly Camera _camera;
     private readonly bool _occlusion;
     private readonly HashSet<PerfectCullingCamera> _observers = new();
@@ -34,7 +36,6 @@ internal sealed partial class EditorEnvironment : IDisposable
         _rotation = camera.transform.rotation;
         camera.useOcclusionCulling = false;
         _active = this;
-        SceneManager.sceneLoaded += SceneLoaded;
         try
         {
             if (EditorMode.Ready)
@@ -126,14 +127,15 @@ internal sealed partial class EditorEnvironment : IDisposable
         {
             using var terrainDiagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.TerrainScan);
             _terrainDiscoveryPending = false;
-            foreach (var terrain in Resources.FindObjectsOfTypeAll<Terrain>())
+            foreach (var terrain in _knownTerrains ??= Resources.FindObjectsOfTypeAll<Terrain>())
                 if (terrain && terrain.gameObject.scene.IsValid() && terrain.gameObject.scene.isLoaded)
                     _terrain.Observe(terrain);
-            foreach (var lod in Resources.FindObjectsOfTypeAll<TerrainLod>())
+            foreach (var lod in _knownTerrainLods ??= Resources.FindObjectsOfTypeAll<TerrainLod>())
                 if (lod && lod.gameObject.scene.IsValid() && lod.gameObject.scene.isLoaded)
                     _terrain.Observe(lod);
             _sceneVisibility?.Discover();
         }
+        _sceneVisibility?.Advance();
         _terrain.Show();
         Observer(_camera.GetComponent<PerfectCullingCamera>());
         var sampler = PerfectCullingCrossSceneSampler.Instance;
@@ -143,7 +145,13 @@ internal sealed partial class EditorEnvironment : IDisposable
 
     // Native resource enumeration stalls large maps. Discover once on opening,
     // then only after a scene loads; visibility enforcement uses the cached objects.
-    private void SceneLoaded(Scene scene, LoadSceneMode mode) => _terrainDiscoveryPending = true;
+    private static void InvalidateDiscovery()
+    {
+        _knownTerrains = null;
+        _knownTerrainLods = null;
+        if (_active != null)
+            _active._terrainDiscoveryPending = true;
+    }
 
     private static void BeforeSampling(out EditorDiagnostics.Scope __state)
     {
@@ -165,6 +173,10 @@ internal sealed partial class EditorEnvironment : IDisposable
     {
         if (_patched)
             return;
+        // Keep discovery across walkthroughs, but release scene references even
+        // when a map unloads while no editor environment owns the camera.
+        SceneManager.sceneLoaded += (_, _) => InvalidateDiscovery();
+        SceneManager.sceneUnloaded += _ => InvalidateDiscovery();
         var harmony = new Harmony("com.wtt.campaigns.editor.environment");
         var before = new HarmonyMethod(typeof(EditorEnvironment), nameof(BeforeSampling));
         var after = new HarmonyMethod(typeof(EditorEnvironment), nameof(AfterSampling));
@@ -201,7 +213,6 @@ internal sealed partial class EditorEnvironment : IDisposable
 
     public void Dispose()
     {
-        SceneManager.sceneLoaded -= SceneLoaded;
         if (_active == this)
             _active = null;
         try

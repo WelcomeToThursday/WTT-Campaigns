@@ -26,6 +26,7 @@
     <Compile Include="..\Client\UI\ImageRequestCache.cs" Link="Client\ImageRequestCache.cs" />
     <Compile Include="..\Client\Authoring\SceneModelLease.cs" Link="Client\SceneModelLease.cs" />
     <Compile Include="..\Client\Authoring\PlayerRoute.cs" Link="Client\PlayerRoute.cs" />
+    <Compile Include="..\Client\Authoring\RouteVisuals.cs" Link="Client\RouteVisuals.cs" />
     <Compile Include="..\Client\Authoring\ScenePropSupport.cs" Link="Client\ScenePropSupport.cs" />
     <Compile Include="..\Client\Authoring\SceneSelectionEdit.cs" Link="Client\SceneSelectionEdit.cs" />
     <Compile Include="..\Client\Authoring\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />

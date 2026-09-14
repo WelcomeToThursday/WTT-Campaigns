@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using WTT.Campaigns.Shared.Seasons;
 
 namespace WTT.Campaigns.Shared.Authoring;
@@ -26,6 +27,10 @@ public class AuthoringRequest
     public string TaskId { get; set; } = "";
     public string TaskStatus { get; set; } = "";
     public string ResultId { get; set; } = "";
+
+    // Older clients omit this field and cannot preserve layout ownership while saving a draft.
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    public bool SupportsZoneLayouts { get; set; }
     public List<string> NativeZoneIds { get; set; } = new();
     public List<string> Scenes { get; set; } = new();
     public bool Enabled { get; set; }

@@ -43,6 +43,14 @@ internal static class EditorSceneVisibilityChecks
             "Visibility bypass preserves authored hidden objects, requested culling state and native LOD selection."
         );
         var environment = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorEnvironment");
+        var advance = compiledType.Methods.Single(m => m.Name == "Advance").Body.Instructions;
+        Require(
+            advance.Any(i => i.Operand is MethodReference { Name: "get_frameCount" })
+                && advance.Any(i => i.Operand is MethodReference { Name: "Advance", DeclaringType.Name: "EditorTriggerVisibility" })
+                && environment.Methods.Single(m => m.Name == "Sync").Body.Instructions.Any(i =>
+                    i.Operand is MethodReference { Name: "Advance", DeclaringType.Name: "EditorSceneVisibility" }),
+            "Visibility discovery advances under a shared per-frame budget across native camera callbacks."
+        );
         Require(
             environment
                 .Methods.Single(m => m.Name == "Dispose")

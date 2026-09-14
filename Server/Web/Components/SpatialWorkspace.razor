@@ -4,11 +4,19 @@
 <label>Find a record<input type="search" @bind="_search" @bind:event="oninput" /></label>
 @foreach (var record in Season.Zones.Cast<SpatialCapture>().Concat(Season.Captures).Where(r => r.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)))
 {
-    <details class="editor-card" @key="record.Id"><summary>@record.Name · @record.Location · @record.Scene</summary>
+    <details class="editor-card" @key="record.Id"><summary>@record.Name · @record.Location · @record.Scene@(record is SeasonZone zone ? " · " + ZoneScope(zone) : "")</summary>
     <label>Name<input maxlength="120" @bind="record.Name" /></label><small>@record.Id</small>
     <SpatialVectorFields Value="record.Position" Changed="Changed" /><SpatialVectorFields Value="record.Rotation" Label="Rotation (degrees)" Changed="Changed" />
     @if (record is SeasonZone zone)
     {
+        <label>Zone scope<select @bind="zone.LayoutId" @bind:after="NotifyChanged">
+            <option value="">Shared · independent of layouts</option>
+            @foreach (var layout in Season.MapLayouts.Where(l => l.Location == zone.Location))
+            {
+                <option value="@(layout.Id)">@(layout.Name)</option>
+            }
+        </select></label>
+        <small>Shared zones are available independently of a layout. Layout zones belong only to the selected layout.</small>
         <label>Shape<select @bind="zone.Shape"><option>Box</option><option>Sphere</option></select></label>
         @if (zone.Shape == "Box") { <SpatialVectorFields Value="zone.Size" Label="Size (metres)" Changed="Changed" /> }
         else { <label>Radius (metres)<input type="number" min="0.05" step="0.05" @bind="zone.Radius" /></label> }
@@ -44,6 +52,7 @@
     [Parameter] public EventCallback Changed { get; set; }
     private string _search = "";
     private IEnumerable<ContentChoice> OwnedItems => WTT.Campaigns.Server.Web.Authoring.StoryAuthoring.Choices(Season, "items").Select(c => new ContentChoice(c.Id, c.Name));
+    private string ZoneScope(SeasonZone zone) => string.IsNullOrEmpty(zone.LayoutId) ? "Shared" : Season.MapLayouts.FirstOrDefault(l => l.Id == zone.LayoutId)?.Name ?? zone.LayoutId;
     private Task NotifyChanged() => Changed.InvokeAsync();
     private async Task Delete(SpatialCapture record) { if (SpatialRules.Uses(Season, record.Id).Any()) return; if (record is SeasonZone zone) Season.Zones.Remove(zone); else Season.Captures.Remove(record); await Changed.InvokeAsync(); }
     private async Task Use(SeasonZone zone, string use, bool enabled) { if (enabled && !zone.Uses.Contains(use)) zone.Uses.Add(use); if (!enabled) zone.Uses.Remove(use); await Changed.InvokeAsync(); }

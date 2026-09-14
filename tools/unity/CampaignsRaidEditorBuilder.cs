@@ -172,7 +172,7 @@ public static class CampaignsRaidEditorBuilder
                 Array.FindAll(controls, t => t.name == "Map" + group + axis && t.GetComponent<InputField>()).Length == 1,
                 "Missing transform input: " + group + axis
             );
-        foreach (var name in new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" })
+        foreach (var name in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene" })
         {
             var tab = Array.Find(controls, t => t.name == name).GetComponentInChildren<Text>();
             Check(tab.preferredWidth <= ((RectTransform)tab.transform).rect.width + .5f, "Module label does not fit: " + name);
@@ -185,7 +185,7 @@ public static class CampaignsRaidEditorBuilder
         foreach (
             var id in new[]
             {
-                "Maps",
+                "Layouts",
                 "Routes",
                 "Zones",
                 "Bindings",
@@ -975,7 +975,7 @@ public static class CampaignsRaidEditorBuilder
                             host.ToggleDock("Inspector");
                     }
                 }
-                foreach (var category in new[] { "Maps", "Zones", "Bindings", "Captures", "Scene" })
+                foreach (var category in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene" })
                     Find(category).GetComponent<Button>().targetGraphic.color =
                         category == mode ? new Color(.36f, .33f, .23f) : new Color(.18f, .18f, .15f);
                 if (state == "popout")

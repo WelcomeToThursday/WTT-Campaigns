@@ -212,6 +212,10 @@ public sealed partial class RaidEditor
                     _rows.Add((item.Id, (item.Operation == "Hide" ? "Removed" : item.Operation) + " · " + item.Name));
                 foreach (var item in Layout.Loot)
                     _rows.Add((item.Id, "Placed loot · " + item.Name));
+                foreach (var item in Layout.Barriers)
+                    _rows.Add((item.Id, "Barrier · " + item.Name));
+                foreach (var item in Layout.Doors)
+                    _rows.Add((item.Id, "Door · " + item.Name + " · " + item.State));
             }
         }
         else if (RemoteCatalog)
@@ -417,7 +421,7 @@ public sealed partial class RaidEditor
     {
         if (!CanSceneEdit)
             return;
-        if (MapPoint is MapLootPlacement or MapObjectEdit { Operation: "Copy" })
+        if (MapPoint is MapLootPlacement or MapObjectEdit { Operation: "Copy" } or MapVolume)
             DeleteMapRecord();
         else if (MapPoint is MapObjectEdit edit)
             MapEdit(_ => edit.Operation = "Hide");

@@ -170,6 +170,7 @@ internal sealed class RaidEditorSession
             Grant = Grant,
             DraftId = DraftId,
             Revision = Revision,
+            SupportsZoneLayouts = true,
             OperationId = Guid.NewGuid().ToString("N"),
         };
     }

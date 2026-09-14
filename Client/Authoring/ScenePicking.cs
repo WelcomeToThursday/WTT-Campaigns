@@ -7,7 +7,7 @@ namespace WTT.Campaigns.Client.Authoring;
 
 internal static class ScenePicking
 {
-    // Maps and Scene share world selection. Other categories keep their capture/zone tools.
+    // Scene owns world selection. Other categories keep their capture/zone tools.
     internal static bool Dispatch(bool editor, string mode, Action pick)
     {
         if (!editor || (mode != "Maps" && mode != "Scene"))

@@ -195,9 +195,8 @@ public sealed partial class RaidEditor
         }
         if (ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
             return;
-        var closest = _session
-            .Definition.Zones.AsValueEnumerable()
-            .Where(z => z.Location == _session.Location)
+        var closest = FilterZonesForLayout(_layoutId)
+            .AsValueEnumerable()
             .Select(z => (Zone: z, Screen: _camera!.WorldToScreenPoint(ZoneRuntime.Vector(z.Position))))
             .Where(z => z.Screen.z > 0)
             .OrderBy(z => Vector2.Distance(mouse, z.Screen))
@@ -286,14 +285,14 @@ public sealed partial class RaidEditor
         using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.Geometry);
         if (!_open || _session?.Definition == null)
         {
+            _view?.HideRoute();
             return;
         }
 
         _lineIndex = 0;
         foreach (
-            var zone in _session
-                .Definition.Zones.AsValueEnumerable()
-                .Where(z => z.Location == _session.Location)
+            var zone in FilterZonesForLayout(_layoutId)
+                .AsValueEnumerable()
                 .OrderBy(z => z.Id == _selected ? 0 : 1)
                 .ThenBy(z => Vector3.Distance(_flyPosition, ZoneRuntime.Vector(z.Position)))
                 .Take(100)
@@ -345,18 +344,7 @@ public sealed partial class RaidEditor
             Line(new[] { center - Vector3.right * .15f, center + Vector3.right * .15f }, color);
             Line(new[] { center - Vector3.up * .15f, center + Vector3.up * .15f }, color);
         }
-        if (Layout != null && _mode == "Routes")
-        {
-            var route = new List<Vector3>();
-            if (Layout.Start != null)
-                route.Add(ZoneRuntime.Vector(Layout.Start.Position));
-            foreach (var checkpoint in Layout.Checkpoints)
-                route.Add(ZoneRuntime.Vector(checkpoint.Position));
-            if (Layout.Exit != null)
-                route.Add(ZoneRuntime.Vector(Layout.Exit.Position));
-            if (route.Count > 1)
-                Line(route.ToArray(), Color.cyan);
-        }
+        _view?.DrawRoute(_mode == "Routes" && !_walking ? Layout : null, _camera, _selected);
         DrawSelectionBounds();
         if (
             Selected is { } selected
@@ -426,6 +414,7 @@ public sealed partial class RaidEditor
 
     private void ClearLines()
     {
+        _view?.HideRoute();
         foreach (var line in _lines.AsValueEnumerable().Where(static l => l))
         {
             Destroy(line.gameObject);

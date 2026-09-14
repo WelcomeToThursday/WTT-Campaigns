@@ -12,18 +12,24 @@ Editor startup opens directly into the full-screen **Campaign Editor** after aut
 
 ## Build a route
 
-The existing workspace now includes **Maps**, **Zones**, **Events**, **Captures** and **Scene**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.
+The workspace includes **Layouts**, **Routes**, **Scene**, **Zones**, **Events** and **Captures**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.
 
-1. In **Maps**, create a layout. Name it in the properties panel.
-2. Place one player start, add numbered checkpoints in route order, and place an exit. Markers use the floor directly beneath the editor camera (within 20 metres), facing the camera's horizontal direction. Fly closer to a floor if placement is unavailable. **Under camera** moves an existing marker there. Use numeric transforms or the Move / Rotate tools to adjust them after capture.
-3. Add barriers to close unwanted passages. Resize barriers and volumes with their size fields or the Scale tool. Checkpoints and exit volumes support box and sphere shapes. **Earlier** and **Later** reorder checkpoints.
-4. Use the existing scene picker to select a supported prop. Capture **Move**, **Copy** or **Hide**, or use the Scene catalog and contextual controls below. Independent static props can be resized. A captured native door cycles through unchanged, open, closed and locked.
+1. In **Layouts**, create a layout. Name it in the properties panel.
+2. Open **Routes**. Place one player start, add numbered checkpoints in route order, and place an exit. Markers use the floor directly beneath the editor camera (within 20 metres), facing the camera's horizontal direction. Fly closer to a floor if placement is unavailable. **Under camera** moves an existing marker there. Use numeric transforms or the Move / Rotate tools to adjust them after capture.
+3. Open **Scene** and add barriers to close unwanted passages. Barriers have translucent editing previews and become invisible solid blockers during walkthrough. Resize barriers and volumes with their size fields or the Scale tool. Checkpoints and exit volumes support box and sphere shapes. **Earlier** and **Later** reorder checkpoints.
+4. In **Scene**, use the scene picker to select a supported prop. Choose **Move prop**, **Copy prop** or **Hide prop**, or use the Scene catalog and contextual controls below. Independent static props can be resized. A captured native door cycles through unchanged, open, closed and locked.
 5. Use snapping, numeric transforms and undo/redo to refine the layout. Remove an override to restore its original behavior. **Rebind** explicitly replaces a missing or changed scenery target with the currently picked object.
 6. Use the existing draft save controls. Incomplete routes can be saved; walkthrough requires a start, at least one checkpoint and an exit.
 
+## Zone scope
+
+Zones can be **Shared** or belong to a specific layout. Existing zones remain Shared. Choose Shared to author a zone independently of layouts, or the current layout to keep it with that layout. The Zones library shows shared zones alongside zones for the selected layout; switching layouts hides zones belonging to other layouts. You can change a zone's scope later, including returning it to Shared. Creator exposes the same choice in the zone properties.
+
+Duplicating a layout copies its zones with new identities. Deleting a layout removes its owned zones only when they are no longer referenced; reassign quest or story references first. Shared zones are unaffected. Layout zones are editor content and do not activate in ordinary raids; Shared zones retain their existing gameplay behavior. Drafts can reference layout zones, but publishing quests or story content that depends on them requires Shared zones until layout raids are supported.
+
 ## Dress the scene
 
-Open **Scene** after selecting a layout in **Maps**. The library has three tabs:
+Open **Scene** after selecting a layout in **Layouts**. The library has three tabs:
 
 - **Catalog** lists reusable **Props** from this map, installed **Loot** templates, and weapon **Presets**. Search by name (or item template ID for loot), page through results, and select an entry to see its thumbnail. Only supported independent props are included; unavailable installed item models report an error.
 - **In scene** lists original supported props, loose loot, searchable containers, and your placed objects. Use **Pick scenery** or click an object in the viewport to select its supported root.
@@ -45,14 +51,14 @@ Opening an editor map keeps the native loading progress and starts its elapsed t
 
 The top toolbar's **Fly m/s** field sets camera speed from **0.25 to 96 metres per second**. Use **− / +** to halve or double it. The default is 6 m/s and your choice is remembered. Hold RMB to fly; **Shift** gives a 4x boost and **Ctrl** gives quarter-speed precision. Diagonal movement keeps the same speed.
 
-**Routes** is the walking-figure tool beside Maps. Select a layout in its library to work on that layout's player start, ordered checkpoints and exit. Create layouts in **Maps**, which retains barriers and scenery records.
+**Routes** is the walking-figure tool. Select a layout to work on its player start, ordered checkpoints and exit. Create and manage layouts in **Layouts**; barriers and scenery tools are in **Scene**.
 
 1. Fly above a floor and choose **Set start**. Markers use the floor within 20 metres beneath the camera and its heading.
 2. Choose **Add checkpoint** along the route. Selecting an existing checkpoint inserts the next one immediately after it; otherwise new checkpoints append.
 3. Select a waypoint and use **Frame waypoint** to bring the camera to it. Use handles or numeric fields to adjust its transform and volume; **Under camera** places it again. **Earlier / Later checkpoint** changes traversal order. Duplicates insert after the selected checkpoint.
 4. Choose **Set exit**. The Routes inspector holds **Walk from marker**. Walkthrough becomes available when the layout has valid start, checkpoint and exit records; captured scene targets and standing clearance are also checked when starting.
 
-Existing layout routes remain available in Routes without conversion. The connecting line follows checkpoint order. During walkthrough the status names the next checkpoint, then directs you to the exit, then reports completion.
+Existing layout routes remain available in Routes without conversion. A green **START** flag, amber numbered checkpoint diamonds, and a red **END** square identify the route even before you select a waypoint. Checkpoint and exit volume previews use matching colors. Bright outlined connections follow checkpoint order; the markers, labels, and connections remain readable through walls and terrain while Routes is open. A white outline marks the selected waypoint without changing its role color. These authoring overlays disappear during walkthrough, when the status names the next checkpoint, then directs you to the exit, then reports completion.
 
 ## Walk through and leave
 

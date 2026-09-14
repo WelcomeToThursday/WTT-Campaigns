@@ -32,7 +32,7 @@ public sealed partial class RaidEditor
 
     private MapSceneAdapter? _mapScene;
     private MapLayout? _walkLayout;
-    private bool MapWorkspace => _mode == "Maps" || _mode == "Routes";
+    private bool MapWorkspace => _mode == "Layouts" || _mode == "Routes";
     private MapLayout? Layout => _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == _layoutId);
     private SpatialCapture? MapPoint =>
         Layout == null ? null : MapLayoutRules.Points(Layout).AsValueEnumerable().FirstOrDefault(p => p.Id == _selected);
@@ -111,13 +111,22 @@ public sealed partial class RaidEditor
         Button(
             "MapBarrier",
             () =>
+            {
+                var v = CaptureVolume("Barrier");
+                // CapturePoint lands on the floor. Keep a new barrier above
+                // that floor so its full collider participates in preview
+                // and walkthrough collision checks.
+                v.Position.Y += v.Shape == "Sphere" ? v.Radius : v.Size.Y / 2;
+                _picked = null;
+                _sceneSelectionPose = null;
+                _sceneSelectionError = "";
+                _sceneTab = "Changes";
                 MapEdit(l =>
                 {
-                    var v = CaptureVolume("Barrier");
-                    v.Position.Y += 1;
                     l.Barriers.Add(v);
                     _selected = v.Id;
-                })
+                });
+            }
         );
         Button(
             "MapShape",
@@ -385,7 +394,12 @@ public sealed partial class RaidEditor
                 loot.Items = FreshItems(loot.Items);
             foreach (var d in copy.Doors)
                 d.Id = MapId();
-            _session!.Edit(s => s.MapLayouts.Add(copy));
+            var sourceLayoutId = _layoutId;
+            _session!.Edit(s =>
+            {
+                s.MapLayouts.Add(copy);
+                s.Zones.AddRange(ZoneLayoutRules.CopyOwnedZones(s, sourceLayoutId, copy.Id));
+            });
             _layoutId = _selected = copy.Id;
         }
         else
@@ -431,7 +445,12 @@ public sealed partial class RaidEditor
             return;
         if (_selected == _layoutId)
         {
-            _session?.Edit(s => s.MapLayouts.RemoveAll(l => l.Id == _layoutId));
+            if (!TryDeleteLayoutZones(_layoutId, out var error))
+            {
+                _notice = error;
+                Refresh();
+                return;
+            }
             _layoutId = _selected = "";
         }
         else
@@ -458,26 +477,14 @@ public sealed partial class RaidEditor
             _rows.Add((layout.Id, "LAYOUT · " + layout.Name));
             if (layout.Id != _layoutId)
                 continue;
-            if (_mode == "Routes")
-            {
-                if (layout.Start != null)
-                    _rows.Add((layout.Start.Id, "START · " + layout.Start.Name));
-                for (var i = 0; i < layout.Checkpoints.Count; i++)
-                    _rows.Add((layout.Checkpoints[i].Id, $"{i + 1}. {layout.Checkpoints[i].Name}"));
-                if (layout.Exit != null)
-                    _rows.Add((layout.Exit.Id, "EXIT · " + layout.Exit.Name));
-            }
-            else
-            {
-                foreach (var o in layout.Objects)
-                    _rows.Add((o.Id, o.Operation + " · " + o.Name));
-                foreach (var loot in layout.Loot)
-                    _rows.Add((loot.Id, "Loot · " + loot.Name));
-                foreach (var d in layout.Doors)
-                    _rows.Add((d.Id, "Door · " + d.Name + " · " + d.State));
-                foreach (var b in layout.Barriers)
-                    _rows.Add((b.Id, "Barrier · " + b.Name));
-            }
+            if (_mode != "Routes")
+                continue;
+            if (layout.Start != null)
+                _rows.Add((layout.Start.Id, "START · " + layout.Start.Name));
+            for (var i = 0; i < layout.Checkpoints.Count; i++)
+                _rows.Add((layout.Checkpoints[i].Id, $"{i + 1}. {layout.Checkpoints[i].Name}"));
+            if (layout.Exit != null)
+                _rows.Add((layout.Exit.Id, "EXIT · " + layout.Exit.Name));
         }
     }
 
@@ -486,7 +493,7 @@ public sealed partial class RaidEditor
         var view = _view!;
         var maps = (MapWorkspace || SceneWorkspace) && EditorMode.Ready;
         // Inspector visibility is owned by the workspace presenter.
-        view.Get<Button>("Maps").interactable = EditorMode.Ready;
+        view.Get<Button>("Layouts").interactable = EditorMode.Ready;
         view.Get<Button>("Routes").interactable = EditorMode.Ready;
 
         view.Get<Transform>("EditorMapToolbar").gameObject.SetActive(EditorMode.Ready);
@@ -566,16 +573,17 @@ public sealed partial class RaidEditor
             view.Text(
                 "RouteGuide",
                 Layout == null
-                    ? "Choose a layout here, or create one in Maps."
+                    ? "Choose a layout here, or create one in Layouts."
                     : "PLAYER ROUTE · "
                         + Layout.Checkpoints.Count
                         + " checkpoints\n"
                         + (
                             index >= 0
-                                ? $"Checkpoint {index + 1} of {Layout.Checkpoints.Count} · new points insert after this one."
+                                ? $"Checkpoint {index + 1} / {Layout.Checkpoints.Count} · inserts next"
                                 : "Set start → add checkpoints → set exit."
                         )
-                        + "\nPlace markers on the floor beneath the camera."
+                        + "\nStart green · Checkpoint amber · End red"
+                        + "\nPlaced on floor beneath camera."
             );
         }
         var errors =
@@ -583,7 +591,7 @@ public sealed partial class RaidEditor
                 ? new List<string>
                 {
                     _mode == "Routes"
-                        ? "Create a layout in Maps, then select it here."
+                        ? "Create a layout in Layouts, then select it here."
                         : "Create or select a layout. Use Routes for player waypoints.",
                 }
                 : MapLayoutRules.Errors(Layout, _mode == "Routes");
@@ -686,7 +694,7 @@ public sealed partial class RaidEditor
             || _shortcut.Value.IsDown()
         )
         {
-            EndWalkthrough();
+            EndWalkthrough(returnToEditor: true);
             return true;
         }
         var route = _walkLayout!;
@@ -698,8 +706,9 @@ public sealed partial class RaidEditor
         return false;
     }
 
-    internal void EndWalkthrough()
+    internal void EndWalkthrough(bool returnToEditor = false)
     {
+        var transition = returnToEditor ? System.Diagnostics.Stopwatch.StartNew() : null;
         try
         {
             _mapScene?.Dispose();
@@ -726,6 +735,18 @@ public sealed partial class RaidEditor
                 _session.Hold = false;
             if (_view?.Valid == true)
                 _view.Windows.SetWalkthrough(false);
+        }
+        // Reclaim the camera before this frame renders. Update consumes the exit
+        // input, so waiting for automatic opening exposes the native player pose.
+        // Teardown callers leave returnToEditor false and must never reopen UI.
+        if (returnToEditor && EditorMode.Ready && AuthoringEnabled && _session?.Definition != null)
+        {
+            var cleanupMilliseconds = transition!.Elapsed.TotalMilliseconds;
+            Open();
+            Plugin.LogInfo(
+                $"Walkthrough return: cleanup {cleanupMilliseconds:0.0} ms, editor reopening "
+                    + $"{transition.Elapsed.TotalMilliseconds - cleanupMilliseconds:0.0} ms."
+            );
         }
     }
 
