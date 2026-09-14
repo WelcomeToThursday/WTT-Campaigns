@@ -112,8 +112,7 @@ internal sealed class EditorTriggerVisibility : IDisposable
         Complete,
     }
 
-    private static double ElapsedMilliseconds(long started) =>
-        (Stopwatch.GetTimestamp() - started) * 1000d / Stopwatch.Frequency;
+    private static double ElapsedMilliseconds(long started) => (Stopwatch.GetTimestamp() - started) * 1000d / Stopwatch.Frequency;
 
     private void BeginOwner(DisablerCullingObject owner)
     {

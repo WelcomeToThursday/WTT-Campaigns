@@ -205,6 +205,7 @@ internal sealed class RouteOverlayBatch : MaskableGraphic
 {
     internal RouteOverlay Owner = null!;
     internal int Index;
+
     protected override void OnPopulateMesh(VertexHelper mesh)
     {
         if (Owner)

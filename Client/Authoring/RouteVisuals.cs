@@ -2,11 +2,18 @@ using WTT.Campaigns.Shared.Spatial;
 
 namespace WTT.Campaigns.Client.Authoring;
 
-internal enum RouteRole { Start, Checkpoint, End }
+internal enum RouteRole
+{
+    Start,
+    Checkpoint,
+    End,
+}
 
 internal static class RouteVisuals
 {
-    internal const int StartColor = 0x66BB6A, CheckpointColor = 0xFFCA28, EndColor = 0xEF5350;
+    internal const int StartColor = 0x66BB6A,
+        CheckpointColor = 0xFFCA28,
+        EndColor = 0xEF5350;
 
     internal static void Points(MapLayout layout, List<(SpatialCapture Point, RouteRole Role, int Number)> result)
     {
@@ -19,8 +26,16 @@ internal static class RouteVisuals
             result.Add((layout.Exit, RouteRole.End, 0));
     }
 
-    internal static int Color(RouteRole role) => role == RouteRole.Start ? StartColor : role == RouteRole.End ? EndColor : CheckpointColor;
-    internal static string Label(RouteRole role, int number) => role == RouteRole.Start ? "START" : role == RouteRole.End ? "END" : "CHECKPOINT " + number;
+    internal static int Color(RouteRole role) =>
+        role == RouteRole.Start ? StartColor
+        : role == RouteRole.End ? EndColor
+        : CheckpointColor;
+
+    internal static string Label(RouteRole role, int number) =>
+        role == RouteRole.Start ? "START"
+        : role == RouteRole.End ? "END"
+        : "CHECKPOINT " + number;
+
     private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
 
     // Clip in depth before perspective projection, including segments crossing the camera.
@@ -42,14 +57,19 @@ internal static class RouteVisuals
         if (!Finite(ax) || !Finite(ay) || !Finite(bx) || !Finite(by) || !Finite(width) || !Finite(height) || width <= 0 || height <= 0)
             return false;
         // Double intermediates also keep very distant finite endpoints safe.
-        double dx = (double)bx - ax, dy = (double)by - ay, start = 0, end = 1;
+        double dx = (double)bx - ax,
+            dy = (double)by - ay,
+            start = 0,
+            end = 1;
         bool Edge(double p, double q)
         {
             if (p == 0)
                 return q >= 0;
             var t = q / p;
-            if (p < 0) start = Math.Max(start, t);
-            else end = Math.Min(end, t);
+            if (p < 0)
+                start = Math.Max(start, t);
+            else
+                end = Math.Min(end, t);
             return start <= end;
         }
         if (!Edge(-dx, ax) || !Edge(dx, width - (double)ax) || !Edge(-dy, ay) || !Edge(dy, height - (double)ay))

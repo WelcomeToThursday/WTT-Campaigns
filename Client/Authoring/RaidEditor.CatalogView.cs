@@ -54,10 +54,8 @@ public sealed partial class RaidEditor
         var removed = sceneKind == "Hide";
         var selected = catalog ? _catalogSelection.Length > 0 : point != null || MapDoor != null || _picked;
         view.Get<Button>("ScenePlace").interactable = CanSceneEdit && selected && _placementLifetime == null;
-        view.Get<Button>("SceneMove").interactable =
-            CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
-        view.Get<Button>("SceneRotate").interactable =
-            CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
+        view.Get<Button>("SceneMove").interactable = CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
+        view.Get<Button>("SceneRotate").interactable = CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
         view.Get<Button>("SceneRemove").interactable = CanSceneEdit && selected && _sceneSelectionError.Length == 0;
         view.Get<Button>("SceneRestore").interactable = CanSceneEdit && MapPoint is MapObjectEdit { Operation: "Move" or "Hide" };
         view.Get<Button>("SceneRebind").interactable = CanSceneEdit && MapPoint is MapObjectEdit;

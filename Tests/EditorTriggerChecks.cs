@@ -106,10 +106,7 @@ internal static class EditorTriggerChecks
             "Reobserving a partially processed owner preserves its cursor"
         );
         partial.Dispose();
-        check(
-            !firstPartial.Enabled && !secondPartial.Enabled,
-            "Partial teardown restores only targets whose state was captured"
-        );
+        check(!firstPartial.Enabled && !secondPartial.Enabled, "Partial teardown restores only targets whose state was captured");
         secondPartial.Enabled = true;
         partial.Advance(4096, double.PositiveInfinity);
         check(secondPartial.Enabled, "Disposed pending work cannot mutate targets later");
@@ -137,10 +134,7 @@ internal static class EditorTriggerChecks
             dynamic.Observe(dynamicOwner);
             dynamicOwner._componentsToTurnOff.Add(dynamicLater);
             Drain(dynamic);
-            check(
-                dynamicFirst.Enabled && dynamicLater.Enabled,
-                "Queued target cursors include list entries appended before processing"
-            );
+            check(dynamicFirst.Enabled && dynamicLater.Enabled, "Queued target cursors include list entries appended before processing");
         }
 
         var rescanOwner = new GameObject().AddComponent<DisablerCullingObject>();

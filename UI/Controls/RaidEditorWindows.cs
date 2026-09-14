@@ -335,9 +335,9 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
             Visible(
                 name,
                 name == "MapNew" ? layouts && !routes
-                : name == "MapStart" || name == "MapCheckpoint" || name == "MapExit" ? routes
-                : name == "ZoneCreateScope" ? mode == "Zones"
-                : sceneWorkspace
+                    : name == "MapStart" || name == "MapCheckpoint" || name == "MapExit" ? routes
+                    : name == "ZoneCreateScope" ? mode == "Zones"
+                    : sceneWorkspace
             );
 
         Visible("CaptureTask", capture);
