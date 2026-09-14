@@ -18,7 +18,7 @@ public sealed partial class RaidEditor
         if (_view?.Valid != true || _session == null)
             return;
         var state =
-            $"{_session.ContentVersion}|{_session.Status}|{_notice}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{_placementLifetime != null}|{_view.Windows.HasMenu}";
+            $"{_session.ContentVersion}|{_session.Status}|{_notice}|{_aiPreviewStatus}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{_placementLifetime != null}|{_view.Windows.HasMenu}";
         if (_presentedIndexCount != _sceneIndex.Count || state != _passiveState)
         {
             _presentedIndexCount = _sceneIndex.Count;
@@ -36,15 +36,19 @@ public sealed partial class RaidEditor
         view.Get<Button>("CameraFaster").interactable = CameraSpeed < 96f;
         var maps = MapWorkspace && EditorMode.Ready;
         var point = _mode == "Scene" ? null : Selected;
+        var aiKind = "";
+        var aiSelection = _mode == "AI" ? AiSelected(out aiKind) : default;
         var selection =
             _mode == "Bindings" ? Binding?.Id ?? ""
             : _mode == "Scene" ? (_picked ? _picked!.GetInstanceID().ToString() : "")
+            : _mode == "AI" ? _selected
             : maps ? MapPoint?.Id ?? MapDoor?.Id ?? Layout?.Id ?? ""
             : point?.Id ?? "";
         if (selection.Length == 0 && _picked && (_mode == "Captures" || _mode == "Bindings"))
             selection = "picked:" + _picked!.GetInstanceID();
         var kind =
-            point == null && _picked && !maps && (_mode == "Scene" || _mode == "Captures" || Binding == null) ? "Scene"
+            _mode == "AI" ? (aiSelection.Valid ? aiKind : "")
+            : point == null && _picked && !maps && (_mode == "Scene" || _mode == "Captures" || Binding == null) ? "Scene"
             : point is SeasonZone zone ? zone.Shape
             : MapPoint is MapObjectEdit obj ? obj.Operation
             : MapPoint is MapVolume volume
@@ -59,22 +63,27 @@ public sealed partial class RaidEditor
             kind,
             selection.Length > 0,
             _task != null,
-            _picked,
+            _mode != "AI" && _picked,
             EditorMode.Ready,
             point is SeasonZone && Binding != null,
             SceneWorkspace
         );
         if (!SceneWorkspace)
             view.Windows.Select(_mode, selection);
+        var treeMode = _mode == "AI" || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
         view.Text(
             "LibraryCount",
-            _rows.Count == 0 ? "No matching records" : $"{_rows.Count} records · Page {_page + 1} / {(LibraryTotal + 9) / 10}"
+            treeMode
+                ? view.TreeRecordCount == 0 || view.TreeVisibleCount == 0 ? "No matching records" : $"{view.TreeRecordCount} records"
+                : _rows.Count == 0 ? "No matching records" : $"{_rows.Count} records · Page {_page + 1} / {(LibraryTotal + 9) / 10}"
         );
         if (_mode == "Scene" && SceneIndexStatus.Length > 0)
             view.Text("LibraryCount", _sceneIndex.Count + " records · " + (!_sceneIndex.Complete ? "Indexing…" : "Limit reached"));
-        view.Get<Button>("Previous").interactable = _page > 0;
-        view.Get<Button>("Next").interactable = (_page + 1) * 10 < LibraryTotal;
-        for (var i = 0; i < 10; i++)
+        view.Visible("Previous", !treeMode);
+        view.Visible("Next", !treeMode);
+        view.Get<Button>("Previous").interactable = !treeMode && _page > 0;
+        view.Get<Button>("Next").interactable = !treeMode && (_page + 1) * 10 < LibraryTotal;
+        for (var i = 0; i < 10 && !treeMode; i++)
         {
             var index = LibraryOffset + i;
             var selected =

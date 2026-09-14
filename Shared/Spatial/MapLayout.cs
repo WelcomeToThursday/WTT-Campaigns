@@ -15,6 +15,11 @@ public sealed class MapLayout
     public SpatialCapture? Start { get; set; }
     public List<MapVolume> Checkpoints { get; set; } = new();
     public MapVolume? Exit { get; set; }
+
+    // AI authoring is layout-owned and intentionally separate from player route checkpoints.
+    public List<SpatialCapture> SpawnPoints { get; set; } = new();
+    public List<MapEncounter> Encounters { get; set; } = new();
+    public List<MapPatrolRoute> PatrolRoutes { get; set; } = new();
 }
 
 public sealed class MapTarget
@@ -96,22 +101,49 @@ public static class MapLayoutRules
     public static bool NeedsFormat5(MapLayout layout) =>
         layout.Loot?.Count > 0 || layout.Objects?.Any(o => o?.Target?.Kind != "Prop") == true;
 
-    public static int Format(IEnumerable<MapLayout> layouts) => layouts.Any(NeedsFormat5) ? 5 : 4;
+    public static bool NeedsFormat6(MapLayout layout) =>
+        layout.SpawnPoints?.Count > 0 || layout.Encounters?.Count > 0 || layout.PatrolRoutes?.Count > 0;
+
+    public static int Format(IEnumerable<MapLayout> layouts) =>
+        layouts.Any(NeedsFormat6) ? 6
+        : layouts.Any(NeedsFormat5) ? 5
+        : 4;
 
     public static IEnumerable<SpatialCapture> Points(MapLayout layout) =>
-        layout
-            .Objects.Cast<SpatialCapture>()
-            .Concat(layout.Loot)
-            .Concat(layout.Barriers)
-            .Concat(layout.Checkpoints)
+        (layout.Objects?.Cast<SpatialCapture>() ?? Enumerable.Empty<SpatialCapture>())
+            .Concat(layout.Loot ?? new())
+            .Concat(layout.Barriers ?? new())
+            .Concat(layout.Checkpoints ?? new())
             .Concat(layout.Start == null ? Array.Empty<SpatialCapture>() : new[] { layout.Start })
-            .Concat(layout.Exit == null ? Array.Empty<SpatialCapture>() : new[] { layout.Exit });
+            .Concat(layout.Exit == null ? Array.Empty<SpatialCapture>() : new[] { layout.Exit })
+            .Concat(layout.SpawnPoints ?? new())
+            .Concat(layout.PatrolRoutes?.SelectMany(r => r?.Waypoints ?? new()) ?? Enumerable.Empty<SpatialCapture>())
+            .Concat(
+                layout.Encounters?.SelectMany(e =>
+                    e?.Trigger?.Volume == null ? Enumerable.Empty<SpatialCapture>() : new[] { e.Trigger.Volume }
+                )
+                    ?? Enumerable.Empty<SpatialCapture>()
+            );
 
     public static IEnumerable<string> OwnedIds(MapLayout layout) =>
         new[] { layout.Id }
             .Concat(Points(layout).Select(p => p.Id))
-            .Concat(layout.Doors.Select(d => d.Id))
-            .Concat(layout.Loot.SelectMany(l => l.Items ?? new()).Select(i => i.Id));
+            .Concat((layout.Doors ?? new()).Where(d => d != null).Select(d => d.Id))
+            .Concat((layout.Loot ?? new()).Where(l => l != null).SelectMany(l => l.Items ?? new()).Select(i => i.Id))
+            .Concat((layout.PatrolRoutes ?? new()).Where(r => r != null).Select(r => r.Id))
+            .Concat(
+                (layout.Encounters ?? new())
+                    .Where(e => e != null)
+                    .SelectMany(e =>
+                        new[] { e.Id }
+                            .Concat((e.Waves ?? new()).Where(w => w != null).Select(w => w.Id))
+                            .Concat(
+                                (e.Waves ?? new())
+                                    .Where(w => w != null)
+                                    .SelectMany(w => (w.Roster ?? new()).Where(entry => entry != null).Select(entry => entry.Id))
+                            )
+                    )
+            );
 
     public static bool Positive(SpatialVector? v) => v?.Finite == true && v.X > 0 && v.Y > 0 && v.Z > 0;
 
@@ -133,10 +165,16 @@ public static class MapLayoutRules
             || layout.Doors == null
             || layout.Barriers == null
             || layout.Checkpoints == null
+            || layout.SpawnPoints == null
+            || layout.Encounters == null
+            || layout.PatrolRoutes == null
             || layout.Objects.Any(o => o == null)
             || layout.Doors.Any(d => d == null)
             || layout.Barriers.Any(v => v == null)
             || layout.Checkpoints.Any(v => v == null)
+            || layout.SpawnPoints.Any(p => p == null)
+            || layout.Encounters.Any(e => e == null)
+            || layout.PatrolRoutes.Any(r => r == null)
         )
         {
             errors.Add("Layout collections cannot contain null records.");
@@ -176,6 +214,9 @@ public static class MapLayoutRules
         }
         foreach (var door in layout.Doors)
             Need(door.State is "Unchanged" or "Open" or "Shut" or "Locked", "Unknown door state: " + door.Name);
+
+        foreach (var error in MapEncounterRules.Errors(layout))
+            errors.Add(error);
         foreach (var target in layout.Objects.Select(o => o.Target).Concat(layout.Doors.Select(d => d.Target)))
             Need(
                 target != null

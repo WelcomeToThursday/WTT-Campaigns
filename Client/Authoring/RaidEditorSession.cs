@@ -33,6 +33,7 @@ internal sealed class RaidEditorSession
     internal List<CaptureTask> Tasks = new();
     internal bool Busy,
         Hold,
+        Previewing,
         Retired,
         Contacted;
     internal event Action? Changed;
@@ -66,7 +67,7 @@ internal sealed class RaidEditorSession
 
     internal void Edit(Action<SeasonDefinition> action)
     {
-        if (Definition == null || Conflict != null || Retired)
+        if (Definition == null || Conflict != null || Retired || Previewing)
         {
             return;
         }
@@ -106,7 +107,7 @@ internal sealed class RaidEditorSession
 
     internal void Undo(bool redo)
     {
-        if (Definition == null || Conflict != null)
+        if (Definition == null || Conflict != null || Previewing)
         {
             return;
         }
@@ -159,7 +160,7 @@ internal sealed class RaidEditorSession
     {
         return new()
         {
-            Version = EditorMode.Ready ? 3 : 1,
+            Version = EditorMode.Ready ? 4 : 1,
             EditorSessionId = EditorMode.SessionId,
             ClientId = ClientId,
             RaidId = RaidId,
@@ -278,6 +279,10 @@ internal sealed class RaidEditorSession
         }
         catch (Exception e)
         {
+            if (Retired)
+            {
+                return;
+            }
             if (e is InvalidOperationException)
             {
                 _pending = null;

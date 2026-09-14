@@ -29,6 +29,7 @@
     />
     <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedDir)UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AIModule" HintPath="$(ManagedDir)UnityEngine.AIModule.dll" Private="false" />
     <Reference Include="UnityEngine.TerrainModule" HintPath="$(ManagedDir)UnityEngine.TerrainModule.dll" Private="false" />
     <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedDir)UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="UnityEngine.AnimationModule" HintPath="$(ManagedDir)UnityEngine.AnimationModule.dll" Private="false" />
@@ -49,6 +50,8 @@
     <Reference Include="BepInEx" HintPath="$(TarkovDir)BepInEx\core\BepInEx.dll" Private="false" />
     <Reference Include="spt-common" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-common.dll" Private="false" />
     <Reference Include="spt-custom" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-custom.dll" Private="false" />
+    <Reference Include="DrakiaXYZ-BigBrain" HintPath="$(TarkovDir)BepInEx\plugins\DrakiaXYZ-BigBrain.dll" Private="false" />
+    <Reference Include="SAIN" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\raid-editor-validation.json" CopyToOutputDirectory="PreserveNewest" TargetPath="raid-editor-validation.json" />

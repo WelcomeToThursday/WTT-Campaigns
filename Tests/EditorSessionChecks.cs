@@ -131,6 +131,22 @@ internal static class EditorSessionChecks
             await session.Tick();
             check(notifications > previous, "Capture task status changes still refresh presentation.");
 
+            var retired = new RaidEditorSession("interchange") { Hold = true };
+            var sendGate = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            var sendStarted = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            socket.SendGate = sendGate;
+            socket.SendStarted = sendStarted;
+            socket.Reply = _ => throw new IOException("late retired poll");
+            var retiredStatus = retired.Status;
+            var retiredTick = retired.Tick();
+            await sendStarted.Task;
+            retired.Retired = true;
+            sendGate.SetResult(true);
+            await retiredTick;
+            check(!retired.Busy && retired.Status == retiredStatus, "A late retired poll completes quietly without exception spam.");
+            socket.SendGate = null;
+            socket.SendStarted = null;
+
             session.Edit(d => d.Name = "Recover me");
             var recovered = new RaidEditorSession("interchange") { Hold = true };
             socket.Reply = _ => Response(remote, 4);
@@ -168,6 +184,8 @@ internal static class EditorSessionChecks
     private sealed class ReplySocket : WebSocket
     {
         internal Func<AuthoringSocketMessage, AuthoringResponse> Reply = null!;
+        internal TaskCompletionSource<bool>? SendGate;
+        internal TaskCompletionSource<bool>? SendStarted;
         public override WebSocketCloseStatus? CloseStatus => null;
         public override string? CloseStatusDescription => null;
         public override WebSocketState State => WebSocketState.Open;
@@ -191,6 +209,16 @@ internal static class EditorSessionChecks
             var message = JsonConvert.DeserializeObject<AuthoringSocketMessage>(
                 Encoding.UTF8.GetString(buffer.Array!, buffer.Offset, buffer.Count)
             )!;
+            SendStarted?.TrySetResult(true);
+            var gate = SendGate;
+            if (gate != null)
+                return CompleteSend(message, gate.Task);
+            return CompleteSend(message, Task.CompletedTask);
+        }
+
+        private async Task CompleteSend(AuthoringSocketMessage message, Task gate)
+        {
+            await gate;
             var response = new AuthoringSocketReply { RequestId = message.RequestId, Response = Reply(message) };
             AuthoringSocket.Shared.Receive(
                 this,
@@ -200,7 +228,7 @@ internal static class EditorSessionChecks
                     )
                 )
             );
-            return Task.CompletedTask;
+            return;
         }
     }
 }

@@ -248,6 +248,32 @@ internal sealed class MapEditorChecks : EditorSessionRegistry
             check(!session.Accepts(owner, session.Id, session.Contact.AddMinutes(2)), "Abandoned editor lease expires");
             ScratchIds[profile] = 0;
             Profiles[profile] = session;
+            var now = DateTimeOffset.UtcNow;
+            session.Contact = now;
+            session.OpenMap("woods");
+            foreach (var identity in new[] { owner, normal, profile })
+            {
+                var resolved = Resolve(identity, session.Id, now);
+                check(resolved.Accepted && ReferenceEquals(resolved.Session, session), "Authenticated editor identity resolves " + identity);
+            }
+            var foreign = Resolve(SeasonRepository.NewId(), session.Id, now);
+            check(
+                !foreign.Accepted && foreign.Session == null && foreign.Status == ResolutionStatus.MissingIdentity,
+                "A foreign transport identity cannot use a matching editor token"
+            );
+            session.Ready = false;
+            check(Resolve(owner, session.Id, now).Status == ResolutionStatus.NotReady, "Unready editor sessions cannot authorize playtests");
+            session.Ready = true;
+            session.Contact = now.AddMinutes(-2);
+            check(Resolve(owner, session.Id, now).Status == ResolutionStatus.Expired, "Expired editor sessions cannot authorize playtests");
+            session.Contact = now;
+            session.UnloadMap();
+            check(Resolve(owner, session.Id, now).Status == ResolutionStatus.MissingMap, "An unloaded editor map cannot authorize playtests");
+            session.OpenMap("woods");
+            check(
+                Resolve(owner, Guid.NewGuid().ToString("N"), now).Status == ResolutionStatus.MismatchedToken,
+                "A stale editor token cannot authorize another playtest"
+            );
             check(
                 Restricted(profile) && Restricted(owner) && Restricted(normal),
                 "Editor restrictions cover scratch, account and previous character identities"
@@ -262,6 +288,10 @@ internal sealed class MapEditorChecks : EditorSessionRegistry
             check(
                 IsScratch(profile) && !Restricted(owner) && !Restricted(normal),
                 "Retiring editor releases normal play while tombstones isolate late scratch saves"
+            );
+            check(
+                Resolve(profile, session.Id, now).Status == ResolutionStatus.RetiredScratch,
+                "A retired scratch identity cannot fall back to an owner or return profile"
             );
         }
         finally

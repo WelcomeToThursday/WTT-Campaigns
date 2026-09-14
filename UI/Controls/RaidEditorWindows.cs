@@ -52,7 +52,10 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
 
         _dock = _controls["ToolWindows"];
         _theme.Apply(gameObject);
-        RegisterWindow("Library", "LibraryTitleBar", "LibraryCollapse", new Vector2(400, 390));
+        // The AI tab keeps ten creation/preview buttons in the lower action
+        // grid. Reserve enough vertical space for those rows and a useful
+        // record viewport at the smallest supported library size.
+        RegisterWindow("Library", "LibraryTitleBar", "LibraryCollapse", new Vector2(400, 480));
         RegisterWindow("Inspector", "InspectorTitleBar", "InspectorCollapse", new Vector2(360, 320));
         RegisterWindow("EnvironmentMenu", "EnvironmentMenuTitleBar", "EnvironmentClose", new Vector2(360, 320));
         RegisterWindow("Controls", "ControlsTitleBar", "HelpClose", new Vector2(440, 220));
@@ -86,7 +89,7 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         foreach (var button in GetComponentsInChildren<Button>(true))
         {
             var control = button;
-            var tip = button.gameObject.AddComponent<EditorControlTooltip>();
+            var tip = button.gameObject.GetComponent<EditorControlTooltip>() ?? button.gameObject.AddComponent<EditorControlTooltip>();
             tip.Enter = () => ShowTooltip(control.name, control.GetComponentInChildren<Text>().text);
             tip.Exit = () => Visible("EditorTooltip", false);
         }
@@ -123,6 +126,7 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         SetTooltip("Bindings", "Raid events: trigger, interaction and scene targets");
         SetTooltip("Captures", "Named camera transforms and scene references");
         SetTooltip("Scene", "Search or pick existing scenery for a binding or map edit");
+        SetTooltip("AI", "Author encounter triggers, authored bot spawns and patrol routes");
         SetTooltip("Undo", "Ctrl+Z Ã‚Â· Undo the last draft edit");
         SetTooltip("Redo", "Ctrl+Y Ã‚Â· Redo the last undone draft edit");
         SetTooltip("Move", "Move the selected record with the axis handles");
@@ -139,7 +143,10 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
 
     public void SetTooltip(string name, string text) => _tips[name] = text;
 
-    private void ShowTooltip(string name, string fallback)
+    // Runtime-created browser rows use the same native tooltip surface as the
+    // serialized controls. Keeping this entry point here avoids a second UI
+    // tooltip implementation in pooled tree renderers.
+    public void ShowTooltip(string name, string fallback)
     {
         if (_controls["ConflictShield"].gameObject.activeSelf || _walkthrough)
             return;
@@ -183,6 +190,8 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         rect.gameObject.SetActive(true);
         rect.SetAsLastSibling();
     }
+
+    public void HideTooltip() => Visible("EditorTooltip", false);
 
     private void Bind(string name, Action action) => _controls[name].GetComponent<Button>().onClick.AddListener(() => action());
 
@@ -251,13 +260,15 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         var routes = mode == "Routes" && mapReady;
         var layouts = (mode == "Layouts" || mode == "Maps") && mapReady;
         var maps = layouts || routes;
+        var ai = mode == "AI";
         Visible("RouteGuideGroup", routes);
         Visible("RouteFrameGroup", routes && hasSelection && kind != "Layout");
         Visible("MapWalkGroup", routes);
 
         var zone = mode == "Zones" && hasSelection;
 
-        var point = hasSelection && kind != "Scene" && (zone || mode == "Captures");
+        var aiPoint = ai && (kind == "spawn" || kind == "waypoint" || kind == "trigger");
+        var point = hasSelection && kind != "Scene" && (zone || mode == "Captures" || aiPoint);
 
         if (!sceneWorkspace)
         {
@@ -277,10 +288,10 @@ public sealed partial class RaidEditorWindows : MonoBehaviour
         Visible("PositionGroup", point);
         Visible("RotationGroup", point);
 
-        Visible("SizeGroup", zone && kind == "Box");
-        Visible("RadiusGroup", zone && kind == "Sphere");
+        Visible("SizeGroup", zone && kind == "Box" || ai && kind == "trigger");
+        Visible("RadiusGroup", zone && kind == "Sphere" || ai && kind == "trigger");
 
-        Visible("PlacementGroup", point);
+        Visible("PlacementGroup", point && !ai);
         Visible("ZoneUsesGroup", zone);
         Visible("ZoneScopeGroup", zone && mapReady);
 

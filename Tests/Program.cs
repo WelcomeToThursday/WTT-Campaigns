@@ -75,6 +75,18 @@ if (args.Length == 3 && args[0] == "--raid-startup-hooks")
     return;
 }
 
+if (args.Length == 3 && args[0] == "--encounter-hooks")
+{
+    WTT.Campaigns.Tests.EncounterHookChecks.Run(args[1], args[2]);
+    return;
+}
+
+if (args.Length == 2 && args[0] == "--editor-artwork")
+{
+    WTT.Campaigns.Tests.EditorArtworkChecks.Run(args[1]);
+    return;
+}
+
 if (args.Length >= 2 && args[0] == "--ui")
 {
     WTT.Campaigns.Tests.UiCompatibilityChecks.Run(args[1], args.Length > 2 ? args[2] : null);
@@ -110,6 +122,8 @@ WTT.Campaigns.Tests.ZoneLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
 WTT.Campaigns.Tests.PlayerRouteChecks.Run(Check);
+WTT.Campaigns.Tests.AiTreeChecks.Run(Check);
+WTT.Campaigns.Tests.EditorLibraryTreeChecks.Run(Check);
 WTT.Campaigns.Tests.RouteVisualChecks.Run(Check);
 WTT.Campaigns.Tests.SceneCatalogChecks.Run(Check);
 WTT.Campaigns.Tests.SceneObjectIndexChecks.Run(Check);
@@ -120,6 +134,12 @@ WTT.Campaigns.Tests.EditorRenderChecks.Sizes(Check);
 WTT.Campaigns.Tests.EditorEnvironmentChecks.Values(Check);
 WTT.Campaigns.Tests.EditorDiagnosticChecks.Run(Check);
 WTT.Campaigns.Tests.EditorMemoryChecks.Run(Check);
+WTT.Campaigns.Tests.EditorPreviewGearChecks.Run();
+WTT.Campaigns.Tests.EncounterContractsChecks.Run(Check);
+WTT.Campaigns.Tests.EncounterRuntimeChecks.Run(Check);
+WTT.Campaigns.Tests.PreviewFreezeChecks.Run(Check);
+WTT.Campaigns.Tests.PatrolDispatchChecks.Run(Check);
+WTT.Campaigns.Tests.PatrolDirectionChecks.Run(Check);
 WTT.Campaigns.Tests.EditorHudChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTerrainChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTriggerChecks.Run(Check);

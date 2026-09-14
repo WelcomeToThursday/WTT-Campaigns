@@ -227,6 +227,8 @@ await using (var renderer = new EditorRenderer(services))
 }
 await MapLayoutUiChecks.Run(services, Check);
 await TraderOfferUiChecks.Run(Check);
+WTT.Campaigns.Web.Tests.EncounterChecks.Run(Check);
+WTT.Campaigns.Web.Tests.AuthoringMapSessionChecks.Run(Check);
 Console.WriteLine($"PASS {count} Creator component assertions");
 
 sealed class EditorHost(SeasonDefinition season, NativeQuest quest, StoryQuest membership) : ComponentBase

@@ -1,0 +1,35 @@
+@using WTT.Campaigns.Shared.Spatial
+
+@if (MapLayoutRules.NeedsFormat6(Layout))
+{
+    <section class="editor-card">
+        <h4>AI encounters</h4>
+        <p>@Layout.Encounters.Count encounters · @Layout.SpawnPoints.Count spawn points · @Layout.PatrolRoutes.Count patrol routes</p>
+        <small>Place and edit AI in the loaded Campaign Editor, where navigation and standing clearance can be checked. These encounters run only in explicit previews.</small>
+        @foreach (var encounter in Layout.Encounters)
+        {
+            <details @key="encounter.Id">
+                <summary>@encounter.Name · @encounter.Trigger.Type · @encounter.Waves.Count waves</summary>
+                @if (encounter.Trigger.Type == MapEncounterTrigger.Event) { <p>Event: @encounter.Trigger.EventId</p> }
+                @foreach (var wave in encounter.Waves)
+                {
+                    <p><strong>@wave.Name</strong> · @wave.DelaySeconds s delay · @(wave.WaitForPreviousWave ? "After previous wave defeated" : "After previous wave activation")</p>
+                    <ul>
+                        @foreach (var entry in wave.Roster)
+                        {
+                            <li>@entry.Count × @entry.Role · @entry.Difficulty · @(entry.SquadId.Length == 0 ? "Independent" : "Squad " + entry.SquadId) · @(Layout.PatrolRoutes.FirstOrDefault(r => r.Id == entry.PatrolRouteId)?.Name ?? "Native idle")</li>
+                        }
+                    </ul>
+                }
+            </details>
+        }
+        @foreach (var route in Layout.PatrolRoutes)
+        {
+            <p>@route.Name · @route.Waypoints.Count waypoints · @route.Pace · @route.Completion</p>
+        }
+    </section>
+}
+
+@code {
+    [Parameter] public MapLayout Layout { get; set; } = null!;
+}

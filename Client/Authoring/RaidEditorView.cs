@@ -17,6 +17,7 @@ internal sealed class RaidEditorView : IDisposable
     private static AssetBundle? _sharedBundle;
     private static int _bundleUsers;
     private bool _disposed;
+    private EditorTreeView? _libraryTree;
     private RouteOverlay? _routeOverlay;
     internal bool Valid => !_disposed && Root;
     internal Shader PreviewShader =>
@@ -37,10 +38,12 @@ internal sealed class RaidEditorView : IDisposable
                 ?? throw new InvalidOperationException("The raid editor prefab is missing.");
             Root = UnityEngine.Object.Instantiate(prefab);
             WTT.Campaigns.UI.Screens.RaidEditorLayout.Prepare(Root);
+            RaidEditorAiView.Prepare(Root);
             _controls = Root.GetComponentsInChildren<Transform>(true)
                 .AsValueEnumerable()
                 .GroupBy(t => t.name)
                 .ToDictionary(g => g.Key, g => g.AsValueEnumerable().First());
+            _libraryTree = new EditorTreeView(_controls["LibraryScroll"].GetComponent<ScrollRect>());
             var ui = new UiElements(Root.GetComponentInChildren<Text>().font, sound => SeasonUi.Instance.PlayInterfaceSound(sound));
             foreach (var button in Root.GetComponentsInChildren<Button>(true))
             {
@@ -49,6 +52,7 @@ internal sealed class RaidEditorView : IDisposable
 
             Windows = Root.AddComponent<RaidEditorWindows>();
             Windows.Initialize();
+            _libraryTree!.BindTooltips(Windows.ShowTooltip, Windows.HideTooltip);
             EditorLayoutPreferences.Attach(Windows);
             _inputs = Root.GetComponentsInChildren<InputField>(true);
             _dropdowns = Root.GetComponentsInChildren<EditorDropdown>(true);
@@ -121,6 +125,21 @@ internal sealed class RaidEditorView : IDisposable
         Get<EditorDropdown>(name).onValueChanged.AddListener(value => action(value));
     }
 
+    internal void BindTreeSelection(Action<string> action) => _libraryTree?.BindSelection(action);
+
+    internal void RefreshTree(
+        string contextId,
+        long revision,
+        string search,
+        string selection,
+        Func<ISet<string>, EditorTreeModel> build
+    ) => _libraryTree?.Refresh(contextId, revision, search, selection, build);
+
+    internal void HideTree() => _libraryTree?.SetActive(false);
+
+    internal int TreeRecordCount => _libraryTree?.RecordCount ?? 0;
+    internal int TreeVisibleCount => _libraryTree?.VisibleCount ?? 0;
+
     internal void SetDropdown(string name, List<Dropdown.OptionData> options, int value)
     {
         var dropdown = Get<EditorDropdown>(name);
@@ -184,7 +203,7 @@ internal sealed class RaidEditorView : IDisposable
         Value("RemoteConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Remote).JoinToString("\n\n"));
     }
 
-    internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected)
+    internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected, long layoutRevision = 0)
     {
         if (layout == null || !camera)
         {
@@ -204,7 +223,7 @@ internal sealed class RaidEditorView : IDisposable
             _routeOverlay.Initialize(Root.GetComponentInChildren<Text>(true).font);
         }
         _routeOverlay!.gameObject.SetActive(true);
-        _routeOverlay.Refresh(layout, camera!, selected);
+        _routeOverlay.Refresh(layout, camera!, selected, layoutRevision);
     }
 
     internal void HideRoute()
@@ -218,6 +237,7 @@ internal sealed class RaidEditorView : IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        _libraryTree?.Dispose();
         if (Root)
         {
             EditorLayoutPreferences.Save(Windows);

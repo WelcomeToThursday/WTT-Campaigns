@@ -49,6 +49,7 @@ These guides cover **0.8.0 — editor milestone**, targeting **SPT 4.1.x / EFT 0
 - [Dialogue and interaction authoring](dialogue-and-interactions.md): build phases and branches, choose actions, configure handovers and connect raid interactions.
 - [Custom story media bundles](story-media-bundles.md): add Visit rooms to custom traders and package images, audio, video and cinematics.
 - [Editor mode and map layouts](editor-mode.md): open maps with a disposable character, reshape scenery and preview routes.
+- [AI encounters and patrol previews](ai-encounters.md): author finite waves, spawn positions and patrols, then observe or playtest them.
 - [Connected raid authoring](raid-authoring.md): capture scene targets and place quest zones.
 - [Story Sandbox](story-sandbox.md): a small example campaign.
 

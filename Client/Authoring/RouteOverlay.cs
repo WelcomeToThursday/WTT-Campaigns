@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using WTT.Campaigns.Client.Spatial;
@@ -9,13 +11,20 @@ namespace WTT.Campaigns.Client.Authoring;
 internal sealed class RouteOverlay : MaskableGraphic
 {
     private readonly List<(SpatialCapture Point, RouteRole Role, int Number)> _points = new();
-    private readonly List<(Vector2 A, Vector2 B)> _segments = new();
-    private readonly List<(Vector2 Position, RouteRole Role, bool Selected)> _markers = new();
+    private readonly List<(SpatialCapture Point, RouteRole Role, int Number, string Caption, string Selection)> _aiPoints = new();
+    private readonly List<(SpatialCapture From, SpatialCapture To, Color Color)> _aiSegments = new();
+    private readonly List<(Vector2 A, Vector2 B, Color Color)> _segments = new();
+    private readonly List<(Vector2 Position, RouteRole Role, bool Selected, Color Color)> _markers = new();
     private readonly List<Text> _labels = new();
     private readonly List<RouteOverlayBatch> _batches = new();
     private const int BatchSize = 400;
     private Font _font = null!;
     private static readonly Color Dark = new(.025f, .03f, .035f, .95f);
+    private readonly Dictionary<string, string> _patrolCaptions = new(StringComparer.Ordinal);
+    private MapLayout? _captionLayout;
+    private long _captionRevision = long.MinValue;
+    private MapLayout? _aiDescriptorLayout;
+    private long _aiDescriptorRevision = long.MinValue;
 
     internal void Initialize(Font font)
     {
@@ -30,7 +39,7 @@ internal sealed class RouteOverlay : MaskableGraphic
         return new Color(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f);
     }
 
-    internal void Refresh(MapLayout layout, Camera camera, string selected)
+    internal void Refresh(MapLayout layout, Camera camera, string selected, long layoutRevision = 0)
     {
         _segments.Clear();
         _markers.Clear();
@@ -49,30 +58,30 @@ internal sealed class RouteOverlay : MaskableGraphic
             if (!RouteVisuals.ClipScreen(ref sa.x, ref sa.y, ref sb.x, ref sb.y, Screen.width, Screen.height))
                 continue;
             if (Local(sa, out var la) && Local(sb, out var lb))
-                _segments.Add((la, lb));
+                _segments.Add((la, lb, Color.white));
         }
+
+        // AI patrols share this renderer so route clipping, labels, marker
+        // outlines, and scenery-through visibility remain identical to player
+        // checkpoints. Cache authored descriptors when the layout changes;
+        // only their camera projection and clipping are performed per frame.
+        RefreshAiDescriptors(layout, layoutRevision);
+        foreach (var segment in _aiSegments)
+            AddSegment(segment.From, segment.To, camera, near, segment.Color);
+
         var labelIndex = 0;
         foreach (var point in _points)
-        {
-            var screen = camera.WorldToScreenPoint(ZoneRuntime.Vector(point.Point.Position));
-            if (!(screen.z >= near && screen.x >= 0 && screen.x <= Screen.width && screen.y >= 0 && screen.y <= Screen.height))
-                continue;
-            if (!Local(screen, out var local))
-                continue;
-            _markers.Add((local, point.Role, point.Point.Id == selected));
-            var label = Label(labelIndex++);
-            var caption = RouteVisuals.Label(point.Role, point.Number);
-            if (label.text != caption)
-                label.text = caption;
-            label.color = RoleColor(point.Role);
-            var rect = rectTransform.rect;
-            // Keep captions inside the viewport, including markers at its right edge.
-            label.rectTransform.anchoredPosition = new Vector2(
-                Mathf.Clamp(local.x + 17, rect.xMin + 4, Mathf.Max(rect.xMin + 4, rect.xMax - 144)),
-                Mathf.Clamp(local.y, rect.yMin + 12, Mathf.Max(rect.yMin + 12, rect.yMax - 12))
+            AddMarker(
+                point.Point,
+                point.Role,
+                point.Point.Id == selected,
+                RouteVisuals.Label(point.Role, point.Number),
+                camera,
+                near,
+                ref labelIndex
             );
-            label.gameObject.SetActive(true);
-        }
+        foreach (var point in _aiPoints)
+            AddMarker(point.Point, point.Role, point.Selection == selected, point.Caption, camera, near, ref labelIndex);
         for (var i = labelIndex; i < _labels.Count; i++)
             _labels[i].gameObject.SetActive(false);
         var extra = (_markers.Count + BatchSize - 1) / BatchSize;
@@ -99,6 +108,131 @@ internal sealed class RouteOverlay : MaskableGraphic
         for (var i = Math.Max(0, extra); i < _batches.Count; i++)
             _batches[i].gameObject.SetActive(false);
         SetVerticesDirty();
+    }
+
+    private void RefreshAiDescriptors(MapLayout layout, long layoutRevision)
+    {
+        if (ReferenceEquals(layout, _aiDescriptorLayout) && layoutRevision == _aiDescriptorRevision)
+            return;
+
+        _aiDescriptorLayout = layout;
+        _aiDescriptorRevision = layoutRevision;
+        _aiPoints.Clear();
+        _aiSegments.Clear();
+
+        RefreshPatrolCaptions(layout, layoutRevision);
+        foreach (var route in (IEnumerable<MapPatrolRoute>?)layout.PatrolRoutes ?? Array.Empty<MapPatrolRoute>())
+        {
+            if (route?.Waypoints == null)
+                continue;
+            var caption = _patrolCaptions.GetValueOrDefault(route.Id, "PATROL · " + route.Id);
+            for (var i = 0; i < route.Waypoints.Count; i++)
+            {
+                var waypoint = route.Waypoints[i];
+                if (waypoint == null)
+                    continue;
+                _aiPoints.Add((waypoint, RouteRole.Patrol, i + 1, caption + " · " + (i + 1), "waypoint:" + route.Id + ":" + waypoint.Id));
+                if (i > 0 && route.Waypoints[i - 1] != null)
+                    _aiSegments.Add((route.Waypoints[i - 1], waypoint, RoleColor(RouteRole.Patrol)));
+            }
+            if (
+                route.Completion == MapPatrolRoute.Loop
+                && route.Waypoints.Count > 1
+                && route.Waypoints[0] != null
+                && route.Waypoints[^1] != null
+            )
+                _aiSegments.Add((route.Waypoints[^1], route.Waypoints[0], RoleColor(RouteRole.Patrol)));
+        }
+        foreach (var spawn in (IEnumerable<SpatialCapture>?)layout.SpawnPoints ?? Array.Empty<SpatialCapture>())
+            if (spawn != null)
+                _aiPoints.Add((spawn, RouteRole.Spawn, 0, "BOT SPAWN", "spawn:" + spawn.Id));
+        foreach (var encounter in (IEnumerable<MapEncounter>?)layout.Encounters ?? Array.Empty<MapEncounter>())
+            if (encounter?.Trigger?.Volume != null)
+                _aiPoints.Add(
+                    (
+                        encounter.Trigger.Volume,
+                        RouteRole.Trigger,
+                        0,
+                        "TRIGGER · " + (encounter.Trigger.Type ?? MapEncounterTrigger.PlayerEntry),
+                        "trigger:" + encounter.Id
+                    )
+                );
+    }
+
+    private void AddMarker(
+        SpatialCapture point,
+        RouteRole role,
+        bool selected,
+        string caption,
+        Camera camera,
+        float near,
+        ref int labelIndex
+    )
+    {
+        var screen = camera.WorldToScreenPoint(ZoneRuntime.Vector(point.Position));
+        if (!(screen.z >= near && screen.x >= 0 && screen.x <= Screen.width && screen.y >= 0 && screen.y <= Screen.height))
+            return;
+        if (!Local(screen, out var local))
+            return;
+        _markers.Add((local, role, selected, RoleColor(role)));
+        var label = Label(labelIndex++);
+        if (label.text != caption)
+            label.text = caption;
+        label.color = RoleColor(role);
+        var rect = rectTransform.rect;
+        // Keep captions inside the viewport, including markers at its right edge.
+        label.rectTransform.anchoredPosition = new Vector2(
+            Mathf.Clamp(local.x + 17, rect.xMin + 4, Mathf.Max(rect.xMin + 4, rect.xMax - 144)),
+            Mathf.Clamp(local.y, rect.yMin + 12, Mathf.Max(rect.yMin + 12, rect.yMax - 12))
+        );
+        label.gameObject.SetActive(true);
+    }
+
+    private void AddSegment(SpatialCapture from, SpatialCapture to, Camera camera, float near, Color color)
+    {
+        var a = ZoneRuntime.Vector(from.Position);
+        var b = ZoneRuntime.Vector(to.Position);
+        var az = Vector3.Dot(a - camera.transform.position, camera.transform.forward);
+        var bz = Vector3.Dot(b - camera.transform.position, camera.transform.forward);
+        if (!RouteVisuals.ClipNear(az, bz, near, out var start, out var end))
+            return;
+        var sa = camera.WorldToScreenPoint(Vector3.Lerp(a, b, start));
+        var sb = camera.WorldToScreenPoint(Vector3.Lerp(a, b, end));
+        if (!RouteVisuals.ClipScreen(ref sa.x, ref sa.y, ref sb.x, ref sb.y, Screen.width, Screen.height))
+            return;
+        if (Local(sa, out var la) && Local(sb, out var lb))
+            _segments.Add((la, lb, color));
+    }
+
+    private void RefreshPatrolCaptions(MapLayout layout, long layoutRevision)
+    {
+        if (ReferenceEquals(layout, _captionLayout) && layoutRevision == _captionRevision)
+            return;
+        _captionLayout = layout;
+        _captionRevision = layoutRevision;
+        _patrolCaptions.Clear();
+        foreach (var route in (IEnumerable<MapPatrolRoute>?)layout.PatrolRoutes ?? Array.Empty<MapPatrolRoute>())
+        {
+            if (route == null)
+                continue;
+            var squads = new List<string>();
+            foreach (var encounter in (IEnumerable<MapEncounter>?)layout.Encounters ?? Array.Empty<MapEncounter>())
+            {
+                foreach (var wave in (IEnumerable<MapEncounterWave>?)encounter?.Waves ?? Array.Empty<MapEncounterWave>())
+                {
+                    foreach (var roster in (IEnumerable<MapEncounterRosterEntry>?)wave?.Roster ?? Array.Empty<MapEncounterRosterEntry>())
+                    {
+                        if (roster == null || roster.PatrolRouteId != route.Id)
+                            continue;
+                        var label = string.IsNullOrWhiteSpace(roster.SquadId) ? roster.Role : roster.SquadId;
+                        if (!string.IsNullOrWhiteSpace(label) && !squads.Contains(label))
+                            squads.Add(label);
+                    }
+                }
+            }
+            var caption = "PATROL · " + (string.IsNullOrWhiteSpace(route.Name) ? route.Id : route.Name);
+            _patrolCaptions[route.Id] = squads.Count == 0 ? caption : caption + " · " + string.Join(", ", squads);
+        }
     }
 
     private bool Local(Vector2 screen, out Vector2 local) =>
@@ -145,7 +279,7 @@ internal sealed class RouteOverlay : MaskableGraphic
             foreach (var segment in _segments)
                 Stroke(mesh, segment.A, segment.B, 8 * pixel, Dark);
             foreach (var segment in _segments)
-                Stroke(mesh, segment.A, segment.B, 4 * pixel, new Color(.94f, .96f, 1));
+                Stroke(mesh, segment.A, segment.B, 4 * pixel, segment.Color);
             return;
         }
         var first = batch * BatchSize;
@@ -155,7 +289,7 @@ internal sealed class RouteOverlay : MaskableGraphic
             Glyph(mesh, marker.Position, marker.Role, 9, Dark);
             if (marker.Selected)
                 Glyph(mesh, marker.Position, marker.Role, 7, Color.white);
-            Glyph(mesh, marker.Position, marker.Role, 3, RoleColor(marker.Role));
+            Glyph(mesh, marker.Position, marker.Role, 3, marker.Color);
         }
     }
 

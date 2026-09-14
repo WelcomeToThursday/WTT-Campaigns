@@ -55,6 +55,8 @@ public sealed partial class RaidEditor : MonoBehaviour
     {
         get
         {
+            if (_mode == "AI")
+                return AiSelectedPoint();
             if (MapWorkspace || SceneWorkspace)
                 return MapPoint ?? (SceneWorkspace && _sceneTab != "Catalog" ? _sceneSelectionPose : null);
             return _session
@@ -144,7 +146,12 @@ public sealed partial class RaidEditor : MonoBehaviour
         using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.FrameUpdate);
         try
         {
-            var player = Plugin.InRaid && Plugin.Player?.HealthController?.IsAlive == true ? Plugin.Player : null;
+            var player =
+                Plugin.InRaid
+                    && (!EditorMode.Active || EditorMode.MapReady)
+                    && Plugin.Player?.HealthController?.IsAlive == true
+                    ? Plugin.Player
+                    : null;
             if (player != _player || !AuthoringEnabled || player && AuthoringEnabled && _session == null)
             {
                 if (_session != null)
@@ -193,6 +200,9 @@ public sealed partial class RaidEditor : MonoBehaviour
                 return;
             }
 
+            if (UpdateAiPreview())
+                return;
+
             if (_walking && _shortcut.Value.IsDown())
             {
                 EndWalkthrough(returnToEditor: true);
@@ -227,9 +237,9 @@ public sealed partial class RaidEditor : MonoBehaviour
             // here would let the same key close the editor and consume its bookmark.
             if (UpdateWalkthrough())
                 return;
-            if (EditorMode.Ready && !_open && !_walking && !OtherModal && _session.Definition != null)
+            if (EditorMode.Ready && !_open && !_walking && !AiPreviewBusy && !OtherModal && _session.Definition != null)
                 Open();
-            _session.Hold = _walking || _view?.Typing == true || _drag != null || _placementLifetime != null;
+            _session.Hold = AiPreviewBusy || _walking || _view?.Typing == true || _drag != null || _placementLifetime != null;
             if (!_session.Busy && Time.realtimeSinceStartup >= _nextPoll)
             {
                 _nextPoll = Time.realtimeSinceStartup + 1;
@@ -243,6 +253,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             if (
                 _task == null
                 && !_walking
+                && !AiPreviewBusy
                 && !_session.Hold
                 && !_session.Dirty
                 && _session.Conflict == null
@@ -293,7 +304,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 }
                 return;
             }
-            if (!_view!.Typing && !_session.Retired && _session.Conflict == null && !_view.Windows.HasMenu)
+            if (!AiPreviewBusy && !_view!.Typing && !_session.Retired && _session.Conflict == null && !_view.Windows.HasMenu)
             {
                 if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Z))
                 {
@@ -358,6 +369,12 @@ public sealed partial class RaidEditor : MonoBehaviour
             _walkRequested = false;
             if (_open && session.Grant.Length > 0 && session.Conflict == null)
                 BeginWalkthrough();
+        }
+        if (_aiRequested.HasValue && !session.Dirty && !session.Busy && session.Conflict == null)
+        {
+            var playtest = _aiRequested.Value;
+            _aiRequested = null;
+            BeginAiPreview(playtest);
         }
     }
 
@@ -535,6 +552,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             if (_view?.Valid == true)
                 _view.Root.SetActive(false);
             ClearLines();
+            ClearAiRoutes();
             _camera = null;
         }
     }

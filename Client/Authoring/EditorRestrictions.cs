@@ -34,10 +34,29 @@ internal static class EditorRestrictions
         "Climb",
     };
 
-    internal static void Filter(List<ECommand> commands) => commands.RemoveAll(c => !MovementCommands.Contains(c.ToString()));
+    internal static void Filter(List<ECommand> commands)
+    {
+        // The editor handles raw Escape after native input has run. Never let the
+        // same press open EFT's menu underneath a returning combat preview.
+        commands.Remove(ECommand.Escape);
+        if (!RaidEditor.AiPlaytestActive)
+            commands.RemoveAll(c => !MovementCommands.Contains(c.ToString()));
+        else
+            // Combat rehearsal does not transfer items into native world containers.
+            // Weapon, reload, quick-slot and medical controls remain native.
+            commands.RemoveAll(c =>
+                c
+                    is ECommand.BeginInteracting
+                        or ECommand.EndInteracting
+                        or ECommand.BeginSpecialInteracting
+                        or ECommand.EndSpecialInteracting
+                        or ECommand.ToggleInventory
+            );
+    }
 
     internal static void Enable()
     {
+        Encounters.EncounterNative.Install();
         var harmony = new Harmony("com.wtt.campaigns.editor.restrictions");
         void Patch(Type type, string name, string prefix)
         {
@@ -57,10 +76,18 @@ internal static class EditorRestrictions
         Patch(typeof(ActiveHealthController), nameof(ActiveHealthController.ApplyDamage), nameof(NoDamage));
         Patch(typeof(ActiveHealthController), nameof(ActiveHealthController.ChangeEnergy), nameof(NoDrain));
         Patch(typeof(ActiveHealthController), nameof(ActiveHealthController.ChangeHealth), nameof(NoDrain));
-        Patch(typeof(ActiveHealthController), nameof(ActiveHealthController.Kill), nameof(NoAction));
+        foreach (
+            var method in typeof(ActiveHealthController).GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+        )
+            if (method.Name == nameof(ActiveHealthController.ChangeHealth))
+                harmony.Patch(method, postfix: new HarmonyMethod(typeof(EditorRestrictions), nameof(PreviewHealthChanged)));
+        Patch(typeof(ActiveHealthController), nameof(ActiveHealthController.Kill), nameof(PreviewKill));
         Patch(typeof(ActiveHealthController), nameof(ActiveHealthController.ChangeHydration), nameof(NoDrain));
         Patch(typeof(Stamina), nameof(Stamina.Consume), nameof(NoConsumption));
         Patch(typeof(LocalGame), nameof(LocalGame.Stop), nameof(Stop));
+        Patch(typeof(EFT.UI.InventoryScreen), nameof(EFT.UI.InventoryScreen.Show), nameof(NoAction));
+        Patch(typeof(EftGamePlayerOwner), nameof(EftGamePlayerOwner.ShowInventoryScreenLoot), nameof(NoAction));
+        Patch(typeof(Player), nameof(Player.SetInventoryOpened), nameof(InventoryOpened));
         Patch(typeof(TarkovApplication), nameof(TarkovApplication.ShowSessionResult), nameof(ReturnHome));
         Patch(typeof(TimerPanel), nameof(TimerPanel.UpdateTimer), nameof(NoAction));
         Patch(typeof(TimerPanel), nameof(TimerPanel.SetTimerText), nameof(NoAction));
@@ -70,19 +97,46 @@ internal static class EditorRestrictions
         Patch(typeof(BotSpawner), nameof(BotSpawner.TrySpawnFreeAndDelay), nameof(NoAction));
     }
 
-    private static bool NoDamage(ref float __result)
+    private static bool DamageAllowed(ActiveHealthController health) =>
+        !EditorMode.Active
+        || RaidEditor.AiPreviewActive && health.Player != Plugin.Player
+        || RaidEditor.AiPlaytestActive && health.Player == Plugin.Player;
+
+    private static bool NoDamage(ActiveHealthController __instance, ref float __result)
     {
-        if (!EditorMode.Active)
+        if (DamageAllowed(__instance))
             return true;
         __result = 0;
         return false;
     }
 
-    private static bool NoDrain(float value) => !EditorMode.Active || value >= 0;
+    private static bool NoDrain(ActiveHealthController __instance, float value) => DamageAllowed(__instance) || value >= 0;
+
+    private static bool PreviewKill(ActiveHealthController __instance)
+    {
+        if (!EditorMode.Active)
+            return true;
+        if (__instance.Player != Plugin.Player)
+            return RaidEditor.AiPreviewActive;
+        if (RaidEditor.AiPlaytestActive)
+            RaidEditor.Instance?.AiDefeated();
+        // Kill is the native terminal transition for direct kills and damage effects.
+        // Reset on the next editor update, outside this health-controller call stack.
+        return false;
+    }
+
+    private static void PreviewHealthChanged(ActiveHealthController __instance)
+    {
+        if (!RaidEditor.AiPlaytestActive || __instance.Player != Plugin.Player)
+            return;
+        // Health-rate effects may change a vital part without invoking native Kill.
+        if (__instance.GetBodyPartHealth(EBodyPart.Head).AtMinimum || __instance.GetBodyPartHealth(EBodyPart.Chest).AtMinimum)
+            RaidEditor.Instance?.AiDefeated();
+    }
 
     private static bool NoConsumption(ref float __result)
     {
-        if (!EditorMode.Active)
+        if (!EditorMode.Active || RaidEditor.AiPreviewActive)
             return true;
         __result = 0;
         return false;
@@ -97,6 +151,8 @@ internal static class EditorRestrictions
     }
 
     private static bool NoAction() => !EditorMode.Active;
+
+    private static bool InventoryOpened(bool opened) => !EditorMode.Active || !opened;
 
     private static bool ReturnHome(TarkovApplication __instance, ref Task __result)
     {

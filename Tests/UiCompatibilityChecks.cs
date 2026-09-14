@@ -7,6 +7,7 @@ internal static class UiCompatibilityChecks
     internal static void Run(string path, string? clientPath = null)
     {
         using var assembly = AssemblyDefinition.ReadAssembly(path);
+        PreviewNativeChecks.Run(assembly.MainModule);
         var types = assembly.MainModule.GetTypes().ToDictionary(type => type.FullName);
         var count = 0;
         void Check(bool value, string description)
@@ -177,7 +178,9 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            PreviewNativeChecks.CheckEscape(assembly.MainModule, client.MainModule);
             EditorOpenChecks.Client(client, Check);
+            AiControlsChecks.Run(client, Check);
             var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
             var geometry = editor.Methods.Single(m => m.Name == "GeometryInput");
             Check(

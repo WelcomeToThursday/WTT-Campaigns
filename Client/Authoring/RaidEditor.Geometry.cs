@@ -130,6 +130,11 @@ public sealed partial class RaidEditor
                 );
                 obj.Scale = ZoneRuntime.Vector(scale);
             }
+            if (_mode == "AI" && !AiAcceptPreview(point, before))
+            {
+                Refresh();
+                return;
+            }
             KeepDragAnchor(point, _drag);
             Refresh();
             return;
@@ -344,7 +349,12 @@ public sealed partial class RaidEditor
             Line(new[] { center - Vector3.right * .15f, center + Vector3.right * .15f }, color);
             Line(new[] { center - Vector3.up * .15f, center + Vector3.up * .15f }, color);
         }
-        _view?.DrawRoute(_mode == "Routes" && !_walking ? Layout : null, _camera, _selected);
+        _view?.DrawRoute(
+            (_mode == "Routes" || _mode == "AI") && !_walking ? Layout : null,
+            _camera,
+            _selected,
+            _session?.ContentVersion ?? 0
+        );
         DrawSelectionBounds();
         if (
             Selected is { } selected

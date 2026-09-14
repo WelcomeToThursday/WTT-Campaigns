@@ -7,6 +7,9 @@ internal enum RouteRole
     Start,
     Checkpoint,
     End,
+    Patrol,
+    Spawn,
+    Trigger,
 }
 
 internal static class RouteVisuals
@@ -29,11 +32,17 @@ internal static class RouteVisuals
     internal static int Color(RouteRole role) =>
         role == RouteRole.Start ? StartColor
         : role == RouteRole.End ? EndColor
+        : role == RouteRole.Patrol ? 0x42A5F5
+        : role == RouteRole.Spawn ? 0xAB47BC
+        : role == RouteRole.Trigger ? 0x26A69A
         : CheckpointColor;
 
     internal static string Label(RouteRole role, int number) =>
         role == RouteRole.Start ? "START"
         : role == RouteRole.End ? "END"
+        : role == RouteRole.Patrol ? "PATROL " + number
+        : role == RouteRole.Spawn ? "BOT SPAWN"
+        : role == RouteRole.Trigger ? "TRIGGER"
         : "CHECKPOINT " + number;
 
     private static bool Finite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);

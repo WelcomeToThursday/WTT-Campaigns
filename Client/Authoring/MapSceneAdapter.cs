@@ -148,11 +148,11 @@ internal sealed partial class MapSceneAdapter : IDisposable
         return matches[0];
     }
 
-    internal void Apply(MapLayout layout)
+    internal void Apply(MapLayout layout, bool requirePlayerRoute = true)
     {
         Reconcile(layout);
         FlushVisuals();
-        var errors = MapLayoutRules.Errors(layout, true);
+        var errors = MapLayoutRules.Errors(layout, requirePlayerRoute);
         errors.AddRange(TargetErrors);
         if (Loading)
             errors.Add("Wait for item models to finish loading.");

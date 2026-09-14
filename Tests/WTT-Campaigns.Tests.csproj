@@ -7,7 +7,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
     <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
+    <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
     <Compile Include="..\Client\Authoring\EditorOpenState.cs" Link="Client\EditorOpenState.cs" />
+    <Compile Include="..\Client\Authoring\RaidEditorAiTree.cs" Link="Client\RaidEditorAiTree.cs" />
+    <Compile Include="..\Client\Authoring\EditorLibraryTrees.cs" Link="Client\EditorLibraryTrees.cs" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="Markdig" Version="1.3.2" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
@@ -24,6 +27,7 @@
     <Compile Include="..\Server\Seasons\TraderOfferCatalogue.cs" Link="Storage\TraderOfferCatalogue.cs" />
     <Compile Include="..\Server\Seasons\CampaignTraderStock.cs" Link="Storage\CampaignTraderStock.cs" />
     <Compile Include="..\Client\UI\ImageRequestCache.cs" Link="Client\ImageRequestCache.cs" />
+    <Compile Include="..\Client\Encounters\EncounterSpawnAdmissionPolicy.cs" Link="Client\EncounterSpawnAdmissionPolicy.cs" />
     <Compile Include="..\Client\Authoring\SceneModelLease.cs" Link="Client\SceneModelLease.cs" />
     <Compile Include="..\Client\Authoring\PlayerRoute.cs" Link="Client\PlayerRoute.cs" />
     <Compile Include="..\Client\Authoring\RouteVisuals.cs" Link="Client\RouteVisuals.cs" />
@@ -50,6 +54,7 @@
     <Compile Include="..\Server\Profiles\AppearanceSelection.cs" Link="Profiles\AppearanceSelection.cs" />
     <Compile Include="..\Server\Profiles\ProfileReadiness.cs" Link="Profiles\ProfileReadiness.cs" />
     <Compile Include="..\Server\Editor\EditorScratchInventory.cs" Link="Editor\EditorScratchInventory.cs" />
+    <Compile Include="..\Server\Editor\EditorPreviewGearCopy.cs" Link="Editor\EditorPreviewGearCopy.cs" />
     <Compile Include="..\Server\Editor\EditorSessionRegistry.cs" Link="Editor\EditorSessionRegistry.cs" />
     <Compile Include="..\Server\Profiles\RaidAbortGuard.cs" Link="Profiles\RaidAbortGuard.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />

@@ -66,14 +66,7 @@ public sealed class AuthoringSocketHandler(IServiceProvider services) : ISptWebS
                     throw new InvalidOperationException("Editor session expired.");
             }
             var character = editor?.Profile ?? seasons.EffectiveId(root);
-            if (
-                editor != null
-                && (
-                    message.Request.Version is not (2 or 3)
-                    || !editor.Accepts(root, message.Request.EditorSessionId, DateTimeOffset.UtcNow)
-                    || message.Request.Location != editor.Location
-                )
-            )
+            if (editor != null && !AcceptsMapRequest(editor, root, message.Request, DateTimeOffset.UtcNow))
                 throw new InvalidOperationException("Editor map session does not match.");
             response =
                 message.Operation == "preview"
@@ -106,4 +99,14 @@ public sealed class AuthoringSocketHandler(IServiceProvider services) : ISptWebS
                 new WsNotificationEvent { ExtensionData = new() { [AuthoringSocketMessage.ChannelName] = reply } }
             );
     }
+
+    internal static bool AcceptsMapRequest(
+        Editor.EditorSessionRegistry.Session editor,
+        string owner,
+        AuthoringRequest request,
+        DateTimeOffset now
+    ) =>
+        request.Version is 2 or 3 or 4
+        && editor.Accepts(owner, request.EditorSessionId, now)
+        && request.Location == editor.Location;
 }

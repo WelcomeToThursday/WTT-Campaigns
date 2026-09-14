@@ -13,7 +13,8 @@
             <label>Name <input @bind="map.Name" @bind:after="Notify" /></label>
             <p>@map.Objects.Count scenery edits · @map.Doors.Count doors · @map.Barriers.Count barriers · @ZoneLayoutRules.OwnedByLayout(Season.Zones, map.Id).Count() zones</p>
             @foreach (var error in MapLayoutRules.Errors(map, true)) { <p class="validation-warning">@error</p> }
-            <p>Choose this layout in the client's Layouts tab, then use Scene, Routes or Zones to edit its content.</p>
+            <p>Choose this layout in the client's Layouts tab, then use Scene, Routes, Zones or AI to edit its content.</p>
+            <EncounterInspection Layout="map" />
             <button disabled="@(Raid?.Connected != true)" @onclick="() => Focus(map)">Edit in connected editor</button>
             <button @onclick="() => Duplicate(map)">Duplicate layout</button>
             <button class="danger" @onclick="() => Delete(map)">Delete layout</button>
@@ -35,14 +36,10 @@
     }
     private async Task Duplicate(MapLayout map)
     {
-        var copy = SeasonCompiler.Copy(map); copy.Id = SeasonRepository.NewId(); copy.Name += " copy";
-        foreach (var p in MapLayoutRules.Points(copy)) p.Id = SeasonRepository.NewId();
-        foreach (var loot in copy.Loot)
-        {
-            var ids = loot.Items.ToDictionary(i => i.Id, _ => SeasonRepository.NewId());
-            WTT.Campaigns.Shared.Serialization.ModelGraph.Rewrite(loot.Items, value => ids.TryGetValue(value, out var id) ? id : value);
-        }
-        foreach (var d in copy.Doors) d.Id = SeasonRepository.NewId();
+        var copy = SeasonCompiler.Copy(map);
+        var ids = MapLayoutRules.OwnedIds(copy).ToDictionary(id => id, _ => SeasonRepository.NewId());
+        WTT.Campaigns.Shared.Serialization.ModelGraph.Rewrite(copy, value => ids.TryGetValue(value, out var fresh) ? fresh : value);
+        copy.Name += " copy";
         Season.MapLayouts.Add(copy);
         try
         {

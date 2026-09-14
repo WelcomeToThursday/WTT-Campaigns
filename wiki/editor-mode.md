@@ -1,6 +1,6 @@
 # Campaign Editor and mission map layouts
 
-Campaign Editor provides a restricted workspace for authoring the spatial part of a mission. Detailed story, quest and item forms remain in the web Creator. Playable mission raids, encounters, rewards and retries are a later milestone.
+Campaign Editor provides a restricted workspace for authoring the spatial part of a mission. Detailed story, quest and item forms remain in the web Creator. AI encounter authoring and previews are covered in [AI encounters and patrols](ai-encounters.md). Playable mission raids, rewards and retries remain a later milestone.
 
 ## Enter the workspace
 
@@ -12,7 +12,9 @@ Editor startup opens directly into the full-screen **Campaign Editor** after aut
 
 ## Build a route
 
-The workspace includes **Layouts**, **Routes**, **Scene**, **Zones**, **Events** and **Captures**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.
+The workspace includes **Layouts**, **Routes**, **Scene**, **AI**, **Zones**, **Events** and **Captures**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.
+
+Hierarchical browsers share an expandable tree: **Routes** groups ordered markers under their layouts, **AI** groups encounters, waves, rosters, and patrol waypoints, and **Zones** separates Shared zones from the selected layout's zones. Use a branch arrow to expand or collapse it and select a record's name to open its properties. Search retains the parent context of matching records; clearing it restores your branch state. Trees scroll continuously without pages. Selecting a route marker also selects its owning layout.
 
 1. In **Layouts**, create a layout. Name it in the properties panel.
 2. Open **Routes**. Place one player start, add numbered checkpoints in route order, and place an exit. Markers use the floor directly beneath the editor camera (within 20 metres), facing the camera's horizontal direction. Fly closer to a floor if placement is unavailable. **Under camera** moves an existing marker there. Use numeric transforms or the Move / Rotate tools to adjust them after capture.
@@ -90,9 +92,9 @@ The native editor home groups draft selection and map settings in a compact fram
 
 The server creates the editor character from a clean native template, with inventory roots and the native empty pockets container for traversal, and no carried gameplay items. It is not linked as an account or campaign character and is excluded from launcher profile lists. Native scratch saves are discarded; a separate editor storage path also prevents scratch files entering gameplay profile storage. Ending a session removes its scratch profile. Sessions expire after one minute without a heartbeat; normal requests then retire abandoned editor state. After a client crash, wait for this lease to expire before retrying a Normal startup. Expired sessions are replaced on editor retry, and abandoned scratch files are cleaned on server startup. Drafts are retained separately.
 
-Map layouts use campaign format **4**; loot placements and native loot/container overrides use format **5**. Formats 1–4 remain supported. Matching client and server components are required for map editing. The authoring service preserves layouts when older authoring clients submit other spatial edits, and rejects older map-editor submissions that could discard format 5 records. Existing draft conflict handling, local recovery, campaign duplication and pack import/export include layouts. Incoming changes wait until walkthrough finishes.
+Map layouts use campaign format **4**; loot placements and native loot/container overrides use format **5**; AI encounters, spawn points and patrol routes use format **6**. Formats 1–5 remain supported. Matching client and server components are required for map editing. The authoring service preserves layouts when older authoring clients submit other spatial edits, and rejects older map-editor submissions that could discard format 5 or 6 records. Existing draft conflict handling, local recovery, campaign duplication and pack import/export include layouts. Incoming changes wait until walkthrough finishes.
 
-Source map bundles are never rewritten. Targets use map, scene, hierarchy and structural fingerprint; native door IDs are included. Missing, ambiguous or changed targets require explicit rebinding. This milestone does not bake navigation meshes or validate AI routes.
+Source map bundles are never rewritten. Targets use map, scene, hierarchy and structural fingerprint; native door IDs are included. Missing, ambiguous or changed targets require explicit rebinding. AI placement and patrols are validated against the existing navigation mesh; this milestone does not rebuild it.
 
 ## User-controlled acceptance
 

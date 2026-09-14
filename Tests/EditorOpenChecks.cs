@@ -53,5 +53,12 @@ internal static class EditorOpenChecks
             editor.Methods.Single(m => m.Name == "Open").Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "TryBegin"),
             "Every automatic editor opening respects the failure latch"
         );
+        var aiSelection = editor.NestedTypes.Single(t => t.Name == "AiSelection");
+        check(
+            aiSelection
+                .Methods.Single(m => m.Name == "get_Valid")
+                .Body.Instructions.Any(i => i.Operand is MethodReference m && m.DeclaringType.FullName == "System.String" && m.Name == "IsNullOrEmpty"),
+            "An empty AI selection remains safe before a layout or record is selected"
+        );
     }
 }

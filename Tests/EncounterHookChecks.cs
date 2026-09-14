@@ -1,0 +1,807 @@
+using Mono.Cecil;
+using Mono.Cecil.Cil;
+using WTT.Campaigns.Client.Encounters;
+
+namespace WTT.Campaigns.Tests;
+
+/// <summary>
+/// Verifies the native activation surface used by the editor encounter runtime.
+///
+/// These checks intentionally read the installed assemblies with Cecil.  Loading EFT or
+/// invoking any of its types would make the check dependent on a live Unity process and would
+/// miss the most useful failure mode: a dumped method was renamed or an override was left
+/// outside the admission boundary.
+/// </summary>
+internal static class EncounterHookChecks
+{
+    private const string BigBrainGuid = "xyz.drakia.bigbrain";
+    private const string SainGuid = "me.sol.sain";
+
+    internal static void Run(string gameRoot, string clientPath)
+    {
+        gameRoot = Path.GetFullPath(gameRoot);
+        clientPath = Path.GetFullPath(clientPath);
+        var nativePath = Path.Combine(gameRoot, "BepInEx", "DumpedAssemblies", "EscapeFromTarkov", "Assembly-CSharp.dll");
+        Require(File.Exists(nativePath), "The installed Assembly-CSharp dump is required for encounter hook checks.");
+        Require(File.Exists(clientPath), "The compiled client assembly is required for encounter hook checks.");
+
+        var bigBrainPath = PluginPath(gameRoot, "DrakiaXYZ-BigBrain.dll");
+        var sainPath = PluginPath(gameRoot, "SAIN.dll");
+        using var native = AssemblyDefinition.ReadAssembly(nativePath);
+        using var client = AssemblyDefinition.ReadAssembly(clientPath);
+        using var bigBrain = AssemblyDefinition.ReadAssembly(bigBrainPath);
+        using var sain = AssemblyDefinition.ReadAssembly(sainPath);
+
+        CheckPlugin(bigBrain, BigBrainGuid, "1.5.0", "BigBrain");
+        CheckPlugin(sain, SainGuid, "4.5.1", "SAIN");
+        CheckNativeSurface(native);
+        CheckAssetPreparation(native, client);
+        CheckActivationReadiness(native, client);
+        CheckOptionalModSurface(bigBrain, sain);
+
+        var gate = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterSpawnAdmissionGate");
+        var install = RequireMethod(gate, "Install");
+        CheckAdmissionCoverage(native, gate, install);
+        CheckAdmissionPolicy();
+        CheckCoordinatorCoverage(client);
+        CheckPatrolCoverage(client);
+        CheckPatrolFacing(native, client);
+        CheckHealthInterceptionCoverage(client);
+
+        Console.WriteLine(
+            "Encounter hooks: installed native activation, preactivation, world registration, SAIN and BigBrain surfaces verified offline."
+        );
+    }
+
+    private static void CheckActivationReadiness(AssemblyDefinition native, AssemblyDefinition client)
+    {
+        var coordinator = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNative");
+        var callback = RequireMethod(coordinator, "OnNativeCreated");
+        Require(
+            !Calls(callback, "AddMember") && !Calls(callback, "MakeStrategyDecision"),
+            "The preactive creation callback must not expose uninitialized members to squad tactics"
+        );
+        var spawn = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<SpawnAsync>")).Methods.Single(m => m.Name == "MoveNext");
+        Require(Calls(spawn, "AwaitNativeActivation"), "A registered bot must finish activation before the wave receives it");
+        var ready = coordinator
+            .NestedTypes.Single(t => t.Name.StartsWith("<AwaitNativeActivation>"))
+            .Methods.Single(m => m.Name == "MoveNext");
+        foreach (
+            var method in new[]
+            {
+                "get_BotState",
+                "get_SubTactic",
+                "IsCurrent",
+                "ThrowIfCancellationRequested",
+                "Delay",
+                "get_ElapsedMilliseconds",
+            }
+        )
+            Require(Calls(ready, method), "Native activation readiness must check " + method);
+        Require(
+            Calls(ready, "Contains") && Calls(ready, "AddMember") && Calls(ready, "MakeStrategyDecision"),
+            "Ready bots join their squad without duplicate membership before choosing tactics"
+        );
+        var nativeActivation = RequireMethod(RequireType(native, "EFT.BotOwner"), "method_10");
+        Require(
+            nativeActivation.Body.Instructions.Any(i =>
+                i.Operand is MethodReference m && m.DeclaringType.FullName == "BotTacticData" && m.Name == "Activate"
+            ),
+            "Native activation remains the owner of tactic initialization"
+        );
+        Require(
+            !CallsAny(coordinator, "method_10", m => m.DeclaringType.FullName == "EFT.BotOwner"),
+            "Preview spawning must not force or duplicate native AI activation"
+        );
+    }
+
+    private static void CheckAssetPreparation(AssemblyDefinition native, AssemblyDefinition client)
+    {
+        RequireMethod(
+            RequireType(native, "EFT.Profile"),
+            "GetAllPrefabPaths",
+            "System.Collections.Generic.IEnumerable`1<EFT.ResourceKey>",
+            "System.Boolean"
+        );
+        var coordinator = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNative");
+        var spawn = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<SpawnAsync>")).Methods.Single(m => m.Name == "MoveNext");
+        var calls = spawn.Body.Instructions.Where(i => i.Operand is MethodReference).ToArray();
+        var profileData = calls.Single(i =>
+            ((MethodReference)i.Operand).Name == ".ctor" && ((MethodReference)i.Operand).DeclaringType.FullName == "GetProfileDataParams"
+        );
+        var spawnId = profileData.Previous?.Previous;
+        Require(
+            spawnId?.OpCode == OpCodes.Stfld
+                && spawnId.Operand is FieldReference field
+                && field.DeclaringType.FullName == "BotSpawnParams"
+                && field.Name == "Id_spawn"
+                && spawnId.Previous?.OpCode == OpCodes.Ldstr
+                && spawnId.Previous.Previous?.OpCode == OpCodes.Dup
+                && spawnId.Previous.Previous.Previous?.Operand is MethodReference spawnParams
+                && spawnParams.Name == ".ctor"
+                && spawnParams.DeclaringType.FullName == "BotSpawnParams",
+            "Generated bots must pass a fresh native spawn object with an initialized ID to registration"
+        );
+        var id = (string)spawnId!.Previous.Operand;
+        Require(!id.ToLower().Contains("hunt"), "MoreBots' exact spawn-ID listener expression must safely reject automatic hunt behavior");
+        var trigger = RequireType(native, "SpawnTriggerType").Fields.Single(f => f.Name == "none");
+        Require(Convert.ToInt32(trigger.Constant) == 0, "Default native spawn parameters must represent an untriggered bot");
+        var resources = calls.Single(i => ((MethodReference)i.Operand).Name == "GetAllPrefabPaths");
+        var load = calls.Single(i => ((MethodReference)i.Operand).Name == "LoadBundlesAndCreatePools");
+        var admission = calls.Single(i => ((MethodReference)i.Operand).Name == "TryOpen");
+        var activation = calls.Single(i => ((MethodReference)i.Operand).Name == "ActivateBot");
+        Require(
+            resources.Offset < load.Offset && load.Offset < admission.Offset && admission.Offset < activation.Offset,
+            "Every generated bot must prepare its native appearance and equipment before spawn admission"
+        );
+        Require(
+            calls.Any(i => i.Offset > load.Offset && i.Offset < admission.Offset && ((MethodReference)i.Operand).Name == "GetResult"),
+            "Native resource loading must finish before activation"
+        );
+        Require(
+            calls.Any(i =>
+                i.Offset > load.Offset && i.Offset < admission.Offset && ((MethodReference)i.Operand).Name == "ThrowIfCancellationRequested"
+            ),
+            "A reset during resource loading must cancel before opening native spawn admission"
+        );
+    }
+
+    private static void CheckNativeSurface(AssemblyDefinition native)
+    {
+        var spawner = RequireType(native, "EFT.BotSpawner");
+        var botCreator = RequireType(native, "BotCreatorClient");
+        var botCreatorInterface = RequireType(native, "IBotCreator");
+        var creationData = RequireType(native, "BotCreationData");
+        var botOwner = RequireType(native, "EFT.BotOwner");
+
+        // These are the native wave, ambient, forced, boss/support and debug entry points.  A
+        // missing overload is a compatibility failure even when another overload has survived.
+        RequireMethod(spawner, "ActivateBotsByWave", "System.Void", "BossLocationSpawn");
+        RequireMethod(spawner, "ActivateBotsByWave", "System.Threading.Tasks.Task", "EFT.SpawnWave");
+        RequireMethod(spawner, "ActivateBotsWithoutWave", "System.Threading.Tasks.Task", "System.Int32", "IGetProfileData");
+        RequireMethod(spawner, "SpawnBotBTR", "System.Threading.Tasks.Task");
+        RequireMethod(
+            spawner,
+            "SpawnBotByTypeForce",
+            "System.Threading.Tasks.Task",
+            "System.Int32",
+            "EFT.WildSpawnType",
+            "BotDifficulty",
+            "BotSpawnParams"
+        );
+        RequireMethod(
+            spawner,
+            "TryToSpawnInZoneAndDelay",
+            "System.Void",
+            "BotZone",
+            "BotCreationData",
+            "System.Boolean",
+            "System.Boolean",
+            "System.Collections.Generic.List`1<EFT.Game.Spawning.ISpawnPoint>",
+            "System.Boolean"
+        );
+        RequireMethod(
+            spawner,
+            "SpawnBotsInZoneOnPositions",
+            "System.Void",
+            "System.Collections.Generic.List`1<EFT.Game.Spawning.ISpawnPoint>",
+            "BotZone",
+            "BotCreationData",
+            "System.Action`1<EFT.BotOwner>"
+        );
+        RequireMethod(spawner, "TrySpawnFreeAndDelay", "System.Void", "BotCreationData", "System.Boolean");
+        RequireMethod(spawner, "CheckSpawnOnFreeAfterDelay", "System.Void", "EFT.SimpleBotSpawnDelayModel");
+        RequireMethod(
+            spawner,
+            "method_7",
+            "System.Threading.Tasks.Task",
+            "System.Collections.Generic.List`1<EFT.Game.Spawning.ISpawnPoint>",
+            "BotZone",
+            "BotCreationData",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Threading.CancellationToken"
+        );
+        RequireMethod(
+            spawner,
+            "method_10",
+            "System.Void",
+            "BotZone",
+            "BotCreationData",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Threading.CancellationToken"
+        );
+        RequireMethod(spawner, "DebugSpawnAnyway", "System.Threading.Tasks.Task");
+        RequireMethod(
+            spawner,
+            "SpawnAndActivateNowDebugClient",
+            "System.Threading.Tasks.Task",
+            "EFT.EPlayerSide",
+            "BotZone",
+            "DebugBotProfileChooser",
+            "System.Boolean"
+        );
+        RequireMethod(
+            spawner,
+            "SpawnAndActivateNowDebugFromLocalFilesServer",
+            "System.Threading.Tasks.Task",
+            "EFT.EPlayerSide",
+            "BotZone",
+            "System.Int32",
+            "DebugBotProfileChooser",
+            "System.Boolean"
+        );
+        RequireMethod(
+            spawner,
+            "SpawnAndActivateNowDebugServer",
+            "System.Threading.Tasks.Task",
+            "EFT.EPlayerSide",
+            "BotZone",
+            "EFT.WildSpawnType",
+            "BotDifficulty",
+            "System.Boolean"
+        );
+        RequireMethod(spawner, "GetGroupAndSetEnemies", "BotsGroup", "EFT.BotOwner", "BotZone");
+        RequireMethod(
+            spawner,
+            "ActivateBotCallback",
+            "System.Void",
+            "EFT.BotOwner",
+            "BotCreationData",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Boolean",
+            "System.Diagnostics.Stopwatch"
+        );
+        RequireMethod(spawner, "BotDied", "System.Void", "EFT.BotOwner");
+
+        var botsController = RequireType(native, "EFT.BotsController");
+        RequireMethod(botsController, "ActivateBotsByWave", "System.Threading.Tasks.Task", "EFT.SpawnWave");
+        Require(
+            CallsAny(
+                botsController,
+                "ActivateBotsByWave",
+                call =>
+                    call.DeclaringType.FullName == "EFT.BotSpawner"
+                    && call.Parameters.Count == 1
+                    && call.Parameters[0].ParameterType.FullName == "EFT.SpawnWave"
+            ),
+            "Installed controller wave scheduler forwards to BotSpawner"
+        );
+        RequireMethod(botsController, "ActivateBotsByWave", "System.Void", "BossLocationSpawn");
+        RequireMethod(botsController, "ActivateBotsWithoutWave", "System.Void", "System.Int32", "IGetProfileData");
+        RequireMethod(botsController, "DebugSpawnServerAnyway", "System.Void");
+
+        // BotCreatorClient has a concrete profile path in addition to the data path.  The
+        // editor uses the latter, while the admission gate must cover both native paths.
+        RequireMethod(
+            botCreator,
+            "CreateBot",
+            "System.Threading.Tasks.Task",
+            "EFT.Profile",
+            "PositionNote",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Boolean",
+            "System.Threading.CancellationToken"
+        );
+        RequireMethod(
+            botCreator,
+            "ActivateBot",
+            "System.Threading.Tasks.Task",
+            "BotCreationData",
+            "BotZone",
+            "System.Boolean",
+            "System.Func`3<EFT.BotOwner,BotZone,BotsGroup>",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Threading.CancellationToken"
+        );
+        RequireMethod(
+            botCreator,
+            "GenerateProfile",
+            "System.Threading.Tasks.Task`1<EFT.Profile>",
+            "BotCreationData",
+            "System.Threading.CancellationToken",
+            "System.Boolean"
+        );
+        RequireMethod(
+            botCreator,
+            "method_3",
+            "System.Void",
+            "BotZone",
+            "EFT.BotOwner",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Func`3<EFT.BotOwner,BotZone,BotsGroup>"
+        );
+        RequireMethod(
+            botCreator,
+            "method_0",
+            "System.Threading.Tasks.Task",
+            "BotCreationData",
+            "System.Boolean",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Threading.CancellationToken",
+            "System.Boolean"
+        );
+        RequireMethod(
+            botCreator,
+            "method_1",
+            "System.Threading.Tasks.Task",
+            "EFT.Profile",
+            "PositionNote",
+            "System.Boolean",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Threading.CancellationToken"
+        );
+        RequireMethod(
+            botOwner,
+            "Create",
+            "EFT.BotOwner",
+            "EFT.Player",
+            "UnityEngine.GameObject",
+            "EFT.GameDateTime",
+            "EFT.BotsController",
+            "System.Boolean",
+            "AICorePoint"
+        );
+        RequireMethod(
+            botCreatorInterface,
+            "ActivateBot",
+            "System.Threading.Tasks.Task",
+            "BotCreationData",
+            "BotZone",
+            "System.Boolean",
+            "System.Func`3<EFT.BotOwner,BotZone,BotsGroup>",
+            "System.Action`1<EFT.BotOwner>",
+            "System.Threading.CancellationToken"
+        );
+        RequireMethod(
+            botCreatorInterface,
+            "GenerateProfile",
+            "System.Threading.Tasks.Task`1<EFT.Profile>",
+            "BotCreationData",
+            "System.Threading.CancellationToken",
+            "System.Boolean"
+        );
+
+        RequireMethod(creationData, "CreateWithoutProfile", "BotCreationData", "IGetProfileData");
+        RequireMethod(creationData, "AddProfile", "System.Void", "EFT.Profile");
+        RequireMethod(creationData, "AddPosition", "System.Void", "UnityEngine.Vector3", "System.Int32");
+        RequireMethod(creationData, "StopSpawn", "System.Void");
+        RequireMethod(botOwner, "PreActivate", "System.Void", "BotZone", "EFT.GameDateTime", "BotsGroup", "AICoversData", "System.Boolean");
+    }
+
+    private static void CheckOptionalModSurface(AssemblyDefinition bigBrain, AssemblyDefinition sain)
+    {
+        var brainManager = RequireType(bigBrain, "DrakiaXYZ.BigBrain.Brains.BrainManager");
+        RequireMethod(
+            brainManager,
+            "AddCustomLayer",
+            "System.Int32",
+            "System.Type",
+            "System.Collections.Generic.List`1<System.String>",
+            "System.Int32",
+            "System.Collections.Generic.List`1<EFT.WildSpawnType>"
+        );
+        RequireType(bigBrain, "DrakiaXYZ.BigBrain.Brains.CustomLayer");
+
+        var external = RequireType(sain, "SAIN.Interop.SAINExternal");
+        RequireMethod(external, "CanBotQuest", "System.Boolean", "EFT.BotOwner", "UnityEngine.Vector3", "System.Single");
+    }
+
+    private static void CheckAdmissionCoverage(AssemblyDefinition native, TypeDefinition gate, MethodDefinition install)
+    {
+        var spawnEntryPoints = new[]
+        {
+            "ActivateBotsByWave",
+            "ActivateBotsWithoutWave",
+            "SpawnBotBTR",
+            "SpawnBotByTypeForce",
+            "TryToSpawnInZoneAndDelay",
+            "SpawnBotsInZoneOnPositions",
+            "TrySpawnFreeAndDelay",
+            "CheckSpawnOnFreeAfterDelay",
+            "method_7",
+            "method_10",
+            "DebugSpawnAnyway",
+            "SpawnAndActivateNowDebugClient",
+            "SpawnAndActivateNowDebugFromLocalFilesServer",
+            "SpawnAndActivateNowDebugServer",
+            "ActivateBot",
+            "CreateBot",
+            "method_0",
+            "method_1",
+        };
+        foreach (var name in spawnEntryPoints)
+            Require(ContainsString(install, name), "Admission install names native activation path " + name);
+
+        foreach (
+            var (typeName, methodName) in new[]
+            {
+                ("BotCreatorClient", "method_3"),
+                ("EFT.BotOwner", "PreActivate"),
+                ("BotsGroup", "AddEnemy"),
+                ("BotsGroup", "CheckAndAddEnemy"),
+                ("EFT.BotMemory", "AddEnemy"),
+            }
+        )
+            Require(ContainsString(install, methodName), "Admission install names " + typeName + "." + methodName);
+
+        Require(Calls(install, "PatchSpawnMethod"), "Each native spawn entry point is sent through the admission patch helper");
+        Require(Calls(install, "PatchRequiredVoid"), "Required preactivation and world hooks use fail-closed patching");
+        Require(Calls(install, "PatchTarget"), "Bot targeting hooks use the admission target helper");
+        Require(Calls(install, "PatchBotOwnerCreate"), "BotOwner.Create is admitted before native registration");
+        var createHelper = RequireMethod(gate, "PatchBotOwnerCreate");
+        Require(ContainsString(createHelper, "Create"), "BotOwner.Create admission helper names the native factory");
+
+        foreach (
+            var methodName in new[]
+            {
+                "NativeSpawnVoidPrefix",
+                "NativeSpawnTaskPrefix",
+                "BotActivationPrefix",
+                "BotPreActivatePrefix",
+                "BotOwnerCreatePrefix",
+                "BotOwnerCreatePostfix",
+                "RegisterPlayerPrefix",
+                "TargetPrefix",
+            }
+        )
+            Require(FindMethod(gate, methodName) != null, "Admission prefix exists: " + methodName);
+
+        var taskPrefix = RequireMethod(gate, "NativeSpawnTaskPrefix");
+        Require(Calls(taskPrefix, "DecideTask"), "Async admission prefix uses the tested task decision policy");
+        Require(Calls(taskPrefix, "get_CompletedTask"), "Ambient async scheduler denial completes successfully");
+        Require(Calls(taskPrefix, "FromException"), "Explicit async admission denial remains faulted");
+
+        var worlds = native
+            .MainModule.GetTypes()
+            .Where(type => IsGameWorld(type, native.MainModule))
+            .Where(type => type.Methods.Any(IsRegisterPlayer))
+            .ToArray();
+        Require(worlds.Length >= 3, "The installed client world hierarchy exposes all RegisterPlayer overrides");
+        foreach (var world in worlds)
+        {
+            Require(ContainsTypeReference(install, world), "Admission install covers RegisterPlayer override " + world.FullName);
+            Require(ContainsString(install, "RegisterPlayer"), "Admission install names RegisterPlayer for " + world.FullName);
+        }
+
+        var registerPrefix = RequireMethod(gate, "RegisterPlayerPrefix");
+        Require(
+            registerPrefix.Parameters.Count == 1 && registerPrefix.Parameters[0].ParameterType.FullName == "EFT.IPlayer",
+            "RegisterPlayer admission prefix accepts the native IPlayer argument"
+        );
+    }
+
+    private static void CheckCoordinatorCoverage(AssemblyDefinition client)
+    {
+        var native = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNative");
+        var gate = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterSpawnAdmissionGate");
+        var compatibility = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterCompatibility");
+
+        Require(
+            CallsAny(
+                native,
+                "ActivateBot",
+                method => method.Parameters.Count > 0 && method.Parameters[0].ParameterType.FullName == "BotCreationData"
+            ),
+            "EncounterNative uses the concrete BotCreationData activation overload"
+        );
+        Require(
+            CallsAny(native, "ActivateBotCallback", method => method.DeclaringType.FullName == "EFT.BotSpawner"),
+            "EncounterNative completes native registration through ActivateBotCallback"
+        );
+        Require(
+            CallsAny(native, "SetBotAsEnemy", method => method.DeclaringType.FullName == "EFT.BotSpawner"),
+            "EncounterNative initializes native enemy relationships through BotSpawner"
+        );
+        Require(
+            CallsAny(native, ".ctor", method => method.DeclaringType.FullName == "BotsGroup"),
+            "EncounterNative constructs the native squad group"
+        );
+        Require(
+            CallsAny(native, "AddNoKey", method => method.DeclaringType.FullName == "BotZoneGroupsDictionary"),
+            "EncounterNative registers the squad with native zone groups"
+        );
+        Require(
+            CallsAny(native, "CreateWithoutProfile", method => method.DeclaringType.FullName == "BotCreationData"),
+            "EncounterNative creates a profile-bearing BotCreationData record"
+        );
+        Require(
+            CallsAny(native, "AddProfile", method => method.DeclaringType.FullName == "BotCreationData"),
+            "EncounterNative attaches the generated profile to BotCreationData"
+        );
+        Require(
+            CallsAny(native, "AddPosition", method => method.DeclaringType.FullName == "BotCreationData"),
+            "EncounterNative passes the authored position to BotCreationData"
+        );
+        Require(
+            CallsAny(native, "StopSpawn", method => method.DeclaringType.FullName == "BotCreationData"),
+            "EncounterNative stops native spawn data during cleanup"
+        );
+        Require(
+            CallsAny(native, "BotDied", method => method.DeclaringType.FullName == "EFT.BotSpawner"),
+            "EncounterNative removes preview bots through the native BotSpawner lifecycle"
+        );
+        Require(
+            CallsAny(native, "Dispose", method => method.DeclaringType.FullName is "EFT.BotOwner" or "EFT.Player"),
+            "EncounterNative disposes native bot and player objects"
+        );
+        Require(
+            CallsAny(native, "FindBotControllerEditorOnly", method => method.DeclaringType.FullName == "EFT.BotsController"),
+            "EncounterNative waits for the editor bot controller"
+        );
+        Require(
+            CallsAny(native, "get_BotSpawner", method => method.DeclaringType.FullName == "EFT.BotsController"),
+            "EncounterNative waits for the native bot spawner"
+        );
+        Require(
+            CallsAny(native, "get_StartProfilesLoaded", method => method.DeclaringType.FullName == "IBotCreator"),
+            "EncounterNative waits for generated profile readiness"
+        );
+
+        var install = RequireMethod(native, "Install");
+        Require(Calls(install, "Ensure"), "EncounterNative fail-closes on optional-mod compatibility");
+        Require(Calls(install, "Install"), "EncounterNative installs admission coverage before preview activation");
+
+        var ensure = RequireMethod(compatibility, "Ensure");
+        Require(ContainsString(ensure, "CanBotQuest"), "Compatibility checks the SAIN quest eligibility signal");
+        Require(ContainsString(ensure, "AddCustomLayer"), "Compatibility checks the BigBrain custom-layer registration API");
+        Require(ContainsTypeReference(ensure, "SAIN.Interop.SAINExternal"), "Compatibility binds the installed SAIN API");
+        Require(ContainsTypeReference(ensure, "DrakiaXYZ.BigBrain.Brains.BrainManager"), "Compatibility binds the installed BigBrain API");
+
+        var gateInstall = RequireMethod(gate, "Install");
+        Require(ContainsString(gateInstall, "com.wtt.campaigns.encounter-admission"), "Admission uses its dedicated Harmony identity");
+    }
+
+    private static void CheckAdmissionPolicy()
+    {
+        Require(
+            EncounterSpawnAdmissionPolicy.IsAmbientScheduler("EFT.BotSpawner")
+                && EncounterSpawnAdmissionPolicy.IsAmbientScheduler("EFT.BotsController")
+                && !EncounterSpawnAdmissionPolicy.IsAmbientScheduler("BotCreatorClient"),
+            "Only native bot scheduler types are ambient admission sources"
+        );
+        Require(
+            EncounterSpawnAdmissionPolicy.DecideTask(false, false, false, "EFT.BotSpawner") == EncounterSpawnTaskDecision.PassThrough,
+            "Normal raid async spawn calls pass through"
+        );
+        Require(
+            EncounterSpawnAdmissionPolicy.DecideTask(true, true, true, "BotCreatorClient") == EncounterSpawnTaskDecision.PassThrough,
+            "A current reservation passes through the async prefix"
+        );
+        Require(
+            EncounterSpawnAdmissionPolicy.DecideTask(true, false, false, "EFT.BotSpawner") == EncounterSpawnTaskDecision.CompleteNoOp
+                && EncounterSpawnAdmissionPolicy.DecideTask(true, false, false, "EFT.BotsController")
+                    == EncounterSpawnTaskDecision.CompleteNoOp,
+            "Unscoped editor scheduler requests complete as no-ops"
+        );
+        Require(
+            EncounterSpawnAdmissionPolicy.DecideTask(true, false, true, "EFT.BotSpawner") == EncounterSpawnTaskDecision.Fault
+                && EncounterSpawnAdmissionPolicy.DecideTask(true, false, true, "EFT.BotsController") == EncounterSpawnTaskDecision.Fault
+                && EncounterSpawnAdmissionPolicy.DecideTask(true, false, false, "BotCreatorClient") == EncounterSpawnTaskDecision.Fault,
+            "Explicit stale or mismatched reservations remain faulted"
+        );
+    }
+
+    private static void CheckPatrolCoverage(AssemblyDefinition client)
+    {
+        var runtime = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
+        var layer = RequireType(client, "WTT.Campaigns.Client.Encounters.CampaignPatrolLayer");
+        var logic = RequireType(client, "WTT.Campaigns.Client.Encounters.CampaignPatrolLogic");
+        Require(
+            layer.BaseType?.FullName == "DrakiaXYZ.BigBrain.Brains.CustomLayer",
+            "Campaign patrol layer derives from BigBrain CustomLayer"
+        );
+        Require(
+            logic.BaseType?.FullName == "DrakiaXYZ.BigBrain.Brains.CustomLogic",
+            "Campaign patrol logic derives from BigBrain CustomLogic"
+        );
+        foreach (var methodName in new[] { "IsActive", "GetNextAction", "IsCurrentActionEnding", "Stop" })
+            Require(FindMethod(layer, methodName) != null, "Campaign patrol layer implements " + methodName);
+        Require(FindMethod(logic, "Update") != null, "Campaign patrol logic implements Update");
+        Require(
+            CallsAny(runtime, "CanBotQuest", method => method.DeclaringType.FullName == "SAIN.Interop.SAINExternal"),
+            "Patrol eligibility checks SAIN before movement"
+        );
+        Require(
+            CallsAny(runtime, "GetActiveLayer", method => method.DeclaringType.FullName == "DrakiaXYZ.BigBrain.Brains.BrainManager"),
+            "Patrol eligibility checks the active BigBrain layer"
+        );
+        Require(
+            CallsAny(runtime, "AddCustomLayer", method => method.DeclaringType.FullName == "DrakiaXYZ.BigBrain.Brains.BrainManager"),
+            "Patrol registers above idle wandering through BigBrain"
+        );
+    }
+
+    private static void CheckPatrolFacing(AssemblyDefinition native, AssemblyDefinition client)
+    {
+        var steering = RequireType(native, "BotSteering");
+        var moving = RequireMethod(steering, "LookToMovingDirection", "System.Void");
+        Require(Calls(moving, "LookToMovingDirection"), "Native movement-facing overload uses configured rotation speed");
+        Require(
+            Calls(RequireMethod(steering, "Steering"), "get_DirCurPoint"),
+            "Native movement steering follows the current path segment"
+        );
+
+        var runtime = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
+        var face = RequireMethod(runtime, "FaceMovement");
+        Require(Calls(face, "LookToMovingDirection"), "Authored patrol selects native movement-facing steering");
+        foreach (var guard in new[] { "GetActiveLayer", "SquadEligible", "get_RealDestPoint" })
+            Require(Calls(face, guard), "Patrol facing respects navigation ownership and combat handoff: " + guard);
+        Require(
+            face.Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "OwnsNavigation"),
+            "Released patrol navigation cannot retain control of facing"
+        );
+        var move = RequireMethod(runtime, "Move");
+        var calls = move.Body.Instructions.Where(i => i.Operand is MethodReference).ToArray();
+        var facingCalls = calls.Where(i => ((MethodReference)i.Operand).Name == "FaceMovement").ToArray();
+        var dispatch = calls.Single(i => ((MethodReference)i.Operand).Name == "Apply");
+        Require(
+            facingCalls.Length == 2 && facingCalls[0].Offset < dispatch.Offset && facingCalls[1].Offset > dispatch.Offset,
+            "Patrol refreshes facing on both throttled ticks and freshly dispatched navigation"
+        );
+    }
+
+    private static void CheckHealthInterceptionCoverage(AssemblyDefinition client)
+    {
+        var restrictions = RequireType(client, "WTT.Campaigns.Client.Authoring.EditorRestrictions");
+        var enable = RequireMethod(restrictions, "Enable", "System.Void");
+        var healthHook = RequireMethod(restrictions, "PreviewHealthChanged", "System.Void", "EFT.HealthSystem.ActiveHealthController");
+        Require(healthHook.IsPrivate && healthHook.IsStatic, "PreviewHealthChanged remains a private static postfix callback");
+
+        // The callback must inspect both lethal vital parts.  Checking only the first call would
+        // allow a head-only or chest-only health path to skip defeat handling after an effect.
+        var vitalCalls = CountCalls(
+            healthHook,
+            "GetBodyPartHealth",
+            call =>
+                call.DeclaringType.FullName == "EFT.HealthSystem.ActiveHealthController"
+                || call.DeclaringType.FullName.StartsWith("EFT.HealthSystem.BaseHealthController`1", StringComparison.Ordinal)
+        );
+        Require(vitalCalls >= 2, "PreviewHealthChanged checks both Head and Chest with GetBodyPartHealth");
+        Require(
+            CallsAny(healthHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.RaidEditor"),
+            "PreviewHealthChanged reports lethal damage through RaidEditor.AiDefeated"
+        );
+
+        // Enable must actually install this method as a Harmony postfix.  The handler name is
+        // emitted by nameof(PreviewHealthChanged), while Patch proves the registration call was
+        // retained by the compiled assembly.
+        Require(ContainsString(enable, "PreviewHealthChanged"), "EditorRestrictions.Enable names the health postfix");
+        Require(Calls(enable, "Patch"), "EditorRestrictions.Enable installs the health postfix through Harmony");
+
+        var killHook = RequireMethod(restrictions, "PreviewKill", "System.Boolean", "EFT.HealthSystem.ActiveHealthController");
+        Require(
+            CallsAny(killHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.RaidEditor"),
+            "PreviewKill reports direct lethal transitions through RaidEditor.AiDefeated"
+        );
+    }
+
+    private static void CheckPlugin(AssemblyDefinition assembly, string id, string minimum, string name)
+    {
+        var metadata = assembly
+            .MainModule.GetTypes()
+            .SelectMany(type => type.CustomAttributes)
+            .FirstOrDefault(attribute => attribute.AttributeType.Name == "BepInPlugin");
+        Require(metadata != null && metadata.ConstructorArguments.Count >= 3, name + " exposes BepInPlugin metadata");
+        Require((string)metadata!.ConstructorArguments[0].Value == id, name + " plugin id is " + id);
+        var versionText = (string)metadata.ConstructorArguments[2].Value;
+        Require(
+            Version.TryParse(versionText, out var installed) && installed!.CompareTo(Version.Parse(minimum)) >= 0,
+            name + " version meets " + minimum
+        );
+    }
+
+    private static string PluginPath(string gameRoot, string fileName)
+    {
+        var pluginRoot = Path.Combine(gameRoot, "BepInEx", "plugins");
+        var direct = Path.Combine(pluginRoot, fileName);
+        if (File.Exists(direct))
+            return direct;
+
+        var matches = Directory.Exists(pluginRoot)
+            ? Directory.GetFiles(pluginRoot, fileName, SearchOption.AllDirectories)
+            : Array.Empty<string>();
+        Require(matches.Length == 1, "Installed optional plugin is missing or ambiguous: " + fileName);
+        return matches[0];
+    }
+
+    private static bool IsGameWorld(TypeDefinition type, ModuleDefinition module)
+    {
+        var current = type;
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        while (current != null && seen.Add(current.FullName))
+        {
+            if (current.FullName == "EFT.GameWorld")
+                return true;
+            var baseName = current.BaseType?.FullName;
+            if (string.IsNullOrWhiteSpace(baseName) || !module.GetTypes().Any(candidate => candidate.FullName == baseName))
+                return false;
+            current = module.GetTypes().First(candidate => candidate.FullName == baseName);
+        }
+
+        return false;
+    }
+
+    private static bool IsRegisterPlayer(MethodDefinition method) =>
+        method.Name == "RegisterPlayer" && method.Parameters.Count == 1 && method.Parameters[0].ParameterType.FullName == "EFT.IPlayer";
+
+    private static TypeDefinition RequireType(AssemblyDefinition assembly, string fullName)
+    {
+        var type =
+            assembly.MainModule.GetTypes().FirstOrDefault(candidate => candidate.FullName == fullName)
+            ?? assembly.MainModule.GetTypes().FirstOrDefault(candidate => candidate.Name == fullName);
+        Require(type != null, "Missing required type: " + fullName);
+        return type!;
+    }
+
+    private static MethodDefinition RequireMethod(TypeDefinition type, string name, string? returnType = null, params string[] parameters)
+    {
+        var method = FindMethod(type, name, returnType, parameters);
+        Require(method != null, "Missing required method: " + type.FullName + "." + name + "(" + string.Join(", ", parameters) + ")");
+        return method!;
+    }
+
+    private static MethodDefinition? FindMethod(TypeDefinition type, string name, string? returnType = null, params string[] parameters) =>
+        type.Methods.FirstOrDefault(method =>
+            method.Name == name
+            && (returnType == null || method.ReturnType.FullName == returnType)
+            && (
+                (returnType == null && parameters.Length == 0)
+                || method.Parameters.Select(parameter => parameter.ParameterType.FullName).SequenceEqual(parameters)
+            )
+        );
+
+    private static IEnumerable<MethodDefinition> AllMethods(TypeDefinition type)
+    {
+        foreach (var method in type.Methods)
+            yield return method;
+        foreach (var nested in type.NestedTypes)
+        foreach (var method in AllMethods(nested))
+            yield return method;
+    }
+
+    private static bool ContainsString(MethodDefinition method, string value) =>
+        method.HasBody
+        && method.Body.Instructions.Any(instruction => instruction.OpCode == OpCodes.Ldstr && (string)instruction.Operand == value);
+
+    private static bool Calls(MethodDefinition method, string name) =>
+        method.HasBody && method.Body.Instructions.Any(instruction => instruction.Operand is MethodReference call && call.Name == name);
+
+    private static int CountCalls(MethodDefinition method, string name, Func<MethodReference, bool>? predicate = null) =>
+        !method.HasBody
+            ? 0
+            : method.Body.Instructions.Count(instruction =>
+                instruction.Operand is MethodReference call && call.Name == name && (predicate == null || predicate(call))
+            );
+
+    private static bool CallsAny(TypeDefinition type, string name, Func<MethodReference, bool> predicate) =>
+        AllMethods(type)
+            .Any(method =>
+                method.HasBody
+                && method.Body.Instructions.Any(instruction =>
+                    instruction.Operand is MethodReference call && call.Name == name && predicate(call)
+                )
+            );
+
+    private static bool CallsAny(MethodDefinition method, string name, Func<MethodReference, bool> predicate) =>
+        method.HasBody
+        && method.Body.Instructions.Any(instruction => instruction.Operand is MethodReference call && call.Name == name && predicate(call));
+
+    private static bool ContainsTypeReference(MethodDefinition method, TypeDefinition target) =>
+        method.HasBody
+        && method.Body.Instructions.Any(instruction => instruction.Operand is TypeReference reference && TypeMatches(reference, target));
+
+    private static bool ContainsTypeReference(MethodDefinition method, string fullName) =>
+        method.HasBody
+        && method.Body.Instructions.Any(instruction =>
+            instruction.Operand is TypeReference reference && (reference.FullName == fullName || reference.Name == fullName)
+        );
+
+    private static bool TypeMatches(TypeReference reference, TypeDefinition target) =>
+        reference.FullName == target.FullName || reference.Name == target.Name;
+
+    private static void Require(bool condition, string message)
+    {
+        if (!condition)
+            throw new InvalidOperationException("Encounter hook check failed: " + message);
+    }
+}

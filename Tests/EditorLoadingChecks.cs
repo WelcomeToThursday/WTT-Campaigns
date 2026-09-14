@@ -29,6 +29,15 @@ internal static class EditorLoadingChecks
                 && loading[clock - 1].Operand is MethodReference { Name: "get_Now", DeclaringType.Name: "DateTimeExtensions" },
             "Every map load must initialize the native clock before its loading screen opens."
         );
+        var mapReady = loading.FindIndex(
+            match + 1,
+            i => i.OpCode.Name == "stfld" && i.Operand is FieldReference { Name: "_mapReady" }
+        );
+        Require(
+            mapReady > match
+                && loading[mapReady - 1].OpCode.Name == "ldc.i4.1",
+            "Editor authoring sessions become eligible only after native map loading completes."
+        );
         var screenType = native.MainModule.GetType("EFT.UI.Matchmaker.MatchmakerTimeHasCome");
         Require(
             screenType

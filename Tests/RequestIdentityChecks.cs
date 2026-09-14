@@ -44,6 +44,10 @@ internal static class RequestIdentityChecks
                 "/wtt-campaigns/hub",
                 "/wtt-campaigns/hub/claim",
                 "/wtt-campaigns/hub/exchange",
+                "/wtt-campaigns/editor/status",
+                "/wtt-campaigns/editor/preview-gear",
+                "/wtt-campaigns/editor/encounter-profiles",
+                "/wtt-campaigns/editor/catalogue",
             }
         )
         {

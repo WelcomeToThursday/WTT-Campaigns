@@ -5,6 +5,40 @@ namespace WTT.Campaigns.Server.Editor;
 
 public class EditorSessionRegistry
 {
+    public enum ResolutionStatus
+    {
+        Accepted,
+        MissingIdentity,
+        RetiredScratch,
+        MismatchedIdentity,
+        NotReady,
+        MismatchedToken,
+        Expired,
+        MissingMap,
+    }
+
+    public readonly record struct Resolution(Session? Session, ResolutionStatus Status)
+    {
+        public bool Accepted => Session != null && Status == ResolutionStatus.Accepted;
+
+        public Session RequireMap(string operation)
+        {
+            if (Accepted)
+                return Session!;
+
+            throw new InvalidOperationException(
+                Status switch
+                {
+                    ResolutionStatus.MismatchedIdentity or ResolutionStatus.MismatchedToken => "Editor session does not match.",
+                    ResolutionStatus.RetiredScratch or ResolutionStatus.NotReady or ResolutionStatus.Expired =>
+                        "Editor session expired. Return to editor home and reconnect.",
+                    ResolutionStatus.MissingMap => "Connect an active editor map before " + operation + ".",
+                    _ => "Connect an active editor map before " + operation + ".",
+                }
+            );
+        }
+    }
+
     public sealed class Session
     {
         public string Id = Guid.NewGuid().ToString("N"),
@@ -55,6 +89,43 @@ public class EditorSessionRegistry
     public static bool IsScratch(string id) => ScratchIds.ContainsKey(id);
 
     public static Session? Find(string profile) => Profiles.GetValueOrDefault(profile);
+
+    /// <summary>
+    /// Resolves only the authenticated transport identity. The request token is
+    /// checked after identity resolution and is never used to discover a session.
+    /// </summary>
+    public static Resolution Resolve(string transportIdentity, string token, DateTimeOffset now)
+    {
+        if (string.IsNullOrWhiteSpace(transportIdentity))
+            return new(null, ResolutionStatus.MissingIdentity);
+
+        // A retired scratch profile must never fall through to an owner or return
+        // profile that happens to share the same text.
+        if (IsScratch(transportIdentity) && Find(transportIdentity) == null)
+            return new(null, ResolutionStatus.RetiredScratch);
+
+        var matches = Profiles.Values
+            .Where(s =>
+                Find(s.Profile) == s
+                && (s.Profile == transportIdentity || s.Owner == transportIdentity || s.ReturnProfile == transportIdentity)
+            )
+            .ToArray();
+        if (matches.Length == 0)
+            return new(null, ResolutionStatus.MissingIdentity);
+        if (matches.Length != 1)
+            return new(null, ResolutionStatus.MismatchedIdentity);
+
+        var session = matches[0];
+        if (!session.Ready)
+            return new(session, ResolutionStatus.NotReady);
+        if (session.Id != token)
+            return new(session, ResolutionStatus.MismatchedToken);
+        if (now - session.Contact > TimeSpan.FromMinutes(1))
+            return new(session, ResolutionStatus.Expired);
+        if (session.Location.Length == 0)
+            return new(session, ResolutionStatus.MissingMap);
+        return new(session, ResolutionStatus.Accepted);
+    }
 
     public static Session? ForOwner(string owner) => Profiles.Values.FirstOrDefault(s => s.Owner == owner && s.Ready);
 

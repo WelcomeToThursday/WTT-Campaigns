@@ -6,6 +6,7 @@ using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.Shared.Story;
+using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
 namespace WTT.Campaigns.Client.Authoring;
@@ -77,7 +78,7 @@ public sealed partial class RaidEditor
                 );
             }
 
-            foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene" })
+            foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene", "AI" })
             {
                 var value = mode;
                 Button(
@@ -114,6 +115,7 @@ public sealed partial class RaidEditor
                 var binding = view.Get<Button>("Row" + i).gameObject.AddComponent<WTT.Campaigns.UI.Controls.EditorRowSelection>();
                 Button("Row" + i, () => SelectRow(binding.Consume()));
             }
+            view.BindTreeSelection(SelectRow);
             view.Get<InputField>("Search")
                 .onValueChanged.AddListener(_ =>
                 {
@@ -272,6 +274,10 @@ public sealed partial class RaidEditor
                         var id = Binding.Id;
                         _session?.Edit(s => s.Story!.RaidBindings.AsValueEnumerable().Single(b => b.Id == id).Name = value.Trim());
                     }
+                    else if (_mode == "AI")
+                    {
+                        EditAiName(value);
+                    }
                     else
                     {
                         EditPoint(point => point.Name = value.Trim());
@@ -311,6 +317,12 @@ public sealed partial class RaidEditor
                             Number(
                                 value,
                                 number =>
+                                {
+                                    if (_mode == "AI")
+                                    {
+                                        EditAiVector(property, axis, number);
+                                        return;
+                                    }
                                     EditPoint(point =>
                                     {
                                         var vector =
@@ -334,7 +346,8 @@ public sealed partial class RaidEditor
                                         {
                                             vector.Z = number;
                                         }
-                                    })
+                                    });
+                                }
                             )
                     );
                 }
@@ -349,13 +362,18 @@ public sealed partial class RaidEditor
                         {
                             if (number > 0)
                             {
-                                EditPoint(p =>
+                                if (_mode == "AI")
                                 {
-                                    if (p is SeasonZone z)
+                                    EditAiRadius(number);
+                                }
+                                else
+                                    EditPoint(p =>
                                     {
-                                        z.Radius = number;
-                                    }
-                                });
+                                        if (p is SeasonZone z)
+                                        {
+                                            z.Radius = number;
+                                        }
+                                    });
                             }
                         }
                     )
@@ -380,6 +398,7 @@ public sealed partial class RaidEditor
             Button("KeepRemote", () => _session?.Resolve(false));
             BindMapControls(view);
             BindSceneControls(view);
+            BindAiControls(view);
             return view;
         }
         catch
@@ -403,6 +422,15 @@ public sealed partial class RaidEditor
 
     private void EditPoint(Action<SpatialCapture> action)
     {
+        if (AiWorkspace)
+        {
+            var proxy = AiSelectedPoint();
+            if (proxy == null)
+                return;
+            action(proxy);
+            EditAiPoint(proxy);
+            return;
+        }
         if (SceneWorkspace && !CanTransformScene("Move"))
             return;
         if (SceneWorkspace && MapPoint == null)
@@ -589,6 +617,18 @@ public sealed partial class RaidEditor
 
     private void Place(bool aim)
     {
+        if (AiWorkspace)
+        {
+            if (!TryAiPlacement(out var aiPosition, out var aiScene))
+                return;
+            var selected = AiSelectedPoint();
+            if (selected == null)
+                return;
+            selected.Position = ZoneRuntime.Vector(aiPosition);
+            selected.Scene = aiScene;
+            EditAiPoint(selected);
+            return;
+        }
         var scene = PlayerScene();
         var position = aim ? Aim(out scene) : _player?.Transform.position;
         if (position == null)
@@ -638,6 +678,11 @@ public sealed partial class RaidEditor
 
     private void Duplicate()
     {
+        if (AiWorkspace)
+        {
+            DuplicateAiSelection();
+            return;
+        }
         if (MapWorkspace || SceneWorkspace)
         {
             DuplicateMapRecord();
@@ -682,6 +727,12 @@ public sealed partial class RaidEditor
 
     private void Delete()
     {
+        if (AiWorkspace)
+        {
+            DeleteAiSelection();
+            Refresh();
+            return;
+        }
         if (MapWorkspace || SceneWorkspace)
         {
             DeleteMapRecord();
@@ -722,6 +773,8 @@ public sealed partial class RaidEditor
         CancelDrag();
         if (MapWorkspace)
         {
+            if (_mode == "Routes" && _session?.Definition != null)
+                _layoutId = EditorLibraryTrees.RouteOwner(_session.Definition.MapLayouts, _session.Location, id) ?? _layoutId;
             if (_session?.Definition?.MapLayouts.AsValueEnumerable().Any(l => l.Id == id) == true)
                 _layoutId = id;
             _selected = id;
@@ -730,6 +783,11 @@ public sealed partial class RaidEditor
                 EnterSceneSelection();
                 SelectSceneRow(id);
             }
+        }
+        else if (_mode == "AI")
+        {
+            _selected = id;
+            _picked = null;
         }
         else if (_mode == "Scene")
         {
@@ -903,16 +961,19 @@ public sealed partial class RaidEditor
             _passiveState = "";
             return;
         }
-        foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene" })
+        foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene", "AI" })
             view.Highlight(mode, _mode == mode);
         var search = view.Get<InputField>("Search").text;
+        var treeMode =
+            _mode == "AI"
+            || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
         var libraryKey =
             $"{_mode}|{_sceneTab}|{_sceneFilter}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
         if (_libraryKey != libraryKey)
         {
             _libraryKey = libraryKey;
             _rows.Clear();
-            if (MapWorkspace && _session.Definition != null)
+            if (MapWorkspace && _session.Definition != null && !treeMode)
                 MapRows();
             else if (SceneWorkspace)
                 SceneRows(search);
@@ -929,6 +990,12 @@ public sealed partial class RaidEditor
                     .Where(b => b.Location.Length == 0 || b.Location == _session.Location)
                     .Select(b => (b.Id, b.Name + " Ã‚Â· " + b.Kind + " Ã‚Â· " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
                     .CopyTo(_rows);
+            }
+            else if (_mode == "AI")
+            {
+                // AI records are presented by the pooled tree below. Keep the
+                // legacy row list empty so generic pagination cannot flatten or
+                // filter away its ancestors.
             }
             else
             {
@@ -948,7 +1015,7 @@ public sealed partial class RaidEditor
                 }
             }
 
-            if (_mode != "Scene")
+            if (_mode != "Scene" && !treeMode)
             {
                 _rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
             }
@@ -962,9 +1029,62 @@ public sealed partial class RaidEditor
                     }
                 );
         }
+        if (treeMode)
+        {
+            var contextId =
+                _mode == "AI" ? "AI:" + _layoutId
+                : _mode == "Routes" ? "Routes:" + _session.Location
+                : "Zones:" + _layoutId;
+            if (_mode == "AI")
+            {
+                view.RefreshTree(
+                    contextId,
+                    _session.ContentVersion,
+                    search,
+                    _selected,
+                    expanded => RaidEditorAiTree.Build(Layout, search, expanded)
+                );
+            }
+            else if (_mode == "Routes")
+            {
+                view.RefreshTree(
+                    contextId,
+                    _session.ContentVersion,
+                    search,
+                    _selected,
+                    expanded =>
+                        EditorTreeModel.Create(
+                            contextId,
+                            EditorLibraryTrees.Routes(_session.Definition?.MapLayouts ?? new(), _session.Location),
+                            search,
+                            expanded
+                        )
+                );
+            }
+            else
+            {
+                view.RefreshTree(
+                    contextId,
+                    _session.ContentVersion,
+                    search,
+                    _selected,
+                    expanded =>
+                        EditorTreeModel.Create(
+                            contextId,
+                            EditorLibraryTrees.Zones(FilterZonesForLayout(_layoutId), _session.Definition?.MapLayouts ?? new()),
+                            search,
+                            expanded
+                        )
+                );
+            }
+        }
+        else
+        {
+            view.HideTree();
+        }
         if (!RemoteCatalog)
             _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / 10));
-        for (var i = 0; i < 10; i++)
+        for (var i = 0; i < 10 && !treeMode; i++)
         {
             var index = LibraryOffset + i;
             view.Get<WTT.Campaigns.UI.Controls.EditorRowSelection>("Row" + i).Identity = index < _rows.Count ? _rows[index].Id : "";
@@ -1043,6 +1163,7 @@ public sealed partial class RaidEditor
         view.Caption("UseObject", point is SeasonZone && Binding != null ? "Bind selected zone" : "Use scene target");
         RefreshMaps(geometry);
         RefreshWorkspace();
+        RefreshAiWorkspace();
         PresentScene();
     }
 

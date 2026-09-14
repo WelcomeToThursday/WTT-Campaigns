@@ -15,8 +15,8 @@ public sealed partial class RaidEditorWindows
     private readonly List<(RectTransform Rect, Vector2 Position, Vector2 Size, RectTransform Row)> _propertyGeometry = new();
     private float _contentWidth = -1,
         _propertyWidth = -1;
-    private int _contentMask = -1;
-    private readonly string[] _categories = { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene" };
+    private ulong _contentMask = ulong.MaxValue;
+    private readonly string[] _categories = { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene", "AI" };
 
     public bool Interacting
     {
@@ -251,9 +251,9 @@ public sealed partial class RaidEditorWindows
             }
         }
         var width = _panels["Library"].Rect.rect.width;
-        var mask = 0;
+        var mask = 0UL;
         var count = 0;
-        var bit = 1;
+        var bit = 1UL;
         foreach (Transform child in _controls["CreationTools"])
         {
             if (child.gameObject.activeSelf)
@@ -266,20 +266,31 @@ public sealed partial class RaidEditorWindows
         var scene = _controls["SceneTabs"].gameObject.activeSelf;
         var filters = _controls["SceneFilters"].gameObject.activeSelf;
         if (scene)
-            mask |= 1 << 24;
+            mask |= 1UL << 62;
         if (filters)
-            mask |= 1 << 25;
+            mask |= 1UL << 63;
         if (_contentWidth == width && _contentMask == mask)
             return;
         _contentWidth = width;
         _contentMask = mask;
         var inner = width - 16;
-        Place("CategoryRail", 8, 36, inner, 60);
+        // Keep the category rail large enough for every row. AI is added to
+        // older bundles at runtime, so the fixed two-row height used to let
+        // its third-row button overlap Search and the scene filters.
+        const float categoryTop = 36;
+        const float categoryRowHeight = 30;
+        var categoryRows = (_categories.Length + 2) / 3;
+        var categoryHeight = categoryRows * categoryRowHeight;
+        var searchTop = categoryTop + categoryHeight + 8;
+        var searchBottom = searchTop + 32;
+        var sceneTabsTop = searchBottom + 6;
+        var sceneFiltersTop = sceneTabsTop + 36;
+        Place("CategoryRail", 8, categoryTop, inner, categoryHeight);
         for (var i = 0; i < _categories.Length; i++)
             Place(_categories[i], i % 3 * (inner + 4) / 3, i / 3 * 30, (inner - 8) / 3, 27);
-        Place("Search", 8, 104, inner, 32);
-        Place("SceneTabs", 8, 142, inner, 30);
-        Place("SceneFilters", 8, 178, inner, 30);
+        Place("Search", 8, searchTop, inner, 32);
+        Place("SceneTabs", 8, sceneTabsTop, inner, 30);
+        Place("SceneFilters", 8, sceneFiltersTop, inner, 30);
         var col = 0;
         foreach (var id in new[] { "SceneCatalog", "SceneExisting", "SceneChanges", "SceneProps", "SceneLoot", "ScenePresets" })
             Place(id, col++ % 3 * (inner + 4) / 3, 0, (inner - 8) / 3, 28);
@@ -308,9 +319,9 @@ public sealed partial class RaidEditorWindows
             (RectTransform)_controls["LibraryScroll"],
             8,
             8,
-            filters ? 218
-                : scene ? 182
-                : 146,
+            filters ? sceneFiltersTop + 40
+                : scene ? sceneTabsTop + 40
+                : searchBottom + 10,
             78 + height
         );
         var paging = (RectTransform)_controls["Paging"];

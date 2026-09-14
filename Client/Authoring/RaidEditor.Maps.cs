@@ -42,7 +42,7 @@ public sealed partial class RaidEditor
 
     private void MapEdit(Action<MapLayout> edit)
     {
-        if (!EditorMode.Ready || _walking || Layout == null)
+        if (!EditorMode.Ready || _walking || AiPreviewBusy || Layout == null)
             return;
         _session!.Edit(s => edit(s.MapLayouts.AsValueEnumerable().Single(l => l.Id == _layoutId)));
         _ghostRevision = "";
@@ -386,14 +386,12 @@ public sealed partial class RaidEditor
         if (_selected == _layoutId && Layout != null)
         {
             var copy = RaidEditorSession.Copy(Layout);
-            copy.Id = MapId();
+            var copiedIds = MapLayoutRules.OwnedIds(copy).AsValueEnumerable().ToDictionary(id => id, _ => MapId());
+            WTT.Campaigns.Shared.Serialization.ModelGraph.Rewrite(
+                copy,
+                value => copiedIds.TryGetValue(value, out var fresh) ? fresh : value
+            );
             copy.Name += " copy";
-            foreach (var p in MapLayoutRules.Points(copy))
-                p.Id = MapId();
-            foreach (var loot in copy.Loot)
-                loot.Items = FreshItems(loot.Items);
-            foreach (var d in copy.Doors)
-                d.Id = MapId();
             var sourceLayoutId = _layoutId;
             _session!.Edit(s =>
             {
@@ -639,7 +637,7 @@ public sealed partial class RaidEditor
 
     private void BeginWalkthrough()
     {
-        if (!EditorMode.Ready || _walking || Layout == null || _session?.Conflict != null || _session?.Busy == true)
+        if (!EditorMode.Ready || _walking || AiPreviewBusy || Layout == null || _session?.Conflict != null || _session?.Busy == true)
             return;
         _mapScene ??= new();
         try
@@ -708,6 +706,8 @@ public sealed partial class RaidEditor
 
     internal void EndWalkthrough(bool returnToEditor = false)
     {
+        if (AiPreviewBusy)
+            EndAiPreview(false);
         var transition = returnToEditor ? System.Diagnostics.Stopwatch.StartNew() : null;
         try
         {

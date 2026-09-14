@@ -30,8 +30,11 @@ public sealed class EditorMode : MonoBehaviour
         && Plugin.App?.Session?.Profile?.Id == Instance._session.ProfileId;
     internal static bool Returning => Instance && Instance._returning;
     internal static bool LoadingMap => Authenticated && Instance._mapLoading && !Returning;
+    internal static bool MapLoadActive => Instance && Instance._mapLoading && !Returning;
+    internal static bool MapReady => Active && Authenticated && Instance._mapReady && !Instance._mapLoading && !Returning;
     internal static bool Unloading;
     internal static string SessionId => Instance?._session?.SessionId ?? "";
+    internal static string ScratchProfileId => Instance?._session?.ProfileId ?? "";
     internal static string DraftId => Instance?._session?.DraftId ?? "";
     private ConfigEntry<StartupMode> _startup = null!;
     private EditorSessionResponse? _session;
@@ -43,7 +46,9 @@ public sealed class EditorMode : MonoBehaviour
         _busy,
         _hadMap,
         _mapLoading,
+        _mapReady,
         _returning;
+    private Task? _mapLoadCleanup;
     private string _status = "",
         _map = "";
     private int _mapIndex;
@@ -398,13 +403,15 @@ public sealed class EditorMode : MonoBehaviour
     {
         if (!Ready || Plugin.InRaid)
             return;
-        if (DraftId.Length == 0 && _session!.Drafts.Count > 0)
-            await Call("select", _session.Drafts[0].Id);
-        await Call("map");
+        _mapReady = false;
+        _mapLoadCleanup = null;
         _mapLoading = true;
         _status = "Loading " + _map + "…";
         try
         {
+            if (DraftId.Length == 0 && _session!.Drafts.Count > 0)
+                await Call("select", _session.Drafts[0].Id);
+            await Call("map");
             var app = Plugin.App!;
             var location = app.Session.LocationSettings.locations.Values.AsValueEnumerable().Single(l => l.Id == _map);
             app.CurrentRaidSettings.SelectedLocation = location;
@@ -418,10 +425,11 @@ public sealed class EditorMode : MonoBehaviour
             await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
             if (!Plugin.InRaid)
                 throw new InvalidOperationException("Map loading did not create an editor world.");
+            _mapReady = true;
         }
         catch
         {
-            await Call("unload");
+            await RecoverFailedMapLoad();
             throw;
         }
         finally
@@ -430,9 +438,34 @@ public sealed class EditorMode : MonoBehaviour
         }
     }
 
+    internal static Task RecoverFailedMapLoad() => Instance ? Instance.RecoverFailedMapLoadCore() : Task.CompletedTask;
+
+    private Task RecoverFailedMapLoadCore()
+    {
+        _mapReady = false;
+        return _mapLoadCleanup ??= RecoverFailedMapLoadCoreAsync();
+    }
+
+    private async Task RecoverFailedMapLoadCoreAsync()
+    {
+        try
+        {
+            await Call("unload");
+        }
+        catch (Exception e)
+        {
+            _connectionFailed = true;
+            _status = e.Message;
+            // The native load error remains the task's failure. Report failed
+            // editor cleanup once without replacing that useful exception.
+            Plugin.Error(e);
+        }
+    }
+
     internal void UnloadMap() =>
         Run(async () =>
         {
+            _mapReady = false;
             RaidEditor.Instance?.EndWalkthrough();
             if (Singleton<AbstractGame>.Instance is LocalGame game)
             {
@@ -454,6 +487,7 @@ public sealed class EditorMode : MonoBehaviour
         if (Plugin.InRaid)
             throw new InvalidOperationException("Unload the map first.");
         var returnProfile = _session?.ReturnProfileId;
+        _mapReady = false;
         if (_session != null)
         {
             await Call("unload");
@@ -488,6 +522,7 @@ public sealed class EditorMode : MonoBehaviour
 
     internal async Task CompleteMapExit(TarkovApplication app)
     {
+        _mapReady = false;
         _mapLoading = true;
         _hadMap = false;
         try
@@ -524,7 +559,7 @@ public sealed class EditorMode : MonoBehaviour
             {
                 if (_connectionFailed && !_busy && !_mapLoading)
                     UnloadMap();
-                _hadMap = true;
+                _hadMap = _mapReady;
             }
             else
             {
@@ -585,7 +620,7 @@ public sealed class EditorMode : MonoBehaviour
         using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.Hud);
         try
         {
-            if (!Active || !Plugin.InRaid)
+            if (!Active || !Plugin.InRaid || RaidEditor.AiPlaytestActive)
             {
                 RestoreHud();
                 return;

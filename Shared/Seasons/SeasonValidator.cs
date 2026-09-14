@@ -41,7 +41,7 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5, "Overview", "Unsupported campaign format version.");
+        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6, "Overview", "Unsupported campaign format version.");
         foreach (var zone in s.Zones)
         {
             if (!string.IsNullOrEmpty(zone.LayoutId) && Spatial.SpatialRules.Uses(s, zone.Id).Any())
@@ -51,7 +51,7 @@ public static class SeasonValidator
         }
         TraderOfferRules.Validate(s, r);
         if (s.MapLayouts.Count > 0 && s.FormatVersion < Spatial.MapLayoutRules.Format(s.MapLayouts))
-            r.Add("Maps", "Map layouts require format 4; loot and container edits require format 5.");
+            r.Add("Maps", "Map layouts require format 4; loot and container edits require format 5; AI encounters require format 6.");
         if (s.MapLayouts.Count > 128 || s.MapLayouts.SelectMany(Spatial.MapLayoutRules.OwnedIds).GroupBy(x => x).Any(g => g.Count() > 1))
             r.Add("Maps", "Layouts require unique identities (at most 128 layouts).");
         foreach (var layout in s.MapLayouts)

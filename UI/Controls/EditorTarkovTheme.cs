@@ -23,6 +23,7 @@ public sealed class EditorTarkovTheme
         ["Bindings"] = "bolt-rounded",
         ["Captures"] = "photo-camera-outline-rounded",
         ["Scene"] = "forest-outline-rounded",
+        ["AI"] = "psychology-rounded",
         ["CloseEditor"] = "close-rounded",
         ["HelpToggle"] = "help-outline-rounded",
         ["WindowsToggle"] = "view-sidebar-outline-rounded",
