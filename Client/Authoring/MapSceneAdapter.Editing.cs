@@ -25,6 +25,7 @@ internal sealed partial class MapSceneAdapter
             LocalRotation;
         internal Transform Parent = null!;
         internal bool Active;
+        internal SceneNavigation? Navigation;
         internal readonly List<SceneBodyState> Bodies = new();
         internal bool Applied,
             VisualsDirty,
@@ -54,6 +55,8 @@ internal sealed partial class MapSceneAdapter
 
         internal void Restore()
         {
+            Navigation?.Dispose();
+            Navigation = null;
             if (!Applied)
                 return;
             Applied = false;
@@ -94,9 +97,12 @@ internal sealed partial class MapSceneAdapter
         internal bool Pending => Lease?.Pending == true;
         internal string Error => Lease?.Error ?? "";
         internal SpatialCapture Pose = null!;
+        internal SceneNavigation? Navigation;
 
         internal void Dispose()
         {
+            Navigation?.Dispose();
+            Navigation = null;
             Lease?.Dispose();
             if (Lease == null && Model)
                 Remove(Model!);
@@ -338,6 +344,7 @@ internal sealed partial class MapSceneAdapter
                         if (!_spawns.TryGetValue(edit.Id, out var spawn))
                             _spawns.Add(edit.Id, spawn = new Spawn { Definition = signature, Model = CopyProp(original.Target, true) });
                         Pose(spawn.Model!.transform, edit, true);
+                        spawn.Navigation ??= new SceneNavigation(spawn.Model.transform);
                     }
                     else
                     {
@@ -349,6 +356,11 @@ internal sealed partial class MapSceneAdapter
                         foreach (var body in original.Bodies)
                             body.Freeze();
                         original.Target.gameObject.SetActive(edit.Operation != "Hide" && original.Active);
+                        if (edit.Operation == "Hide")
+                        {
+                            original.Navigation?.Dispose();
+                            original.Navigation = null;
+                        }
                         if (edit.Operation == "Move")
                         {
                             var position = original.Target.position;
@@ -366,6 +378,7 @@ internal sealed partial class MapSceneAdapter
                                 || scale != original.Target.lossyScale
                             )
                                 original.VisualsDirty = true;
+                            original.Navigation ??= new SceneNavigation(original.Target);
                         }
                     }
                 }

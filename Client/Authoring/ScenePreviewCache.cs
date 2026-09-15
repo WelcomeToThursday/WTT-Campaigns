@@ -8,6 +8,11 @@ internal sealed class ScenePreviewCache<T>
     private readonly Action<T> _release;
     private readonly Dictionary<string, T> _ready = new();
     private readonly Dictionary<string, string> _errors = new();
+
+    // Dictionary enumeration is not insertion order after removals: reused
+    // slots can make the newest image the next victim and flash a full page.
+    private readonly List<string> _readyOrder = new();
+    private readonly List<string> _errorOrder = new();
     private readonly HashSet<string> _requested = new();
     internal int Generation { get; private set; }
 
@@ -28,6 +33,7 @@ internal sealed class ScenePreviewCache<T>
     internal void Retry(string key)
     {
         _errors.Remove(key);
+        _errorOrder.Remove(key);
         _requested.Remove(key);
     }
 
@@ -40,11 +46,14 @@ internal sealed class ScenePreviewCache<T>
         }
         _requested.Remove(key);
         if (_ready.TryGetValue(key, out var old))
+        {
             _release(old);
+            _readyOrder.Remove(key);
+        }
         else if (_ready.Count >= _limit)
         {
             string? victim = null;
-            foreach (var candidate in _ready.Keys)
+            foreach (var candidate in _readyOrder)
                 if (candidate != protectedKey)
                 {
                     victim = candidate;
@@ -57,9 +66,12 @@ internal sealed class ScenePreviewCache<T>
             }
             _release(_ready[victim]);
             _ready.Remove(victim);
+            _readyOrder.Remove(victim);
         }
         _ready[key] = value;
+        _readyOrder.Add(key);
         _errors.Remove(key);
+        _errorOrder.Remove(key);
         return true;
     }
 
@@ -68,18 +80,18 @@ internal sealed class ScenePreviewCache<T>
         if (generation != Generation)
             return;
         _requested.Remove(key);
-        if (_errors.Count >= _limit)
+        _errorOrder.Remove(key);
+        if (!_errors.ContainsKey(key) && _errors.Count >= _limit)
         {
-            string? first = null;
-            foreach (var entry in _errors.Keys)
-            {
-                first = entry;
-                break;
-            }
+            var first = _errorOrder.Count > 0 ? _errorOrder[0] : null;
             if (first != null)
+            {
                 _errors.Remove(first);
+                _errorOrder.RemoveAt(0);
+            }
         }
         _errors[key] = error;
+        _errorOrder.Add(key);
     }
 
     internal void Clear()
@@ -88,7 +100,9 @@ internal sealed class ScenePreviewCache<T>
         foreach (var value in _ready.Values)
             _release(value);
         _ready.Clear();
+        _readyOrder.Clear();
         _errors.Clear();
+        _errorOrder.Clear();
         _requested.Clear();
     }
 }

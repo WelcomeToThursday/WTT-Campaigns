@@ -42,7 +42,7 @@ internal static class EditorLayoutSpec
     {
         R(
             "WorkspaceTitleBar",
-            T("WorkspaceTitle", "CAMPAIGN EDITOR"),
+            T("WorkspaceTitle", "CAMPAIGN EDITOR · BETA"),
             T("Connection", "Connecting…"),
             B("ContextToggle", "Session"),
             B("WindowsToggle", "Windows"),
@@ -96,17 +96,23 @@ internal static class EditorLayoutSpec
                 B("MapCopyObject", "Copy prop"),
                 B("MapHideObject", "Hide prop"),
                 B("MapDoor", "Door state"),
-                new Node("choice", "ZoneCreateScope", "New zone scope"),
-                B("AiEncounter", "+ Encounter"),
-                B("AiWave", "+ Wave"),
-                B("AiRoster", "+ Roster"),
-                B("AiSpawn", "+ Spawn"),
-                B("AiPatrol", "+ Patrol"),
-                B("AiWaypoint", "+ Waypoint"),
-                B("AiObserve", "Observe AI"),
-                B("AiPlaytest", "Playtest AI"),
-                B("AiReset", "Reset AI"),
-                B("AiSimulate", "Trigger encounter")
+                new Node("choice", "ZoneCreateScope", "New zone scope")
+            ),
+            G(
+                "AiTools",
+                G(
+                    "AiCreateSection",
+                    T("AiCreateHeading", "BUILD ENCOUNTERS"),
+                    R("AiCreateRow", B("AiEncounter", "+ Encounter"), B("AiWave", "+ Wave"), B("AiRoster", "+ Roster")),
+                    R("AiPlacementRow", B("AiSpawn", "+ Spawn"), B("AiPatrol", "+ Patrol"), B("AiWaypoint", "+ Waypoint"))
+                ),
+                G("AiNavigationSection", T("AiNavigationHeading", "NAVIGATION"), B("AiNavigation", "Inspect navigation: off")),
+                G(
+                    "AiPreviewSection",
+                    T("AiPreviewHeading", "TEST ENCOUNTERS"),
+                    R("AiPreviewRow", B("AiObserve", "Observe"), B("AiPlaytest", "Playtest")),
+                    R("AiRunRow", B("AiSimulate", "Trigger selected"), B("AiReset", "Reset preview"))
+                )
             )
         ),
         G(
@@ -142,22 +148,43 @@ internal static class EditorLayoutSpec
                     R("RecordActionsGroup", B("Duplicate", "Duplicate"), B("Delete", "Delete")),
                     G("DetailsGroup", T("Details", "")),
                     A("RecordDetailsToggleGroup", "RecordDetailsToggle", "Details +"),
-                    F("AiTriggerEventId", "Event id"),
-                    F("AiTriggerZoneId", "Trigger zone"),
-                    F("AiWaveDelaySeconds", "Wave delay"),
-                    F("AiRosterCount", "Roster count"),
-                    F("AiRosterSquadId", "Squad"),
-                    F("AiRosterSpawnPoints", "Spawn point ids"),
-                    F("AiRosterPatrolRoute", "Patrol route id"),
-                    F("AiWaypointWaitSeconds", "Waypoint wait"),
-                    A("AiTriggerGroup", "AiTrigger", "Trigger"),
-                    A("AiWaveWaitPreviousGroup", "AiWaveWaitPrevious", "Wave wait mode"),
-                    A("AiRosterRoleGroup", "AiRosterRole", "Roster role"),
-                    A("AiRosterDifficultyGroup", "AiRosterDifficulty", "Roster difficulty"),
-                    A("AiRosterSpawnNextGroup", "AiRosterSpawnNext", "Next spawn point"),
-                    A("AiRosterPatrolNextGroup", "AiRosterPatrolNext", "Next patrol route"),
-                    A("AiPaceGroup", "AiPace", "Patrol pace"),
-                    A("AiCompletionGroup", "AiCompletion", "Patrol completion")
+                    G(
+                        "AiTriggerSection",
+                        T("AiTriggerHeading", "ACTIVATION"),
+                        A("AiTriggerGroup", "AiTrigger", "Trigger"),
+                        F("AiTriggerEventId", "Event id"),
+                        F("AiTriggerZoneId", "Trigger zone")
+                    ),
+                    G(
+                        "AiWaveSection",
+                        T("AiWaveHeading", "WAVE TIMING"),
+                        F("AiWaveDelaySeconds", "Delay (seconds)"),
+                        A("AiWaveWaitPreviousGroup", "AiWaveWaitPrevious", "Wave wait mode")
+                    ),
+                    G(
+                        "AiRosterSection",
+                        T("AiRosterHeading", "BOT ROSTER"),
+                        A("AiRosterRoleGroup", "AiRosterRole", "Roster role"),
+                        A("AiRosterDifficultyGroup", "AiRosterDifficulty", "Roster difficulty"),
+                        F("AiRosterCount", "Bot count"),
+                        F("AiRosterSquadId", "Squad name")
+                    ),
+                    G(
+                        "AiAssignmentSection",
+                        T("AiAssignmentHeading", "SPAWN & PATROL ASSIGNMENTS"),
+                        G("AiRosterSpawnNextGroup", new Node("choice", "AiRosterSpawnNext", "Choose spawn points")),
+                        T("AiAssignedSpawns", "No spawns assigned"),
+                        F("AiRosterSpawnPoints", "Spawn point ids"),
+                        G("AiRosterPatrolNextGroup", new Node("choice", "AiRosterPatrolNext", "Choose patrol")),
+                        F("AiRosterPatrolRoute", "Patrol route id")
+                    ),
+                    G(
+                        "AiPatrolSection",
+                        T("AiPatrolHeading", "PATROL MOVEMENT"),
+                        A("AiPaceGroup", "AiPace", "Patrol pace"),
+                        A("AiCompletionGroup", "AiCompletion", "Patrol completion"),
+                        F("AiWaypointWaitSeconds", "Wait (seconds)")
+                    )
                 ),
                 G(
                     "MapInspector",

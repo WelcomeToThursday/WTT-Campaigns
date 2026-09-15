@@ -23,6 +23,7 @@ internal static class PatchRegistration
         EnableItems();
         EnableHideout();
         EnableUi();
+        WTT.Campaigns.Client.UI.NativeLoadingStatus.Enable();
         new Story.StoryTraderPatch().Enable();
         new Story.StoryCollectiblePatch().Enable();
     }

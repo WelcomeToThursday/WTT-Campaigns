@@ -138,6 +138,7 @@ WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.MapEditorChecks.Run(Check);
 WTT.Campaigns.Tests.ZoneLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);
 WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
 WTT.Campaigns.Tests.PlayerRouteChecks.Run(Check);
 WTT.Campaigns.Tests.AiTreeChecks.Run(Check);

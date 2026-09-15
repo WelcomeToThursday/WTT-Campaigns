@@ -7,6 +7,7 @@ using Diz.Jobs;
 using EFT;
 using Newtonsoft.Json;
 using UnityEngine;
+using UnityEngine.AI;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
@@ -110,6 +111,7 @@ internal sealed class EncounterNative
     private bool _active;
     private bool _resetting;
     private EncounterPreviewObjects? _objects;
+    private EncounterCorePoints? _corePoints;
     private BotCreatorClient? _rendererCreator;
     private readonly HashSet<Player> _existingRendererPlayers = new();
 
@@ -208,6 +210,9 @@ internal sealed class EncounterNative
         try
         {
             await WaitForNativeReady(context, cancellationToken);
+            _corePoints = new EncounterCorePoints();
+            _corePoints.Prepare(context, layout);
+            ValidateNativeSpawns(layout);
             lock (_gate)
             {
                 if (_resetting || _context == null || !_context.Matches(context))
@@ -271,7 +276,7 @@ internal sealed class EncounterNative
             throw new InvalidOperationException("The authored spawn point is occupied by another encounter bot.");
 
         if (!TryResolveNativeSpawn(spawner, worldPosition, out var zone, out var corePointId, out var nativeError))
-            throw new InvalidOperationException(nativeError);
+            throw new InvalidOperationException($"Spawn '{authoredSpawn.Name}' ({authoredSpawn.Id}): {nativeError}");
         if (!TryValidateProfile(profile, out var profileError))
             throw new InvalidOperationException(profileError);
         var authoredSquad = string.IsNullOrWhiteSpace(squadId) ? encounterId + ":profile:" + profile.Id : squadId;
@@ -504,6 +509,11 @@ internal sealed class EncounterNative
             _creator = null;
             if (!cleanupPending)
                 _spawner = null;
+        }
+        if (!cleanupPending)
+        {
+            _corePoints?.Dispose();
+            _corePoints = null;
         }
         if (cleanupPending)
             throw new InvalidOperationException("Native preview cleanup remains pending; retry Reset preview.", objectFailure);
@@ -1027,6 +1037,23 @@ internal sealed class EncounterNative
         return false;
     }
 
+    private void ValidateNativeSpawns(MapLayout layout)
+    {
+        var assigned = new HashSet<string>();
+        foreach (var encounter in layout.Encounters)
+        foreach (var wave in encounter.Waves)
+        foreach (var roster in wave.Roster)
+        foreach (var id in roster.SpawnPointIds)
+            assigned.Add(id);
+        foreach (var point in layout.SpawnPoints)
+        {
+            if (!assigned.Contains(point.Id))
+                continue;
+            if (!TryResolveNativeSpawn(_spawner!, EncounterNavigation.ToVector3(point.Position), out _, out _, out var error))
+                throw new InvalidOperationException($"Spawn '{point.Name}' ({point.Id}): {error}");
+        }
+    }
+
     private static bool TryResolveNativeSpawn(BotSpawner spawner, Vector3 position, out BotZone zone, out int corePointId, out string error)
     {
         zone = null!;
@@ -1041,10 +1068,43 @@ internal sealed class EncounterNative
                 return false;
             }
 
+            // The native helper uses a static holder cache. Editor map changes must
+            // refresh it before querying connectivity on the currently loaded map.
+            var points = AICorePointHolder.GetAllTestObjects(canUseCache: false);
+            if (points == null || points.Count == 0)
+            {
+                error = "The loaded map has no native AI core points available.";
+                return false;
+            }
             var corePoint = AICorePointHolder.GetAnyPointToConnect(position);
             if (corePoint == null)
             {
-                error = "No connected native AI core point can own the authored spawn point.";
+                AICorePoint? nearest = null;
+                var distance = float.PositiveInfinity;
+                foreach (var candidate in points)
+                {
+                    if (!candidate)
+                        continue;
+                    var squared = (candidate.Position - position).sqrMagnitude;
+                    if (squared >= distance)
+                        continue;
+                    nearest = candidate;
+                    distance = squared;
+                }
+                var detail = $"Checked {points.Count} native core points at {position.ToString("F2")}.";
+                if (nearest)
+                {
+                    var forward = new NavMeshPath();
+                    var reverse = new NavMeshPath();
+                    var outward = NavMesh.CalculatePath(position, nearest!.Position, NavMesh.AllAreas, forward);
+                    var inward = NavMesh.CalculatePath(nearest.Position, position, NavMesh.AllAreas, reverse);
+                    detail +=
+                        $" Nearest core {nearest.Id}, {Mathf.Sqrt(distance):F1} m: outward {(outward ? forward.status.ToString() : "no path")}, return {(inward ? reverse.status.ToString() : "no path")}.";
+                }
+                error =
+                    "The spawn is on walkable ground but has no complete two-way route to the map's native AI network. "
+                    + "Check for a sealed container/barrier passage or move the spawn to connected ground. "
+                    + detail;
                 return false;
             }
 

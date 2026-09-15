@@ -24,6 +24,7 @@ internal sealed class MissionLoot : IDisposable
 
     internal async Task ApplyAsync(MapLayout layout, string runId, CancellationToken token)
     {
+        using var loading = UI.NativeLoadingStatus.Begin("Preparing placed items…");
         if (_begun || _disposed)
             throw new InvalidOperationException("Create a fresh loot owner for each mission attempt.");
         _begun = true;

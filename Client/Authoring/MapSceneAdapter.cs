@@ -185,6 +185,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
     internal async Task ApplyAsync(MapLayout layout, bool requirePlayerRoute, CancellationToken token)
     {
+        using var loading = UI.NativeLoadingStatus.Begin("Preparing authored scenery…");
         token.ThrowIfCancellationRequested();
         Reconcile(layout);
         var timer = System.Diagnostics.Stopwatch.StartNew();
@@ -200,6 +201,14 @@ internal sealed partial class MapSceneAdapter : IDisposable
         if (_disposed)
             throw new OperationCanceledException("The scene preview was closed.");
         Apply(layout, requirePlayerRoute);
+        await WaitForNavigationAsync(token);
+    }
+
+    internal static async Task WaitForNavigationAsync(CancellationToken token)
+    {
+        // Followers run in LateUpdate; carving becomes queryable the next frame.
+        await UniTask.NextFrame(cancellationToken: token);
+        await UniTask.NextFrame(cancellationToken: token);
     }
 
     internal void ApplyMission(MapLayout layout) => Apply(layout, true, true);
@@ -222,13 +231,17 @@ internal sealed partial class MapSceneAdapter : IDisposable
         foreach (var barrier in layout.Barriers)
         {
             GameObject? go = null;
+            SceneNavigation? navigation = null;
             _transaction.Apply(
                 () =>
                 {
                     go = Volume(barrier, false);
+                    navigation = new SceneNavigation(go.transform);
                 },
                 () =>
                 {
+                    navigation?.Dispose();
+                    navigation = null;
                     if (go)
                         Remove(go!);
                     go = null;
@@ -266,7 +279,9 @@ internal sealed partial class MapSceneAdapter : IDisposable
                     to.gameObject.AddComponent<MeshFilter>().sharedMesh = mesh.sharedMesh;
                     var copy = to.gameObject.AddComponent<MeshRenderer>();
                     copy.sharedMaterials = renderer.sharedMaterials;
-                    copy.enabled = renderer.enabled;
+                    // Native culling owns the source's enabled flag. The copy has
+                    // no native culling owner to turn it back on after reload.
+                    copy.enabled = true;
                     copy.shadowCastingMode = renderer.shadowCastingMode;
                     copy.receiveShadows = renderer.receiveShadows;
                 }
@@ -314,6 +329,11 @@ internal sealed partial class MapSceneAdapter : IDisposable
                 }
             }
             Copy(source, root.transform);
+            // Reveal mesh ancestors on our detached copy only. Trigger culling
+            // can deactivate source branches before the editor finishes discovery.
+            foreach (var renderer in root.GetComponentsInChildren<MeshRenderer>(true))
+                for (var node = renderer.transform; node; node = node.parent)
+                    node.gameObject.SetActive(true);
             foreach (var group in source.GetComponentsInChildren<LODGroup>(true))
             {
                 var copy = copies[group.transform].gameObject.AddComponent<LODGroup>();
@@ -327,9 +347,10 @@ internal sealed partial class MapSceneAdapter : IDisposable
                 copy.SetLODs(lods);
                 copy.localReferencePoint = group.localReferencePoint;
                 copy.size = group.size;
-                copy.fadeMode = group.fadeMode;
-                copy.animateCrossFading = group.animateCrossFading;
-                copy.enabled = group.enabled;
+                // Copies do not retain the source's cross-fade shader state.
+                copy.fadeMode = LODFadeMode.None;
+                copy.animateCrossFading = false;
+                copy.enabled = true;
             }
             root.transform.SetPositionAndRotation(source.position, source.rotation);
             root.transform.localScale = source.lossyScale;

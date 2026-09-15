@@ -1,5 +1,7 @@
 using UnityEngine;
+using EFT.UI.Screens;
 using WTT.Campaigns.Client.Encounters;
+using WTT.Campaigns.Client.Missions;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
@@ -11,6 +13,7 @@ public sealed partial class RaidEditor
     private EncounterPreviewRuntime? _aiRuntime;
     private CancellationTokenSource? _aiLifetime;
     private EditorPreviewPlayer? _aiPlayer;
+    private MissionLoot? _aiLoot;
     private Task? _aiReset;
     private bool _aiPreview,
         _aiPlaytest;
@@ -131,6 +134,14 @@ public sealed partial class RaidEditor
             Plugin.LogInfo($"Preview transition: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
             transitionTimer.Restart();
             transitionStage = "mission route and loot";
+            if (playtest && !_editorMissionRequested)
+            {
+                // Replace inert editor models with native, collectable loot.
+                _mapScene.Apply(layout, requirePlayerRoute: false, runtime: true);
+                _aiLoot = new MissionLoot();
+                await _aiLoot.ApplyAsync(layout, Guid.NewGuid().ToString("N"), lifetime.Token);
+                lifetime.Token.ThrowIfCancellationRequested();
+            }
             await BeginEditorMissionRoute(layout, lifetime.Token);
             _aiRuntime.MissionStart();
             _notice = "";
@@ -161,6 +172,10 @@ public sealed partial class RaidEditor
     private void EndAiPreview(bool reopen)
     {
         _aiRequested = null;
+        // Close through the native screen lifecycle before destroying loot or
+        // replacing equipment that an inventory/loot screen may still observe.
+        if (_player && _player!.IsInventoryOpened)
+            EftScreenManager.Instance.ToggleScreen(EEftScreenType.Inventory);
         EndEditorMissionRoute(_editorMissionRetrying);
         if (!AiPreviewBusy && _aiRuntime == null && _aiPlayer == null)
             return;
@@ -201,6 +216,8 @@ public sealed partial class RaidEditor
         _returnPosition = null;
         try
         {
+            _aiLoot?.Dispose();
+            _aiLoot = null;
             scene?.Dispose();
             Plugin.LogInfo($"Preview reset: scene cleanup {transitionTimer.ElapsedMilliseconds} ms");
             transitionTimer.Restart();

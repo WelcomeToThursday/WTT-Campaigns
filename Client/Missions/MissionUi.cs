@@ -263,7 +263,8 @@ internal sealed class MissionUi : MonoBehaviour
         app.Matchmaker.MatchingStartTime = DateTimeExtensions.Now;
         _screen?.Close();
         _blockedThrough = Time.frameCount + 1;
-        await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
+        using (UI.NativeLoadingStatus.Begin("Deploying campaign mission…"))
+            await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
         if (!Plugin.InRaid)
             throw new InvalidOperationException("Mission loading did not create a local raid.");
     }

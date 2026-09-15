@@ -243,14 +243,10 @@ public sealed partial class RaidEditor
                             await UniTask.NextFrame(cancellationToken: token);
                         if (icon.Sprite)
                         {
-                            texture = icon.Sprite.texture;
-                            var rect = icon.Sprite.textureRect;
-                            uv = new Rect(
-                                rect.x / texture.width,
-                                rect.y / texture.height,
-                                rect.width / texture.width,
-                                rect.height / texture.height
-                            );
+                            // Native icons can live in a shared, reused render target.
+                            // Retain an owned snapshot, not that mutable backing texture.
+                            texture = SnapshotThumbnail(icon.Sprite);
+                            owned = true;
                         }
                     }
                     token.ThrowIfCancellationRequested();
@@ -307,7 +303,11 @@ public sealed partial class RaidEditor
             model.transform.SetPositionAndRotation(new Vector3(0, -10000, 0), Quaternion.identity);
             foreach (var lod in model.GetComponentsInChildren<LODGroup>(true))
                 if (lod && lod.enabled && lod.gameObject.activeInHierarchy)
+                {
+                    lod.fadeMode = LODFadeMode.None;
+                    lod.animateCrossFading = false;
                     lod.ForceLOD(0);
+                }
             foreach (var t in model.GetComponentsInChildren<Transform>(true))
                 t.gameObject.layer = 31;
             if (!SceneBounds.TryGet(model.transform, out var bounds))
@@ -369,6 +369,43 @@ public sealed partial class RaidEditor
                 Destroy(material);
             rt.Release();
             Destroy(rt);
+        }
+    }
+
+    private static Texture2D SnapshotThumbnail(Sprite sprite)
+    {
+        var source = sprite.texture;
+        var rect = sprite.textureRect;
+        var scale = Mathf.Min(1, 192f / Mathf.Max(rect.width, rect.height));
+        var width = Mathf.Max(1, Mathf.RoundToInt(rect.width * scale));
+        var height = Mathf.Max(1, Mathf.RoundToInt(rect.height * scale));
+        var previous = RenderTexture.active;
+        var target = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
+        Texture2D? result = null;
+        try
+        {
+            Graphics.Blit(
+                source,
+                target,
+                new Vector2(rect.width / source.width, rect.height / source.height),
+                new Vector2(rect.x / source.width, rect.y / source.height)
+            );
+            RenderTexture.active = target;
+            result = new Texture2D(width, height, TextureFormat.RGBA32, false);
+            result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            result.Apply();
+            return result;
+        }
+        catch
+        {
+            if (result)
+                Destroy(result);
+            throw;
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(target);
         }
     }
 }

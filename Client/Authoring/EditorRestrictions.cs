@@ -41,23 +41,8 @@ internal static class EditorRestrictions
         commands.Remove(ECommand.Escape);
         if (!RaidEditor.AiPlaytestActive)
             commands.RemoveAll(c => !MovementCommands.Contains(c.ToString()));
-        else if (RaidEditor.MissionTestActive)
-            // The quick mission owns a disposable raid state, so native loot
-            // and inventory interactions are safe to exercise in this mode.
-            // Escape is still filtered above; RaidEditor consumes it to return
-            // to the editor and restore the source character.
-            return;
-        else
-            // Combat rehearsal does not transfer items into native world containers.
-            // Weapon, reload, quick-slot and medical controls remain native.
-            commands.RemoveAll(c =>
-                c
-                    is ECommand.BeginInteracting
-                        or ECommand.EndInteracting
-                        or ECommand.BeginSpecialInteracting
-                        or ECommand.EndSpecialInteracting
-                        or ECommand.ToggleInventory
-            );
+        // Playtests use temporary equipment and must retain native inventory,
+        // looting, weapon, medical and interaction commands.
     }
 
     internal static void Enable()
@@ -91,8 +76,8 @@ internal static class EditorRestrictions
         Patch(typeof(ActiveHealthController), nameof(ActiveHealthController.ChangeHydration), nameof(NoDrain));
         Patch(typeof(Stamina), nameof(Stamina.Consume), nameof(NoConsumption));
         Patch(typeof(LocalGame), nameof(LocalGame.Stop), nameof(Stop));
-        Patch(typeof(EFT.UI.InventoryScreen), nameof(EFT.UI.InventoryScreen.Show), nameof(NoAction));
-        Patch(typeof(EftGamePlayerOwner), nameof(EftGamePlayerOwner.ShowInventoryScreenLoot), nameof(NoAction));
+        Patch(typeof(EFT.UI.InventoryScreen), nameof(EFT.UI.InventoryScreen.Show), nameof(InventoryAllowed));
+        Patch(typeof(EftGamePlayerOwner), nameof(EftGamePlayerOwner.ShowInventoryScreenLoot), nameof(InventoryAllowed));
         Patch(typeof(Player), nameof(Player.SetInventoryOpened), nameof(InventoryOpened));
         Patch(typeof(TarkovApplication), nameof(TarkovApplication.ShowSessionResult), nameof(ReturnHome));
         Patch(typeof(TimerPanel), nameof(TimerPanel.UpdateTimer), nameof(NoAction));
@@ -158,7 +143,9 @@ internal static class EditorRestrictions
 
     private static bool NoAction() => !EditorMode.Active || MissionGameplayActive;
 
-    private static bool InventoryOpened(bool opened) => !EditorMode.Active || MissionGameplayActive || !opened;
+    private static bool InventoryAllowed() => !EditorMode.Active || RaidEditor.AiPlaytestActive;
+
+    private static bool InventoryOpened(bool opened) => InventoryAllowed() || !opened;
 
     private static bool MissionGameplayActive => RaidEditor.MissionTestActive && RaidEditor.AiPlaytestActive;
 

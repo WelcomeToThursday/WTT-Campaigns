@@ -36,6 +36,7 @@ internal sealed class EditorPreviewPlayer
 
     internal async Task Equip(CancellationToken token)
     {
+        using var loading = UI.NativeLoadingStatus.Begin("Preparing playtest equipment…");
         var payload = JsonConvert.SerializeObject(new EditorPreviewGearRequest { SessionId = EditorMode.SessionId });
         var response =
             JsonConvert.DeserializeObject<EditorPreviewGearResponse>(

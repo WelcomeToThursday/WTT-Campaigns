@@ -47,10 +47,101 @@ internal static class EncounterHookChecks
         CheckPatrolCoverage(client);
         CheckPatrolFacing(native, client);
         CheckHealthInterceptionCoverage(client);
+        CheckSceneNavigation(gameRoot, client);
+        CheckNativeSpawnPreflight(native, client);
+        CheckOwnedCores(native, client);
 
         Console.WriteLine(
             "Encounter hooks: installed native activation, preactivation, world registration, SAIN and BigBrain surfaces verified offline."
         );
+    }
+
+    private static void CheckOwnedCores(AssemblyDefinition native, AssemblyDefinition client)
+    {
+        EncounterCoreChecks.Run();
+        var lease = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterCorePoints");
+        foreach (var method in lease.Methods.Where(m => m.HasBody))
+        foreach (var reference in method.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>())
+            if (reference.DeclaringType.FullName is "AICorePoint" or "AICorePointHolder" or "AICoversData")
+                RequireMethod(
+                    RequireType(native, reference.DeclaringType.FullName),
+                    reference.Name,
+                    reference.ReturnType.FullName,
+                    reference.Parameters.Select(p => p.ParameterType.FullName).ToArray()
+                );
+        var prepare = RequireMethod(lease, "Prepare");
+        Require(
+            Calls(prepare, "get_HasIdentity") && Calls(prepare, "get_PublishedLayoutConfirmed"),
+            "Local cores require authenticated runtime scope"
+        );
+        Require(Calls(prepare, "HasStandingClearance") && Calls(prepare, "IsOnNavMesh"), "A local core cannot legalize an invalid spawn");
+        Require(
+            Calls(prepare, "ClearConnections") && Calls(prepare, "SetIds") && Calls(prepare, "AddCorePoint"),
+            "Local cores initialize native graph identity before use"
+        );
+        var dispose = RequireMethod(lease, "Dispose");
+        Require(
+            Calls(dispose, "Remove") && Calls(dispose, "Destroy") && Calls(dispose, "SetActive"),
+            "Local core cleanup removes registry ownership and disables scene objects"
+        );
+        var coordinator = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNative");
+        var reset = RequireMethod(coordinator, "Reset");
+        var instructions = reset.Body.Instructions;
+        var removeBots = instructions.First(i => i.Operand is MethodReference m && m.Name == "DisposeOwnedBot");
+        var removeCores = instructions.First(i =>
+            i.Operand is MethodReference m && m.DeclaringType.FullName == lease.FullName && m.Name == "Dispose"
+        );
+        Require(
+            instructions.IndexOf(removeBots) < instructions.IndexOf(removeCores),
+            "Bot teardown precedes removal of their core identities"
+        );
+        Console.WriteLine("Mission cores: island planning, unique identities, native registration and cleanup contracts passed offline.");
+    }
+
+    private static void CheckNativeSpawnPreflight(AssemblyDefinition native, AssemblyDefinition client)
+    {
+        var holder = RequireType(native, "AICorePointHolder");
+        RequireMethod(holder, "GetAllTestObjects", "System.Collections.Generic.List`1<AICorePoint>", "System.Boolean");
+        RequireMethod(holder, "GetAnyPointToConnect", "AICorePoint", "UnityEngine.Vector3");
+        var coordinator = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNative");
+        var begin = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<BeginAsync>")).Methods.Single(m => m.Name == "MoveNext");
+        Require(Calls(begin, "ValidateNativeSpawns"), "Native connectivity must fail during preparation before waves start");
+        var resolve = RequireMethod(coordinator, "TryResolveNativeSpawn");
+        var refresh = resolve.Body.Instructions.Single(i => i.Operand is MethodReference m && m.Name == "GetAllTestObjects");
+        Require(refresh.Previous.OpCode == OpCodes.Ldc_I4_0, "Native spawn lookup must refresh the current map holder");
+        Require(Calls(resolve, "GetAnyPointToConnect"), "Native two-way connectivity must remain mandatory");
+        Require(
+            Calls(RequireMethod(coordinator, "ValidateNativeSpawns"), "get_SpawnPointIds"),
+            "Preflight must check assigned spawns only"
+        );
+        Console.WriteLine("Native spawn preflight: current-map holder and strict connectivity contracts verified offline.");
+    }
+
+    private static void CheckSceneNavigation(string gameRoot, AssemblyDefinition client)
+    {
+        using var ai = AssemblyDefinition.ReadAssembly(
+            Path.Combine(gameRoot, "EscapeFromTarkov_Data", "Managed", "UnityEngine.AIModule.dll")
+        );
+        var obstacle = RequireType(ai, "UnityEngine.AI.NavMeshObstacle");
+        var navigation = RequireType(client, "WTT.Campaigns.Client.Authoring.SceneNavigation");
+        var constructor = RequireMethod(navigation, ".ctor");
+        var references = constructor
+            .Body.Instructions.Select(i => i.Operand)
+            .OfType<MethodReference>()
+            .Where(m => m.DeclaringType.FullName == obstacle.FullName)
+            .ToArray();
+        Require(references.Length > 0, "Authored scenery must configure native navigation obstacles");
+        foreach (var reference in references)
+            RequireMethod(
+                obstacle,
+                reference.Name,
+                reference.ReturnType.FullName,
+                reference.Parameters.Select(p => p.ParameterType.FullName).ToArray()
+            );
+        var follower = RequireType(client, "WTT.Campaigns.Client.Authoring.SceneNavigationFollower");
+        Require(Calls(RequireMethod(follower, "Sync"), "get_activeInHierarchy"), "Hidden scenery must stop carving");
+        Require(Calls(RequireMethod(navigation, "Dispose"), "SetActive"), "Navigation cuts must disable before deferred destruction");
+        Console.WriteLine("Scene navigation: carving APIs resolve against installed Unity; hide and disposal contracts passed offline.");
     }
 
     private static void CheckActivationReadiness(AssemblyDefinition native, AssemblyDefinition client)

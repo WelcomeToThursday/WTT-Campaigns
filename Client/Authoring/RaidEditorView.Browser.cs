@@ -24,7 +24,10 @@ internal sealed partial class RaidEditorView
     {
         var parent = Element("LibraryScroll");
         _paged = new ScrollView();
+        EditorScrollStyle.Apply(_paged);
         _paged.style.flexGrow = 1;
+        _paged.style.minHeight = 0;
+        _paged.style.flexBasis = 0;
         parent.Add(_paged);
         for (var i = 0; i < 10; i++)
         {
@@ -74,7 +77,7 @@ internal sealed partial class RaidEditorView
                 row.RegisterCallback<PointerEnterEvent>(_ =>
                 {
                     if (row.userData is EditorTreeNode node)
-                        Windows.ShowTooltip("", node.Path);
+                        Windows.ShowTooltip("", node.Path, row);
                 });
                 row.RegisterCallback<PointerLeaveEvent>(_ => Windows.HideTooltip());
                 return row;
@@ -91,6 +94,9 @@ internal sealed partial class RaidEditorView
             },
         };
         _tree.style.flexGrow = 1;
+        _tree.style.minHeight = 0;
+        _tree.style.flexBasis = 0;
+        EditorScrollStyle.Apply(_tree.Q<ScrollView>());
         parent.Add(_tree);
         _tree.style.display = DisplayStyle.None;
         _tree.selectionChanged += selection =>

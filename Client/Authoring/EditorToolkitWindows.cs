@@ -11,6 +11,7 @@ internal sealed partial class EditorToolkitWindows
     private readonly Dictionary<string, EditorWindowPlacement> _panels = new();
     private readonly Dictionary<string, string> _tips = new();
     private readonly Label _tooltip = new() { pickingMode = PickingMode.Ignore, enableRichText = false };
+    private VisualElement? _tooltipAnchor;
     private string _selection = "",
         _category = "";
     private bool _walkthrough,
@@ -71,6 +72,7 @@ internal sealed partial class EditorToolkitWindows
         );
         _tooltip.AddToClassList("editor-tooltip");
         _view.Document.Content.Add(_tooltip);
+        _tooltip.RegisterCallback<GeometryChangedEvent>(_ => PlaceTooltip());
         HideTooltip();
         ResetLayout();
     }
@@ -138,27 +140,61 @@ internal sealed partial class EditorToolkitWindows
             _view.Element(id).pickingMode = PickingMode.Position;
     }
 
-    internal void ShowTooltip(string id, string fallback)
+    internal void ShowTooltip(string id, string fallback, VisualElement? anchor = null)
     {
         if (_walkthrough || _view.IsVisible("ConflictShield"))
             return;
         var text = _tips.GetValueOrDefault(id, fallback);
         if (string.IsNullOrWhiteSpace(text))
+        {
+            HideTooltip();
             return;
+        }
+        _tooltipAnchor = anchor ?? _view.Element(id);
         _tooltip.text = text;
+        _tooltip.style.maxWidth = Math.Min(360, _view.Document.Width - 16);
+        _tooltip.style.visibility = Visibility.Hidden;
         _tooltip.style.display = DisplayStyle.Flex;
         _tooltip.BringToFront();
-        PlaceTooltip();
     }
 
     private void PlaceTooltip()
     {
-        var p = _view.Document.Pointer;
-        _tooltip.style.left = Mathf.Clamp(p.x + 14, 8, _view.Document.Width - 368);
-        _tooltip.style.top = Mathf.Clamp(p.y + 20, 8, _view.Document.Height - Math.Max(50, _tooltip.resolvedStyle.height) - 8);
+        if (_tooltip.style.display.value == DisplayStyle.None)
+            return;
+        if (_tooltipAnchor?.panel == null)
+        {
+            HideTooltip();
+            return;
+        }
+        var size = _tooltip.layout.size;
+        if (!float.IsFinite(size.x) || !float.IsFinite(size.y) || size.x <= 0 || size.y <= 0)
+            return;
+        // Element bounds and the tooltip parent share panel coordinates. Using
+        // the measured width avoids reserving 360px for a short toolbar hint.
+        var parent = _view.Document.Content;
+        var min = parent.WorldToLocal(_tooltipAnchor.worldBound.min);
+        var max = parent.WorldToLocal(_tooltipAnchor.worldBound.max);
+        var position = EditorTooltipPlacement.Place(
+            min.x,
+            max.x,
+            min.y,
+            max.y,
+            size.x,
+            size.y,
+            _view.Document.Width,
+            _view.Document.Height
+        );
+        _tooltip.style.left = position.X;
+        _tooltip.style.top = position.Y;
+        _tooltip.style.visibility = Visibility.Visible;
     }
 
-    internal void HideTooltip() => _tooltip.style.display = DisplayStyle.None;
+    internal void HideTooltip()
+    {
+        _tooltipAnchor = null;
+        _tooltip.style.display = DisplayStyle.None;
+    }
 
     internal void BrowseCategory() => ShowPanel("Library", true);
 

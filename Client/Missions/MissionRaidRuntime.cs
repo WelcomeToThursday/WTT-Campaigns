@@ -290,6 +290,7 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
             EncounterSpawnAdmissionGate.SetMissionContext(_missionContext);
             _scene = new MapSceneAdapter();
             _scene.ApplyMission(descriptor.Layout);
+            await MapSceneAdapter.WaitForNavigationAsync(lifetime.Token);
             EnsureStartupWorld();
             _loot = new MissionLoot();
             await _loot.ApplyAsync(descriptor.Layout, run.RunId, lifetime.Token);

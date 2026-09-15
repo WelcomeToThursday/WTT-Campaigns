@@ -14,6 +14,14 @@ internal static class UiCompatibilityChecks
         {
             count += value ? 1 : throw new InvalidOperationException(description);
         }
+        var raidLoadingScreen = types["EFT.UI.Matchmaker.MatchmakerTimeHasCome"];
+        Check(
+            raidLoadingScreen.Methods.Any(m => m.Name == "ChangeStatus" && m.Parameters.Count == 2
+                && m.Parameters[0].Name == "status" && m.Parameters[0].ParameterType.FullName == "System.String"
+                && m.Parameters[1].Name == "progress" && m.Parameters[1].ParameterType.FullName == "System.Nullable`1<System.Single>")
+                && raidLoadingScreen.Methods.Any(m => m.Name == "OnDestroy" && m.Parameters.Count == 0),
+            "Campaign loading captions preserve the native status, progress and screen destruction contracts"
+        );
         Check(
             types["EFT.ObjectsFactory"]
                 .Methods.Any(m =>
@@ -269,8 +277,14 @@ internal static class UiCompatibilityChecks
             Check(
                 preparePreview.IndexOf("ApplyAsync") >= 0
                     && preparePreview.IndexOf("ApplyAsync") < preparePreview.IndexOf("Equip")
-                    && !preparePreview.Contains("Apply"),
+                    && preparePreview.IndexOf("Apply") > preparePreview.IndexOf("Equip"),
                 "Mission and AI preview wait for scene preparation before equipping the player"
+            );
+            var previewLootCalls = AsyncBody(editor.FullName, "BeginAiPreview")
+                .Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().ToList();
+            Check(
+                previewLootCalls.Any(m => m.DeclaringType.FullName == "WTT.Campaigns.Client.Missions.MissionLoot" && m.Name == "ApplyAsync"),
+                "Playable AI previews create native collectable loot after preparing the scene"
             );
             var missionLootCalls = AsyncBody("WTT.Campaigns.Client.Missions.MissionLoot", "ApplyAsync")
                 .Body.Instructions.Select(i => i.Operand)

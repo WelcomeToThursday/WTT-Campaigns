@@ -31,7 +31,7 @@ public static class EditorHomeComposition
     {
         new Element("Panel", "HomeFrame", "", 100, 60, 1080, 600),
         new Element("Panel", "HomeTitleBar", "", 100, 60, 1080, 40),
-        new Element("Text", "EditorTitle", "WTT / CAMPAIGNS — CAMPAIGN EDITOR", 114, 64, 690, 32, 21),
+        new Element("Text", "EditorTitle", "WTT / CAMPAIGNS — CAMPAIGN EDITOR · BETA", 114, 64, 790, 32, 21),
         new Element("Button", "EditorStartup", "STARTUP: NORMAL", 916, 66, 250, 28),
         new Element("Text", "DraftHeading", "CAMPAIGN DRAFT", 124, 124, 292, 28, 20),
         new Element("Button", "EditorDraft", "SELECT DRAFT", 124, 164, 292, 38),

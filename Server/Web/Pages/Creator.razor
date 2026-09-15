@@ -7,13 +7,13 @@
 @inject SeasonRepository Repository
 @inject SeasonContentService Content
 
-<PageTitle>Campaign Creator</PageTitle>
-<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=061-trader-portraits" /></HeadContent>
+<PageTitle>Campaign Creator · Beta</PageTitle>
+<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=080-editor-beta" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
 <main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
     <header class="creator-header">
-        <div><h1><span class="app-mark" aria-hidden="true">C</span>Campaign Creator</h1><p>Create and publish campaigns. Each campaign character chooses its own campaign.</p><a href="/wtt-campaigns/creator/traders">Open standalone trader editor →</a></div>
+        <div><h1><span class="app-mark" aria-hidden="true">C</span>Campaign Creator <span class="editor-beta">BETA</span></h1><p>Create and publish campaigns. Each campaign character chooses its own campaign.</p><a href="/wtt-campaigns/creator/traders">Open standalone trader editor →</a></div>
         <div class="row"><a class="button subtle" href="/wtt-campaigns/docs">Documentation</a><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
     </header>
     @if (_showHelp) { <CreatorHelp HasDraft="@(_draft != null)" Navigate="OpenGuideSection" StartTutorial="StartTutorial" Close="@(() => _showHelp = false)" /> }

@@ -163,17 +163,29 @@ internal sealed class EditorImage : EditorControl
     internal Texture? texture
     {
         get => ((Image)Element).image;
-        set => ((Image)Element).image = value;
+        set
+        {
+            if (texture != value)
+                ((Image)Element).image = value;
+        }
     }
     internal Rect uvRect
     {
         get => ((Image)Element).uv;
-        set => ((Image)Element).uv = value;
+        set
+        {
+            if (uvRect != value)
+                ((Image)Element).uv = value;
+        }
     }
     internal Color color
     {
         get => ((Image)Element).tintColor;
-        set => ((Image)Element).tintColor = value;
+        set
+        {
+            if (color != value)
+                ((Image)Element).tintColor = value;
+        }
     }
 }
 

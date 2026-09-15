@@ -491,7 +491,8 @@ public sealed class EditorMode : MonoBehaviour
             if (_home)
                 _home!.Close();
             Plugin.LogInfo("Editor loading: entering native map load for " + _map);
-            await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
+            using (UI.NativeLoadingStatus.Begin("Opening Campaign Editor…"))
+                await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
             Plugin.LogInfo("Editor loading: native map load completed");
             if (!Plugin.InRaid)
                 throw new InvalidOperationException("Map loading did not create an editor world.");

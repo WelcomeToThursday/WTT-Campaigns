@@ -33,5 +33,28 @@ internal static class ScenePreviewChecks
         cache.Abandon("pending");
         check(cache.Request("pending"), "Pruned page request can be queued again");
         check(released.Count == 4 && released.Distinct().Count() == 4, "Clear and stale completion release all owned results once");
+
+        var pages = new ScenePreviewCache<string>(64, _ => { });
+        for (var i = 0; i < 64; i++)
+            pages.Complete(pages.Generation, "old" + i, "image" + i, "old0");
+        for (var page = 0; page < 10; page++)
+        {
+            for (var row = 0; row < 10; row++)
+            {
+                var key = page + ":" + row;
+                pages.Complete(pages.Generation, key, "image" + key, "old0");
+                pages.Fail(pages.Generation, "error" + key, "Unavailable");
+            }
+            check(pages.Get("old0") != null, "Paging preserves the selected thumbnail");
+            for (var row = 0; row < 10; row++)
+            {
+                var key = page + ":" + row;
+                check(pages.Get(key) != null && !pages.Request(key), "Full cache retains every newly rendered page row without retrying");
+                check(
+                    pages.Error("error" + key) == "Unavailable" && !pages.Request("error" + key),
+                    "Full error cache retains the current page failures without retrying"
+                );
+            }
+        }
     }
 }

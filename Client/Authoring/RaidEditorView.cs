@@ -131,6 +131,7 @@ internal sealed partial class RaidEditorView : IDisposable
                 DismissDropdowns();
         });
         var list = new ScrollView();
+        EditorScrollStyle.Apply(list);
         list.AddToClassList("editor-choice-menu");
         var rect = choice.Element.worldBound;
         list.style.left = Mathf.Clamp(rect.x, 8, Document.Width - 308);
@@ -189,6 +190,8 @@ internal sealed partial class RaidEditorView : IDisposable
     }
 
     internal void HideRoute() => _routeOverlay.style.display = DisplayStyle.None;
+
+    internal void InspectNavigation(bool enabled) => _routeOverlay.InspectNavigation = enabled;
 
     public void Dispose()
     {

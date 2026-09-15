@@ -58,6 +58,7 @@ internal sealed partial class RaidEditorView
                 break;
             case "scroll":
                 element = new ScrollView();
+                EditorScrollStyle.Apply((ScrollView)element);
                 element.style.flexGrow = 1;
                 element.style.minHeight = 0;
                 control = new EditorControl(element);
@@ -70,7 +71,12 @@ internal sealed partial class RaidEditorView
         Register(node.Id, control);
         parent.Add(element);
         if (node.Kind == "row")
+        {
             element.AddToClassList("editor-actions");
+            element.style.flexShrink = 0;
+        }
+        if (node.Kind == "input")
+            element.style.flexShrink = 0;
         if (node.Kind == "group")
             element.AddToClassList("editor-group");
         if (node.Id.EndsWith("Axes"))
@@ -146,8 +152,44 @@ internal sealed partial class RaidEditorView
         Element("CameraSpeed").style.flexGrow = 0;
         Element("CategoryRail").AddToClassList("editor-grid");
         Element("CreationTools").AddToClassList("editor-grid");
+        Visible("AiTools", false);
+        // Keep the tree usable even on short windows: tools have their own bounded scroll area.
+        var aiToolsScroll = new ScrollView();
+        Register("AiToolsScroll", new EditorControl(aiToolsScroll));
+        EditorScrollStyle.Apply(aiToolsScroll);
+        aiToolsScroll.style.maxHeight = 260;
+        aiToolsScroll.style.flexShrink = 1;
+        var aiTools = Element("AiTools");
+        var aiParent = aiTools.parent;
+        var aiIndex = aiParent.IndexOf(aiTools);
+        aiParent.Insert(aiIndex, aiToolsScroll);
+        aiToolsScroll.Add(aiTools);
+        Visible("AiToolsScroll", false);
+        foreach (
+            var id in new[]
+            {
+                "AiCreateSection",
+                "AiNavigationSection",
+                "AiPreviewSection",
+                "AiTriggerSection",
+                "AiWaveSection",
+                "AiRosterSection",
+                "AiAssignmentSection",
+                "AiPatrolSection",
+            }
+        )
+        {
+            Element(id).style.marginTop = 8;
+            Element(id).style.paddingTop = 6;
+            Element(id).style.borderTopWidth = 1;
+            Element(id).style.borderTopColor = new Color(.35f, .35f, .32f, .6f);
+            Element(id).style.flexShrink = 0;
+        }
         Element("LibraryScroll").style.flexGrow = 1;
-        Element("LibraryScroll").style.minHeight = 70;
+        Element("LibraryScroll").style.flexShrink = 1;
+        Element("LibraryScroll").style.flexBasis = 0;
+        Element("LibraryScroll").style.minHeight = 0;
+        Element("LibraryScroll").style.overflow = Overflow.Hidden;
         foreach (var id in new[] { "WindowsMenu", "ContextMenu" })
         {
             Element(id).AddToClassList("editor-menu");

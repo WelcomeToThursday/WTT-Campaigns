@@ -58,6 +58,7 @@ internal sealed class EncounterPreviewRuntime
         string encounterToken = ""
     )
     {
+        using var loading = UI.NativeLoadingStatus.Begin("Preparing campaign AI…");
         if (_lifetime != null || _ended)
             throw new InvalidOperationException("Create a fresh encounter runtime for every preview.");
         if (!context.HasIdentity || (!context.IsPreview && context.Mode != EncounterRuntimeModes.Mission))

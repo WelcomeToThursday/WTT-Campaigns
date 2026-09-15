@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\Client\Authoring\EditorLayoutSpec.cs" Link="Client\EditorLayoutSpec.cs" />
+    <Compile Include="..\Client\Encounters\EncounterCorePlan.cs" Link="Client\EncounterCorePlan.cs" />
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
     <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
     <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
@@ -42,6 +43,7 @@
     <Compile Include="..\Client\Authoring\ScenePropSupport.cs" Link="Client\ScenePropSupport.cs" />
     <Compile Include="..\Client\Authoring\SceneSelectionEdit.cs" Link="Client\SceneSelectionEdit.cs" />
     <Compile Include="..\Client\Authoring\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />
+    <Compile Include="..\Client\Authoring\EditorTooltipPlacement.cs" Link="Client\EditorTooltipPlacement.cs" />
     <Compile Include="..\Client\Authoring\SceneObjectIndex.cs" Link="Client\SceneObjectIndex.cs" />
     <Compile Include="..\Client\Authoring\EditorRenderSize.cs" Link="Client\EditorRenderSize.cs" />
     <Compile Include="..\Client\Authoring\EditorTiming.cs" Link="Client\EditorTiming.cs" />

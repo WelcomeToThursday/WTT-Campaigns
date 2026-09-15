@@ -24,6 +24,9 @@ internal sealed class RouteOverlay : VisualElement
     private long _captionRevision = long.MinValue;
     private MapLayout? _aiDescriptorLayout;
     private long _aiDescriptorRevision = long.MinValue;
+    private readonly NavigationInspection _navigation = new();
+    internal bool InspectNavigation;
+    private readonly Label _navigationLegend = new();
 
     internal RouteOverlay()
     {
@@ -31,6 +34,18 @@ internal sealed class RouteOverlay : VisualElement
         style.position = Position.Absolute;
         style.left = style.right = style.top = style.bottom = 0;
         generateVisualContent += context => Populate(context, -1);
+        _navigationLegend.pickingMode = PickingMode.Ignore;
+        _navigationLegend.style.position = Position.Absolute;
+        _navigationLegend.style.left = 16;
+        _navigationLegend.style.bottom = 48;
+        _navigationLegend.style.maxWidth = 620;
+        _navigationLegend.style.whiteSpace = WhiteSpace.Normal;
+        _navigationLegend.style.backgroundColor = new Color(.025f, .03f, .035f, .9f);
+        _navigationLegend.style.color = Color.white;
+        _navigationLegend.style.paddingLeft = _navigationLegend.style.paddingRight = 10;
+        _navigationLegend.style.paddingTop = _navigationLegend.style.paddingBottom = 6;
+        _navigationLegend.style.display = DisplayStyle.None;
+        Add(_navigationLegend);
     }
 
     internal static Color RoleColor(RouteRole role)
@@ -82,6 +97,16 @@ internal sealed class RouteOverlay : VisualElement
             );
         foreach (var point in _aiPoints)
             AddMarker(point.Point, point.Role, point.Selection == selected, point.Caption, camera, near, ref labelIndex);
+        _navigationLegend.style.display = InspectNavigation ? DisplayStyle.Flex : DisplayStyle.None;
+        if (InspectNavigation)
+        {
+            _navigation.Refresh(layout, selected);
+            _navigationLegend.text = _navigation.Summary;
+            foreach (var segment in _navigation.Segments)
+                AddSegment(segment.From, segment.To, camera, near, segment.Color);
+            foreach (var point in _navigation.Points)
+                AddMarker(point.Point, RouteRole.Spawn, false, point.Caption, camera, near, ref labelIndex, point.Color);
+        }
         for (var i = labelIndex; i < _labels.Count; i++)
             _labels[i].style.display = DisplayStyle.None;
         var extra = (_markers.Count + BatchSize - 1) / BatchSize;
@@ -161,7 +186,8 @@ internal sealed class RouteOverlay : VisualElement
         string caption,
         Camera camera,
         float near,
-        ref int labelIndex
+        ref int labelIndex,
+        Color? tint = null
     )
     {
         var screen = camera.WorldToScreenPoint(ZoneRuntime.Vector(point.Position));
@@ -169,11 +195,11 @@ internal sealed class RouteOverlay : VisualElement
             return;
         if (!Local(screen, out var local))
             return;
-        _markers.Add((local, role, selected, RoleColor(role)));
+        _markers.Add((local, role, selected, tint ?? RoleColor(role)));
         var label = Label(labelIndex++);
         if (label.text != caption)
             label.text = caption;
-        label.style.color = RoleColor(role);
+        label.style.color = tint ?? RoleColor(role);
         label.style.left = Mathf.Clamp(local.x + 17, 4, Mathf.Max(4, contentRect.width - 144));
         label.style.top = Mathf.Clamp(local.y - 12, 4, Mathf.Max(4, contentRect.height - 24));
         label.style.display = DisplayStyle.Flex;
@@ -183,6 +209,11 @@ internal sealed class RouteOverlay : VisualElement
     {
         var a = ZoneRuntime.Vector(from.Position);
         var b = ZoneRuntime.Vector(to.Position);
+        AddSegment(a, b, camera, near, color);
+    }
+
+    private void AddSegment(Vector3 a, Vector3 b, Camera camera, float near, Color color)
+    {
         var az = Vector3.Dot(a - camera.transform.position, camera.transform.forward);
         var bz = Vector3.Dot(b - camera.transform.position, camera.transform.forward);
         if (!RouteVisuals.ClipNear(az, bz, near, out var start, out var end))

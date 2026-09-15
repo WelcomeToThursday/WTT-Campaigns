@@ -78,6 +78,9 @@ public sealed partial class RaidEditor
     }
 
     private bool AiWorkspace => _mode == "AI";
+    private bool _inspectAiNavigation;
+    private readonly List<string> _aiSpawnChoices = new();
+    private readonly List<string> _aiPatrolChoices = new();
 
     private void BindAiControls(RaidEditorView view)
     {
@@ -93,11 +96,39 @@ public sealed partial class RaidEditor
         view.Button("AiPlaytest", () => BeginAiPreview(true));
         view.Button("AiReset", EndAiPreview);
         view.Button("AiSimulate", SimulateSelectedAiEvent);
+        view.Button(
+            "AiNavigation",
+            () =>
+            {
+                _inspectAiNavigation = !_inspectAiNavigation;
+                RefreshAiWorkspace();
+            }
+        );
         view.Button("AiWaveWaitPrevious", ToggleAiWaveWait);
         view.Button("AiRosterRole", CycleAiRole);
         view.Button("AiRosterDifficulty", CycleAiDifficulty);
-        view.Button("AiRosterSpawnNext", CycleAiSpawnAssignment);
-        view.Button("AiRosterPatrolNext", CycleAiPatrolAssignment);
+        view.Dropdown(
+            "AiRosterSpawnNext",
+            index =>
+            {
+                var selected = AiSelected(out var kind);
+                if (kind != "roster" || selected.Roster == null || index <= 0 || index > _aiSpawnChoices.Count)
+                    return;
+                var ids = new List<string>(selected.Roster.SpawnPointIds);
+                var id = _aiSpawnChoices[index - 1];
+                if (!ids.Remove(id))
+                    ids.Add(id);
+                EditAiSpawnPoints(string.Join(",", ids));
+            }
+        );
+        view.Dropdown(
+            "AiRosterPatrolNext",
+            index =>
+            {
+                if (index >= 0 && index < _aiPatrolChoices.Count)
+                    EditAiRosterText("PatrolRouteId", _aiPatrolChoices[index]);
+            }
+        );
         view.Button("AiPace", CycleAiPace);
         view.Button("AiCompletion", CycleAiCompletion);
         view.Input("AiTriggerEventId", value => EditAiTriggerText("EventId", value));
@@ -766,6 +797,14 @@ public sealed partial class RaidEditor
         if (_view?.Valid != true)
             return;
         var visible = AiWorkspace;
+        _view.Visible("AiTools", visible);
+        _view.Visible("AiToolsScroll", visible);
+        _view.InspectNavigation(visible && _inspectAiNavigation);
+        _view.Caption("AiNavigation", "Inspect navigation: " + (_inspectAiNavigation ? "on" : "off"));
+        _view.Windows.SetTooltip(
+            "AiNavigation",
+            "Select a spawn to see nearby navigation samples, authored cuts, and its core connection. Local cores are created when preview starts."
+        );
         foreach (var name in RaidEditorAiView.CreationControls)
             _view.Visible(name, visible);
         if (!visible)
@@ -800,6 +839,11 @@ public sealed partial class RaidEditor
         var isRoute = kind == "route" && route != null;
         var isWaypoint = kind == "waypoint" && route != null;
         var isTrigger = kind == "trigger" && trigger?.Volume != null;
+        _view.Visible("AiTriggerSection", isEncounter);
+        _view.Visible("AiWaveSection", isWave);
+        _view.Visible("AiRosterSection", isRoster);
+        _view.Visible("AiAssignmentSection", isRoster);
+        _view.Visible("AiPatrolSection", isRoute || isWaypoint);
         _view.Visible("AiTriggerEventIdGroup", isEncounter && trigger?.Type == MapEncounterTrigger.Event);
         _view.Visible("AiTriggerZoneIdGroup", isEncounter && trigger?.Type == MapEncounterTrigger.PlayerEntry);
         _view.Visible("AiWaveDelaySecondsGroup", isWave);
@@ -808,8 +852,8 @@ public sealed partial class RaidEditor
         _view.Visible("AiRosterDifficultyGroup", isRoster);
         _view.Visible("AiRosterCountGroup", isRoster);
         _view.Visible("AiRosterSquadIdGroup", isRoster);
-        _view.Visible("AiRosterSpawnPointsGroup", isRoster);
-        _view.Visible("AiRosterPatrolRouteGroup", isRoster);
+        _view.Visible("AiRosterSpawnPointsGroup", false);
+        _view.Visible("AiRosterPatrolRouteGroup", false);
         _view.Visible("AiPaceGroup", isRoute);
         _view.Visible("AiCompletionGroup", isRoute);
         _view.Visible("AiWaypointWaitSecondsGroup", isWaypoint);
@@ -840,6 +884,7 @@ public sealed partial class RaidEditor
             _view.Value("AiRosterSquadId", roster.SquadId ?? "");
             _view.Value("AiRosterSpawnPoints", string.Join(", ", roster.SpawnPointIds ?? new()));
             _view.Value("AiRosterPatrolRoute", roster.PatrolRouteId ?? "");
+            RefreshAiAssignments(roster);
         }
         if (isRoute)
         {
@@ -877,13 +922,19 @@ public sealed partial class RaidEditor
                 "AiWaveWaitPrevious",
                 "AiRosterRole",
                 "AiRosterDifficulty",
-                "AiRosterSpawnNext",
-                "AiRosterPatrolNext",
                 "AiPace",
                 "AiCompletion",
             }
         )
             _view.Get<Button>(name).interactable = editable;
+        _view.Get<EditorChoice>("AiRosterSpawnNext").interactable = editable;
+        _view.Get<EditorChoice>("AiRosterPatrolNext").interactable = editable;
+        _view.Get<Button>("AiWave").interactable = editable && selected.Encounter != null;
+        _view.Get<Button>("AiRoster").interactable = editable && selected.Wave != null;
+        _view.Get<Button>("AiWaypoint").interactable = editable && selected.Route != null;
+        _view.Windows.SetTooltip("AiWave", "Select an encounter in the tree, then add a wave.");
+        _view.Windows.SetTooltip("AiRoster", "Select a wave in the tree, then add its bot roster.");
+        _view.Windows.SetTooltip("AiWaypoint", "Select a patrol route in the tree, then place a waypoint.");
         foreach (
             var name in new[]
             {
@@ -904,6 +955,47 @@ public sealed partial class RaidEditor
         _view.Text("Status", previewStatus);
         _view.Windows.SetTooltip("Status", previewStatus);
         RefreshAiRoutes();
+    }
+
+    private void RefreshAiAssignments(MapEncounterRosterEntry roster)
+    {
+        _aiSpawnChoices.Clear();
+        _aiPatrolChoices.Clear();
+        var spawns = new List<EditorChoice.OptionData> { new("Add / remove spawn…") };
+        var names = new List<string>();
+        foreach (var point in Layout!.SpawnPoints)
+        {
+            _aiSpawnChoices.Add(point.Id);
+            var assigned = roster.SpawnPointIds.Contains(point.Id);
+            var label = (_aiSpawnChoices.Count) + ". " + point.Name;
+            spawns.Add(new((assigned ? "✓ " : "+ ") + label));
+            if (assigned)
+                names.Add(label);
+        }
+        foreach (var id in roster.SpawnPointIds)
+            if (!_aiSpawnChoices.Contains(id))
+            {
+                _aiSpawnChoices.Add(id);
+                spawns.Add(new("Remove missing spawn: " + id));
+                names.Add("Missing spawn: " + id);
+            }
+        _view!.SetDropdown("AiRosterSpawnNext", spawns, 0);
+        _view.Text("AiAssignedSpawns", names.Count == 0 ? "No spawns assigned" : string.Join("\n", names));
+        var patrols = new List<EditorChoice.OptionData> { new("Patrol: none") };
+        _aiPatrolChoices.Add("");
+        foreach (var route in Layout.PatrolRoutes)
+        {
+            _aiPatrolChoices.Add(route.Id);
+            patrols.Add(new("Patrol: " + (_aiPatrolChoices.Count - 1) + ". " + route.Name));
+        }
+        var index = _aiPatrolChoices.IndexOf(roster.PatrolRouteId ?? "");
+        if (index < 0)
+        {
+            index = _aiPatrolChoices.Count;
+            _aiPatrolChoices.Add(roster.PatrolRouteId);
+            patrols.Add(new("Missing patrol: " + roster.PatrolRouteId));
+        }
+        _view.SetDropdown("AiRosterPatrolNext", patrols, index);
     }
 
     private void SetVectorFields(string group, SpatialVector? vector)

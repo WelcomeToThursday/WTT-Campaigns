@@ -64,6 +64,31 @@ internal static class PreviewNativeChecks
         )
             throw new InvalidOperationException("Preview Escape must be removed before either editor/playtest native input branch.");
 
+        var restrictions = filter.DeclaringType;
+        var inventoryGate = restrictions.Methods.Single(m => m.Name == "InventoryAllowed");
+        var gateCalls = inventoryGate.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().ToArray();
+        if (
+            !gateCalls.Any(m => m.Name == "get_AiPlaytestActive")
+            || gateCalls.Any(m => m.Name == "get_MissionTestActive" || m.Name == "get_MissionGameplayActive")
+            || instructions.Select(i => i.Operand).OfType<MethodReference>().Any(m => m.Name == "get_MissionTestActive")
+            || instructions.Count(i => i.Operand is MethodReference m && m.Name == "RemoveAll") != 1
+        )
+            throw new InvalidOperationException("Every playable AI preview must allow native inventory and interaction commands.");
+
+        var editor = client.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var reset = editor.Methods.Single(m => m.Name == "EndAiPreview" && m.Parameters.Count == 1);
+        var closeInventory = reset.Body.Instructions.Single(i => i.Operand is MethodReference m && m.Name == "ToggleScreen");
+        var cleanup = reset.Body.Instructions.First(i => i.Operand is MethodReference m && m.Name == "EndEditorMissionRoute");
+        if (closeInventory.Offset >= cleanup.Offset)
+            throw new InvalidOperationException("Preview reset must close native inventory before disposing its loot.");
+        var nativeClose = native.GetType("EFT.EftGamePlayerOwner").Methods.Single(m => m.Name == "CloseInventoryIfOpen");
+        var closeCall = (MethodReference)closeInventory.Operand;
+        if (!nativeClose.Body.Instructions.Any(i => i.Operand is MethodReference m
+            && m.Name == closeCall.Name
+            && m.DeclaringType.FullName == closeCall.DeclaringType.FullName
+            && m.Parameters.Count == closeCall.Parameters.Count))
+            throw new InvalidOperationException("Native inventory screen close contract changed.");
+
         var update = client.GetType("WTT.Campaigns.Client.Authoring.RaidEditor").Methods.Single(m => m.Name == "UpdateAiPreview");
         var failure = update.Body.Instructions.Single(i => i.Operand is MethodReference m && m.Name == "get_Failure");
         var handler = update.Body.ExceptionHandlers.Single(h => h.CatchType?.FullName == "System.Exception");

@@ -65,6 +65,20 @@ The selected object's bounds are outlined. Handles remain visible through scener
 
 Background synchronization does not disable ordinary scene-editing controls. Conflicts still block edits. Each completed handle drag makes one undo entry; Escape restores its starting transform. Unfinished text, panel positions, and inspector scrolling survive ordinary refreshes.
 
+Copied props, moved scenery, and applied mission barriers cut AI navigation around their solid colliders. The cuts follow position, rotation, and size changes and are removed when an edit is undone or the scene is released. Trigger volumes and placement ghosts do not cut navigation. AI preview and mission startup wait for the navigation update before checking routes.
+
+These cuts use a box for each collider; an irregular or hollow mesh can therefore block more space than its visible surface. Moving or hiding original map scenery cannot restore walkable ground that was absent from the map's baked navigation. Check container detours, narrow passages, and undo/redo in Observe or Playtest before publishing a layout.
+
+Assigned AI spawns must also have a complete route in both directions to an AI core point. Preview and mission preparation reuse native cores where reachable. For a valid isolated area, preparation creates one temporary native core per mutually reachable group of assigned spawns, with its own connection group. These cores remain registered until the owned bots finish cleanup and are removed on reset or mission teardown. They do not create walkable ground, bypass blocked spawn checks, or add baked tactical cover.
+
+### AI workspace and navigation inspection
+
+The AI browser separates **Build encounters**, **Navigation**, and **Test encounters**. Use the tree to select an encounter before adding a wave, a wave before adding a roster, and a patrol before adding waypoints. Properties show the selected record's activation, wave timing, bot roster, assignments, or patrol movement. Spawn assignments use a named add/remove menu, and patrol assignment uses a named dropdown.
+
+Select a spawn, then enable **Inspect navigation**. The overlay shows local navigation samples within 14 metres on either side at the spawn's elevation, nearby authored obstacle boxes, and the path toward a core. Green indicates walkable samples or a complete two-way core connection. Amber marks an isolated valid spawn that needs a local core and the authored obstacle boxes. Red indicates missing samples or a disconnected route; the red connector to an unreachable core is a diagnostic line, not a traversable path. Inspection is read-only and refreshes every two seconds. It does not triangulate the whole map, and samples at one elevation do not describe other floors.
+
+For live acceptance, test one assigned bot inside an enclosed area: inspect its spawn, start Observe, confirm a local core is logged and the bot follows its assigned patrol around containers, then reset and repeat. In Playtest, confirm combat can interrupt the patrol and that the bot resumes afterward. Also test a spawn connected to the original map, an invalid spawn, and map unload/reload. Offline checks verify planning and native APIs; they cannot establish live combat, path following, or Unity cleanup behavior.
+
 For manual acceptance after installing and restarting the game: hold and release buttons across several synchronization cycles; search and page while thumbnails load; retry a failed preview; place small loot and a large container; switch Center/Pivot and move, rotate, resize, cancel, undo, and redo; frame an object with an offset pivot; then unload and reopen the map. Confirm that previews, selection, and handles recover without stale objects. Offline rendering and assembly checks do not replace these in-game checks.
 
 ## Saving and recovery

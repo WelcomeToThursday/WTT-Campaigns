@@ -183,25 +183,95 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
         });
         var panel = new VisualElement();
         panel.AddToClassList("editor-modal");
+        panel.style.width = 500;
+        panel.style.maxWidth = Length.Percent(92);
+        panel.style.maxHeight = Length.Percent(85);
         shield.Add(panel);
-        panel.Add(new Button(() => DismissPicker()) { text = title + " / CLOSE" });
+        var header = new VisualElement();
+        header.style.flexDirection = FlexDirection.Row;
+        header.style.alignItems = Align.Center;
+        header.style.flexShrink = 0;
+        header.style.marginBottom = 12;
+        var heading = new Label(title) { enableRichText = false, pickingMode = PickingMode.Ignore };
+        heading.style.fontSize = 18;
+        heading.style.flexGrow = 1;
+        heading.style.flexShrink = 1;
+        heading.style.minWidth = 0;
+        heading.style.whiteSpace = WhiteSpace.Normal;
+        header.Add(heading);
+        var close = new Button(() => DismissPicker()) { text = "×", tooltip = "Close selection (Escape)" };
+        close.style.width = 32;
+        close.style.height = 32;
+        close.style.flexShrink = 0;
+        close.style.marginTop = close.style.marginBottom = close.style.marginRight = 0;
+        header.Add(close);
+        panel.Add(header);
         var rows = new List<(string Id, string Name)>();
         foreach (var choice in choices)
             rows.Add(choice);
         var list = new ListView
         {
             itemsSource = rows,
-            fixedItemHeight = 38,
+            fixedItemHeight = 44,
+            virtualizationMethod = CollectionVirtualizationMethod.FixedHeight,
             selectionType = SelectionType.Single,
-            makeItem = () => new Label { enableRichText = false },
+            makeItem = () =>
+            {
+                var row = new VisualElement();
+                row.style.flexDirection = FlexDirection.Row;
+                row.style.alignItems = Align.Center;
+                row.style.height = 40;
+                row.style.marginTop = row.style.marginBottom = 2;
+                row.style.paddingLeft = row.style.paddingRight = 10;
+                var marker = new Label { name = "selected", pickingMode = PickingMode.Ignore };
+                marker.style.width = 24;
+                marker.style.flexShrink = 0;
+                var name = new Label
+                {
+                    name = "name",
+                    enableRichText = false,
+                    pickingMode = PickingMode.Ignore,
+                };
+                name.style.flexGrow = 1;
+                name.style.minWidth = 0;
+                name.style.whiteSpace = WhiteSpace.NoWrap;
+                name.style.overflow = Overflow.Hidden;
+                name.style.textOverflow = TextOverflow.Ellipsis;
+                // Override the modal's generic list label padding so both
+                // labels share a centered baseline inside the fixed row.
+                foreach (var label in new[] { marker, name })
+                    label.style.paddingTop = label.style.paddingBottom = label.style.paddingLeft = label.style.paddingRight = 0;
+                row.Add(marker);
+                row.Add(name);
+                return row;
+            },
             bindItem = (element, index) =>
             {
-                ((Label)element).text = rows[index].Name;
-                element.EnableInClassList("editor-selected", rows[index].Id == selected);
+                var current = rows[index].Id == selected;
+                element.Q<Label>("name").text = rows[index].Name;
+                element.Q<Label>("selected").text = current ? "›" : "";
+                element.tooltip = rows[index].Name;
+                element.EnableInClassList("editor-selected", current);
             },
         };
-        list.style.height = Mathf.Min(460, _document.Height - 160);
+        list.style.height = Math.Min(8, rows.Count) * 44;
+        list.style.flexShrink = 1;
+        list.style.minHeight = 0;
+        EditorScrollStyle.Apply(list.Q<ScrollView>());
         panel.Add(list);
+        if (rows.Count == 0)
+        {
+            var empty = new Label("No choices available.");
+            empty.style.paddingTop = empty.style.paddingBottom = 12;
+            panel.Add(empty);
+        }
+        var selectedIndex = rows.FindIndex(row => row.Id == selected);
+        if (selectedIndex >= 0)
+        {
+            // Highlight the saved choice without preselecting the ListView;
+            // clicking that same choice must still select it and close.
+            list.schedule.Execute(() => list.ScrollToItem(selectedIndex));
+        }
         list.selectionChanged += items =>
         {
             foreach (var item in items)

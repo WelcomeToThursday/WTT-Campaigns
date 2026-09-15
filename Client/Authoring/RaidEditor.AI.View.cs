@@ -14,10 +14,16 @@ internal static class RaidEditorAiView
         "AiPlaytest",
         "AiReset",
         "AiSimulate",
+        "AiNavigation",
     };
 
     internal static readonly string[] InspectorGroups =
     {
+        "AiTriggerSection",
+        "AiWaveSection",
+        "AiRosterSection",
+        "AiAssignmentSection",
+        "AiPatrolSection",
         "AiTriggerGroup",
         "AiWaveWaitPreviousGroup",
         "AiRosterRoleGroup",

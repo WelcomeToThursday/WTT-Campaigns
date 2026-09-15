@@ -1,4 +1,5 @@
 /* Season Creator uses the SPT S.I.C. theme tokens supplied by BaseMudBlazorLayout. */
+.season-creator .editor-beta { display: inline-block; vertical-align: middle; margin-left: 8px; padding: 3px 7px; border: 1px solid var(--line); border-radius: 4px; font-size: 11px; line-height: 1.4; letter-spacing: .08em; font-weight: 700; color: var(--accent); }
 .trader-offer-workspace { min-width: 0; }
 .assort-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
 .assort-heading h2, .assort-heading h3 { margin: 10px 0 6px; }
