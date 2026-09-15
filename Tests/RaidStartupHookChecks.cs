@@ -6,6 +6,7 @@ internal static class RaidStartupHookChecks
 {
     internal static void Run(string gamePath, string clientPath)
     {
+        AuthoringRaidNotificationChecks.Run(gamePath, clientPath);
         using var spt = AssemblyDefinition.ReadAssembly(Path.Combine(gamePath, "BepInEx/plugins/spt/spt-custom.dll"));
         using var client = AssemblyDefinition.ReadAssembly(clientPath);
         var manager = spt.MainModule.GetType("SPT.Custom.Utils.DifficultyManager");
@@ -41,6 +42,27 @@ internal static class RaidStartupHookChecks
                 ),
                 name + " has a Harmony prefix"
             );
+            if (name == "RaidLoadRecoveryPatch")
+            {
+                var prefix = patch.Methods.Single(method => method.Name == "Prefix");
+                var postfix = patch.Methods.Single(method => method.Name == "Postfix");
+                Require(
+                    prefix.Body.Instructions.Any(instruction =>
+                        instruction.Operand is MethodReference call
+                        && call.Name == "get_MapLoadActive"
+                        && call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.EditorMode"
+                    ),
+                    "Raid load recovery captures editor map-load state before native startup"
+                );
+                Require(
+                    postfix.Body.Instructions.Any(instruction =>
+                        instruction.Operand is MethodReference call
+                        && call.Name == "SelectCleanup"
+                        && call.DeclaringType.FullName == "WTT.Campaigns.Client.Patches.Session.RaidLoadRecovery"
+                    ),
+                    "Raid load recovery preserves gameplay abort while routing editor failures to editor unload"
+                );
+            }
         }
         Console.WriteLine("Raid startup: installed SPT cache and compiled client hook contracts verified offline.");
     }

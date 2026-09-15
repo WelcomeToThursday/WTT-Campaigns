@@ -18,7 +18,7 @@ public sealed record Metadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMeta
     public string Name { get; init; } = "WTT-Campaigns";
     public string Author { get; init; } = "CJ, WTT";
     public List<string>? Contributors { get; init; }
-    public SemanticVersioning.Version Version { get; init; } = new("0.7.0");
+    public SemanticVersioning.Version Version { get; init; } = new("0.8.0");
     public Range SptVersion { get; init; } = new("4.1.x");
     public bool HasPrepatcher { get; init; }
     public List<string>? Incompatibilities { get; init; }

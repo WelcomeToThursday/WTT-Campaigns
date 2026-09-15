@@ -48,6 +48,8 @@ internal class StaminaConsumptionPatch(string methodName) : ModulePatch("WTT.Cam
 
     private static float ScaleConsumption(float value, Stamina stamina)
     {
+        if (Authoring.EditorMode.Active && value > 0)
+            return 0;
         if (!Plugin.SeasonalPlayer || value <= 0)
         {
             return value;

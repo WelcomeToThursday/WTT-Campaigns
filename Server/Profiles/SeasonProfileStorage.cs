@@ -151,6 +151,9 @@ public sealed class SeasonProfileStorage
     // Called only from patched SPT profile/backup methods, not from general filesystem operations.
     public static string Combine(string directory, string filename)
     {
+        var scratch = Editor.EditorSessions.ScratchPath(directory, filename);
+        if (scratch != null)
+            return scratch;
         if (
             Path.GetFullPath(directory)
                 .TrimEnd(Path.DirectorySeparatorChar)
@@ -169,6 +172,7 @@ public sealed class SeasonProfileStorage
     public static List<string> BackupFiles(FileUtil files, string directory, bool recursive, string searchPattern)
     {
         var result = files.GetFiles(directory, recursive, searchPattern);
+        result.RemoveAll(path => Editor.CampaignTestSessions.IsTest(Path.GetFileNameWithoutExtension(path).Split('-')[0]));
         if (Directory.Exists(DirectoryPath))
         {
             result.AddRange(

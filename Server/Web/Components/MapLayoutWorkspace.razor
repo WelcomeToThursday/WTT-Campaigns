@@ -1,0 +1,58 @@
+@using WTT.Campaigns.Shared.Seasons
+@using WTT.Campaigns.Shared.Spatial
+@using WTT.Campaigns.Server.Seasons
+
+<section class="editor-section">
+    <h3>Mission map layouts</h3>
+    <p>Open Campaign Editor from the game's main menu, select this draft, then open a map. Layouts are previewed only in Editor mode; they do not change ordinary raids.</p>
+    @if (_error.Length > 0) { <p class="validation-warning">@_error</p> }
+    @foreach (var map in Season.MapLayouts)
+    {
+        <details @key="map.Id">
+            <summary>@map.Name · @map.Location · @map.Checkpoints.Count checkpoints</summary>
+            <label>Name <input @bind="map.Name" @bind:after="Notify" /></label>
+            <p>@map.Objects.Count scenery edits · @map.Doors.Count doors · @map.Barriers.Count barriers · @ZoneLayoutRules.OwnedByLayout(Season.Zones, map.Id).Count() zones</p>
+            @foreach (var error in MapLayoutRules.Errors(map, true)) { <p class="validation-warning">@error</p> }
+            <p>Choose this layout in the client's Layouts tab, then use Scene, Routes, Zones or AI to edit its content.</p>
+            <EncounterInspection Layout="map" />
+            <button disabled="@(Raid?.Connected != true)" @onclick="() => Focus(map)">Edit in connected editor</button>
+            <button @onclick="() => Duplicate(map)">Duplicate layout</button>
+            <button class="danger" @onclick="() => Delete(map)">Delete layout</button>
+        </details>
+    }
+</section>
+
+@code {
+    [CascadingParameter] public WTT.Campaigns.Server.Web.Authoring.RaidEditorContext? Raid { get; set; }
+    [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private Task Focus(MapLayout map) => Raid?.Request(new WTT.Campaigns.Shared.Authoring.CaptureTask { Tool = "MapLayout", TargetKind = "MapLayout", TargetId = map.Id, RecordId = map.Id }) ?? Task.CompletedTask;
+    private string _error = "";
+    private Task Notify() => Changed.InvokeAsync();
+    private async Task Delete(MapLayout map)
+    {
+        if (!ZoneLayoutRules.TryDeleteLayout(Season, map.Id, out _error)) return;
+        await Notify();
+    }
+    private async Task Duplicate(MapLayout map)
+    {
+        var copy = SeasonCompiler.Copy(map);
+        var ids = MapLayoutRules.OwnedIds(copy).ToDictionary(id => id, _ => SeasonRepository.NewId());
+        WTT.Campaigns.Shared.Serialization.ModelGraph.Rewrite(copy, value => ids.TryGetValue(value, out var fresh) ? fresh : value);
+        copy.Name += " copy";
+        Season.MapLayouts.Add(copy);
+        try
+        {
+            Season.Zones.AddRange(ZoneLayoutRules.CopyOwnedZones(Season, map.Id, copy.Id));
+        }
+        catch (InvalidOperationException error)
+        {
+            Season.MapLayouts.Remove(copy);
+            _error = error.Message;
+            return;
+        }
+        Season.FormatVersion = Math.Max(Season.FormatVersion, MapLayoutRules.Format(Season.MapLayouts));
+        _error = "";
+        await Notify();
+    }
+}

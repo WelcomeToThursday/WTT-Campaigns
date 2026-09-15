@@ -16,6 +16,7 @@ public sealed class SeasonProfileStorageStartup(
 {
     public Task OnLoadAsync(CancellationToken cancellationToken)
     {
+        Editor.EditorSessions.ClearAbandonedFiles();
         save.Enable();
         load.Enable();
         remove.Enable();

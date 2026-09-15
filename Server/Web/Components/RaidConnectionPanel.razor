@@ -17,7 +17,7 @@
             </div>
             <details class="raid-connection-help">
                 <summary>How to connect</summary>
-                <p>Enable authoring in the game's WTT-Campaigns settings, enter a raid, then choose it here. Draft edits synchronize; publish when you're ready. Use Ctrl+F8 to open the editor in the raid.</p>
+                <p>Choose Campaign Editor in the game menu and select this draft to connect an editor map automatically. For ordinary raid captures, enable authoring in WTT-Campaigns settings, enter a raid, then choose it here. Draft edits synchronize; publish when you're ready. Use Ctrl+F8 to open the editor in the raid.</p>
             </details>
             @foreach (var c in _clients.Where(c => c.DraftId == Draft.Id))
             {

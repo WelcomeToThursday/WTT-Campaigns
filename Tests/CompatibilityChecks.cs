@@ -37,6 +37,54 @@ internal static class CompatibilityChecks
             "Raid recovery can read the server-issued raid identity"
         );
 
+        check(
+            Method("EFT.TarkovApplication", "LocalGameMatching").ReturnType.FullName == "System.Threading.Tasks.Task",
+            "Editor map loading retains native awaited lifecycle"
+        );
+        check(
+            Method("EFT.TarkovApplication", "ShowSessionResult").ReturnType.FullName == "System.Threading.Tasks.Task"
+                && Method("EFT.TarkovApplication", "ComebackToMainMenu").ReturnType.FullName == "System.Threading.Tasks.Task",
+            "Editor exit can bypass results while awaiting native scene cleanup"
+        );
+        check(Method("EFT.LocalGame", "Stop").Parameters.Count == 4, "Editor map exit uses native cleanup entry point");
+        foreach (var methodName in new[] { "UpdateTimer", "SetTimerText" })
+        {
+            var timer = Method("EFT.UI.BattleTimer.TimerPanel", methodName);
+            check(
+                timer.HasBody && !timer.IsStatic && timer.ReturnType.FullName == "System.Void",
+                "Editor timer gate target: " + methodName
+            );
+        }
+        var transitText = Method("EFT.UI.BattleTimer.TransitTimerPanel", "SetTimerText");
+        check(
+            transitText.Body.Instructions.Any(i =>
+                i.Operand is MethodReference call
+                && call.DeclaringType.FullName == "EFT.UI.BattleTimer.TimerPanel"
+                && call.Name == "SetTimerText"
+            ),
+            "Transit timer text reaches the gated base renderer"
+        );
+        check(
+            Method("EFT.Player", "Teleport").Parameters[0].ParameterType.FullName == "UnityEngine.Vector3",
+            "Walkthrough relocation uses native player teleport"
+        );
+        check(
+            Method("EFT.Interactive.WorldInteractiveObject", "SetInitialSyncState").Parameters.Count == 1,
+            "Editor door preview supports native state restoration"
+        );
+        foreach (var method in new[] { "ApplyDamage", "ChangeEnergy", "ChangeHydration", "ChangeHealth", "Kill" })
+            check(Method("EFT.HealthSystem.ActiveHealthController", method).HasBody, "Editor health restriction target exists: " + method);
+        foreach (
+            var method in new[] { "ActivateBotsByWave", "TryToSpawnInZoneAndDelay", "SpawnBotsInZoneOnPositions", "TrySpawnFreeAndDelay" }
+        )
+        {
+            var overloads = types["EFT.BotSpawner"].Methods.Where(m => m.Name == method).ToArray();
+            check(
+                overloads.Length > 0 && overloads.All(m => m.ReturnType.FullName is "System.Void" or "System.Threading.Tasks.Task"),
+                "Every editor bot gate overload has a supported completion: " + method
+            );
+        }
+
         foreach (var door in new[] { "EFT.Interactive.WorldInteractiveObject", "EFT.Interactive.KeycardDoor" })
         {
             var method = Method(door, "UnlockOperation");

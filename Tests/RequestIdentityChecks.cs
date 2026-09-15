@@ -10,11 +10,11 @@ internal static class RequestIdentityChecks
         const string character = "222222222222222222222222";
         const string otherCharacter = "333333333333333333333333";
         const string documents = "/wtt-campaigns/hub/raid-document";
-        HttpRequestMessage Create(string path, string? sessionId = character, bool shared = true)
+        HttpRequestMessage Create(string path, string? sessionId = character, bool shared = true, bool campaignTest = false)
         {
             var request = new HttpRequestMessage(HttpMethod.Post, "http://localhost" + path);
             request.Headers.Add("Cookie", "PHPSESSID=" + root);
-            RequestIdentity.Apply(shared, path, sessionId, request);
+            RequestIdentity.Apply(shared, path, sessionId, request, campaignTest);
             return request;
         }
         string Cookie(HttpRequestMessage request)
@@ -44,6 +44,10 @@ internal static class RequestIdentityChecks
                 "/wtt-campaigns/hub",
                 "/wtt-campaigns/hub/claim",
                 "/wtt-campaigns/hub/exchange",
+                "/wtt-campaigns/editor/status",
+                "/wtt-campaigns/editor/preview-gear",
+                "/wtt-campaigns/editor/encounter-profiles",
+                "/wtt-campaigns/editor/catalogue",
             }
         )
         {
@@ -57,5 +61,39 @@ internal static class RequestIdentityChecks
         using var switched = Create(documents, otherCharacter);
         check(Cookie(switched) == "PHPSESSID=" + otherCharacter, "New document requests follow a character switch");
         check(Cookie(pickup) == "PHPSESSID=" + character, "A character switch cannot retarget an existing request");
+        foreach (
+            var path in new[]
+            {
+                "/wtt-campaigns/snapshot",
+                "/wtt-campaigns/missions/list",
+                "/wtt-campaigns/missions/progress",
+                "/wtt-campaigns/raid-abort",
+                "/wtt-campaigns/hub",
+                "/client/quest/accept",
+                "/client/match/local/end",
+            }
+        )
+        {
+            using var request = Create(path, campaignTest: true);
+            check(Cookie(request) == "PHPSESSID=" + character, "Disposable campaign gameplay uses its own identity: " + path);
+        }
+        foreach (
+            var path in new[] { "/wtt-campaigns/editor/begin", "/wtt-campaigns/test-campaign/create", "/wtt-campaigns/test-campaign/end" }
+        )
+        {
+            using var request = Create(path, campaignTest: true);
+            check(Cookie(request) == "PHPSESSID=" + root, "Disposable campaign management keeps its authenticated owner: " + path);
+        }
+        using var missionLaunch = new HttpRequestMessage();
+        RequestIdentity.Apply(true, "/client/match/local/start", character, missionLaunch, missionRunId: "mission-run");
+        check(
+            missionLaunch.Headers.GetValues("X-WTT-Mission-Run").Single() == "mission-run",
+            "Explicit native mission launch carries its prepared run identity"
+        );
+        RequestIdentity.Apply(true, "/client/match/local/start", character, missionLaunch);
+        check(!missionLaunch.Headers.Contains("X-WTT-Mission-Run"), "Ordinary native launch clears any previous mission marker");
+        using var otherRoute = new HttpRequestMessage();
+        RequestIdentity.Apply(true, "/client/items", character, otherRoute, missionRunId: "mission-run");
+        check(!otherRoute.Headers.Contains("X-WTT-Mission-Run"), "Mission launch identity is not sent on unrelated requests");
     }
 }

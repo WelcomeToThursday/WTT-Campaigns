@@ -2,6 +2,7 @@ using Newtonsoft.Json;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Utils;
+using WTT.Campaigns.Server.Missions;
 using WTT.Campaigns.Server.Profiles;
 using WTT.Campaigns.Server.Seasons;
 
@@ -12,14 +13,16 @@ public sealed class SeasonRouter(
     JsonUtil json,
     SeasonService seasons,
     SeasonRepository repository,
-    WTT.Campaigns.Server.Story.StoryService story
-) : StaticRouter(json, Routes(json, seasons, repository, story))
+    WTT.Campaigns.Server.Story.StoryService story,
+    MissionService missions
+) : StaticRouter(json, Routes(json, seasons, repository, story, missions))
 {
     private static List<RouteAction> Routes(
         JsonUtil json,
         SeasonService s,
         SeasonRepository repository,
-        WTT.Campaigns.Server.Story.StoryService story
+        WTT.Campaigns.Server.Story.StoryService story,
+        MissionService missions
     )
     {
         return
@@ -35,7 +38,16 @@ public sealed class SeasonRouter(
                         repository,
                         async root =>
                         {
-                            await s.AbortRaid(root, r.CharacterId, r.OperationId, story.ResetSessionUnderLease);
+                            await s.AbortRaid(
+                                root,
+                                r.CharacterId,
+                                r.OperationId,
+                                async ownerRoot =>
+                                {
+                                    await story.ResetSessionUnderLease(ownerRoot);
+                                    await missions.AbandonSessionUnderLease(r.CharacterId, r.OperationId);
+                                }
+                            );
                             return new ServerSnapshot();
                         }
                     )

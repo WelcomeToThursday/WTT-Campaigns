@@ -23,6 +23,7 @@ internal static class PatchRegistration
         EnableItems();
         EnableHideout();
         EnableUi();
+        WTT.Campaigns.Client.UI.NativeLoadingStatus.Enable();
         new Story.StoryTraderPatch().Enable();
         new Story.StoryCollectiblePatch().Enable();
     }
@@ -33,6 +34,8 @@ internal static class PatchRegistration
         new SptRequestIdentity().Enable();
         new AuthoringNotificationSocket().Enable();
         new AuthoringNotificationReply().Enable();
+        new AuthoringRaidNotifications(nameof(TarkovApplication.LocalGameCreate)).Enable();
+        new AuthoringRaidNotifications(nameof(TarkovApplication.OnGameEnd)).Enable();
         new BotDifficultyFallbackPatch().Enable();
         new RaidLoadRecoveryPatch().Enable();
     }

@@ -7,12 +7,71 @@ internal static class UiCompatibilityChecks
     internal static void Run(string path, string? clientPath = null)
     {
         using var assembly = AssemblyDefinition.ReadAssembly(path);
+        PreviewNativeChecks.Run(assembly.MainModule);
         var types = assembly.MainModule.GetTypes().ToDictionary(type => type.FullName);
         var count = 0;
         void Check(bool value, string description)
         {
             count += value ? 1 : throw new InvalidOperationException(description);
         }
+        var raidLoadingScreen = types["EFT.UI.Matchmaker.MatchmakerTimeHasCome"];
+        Check(
+            raidLoadingScreen.Methods.Any(m =>
+                m.Name == "ChangeStatus"
+                && m.Parameters.Count == 2
+                && m.Parameters[0].Name == "status"
+                && m.Parameters[0].ParameterType.FullName == "System.String"
+                && m.Parameters[1].Name == "progress"
+                && m.Parameters[1].ParameterType.FullName == "System.Nullable`1<System.Single>"
+            ) && raidLoadingScreen.Methods.Any(m => m.Name == "OnDestroy" && m.Parameters.Count == 0),
+            "Campaign loading captions preserve the native status, progress and screen destruction contracts"
+        );
+        Check(
+            types["EFT.ObjectsFactory"]
+                .Methods.Any(m =>
+                    m.Name == "CreateItemAsync"
+                    && m.IsPublic
+                    && m.Parameters.Count == 6
+                    && m.ReturnType.FullName == "System.Threading.Tasks.Task`1<UnityEngine.GameObject>"
+                ),
+            "Scene models use the native asynchronous item factory"
+        );
+        Check(
+            types["EFT.ObjectsFactory"]
+                .Methods.Any(m =>
+                    m.Name == "LoadBundlesAndCreatePools"
+                    && m.IsPublic
+                    && m.Parameters.Count == 6
+                    && m.Parameters[5].ParameterType.FullName == "System.Threading.CancellationToken"
+                ),
+            "Scene asset loading supports cancellation"
+        );
+        Check(
+            types["EFT.AssetsManager.AssetPoolObject"]
+                .Methods.Any(m =>
+                    m.Name == "ReturnToPool"
+                    && m.IsPublic
+                    && m.IsStatic
+                    && m.Parameters.Count == 2
+                    && m.Parameters[0].ParameterType.FullName == "UnityEngine.GameObject"
+                ),
+            "Scene cleanup returns native models to their pool"
+        );
+        foreach (var name in new[] { "StaticId", "TemplateId" })
+            Check(
+                types["EFT.Interactive.LootItem"].Fields.Any(f => f.Name == name && f.IsPublic && f.FieldType.FullName == "System.String"),
+                "Loose loot binding uses native " + name
+            );
+        Check(
+            types["EFT.Interactive.LootableContainer"]
+                .Methods.Any(m => m.Name == "get_Id" && m.IsPublic && m.ReturnType.FullName == "System.String"),
+            "Container binding uses native identity"
+        );
+        foreach (var name in new[] { "RegisterInCullingObject", "UnregisterFromCullingObject" })
+            Check(
+                types["EFT.Interactive.LootItem"].Methods.Any(m => m.Name == name && m.IsPublic && m.Parameters.Count == 0),
+                "Loot edits preserve native culling registration: " + name
+            );
         foreach (var name in new[] { "_buyTab", "_sellTab" })
         {
             Check(
@@ -131,6 +190,194 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            PreviewNativeChecks.CheckEscape(assembly.MainModule, client.MainModule);
+            EditorOpenChecks.Client(client, Check);
+            AiControlsChecks.Run(client, Check);
+            var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+            var geometry = editor.Methods.Single(m => m.Name == "GeometryInput");
+            Check(
+                geometry.Body.Instructions.Count(i =>
+                    i.Operand is MethodReference m && m.DeclaringType.Name == "ScenePicking" && m.Name == "Dispatch"
+                ) == 2,
+                "Ordinary clicks and armed picking both use Maps/Scene selection routing"
+            );
+            var pick = editor.Methods.Single(m => m.Name == "PickScene");
+            var calls = pick
+                .Body.Instructions.Where(i => i.Operand is MethodReference)
+                .Select(i => ((MethodReference)i.Operand).Name)
+                .ToList();
+            Check(
+                calls.IndexOf("EnterSceneSelection") >= 0 && calls.IndexOf("EnterSceneSelection") < calls.IndexOf("SelectSceneTarget"),
+                "A Maps world hit enters Scene before resolving its selection and inspector"
+            );
+            var row = editor.Methods.Single(m => m.Name == "SelectRow");
+            Check(
+                row.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "EnterSceneSelection"),
+                "Selecting a prop in the Maps library opens the unified object inspector"
+            );
+
+            foreach (
+                var (type, method, arguments) in new[]
+                {
+                    ("HotObject", "SyncPosition", 0),
+                    ("StencilShadow", "set_Bounds", 1),
+                    ("StaticDeferredDecalRenderer", "RegisterDecal", 2),
+                    ("StaticDeferredDecalRenderer", "UnregisterDecal", 2),
+                }
+            )
+                Check(
+                    types[type].Methods.Any(m => m.Name == method && m.IsPublic && m.Parameters.Count == arguments),
+                    "Original-prop movement uses the installed native render adapter: " + type + "." + method
+                );
+            var sceneAdapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.MapSceneAdapter");
+            var resolveCalls = sceneAdapter
+                .Methods.Single(m => m.Name == "Resolve")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                resolveCalls.Contains("FindTargetPath")
+                    && resolveCalls.Contains("Capture")
+                    && !resolveCalls.Contains("FindObjectsOfTypeAll"),
+                "Scene binding follows the saved hierarchy without a per-prop global scan and retains fingerprint validation"
+            );
+            var previewModelCalls = AsyncBody("WTT.Campaigns.Client.Authoring.SceneLootModel", "Create")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            foreach (var pose in new[] { "set_localPosition", "set_localRotation", "set_localScale" })
+                Check(
+                    previewModelCalls.IndexOf(pose) > previewModelCalls.IndexOf("SetParent")
+                        && previewModelCalls.IndexOf(pose) < previewModelCalls.IndexOf("get_bounds"),
+                    "Loot preview clears the pooled pose before measuring placement bounds: " + pose
+                );
+            var equipCalls = AsyncBody("WTT.Campaigns.Client.Authoring.EditorPreviewPlayer", "Equip")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                equipCalls.IndexOf("UncoverContent") > equipCalls.LastIndexOf("Replace"),
+                "Fresh preview gear receives native search knowledge after entering equipped slots"
+            );
+            var restoreGearCalls = AsyncBody("WTT.Campaigns.Client.Authoring.EditorPreviewPlayer", "Restore")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                restoreGearCalls.IndexOf("StopSearching") >= 0
+                    && restoreGearCalls.IndexOf("StopSearching") < restoreGearCalls.IndexOf("Replace")
+                    && restoreGearCalls.Contains("ForgetItem"),
+                "Preview reset stops active searches before removing their items and retires temporary search knowledge"
+            );
+            var preparePreview = AsyncBody(editor.FullName, "BeginAiPreview")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                preparePreview.IndexOf("ApplyAsync") >= 0
+                    && preparePreview.IndexOf("ApplyAsync") < preparePreview.IndexOf("Equip")
+                    && preparePreview.IndexOf("Apply") > preparePreview.IndexOf("Equip"),
+                "Mission and AI preview wait for scene preparation before equipping the player"
+            );
+            var previewLootCalls = AsyncBody(editor.FullName, "BeginAiPreview")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .ToList();
+            Check(
+                previewLootCalls.Any(m =>
+                    m.DeclaringType.FullName == "WTT.Campaigns.Client.Missions.MissionLoot" && m.Name == "ApplyAsync"
+                ),
+                "Playable AI previews create native collectable loot after preparing the scene"
+            );
+            var missionLootCalls = AsyncBody("WTT.Campaigns.Client.Missions.MissionLoot", "ApplyAsync")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .ToList();
+            var lootOwner = missionLootCalls.FindIndex(m =>
+                m.Name == ".ctor" && m.DeclaringType.FullName == "EFT.InventoryLogic.ItemController"
+            );
+            Check(
+                lootOwner >= 0
+                    && lootOwner < missionLootCalls.FindIndex(m => m.Name == "CreateLootPrefab")
+                    && lootOwner < missionLootCalls.FindIndex(m => m.Name == "CreateStaticLoot"),
+                "Mission loot receives a native root owner before prefab creation and world registration"
+            );
+            var prepareScene = AsyncBody(sceneAdapter.FullName, "ApplyAsync")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                prepareScene.IndexOf("Reconcile") >= 0
+                    && prepareScene.IndexOf("Reconcile") < prepareScene.IndexOf("get_Loading")
+                    && prepareScene.IndexOf("Delay") < prepareScene.IndexOf("Apply")
+                    && prepareScene.Count(m => m == "ThrowIfCancellationRequested") >= 2
+                    && prepareScene.Contains("GetResult"),
+                "Scene preparation starts model loads, awaits readiness with cancellation, and then validates the applied layout"
+            );
+            var scaleRestriction = sceneAdapter.Methods.Single(m => m.Name == "ScaleRestriction").Body.Instructions;
+            Check(
+                scaleRestriction.Any(i =>
+                    i.Operand is GenericInstanceMethod m
+                    && m.Name == "GetComponentsInChildren"
+                    && m.GenericArguments.Single().FullName == "UnityEngine.MeshCollider"
+                    && i.Previous.OpCode == Mono.Cecil.Cil.OpCodes.Ldc_I4_1
+                ),
+                "Resize checks every child collision mesh, including disabled children"
+            );
+            Check(
+                scaleRestriction.Any(i =>
+                    i.Operand is MethodReference m && m.DeclaringType.FullName == "UnityEngine.Mesh" && m.Name == "get_isReadable"
+                ),
+                "Resize eligibility uses native collision mesh readability"
+            );
+            Check(
+                editor
+                    .Methods.Single(m => m.Name == "CanTransformScene")
+                    .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "ScaleRestriction"),
+                "Resize handles and numeric properties share the collision restriction"
+            );
+            var reconcileCalls = sceneAdapter
+                .Methods.Single(m => m.Name == "Reconcile")
+                .Body.Instructions.Where(i => i.Operand is MethodReference)
+                .Select(i => ((MethodReference)i.Operand).Name)
+                .ToList();
+            var guard = reconcileCalls.IndexOf("ScaleRestriction");
+            foreach (var mutation in new[] { "CopyProp", "SetActive", "Pose", "WorldScale" })
+                Check(
+                    guard >= 0 && guard < reconcileCalls.IndexOf(mutation),
+                    "Saved or remote resize is checked before scene mutation: " + mutation
+                );
+            var original = sceneAdapter.NestedTypes.Single(t => t.Name == "Original");
+            var visualUpdates = original.Methods.Single(m => m.Name == "RefreshVisuals").Body.Instructions;
+            foreach (var name in new[] { "SyncPosition", "set_Bounds", "UnregisterDecal", "RegisterDecal" })
+                Check(visualUpdates.Any(i => i.Operand is MethodReference m && m.Name == name), "Moved originals refresh " + name);
+            var restore = original.Methods.Single(m => m.Name == "Restore").Body.Instructions;
+            foreach (var name in new[] { "set_localPosition", "set_localRotation" })
+                Check(
+                    restore.Any(i => i.Operand is MethodReference m && m.Name == name),
+                    "Scene restore preserves exact local transforms: " + name
+                );
+            Check(
+                editor
+                    .Methods.Single(m => m.Name == "LateUpdate")
+                    .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "FlushVisuals"),
+                "Render adapters receive the final anchored pose once per frame"
+            );
+            EditorHomeCompatibilityChecks.Run(assembly, client);
+            EditorRenderChecks.Native(assembly, client);
+            EditorEnvironmentChecks.Native(assembly, client);
+            EditorDiagnosticChecks.Native(assembly, client);
+            EditorMemoryChecks.Native(assembly, client);
+            EditorRouteChecks.Native(assembly, client);
+            EditorBarrierChecks.Native(assembly, client);
+            EditorLoadingChecks.Native(assembly, client);
+            EditorSceneVisibilityChecks.Native(assembly, client);
             var faceIcon = client
                 .MainModule.Resources.OfType<EmbeddedResource>()
                 .SingleOrDefault(r => r.Name == "WTT.Campaigns.Customization.face.png");

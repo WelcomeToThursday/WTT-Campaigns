@@ -71,7 +71,7 @@ public sealed partial class HubGameplay(
     private SptProfile Active(string root)
     {
         var id = seasons.EffectiveId(root);
-        if (id == root || !seasons.IsSeasonal(id))
+        if ((id == root && !seasons.IsEphemeral(id)) || !seasons.IsSeasonal(id))
         {
             throw new InvalidOperationException("Open the Campaign character to use the Battle Pass.");
         }
@@ -87,7 +87,7 @@ public sealed partial class HubGameplay(
     public void Initialize()
     {
         _runtimes = new();
-        foreach (var runtime in repository.Playable.Values)
+        foreach (var runtime in repository.OrdinaryPlayable())
         {
             var handler = new HubGameplay(seasons, saves, templates, traders, inventory, json, cloner, quests, repository);
             handler._manager = this;
@@ -95,6 +95,82 @@ public sealed partial class HubGameplay(
             _runtimes.Add(runtime.Definition.Id, handler);
         }
         _ready = true;
+    }
+
+    /// <summary>
+    /// Adds a frozen, disposable campaign runtime after normal startup. Full
+    /// campaign tests use the native hub/raid lifecycle, so their isolated
+    /// season must receive the same per-season handler as a published pack.
+    /// </summary>
+    public IDisposable RegisterIsolated(SeasonRuntimeSnapshot runtime)
+    {
+        if (_runtimes == null)
+            throw new InvalidOperationException("Campaign hub content is still loading.");
+        var id = runtime.Definition.Id;
+        lock (_runtimes)
+        {
+            if (_runtimes.ContainsKey(id))
+                throw new InvalidOperationException("This campaign hub runtime is already registered.");
+            var handler = new HubGameplay(seasons, saves, templates, traders, inventory, json, cloner, quests, repository)
+            {
+                _manager = this,
+            };
+            try
+            {
+                handler.InitializeRuntime(runtime);
+            }
+            catch
+            {
+                handler.RemoveIsolatedOffers();
+                throw;
+            }
+            _runtimes.Add(id, handler);
+            return new IsolatedRuntimeRegistration(this, id, handler);
+        }
+    }
+
+    private sealed class IsolatedRuntimeRegistration(HubGameplay owner, string id, HubGameplay handler) : IDisposable
+    {
+        private int _disposed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) == 0)
+            {
+                lock (owner._runtimes!)
+                {
+                    if (owner._runtimes!.TryGetValue(id, out var current) && ReferenceEquals(current, handler))
+                    {
+                        owner._runtimes.Remove(id);
+                        handler.RemoveIsolatedOffers();
+                    }
+                }
+            }
+        }
+    }
+
+    private void RemoveIsolatedOffers()
+    {
+        foreach (var target in _fallbackOffers)
+        {
+            if (!_offers.TryGetValue(target, out var assortment))
+                continue;
+            var ids = assortment.Items.Select(item => item.Id).ToHashSet();
+            foreach (var trader in traders.Values)
+            {
+                if (trader.Assort == null)
+                    continue;
+                trader.Assort.Items.RemoveAll(item => ids.Contains(item.Id));
+                foreach (var id in ids)
+                {
+                    trader.Assort.BarterScheme.Remove(id);
+                    trader.Assort.LoyalLevelItems.Remove(id);
+                }
+            }
+        }
+        _fallbackOffers.Clear();
+        _offers.Clear();
+        _offerIds.Clear();
     }
 
     private void InitializeRuntime(SeasonRuntimeSnapshot runtime)

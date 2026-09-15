@@ -15,6 +15,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
     private sealed class Connection
     {
         public AuthoringClient Client = new();
+        public string AutoDraft = "";
         public string Owner = "",
             Grant = "";
         public HashSet<string> NativeZoneIds = new(),
@@ -103,12 +104,12 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             }
 
             var c = matches[0];
-            if (task.TargetKind is not ("" or "Condition" or "Binding"))
+            if (task.TargetKind is not ("" or "Condition" or "Binding" or "MapLayout"))
             {
                 throw new InvalidOperationException("Unsupported capture destination.");
             }
 
-            if (task.Tool is not ("Zone" or "Object" or "Transform"))
+            if (task.Tool is not ("Zone" or "Object" or "Transform" or "MapLayout"))
             {
                 throw new InvalidOperationException("Unsupported capture tool.");
             }
@@ -118,6 +119,8 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 throw new InvalidOperationException("Finish or cancel pending captures first.");
             }
 
+            if (task.Tool == "MapLayout" && Editor.EditorSessionRegistry.Find(c.Client.CharacterId)?.Ready != true)
+                throw new InvalidOperationException("Open this map in Campaign Editor first.");
             c.Client.Tasks.RemoveAll(t => t.Status is "Completed" or "Cancelled");
             task.Id = Guid.NewGuid().ToString("N");
             task.Status = "Pending";
@@ -131,7 +134,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         {
             Expire();
             if (
-                r.Version != 1
+                r.Version is not (1 or 2 or 3 or 4)
                 || !Guid.TryParseExact(r.ClientId, "N", out _)
                 || !Guid.TryParseExact(r.RaidId, "N", out _)
                 || r.Location.Length is 0 or > 120
@@ -180,6 +183,12 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             prior.NativeZoneIds = r.NativeZoneIds.ToHashSet();
             prior.Scenes = r.Scenes.ToHashSet();
             prior.Client.LastSeen = UtcNow();
+            var editor = Editor.EditorSessionRegistry.Find(character);
+            if (editor != null && editor.Id == r.EditorSessionId && editor.Draft.Length > 0 && prior.AutoDraft != editor.Draft)
+            {
+                Connect(r.ClientId, editor.Draft);
+                prior.AutoDraft = editor.Draft;
+            }
             if (prior.Grant.Length == 0)
             {
                 return new();
@@ -217,7 +226,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         {
             Expire();
             if (
-                r.Version != 1
+                r.Version is not (1 or 2 or 3 or 4)
                 || !_clients.TryGetValue(r.ClientId, out var c)
                 || c.Owner != owner
                 || c.Client.CharacterId != character
@@ -277,7 +286,73 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 // Client writes only spatial authoring records and bindings. Other season settings stay on the server.
                 var proposed = Copy(baseline);
                 proposed.Zones = Copy(r.Definition.Zones);
+                if (!r.SupportsZoneLayouts)
+                {
+                    // Older raid authoring clients do not know LayoutId. Keep the server's
+                    // existing ownership when they round-trip a draft so a normal raid cannot
+                    // silently turn layout zones into Shared zones.
+                    foreach (var zone in proposed.Zones)
+                    {
+                        var original = baseline.Zones.FirstOrDefault(z => z.Id == zone.Id);
+                        if (!string.IsNullOrEmpty(original?.LayoutId) && string.IsNullOrEmpty(zone.LayoutId))
+                        {
+                            zone.LayoutId = original.LayoutId;
+                        }
+                    }
+                }
                 proposed.Captures = Copy(r.Definition.Captures);
+                if (
+                    r.Version >= 2
+                    && Editor.EditorSessionRegistry.Find(character) is { Ready: true } editor
+                    && editor.Id == r.EditorSessionId
+                )
+                {
+                    if (
+                        r.Version < 4
+                        && (
+                            baseline.MapLayouts.Any(MapLayoutRules.NeedsFormat6)
+                            || draft.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat6)
+                            || r.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat6)
+                        )
+                    )
+                        throw new InvalidOperationException("Update the client before editing layouts with AI encounters or patrols.");
+                    if (
+                        r.Version < 3
+                        && (
+                            baseline.MapLayouts.Any(MapLayoutRules.NeedsFormat5)
+                            || draft.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat5)
+                        )
+                    )
+                        throw new InvalidOperationException("Update the client before editing layouts with scene catalog records.");
+                    proposed.MapLayouts = Copy(r.Definition.MapLayouts);
+                    foreach (
+                        var layout in proposed.MapLayouts.Where(l =>
+                            !baseline.MapLayouts.Any(b => b.Id == l.Id && JToken.DeepEquals(JObject.FromObject(b), JObject.FromObject(l)))
+                        )
+                    )
+                    {
+                        if (layout.Location != c.Client.Location)
+                            throw new InvalidOperationException("Edit layouts on the connected map.");
+                        if (
+                            c.Scenes.Count > 0
+                            && (
+                                MapLayoutRules.Points(layout).Any(p => !c.Scenes.Contains(p.Scene))
+                                || layout.Doors.Any(d => !c.Scenes.Contains(d.Target.Scene))
+                            )
+                        )
+                            throw new InvalidOperationException("Layout targets must belong to loaded scenes.");
+                        var errors = MapLayoutRules.Errors(layout);
+                        if (errors.Count > 0)
+                            throw new InvalidOperationException(string.Join("\n", errors));
+                    }
+                    if (
+                        proposed.MapLayouts.Count > 128
+                        || proposed.MapLayouts.SelectMany(MapLayoutRules.OwnedIds).GroupBy(id => id).Any(g => g.Count() > 1)
+                    )
+                        throw new InvalidOperationException("Map layouts require unique record identities (at most 128 layouts).");
+                    if (proposed.MapLayouts.Count > 0)
+                        proposed.FormatVersion = Math.Max(proposed.FormatVersion, MapLayoutRules.Format(proposed.MapLayouts));
+                }
                 if (r.Definition.Story != null)
                 {
                     proposed.Story ??= new();
@@ -343,6 +418,12 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
 
     private static void Assign(SeasonDefinition s, CaptureTask task, string id, string map)
     {
+        if (task.Tool == "MapLayout")
+        {
+            if (task.TargetKind != "MapLayout" || task.RecordId != id || !s.MapLayouts.Any(l => l.Id == id && l.Location == map))
+                throw new InvalidOperationException("Open the layout on its map.");
+            return;
+        }
         if (task.TargetKind.Length == 0)
         {
             return;
@@ -418,6 +499,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                 // Captures may be saved before their salvage items are configured in the browser.
                 // Publishing still requires the complete salvage configuration.
                 var errors = SpatialRules.Errors(candidate, requireCompleteSalvage: false);
+                errors.AddRange(candidate.MapLayouts.SelectMany(l => MapLayoutRules.Errors(l)));
                 if (errors.Count > 0)
                 {
                     throw new InvalidOperationException(string.Join("\n", errors.Take(10)));

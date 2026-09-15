@@ -35,6 +35,8 @@ public class SpatialCapture
 
 public sealed class SeasonZone : SpatialCapture
 {
+    // Empty means Shared and keeps zones authored before layout ownership was introduced global.
+    public string LayoutId { get; set; } = "";
     public SalvageZoneSettings Salvage { get; set; } = new();
     public string Shape { get; set; } = "Box";
     public SpatialVector Size { get; set; } =
@@ -210,7 +212,9 @@ public static class SpatialRules
             }
         }
 
-        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion is not (2 or 3))
+        errors.AddRange(ZoneLayoutRules.Errors(season));
+
+        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7))
         {
             errors.Add("Spatial content requires campaign format 2 or later.");
         }

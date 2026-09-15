@@ -25,6 +25,11 @@ internal class BackendIdentity : ModulePatch
             Plugin.SessionId = Plugin.PendingSessionId;
             Plugin.LogInfo("WTT-Campaigns switch/save: opening the requested backend session.");
         }
+        if (Authoring.CampaignTestMode.PrepareBackend() || Authoring.EditorMode.PrepareBackend())
+        {
+            AccessTools.Field(typeof(TarkovApplication), "_cachedPhpSessionId").SetValue(__instance, Plugin.SessionId);
+            return;
+        }
         if (Plugin.SessionId == null)
         {
             var snapshot = JsonConvert.DeserializeObject<ClientSnapshot>(

@@ -17,7 +17,7 @@ New-Item -ItemType Directory -Path $oldClient,$oldServer,$source,$config,(Join-P
 [IO.File]::WriteAllText((Join-Path $oldServer 'creator/draft.json'), 'preserve authored content')
 [IO.File]::WriteAllText((Join-Path $config 'com.cj.seasonalperks.cfg'), 'preserve client settings')
 [IO.File]::WriteAllText((Join-Path $game 'SPT_Runtime/user/profiles/example.json'), 'preserve profiles')
-$paths = @('client/WTT-Campaigns.Client.dll','client/WTT-Campaigns.UI.dll','client/WTT-Campaigns.Shared.dll','server/WTT-Campaigns.Server.dll','server/WTT-Campaigns.Shared.dll','server/WTT-Campaigns.Server.deps.json','client/wtt_campaigns_ui.bundle','client/wtt_campaigns_raid_editor.bundle','client/wtt_campaigns_story_notifications.bundle')
+$paths = @('client/WTT-Campaigns.Client.dll','client/WTT-Campaigns.UI.dll','client/WTT-Campaigns.Shared.dll','server/WTT-Campaigns.Server.dll','server/WTT-Campaigns.Shared.dll','server/WTT-Campaigns.Server.deps.json','client/wtt_campaigns_ui.bundle','client/wtt_campaigns_editor_toolkit.bundle','client/wtt_campaigns_story_notifications.bundle')
 $manifest = Join-Path $fixture 'files.props'
 $document = [xml]'<Project><ItemGroup /></Project>'
 foreach ($path in $paths) {

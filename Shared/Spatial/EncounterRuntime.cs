@@ -1,0 +1,1057 @@
+namespace WTT.Campaigns.Shared.Spatial;
+
+public static class EncounterRuntimeModes
+{
+    public const string Preview = "Preview";
+    public const string Mission = "Mission";
+}
+
+/// <summary>Identity carried by every controlled encounter operation.</summary>
+public sealed class EncounterRuntimeContext
+{
+    public string SessionId { get; set; } = "";
+    public string RaidId { get; set; } = "";
+    public string LayoutId { get; set; } = "";
+    public long LayoutRevision { get; set; }
+    public string Mode { get; set; } = EncounterRuntimeModes.Preview;
+    public string PreviewGeneration { get; set; } = "";
+    public bool PublishedLayoutConfirmed { get; set; }
+
+    public bool IsPreview => string.Equals(Mode, EncounterRuntimeModes.Preview, StringComparison.Ordinal);
+
+    public bool HasIdentity =>
+        !string.IsNullOrWhiteSpace(SessionId)
+        && !string.IsNullOrWhiteSpace(RaidId)
+        && !string.IsNullOrWhiteSpace(LayoutId)
+        && !string.IsNullOrWhiteSpace(PreviewGeneration);
+
+    public bool Matches(EncounterRuntimeContext other)
+    {
+        return other != null
+            && string.Equals(SessionId, other.SessionId, StringComparison.Ordinal)
+            && string.Equals(RaidId, other.RaidId, StringComparison.Ordinal)
+            && string.Equals(LayoutId, other.LayoutId, StringComparison.Ordinal)
+            && LayoutRevision == other.LayoutRevision
+            && string.Equals(Mode, other.Mode, StringComparison.Ordinal)
+            && string.Equals(PreviewGeneration, other.PreviewGeneration, StringComparison.Ordinal)
+            && PublishedLayoutConfirmed == other.PublishedLayoutConfirmed;
+    }
+}
+
+/// <summary>A one-shot admission token for one generated profile and authored spawn point.</summary>
+public sealed class EncounterSpawnReservation
+{
+    internal EncounterSpawnReservation(
+        string token,
+        EncounterRuntimeContext context,
+        string encounterId,
+        string profileId,
+        string spawnPointId
+    )
+    {
+        Token = token;
+        SessionId = context.SessionId;
+        RaidId = context.RaidId;
+        LayoutId = context.LayoutId;
+        LayoutRevision = context.LayoutRevision;
+        Mode = context.Mode;
+        PreviewGeneration = context.PreviewGeneration;
+        PublishedLayoutConfirmed = context.PublishedLayoutConfirmed;
+        EncounterId = encounterId;
+        ProfileId = profileId;
+        SpawnPointId = spawnPointId;
+    }
+
+    public string Token { get; }
+    public string SessionId { get; }
+    public string RaidId { get; }
+    public string LayoutId { get; }
+    public long LayoutRevision { get; }
+    public string Mode { get; }
+    public string PreviewGeneration { get; }
+    public bool PublishedLayoutConfirmed { get; }
+    public string EncounterId { get; }
+    public string ProfileId { get; }
+    public string SpawnPointId { get; }
+}
+
+/// <summary>
+/// Admission is deliberately scoped to a generation, encounter and profile. It provides no global bot-spawn bypass.
+/// </summary>
+public sealed class EncounterSpawnAdmission
+{
+    private readonly object _gate = new();
+    private readonly Dictionary<string, EncounterSpawnReservation> _active = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _consumedTokens = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _invalidatedTokens = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _usedProfiles = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _usedSpawns = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _invalidatedContexts = new(StringComparer.Ordinal);
+
+    public bool CanActivate(EncounterRuntimeContext? context, out string error)
+    {
+        error = "";
+        if (context == null || !context.HasIdentity)
+        {
+            error = "Encounter runtime identity is incomplete.";
+            return false;
+        }
+
+        if (context.IsPreview)
+        {
+            return true;
+        }
+
+        if (string.Equals(context.Mode, EncounterRuntimeModes.Mission, StringComparison.Ordinal) && context.PublishedLayoutConfirmed)
+        {
+            return true;
+        }
+
+        error = "Mission encounter spawning requires a server-confirmed published layout.";
+        return false;
+    }
+
+    public bool TryReserve(
+        EncounterRuntimeContext context,
+        string encounterId,
+        string profileId,
+        string spawnPointId,
+        out EncounterSpawnReservation? reservation,
+        out string error
+    )
+    {
+        reservation = null;
+        if (!CanActivate(context, out error))
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(encounterId) || string.IsNullOrWhiteSpace(profileId) || string.IsNullOrWhiteSpace(spawnPointId))
+        {
+            error = "Encounter reservations require encounter, profile and spawn identities.";
+            return false;
+        }
+
+        var contextKey = ContextKey(context);
+        // A generated profile is single-use for the whole preview generation. A spawn anchor is
+        // reserved only until activation consumes its token; later finite waves may reuse it after
+        // their own runtime occupancy/death tracking releases the bot.
+        var profileKey = contextKey + "|profile|" + profileId;
+        var spawnKey = contextKey + "|spawn|" + spawnPointId;
+        lock (_gate)
+        {
+            if (_invalidatedContexts.Contains(contextKey))
+            {
+                error = "The encounter runtime generation has been invalidated.";
+                return false;
+            }
+
+            if (_usedProfiles.Contains(profileKey))
+            {
+                error = "A generated profile can be admitted only once for an encounter generation.";
+                return false;
+            }
+
+            if (_usedSpawns.Contains(spawnKey))
+            {
+                error = "An authored spawn point can be admitted only once for an encounter generation.";
+                return false;
+            }
+
+            var token = Guid.NewGuid().ToString("N");
+            reservation = new EncounterSpawnReservation(token, context, encounterId, profileId, spawnPointId);
+            _active[token] = reservation;
+            _usedProfiles.Add(profileKey);
+            _usedSpawns.Add(spawnKey);
+            error = "";
+            return true;
+        }
+    }
+
+    public bool TryReserve(
+        EncounterRuntimeContext context,
+        string encounterId,
+        string profileId,
+        string spawnPointId,
+        out EncounterSpawnReservation? reservation
+    )
+    {
+        return TryReserve(context, encounterId, profileId, spawnPointId, out reservation, out _);
+    }
+
+    public bool TryConsume(EncounterRuntimeContext context, EncounterSpawnReservation reservation, out string error)
+    {
+        error = "";
+        if (reservation == null || !Matches(context, reservation))
+        {
+            error = "The spawn reservation does not belong to this runtime context.";
+            return false;
+        }
+
+        lock (_gate)
+        {
+            if (_invalidatedTokens.Contains(reservation.Token))
+            {
+                error = "The spawn reservation was invalidated.";
+                return false;
+            }
+
+            if (_consumedTokens.Contains(reservation.Token) || !_active.Remove(reservation.Token))
+            {
+                error = "Spawn reservations are single-use.";
+                return false;
+            }
+
+            _consumedTokens.Add(reservation.Token);
+            _usedSpawns.Remove(ContextKey(context) + "|spawn|" + reservation.SpawnPointId);
+            return true;
+        }
+    }
+
+    public bool TryConsume(EncounterRuntimeContext context, EncounterSpawnReservation reservation)
+    {
+        return TryConsume(context, reservation, out _);
+    }
+
+    /// <summary>Cancel one reservation before activation. Invalidating a context is stronger and rejects late results.</summary>
+    public bool Cancel(EncounterRuntimeContext context, EncounterSpawnReservation reservation)
+    {
+        if (reservation == null || !Matches(context, reservation))
+        {
+            return false;
+        }
+
+        lock (_gate)
+        {
+            if (!_active.Remove(reservation.Token))
+            {
+                return false;
+            }
+
+            _invalidatedTokens.Add(reservation.Token);
+            _usedProfiles.Remove(ContextKey(context) + "|profile|" + reservation.ProfileId);
+            _usedSpawns.Remove(ContextKey(context) + "|spawn|" + reservation.SpawnPointId);
+            return true;
+        }
+    }
+
+    /// <summary>Invalidates every outstanding token for this exact runtime generation.</summary>
+    public int Invalidate(EncounterRuntimeContext context)
+    {
+        if (context == null)
+        {
+            return 0;
+        }
+
+        var key = ContextKey(context);
+        lock (_gate)
+        {
+            _invalidatedContexts.Add(key);
+            var tokens = _active.Values.Where(r => Matches(context, r)).Select(r => r.Token).ToArray();
+            foreach (var token in tokens)
+            {
+                _active.Remove(token);
+                _invalidatedTokens.Add(token);
+            }
+
+            return tokens.Length;
+        }
+    }
+
+    public int ActiveCount
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _active.Count;
+            }
+        }
+    }
+
+    public void Clear()
+    {
+        lock (_gate)
+        {
+            _active.Clear();
+            _consumedTokens.Clear();
+            _invalidatedTokens.Clear();
+            _usedProfiles.Clear();
+            _usedSpawns.Clear();
+            _invalidatedContexts.Clear();
+        }
+    }
+
+    private static bool Matches(EncounterRuntimeContext context, EncounterSpawnReservation reservation)
+    {
+        return context != null
+            && context.SessionId == reservation.SessionId
+            && context.RaidId == reservation.RaidId
+            && context.LayoutId == reservation.LayoutId
+            && context.LayoutRevision == reservation.LayoutRevision
+            && context.Mode == reservation.Mode
+            && context.PreviewGeneration == reservation.PreviewGeneration
+            && context.PublishedLayoutConfirmed == reservation.PublishedLayoutConfirmed;
+    }
+
+    private static string ContextKey(EncounterRuntimeContext context)
+    {
+        return string.Join(
+            "|",
+            context.SessionId,
+            context.RaidId,
+            context.LayoutId,
+            context.LayoutRevision,
+            context.Mode,
+            context.PreviewGeneration,
+            context.PublishedLayoutConfirmed ? "1" : "0"
+        );
+    }
+}
+
+public enum EncounterWaveStatus
+{
+    Pending,
+    Ready,
+    Generating,
+    Active,
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+public sealed class EncounterWaveRuntimeState
+{
+    internal EncounterWaveRuntimeState(int index, MapEncounterWave wave)
+    {
+        Index = index;
+        WaveId = wave.Id;
+        ExpectedBots = wave.Roster?.Where(r => r != null).Sum(r => Math.Max(r.Count, 0)) ?? 0;
+        Status = EncounterWaveStatus.Pending;
+    }
+
+    public int Index { get; }
+    public string WaveId { get; }
+    public int ExpectedBots { get; }
+    public EncounterWaveStatus Status { get; internal set; }
+    public string GenerationId { get; internal set; } = "";
+    public double? ActivatedAt { get; internal set; }
+    public double? CompletedAt { get; internal set; }
+    public string FailureReason { get; internal set; } = "";
+    public int ReservedBots { get; internal set; }
+    public int ActiveBots { get; internal set; }
+    public IReadOnlyCollection<string> ActiveProfileIds => _activeProfileIds;
+
+    private readonly HashSet<string> _activeProfileIds = new(StringComparer.Ordinal);
+
+    internal void AddActive(string profileId)
+    {
+        _activeProfileIds.Add(profileId);
+        ActiveBots = _activeProfileIds.Count;
+    }
+
+    internal bool RemoveActive(string profileId)
+    {
+        var removed = _activeProfileIds.Remove(profileId);
+        ActiveBots = _activeProfileIds.Count;
+        return removed;
+    }
+
+    internal void Clear()
+    {
+        _activeProfileIds.Clear();
+        ActiveBots = 0;
+        ReservedBots = 0;
+        GenerationId = "";
+        ActivatedAt = null;
+        CompletedAt = null;
+        FailureReason = "";
+        Status = EncounterWaveStatus.Pending;
+    }
+}
+
+public sealed class EncounterWaveReservation
+{
+    public EncounterWaveReservation(string rosterId, string profileId, string spawnPointId)
+    {
+        RosterId = rosterId;
+        ProfileId = profileId;
+        SpawnPointId = spawnPointId;
+    }
+
+    public string RosterId { get; }
+    public string ProfileId { get; }
+    public string SpawnPointId { get; }
+}
+
+/// <summary>Deterministic encounter trigger, generation and death-gated wave state.</summary>
+public sealed class EncounterWaveStateMachine
+{
+    private readonly MapEncounter _encounter;
+    private readonly List<EncounterWaveRuntimeState> _states;
+    private readonly Dictionary<int, List<EncounterWaveReservation>> _reservations = new();
+    private bool _activated;
+    private bool _halted;
+    private string _activationKey = "";
+    private double _activationTime;
+
+    public EncounterWaveStateMachine(MapEncounter encounter)
+    {
+        _encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
+        _states = (encounter.Waves ?? new()).Select((wave, index) => new EncounterWaveRuntimeState(index, wave)).ToList();
+    }
+
+    public MapEncounter Encounter => _encounter;
+    public bool IsActivated => _activated;
+    public bool IsFailed => _halted;
+    public IReadOnlyList<EncounterWaveRuntimeState> Waves => _states;
+
+    public bool TryActivate(string activationKey, double now, out string error)
+    {
+        error = "";
+        if (_activated)
+        {
+            error = "Encounter activation is already consumed for this run.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(activationKey) || !double.IsFinite(now))
+        {
+            error = "Encounter activation requires a key and finite time.";
+            return false;
+        }
+
+        if (_states.Count == 0)
+        {
+            error = "An encounter requires at least one wave.";
+            _halted = true;
+            return false;
+        }
+
+        _activated = true;
+        _activationKey = activationKey;
+        _activationTime = now;
+        return true;
+    }
+
+    public bool TryActivate(string activationKey, double now)
+    {
+        return TryActivate(activationKey, now, out _);
+    }
+
+    /// <summary>Returns each wave that is newly eligible and marks it Ready exactly once.</summary>
+    public IReadOnlyList<int> ReadyWaves(double now)
+    {
+        if (!_activated || _halted || !double.IsFinite(now))
+        {
+            return Array.Empty<int>();
+        }
+
+        var ready = new List<int>();
+        for (var index = 0; index < _states.Count; index++)
+        {
+            var state = _states[index];
+            if (state.Status != EncounterWaveStatus.Pending)
+            {
+                continue;
+            }
+
+            var wave = _encounter.Waves![index];
+            var due = index == 0 ? now >= _activationTime + wave.DelaySeconds : DueAfterPrevious(index, wave, now);
+            if (due)
+            {
+                state.Status = EncounterWaveStatus.Ready;
+                ready.Add(index);
+            }
+        }
+
+        return ready;
+    }
+
+    public bool TryBeginGeneration(int waveIndex, string generationId, out string error)
+    {
+        error = "";
+        if (!TryGetState(waveIndex, out var state))
+        {
+            error = "Unknown encounter wave.";
+            return false;
+        }
+
+        if (state.Status != EncounterWaveStatus.Ready)
+        {
+            error = "The encounter wave is not ready for generation.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(generationId) || _states.Any(s => s.GenerationId == generationId))
+        {
+            error = "Each wave generation requires a unique identity.";
+            return false;
+        }
+
+        state.Status = EncounterWaveStatus.Generating;
+        state.GenerationId = generationId;
+        state.ReservedBots = 0;
+        _reservations[waveIndex] = new();
+        return true;
+    }
+
+    public bool TryBeginGeneration(int waveIndex, string generationId)
+    {
+        return TryBeginGeneration(waveIndex, generationId, out _);
+    }
+
+    public bool TryReserveBot(int waveIndex, string generationId, string rosterId, string profileId, string spawnPointId, out string error)
+    {
+        error = "";
+        if (!TryGetState(waveIndex, out var state) || state.Status != EncounterWaveStatus.Generating)
+        {
+            error = "The encounter wave is not generating.";
+            return false;
+        }
+
+        if (!string.Equals(state.GenerationId, generationId, StringComparison.Ordinal))
+        {
+            error = "The generation identity is stale.";
+            return false;
+        }
+
+        var wave = _encounter.Waves![waveIndex];
+        var roster = wave.Roster?.FirstOrDefault(r => r != null && r.Id == rosterId);
+        if (roster == null)
+        {
+            error = "The profile roster entry is unknown.";
+            return false;
+        }
+
+        var reservations = _reservations[waveIndex];
+        if (reservations.Any(r => r.ProfileId == profileId || r.SpawnPointId == spawnPointId))
+        {
+            error = "Profiles and authored spawn points can be reserved only once per wave.";
+            return false;
+        }
+
+        if (reservations.Count(r => r.RosterId == rosterId) >= roster.Count)
+        {
+            error = "The roster count has already been reserved.";
+            return false;
+        }
+
+        if (roster.SpawnPointIds == null || !roster.SpawnPointIds.Contains(spawnPointId, StringComparer.Ordinal))
+        {
+            error = "The spawn point is not authored for this roster entry.";
+            return false;
+        }
+
+        reservations.Add(new EncounterWaveReservation(rosterId, profileId, spawnPointId));
+        state.ReservedBots = reservations.Count;
+        return true;
+    }
+
+    public bool TryReserveBot(int waveIndex, string generationId, EncounterWaveReservation reservation, out string error)
+    {
+        if (reservation == null)
+        {
+            error = "A wave reservation is required.";
+            return false;
+        }
+
+        return TryReserveBot(waveIndex, generationId, reservation.RosterId, reservation.ProfileId, reservation.SpawnPointId, out error);
+    }
+
+    public bool TryCommitGeneration(int waveIndex, string generationId, double now, out string error)
+    {
+        error = "";
+        if (!TryGetState(waveIndex, out var state) || state.Status != EncounterWaveStatus.Generating)
+        {
+            error = "The encounter wave is not generating.";
+            return false;
+        }
+
+        if (state.GenerationId != generationId)
+        {
+            error = "The generation identity is stale.";
+            return false;
+        }
+
+        var reservations = _reservations.GetValueOrDefault(waveIndex) ?? new();
+        var wave = _encounter.Waves![waveIndex];
+        var counts = reservations.GroupBy(r => r.RosterId).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+        var complete =
+            double.IsFinite(now)
+            && reservations.Count == state.ExpectedBots
+            && wave.Roster != null
+            && wave.Roster.All(r => r != null && counts.GetValueOrDefault(r.Id) == r.Count);
+        if (!complete)
+        {
+            FailGeneration(waveIndex, generationId, "Profile generation or authored spawn reservations were incomplete.");
+            error = state.FailureReason;
+            return false;
+        }
+
+        state.Status = EncounterWaveStatus.Active;
+        state.ActivatedAt = now;
+        state.CompletedAt = null;
+        foreach (var reservation in reservations)
+        {
+            state.AddActive(reservation.ProfileId);
+        }
+
+        return true;
+    }
+
+    public bool TryCommitGeneration(int waveIndex, string generationId, double now)
+    {
+        return TryCommitGeneration(waveIndex, generationId, now, out _);
+    }
+
+    public bool FailGeneration(int waveIndex, string generationId, string reason)
+    {
+        if (!TryGetState(waveIndex, out var state) || state.Status != EncounterWaveStatus.Generating || state.GenerationId != generationId)
+        {
+            return false;
+        }
+
+        state.Status = EncounterWaveStatus.Failed;
+        state.FailureReason = string.IsNullOrWhiteSpace(reason) ? "Encounter wave generation failed." : reason;
+        _halted = true;
+        return true;
+    }
+
+    public bool MarkBotDefeated(int waveIndex, string profileId, double now)
+    {
+        if (!TryGetState(waveIndex, out var state) || state.Status != EncounterWaveStatus.Active || !double.IsFinite(now))
+        {
+            return false;
+        }
+
+        if (!state.RemoveActive(profileId))
+        {
+            return false;
+        }
+
+        if (state.ActiveBots == 0)
+        {
+            state.Status = EncounterWaveStatus.Completed;
+            state.CompletedAt = now;
+        }
+
+        return true;
+    }
+
+    /// <summary>A missing or failed bot is never treated as a death-gated completion.</summary>
+    public bool MarkBotFailed(int waveIndex, string profileId, string reason)
+    {
+        if (
+            !TryGetState(waveIndex, out var state)
+            || state.Status != EncounterWaveStatus.Active
+            || !state.ActiveProfileIds.Contains(profileId)
+        )
+        {
+            return false;
+        }
+
+        state.Status = EncounterWaveStatus.Failed;
+        state.FailureReason = string.IsNullOrWhiteSpace(reason) ? "An encounter bot failed outside the death path." : reason;
+        _halted = true;
+        return true;
+    }
+
+    public void Cancel()
+    {
+        _halted = true;
+        foreach (
+            var state in _states.Where(s =>
+                s.Status
+                    is EncounterWaveStatus.Pending
+                        or EncounterWaveStatus.Ready
+                        or EncounterWaveStatus.Generating
+                        or EncounterWaveStatus.Active
+            )
+        )
+        {
+            state.Status = EncounterWaveStatus.Cancelled;
+        }
+    }
+
+    public void Reset()
+    {
+        _activated = false;
+        _halted = false;
+        _activationKey = "";
+        _activationTime = 0;
+        _reservations.Clear();
+        foreach (var state in _states)
+        {
+            state.Clear();
+        }
+    }
+
+    private bool DueAfterPrevious(int index, MapEncounterWave wave, double now)
+    {
+        var previous = _states[index - 1];
+        if (previous.Status is EncounterWaveStatus.Failed or EncounterWaveStatus.Cancelled || previous.ActivatedAt == null)
+        {
+            return false;
+        }
+
+        return wave.WaitForPreviousWave
+            ? previous.Status == EncounterWaveStatus.Completed
+                && previous.CompletedAt != null
+                && now >= previous.CompletedAt.Value + wave.DelaySeconds
+            : now >= previous.ActivatedAt.Value + wave.DelaySeconds;
+    }
+
+    private bool TryGetState(int index, out EncounterWaveRuntimeState state)
+    {
+        if (index >= 0 && index < _states.Count)
+        {
+            state = _states[index];
+            return true;
+        }
+
+        state = null!;
+        return false;
+    }
+}
+
+public enum PatrolBotControlState
+{
+    Unknown,
+    Eligible,
+    Combat,
+    Searching,
+    Recovery,
+}
+
+public sealed class PatrolBotSnapshot
+{
+    public string BotId { get; set; } = "";
+    public bool Alive { get; set; } = true;
+    public PatrolBotControlState ControlState { get; set; }
+    public SpatialVector Position { get; set; } = new();
+}
+
+public interface IPatrolNavigation
+{
+    bool CanReach(SpatialVector from, SpatialVector to);
+}
+
+public enum PatrolRuntimeStatus
+{
+    Inactive,
+    Moving,
+    Waiting,
+    Suspended,
+    Completed,
+    Failed,
+    Cancelled,
+}
+
+public enum PatrolSuspensionReason
+{
+    None,
+    UnknownState,
+    Combat,
+    Searching,
+    Recovery,
+    Unreachable,
+    NoSurvivors,
+}
+
+public sealed class PatrolMovementCommand
+{
+    public string BotId { get; internal set; } = "";
+    public int WaypointIndex { get; internal set; }
+    public SpatialVector Target { get; internal set; } = new();
+    public string Pace { get; internal set; } = MapPatrolRoute.Walk;
+}
+
+public sealed class PatrolUpdate
+{
+    public PatrolRuntimeStatus Status { get; internal set; }
+    public PatrolSuspensionReason SuspensionReason { get; internal set; }
+    public string LeaderId { get; internal set; } = "";
+    public bool LeaderChanged { get; internal set; }
+    public int TargetWaypointIndex { get; internal set; } = -1;
+    public IReadOnlyList<PatrolMovementCommand> Commands { get; internal set; } = Array.Empty<PatrolMovementCommand>();
+}
+
+/// <summary>Pure squad patrol ownership state. It emits movement only while every survivor is SAIN-eligible.</summary>
+public sealed class EncounterPatrolStateMachine
+{
+    private readonly MapPatrolRoute _route;
+    private readonly List<string> _orderedBotIds = new();
+    private int _targetWaypoint = -1;
+    private int _direction = 1;
+    private double? _waitUntil;
+    private string _leaderId = "";
+    private PatrolRuntimeStatus _status = PatrolRuntimeStatus.Inactive;
+    private PatrolSuspensionReason _reason;
+
+    public EncounterPatrolStateMachine(MapPatrolRoute route)
+    {
+        _route = route ?? throw new ArgumentNullException(nameof(route));
+    }
+
+    public MapPatrolRoute Route => _route;
+    public PatrolRuntimeStatus Status => _status;
+    public PatrolSuspensionReason SuspensionReason => _reason;
+    public string LeaderId => _leaderId;
+    public int TargetWaypointIndex => _targetWaypoint;
+
+    public bool Start(IEnumerable<string> orderedBotIds, out string error)
+    {
+        error = "";
+        _orderedBotIds.Clear();
+        _orderedBotIds.AddRange((orderedBotIds ?? Array.Empty<string>()).Where(id => !string.IsNullOrWhiteSpace(id)));
+        if (_orderedBotIds.Count == 0)
+        {
+            error = "A patrol requires at least one bot.";
+            _status = PatrolRuntimeStatus.Failed;
+            _reason = PatrolSuspensionReason.NoSurvivors;
+            return false;
+        }
+
+        if (_route.Waypoints == null || _route.Waypoints.Count < 2)
+        {
+            error = "A patrol requires at least two waypoints.";
+            _status = PatrolRuntimeStatus.Failed;
+            return false;
+        }
+
+        if (_orderedBotIds.Distinct(StringComparer.Ordinal).Count() != _orderedBotIds.Count)
+        {
+            error = "Patrol bot identities must be unique.";
+            _status = PatrolRuntimeStatus.Failed;
+            return false;
+        }
+
+        _targetWaypoint = -1;
+        _direction = 1;
+        _waitUntil = null;
+        _leaderId = "";
+        _status = PatrolRuntimeStatus.Inactive;
+        _reason = PatrolSuspensionReason.None;
+        return true;
+    }
+
+    public bool Start(IEnumerable<string> orderedBotIds)
+    {
+        return Start(orderedBotIds, out _);
+    }
+
+    public PatrolUpdate Update(IEnumerable<PatrolBotSnapshot> snapshots, double now, IPatrolNavigation navigation)
+    {
+        var result = new PatrolUpdate
+        {
+            Status = _status,
+            SuspensionReason = _reason,
+            TargetWaypointIndex = _targetWaypoint,
+        };
+        if (
+            !double.IsFinite(now)
+            || navigation == null
+            || _status is PatrolRuntimeStatus.Failed or PatrolRuntimeStatus.Completed or PatrolRuntimeStatus.Cancelled
+        )
+        {
+            return result;
+        }
+
+        var byId = (snapshots ?? Array.Empty<PatrolBotSnapshot>())
+            .Where(s => s != null && _orderedBotIds.Contains(s.BotId, StringComparer.Ordinal))
+            .GroupBy(s => s.BotId, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.Ordinal);
+        var survivors = _orderedBotIds
+            .Where(id => byId.TryGetValue(id, out var snapshot) && snapshot.Alive)
+            .Select(id => byId[id])
+            .ToArray();
+        if (survivors.Length == 0)
+        {
+            _status = PatrolRuntimeStatus.Failed;
+            _reason = PatrolSuspensionReason.NoSurvivors;
+            return Snapshot(result);
+        }
+
+        var leader = _orderedBotIds.FirstOrDefault(id => byId.TryGetValue(id, out var snapshot) && snapshot.Alive) ?? "";
+        var leaderChanged = leader != _leaderId;
+        _leaderId = leader;
+
+        var missing = _orderedBotIds.Any(id => !byId.ContainsKey(id));
+        var blocker =
+            missing ? PatrolSuspensionReason.UnknownState
+            : survivors.Any(s => s.ControlState == PatrolBotControlState.Combat) ? PatrolSuspensionReason.Combat
+            : survivors.Any(s => s.ControlState == PatrolBotControlState.Searching) ? PatrolSuspensionReason.Searching
+            : survivors.Any(s => s.ControlState == PatrolBotControlState.Recovery) ? PatrolSuspensionReason.Recovery
+            : survivors.Any(s => s.ControlState != PatrolBotControlState.Eligible) ? PatrolSuspensionReason.UnknownState
+            : PatrolSuspensionReason.None;
+        if (blocker != PatrolSuspensionReason.None)
+        {
+            _status = PatrolRuntimeStatus.Suspended;
+            _reason = blocker;
+            return Snapshot(result, leaderChanged);
+        }
+
+        var leaderSnapshot = byId[_leaderId];
+        if (_status == PatrolRuntimeStatus.Suspended || _status == PatrolRuntimeStatus.Inactive || _targetWaypoint < 0)
+        {
+            if (!TryNearestReachable(leaderSnapshot.Position, navigation, out _targetWaypoint))
+            {
+                _status = PatrolRuntimeStatus.Suspended;
+                _reason = PatrolSuspensionReason.Unreachable;
+                return Snapshot(result, leaderChanged);
+            }
+
+            _direction = 1;
+            _waitUntil = null;
+            _status = PatrolRuntimeStatus.Moving;
+            _reason = PatrolSuspensionReason.None;
+        }
+
+        if (_status == PatrolRuntimeStatus.Waiting)
+        {
+            if (_waitUntil != null && now < _waitUntil.Value)
+            {
+                return Snapshot(result, leaderChanged);
+            }
+
+            _status = PatrolRuntimeStatus.Moving;
+            _waitUntil = null;
+        }
+
+        if (_status != PatrolRuntimeStatus.Moving || _targetWaypoint < 0 || _targetWaypoint >= _route.Waypoints.Count)
+        {
+            return Snapshot(result, leaderChanged);
+        }
+
+        var target = _route.Waypoints[_targetWaypoint];
+        if (target == null || survivors.Any(s => !navigation.CanReach(s.Position, target.Position)))
+        {
+            _status = PatrolRuntimeStatus.Suspended;
+            _reason = PatrolSuspensionReason.Unreachable;
+            return Snapshot(result, leaderChanged);
+        }
+
+        _reason = PatrolSuspensionReason.None;
+        result.Commands = survivors
+            .Select(s => new PatrolMovementCommand
+            {
+                BotId = s.BotId,
+                WaypointIndex = _targetWaypoint,
+                Target = target.Position,
+                Pace = _route.Pace,
+            })
+            .ToArray();
+        return Snapshot(result, leaderChanged);
+    }
+
+    /// <summary>Advance only after the elected leader reaches the current target.</summary>
+    public bool AcknowledgeWaypoint(string botId, int waypointIndex, double now)
+    {
+        if (_status != PatrolRuntimeStatus.Moving || botId != _leaderId || waypointIndex != _targetWaypoint || !double.IsFinite(now))
+        {
+            return false;
+        }
+
+        var wait = _route.WaitSeconds is { Count: > 0 } waits && waypointIndex < waits.Count ? waits[waypointIndex] : 0;
+        var next = waypointIndex + _direction;
+        switch (_route.Completion)
+        {
+            case MapPatrolRoute.Loop:
+                next = (waypointIndex + 1) % _route.Waypoints.Count;
+                _direction = 1;
+                break;
+            case MapPatrolRoute.PingPong:
+                if (next >= _route.Waypoints.Count || next < 0)
+                {
+                    _direction *= -1;
+                    next = waypointIndex + _direction;
+                }
+                break;
+            case MapPatrolRoute.Stop:
+                if (waypointIndex == _route.Waypoints.Count - 1)
+                {
+                    _status = PatrolRuntimeStatus.Completed;
+                    _waitUntil = null;
+                    return true;
+                }
+                _direction = 1;
+                next = waypointIndex + 1;
+                break;
+            default:
+                _status = PatrolRuntimeStatus.Failed;
+                return false;
+        }
+
+        _targetWaypoint = next;
+        if (float.IsFinite(wait) && wait > 0)
+        {
+            _status = PatrolRuntimeStatus.Waiting;
+            _waitUntil = now + wait;
+        }
+        else
+        {
+            _status = PatrolRuntimeStatus.Moving;
+            _waitUntil = null;
+        }
+
+        return true;
+    }
+
+    public void Cancel()
+    {
+        _status = PatrolRuntimeStatus.Cancelled;
+        _reason = PatrolSuspensionReason.None;
+    }
+
+    public void Reset()
+    {
+        _targetWaypoint = -1;
+        _direction = 1;
+        _waitUntil = null;
+        _leaderId = "";
+        _status = PatrolRuntimeStatus.Inactive;
+        _reason = PatrolSuspensionReason.None;
+    }
+
+    private bool TryNearestReachable(SpatialVector position, IPatrolNavigation navigation, out int waypoint)
+    {
+        waypoint = -1;
+        if (position?.Finite != true || _route.Waypoints == null)
+        {
+            return false;
+        }
+
+        var best = float.PositiveInfinity;
+        for (var i = 0; i < _route.Waypoints.Count; i++)
+        {
+            var candidate = _route.Waypoints[i];
+            if (candidate?.Position?.Finite != true || !navigation.CanReach(position, candidate.Position))
+            {
+                continue;
+            }
+
+            var dx = position.X - candidate.Position.X;
+            var dy = position.Y - candidate.Position.Y;
+            var dz = position.Z - candidate.Position.Z;
+            var distance = dx * dx + dy * dy + dz * dz;
+            if (distance < best)
+            {
+                best = distance;
+                waypoint = i;
+            }
+        }
+
+        return waypoint >= 0;
+    }
+
+    private PatrolUpdate Snapshot(PatrolUpdate result, bool leaderChanged = false)
+    {
+        result.Status = _status;
+        result.SuspensionReason = _reason;
+        result.LeaderId = _leaderId;
+        result.LeaderChanged = leaderChanged;
+        result.TargetWaypointIndex = _targetWaypoint;
+        return result;
+    }
+}

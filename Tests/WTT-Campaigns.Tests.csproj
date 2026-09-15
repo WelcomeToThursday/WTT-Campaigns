@@ -5,23 +5,56 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Authoring\EditorLayoutSpec.cs" Link="Client\EditorLayoutSpec.cs" />
+    <Compile Include="..\Client\Encounters\EncounterCorePlan.cs" Link="Client\EncounterCorePlan.cs" />
+    <Compile Include="..\Client\Encounters\EncounterMovementPolicy.cs" Link="Client\EncounterMovementPolicy.cs" />
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
+    <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
+    <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
+    <Compile Include="..\Client\Authoring\EditorOpenState.cs" Link="Client\EditorOpenState.cs" />
+    <Compile Include="..\Client\Authoring\RaidEditorAiTree.cs" Link="Client\RaidEditorAiTree.cs" />
+    <Compile Include="..\Client\Authoring\EditorLibraryTrees.cs" Link="Client\EditorLibraryTrees.cs" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />
     <PackageReference Include="Markdig" Version="1.3.2" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
-    <PackageReference Include="SPTarkov.DI" Version="4.1.0" />
-    <PackageReference Include="SPTarkov.Server.Core" Version="4.1.0" />
+    <PackageReference Include="SPTushonka.DI" Version="$(SptPackageVersion)" />
+    <PackageReference Include="SPTushonka.Server.Core" Version="$(SptPackageVersion)" />
+    <PackageReference Include="SPTushonka.Reflection" Version="$(SptPackageVersion)" />
     <Compile Include="..\Server\Hub\HubDocumentLoot.cs" Link="Hub\HubDocumentLoot.cs" />
     <Compile Include="..\Server\Progression\QuestStartRequirements.cs" Link="Progression\QuestStartRequirements.cs" />
     <Compile Include="..\Server\Progression\QuestBackportCompatibility.cs" Link="Progression\QuestBackportCompatibility.cs" />
     <Compile Include="..\Server\Progression\ReputationMigration.cs" Link="Progression\ReputationMigration.cs" />
     <Compile Include="..\Server\Profiles\ProfileStateSerialization.cs" Link="Profiles\ProfileStateSerialization.cs" />
+    <Compile Include="..\Server\Missions\MissionStore.cs" Link="Missions\MissionStore.cs" />
+    <Compile Include="..\Server\Profiles\RaidFinalization.cs" Link="Profiles\RaidFinalization.cs" />
     <Compile Include="..\Server\Seasons\SeasonRepository.cs" Link="Storage\SeasonRepository.cs" />
+    <Compile Include="..\Server\Seasons\IsolatedLocaleLayers.cs" Link="Storage\IsolatedLocaleLayers.cs" />
+    <Compile Include="..\Server\Missions\MissionLaunchContext.cs" Link="Missions\MissionLaunchContext.cs" />
     <Compile Include="..\Server\Seasons\SeasonItemBundles.cs" Link="Storage\SeasonItemBundles.cs" />
     <Compile Include="..\Server\Seasons\TraderOfferCatalogue.cs" Link="Storage\TraderOfferCatalogue.cs" />
     <Compile Include="..\Server\Seasons\CampaignTraderStock.cs" Link="Storage\CampaignTraderStock.cs" />
     <Compile Include="..\Client\UI\ImageRequestCache.cs" Link="Client\ImageRequestCache.cs" />
+    <Compile Include="..\Client\Encounters\EncounterSpawnAdmissionPolicy.cs" Link="Client\EncounterSpawnAdmissionPolicy.cs" />
+    <Compile Include="..\Client\Missions\MissionLootRecords.cs" Link="Client\MissionLootRecords.cs" />
+    <Compile Include="..\Client\Missions\MissionProgressCallbackGuard.cs" Link="Client\MissionProgressCallbackGuard.cs" />
+    <Compile Include="..\Client\Authoring\SceneModelLease.cs" Link="Client\SceneModelLease.cs" />
+    <Compile Include="..\Client\Authoring\ItemStackPosition.cs" Link="Client\ItemStackPosition.cs" />
+    <Compile Include="..\Client\Authoring\PlayerRoute.cs" Link="Client\PlayerRoute.cs" />
+    <Compile Include="..\Client\Authoring\RouteVisuals.cs" Link="Client\RouteVisuals.cs" />
+    <Compile Include="..\Client\Authoring\ScenePropSupport.cs" Link="Client\ScenePropSupport.cs" />
+    <Compile Include="..\Client\Authoring\SceneSelectionEdit.cs" Link="Client\SceneSelectionEdit.cs" />
+    <Compile Include="..\Client\Authoring\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />
+    <Compile Include="..\Client\Authoring\EditorTooltipPlacement.cs" Link="Client\EditorTooltipPlacement.cs" />
+    <Compile Include="..\Client\Authoring\SceneObjectIndex.cs" Link="Client\SceneObjectIndex.cs" />
+    <Compile Include="..\Client\Authoring\EditorRenderSize.cs" Link="Client\EditorRenderSize.cs" />
+    <Compile Include="..\Client\Authoring\EditorTiming.cs" Link="Client\EditorTiming.cs" />
+    <Compile Include="..\Client\Authoring\EditorCollectionPolicy.cs" Link="Client\EditorCollectionPolicy.cs" />
+    <Compile Include="..\Client\Authoring\EditorHud.cs" Link="Client\EditorHud.cs" />
+    <Compile Include="..\Client\Authoring\EditorTerrainVisibility.cs" Link="Client\EditorTerrainVisibility.cs" />
+    <Compile Include="..\Client\Authoring\EditorTriggerVisibility.cs" Link="Client\EditorTriggerVisibility.cs" />
+    <Compile Include="..\Client\Authoring\EnvironmentValues.cs" Link="Client\EnvironmentValues.cs" />
     <Compile Include="..\Client\Authoring\AuthoringSocket.cs" Link="Client\AuthoringSocket.cs" />
+    <Compile Include="..\Client\Authoring\RaidEditorSession.cs" Link="Client\RaidEditorSession.cs" />
     <Compile Include="..\Client\Profiles\ProfileReconnect.cs" Link="Client\ProfileReconnect.cs" />
     <Compile Include="..\Client\Story\StoryChapterChanges.cs" Link="Client\StoryChapterChanges.cs" />
     <Compile Include="..\Server\Hub\HubService.cs" Link="Hub\HubService.cs" />
@@ -31,6 +64,9 @@
     <Compile Include="..\Server\Profiles\AccountLink.cs" Link="Profiles\AccountLink.cs" />
     <Compile Include="..\Server\Profiles\AppearanceSelection.cs" Link="Profiles\AppearanceSelection.cs" />
     <Compile Include="..\Server\Profiles\ProfileReadiness.cs" Link="Profiles\ProfileReadiness.cs" />
+    <Compile Include="..\Server\Editor\EditorScratchInventory.cs" Link="Editor\EditorScratchInventory.cs" />
+    <Compile Include="..\Server\Editor\EditorPreviewGearCopy.cs" Link="Editor\EditorPreviewGearCopy.cs" />
+    <Compile Include="..\Server\Editor\EditorSessionRegistry.cs" Link="Editor\EditorSessionRegistry.cs" />
     <Compile Include="..\Server\Profiles\RaidAbortGuard.cs" Link="Profiles\RaidAbortGuard.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />
     <Compile Include="..\Server\Web\Documentation\WikiDocumentation.cs" Link="Documentation\WikiDocumentation.cs" />

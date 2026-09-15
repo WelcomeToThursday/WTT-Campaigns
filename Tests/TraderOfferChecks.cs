@@ -243,7 +243,66 @@ internal static class TraderOfferChecks
             catalogue.Search("Root").Any(i => i.Id == Tpl) && catalogue.IsInventoryItem(ChildTpl),
             "Valid installed inventory items and attachments remain available without existing trader offers"
         );
+        var scenePage = catalogue.SceneCatalog(new WTT.Campaigns.Shared.Authoring.SceneCatalogRequest { Search = "Root" });
+        check(scenePage.Entries.Any(e => e.Id == Tpl && e.Items.Count == 1), "Scene catalog uses installed native item templates");
+        check(
+            catalogue.SceneCatalog(new WTT.Campaigns.Shared.Authoring.SceneCatalogRequest { Search = "CircleOfCultists" }).Total == 0,
+            "Scene catalog excludes hideout storage"
+        );
+        check(
+            catalogue.SceneCatalog(new WTT.Campaigns.Shared.Authoring.SceneCatalogRequest { Page = 1 }).Entries.Count == 0,
+            "Catalog paging does not repeat the first page"
+        );
         var invalidOffer = SeasonCompiler.Copy(offer);
+        const string boxId = "000000000000000000000081",
+            ammoId = "000000000000000000000082";
+        templates[new MongoId(ammoId)] = json.Deserialize<TemplateItem>(
+            $$$"""{"_id":"{{{ammoId}}}","_type":"Item","_parent":"{{{SPTarkov.Server.Core.Models.Enums.BaseClasses.AMMO}}}","_name":"Test cartridges","_props":{"StackMaxSize":20}}"""
+        )!;
+        templates[new MongoId(boxId)] = json.Deserialize<TemplateItem>(
+            $$$"""{"_id":"{{{boxId}}}","_type":"Item","_parent":"{{{SPTarkov.Server.Core.Models.Enums.BaseClasses.AMMO_BOX}}}","_name":"Test ammo box","_props":{"StackSlots":[{"_name":"cartridges","_max_count":25,"_props":{"filters":[{"Filter":["{{{ammoId}}}"]}]}}]}}"""
+        )!;
+        var ammoCatalogue = new TraderOfferCatalogue(table, traders, null!, locale, json, NativeItemHelperFixture.Create(table));
+        var filledBox = ammoCatalogue.SceneCatalog(new SceneCatalogRequest { Id = boxId }).Entries.Single().Items;
+        var boxRoot = filledBox.Single(i => i.ParentId == null);
+        var rounds = filledBox.Where(i => i.ParentId == boxRoot.Id).ToArray();
+        check(
+            rounds.Length == 2
+                && rounds.All(i => i.Template == ammoId && i.SlotId == "cartridges")
+                && rounds.Sum(i => i.Upd!.StackObjectsCount) == 25
+                && rounds.All(i => i.Upd!.StackObjectsCount <= 20),
+            "Scene ammo boxes contain their native ammunition capacity split into legal stacks"
+        );
+        var filledValidation = new SeasonValidationResult();
+        SeasonValidator.ItemTree(filledBox, "Ammo box", filledValidation);
+        check(filledValidation.CanPublish, "Filled catalog ammo boxes remain valid serializable item trees");
+        var positions = rounds.Select(i => WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(i.Location, true)).Order().ToArray();
+        check(
+            rounds.Any(i => i.Location == null) && positions.SequenceEqual(new[] { 0, 1 }),
+            "Actual SPT ammo-box output assembles both the omitted zero position and explicit upper stack"
+        );
+        check(
+            WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(new NativeItemLocation(0), true) == 0,
+            "Explicit ammo-box zero positions remain supported"
+        );
+        Reject(() => WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(null, false), "Missing magazine positions still fail closed");
+        Reject(
+            () => WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(new NativeItemLocation(-1), true),
+            "Negative ammo-box positions remain invalid"
+        );
+        Reject(
+            () => WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(new NativeItemLocation(new NativeGridLocation()), true),
+            "A grid location cannot be interpreted as an ammo-box stack position"
+        );
+        var secondBox = ammoCatalogue.SceneItem(boxId);
+        check(
+            !filledBox.Select(i => i.Id).Intersect(secondBox.Select(i => i.Id)).Any(),
+            "Repeated ammo box placement creates fresh identities for boxes and cartridges"
+        );
+        templates[new MongoId(ammoId)].Properties!.StackMaxSize = 0;
+        Reject(() => ammoCatalogue.SceneItem(boxId), "Invalid ammunition stack sizes fail before native filling can loop");
+        templates.Remove(new MongoId(boxId));
+        templates.Remove(new MongoId(ammoId));
         var blockedCatalogue = new TraderOfferCatalogue(
             table,
             traders,

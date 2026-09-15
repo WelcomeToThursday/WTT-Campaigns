@@ -29,6 +29,12 @@ public static class SeasonCompiler
             texts[doc.Id + " name"] = doc.Name;
         }
 
+        foreach (var mission in season.Missions)
+        {
+            texts[mission.Id + " name"] = mission.Name;
+            texts[mission.Id + " briefing"] = mission.Briefing;
+        }
+
         foreach (var reward in season.AllRewards)
         {
             texts[reward.Id + " name"] = reward.Name;

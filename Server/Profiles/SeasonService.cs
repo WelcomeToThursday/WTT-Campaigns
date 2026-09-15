@@ -51,6 +51,17 @@ public sealed class SeasonService(
 
     private const string LinkKey = "wttCampaignsAccount";
     private readonly ConcurrentDictionary<string, AccountLink> _links = new();
+
+    // Full campaign rehearsal profiles are normal native profiles for raid
+    // purposes, but their account link is process-local and must never reach
+    // profileData or the launcher account on disk.
+    private readonly ConcurrentDictionary<string, AccountLink> _ephemeralLinks = new(StringComparer.Ordinal);
+
+    // Keep a disk-free link sentinel after a disposable profile is retired.
+    // Native profile callbacks can arrive after teardown; resolving a retired
+    // test id must never fall through to ProfileDataService and create/read a
+    // real launcher account document.
+    private readonly ConcurrentDictionary<string, AccountLink> _ephemeralTombstones = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _gates = new();
     private readonly Dictionary<string, Catalogue> _catalogues = new();
     public Catalogue Catalogue { get; private set; } = new();
@@ -60,7 +71,7 @@ public sealed class SeasonService(
 
     public void Initialize()
     {
-        foreach (var runtime in repository.Playable.Values)
+        foreach (var runtime in repository.OrdinaryPlayable())
         {
             var season = runtime.Definition;
             _catalogues[season.Id] = season.Perks;
@@ -122,6 +133,11 @@ public sealed class SeasonService(
 
     private AccountLink Link(string root)
     {
+        if (_ephemeralLinks.TryGetValue(root, out var ephemeral))
+            return ephemeral;
+        if (_ephemeralTombstones.TryGetValue(root, out var tombstone))
+            return tombstone;
+
         var link = _links.GetOrAdd(
             root,
             id => profileData.GetProfileDataAsync<AccountLink>(new MongoId(id), LinkKey).GetAwaiter().GetResult() ?? new AccountLink()
@@ -165,6 +181,69 @@ public sealed class SeasonService(
         }
 
         return link;
+    }
+
+    /// <summary>
+    /// Registers the self-owned account link used by a disposable campaign
+    /// profile. The profile id is deliberately both root and seasonal id so
+    /// normal native APIs can authenticate it without creating a launcher
+    /// account link.
+    /// </summary>
+    public void RegisterEphemeral(string profileId, string seasonId)
+    {
+        if (!MongoId.IsValidMongoId(profileId) || !MongoId.IsValidMongoId(seasonId))
+            throw new InvalidDataException("Disposable campaign identities are invalid.");
+        if (!repository.IsIsolatedSnapshot(seasonId))
+            throw new InvalidOperationException("A disposable profile must reference an isolated campaign snapshot.");
+
+        _ephemeralTombstones.TryRemove(profileId, out _);
+        _ephemeralLinks[profileId] = new AccountLink
+        {
+            Mode = "seasonal",
+            Created = true,
+            SeasonalId = profileId,
+            CurrentSeasonId = seasonId,
+            Characters =
+            [
+                new SeasonCharacterLink
+                {
+                    ProfileId = profileId,
+                    SeasonId = seasonId,
+                    Created = true,
+                },
+            ],
+        };
+    }
+
+    public bool IsEphemeral(string profileId) => _ephemeralLinks.ContainsKey(profileId);
+
+    public bool UnregisterEphemeral(string profileId)
+    {
+        if (!_ephemeralLinks.TryRemove(profileId, out var link))
+            return false;
+        _ephemeralTombstones[profileId] = new AccountLink
+        {
+            Mode = "normal",
+            Created = false,
+            Characters = [],
+        };
+        _catalogues.Remove(link.CurrentSeasonId ?? "");
+        return true;
+    }
+
+    public void InitializeEphemeralProfile(PmcData pmc, string profileId, string seasonId)
+    {
+        var definition = repository.Runtime(seasonId).Definition;
+        var state = new PerkState
+        {
+            RootAccountId = profileId,
+            SeasonId = seasonId,
+            GameplayHash = SeasonRepository.GameplayHash(definition),
+            Revision = 1,
+            SeasonalPerks = definition.Rules.EnabledCommonIds.ToList(),
+        };
+        SetState(pmc, state);
+        _catalogues[seasonId] = definition.Perks;
     }
 
     public string EffectiveId(string root)
@@ -231,8 +310,8 @@ public sealed class SeasonService(
             ProtocolVersion = 2,
             SeasonId = definition.Id,
             SeasonName = definition.Name,
-            Seasons = repository
-                .Playable.Values.Select(r => r.Definition)
+            Seasons = (_ephemeralLinks.ContainsKey(root) ? repository.Playable.Values : repository.OrdinaryPlayable())
+                .Select(r => r.Definition)
                 .OrderBy(d => d.Name)
                 .Select(d => new SeasonChoice
                 {
@@ -251,7 +330,7 @@ public sealed class SeasonService(
             Unavailable = Unsupported(definition.Perks),
             Rules = definition.Rules,
             HasStory = definition.Story != null,
-            Zones = definition.Zones,
+            Zones = definition.Zones.Where(WTT.Campaigns.Shared.Spatial.ZoneLayoutRules.IsShared).ToList(),
             ActiveMode = link.Mode,
             EffectiveProfileId = EffectiveId(root),
             State = seasonal == null ? new PerkState() : State(seasonal),
@@ -358,6 +437,7 @@ public sealed class SeasonService(
 
     public async Task<ServerSnapshot> Create(string root, Mutation request)
     {
+        RejectEphemeral(root);
         if (request.PerkIds == null)
         {
             throw new InvalidOperationException("A personal perk selection is required.");
@@ -524,6 +604,7 @@ public sealed class SeasonService(
 
     public async Task<ServerSnapshot> Edit(string root, Mutation request)
     {
+        RejectEphemeral(root);
         var link = Link(root);
         var entry = Owned(link, request.CharacterId.Length > 0 ? request.CharacterId : link.SeasonalId ?? "");
         var definition = repository.Runtime(entry.SeasonId).Definition;
@@ -544,6 +625,7 @@ public sealed class SeasonService(
 
     public async Task<ServerSnapshot> Switch(string root, string mode, string characterId = "")
     {
+        RejectEphemeral(root);
         var link = Link(root);
         if (mode is not ("normal" or "seasonal"))
         {
@@ -580,6 +662,7 @@ public sealed class SeasonService(
 
     public async Task<ServerSnapshot> Delete(string root, Mutation request)
     {
+        RejectEphemeral(root);
         var link = Link(root);
         if (link.RetiredCharacters.ContainsKey(request.CharacterId) && !link.Characters.Any(c => c.ProfileId == request.CharacterId))
         {
@@ -647,6 +730,7 @@ public sealed class SeasonService(
 
     public async Task<ServerSnapshot> Wipe(string root, Mutation request)
     {
+        RejectEphemeral(root);
         if (string.IsNullOrEmpty(request.OperationId))
         {
             throw new InvalidOperationException("A wipe operation ID is required.");
@@ -872,7 +956,8 @@ public sealed class SeasonService(
         var link = Link(root);
         link.ActiveRaidProfiles.Remove(character);
         link.ActiveRaidIds.Remove(character);
-        await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
+        if (!_ephemeralLinks.ContainsKey(root))
+            await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
     }
 
     public async Task MarkRaid(string sessionId, bool active, string? raidId = null)
@@ -897,7 +982,8 @@ public sealed class SeasonService(
             link.ActiveRaidProfiles.Remove(sessionId);
             link.ActiveRaidIds.Remove(sessionId);
         }
-        await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
+        if (!_ephemeralLinks.ContainsKey(root))
+            await profileData.SaveProfileDataAsync(new MongoId(root), LinkKey, link);
     }
 
     private static string NewId()
@@ -913,5 +999,11 @@ public sealed class SeasonService(
         }
         value = new string(value.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_').Take(15).ToArray());
         return value.Length < 3 ? "Campaign" : value;
+    }
+
+    private void RejectEphemeral(string root)
+    {
+        if (_ephemeralLinks.ContainsKey(root) || _ephemeralLinks.ContainsKey(EffectiveId(root)))
+            throw new InvalidOperationException("Disposable campaign profiles cannot change campaign characters or settings.");
     }
 }

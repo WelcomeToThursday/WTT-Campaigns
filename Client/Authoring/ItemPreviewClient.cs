@@ -266,7 +266,7 @@ public sealed class ItemPreviewClient : MonoBehaviour
         return icon.Sprite;
     }
 
-    private static Item Build(ItemPreviewJob job, List<string> warnings, out List<PreviewItemSize> sizes)
+    internal static Item Build(ItemPreviewJob job, List<string> warnings, out List<PreviewItemSize> sizes)
     {
         var validation = new SeasonValidationResult();
         SeasonValidator.ItemTree(job.Items, "Assembly", validation);
@@ -348,9 +348,9 @@ public sealed class ItemPreviewClient : MonoBehaviour
                 }
                 else if (container is StackSlot stack)
                 {
-                    if (!stack.CheckCompatibility(item) || record.Location?.Slot == null)
-                        throw new InvalidOperationException("Ammunition is incompatible or has no position.");
-                    stack.AddAtPosition(item, record.Location.Slot.Value);
+                    if (!stack.CheckCompatibility(item))
+                        throw new InvalidOperationException("Ammunition is incompatible with its container.");
+                    stack.AddAtPosition(item, ItemStackPosition.Require(record.Location, parent is AmmoBox));
                     stacks[stack] = checked(stacks.GetValueOrDefault(stack) + item.StackObjectsCount);
                 }
                 else

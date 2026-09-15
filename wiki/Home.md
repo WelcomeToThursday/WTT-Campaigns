@@ -2,7 +2,7 @@
 
 Welcome to the WTT-Campaigns wiki: guides for playing campaigns, understanding perks and rewards, and creating your own stories in SPT.
 
-These guides cover **0.7.0 — beta release**, targeting **SPT 4.1.x / EFT 0.16.9.40743**. They describe the bundled campaign and supported features; custom campaigns can change perks, rewards and progression.
+These guides cover **0.8.0 — Campaign Editor and missions**, targeting **SPT 4.1.x / EFT 0.16.9.40743**. They describe the bundled campaign and supported features; custom campaigns can change perks, rewards and progression.
 
 ## Start here
 
@@ -26,6 +26,7 @@ These guides cover **0.7.0 — beta release**, targeting **SPT 4.1.x / EFT 0.16.
 | [Battle Pass controls](battle-pass-ui.md) | Browse rewards, use the tutorial and make exchanges. |
 | [Documents and rewards](battle-pass-gameplay.md) | Collection limits, claims, Classified documents and reward locks. |
 | [Story and quests](story-system.md) | Chapters, dialogue, objectives and cinematics. |
+| [Missions](missions.md) | Quest-unlocked mission raids, replay, and disposable draft tests. |
 | [Trader visits](trader-media-and-visit.md) | Open rooms, choose replies and hand over items. |
 | [Chapter notifications](story-notifications.md) | Understand chapter availability and status banners. |
 | [Trader progression](trader-progression.md) | Loyalty requirements and grouped task lists. |
@@ -48,6 +49,9 @@ These guides cover **0.7.0 — beta release**, targeting **SPT 4.1.x / EFT 0.16.
 - [Story authoring](story-authoring.md): conversations, conditions, media and raid events.
 - [Dialogue and interaction authoring](dialogue-and-interactions.md): build phases and branches, choose actions, configure handovers and connect raid interactions.
 - [Custom story media bundles](story-media-bundles.md): add Visit rooms to custom traders and package images, audio, video and cinematics.
+- [Editor mode and map layouts](editor-mode.md): open maps with a disposable character, reshape scenery and preview routes.
+- [AI encounters and patrol previews](ai-encounters.md): author finite waves, spawn positions and patrols, then observe or playtest them.
+- [Editor UI Toolkit](editor-toolkit.md): the full Editor interface and in-game acceptance checks.
 - [Connected raid authoring](raid-authoring.md): capture scene targets and place quest zones.
 - [Story Sandbox](story-sandbox.md): a small example campaign.
 

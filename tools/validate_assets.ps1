@@ -11,9 +11,9 @@ if ($server) {
 }
 if ($client) {
     $notificationRoot = Split-Path $client -Parent
-    $raidCheck = Get-Content -LiteralPath (Join-Path $notificationRoot 'raid-editor-validation.json') -Raw | ConvertFrom-Json
-    if ($raidCheck.schema -ne 2 -or !$raidCheck.validated -or (Get-FileHash -LiteralPath (Join-Path $notificationRoot 'wtt_campaigns_raid_editor.bundle') -Algorithm SHA256).Hash -ne $raidCheck.sha256) {
-        throw 'Raid editor bundle must pass SDK window and layout validation before installation.'
+    $toolkitCheck = Get-Content -LiteralPath (Join-Path $notificationRoot 'editor-toolkit-validation.json') -Raw | ConvertFrom-Json
+    if ($toolkitCheck.schema -ne 1 -or !$toolkitCheck.validated -or $toolkitCheck.unity -ne '2022.3.43f1' -or (Get-FileHash -LiteralPath (Join-Path $notificationRoot 'wtt_campaigns_editor_toolkit.bundle') -Algorithm SHA256).Hash -ne $toolkitCheck.sha256) {
+        throw 'Editor Toolkit bundle must pass matching Unity SDK import and bundle validation before installation.'
     }
     $notificationCheck = Get-Content -LiteralPath (Join-Path $notificationRoot 'story-notification-validation.json') -Raw | ConvertFrom-Json
     if (@($notificationCheck.prefabs).Count -ne 3 -or @($notificationCheck.dependencies) -notcontains 'wtt_campaigns_ui.bundle') {

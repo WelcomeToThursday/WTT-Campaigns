@@ -15,6 +15,12 @@ if (args.Length == 2 && args[0] == "--appearance-data")
     return;
 }
 
+if (args.Length == 3 && args[0] == "--editor-hooks")
+{
+    WTT.Campaigns.Tests.EditorRoutingCompatibility.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 4 && args[0] == "--authoring-socket")
 {
     WTT.Campaigns.Tests.AuthoringSocketCompatibility.Run(args[1], args[2], args[3]);
@@ -63,9 +69,39 @@ if (args.Length == 3 && args[0] == "--unity-toolkit")
     return;
 }
 
+if (args.Length == 3 && args[0] == "--editor-toolkit")
+{
+    WTT.Campaigns.Tests.EditorToolkitChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 3 && args[0] == "--raid-startup-hooks")
 {
     WTT.Campaigns.Tests.RaidStartupHookChecks.Run(args[1], args[2]);
+    return;
+}
+
+if (args.Length == 4 && args[0] == "--prepare-test-mission")
+{
+    WTT.Campaigns.Tests.MissionTestCampaign.Prepare(args[1], args[2], args[3]);
+    return;
+}
+
+if (args.Length == 3 && args[0] == "--install-test-mission")
+{
+    WTT.Campaigns.Tests.MissionTestCampaign.Install(args[1], args[2]);
+    return;
+}
+
+if (args.Length == 3 && args[0] == "--encounter-hooks")
+{
+    WTT.Campaigns.Tests.EncounterHookChecks.Run(args[1], args[2]);
+    return;
+}
+
+if (args.Length == 2 && args[0] == "--editor-artwork")
+{
+    WTT.Campaigns.Tests.EditorArtworkChecks.Run(args[1]);
     return;
 }
 
@@ -99,6 +135,33 @@ WTT.Campaigns.Tests.StoryChapterNotificationChecks.Run(Check);
 WTT.Campaigns.Tests.StoryEngineChecks.Run(Check);
 WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
 WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.MapEditorChecks.Run(Check);
+WTT.Campaigns.Tests.ZoneLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);
+WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
+WTT.Campaigns.Tests.PlayerRouteChecks.Run(Check);
+WTT.Campaigns.Tests.AiTreeChecks.Run(Check);
+WTT.Campaigns.Tests.EditorLibraryTreeChecks.Run(Check);
+WTT.Campaigns.Tests.RouteVisualChecks.Run(Check);
+WTT.Campaigns.Tests.SceneCatalogChecks.Run(Check);
+WTT.Campaigns.Tests.SceneObjectIndexChecks.Run(Check);
+WTT.Campaigns.Tests.ScenePreviewChecks.Run(Check);
+await WTT.Campaigns.Tests.EditorSessionChecks.Run(Check);
+WTT.Campaigns.Tests.SceneSelectionChecks.Run(Check);
+WTT.Campaigns.Tests.EditorRenderChecks.Sizes(Check);
+WTT.Campaigns.Tests.EditorEnvironmentChecks.Values(Check);
+WTT.Campaigns.Tests.EditorDiagnosticChecks.Run(Check);
+WTT.Campaigns.Tests.EditorMemoryChecks.Run(Check);
+WTT.Campaigns.Tests.EditorPreviewGearChecks.Run();
+WTT.Campaigns.Tests.EncounterContractsChecks.Run(Check);
+WTT.Campaigns.Tests.EncounterRuntimeChecks.Run(Check);
+WTT.Campaigns.Tests.PreviewFreezeChecks.Run(Check);
+WTT.Campaigns.Tests.PatrolDispatchChecks.Run(Check);
+WTT.Campaigns.Tests.PatrolDirectionChecks.Run(Check);
+WTT.Campaigns.Tests.EditorHudChecks.Run(Check);
+WTT.Campaigns.Tests.EditorTerrainChecks.Run(Check);
+WTT.Campaigns.Tests.EditorTriggerChecks.Run(Check);
 WTT.Campaigns.Tests.AuthoringSocketChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.EditorLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.WikiDocumentationChecks.Run(Check);
@@ -109,8 +172,16 @@ if (args.Length > 0 && File.Exists(args[0]))
 {
     WTT.Campaigns.Tests.ProgressionChecks.Hooks(args[0], Check);
     WTT.Campaigns.Tests.QuestBackportClientChecks.Run(args[0], Check);
+    WTT.Campaigns.Tests.MissionNativeQuestChecks.Run(args[0], Check);
 }
 WTT.Campaigns.Tests.CreatorChecks.Run(Check);
+WTT.Campaigns.Tests.MissionTestCampaign.Run(Check);
+WTT.Campaigns.Tests.MissionAuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.MissionRuntimeChecks.Run(Check);
+WTT.Campaigns.Tests.RaidFinalizationChecks.Run(Check);
+WTT.Campaigns.Tests.MissionServiceChecks.Run(Check);
+WTT.Campaigns.Tests.IsolatedLocaleChecks.Run(Check);
+WTT.Campaigns.Tests.MissionLaunchContextChecks.Run(Check);
 WTT.Campaigns.Tests.HubGameplayChecks.Run(Check);
 WTT.Campaigns.Tests.HubDocumentLootChecks.Run(Check);
 var seasoned = new RuntimeEffects(c, new[] { "69c41adf883efd5e3b09ccae" });

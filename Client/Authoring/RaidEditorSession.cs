@@ -26,12 +26,14 @@ internal sealed class RaidEditorSession
         Grant = "",
         Status = "Waiting for the web editor to connect a draft";
     internal long Revision;
+    internal long ContentVersion;
     internal SeasonDefinition? Baseline,
         Definition;
     internal AuthoringResponse? Conflict;
     internal List<CaptureTask> Tasks = new();
     internal bool Busy,
         Hold,
+        Previewing,
         Retired,
         Contacted;
     internal event Action? Changed;
@@ -40,14 +42,16 @@ internal sealed class RaidEditorSession
     private readonly Stack<SeasonDefinition> _undo = new(),
         _redo = new();
     private readonly string _recoveryRoot = Path.Combine(BepInEx.Paths.ConfigPath, "WTT-Campaigns", "raid-authoring");
-    internal bool Dirty
-    {
-        get
-        {
-            return Definition != null
-                && !JToken.DeepEquals(JObject.FromObject(Definition), Baseline == null ? null : JObject.FromObject(Baseline));
-        }
-    }
+
+    // Read by the frame loop. Compare only when committed content or its baseline
+    // changes; serializing the entire campaign here allocates two JSON trees per frame.
+    // Drag previews are held until Edit commits them or cancellation restores them.
+    internal bool Dirty { get; private set; }
+
+    private void RefreshDirty() =>
+        Dirty =
+            Definition != null
+            && !JToken.DeepEquals(JObject.FromObject(Definition), Baseline == null ? null : JObject.FromObject(Baseline));
 
     internal RaidEditorSession(string location) => Location = location;
 
@@ -63,13 +67,26 @@ internal sealed class RaidEditorSession
 
     internal void Edit(Action<SeasonDefinition> action)
     {
-        if (Definition == null || Conflict != null || Retired)
+        if (Definition == null || Conflict != null || Retired || Previewing)
         {
             return;
         }
 
         var before = Copy(Definition);
-        action(Definition);
+        try
+        {
+            action(Definition);
+        }
+        catch
+        {
+            Definition = before;
+            throw;
+        }
+        if (Definition.MapLayouts.Count > 0)
+            Definition.FormatVersion = Math.Max(
+                Definition.FormatVersion,
+                WTT.Campaigns.Shared.Spatial.MapLayoutRules.Format(Definition.MapLayouts)
+            );
         if (Definition.Zones.Count > 0 || Definition.Captures.Count > 0)
         {
             Definition.FormatVersion = Math.Max(Definition.FormatVersion, 2);
@@ -80,15 +97,17 @@ internal sealed class RaidEditorSession
             return;
         }
 
+        ContentVersion++;
         _undo.Push(before);
         _redo.Clear();
+        RefreshDirty();
         Persist();
         Changed?.Invoke();
     }
 
     internal void Undo(bool redo)
     {
-        if (Definition == null || Conflict != null)
+        if (Definition == null || Conflict != null || Previewing)
         {
             return;
         }
@@ -102,6 +121,8 @@ internal sealed class RaidEditorSession
 
         to.Push(Copy(Definition));
         Definition = from.Pop();
+        ContentVersion++;
+        RefreshDirty();
         Persist();
         Changed?.Invoke();
     }
@@ -139,6 +160,8 @@ internal sealed class RaidEditorSession
     {
         return new()
         {
+            Version = EditorMode.Ready ? 4 : 1,
+            EditorSessionId = EditorMode.SessionId,
             ClientId = ClientId,
             RaidId = RaidId,
             Location = Location,
@@ -148,6 +171,7 @@ internal sealed class RaidEditorSession
             Grant = Grant,
             DraftId = DraftId,
             Revision = Revision,
+            SupportsZoneLayouts = true,
             OperationId = Guid.NewGuid().ToString("N"),
         };
     }
@@ -177,6 +201,10 @@ internal sealed class RaidEditorSession
 
         Busy = true;
         Contacted = false;
+        var previousContent = ContentVersion;
+        var previousStatus = Status;
+        var previousConflict = Conflict;
+        var previousTasks = Tasks;
         try
         {
             var response = await Send("poll", Request());
@@ -191,10 +219,12 @@ internal sealed class RaidEditorSession
                 Persist();
                 Grant = "";
                 DraftId = "";
+                if (Definition != null || Baseline != null)
+                    ContentVersion++;
                 Definition = Baseline = null;
+                Dirty = false;
                 _pending = null;
                 Status = "Enable and connect this raid in the web campaign editor";
-                Changed?.Invoke();
                 return;
             }
             if (response.Grant != Grant || response.DraftId != DraftId)
@@ -208,6 +238,8 @@ internal sealed class RaidEditorSession
                 DraftId = response.DraftId;
                 Baseline = Copy(response.Definition!);
                 Definition = Copy(Baseline);
+                RefreshDirty();
+                ContentVersion++;
                 Revision = response.Revision;
                 if (File.Exists(RecoveryPath))
                 {
@@ -244,10 +276,13 @@ internal sealed class RaidEditorSession
                 Conflict != null ? "Resolve conflicting edits"
                 : Dirty ? "Unsynchronized draft edits"
                 : "Draft synchronized · revision " + Revision;
-            Changed?.Invoke();
         }
         catch (Exception e)
         {
+            if (Retired)
+            {
+                return;
+            }
             if (e is InvalidOperationException)
             {
                 _pending = null;
@@ -258,7 +293,47 @@ internal sealed class RaidEditorSession
         finally
         {
             Busy = false;
+            if (
+                !Retired
+                && (
+                    ContentVersion != previousContent
+                    || Status != previousStatus
+                    || Conflict != previousConflict
+                    || !SameTasks(previousTasks, Tasks)
+                )
+            )
+            {
+                try
+                {
+                    Changed?.Invoke();
+                }
+                catch (Exception e)
+                {
+                    Plugin.Error(e);
+                }
+            }
         }
+    }
+
+    private static bool SameTasks(List<CaptureTask> before, List<CaptureTask> after)
+    {
+        if (before.Count != after.Count)
+            return false;
+        for (var i = 0; i < before.Count; i++)
+        {
+            var a = before[i];
+            var b = after[i];
+            if (
+                a.Id != b.Id
+                || a.Tool != b.Tool
+                || a.TargetKind != b.TargetKind
+                || a.TargetId != b.TargetId
+                || a.RecordId != b.RecordId
+                || a.Status != b.Status
+            )
+                return false;
+        }
+        return true;
     }
 
     private void AcceptSubmit(AuthoringResponse response, SeasonDefinition sent)
@@ -276,6 +351,8 @@ internal sealed class RaidEditorSession
                 .Merge(JObject.FromObject(sent), JObject.FromObject(remote), JObject.FromObject(Definition!), new())!
                 .ToObject<SeasonDefinition>();
         }
+        if (!JToken.DeepEquals(JObject.FromObject(Definition!), JObject.FromObject(working)))
+            ContentVersion++;
         RebaseHistory(_undo, sent, remote);
         RebaseHistory(_redo, sent, remote);
         Baseline = Copy(response.Definition!);
@@ -291,6 +368,7 @@ internal sealed class RaidEditorSession
             Definition = working;
             Conflict = null;
         }
+        RefreshDirty();
         Persist();
     }
 
@@ -328,6 +406,8 @@ internal sealed class RaidEditorSession
         var l = JObject.FromObject(Definition);
         var r = JObject.FromObject(response.Definition);
         var merged = DraftMerge.Merge(b, l, r, conflicts)!.ToObject<SeasonDefinition>()!;
+        if (!JToken.DeepEquals(l, JObject.FromObject(merged)))
+            ContentVersion++;
         if (conflicts.Count > 0)
         {
             Conflict = new()
@@ -347,6 +427,7 @@ internal sealed class RaidEditorSession
         Baseline = Copy(response.Definition);
         Definition = merged;
         Revision = response.Revision;
+        RefreshDirty();
         Persist();
     }
 
@@ -358,10 +439,12 @@ internal sealed class RaidEditorSession
         }
 
         Definition = Copy((local ? Conflict.Candidate : Conflict.RemoteCandidate)!);
+        ContentVersion++;
         Baseline = Copy(Conflict.Definition!);
         Revision = Conflict.Revision;
         Conflict = null;
         _pending = null;
+        RefreshDirty();
         Persist();
         Changed?.Invoke();
     }

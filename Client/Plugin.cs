@@ -12,10 +12,12 @@ using WTT.Campaigns.Shared.Profiles;
 
 namespace WTT.Campaigns.Client;
 
-[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.7.0")]
+[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.8.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 [BepInDependency("com.wtt.commonlib", "3.0.6")]
+[BepInDependency("xyz.drakia.bigbrain", BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency("me.sol.sain", BepInDependency.DependencyFlags.SoftDependency)]
 public sealed class Plugin : BaseUnityPlugin
 {
     internal static Plugin Instance = null!;
@@ -42,7 +44,13 @@ public sealed class Plugin : BaseUnityPlugin
 
     internal static bool SeasonalPlayer
     {
-        get { return Player != null && Current?.ActiveMode == "seasonal" && Player.Profile.Id == App?.Session?.Profile?.Id; }
+        get
+        {
+            return !Authoring.EditorMode.Active
+                && Player != null
+                && Current?.ActiveMode == "seasonal"
+                && Player.Profile.Id == App?.Session?.Profile?.Id;
+        }
     }
 
     internal static string Folder
@@ -53,12 +61,16 @@ public sealed class Plugin : BaseUnityPlugin
     private void Awake()
     {
         Instance = this;
+        gameObject.AddComponent<Authoring.EditorMode>();
+        gameObject.AddComponent<Authoring.CampaignTestMode>();
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
         WTT.Campaigns.UI.Media.StoryUiArtwork.SharedStatusIcon = name =>
             SeasonUi.Instance.UiBundle.LoadAsset<UnityEngine.Sprite>("assets/mods/wtt-campaigns.assets/storystatusicons/" + name + ".png");
         gameObject.AddComponent<SeasonHubUi>();
         gameObject.AddComponent<Spatial.ZoneRuntime>();
+        gameObject.AddComponent<Missions.MissionUi>();
+        gameObject.AddComponent<Missions.MissionRaidRuntime>();
         gameObject.AddComponent<Authoring.RaidEditor>();
         gameObject.AddComponent<Authoring.ItemPreviewClient>();
         gameObject.AddComponent<Story.StoryRaidRuntime>();

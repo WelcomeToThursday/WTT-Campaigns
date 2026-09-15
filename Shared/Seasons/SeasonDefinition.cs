@@ -1,6 +1,7 @@
 using Newtonsoft.Json;
 using WTT.Campaigns.Shared.Configuration;
 using WTT.Campaigns.Shared.Contracts;
+using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Native;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Serialization;
@@ -11,6 +12,10 @@ namespace WTT.Campaigns.Shared.Seasons;
 // These are authoring contracts. Player state is constructed by the runtime compiler only.
 public sealed class SeasonDefinition : ExtensibleJsonModel
 {
+    public List<Spatial.MapLayout> MapLayouts { get; set; } = new();
+
+    public bool ShouldSerializeMapLayouts() => MapLayouts.Count > 0;
+
     public bool ShouldSerializeZones()
     {
         return Zones.Count > 0;
@@ -49,6 +54,12 @@ public sealed class SeasonDefinition : ExtensibleJsonModel
     public List<SeasonItem> Items { get; set; } = new();
     public List<SeasonCrate> Crates { get; set; } = new();
     public List<NativeQuest> Quests { get; set; } = new();
+
+    // Mission definitions are optional so format 1-6 campaigns remain byte-for-byte
+    // compatible until an author adds the v7 mission surface.
+    public List<MissionDefinition> Missions { get; set; } = new();
+
+    public bool ShouldSerializeMissions() => Missions.Count > 0;
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
     public StoryDefinition? Story { get; set; }

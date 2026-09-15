@@ -2,6 +2,7 @@ using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json.Serialization;
+using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Native;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Seasons;
@@ -66,6 +67,7 @@ internal static class GameplaySerialization
                 nameof(SeasonDocument.Image),
                 nameof(SeasonDocument.UnavailableImage),
             },
+            [typeof(MissionDefinition)] = new() { nameof(MissionDefinition.Name), nameof(MissionDefinition.Briefing) },
             [typeof(SeasonReward)] = new()
             {
                 nameof(SeasonReward.Name),

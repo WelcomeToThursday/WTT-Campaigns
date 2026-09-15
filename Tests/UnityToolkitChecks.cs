@@ -11,7 +11,9 @@ internal static class UnityToolkitChecks
     {
         var toolkitDir = Path.GetFullPath(Path.Combine(sptRoot, "BepInEx/plugins/UnityToolkit"));
         clientPath = Path.GetFullPath(clientPath);
-        using var client = AssemblyDefinition.ReadAssembly(clientPath);
+        using var resolver = new DefaultAssemblyResolver();
+        resolver.AddSearchDirectory(Path.Combine(sptRoot, "BepInEx/core"));
+        using var client = AssemblyDefinition.ReadAssembly(clientPath, new ReaderParameters { AssemblyResolver = resolver });
         using var toolkit = AssemblyDefinition.ReadAssembly(Path.Combine(toolkitDir, "UnityToolkit.dll"));
         var dependency = client
             .MainModule.Types.Single(t => t.Name == "Plugin")

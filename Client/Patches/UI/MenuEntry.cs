@@ -4,6 +4,7 @@ using SPT.Reflection.Patching;
 using UnityEngine;
 using UnityEngine.UI;
 using WTT.Campaigns.Client.Hub;
+using WTT.Campaigns.Client.Missions;
 using WTT.Campaigns.Client.UI;
 using ZLinq;
 
@@ -24,6 +25,13 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("WTT.Campaigns.Me
     [PatchPostfix]
     private static void Postfix(MenuScreen __instance)
     {
+        if (Authoring.EditorMode.Active && !Authoring.EditorMode.Returning)
+        {
+            Authoring.EditorMode.Instance.MenuReady(__instance);
+            return;
+        }
+        AttachEditor(__instance);
+        Authoring.CampaignTestMode.AttachMenu(__instance);
         SeasonUi.Instance.ShowStartupSelection();
         try
         {
@@ -40,30 +48,99 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("WTT.Campaigns.Me
         if (existing != null)
         {
             existing.gameObject.SetActive(!Plugin.InRaid);
-            return;
-        }
-        var source = __instance._playerButton;
-        var parent = source.transform.parent;
-        var inMenuList = parent.GetComponent<VerticalLayoutGroup>() != null;
-        var entry = UnityEngine.Object.Instantiate(source, inMenuList ? parent : __instance.transform, false);
-        entry.name = "CampaignsEntry";
-        entry.OnClick.RemoveAllListeners();
-        entry.OnClick.AddListener(() => SeasonUi.Instance.Open());
-        entry.SetRawText("CHARACTERS", inMenuList ? (int)source._headerLabel.fontSize : 24);
-        entry.SetIcon(null);
-        entry.Interactable = true;
-        if (inMenuList)
-        {
-            entry.transform.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
         }
         else
         {
-            var rect = (RectTransform)entry.transform;
+            var source = __instance._playerButton;
+            var parent = source.transform.parent;
+            var inMenuList = parent.GetComponent<VerticalLayoutGroup>() != null;
+            existing = UnityEngine.Object.Instantiate(source, inMenuList ? parent : __instance.transform, false);
+            existing.name = "CampaignsEntry";
+            existing.OnClick.RemoveAllListeners();
+            existing.OnClick.AddListener(() => SeasonUi.Instance.Open());
+            existing.SetRawText("CHARACTERS", inMenuList ? (int)source._headerLabel.fontSize : 24);
+            existing.SetIcon(null);
+            existing.Interactable = true;
+            if (inMenuList)
+            {
+                existing.transform.SetSiblingIndex(source.transform.GetSiblingIndex() + 1);
+            }
+            else
+            {
+                var rect = (RectTransform)existing.transform;
+                rect.anchorMin = rect.anchorMax = Vector2.one;
+                rect.pivot = Vector2.one;
+                rect.anchoredPosition = new Vector2(-45, -110);
+                rect.sizeDelta = new Vector2(280, 46);
+            }
+        }
+        existing!.gameObject.SetActive(!Plugin.InRaid && !Authoring.CampaignTestMode.Restricted);
+        AttachMissions(__instance, existing);
+    }
+
+    private static void AttachMissions(MenuScreen screen, DefaultUIButton campaigns)
+    {
+        var existing = screen
+            .GetComponentsInChildren<DefaultUIButton>(true)
+            .AsValueEnumerable()
+            .FirstOrDefault(button => button.name == "MissionsEntry");
+        if (existing != null)
+        {
+            existing.gameObject.SetActive(MissionUi.Available);
+            return;
+        }
+
+        var source = screen._playerButton;
+        var parent = source.transform.parent;
+        var inMenuList = parent.GetComponent<VerticalLayoutGroup>() != null;
+        existing = UnityEngine.Object.Instantiate(source, inMenuList ? parent : screen.transform, false);
+        existing.name = "MissionsEntry";
+        existing.OnClick.RemoveAllListeners();
+        existing.OnClick.AddListener(() => MissionUi.Instance.Open());
+        existing.SetRawText("MISSIONS", inMenuList ? (int)source._headerLabel.fontSize : 24);
+        existing.SetIcon(null);
+        existing.Interactable = true;
+        if (inMenuList)
+        {
+            existing.transform.SetSiblingIndex(campaigns.transform.GetSiblingIndex() + 1);
+        }
+        else
+        {
+            var rect = (RectTransform)existing.transform;
             rect.anchorMin = rect.anchorMax = Vector2.one;
             rect.pivot = Vector2.one;
-            rect.anchoredPosition = new Vector2(-45, -110);
+            rect.anchoredPosition = new Vector2(-45, -165);
             rect.sizeDelta = new Vector2(280, 46);
         }
-        entry.gameObject.SetActive(!Plugin.InRaid);
+        existing.gameObject.SetActive(MissionUi.Available);
+    }
+
+    private static void AttachEditor(MenuScreen screen)
+    {
+        var existing = screen
+            .GetComponentsInChildren<DefaultUIButton>(true)
+            .AsValueEnumerable()
+            .FirstOrDefault(b => b.name == "CampaignEditorEntry");
+        if (existing)
+        {
+            existing!.gameObject.SetActive(!Authoring.CampaignTestMode.Restricted);
+            return;
+        }
+        var button = UnityEngine.Object.Instantiate(screen._playerButton, screen._playerButton.transform.parent, false);
+        button.name = "CampaignEditorEntry";
+        button.OnClick.RemoveAllListeners();
+        button.OnClick.AddListener(() => Authoring.EditorMode.Instance.Enter());
+        button.SetRawText("CAMPAIGN EDITOR", 24);
+        button.SetIcon(null);
+        button.Interactable = !Plugin.InRaid;
+        if (button.transform.parent.GetComponent<VerticalLayoutGroup>() == null)
+        {
+            var rect = (RectTransform)button.transform;
+            rect.anchorMin = rect.anchorMax = Vector2.one;
+            rect.pivot = Vector2.one;
+            rect.anchoredPosition = new Vector2(-45, -220);
+            rect.sizeDelta = new Vector2(280, 46);
+        }
+        button.gameObject.SetActive(!Authoring.CampaignTestMode.Restricted);
     }
 }

@@ -18,7 +18,7 @@ public static class TraderOfferAuthoring
             policy = new() { TraderId = trader };
             season.TraderAssorts.Add(policy);
         }
-        season.FormatVersion = 3;
+        season.FormatVersion = Math.Max(season.FormatVersion, 3);
         return policy;
     }
 
@@ -137,7 +137,7 @@ public static class TraderOfferAuthoring
             ],
         };
         season.TraderOffers.Add(offer);
-        season.FormatVersion = 3;
+        season.FormatVersion = Math.Max(season.FormatVersion, 3);
         return offer;
     }
 

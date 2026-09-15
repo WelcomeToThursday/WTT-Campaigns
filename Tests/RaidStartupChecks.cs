@@ -35,6 +35,38 @@ internal static class RaidStartupChecks
         }
         await RaidLoadRecovery.Complete(Task.CompletedTask, Abort, error => reported = error);
         check(aborted == 0, "Successful raid loading keeps the character locked");
+        var editorCleanupCalled = false;
+        var gameplayCleanupCalled = false;
+        Func<Task> editorCleanup = () =>
+        {
+            editorCleanupCalled = true;
+            return Task.CompletedTask;
+        };
+        Func<Task> gameplayCleanup = () =>
+        {
+            gameplayCleanupCalled = true;
+            return Task.CompletedTask;
+        };
+        try
+        {
+            await RaidLoadRecovery.Complete(
+                Task.FromException(new InvalidOperationException("editor load")),
+                RaidLoadRecovery.SelectCleanup(true, editorCleanup, gameplayCleanup),
+                _ => { }
+            );
+        }
+        catch (InvalidOperationException) { }
+        check(editorCleanupCalled && !gameplayCleanupCalled, "Editor load failures use editor unload cleanup");
+        try
+        {
+            await RaidLoadRecovery.Complete(
+                Task.FromException(new InvalidOperationException("gameplay load")),
+                RaidLoadRecovery.SelectCleanup(false, editorCleanup, gameplayCleanup),
+                _ => { }
+            );
+        }
+        catch (InvalidOperationException) { }
+        check(gameplayCleanupCalled, "Gameplay load failures retain raid abort cleanup");
         var failure = new KeyNotFoundException("blackdivlead");
         try
         {

@@ -16,7 +16,8 @@ public sealed class HubService(SeasonRepository repository)
     {
         _state = repository.Current.Hub;
         var ids = repository
-            .Playable.Values.SelectMany(r => SeasonCompiler.Assets(r.Definition))
+            .OrdinaryPlayable()
+            .SelectMany(r => SeasonCompiler.Assets(r.Definition))
             .Where(SeasonValidator.IsId)
             .Distinct(StringComparer.Ordinal);
         foreach (var id in ids)
