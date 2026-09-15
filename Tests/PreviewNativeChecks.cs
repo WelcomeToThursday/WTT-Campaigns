@@ -83,10 +83,14 @@ internal static class PreviewNativeChecks
             throw new InvalidOperationException("Preview reset must close native inventory before disposing its loot.");
         var nativeClose = native.GetType("EFT.EftGamePlayerOwner").Methods.Single(m => m.Name == "CloseInventoryIfOpen");
         var closeCall = (MethodReference)closeInventory.Operand;
-        if (!nativeClose.Body.Instructions.Any(i => i.Operand is MethodReference m
-            && m.Name == closeCall.Name
-            && m.DeclaringType.FullName == closeCall.DeclaringType.FullName
-            && m.Parameters.Count == closeCall.Parameters.Count))
+        if (
+            !nativeClose.Body.Instructions.Any(i =>
+                i.Operand is MethodReference m
+                && m.Name == closeCall.Name
+                && m.DeclaringType.FullName == closeCall.DeclaringType.FullName
+                && m.Parameters.Count == closeCall.Parameters.Count
+            )
+        )
             throw new InvalidOperationException("Native inventory screen close contract changed.");
 
         var update = client.GetType("WTT.Campaigns.Client.Authoring.RaidEditor").Methods.Single(m => m.Name == "UpdateAiPreview");

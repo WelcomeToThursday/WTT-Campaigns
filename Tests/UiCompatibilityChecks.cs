@@ -16,10 +16,14 @@ internal static class UiCompatibilityChecks
         }
         var raidLoadingScreen = types["EFT.UI.Matchmaker.MatchmakerTimeHasCome"];
         Check(
-            raidLoadingScreen.Methods.Any(m => m.Name == "ChangeStatus" && m.Parameters.Count == 2
-                && m.Parameters[0].Name == "status" && m.Parameters[0].ParameterType.FullName == "System.String"
-                && m.Parameters[1].Name == "progress" && m.Parameters[1].ParameterType.FullName == "System.Nullable`1<System.Single>")
-                && raidLoadingScreen.Methods.Any(m => m.Name == "OnDestroy" && m.Parameters.Count == 0),
+            raidLoadingScreen.Methods.Any(m =>
+                m.Name == "ChangeStatus"
+                && m.Parameters.Count == 2
+                && m.Parameters[0].Name == "status"
+                && m.Parameters[0].ParameterType.FullName == "System.String"
+                && m.Parameters[1].Name == "progress"
+                && m.Parameters[1].ParameterType.FullName == "System.Nullable`1<System.Single>"
+            ) && raidLoadingScreen.Methods.Any(m => m.Name == "OnDestroy" && m.Parameters.Count == 0),
             "Campaign loading captions preserve the native status, progress and screen destruction contracts"
         );
         Check(
@@ -281,9 +285,13 @@ internal static class UiCompatibilityChecks
                 "Mission and AI preview wait for scene preparation before equipping the player"
             );
             var previewLootCalls = AsyncBody(editor.FullName, "BeginAiPreview")
-                .Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().ToList();
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .ToList();
             Check(
-                previewLootCalls.Any(m => m.DeclaringType.FullName == "WTT.Campaigns.Client.Missions.MissionLoot" && m.Name == "ApplyAsync"),
+                previewLootCalls.Any(m =>
+                    m.DeclaringType.FullName == "WTT.Campaigns.Client.Missions.MissionLoot" && m.Name == "ApplyAsync"
+                ),
                 "Playable AI previews create native collectable loot after preparing the scene"
             );
             var missionLootCalls = AsyncBody("WTT.Campaigns.Client.Missions.MissionLoot", "ApplyAsync")
