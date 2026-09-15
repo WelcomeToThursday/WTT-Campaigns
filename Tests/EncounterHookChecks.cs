@@ -52,10 +52,46 @@ internal static class EncounterHookChecks
         CheckNativeSpawnPreflight(native, client);
         CheckOwnedCores(native, client);
         CheckCoverAndHold(sain, native, client);
+        CheckPlayerPoolCleanup(native, client);
 
         Console.WriteLine(
             "Encounter hooks: installed native activation, preactivation, world registration, SAIN and BigBrain surfaces verified offline."
         );
+    }
+
+    private static void CheckPlayerPoolCleanup(AssemblyDefinition native, AssemblyDefinition client)
+    {
+        var cleanup = RequireMethod(RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPlayerCleanup"), "Dispose");
+        foreach (var call in new[] { "get_IsInPool", "GetComponent", "Dispose", "DestroyLoot", "ReturnToPool" })
+            Require(Calls(cleanup, call), "Encounter cleanup preserves native pool ownership: " + call);
+        Require(!Calls(cleanup, "Destroy") && !Calls(cleanup, "DestroyImmediate"), "Cleanup must never destroy a reusable player root");
+        var coordinator = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNative");
+        var owned = RequireMethod(coordinator, "DisposeOwnedNativeRegistration");
+        Require(!Calls(owned, "Destroy"), "Owned and late bots cannot schedule destruction before corpse pooling");
+        var gate = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterSpawnAdmissionGate");
+        var denied = RequireMethod(gate, "DisposePlayer");
+        Require(!Calls(denied, "Destroy"), "Denied activation cleanup cannot poison the player pool");
+        foreach (var method in new[] { owned, denied })
+            Require(
+                method.Body.Instructions.Any(i =>
+                    i.Operand is MethodReference m && m.DeclaringType.Name == "EncounterPlayerCleanup" && m.Name == "Dispose"
+                ),
+                "All encounter player cleanup uses native pooling"
+            );
+        RequireMethod(
+            RequireType(native, "EFT.AssetsManager.AssetPoolObject"),
+            "ReturnToPool",
+            "System.Void",
+            "UnityEngine.GameObject",
+            "System.Boolean"
+        );
+        var corpse = RequireType(native, "EFT.Interactive.Corpse");
+        Require(Calls(RequireMethod(corpse, "Kill"), "Kill"), "Native corpse cleanup delegates to loot cleanup");
+        Require(
+            Calls(RequireMethod(RequireType(native, "EFT.Interactive.LootItem"), "Kill"), "ReturnToPool"),
+            "Native corpse roots are returned to the asset pool"
+        );
+        Console.WriteLine("Encounter replay: owned, late and denied players preserve native corpse and player-pool ownership.");
     }
 
     private static void CheckCoverAndHold(AssemblyDefinition sain, AssemblyDefinition native, AssemblyDefinition client)

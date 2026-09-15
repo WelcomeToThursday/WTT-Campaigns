@@ -948,13 +948,11 @@ internal sealed class EncounterNative
             var player = bot.GetPlayer;
             if (player != null)
             {
-                player.Dispose();
-                if (player.gameObject != null)
-                    UnityEngine.Object.Destroy(player.gameObject);
+                EncounterPlayerCleanup.Dispose(player);
             }
             else if (bot.gameObject != null)
             {
-                UnityEngine.Object.Destroy(bot.gameObject);
+                EFT.AssetsManager.AssetPoolObject.ReturnToPool(bot.gameObject, true);
             }
         }
         catch (Exception exception)

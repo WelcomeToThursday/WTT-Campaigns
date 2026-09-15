@@ -1044,21 +1044,11 @@ internal static class EncounterSpawnAdmissionGate
 
         try
         {
-            player.Dispose();
+            EncounterPlayerCleanup.Dispose(player);
         }
         catch (Exception exception)
         {
             UnityEngine.Debug.LogError("WTT denied encounter player cleanup failed: " + exception);
-        }
-
-        try
-        {
-            if (player.gameObject != null)
-                UnityEngine.Object.Destroy(player.gameObject);
-        }
-        catch (Exception exception)
-        {
-            UnityEngine.Debug.LogError("WTT denied encounter player object cleanup failed: " + exception);
         }
     }
 
