@@ -236,7 +236,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
                 () =>
                 {
                     go = Volume(barrier, false);
-                    navigation = new SceneNavigation(go.transform);
+                    navigation = new SceneNavigation(go.transform, tacticalCover: false);
                 },
                 () =>
                 {

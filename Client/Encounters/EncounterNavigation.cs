@@ -129,6 +129,43 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         return new Vector3(value.X, value.Y, value.Z);
     }
 
+    internal bool TryPatrolPath(Vector3 from, Vector3 to, out Vector3[] corners, out string status)
+    {
+        corners = Array.Empty<Vector3>();
+        var path = new NavMeshPath();
+        var found = NavMesh.CalculatePath(from, to, NavMeshAreaMask, path);
+        status = found ? path.status.ToString() : "No path";
+        if (!found || path.status != NavMeshPathStatus.PathComplete)
+            return false;
+        var result = path.corners;
+        if (result.Length < 2 || (result[result.Length - 1] - to).sqrMagnitude > PointTolerance * PointTolerance)
+        {
+            status = "Path does not reach waypoint";
+            return false;
+        }
+        if (!ClearSegments(result))
+        {
+            status = "Path blocked by solid scenery";
+            return false;
+        }
+        corners = result;
+        return true;
+    }
+
+    internal bool RemainingPathClear(Vector3 position, AbstractBotPath path)
+    {
+        if (path.CurIndex < 0 || path.CurIndex >= path.Length)
+            return false;
+        var corners = new Vector3[path.Length - path.CurIndex + 1];
+        corners[0] = position;
+        for (var i = path.CurIndex; i < path.Length; i++)
+            corners[i - path.CurIndex + 1] = path.GetPoint(i);
+        for (var i = 1; i < corners.Length; i++)
+            if (NavMesh.Raycast(corners[i - 1], corners[i], out _, NavMeshAreaMask))
+                return false;
+        return ClearSegments(corners);
+    }
+
     internal static bool TryToVector(SpatialVector? value, out Vector3 world)
     {
         if (value?.Finite == true)

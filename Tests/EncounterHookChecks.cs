@@ -46,13 +46,70 @@ internal static class EncounterHookChecks
         CheckCoordinatorCoverage(client);
         CheckPatrolCoverage(client);
         CheckPatrolFacing(native, client);
+        CheckPatrolPathDispatch(native, client);
         CheckHealthInterceptionCoverage(client);
         CheckSceneNavigation(gameRoot, client);
         CheckNativeSpawnPreflight(native, client);
         CheckOwnedCores(native, client);
+        CheckCoverAndHold(sain, native, client);
 
         Console.WriteLine(
             "Encounter hooks: installed native activation, preactivation, world registration, SAIN and BigBrain surfaces verified offline."
+        );
+    }
+
+    private static void CheckCoverAndHold(AssemblyDefinition sain, AssemblyDefinition native, AssemblyDefinition client)
+    {
+        var finder = RequireType(sain, "SAIN.Components.CoverFinder.CoverFinderComponent");
+        var data = RequireType(sain, "SAIN.SAINComponent.SubComponents.CoverFinder.SainBotCoverData");
+        var analyzer = RequireType(sain, "SAIN.SAINComponent.SubComponents.CoverFinder.CoverAnalyzer");
+        Require(
+            finder.Fields.Any(f => f.Name == "CoverData" && f.FieldType.FullName == data.FullName),
+            "SAIN finder retains its candidate cache"
+        );
+        Require(
+            finder.Properties.Any(p => p.Name == "CoverAnalyzer" && p.PropertyType.FullName == analyzer.FullName),
+            "SAIN finder exposes the expected analyzer contract"
+        );
+        Require(
+            data.Fields.Any(f =>
+                f.Name == "validCollidersHashSet" && f.FieldType.FullName == "System.Collections.Generic.HashSet`1<UnityEngine.Collider>"
+            ),
+            "SAIN candidate deduplication cache matches"
+        );
+        RequireMethod(data, "HandleLists", "System.Void", "UnityEngine.Vector3");
+        RequireMethod(data, "OverlapBoxAndFilter", "System.Int32", data.FullName + "/BotColliderQueryParams");
+        foreach (var name in new[] { "CheckCreateNewCoverPoint", "RecheckCoverPoint" })
+            RequireMethod(analyzer, name);
+        var cover = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterCoverRuntime");
+        Require(Calls(RequireMethod(cover, "Refresh"), "VisitCoverColliders"), "Authored cover enters SAIN's normal candidate loop");
+        foreach (var name in new[] { "Created", "Rechecked", "Creating", "Rechecking" })
+            Require(
+                Calls(RequireMethod(cover, name), name.EndsWith("ing") ? "ContainsKey" : "TryGetValue"),
+                "Cover hook is scoped to owned analyzers: " + name
+            );
+        var validate = RequireMethod(cover, "Validate");
+        Require(
+            Calls(validate, "HasCompletePath") && Calls(validate, "HasStandingClearance"),
+            "Accepted cover must remain reachable with standing space"
+        );
+        var hold = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterHoldRuntime");
+        Require(Calls(RequireMethod(hold, "Active"), "Eligible"), "Hold behavior yields through the combat/recovery eligibility gate");
+        Require(Calls(RequireMethod(hold, "Move"), "TryPatrolPath"), "Return to spawn uses validated live navigation");
+        var mover = RequireType(native, "BotMover");
+        var movePlayer = RequireMethod(mover, "MovePlayer");
+        Require(
+            Calls(movePlayer, "Move") && Calls(movePlayer, "get_Speed"),
+            "Native movement still uses player speed at the dispatch hook"
+        );
+        var patrol = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
+        var pace = RequireMethod(patrol, "ApplyOwnedPace");
+        Require(
+            Calls(pace, "GetActiveLayer") && Calls(pace, "SquadEligible") && Calls(pace, "ChangeSpeed"),
+            "Pace is enforced only while the campaign owns eligible movement"
+        );
+        Console.WriteLine(
+            "Cover and hold: SAIN cache contracts, scoped candidate validation, hold boundaries and native walking dispatch passed offline."
         );
     }
 
@@ -712,8 +769,28 @@ internal static class EncounterHookChecks
         var runtime = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
         var face = RequireMethod(runtime, "FaceMovement");
         Require(Calls(face, "LookToMovingDirection"), "Authored patrol selects native movement-facing steering");
-        foreach (var guard in new[] { "GetActiveLayer", "SquadEligible", "get_RealDestPoint" })
+        foreach (var guard in new[] { "GetActiveLayer", "SquadEligible", "Owns" })
             Require(Calls(face, guard), "Patrol facing respects navigation ownership and combat handoff: " + guard);
+        Require(!Calls(face, "get_RealDestPoint"), "An intermediate corner must not disable patrol facing");
+        var ownership = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterMovementPath");
+        var owns = RequireMethod(ownership, "Owns");
+        Require(
+            Calls(owns, "get_CurPath") && owns.Body.Instructions.Any(i => i.OpCode == OpCodes.Ceq),
+            "Movement ownership compares the exact native path reference"
+        );
+        Require(Calls(RequireMethod(ownership, "Keep"), "RemainingPathClear"), "Retained paths must be checked against current scenery");
+        Require(Calls(RequireMethod(ownership, "Keep"), "KeepPath"), "Retained paths must allow stalled movement to retry");
+        Require(
+            CallsAny(runtime, "Keep", m => m.DeclaringType.Name == "EncounterMovementPath"),
+            "Patrol refresh preserves corner progress"
+        );
+        var hold = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterHoldRuntime");
+        Require(Calls(RequireMethod(hold, "Move"), "Keep"), "Hold returns preserve corner progress too");
+        var navigation = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNavigation");
+        Require(Calls(RequireMethod(navigation, "RemainingPathClear"), "Raycast"), "Retained corners respect new NavMesh cuts");
+        Require(Calls(RequireMethod(navigation, "RemainingPathClear"), "ClearSegments"), "Retained corners respect solid scenery");
+        RequireMethod(RequireType(native, "AbstractBotPath"), "get_CurIndex", "System.Int32");
+        RequireMethod(RequireType(native, "AbstractBotPath"), "GetPoint", "UnityEngine.Vector3", "System.Int32");
         Require(
             face.Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "OwnsNavigation"),
             "Released patrol navigation cannot retain control of facing"
@@ -725,6 +802,31 @@ internal static class EncounterHookChecks
         Require(
             facingCalls.Length == 2 && facingCalls[0].Offset < dispatch.Offset && facingCalls[1].Offset > dispatch.Offset,
             "Patrol refreshes facing on both throttled ticks and freshly dispatched navigation"
+        );
+    }
+
+    private static void CheckPatrolPathDispatch(AssemblyDefinition native, AssemblyDefinition client)
+    {
+        RequireMethod(RequireType(native, "BotMover"), "GoToByWay", "System.Void", "UnityEngine.Vector3[]", "System.Single");
+        var runtime = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
+        Require(
+            CallsAny(runtime, "GoToByWay", m => m.DeclaringType.Name == "BotMover"),
+            "Patrol submits the validated live mesh corners to native movement"
+        );
+        Require(
+            !CallsAny(runtime, "GoToPoint", m => m.DeclaringType.Name == "BotMover"),
+            "Patrol must not reenter baked cover graph routing or its teleport recovery"
+        );
+        var navigation = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNavigation");
+        var path = RequireMethod(navigation, "TryPatrolPath");
+        foreach (var call in new[] { "CalculatePath", "get_status", "get_corners", "ClearSegments" })
+            Require(Calls(path, call), "Live patrol paths validate " + call);
+        Require(
+            Calls(RequireMethod(runtime, "Describe"), "GetActiveLogic"),
+            "Patrol diagnostics include the native action that owns movement"
+        );
+        Console.WriteLine(
+            "Patrol dispatch: live NavMesh corners, solid clearance, native movement API and action diagnostics verified offline."
         );
     }
 

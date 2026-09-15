@@ -7,6 +7,14 @@ internal static class EncounterCoreChecks
 {
     internal static void Run()
     {
+        Check(!EncounterMovementPolicy.ReturnToAnchor(false, 8.9f), "Idle bots hold within the outer boundary");
+        Check(EncounterMovementPolicy.ReturnToAnchor(false, 9.1f), "Displaced idle bots return");
+        Check(EncounterMovementPolicy.ReturnToAnchor(true, 4f), "Returning bots avoid oscillating at the outer boundary");
+        Check(!EncounterMovementPolicy.ReturnToAnchor(true, 2.25f), "Returning bots stop within the inner boundary");
+        Check(EncounterMovementPolicy.Speed(false) < EncounterMovementPolicy.Speed(true), "Walk is slower than run");
+        Check(EncounterMovementPolicy.KeepPath(.5f), "A normal refresh must preserve native corner progress");
+        Check(EncounterMovementPolicy.KeepPath(2.99f), "Slow but progressing walking paths are retained");
+        Check(!EncounterMovementPolicy.KeepPath(3f), "A stalled path is eligible for a bounded retry");
         var a = new SpatialCapture { Id = "a" };
         var b = new SpatialCapture { Id = "b" };
         var c = new SpatialCapture { Id = "c" };

@@ -28,6 +28,10 @@ internal sealed class EncounterPatrolRuntime
         internal bool OwnsNavigation;
         internal Vector3 Destination;
         internal float NextMove;
+        internal string PathStatus = "Not requested";
+        internal string LastWriter = "None";
+        internal readonly EncounterNavigation Navigation = new();
+        internal readonly EncounterMovementPath Path = new();
     }
 
     private sealed class Squad(MapPatrolRoute route)
@@ -73,7 +77,17 @@ internal sealed class EncounterPatrolRuntime
             40,
             new List<WildSpawnType> { WildSpawnType.assault, WildSpawnType.pmcUSEC, WildSpawnType.pmcBEAR }
         );
+        BrainManager.AddCustomLayer(
+            typeof(CampaignHoldLayer),
+            brains,
+            40,
+            new List<WildSpawnType> { WildSpawnType.assault, WildSpawnType.pmcUSEC, WildSpawnType.pmcBEAR }
+        );
         var harmony = new Harmony("com.wtt.campaigns.encounter.navigation");
+        harmony.Patch(
+            AccessTools.Method(typeof(BotMover), nameof(BotMover.MovePlayer)),
+            prefix: new HarmonyMethod(typeof(EncounterPatrolRuntime), nameof(ApplyOwnedPace))
+        );
         foreach (
             var method in typeof(BotMover)
                 .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.DeclaredOnly)
@@ -94,10 +108,13 @@ internal sealed class EncounterPatrolRuntime
     }
 
     // If native AI writes navigation after us, relinquish ownership immediately.
-    private static void NativeNavigation(BotMover __instance)
+    private static void NativeNavigation(BotMover __instance, MethodBase __originalMethod)
     {
         if (_writing != __instance && Movers.TryGetValue(__instance, out var member))
+        {
             member.OwnsNavigation = false;
+            member.LastWriter = __originalMethod.Name;
+        }
     }
 
     internal void Add(BotOwner bot, string squadId, string routeId)
@@ -123,6 +140,9 @@ internal sealed class EncounterPatrolRuntime
         Owners.Add(bot, member);
         Movers.Add(bot.Mover, member);
         squad.State.Start(squad.Members.AsValueEnumerable().Select(m => m.Id).ToArray());
+        Plugin.LogInfo(
+            $"AI patrol assigned: bot={bot.ProfileId}, squad={squadId}, route='{route.Name}' ({route.Id}), waypoints={route.Waypoints.Count}"
+        );
     }
 
     internal void Tick()
@@ -175,27 +195,51 @@ internal sealed class EncounterPatrolRuntime
         Status = _squads.Count + " patrol squads" + (suspended > 0 ? " · " + suspended + " suspended" : "");
     }
 
-    private static bool Eligible(BotOwner bot)
+    internal static bool Eligible(BotOwner bot) => EligibilityReason(bot).Length == 0;
+
+    private static void ApplyOwnedPace(BotMover __instance)
+    {
+        BotOwner? bot = null;
+        var run = false;
+        if (Movers.TryGetValue(__instance, out var member))
+        {
+            bot = member.Bot;
+            if (!member.OwnsNavigation || BrainManager.GetActiveLayer(bot) is not CampaignPatrolLayer || !SquadEligible(member.Squad))
+                return;
+            run = member.Command?.Pace == MapPatrolRoute.Run;
+        }
+        else
+        {
+            // Native mover owns its BotOwner; no scene-wide search or global speed override.
+            bot = EncounterHoldRuntime.Owner(__instance);
+            if (!bot || !EncounterHoldRuntime.Active(bot) || BrainManager.GetActiveLayer(bot) is not CampaignHoldLayer)
+                return;
+        }
+        var speed = EncounterMovementPolicy.Speed(run);
+        __instance.Sprint(false);
+        bot.GetPlayer.EnableSprint(false);
+        __instance.SetTargetMoveSpeed(speed);
+        bot.GetPlayer.ChangeSpeed(speed - bot.GetPlayer.Speed);
+    }
+
+    private static string EligibilityReason(BotOwner bot)
     {
         if (!bot || bot.IsDead || !bot.GetPlayer || bot.GetPlayer.ActiveHealthController?.IsAlive != true)
-            return false;
+            return "Bot not alive/ready";
         var sain = bot.GetComponent<BotComponent>();
-        if (
-            !sain
-            || !sain.BotActive
-            || sain.Decision == null
-            || sain.Decision.HasDecision
-            || sain.GoalEnemy != null
-            || bot.Memory == null
-            || bot.Memory.GoalEnemy != null
-            || bot.Memory.IsUnderFire
-        )
-            return false;
+        if (!sain || !sain.BotActive || sain.Decision == null || bot.Memory == null)
+            return "SAIN or memory not ready";
+        if (sain.GoalEnemy != null || bot.Memory.GoalEnemy != null || bot.Memory.IsUnderFire)
+            return "Enemy or incoming fire";
+        if (sain.Decision.HasDecision)
+            return "SAIN decision active";
         if (!SAINExternal.CanBotQuest(bot, bot.GetPlayer.Transform.position))
-            return false;
+            return "SAIN blocks patrol (combat/search)";
         var active = BrainManager.GetActiveLayer(bot);
         // Includes SAIN threat avoidance, recovery and extraction layers that need not have an enemy.
-        return active != null && (active is CampaignPatrolLayer || active.GetType().Assembly != typeof(SAINExternal).Assembly);
+        return active == null ? "Brain layer not ready"
+            : active is CampaignPatrolLayer || active.GetType().Assembly != typeof(SAINExternal).Assembly ? ""
+            : "SAIN layer: " + active.GetType().Name;
     }
 
     private static bool SquadEligible(Squad squad)
@@ -253,6 +297,11 @@ internal sealed class EncounterPatrolRuntime
                 // This logic is only invoked by our currently selected BigBrain layer.
                 if (BrainManager.GetActiveLayer(bot) is not CampaignPatrolLayer)
                     return;
+                if (member.OwnsNavigation && member.Path.Keep(bot, target, member.Navigation))
+                {
+                    member.PathStatus = "Following existing path";
+                    return;
+                }
                 _writing = bot.Mover;
                 try
                 {
@@ -268,11 +317,35 @@ internal sealed class EncounterPatrolRuntime
                         Release(member.Squad);
                         return;
                     }
-                    var result = bot.Mover.GoToPoint(target, true, .5f, false, true);
-                    member.OwnsNavigation = result == NavMeshPathStatus.PathComplete;
+                    // Use the same live carved mesh as validation. GoToPoint enters
+                    // baked cover-graph routing and can invoke its teleport recovery.
+                    if (!member.Navigation.TryPatrolPath(bot.GetPlayer.Transform.position, target, out var corners, out var pathStatus))
+                    {
+                        member.PathStatus = pathStatus;
+                        Release(member);
+                        return;
+                    }
+                    if (!SquadEligible(member.Squad))
+                    {
+                        Release(member.Squad);
+                        return;
+                    }
+                    if (bot.BotLay.IsLay)
+                    {
+                        bot.BotLay.GetUp(false);
+                        if (bot.BotLay.IsLay)
+                        {
+                            member.PathStatus = "Waiting to stand";
+                            return;
+                        }
+                    }
+                    bot.WeaponManager.Stationary.StartMove();
+                    bot.Mover.GoToByWay(corners, .5f);
+                    member.Path.Submitted(bot, target);
+                    member.PathStatus = pathStatus;
+                    member.LastWriter = "Campaign patrol";
+                    member.OwnsNavigation = true;
                     member.Destination = target;
-                    if (!member.OwnsNavigation)
-                        member.Command = null;
                 }
                 finally
                 {
@@ -291,7 +364,7 @@ internal sealed class EncounterPatrolRuntime
             !member.OwnsNavigation
             || BrainManager.GetActiveLayer(bot) is not CampaignPatrolLayer
             || !SquadEligible(member.Squad)
-            || (bot.Mover.RealDestPoint - member.Destination).sqrMagnitude > .01f
+            || !member.Path.Owns(bot.Mover)
         )
             return;
         // Native steering follows the current path segment, including bends between waypoints.
@@ -313,7 +386,7 @@ internal sealed class EncounterPatrolRuntime
         if (!member.Bot || member.Bot.Mover == null)
             return;
         var mover = member.Bot.Mover;
-        if ((mover.RealDestPoint - member.Destination).sqrMagnitude > .01f)
+        if (!member.Path.Owns(mover))
             return;
         _writing = mover;
         try
@@ -330,6 +403,26 @@ internal sealed class EncounterPatrolRuntime
     {
         if (Owners.TryGetValue(bot, out var member))
             Release(member);
+    }
+
+    internal static string Describe(BotOwner bot)
+    {
+        if (!bot || !bot.GetPlayer)
+            return "Bot unavailable";
+        var active = BrainManager.GetActiveLayer(bot);
+        var logic = BrainManager.GetActiveLogic(bot);
+        var sain = bot.GetComponent<BotComponent>();
+        var decisions =
+            sain && sain.Decision != null
+                ? $"{sain.Decision.CurrentCombatDecision}/{sain.Decision.CurrentSquadDecision}/{sain.Decision.CurrentSelfDecision}"
+                : "unavailable";
+        var native =
+            $"layer={active?.GetType().Name ?? "none"}, logic={logic?.GetType().Name ?? "none"}, decisions={decisions}, position={bot.GetPlayer.Transform.position.ToString("F2")}, corner={bot.Mover.RealDestPoint.ToString("F2")}, target={bot.Mover.TargetPoint?.ToString("F2") ?? "none"}, cornerIndex={bot.Mover.ActualPathController.CurPath?.CurIndex.ToString() ?? "none"}";
+        if (!Owners.TryGetValue(bot, out var member))
+            return EncounterHoldRuntime.Describe(bot) + "; " + native;
+        var reason = EligibilityReason(bot);
+        return $"route='{member.Squad.State.Route.Name}', waypoint={member.Squad.State.TargetWaypointIndex + 1}, state={member.Squad.State.Status}/{member.Squad.State.SuspensionReason}, eligibility={(reason.Length == 0 ? "eligible" : reason)}, owns={member.OwnsNavigation}, path={member.PathStatus}, lastWriter={member.LastWriter}; "
+            + native;
     }
 
     internal void Reset()

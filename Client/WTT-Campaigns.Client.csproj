@@ -53,6 +53,7 @@
     <Reference Include="spt-custom" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-custom.dll" Private="false" />
     <Reference Include="DrakiaXYZ-BigBrain" HintPath="$(TarkovDir)BepInEx\plugins\DrakiaXYZ-BigBrain.dll" Private="false" />
     <Reference Include="SAIN" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.dll" Private="false" />
+    <Reference Include="SAIN.Preset.Shared" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.Preset.Shared.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
     <None

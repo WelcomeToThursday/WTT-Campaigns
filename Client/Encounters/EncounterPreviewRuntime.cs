@@ -40,10 +40,13 @@ internal sealed class EncounterPreviewRuntime
     private Player _player = null!;
     private string _encounterToken = "";
     private EncounterPatrolRuntime? _patrol;
+    private readonly EncounterHoldRuntime _holds = new();
+    private readonly EncounterCoverRuntime _cover = new();
     private CancellationTokenSource? _lifetime;
     private bool _ready,
         _ended;
     private float _nextUpdate;
+    private float _nextBotTrace;
 
     internal static string CompatibilityError => EncounterNative.CompatibilityError;
     internal string Status { get; private set; } = "Preparing AI preview";
@@ -126,6 +129,20 @@ internal sealed class EncounterPreviewRuntime
         if (!_player)
             throw new InvalidOperationException("The preview player is no longer available.");
         _patrol?.Tick();
+        if (Time.time >= _nextBotTrace)
+        {
+            _nextBotTrace = Time.time + 5;
+            foreach (var record in _bots)
+                if (!record.Finished && !record.DeathConfirmed && record.Bot)
+                    Plugin.LogInfo(
+                        "AI movement: bot="
+                            + record.ProfileId
+                            + "; "
+                            + EncounterPatrolRuntime.Describe(record.Bot)
+                            + "; "
+                            + EncounterCoverRuntime.Describe(record.Bot)
+                    );
+        }
         if (Time.time < _nextUpdate)
             return;
         _nextUpdate = Time.time + .1f;
@@ -339,8 +356,11 @@ internal sealed class EncounterPreviewRuntime
                     record.DeathConfirmed = !record.Health.IsAlive;
                     record.Health.DiedEvent += record.OnDeath;
                     _bots.Add(record);
+                    _cover.Add(bot);
                     if (roster.PatrolRouteId.Length > 0)
                         _patrol!.Add(bot, squad, roster.PatrolRouteId);
+                    else
+                        _holds.Add(bot, point);
                 }
             }
             if (!state.TryCommitGeneration(waveIndex, generation, Time.time, out var failure))
@@ -383,6 +403,8 @@ internal sealed class EncounterPreviewRuntime
         finally
         {
             _patrol?.Reset();
+            _holds.Reset();
+            _cover.Reset();
         }
         _patrol = null;
         _encounterToken = "";

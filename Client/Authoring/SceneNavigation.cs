@@ -10,8 +10,9 @@ internal sealed class SceneNavigation : IDisposable
 {
     private static readonly HashSet<SceneNavigation> Active = new();
     private readonly List<GameObject> _proxies = new();
+    private readonly List<Collider> _coverColliders = new();
 
-    internal SceneNavigation(Transform root)
+    internal SceneNavigation(Transform root, bool tacticalCover = true)
     {
         try
         {
@@ -19,6 +20,8 @@ internal sealed class SceneNavigation : IDisposable
             {
                 if (collider.isTrigger)
                     continue;
+                if (tacticalCover)
+                    _coverColliders.Add(collider);
                 Bounds bounds;
                 switch (collider)
                 {
@@ -87,6 +90,14 @@ internal sealed class SceneNavigation : IDisposable
         foreach (var proxy in owner._proxies)
             if (proxy && proxy.activeInHierarchy && proxy.GetComponent<NavMeshObstacle>() is { } obstacle && obstacle.enabled)
                 visit(obstacle);
+    }
+
+    internal static void VisitCoverColliders(Action<Collider> visit)
+    {
+        foreach (var owner in Active)
+        foreach (var collider in owner._coverColliders)
+            if (collider && collider.enabled && !collider.isTrigger && collider.gameObject.activeInHierarchy)
+                visit(collider);
     }
 }
 

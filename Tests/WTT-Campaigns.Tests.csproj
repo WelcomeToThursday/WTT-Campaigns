@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="..\Client\Authoring\EditorLayoutSpec.cs" Link="Client\EditorLayoutSpec.cs" />
     <Compile Include="..\Client\Encounters\EncounterCorePlan.cs" Link="Client\EncounterCorePlan.cs" />
+    <Compile Include="..\Client\Encounters\EncounterMovementPolicy.cs" Link="Client\EncounterMovementPolicy.cs" />
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
     <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
     <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
