@@ -13,7 +13,7 @@
       <_CampaignsComponent Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Server'">server</_CampaignsComponent>
       <_CampaignsComponent Condition="'$(MSBuildProjectName)' != 'WTT-Campaigns.Server'">client</_CampaignsComponent>
     </PropertyGroup>
-    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.UI'">
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.UI' or '$(MSBuildProjectName)' == 'WTT-Campaigns.AI'">
       <_CampaignsRuntimeFile Include="$(TargetPath)" />
     </ItemGroup>
     <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Client'">

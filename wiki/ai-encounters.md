@@ -28,7 +28,7 @@ BigBrain provides the patrol layer. SAIN keeps control during combat, search, an
 
 ## Observe, playtest, and reset
 
-Compatible **BigBrain 1.5.0** and **SAIN 4.5.1** are required for the initial **SPT 4.1.5** target. Preview remains unavailable when the installed integration cannot establish safe spawn admission and AI ownership. Ordinary raids keep their normal spawning and AI behavior.
+Compatible **BigBrain 1.5.0** and **SAIN 4.5.1** are required for the initial **SPT 4.1.5** target. Preview remains unavailable when the installed integration cannot establish safe spawn admission and AI ownership. Ordinary raids keep their normal spawning and AI behavior. These AI dependencies are optional for ordinary campaign play. The shipped `WTT-Campaigns.AI.dll` is loaded only when an authored encounter needs the integration and both dependencies pass compatibility checks; keep it alongside the matching client assembly when updating.
 
 - **Observe** keeps the free camera and excludes the editor player from combat targeting. Bots can fight and damage each other.
 - Observe sends the mission-start signal. An encounter using **Event** waits for its named event; select that encounter, wave, or roster and use **Simulate**. Selecting a patrol route alone does not select an encounter to activate. Player-entry encounters can also be activated with Simulate. To spawn automatically when Observe begins, use the **Mission start** trigger.

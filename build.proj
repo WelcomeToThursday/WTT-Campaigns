@@ -12,6 +12,7 @@
   </PropertyGroup>
   <ItemGroup>
     <_DeployProject Include="Client\WTT-Campaigns.Client.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Client'" />
+    <_DeployProject Include="AiIntegration\WTT-Campaigns.AI.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Client'" />
     <_DeployProject Include="Server\WTT-Campaigns.Server.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" />
     <_DeployProject Include="UI\WTT-Campaigns.UI.csproj" Condition="'$(DeploymentScope)' == 'UI'" />
     <_TestProject Include="Tests\WTT-Campaigns.Tests.csproj" />

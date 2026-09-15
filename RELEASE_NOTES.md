@@ -4,6 +4,8 @@ The 0.9.0 development cycle is underway.
 
 ## Maintenance
 
+- Fixed startup type-loading errors when SAIN or BigBrain is absent, which could leave game serialization uninitialized and prevent raids from loading (issue #10). The optional AI integration now loads only after its dependency checks pass.
+
 - Organized Campaign Editor client code into focused view, scene, rendering, and preview namespaces. This is an internal code cleanup with no intended gameplay changes.
 
 ---

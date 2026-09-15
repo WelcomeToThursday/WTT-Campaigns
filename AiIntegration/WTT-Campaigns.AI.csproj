@@ -1,25 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <RootNamespace>WTT.Campaigns.Client</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.9.0</Version>
+    <OutputPath>../Client/bin/$(Configuration)/</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <Using Remove="System.Linq" />
-    <EmbeddedResource Include="Customization\Assets\face.png" LogicalName="WTT.Campaigns.Customization.face.png" />
-    <Reference
-      Include="WTT-ClientCommonLib"
-      HintPath="$(TarkovDir)BepInEx\plugins\WTT-ClientCommonLib\WTT-ClientCommonLib.dll"
-      Private="false"
-    />
-    <Reference Include="UniTask" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\UniTask.dll" Private="false" />
-    <Reference Include="ZLinq" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll" Private="false" />
-    <Reference Include="ZString" HintPath="$(TarkovDir)BepInEx\plugins\UnityToolkit\ZString.dll" Private="false" />
-    <Reference Include="spt-reflection" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-reflection.dll" Private="false" />
-    <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
-    <ProjectReference Include="..\UI\WTT-Campaigns.UI.csproj" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="../Client/WTT-Campaigns.Client.csproj" />
+    <Reference Include="ZLinq" HintPath="$(TarkovDir)BepInEx/plugins/UnityToolkit/ZLinq.dll" Private="false" />
     <Reference Include="Sirenix.Serialization" HintPath="$(ManagedDir)Sirenix.Serialization.dll" Private="false" />
     <Reference Include="ItemComponent.Types" HintPath="$(ManagedDir)ItemComponent.Types.dll" Private="false" />
     <Reference
@@ -51,44 +38,8 @@
     <Reference Include="BepInEx" HintPath="$(TarkovDir)BepInEx\core\BepInEx.dll" Private="false" />
     <Reference Include="spt-common" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-common.dll" Private="false" />
     <Reference Include="spt-custom" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-custom.dll" Private="false" />
+    <Reference Include="DrakiaXYZ-BigBrain" HintPath="$(TarkovDir)BepInEx\plugins\DrakiaXYZ-BigBrain.dll" Private="false" />
+    <Reference Include="SAIN" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.dll" Private="false" />
+    <Reference Include="SAIN.Preset.Shared" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.Preset.Shared.dll" Private="false" />
   </ItemGroup>
-  <ItemGroup>
-    <None
-      Include="Resources\wtt_campaigns_editor_toolkit.bundle"
-      CopyToOutputDirectory="PreserveNewest"
-      TargetPath="wtt_campaigns_editor_toolkit.bundle"
-    />
-    <None
-      Include="Resources\editor-toolkit-validation.json"
-      CopyToOutputDirectory="PreserveNewest"
-      TargetPath="editor-toolkit-validation.json"
-    />
-    <None
-      Include="Resources\wtt_campaigns_story_notifications.bundle"
-      CopyToOutputDirectory="PreserveNewest"
-      TargetPath="wtt_campaigns_story_notifications.bundle"
-    />
-    <None
-      Include="Resources\story-notification-validation.json"
-      CopyToOutputDirectory="PreserveNewest"
-      TargetPath="story-notification-validation.json"
-    />
-    <None
-      Include="Resources\StoryMedia\**\*"
-      CopyToOutputDirectory="PreserveNewest"
-      TargetPath="StoryMedia\%(RecursiveDir)%(Filename)%(Extension)"
-    />
-    <None
-      Include="Resources\wtt_campaigns_ui.bundle"
-      CopyToOutputDirectory="PreserveNewest"
-      TargetPath="wtt_campaigns_ui.bundle"
-      Condition="Exists('Resources\wtt_campaigns_ui.bundle')"
-    />
-  </ItemGroup>
-  <Target Name="CheckUnityToolkit" BeforeTargets="ResolveAssemblyReferences">
-    <Error
-      Condition="!Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\UnityToolkit.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\UniTask.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll') or !Exists('$(TarkovDir)BepInEx\plugins\UnityToolkit\ZString.dll')"
-      Text="Install UnityToolkit 2.0.2 or later in the target SPT installation before building the WTT-Campaigns client."
-    />
-  </Target>
 </Project>
