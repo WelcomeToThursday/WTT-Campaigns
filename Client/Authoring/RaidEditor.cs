@@ -66,7 +66,7 @@ public sealed partial class RaidEditor : MonoBehaviour
     private int _page;
     private Transform? _picked;
     private CaptureTask? _task;
-    private readonly List<(string Id, string Label)> _rows = new();
+
     private SpatialCapture? Selected
     {
         get
@@ -185,7 +185,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 _task = null;
                 if (player && AuthoringEnabled && ZoneRuntime.Location.Length > 0)
                 {
-                    _moduleSelection.Clear();
+                    _toolStates.Clear();
                     _session = new RaidEditorSession(ZoneRuntime.Location);
                     if (EditorMode.Ready)
                     {
@@ -341,6 +341,23 @@ public sealed partial class RaidEditor : MonoBehaviour
 
                 if (Input.GetKeyDown(KeyCode.F))
                     FrameSceneSelection();
+                if (!Input.GetMouseButton(1) && _drag == null && _placementLifetime == null
+                    && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)
+                    && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.RightAlt)
+                    && !Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+                {
+                    var tool = Input.GetKeyDown(KeyCode.W) ? "Move"
+                        : Input.GetKeyDown(KeyCode.E) ? "Rotate"
+                        : Input.GetKeyDown(KeyCode.R) ? "Scale" : "";
+                    if (tool.Length > 0 && (SceneWorkspace ? CanTransformScene(tool) : Selected != null || MapPoint != null))
+                    {
+                        if (SceneWorkspace)
+                            SceneTransform(tool);
+                        else
+                            _tool = tool;
+                        Refresh();
+                    }
+                }
                 if (!PlacementInput())
                     GeometryInput();
             }
@@ -385,7 +402,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             _task = null;
             Close();
         }
-        if (_walkRequested)
+        if (_walkRequested && !session.Dirty && !session.Busy)
         {
             _walkRequested = false;
             if (_open && session.Grant.Length > 0 && session.Conflict == null)

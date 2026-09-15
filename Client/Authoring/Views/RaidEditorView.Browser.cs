@@ -5,35 +5,95 @@ namespace WTT.Campaigns.Client.Authoring.Views;
 
 internal sealed partial class RaidEditorView
 {
-    private ScrollView _paged = null!;
-    private ListView _tree = null!;
-    private readonly List<EditorTreeNode> _treeRows = new();
-    private readonly Dictionary<string, HashSet<string>> _expanded = new();
-    private EditorTreeModel? _treeModel;
-    private Func<ISet<string>, EditorTreeModel>? _treeBuild;
+    private sealed class BrowserState
+    {
+        internal readonly List<EditorButton> Rows = new();
+        internal ScrollView Paged = null!;
+        internal ListView Tree = null!;
+        internal readonly List<EditorTreeNode> TreeRows = new();
+        internal readonly Dictionary<string, HashSet<string>> Expanded = new();
+        internal EditorTreeModel? Model;
+        internal Func<ISet<string>, EditorTreeModel>? Build;
+        internal string Context = "",
+            Search = "",
+            Selection = "";
+        internal long Revision = long.MinValue;
+        internal bool Sync,
+            PointerHeld;
+        internal bool Grid = true;
+        internal int Presentation = -1;
+    }
+
+    private readonly Dictionary<string, BrowserState> _browsers = new();
+    private BrowserState Browser => _browsers[ToolContext];
+    private ScrollView _paged => Browser.Paged;
+    private ListView _tree => Browser.Tree;
+    private List<EditorTreeNode> _treeRows => Browser.TreeRows;
+    private Dictionary<string, HashSet<string>> _expanded => Browser.Expanded;
+    private EditorTreeModel? _treeModel
+    {
+        get => Browser.Model;
+        set => Browser.Model = value;
+    }
+    private Func<ISet<string>, EditorTreeModel>? _treeBuild
+    {
+        get => Browser.Build;
+        set => Browser.Build = value;
+    }
+    private string _treeContext
+    {
+        get => Browser.Context;
+        set => Browser.Context = value;
+    }
+    private string _treeSearch
+    {
+        get => Browser.Search;
+        set => Browser.Search = value;
+    }
+    private string _treeSelection
+    {
+        get => Browser.Selection;
+        set => Browser.Selection = value;
+    }
+    private long _treeRevision
+    {
+        get => Browser.Revision;
+        set => Browser.Revision = value;
+    }
+    private bool _treeSync
+    {
+        get => Browser.Sync;
+        set => Browser.Sync = value;
+    }
     private Action<string>? _selectTree;
-    private string _treeContext = "",
-        _treeSearch = "",
-        _treeSelection = "";
-    private long _treeRevision = long.MinValue;
-    private bool _treeSync;
     internal int TreeRecordCount => _treeModel?.SelectableCount ?? 0;
     internal int TreeVisibleCount => _treeRows.Count;
 
     private void BuildBrowser()
     {
+        var owner = ToolContext;
+        var state = Browser;
         var parent = Element("LibraryScroll");
-        _paged = new ScrollView();
+        Browser.Paged = new ScrollView();
         EditorScrollStyle.Apply(_paged);
         _paged.style.flexGrow = 1;
         _paged.style.minHeight = 0;
         _paged.style.flexBasis = 0;
+        _paged.contentViewport.RegisterCallback<GeometryChangedEvent>(evt =>
+        {
+            if (state.Presentation == 2)
+                state.Paged.contentContainer.style.width = evt.newRect.width;
+        });
         parent.Add(_paged);
-        for (var i = 0; i < 10; i++)
+        for (var i = 0; i < (owner == "Scene" ? CatalogGridLayout.MaximumItems : 10); i++)
         {
             var button = new Button();
             button.AddToClassList("editor-browser-row");
+            EditorControlLayout.ListRow(button);
+            button.style.minHeight = 28;
+            button.style.marginTop = button.style.marginBottom = 1;
             var control = new EditorButton(button);
+            button.style.display = DisplayStyle.None;
             Register("Row" + i, control);
             _rows.Add(control);
             _paged.Add(button);
@@ -48,9 +108,9 @@ internal sealed partial class RaidEditorView
             Visible("SceneIcon" + i, false);
             Visible("SceneIconStatus" + i, false);
         }
-        _tree = new ListView
+        Browser.Tree = new ListView
         {
-            fixedItemHeight = 30,
+            fixedItemHeight = EditorControlLayout.TreeRowHeight,
             virtualizationMethod = CollectionVirtualizationMethod.FixedHeight,
             selectionType = SelectionType.Single,
             itemsSource = _treeRows,
@@ -58,22 +118,31 @@ internal sealed partial class RaidEditorView
             {
                 var row = new VisualElement();
                 row.AddToClassList("editor-tree-row");
-                var fold = new Button();
-                fold.style.width = 24;
-                fold.style.flexShrink = 0;
+                // Use the native theme arrow: the recovered EFT font has no triangle glyphs.
+                var fold = new Foldout { text = "", focusable = false };
                 row.Add(fold);
-                var label = new Label { enableRichText = false };
+                var label = new Label { name = "tree-label", enableRichText = false };
+                EditorControlLayout.TreeRow(row, fold, label);
                 row.Add(label);
-                fold.clicked += () =>
+                fold.RegisterValueChangedCallback(evt =>
                 {
                     if (row.userData is EditorTreeNode node && node.HasChildren)
                     {
-                        var expanded = _expanded[_treeContext];
-                        if (!expanded.Remove(node.Key))
+                        if (!Activate(owner))
+                            return;
+                        var expanded = state.Expanded[state.Context];
+                        if (evt.newValue)
                             expanded.Add(node.Key);
-                        RebuildTree(false);
+                        else
+                            expanded.Remove(node.Key);
+                        // Finish the toggle event before rebinding recycled list rows.
+                        state.Tree.schedule.Execute(() =>
+                        {
+                            if (Activate(owner))
+                                RebuildTree(false);
+                        });
                     }
-                };
+                });
                 row.RegisterCallback<PointerEnterEvent>(_ =>
                 {
                     if (row.userData is EditorTreeNode node)
@@ -84,13 +153,17 @@ internal sealed partial class RaidEditorView
             },
             bindItem = (row, index) =>
             {
-                var node = _treeRows[index];
+                var node = state.TreeRows[index];
                 row.userData = node;
-                row.style.paddingLeft = node.Depth * 14;
-                row.Q<Label>().text = node.Label;
-                var fold = row.Q<Button>();
-                fold.text = node.HasChildren ? (_treeSearch.Length > 0 || _expanded[_treeContext].Contains(node.Key) ? "−" : "+") : "";
+                row.style.paddingLeft = 4 + node.Depth * 14;
+                row.Q<Label>("tree-label").text = node.Label;
+                var fold = row.Q<Foldout>();
+                fold.SetValueWithoutNotify(
+                    node.HasChildren && (state.Search.Length > 0 || state.Expanded[state.Context].Contains(node.Key))
+                );
+                fold.contentContainer.style.display = DisplayStyle.None;
                 fold.SetEnabled(node.HasChildren);
+                fold.style.visibility = node.HasChildren ? Visibility.Visible : Visibility.Hidden;
             },
         };
         _tree.style.flexGrow = 1;
@@ -101,12 +174,16 @@ internal sealed partial class RaidEditorView
         _tree.style.display = DisplayStyle.None;
         _tree.selectionChanged += selection =>
         {
-            if (_treeSync)
+            if (state.Sync)
                 return;
             foreach (var item in selection)
             {
                 if (item is EditorTreeNode { Selectable: true } node)
-                    _selectTree?.Invoke(node.Id);
+                {
+                    var id = node.Id;
+                    if (Activate(owner))
+                        _selectTree?.Invoke(id);
+                }
                 break;
             }
         };

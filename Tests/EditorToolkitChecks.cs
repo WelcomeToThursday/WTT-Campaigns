@@ -100,7 +100,7 @@ internal static class EditorToolkitChecks
             inventory[id + "Heading"] = "text";
         foreach (var id in new[] { "LibraryCollapse", "InspectorCollapse", "HelpClose", "EnvironmentClose" })
             inventory[id] = "button";
-        for (var i = 0; i < 10; i++)
+        for (var i = 0; i < 60; i++)
         {
             inventory["Row" + i] = "button";
             inventory["SceneIcon" + i] = "image";

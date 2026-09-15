@@ -9,6 +9,7 @@ internal static class UiCompatibilityChecks
         using var assembly = AssemblyDefinition.ReadAssembly(path);
         PreviewNativeChecks.Run(assembly.MainModule);
         var types = assembly.MainModule.GetTypes().ToDictionary(type => type.FullName);
+        SceneMovementNativeChecks.Run(types);
         var count = 0;
         void Check(bool value, string description)
         {
@@ -199,7 +200,7 @@ internal static class UiCompatibilityChecks
                 geometry.Body.Instructions.Count(i =>
                     i.Operand is MethodReference m && m.DeclaringType.Name == "ScenePicking" && m.Name == "Dispatch"
                 ) == 2,
-                "Ordinary clicks and armed picking both use Maps/Scene selection routing"
+                "Ordinary clicks use viewport selection; armed scene picking retains its dedicated path"
             );
             var pick = editor.Methods.Single(m => m.Name == "PickScene");
             var calls = pick
@@ -281,7 +282,7 @@ internal static class UiCompatibilityChecks
             Check(
                 preparePreview.IndexOf("ApplyAsync") >= 0
                     && preparePreview.IndexOf("ApplyAsync") < preparePreview.IndexOf("Equip")
-                    && preparePreview.IndexOf("Apply") > preparePreview.IndexOf("Equip"),
+                    && preparePreview.LastIndexOf("ApplyAsync") > preparePreview.IndexOf("Equip"),
                 "Mission and AI preview wait for scene preparation before equipping the player"
             );
             var previewLootCalls = AsyncBody(editor.FullName, "BeginAiPreview")
@@ -307,6 +308,15 @@ internal static class UiCompatibilityChecks
                     && lootOwner < missionLootCalls.FindIndex(m => m.Name == "CreateStaticLoot"),
                 "Mission loot receives a native root owner before prefab creation and world registration"
             );
+            Check(missionLootCalls.Any(m => m.Name == "CreateLootContainer" && m.DeclaringType.FullName == "EFT.Interactive.LootItem"),
+                "Placed containers use native initialization and world item-owner registration");
+            Check(missionLootCalls.Any(m => m.Name == ".ctor" && m.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.Scenes.SceneNavigation")
+                && missionLootCalls.Any(m => m.Name == "WaitForNavigationAsync"), "Placed containers prepare owned navigation before the run continues");
+            var assetLoadCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Scenes.SceneAssetCatalog", "Load")
+                .Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().Select(m => m.Name).ToList();
+            Check(assetLoadCalls.IndexOf("Retain") >= 0 && assetLoadCalls.IndexOf("Retain") < assetLoadCalls.IndexOf("LoadAssetAsync")
+                && assetLoadCalls.Contains("ThrowIfCancellationRequested") && !assetLoadCalls.Any(n => n is "LoadScene" or "LoadSceneAsync"),
+                "Independent asset loads retain native dependencies, observe cancellation and never load another map");
             var prepareScene = AsyncBody(sceneAdapter.FullName, "ApplyAsync")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()

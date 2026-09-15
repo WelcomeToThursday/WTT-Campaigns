@@ -138,7 +138,7 @@ public sealed partial class RaidEditor
             if (playtest && !_editorMissionRequested)
             {
                 // Replace inert editor models with native, collectable loot.
-                _mapScene.Apply(layout, requirePlayerRoute: false, runtime: true);
+                await _mapScene.ApplyAsync(layout, false, lifetime.Token, runtime: true);
                 _aiLoot = new MissionLoot();
                 await _aiLoot.ApplyAsync(layout, Guid.NewGuid().ToString("N"), lifetime.Token);
                 lifetime.Token.ThrowIfCancellationRequested();

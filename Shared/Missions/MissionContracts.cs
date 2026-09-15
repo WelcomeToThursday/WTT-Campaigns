@@ -30,6 +30,7 @@ public sealed class MissionSummary
 /// <summary>Immutable content and server-issued identity required to enter a mission raid.</summary>
 public sealed class MissionDescriptor
 {
+    public Dictionary<string, List<WTT.Campaigns.Shared.Native.NativeItem>> ContainerLoot { get; set; } = new();
     public MissionDefinition Definition { get; set; } = new();
     public MapLayout Layout { get; set; } = new();
     public List<SeasonZone> Zones { get; set; } = new();

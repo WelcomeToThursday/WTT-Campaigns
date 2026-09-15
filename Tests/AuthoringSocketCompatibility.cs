@@ -55,6 +55,9 @@ internal static class AuthoringSocketCompatibility
         }
 
         var handler = server.MainModule.GetType("WTT.Campaigns.Server.Routing.AuthoringSocketHandler");
+        Require(handler.Methods.Single(m => m.Name == "AcceptsMapRequest").Body.Instructions.Any(i =>
+            i.Operand is MethodReference m && m.Name == "AcceptsMapRequest" && m.DeclaringType.Name == "Session"),
+            "The live map socket uses the tested editor protocol and identity gate");
         Require(
             handler.Interfaces.Single().InterfaceType.Name == "ISptWebSocketMessageHandler",
             "Editor extends the existing SPT message connection"

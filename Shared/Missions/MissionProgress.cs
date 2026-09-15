@@ -26,6 +26,7 @@ public sealed class MissionProgress
 /// <summary>Server-owned identity and progress for one prepared or active raid.</summary>
 public sealed class MissionRun
 {
+    public Dictionary<string, List<WTT.Campaigns.Shared.Native.NativeItem>> ContainerLoot { get; set; } = new();
     public string RunId { get; set; } = "";
     public string CharacterId { get; set; } = "";
     public string RaidId { get; set; } = "";

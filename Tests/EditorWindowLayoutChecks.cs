@@ -72,7 +72,7 @@ internal static class EditorWindowLayoutChecks
         var json = JsonConvert.SerializeObject(layout);
         var restored = JsonConvert.DeserializeObject<EditorWindowLayout>(json)!;
         check(
-            restored.Version == 1 && restored.Windows[0].Width == 520 && restored.Windows[0].Visible,
+            restored.Version == 2 && restored.Windows[0].Width == 520 && restored.Windows[0].Visible,
             "Local layout survives serialization between launches"
         );
         var onSmallerDisplay = EditorWindowPlacement.Fit(restored.Windows[0], 1280, 720, 400, 390);

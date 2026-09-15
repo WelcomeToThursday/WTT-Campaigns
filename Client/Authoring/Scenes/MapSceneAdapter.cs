@@ -22,6 +22,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
     internal static string ScaleRestriction(Transform target)
     {
+        if (target.GetComponentInChildren<WorldInteractiveObject>(true))
+            return "Props with native interactions retain their original size so grips, hinges and drawers stay aligned.";
         // Include disabled colliders: hiding a prop must not bypass its collision requirements.
         foreach (var collider in target.GetComponentsInChildren<MeshCollider>(true))
             if (collider.sharedMesh && !collider.sharedMesh.isReadable)
@@ -84,6 +86,15 @@ internal sealed partial class MapSceneAdapter : IDisposable
                 continue;
             if (c.GetType().FullName == "EFT.Ballistics.BallisticCollider")
                 continue;
+            if (ScenePropSupport.OwnedComponent(c.GetType().FullName ?? ""))
+            {
+                if (copy)
+                    return "This original can be moved, but copying its native interaction or marker is unsupported.";
+                var restriction = ScenePropMovement.Restriction(t, c);
+                if (restriction.Length > 0)
+                    return restriction;
+                continue;
+            }
             if (ScenePropSupport.PreservedComponent(c.GetType().FullName ?? ""))
             {
                 if (copy)
@@ -183,11 +194,11 @@ internal sealed partial class MapSceneAdapter : IDisposable
         }
     }
 
-    internal async Task ApplyAsync(MapLayout layout, bool requirePlayerRoute, CancellationToken token)
+    internal async Task ApplyAsync(MapLayout layout, bool requirePlayerRoute, CancellationToken token, bool runtime = false)
     {
         using var loading = UI.NativeLoadingStatus.Begin("Preparing authored scenery…");
         token.ThrowIfCancellationRequested();
-        Reconcile(layout);
+        Reconcile(layout, runtime: runtime);
         var timer = System.Diagnostics.Stopwatch.StartNew();
         while (Loading)
         {
@@ -200,7 +211,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
         token.ThrowIfCancellationRequested();
         if (_disposed)
             throw new OperationCanceledException("The scene preview was closed.");
-        Apply(layout, requirePlayerRoute);
+        Apply(layout, requirePlayerRoute, runtime);
         await WaitForNavigationAsync(token);
     }
 
@@ -257,6 +268,42 @@ internal sealed partial class MapSceneAdapter : IDisposable
         t.SetPositionAndRotation(ZoneRuntime.Vector(edit.Position), Quaternion.Euler(ZoneRuntime.Vector(edit.Rotation)));
         if (scale)
             t.localScale = ZoneRuntime.Vector(edit.Scale);
+    }
+
+    internal static string ContainerCopyRestriction(Transform source)
+    {
+        var native = NativeSupported(source);
+        return native.Length > 0 ? native : SceneAssetCatalog.Restriction(source.gameObject, true);
+    }
+
+    internal static SceneAssetCatalog.Model LoadSceneCopy(MapTarget target)
+    {
+        var source = Resolve(target, false);
+        if (target.Kind == "Prop") return new SceneAssetCatalog.Model { Object = CopyProp(source, true) };
+        if (target.Kind != "Container") throw new InvalidOperationException("Unsupported scene copy.");
+        var restriction = ContainerCopyRestriction(source);
+        if (restriction.Length > 0) throw new InvalidOperationException(restriction);
+        var wrapper = new GameObject("CampaignEditor container");
+        wrapper.SetActive(false);
+        try
+        {
+            var clone = UnityEngine.Object.Instantiate(source.gameObject, wrapper.transform, false);
+            clone.transform.localPosition = Vector3.zero;
+            clone.transform.localRotation = Quaternion.identity;
+            clone.transform.localScale = source.lossyScale;
+            var container = clone.GetComponent<LootableContainer>();
+            var displacement = container.OpenPosition - container.ClosedPosition;
+            container.ClosedPosition = Vector3.zero;
+            container.OpenPosition = displacement;
+            container.Id = "wtt-preview-" + Guid.NewGuid().ToString("N");
+            container.ItemOwner = null;
+            container.IsInitialized = false;
+            container.enabled = true;
+            container.DoorState = EDoorState.Shut;
+            clone.SetActive(true);
+            return new SceneAssetCatalog.Model { Object = wrapper };
+        }
+        catch { Remove(wrapper); throw; }
     }
 
     private static GameObject CopyProp(Transform source, bool collision)

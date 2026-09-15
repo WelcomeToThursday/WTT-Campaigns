@@ -1,3 +1,4 @@
+using EFT.Interactive;
 using Cysharp.Threading.Tasks;
 using EFT.UI.DragAndDrop;
 using UnityEngine;
@@ -18,7 +19,7 @@ public sealed partial class RaidEditor
     private string ToolkitContext =>
         !SceneWorkspace
             ? _mode + ":" + _layoutId + ":" + _selected
-            : _sceneTab + ":" + _sceneFilter + ":" + _layoutId + ":" + ToolkitSelection;
+            : _catalogSource + ":" + _sceneTab + ":" + _sceneFilter + ":" + _layoutId + ":" + ToolkitSelection;
 
     private void PresentScene()
     {
@@ -42,7 +43,7 @@ public sealed partial class RaidEditor
         );
         if (!scene)
         {
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < view.RowCapacity; i++)
             {
                 view.Visible("SceneIcon" + i, false);
                 view.Visible("SceneIconStatus" + i, false);
@@ -51,15 +52,17 @@ public sealed partial class RaidEditor
         }
         foreach (var tab in new[] { "Catalog", "Existing", "Changes" })
             view.Highlight("Scene" + tab, _sceneTab == tab);
-        foreach (var filter in new[] { "Props", "Loot", "Presets" })
+        foreach (var filter in new[] { "Props", "Containers", "Loot", "Presets" })
             view.Highlight("Scene" + filter, _sceneFilter == filter);
+        view.SetDropdown("SceneSource", new List<EditorChoice.OptionData> { new("All game"), new("Current map") }, _catalogSource == "All game" ? 0 : 1);
         var point = ScenePoint;
         var catalog = _sceneTab == "Catalog";
         var removed = sceneKind == "Hide";
         var selected = catalog ? _catalogSelection.Length > 0 : point != null || MapDoor != null || _picked;
-        view.Get<Button>("ScenePlace").interactable = CanSceneEdit && selected && _placementLifetime == null;
+        view.Get<Button>("ScenePlace").interactable = CanSceneEdit && selected && _placementLifetime == null && (_selectedCatalogEntry == null || CatalogError(_selectedCatalogEntry).Length == 0);
         view.Get<Button>("SceneMove").interactable = CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
         view.Get<Button>("SceneRotate").interactable = CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
+        view.Get<Button>("SceneScale").interactable = CanTransformScene("Scale");
         view.Get<Button>("SceneRemove").interactable = CanSceneEdit && selected && _sceneSelectionError.Length == 0;
         view.Get<Button>("SceneRestore").interactable = CanSceneEdit && MapPoint is MapObjectEdit { Operation: "Move" or "Hide" };
         view.Get<Button>("SceneRebind").interactable = CanSceneEdit && MapPoint is MapObjectEdit;
@@ -77,7 +80,7 @@ public sealed partial class RaidEditor
             "SceneInfo",
             Layout == null ? "Select or create a layout in Layouts first."
                 : removed ? "Removed from this layout. Restore original returns it to its original position."
-                : catalog ? "Place on a surface, then refine with the transform handles. Escape cancels."
+                : catalog ? (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0 ? CatalogError(_selectedCatalogEntry) : "Place on a surface, then refine with the transform handles. Escape cancels.")
                 : sceneKind == "Door" ? "Use Door state to cycle the saved native state. Remove clears it from this layout."
                 : point == null ? "Choose Move or Rotate to edit this object. Remove hides it in this layout."
                 : "Saved in " + Layout.Name + ". Undo and redo restore scene changes."
@@ -86,8 +89,9 @@ public sealed partial class RaidEditor
             "LibraryCount",
             _catalogLoading && RemoteCatalog ? "Loading catalog…"
                 : LibraryTotal == 0 ? "No matching objects"
-                : LibraryTotal + " objects · " + (_page + 1) + " / " + ((LibraryTotal + 9) / 10)
+                : LibraryTotal + " objects · " + (_page + 1) + " / " + ((LibraryTotal + LibraryPageSize - 1) / LibraryPageSize)
         );
+        if (AssetCatalog) view.Text("LibraryCount", LibraryTotal + " objects � " + _assetCatalog?.Status);
         view.Windows.Select(
             "Scene/" + _sceneTab,
             selected
@@ -123,15 +127,16 @@ public sealed partial class RaidEditor
         internal WTT.Campaigns.Shared.Authoring.SceneCatalogEntry? Entry;
     }
 
-    private void PresentSceneThumbnails()
+    private void PresentSceneThumbnails(bool inspector = true)
     {
         if (_view?.Valid != true || !SceneWorkspace)
             return;
         var view = _view;
         var catalog = _sceneTab == "Catalog";
         var wanted = new HashSet<string> { _sceneFilter + ":" + _catalogSelection };
+        view.SetRowThumbnails(catalog);
         if (catalog)
-            for (var i = LibraryOffset; i < Math.Min(_rows.Count, LibraryOffset + 10); i++)
+            for (var i = LibraryOffset; i < Math.Min(_rows.Count, LibraryOffset + LibraryPageSize); i++)
                 wanted.Add(_sceneFilter + ":" + _rows[i].Id);
         for (var i = _thumbnailQueue.Count - 1; i >= 0; i--)
             if (!catalog || !wanted.Contains(_thumbnailQueue[i].Key))
@@ -142,12 +147,11 @@ public sealed partial class RaidEditor
         // Enqueue the selection first; jobs carry immutable category/source data.
         if (catalog && _catalogSelection.Length > 0)
             RequestThumbnail(_catalogSelection, _sceneFilter + ":" + _catalogSelection);
-        for (var i = 0; i < 10; i++)
+        for (var i = 0; i < view.RowCapacity; i++)
         {
             var index = LibraryOffset + i;
-            var visible = catalog && index < _rows.Count;
+            var visible = catalog && i < LibraryPageSize && index < _rows.Count;
             view.Visible("SceneIcon" + i, visible);
-            view.Element("Row" + i).style.paddingLeft = visible ? 54 : 8;
             if (!visible)
             {
                 view.Visible("SceneIconStatus" + i, false);
@@ -164,9 +168,11 @@ public sealed partial class RaidEditor
                 _rows[index].Label + (_previews.Error(key) is { Length: > 0 } error ? "\nPreview unavailable: " + error : "")
             );
         }
+        if (!inspector)
+            return;
         var selectedKey = _sceneFilter + ":" + _catalogSelection;
         SetThumbnail(view.Get<RawImage>("ScenePreview"), selectedKey);
-        var failed = _previews.Error(selectedKey).Length > 0;
+        var failed = _previews.Error(selectedKey).Length > 0 || (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0);
         view.Visible("ScenePreviewStatus", catalog && _previews.Get(selectedKey) == null);
         view.Text("ScenePreviewStatus", failed ? "Preview unavailable" : "Loading preview…");
         view.Visible("ScenePreviewRetryGroup", catalog && failed);
@@ -175,8 +181,13 @@ public sealed partial class RaidEditor
     private void RetryThumbnail()
     {
         var key = _sceneFilter + ":" + _catalogSelection;
-        if (_previews.Error(key).Length == 0)
-            return;
+        if (AssetCatalog)
+        {
+            _selectedCatalogEntry = null;
+            _assetCatalog?.Retry(_catalogSelection, () => { _libraryKey = ""; });
+            _ = LoadContainerTemplates();
+        }
+        if (_previews.Error(key).Length == 0) return;
         _previews.Retry(key);
         RequestThumbnail(_catalogSelection, key);
         PresentSceneThumbnails();
@@ -187,7 +198,7 @@ public sealed partial class RaidEditor
         if (!_previews.Request(key))
             return;
         var job = new ThumbnailJob { Id = id, Key = key };
-        if (_sceneFilter == "Props")
+        if (_sceneFilter == "Props" && !AssetCatalog)
             _sceneRoots.TryGetValue(id, out job.Source);
         else
         {
@@ -235,6 +246,13 @@ public sealed partial class RaidEditor
                     if (job.Source)
                     {
                         texture = RenderPropThumbnail(job.Source!);
+                        owned = true;
+                    }
+                    else if (job.Entry?.AssetTarget != null)
+                    {
+                        if (job.Entry.Error.Length > 0) throw new InvalidOperationException(job.Entry.Error);
+                        using var model = await SceneAssetCatalog.Load(job.Entry.AssetTarget, token);
+                        texture = RenderPropThumbnail(model.Object.transform, model.Object);
                         owned = true;
                     }
                     else if (job.Entry != null)
@@ -292,16 +310,19 @@ public sealed partial class RaidEditor
         }
     }
 
-    private Texture RenderPropThumbnail(Transform source)
+    private Texture RenderPropThumbnail(Transform source, GameObject? prepared = null)
     {
-        var model = (_mapScene ??= new()).CopyForPlacement(source);
+        var model = prepared ?? (_mapScene ??= new()).CopyForPlacement(source);
         var rig = new GameObject("CampaignEditor thumbnail camera");
         var rt = new RenderTexture(192, 192, 24);
         var materials = new List<Material>();
+        var opaqueTextures = new Dictionary<Texture, Texture2D>();
         Texture2D? texture = null;
         var previous = RenderTexture.active;
         try
         {
+            if (model.GetComponentInChildren<LootableContainer>(true) is { } container) container.enabled = false;
+            model.SetActive(true);
             model.transform.SetPositionAndRotation(new Vector3(0, -10000, 0), Quaternion.identity);
             foreach (var lod in model.GetComponentsInChildren<LODGroup>(true))
                 if (lod && lod.enabled && lod.gameObject.activeInHierarchy)
@@ -323,13 +344,30 @@ public sealed partial class RaidEditor
                     var original = originals[i];
                     var material = new Material(_view!.PreviewShader);
                     materials.Add(material);
+                    var opacity = original && PreviewMaterialPolicy.UsesOpacity(
+                        original.GetTag("RenderType", false, ""), original.shader ? original.shader.name : "",
+                        original.IsKeywordEnabled("_ALPHATEST_ON"),
+                        original.IsKeywordEnabled("_ALPHABLEND_ON") || original.IsKeywordEnabled("_ALPHAPREMULTIPLY_ON"));
                     if (original && original.HasProperty("_MainTex"))
                     {
-                        material.SetTexture("_MainTex", original.GetTexture("_MainTex"));
+                        var diffuse = original.GetTexture("_MainTex");
+                        if (diffuse && !opacity)
+                        {
+                            if (!opaqueTextures.TryGetValue(diffuse, out var opaque))
+                            {
+                                opaque = SnapshotOpaqueDiffuse(diffuse);
+                                opaqueTextures.Add(diffuse, opaque);
+                            }
+                            diffuse = opaque;
+                        }
+                        material.SetTexture("_MainTex", diffuse);
                         material.SetTextureScale("_MainTex", original.GetTextureScale("_MainTex"));
                         material.SetTextureOffset("_MainTex", original.GetTextureOffset("_MainTex"));
                     }
-                    material.SetColor("_Color", original && original.HasProperty("_Color") ? original.GetColor("_Color") : Color.white);
+                    var tint = original && original.HasProperty("_Color") ? original.GetColor("_Color") : Color.white;
+                    if (!opacity)
+                        tint.a = 1;
+                    material.SetColor("_Color", tint);
                     preview[i] = material;
                 }
                 renderer.sharedMaterials = preview;
@@ -369,8 +407,48 @@ public sealed partial class RaidEditor
             Destroy(rig);
             foreach (var material in materials)
                 Destroy(material);
+            foreach (var opaque in opaqueTextures.Values)
+                Destroy(opaque);
             rt.Release();
             Destroy(rt);
+        }
+    }
+
+    // Opaque EFT diffuse alpha can contain surface masks rather than opacity.
+    // RGB24 drops that channel before the bundled preview shader's alpha test.
+    // Blitting also supports source textures that cannot be read by the CPU.
+    private static Texture2D SnapshotOpaqueDiffuse(Texture source)
+    {
+        var factor = Mathf.Min(1, 512f / Mathf.Max(source.width, source.height));
+        var width = Mathf.Max(1, Mathf.RoundToInt(source.width * factor));
+        var height = Mathf.Max(1, Mathf.RoundToInt(source.height * factor));
+        var previous = RenderTexture.active;
+        var target = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
+        Texture2D? result = null;
+        try
+        {
+            Graphics.Blit(source, target);
+            RenderTexture.active = target;
+            result = new Texture2D(width, height, TextureFormat.RGB24, false)
+            {
+                wrapModeU = source.wrapModeU,
+                wrapModeV = source.wrapModeV,
+                filterMode = source.filterMode,
+            };
+            result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+            result.Apply(false, true);
+            return result;
+        }
+        catch
+        {
+            if (result)
+                Destroy(result);
+            throw;
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            RenderTexture.ReleaseTemporary(target);
         }
     }
 

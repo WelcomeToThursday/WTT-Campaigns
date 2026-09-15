@@ -1,3 +1,4 @@
+using System.Threading;
 using UnityEngine;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Authoring.Views;
@@ -432,6 +433,14 @@ public sealed partial class RaidEditor
                     l.Loot.Add(copy);
                     _selected = copy.Id;
                 }
+                else if (point is MapObjectEdit assetEdit && (assetEdit.Target.IsAsset || SceneAssetRules.IsContainer(assetEdit)))
+                {
+                    var copy = RaidEditorSession.Copy(assetEdit);
+                    copy.Id = MapId();
+                    copy.Name += " copy";
+                    l.Objects.Add(copy);
+                    _selected = copy.Id;
+                }
                 else if (point is MapObjectEdit edit && edit.Target.Kind == "Prop")
                 {
                     var target = _mapScene?.OriginalFor(edit.Target);
@@ -517,7 +526,7 @@ public sealed partial class RaidEditor
         view.Visible("EditorMapToolbar", EditorMode.Ready);
         if (EditorMode.Ready)
             view.Text("Request", "EDITOR MODE · Gameplay and progression disabled");
-        if (EditorMode.Ready && !_walking)
+        if (EditorMode.Ready && !_walking && _walkAssetLifetime == null)
         {
             _mapScene ??= new();
             _mapScene.Reconcile(Layout, _drag?.Transient == true ? _sceneSelectionPose : null);
@@ -645,7 +654,7 @@ public sealed partial class RaidEditor
 
     private void RequestWalkthrough()
     {
-        if (_session?.Busy == true)
+        if (_session?.Busy == true || _session?.Dirty == true)
         {
             _walkRequested = true;
             _notice = "Starting walkthrough after synchronization…";
@@ -655,15 +664,23 @@ public sealed partial class RaidEditor
         BeginWalkthrough();
     }
 
-    private void BeginWalkthrough()
+    private async void BeginWalkthrough()
     {
-        if (!EditorMode.Ready || _walking || AiPreviewBusy || Layout == null || _session?.Conflict != null || _session?.Busy == true)
+        if (!EditorMode.Ready || _walking || _walkAssetLifetime != null || AiPreviewBusy || Layout == null || _session?.Conflict != null || _session?.Busy == true || _session?.Dirty == true)
             return;
         _mapScene ??= new();
+        _walkAssetLifetime?.Cancel();
+        _walkAssetLifetime = new CancellationTokenSource();
+        var walkLifetime = _walkAssetLifetime;
+        _session!.Previewing = _session.Hold = true;
+        _notice = "Preparing walkthrough scenery and containers�";
         try
         {
             _walkLayout = RaidEditorSession.Copy(Layout);
-            _mapScene.Apply(_walkLayout);
+            await _mapScene.ApplyAsync(_walkLayout, true, walkLifetime.Token, runtime: true);
+            _walkAssetLoot = new WTT.Campaigns.Client.Missions.MissionLoot();
+            await _walkAssetLoot.ApplyAsync(_walkLayout, Guid.NewGuid().ToString("N"), walkLifetime.Token);
+            walkLifetime.Token.ThrowIfCancellationRequested();
             Physics.SyncTransforms();
             Vector3? destination = null;
             if (_walkFromStart)
@@ -676,7 +693,7 @@ public sealed partial class RaidEditor
             }
             _walking = true;
             _checkpoint = 0;
-            _session!.Hold = true;
+            _session!.Previewing = _session.Hold = true;
             _walkCameraPosition = _flyPosition;
             _walkCameraRotation = _flyRotation;
             _walkCameraRaid = _session.RaidId;
@@ -692,12 +709,14 @@ public sealed partial class RaidEditor
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
         }
-        catch
+        catch (Exception e)
         {
-            EndWalkthrough();
-            throw;
+            if (ReferenceEquals(_walkAssetLifetime, walkLifetime)) { EndWalkthrough(); _notice = e.Message; Refresh(false); }
         }
     }
+
+    private CancellationTokenSource? _walkAssetLifetime;
+    private WTT.Campaigns.Client.Missions.MissionLoot? _walkAssetLoot;
 
     private bool UpdateWalkthrough()
     {
@@ -726,6 +745,11 @@ public sealed partial class RaidEditor
 
     internal void EndWalkthrough(bool returnToEditor = false)
     {
+        _walkAssetLifetime?.Cancel();
+        _walkAssetLifetime?.Dispose();
+        _walkAssetLifetime = null;
+        _walkAssetLoot?.Dispose();
+        _walkAssetLoot = null;
         if (AiPreviewBusy)
             EndAiPreview(false);
         var transition = returnToEditor ? System.Diagnostics.Stopwatch.StartNew() : null;
@@ -752,7 +776,7 @@ public sealed partial class RaidEditor
             }
             _returnPosition = null;
             if (_session != null)
-                _session.Hold = false;
+                _session.Previewing = _session.Hold = _aiCleanupFailed;
             if (_view?.Valid == true)
                 _view.Windows.SetWalkthrough(false);
         }

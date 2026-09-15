@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.UIElements;
 using WTT.Campaigns.UI.Controls;
@@ -9,7 +10,6 @@ internal sealed partial class EditorToolkitWindows
 {
     private readonly RaidEditorView _view;
     private readonly Dictionary<string, EditorWindowPlacement> _panels = new();
-    private readonly Dictionary<string, string> _tips = new();
     private readonly Label _tooltip = new() { pickingMode = PickingMode.Ignore, enableRichText = false };
     private VisualElement? _tooltipAnchor;
     private string _selection = "",
@@ -21,25 +21,55 @@ internal sealed partial class EditorToolkitWindows
         _recordAvailable,
         _identityAvailable;
     private Vector2 _size;
+    private int _scalePercent;
+    private EditorDockNode _dock = EditorDockNode.Default();
+    private readonly VisualElement _chrome = new() { pickingMode = PickingMode.Ignore };
+    private readonly VisualElement _dropPreview = new() { pickingMode = PickingMode.Ignore };
+    private readonly Dictionary<string, VisualElement> _bars = new(),
+        _dividers = new();
+    private readonly Dictionary<string, Rect> _windowBounds = new();
+    private Dictionary<string, EditorDockRect> _dockRects = new();
+    private readonly HashSet<string> _sized = new(),
+        _opened = new();
     private VisualElement? _dragHandle;
     private string _dragId = "";
     private int _pointerId;
-    private bool _resize;
+    private bool _resize,
+        _dragMoved;
     private Vector2 _start;
-    private EditorWindowPlacement? _before;
+    private Rect _before;
+    private EditorWindowLayout? _dragLayout;
+    private EditorDockNode? _candidate;
     internal Action? LayoutChanged;
     internal bool Interacting => _dragHandle != null;
     internal bool HasMenu => _view.IsVisible("WindowsMenu") || _view.IsVisible("ContextMenu");
+    internal bool Modal => _view.IsVisible("ConflictShield");
+    internal string ActiveTool = "Layouts";
+    internal bool LayoutRestored { get; private set; }
 
     internal EditorToolkitWindows(RaidEditorView view)
     {
         _view = view;
-        foreach (var id in new[] { "Library", "Inspector", "EnvironmentMenu", "Controls" })
+        foreach (
+            var id in RaidEditorView
+                .ToolIds.AsValueEnumerable()
+                .Select(t => "Tool:" + t)
+                .Concat(new[] { "Inspector", "EnvironmentMenu", "Controls" })
+        )
         {
-            _panels.Add(id, new EditorWindowPlacement { Id = id });
-            BindDrag(id, view.Element(id + "TitleBar"), false);
-            BindDrag(id, view.Element(id + "Resize"), true);
-            view.Element(id).RegisterCallback<PointerDownEvent>(_ => Focus(id), TrickleDown.TrickleDown);
+            _panels.Add(id, new() { Id = id });
+            BindDrag(id, view.WindowElement(id, "TitleBar"), false);
+            BindDrag(id, view.WindowElement(id, "Resize"), true);
+            view.WindowElement(id).RegisterCallback<PointerDownEvent>(_ => Focus(id), TrickleDown.TrickleDown);
+            var window = view.WindowElement(id);
+            window.RegisterCallback<GeometryChangedEvent>(evt =>
+            {
+                var narrow = evt.newRect.width < 340;
+                foreach (var row in window.Query<VisualElement>(className: "editor-actions").ToList())
+                    row.style.flexWrap = Wrap.Wrap;
+                foreach (var field in window.Query<TextField>().ToList())
+                    EditorControlLayout.Field(field, narrow);
+            });
         }
         Bind("LibraryCollapse", () => ShowPanel("Library", false));
         Bind("InspectorCollapse", () => ShowPanel("Inspector", false));
@@ -54,6 +84,9 @@ internal sealed partial class EditorToolkitWindows
         Bind("WindowsToggle", () => ToggleMenu("WindowsMenu"));
         Bind("ContextToggle", () => ToggleMenu("ContextMenu"));
         Bind("ResetLayout", ResetLayout);
+        Bind("UiSizeSmaller", () => EditorLayoutPreferences.SetScale(EditorLayoutPreferences.ScalePercent - 5));
+        Bind("UiSizeLarger", () => EditorLayoutPreferences.SetScale(EditorLayoutPreferences.ScalePercent + 5));
+        Bind("UiSizeReset", () => EditorLayoutPreferences.SetScale(EditorUiScale.DefaultPercent));
         Bind(
             "RecordDetailsToggle",
             () =>
@@ -70,10 +103,18 @@ internal sealed partial class EditorToolkitWindows
                 UpdateDetails();
             }
         );
+        _chrome.style.position = Position.Absolute;
+        _chrome.style.left = _chrome.style.top = _chrome.style.right = _chrome.style.bottom = 0;
+        _view.Element("Workspace").Add(_chrome);
+        _dropPreview.style.position = Position.Absolute;
+        _dropPreview.style.backgroundColor = new Color(.65f, .60f, .40f, .28f);
+        _dropPreview.style.display = DisplayStyle.None;
+        _view.Element("Workspace").Add(_dropPreview);
         _tooltip.AddToClassList("editor-tooltip");
         _view.Document.Content.Add(_tooltip);
         _tooltip.RegisterCallback<GeometryChangedEvent>(_ => PlaceTooltip());
         HideTooltip();
+        SetupMenus();
         ResetLayout();
     }
 
@@ -81,11 +122,27 @@ internal sealed partial class EditorToolkitWindows
 
     private void Visible(string id, bool visible) => _view.Visible(id, visible);
 
+    private string Resolve(string id) => id == "Library" ? "Tool:" + _view.ToolContext : id;
+
+    internal bool IsOpen(string id) => _panels.TryGetValue(Resolve(id), out var p) && p.Visible;
+
+    private HashSet<string> OpenIds() => _panels.AsValueEnumerable().Where(p => p.Value.Visible).Select(p => p.Key).ToHashSet();
+
+    private EditorDockRect Area =>
+        new(56, 84, Math.Max(1, _view.Document.Width - 64), Math.Max(1, _view.Document.Height - 84 - (_capture ? 88 : 40)));
+
     private void Focus(string id)
     {
-        if (_view.IsVisible("ConflictShield"))
+        if (Modal)
             return;
-        _view.Element(id).BringToFront();
+        id = Resolve(id);
+        _view.WindowElement(id).BringToFront();
+        _chrome.BringToFront();
+        foreach (var p in _panels.AsValueEnumerable().Where(p => p.Value.Visible && !Docked(p.Key)))
+            _view.WindowElement(p.Key).BringToFront();
+        if (!Docked(id))
+            _view.WindowElement(id).BringToFront();
+        _view.Element("CategoryRail").BringToFront();
         _view.Element("WindowsMenu").BringToFront();
         _view.Element("ContextMenu").BringToFront();
         KeepModalOnTop();
@@ -93,8 +150,21 @@ internal sealed partial class EditorToolkitWindows
 
     internal void ShowPanel(string id, bool visible)
     {
+        id = Resolve(id);
         _panels[id].Visible = visible;
-        ApplyVisibility();
+        if (visible)
+        {
+            _panels[id].Opened = true;
+            _opened.Add(id);
+        }
+        if (visible)
+        {
+            var group = EditorDockLayout.Nodes(_dock).AsValueEnumerable().FirstOrDefault(n => n.Tabs.AsValueEnumerable().Contains(id));
+            if (group != null)
+                group.Active = id;
+        }
+        RebuildChrome();
+        FitPanels();
         if (visible)
             Focus(id);
         LayoutChanged?.Invoke();
@@ -103,7 +173,7 @@ internal sealed partial class EditorToolkitWindows
     private void ToggleWindow(string id)
     {
         DismissMenus();
-        ShowPanel(id, !_panels[id].Visible);
+        ShowPanel(id, !IsOpen(id));
     }
 
     private void ToggleMenu(string id)
@@ -111,12 +181,17 @@ internal sealed partial class EditorToolkitWindows
         var show = !_view.IsVisible(id);
         DismissMenus();
         Visible(id, show);
-        _view.Element(id).BringToFront();
+        if (show)
+            OpenMenu(id);
     }
 
     internal bool DismissMenus()
     {
         var shown = HasMenu;
+        if (shown)
+            _menuDismissFrame = Time.frameCount;
+        _openMenu = "";
+        _menuShield.style.display = DisplayStyle.None;
         Visible("WindowsMenu", false);
         Visible("ContextMenu", false);
         HideTooltip();
@@ -125,251 +200,212 @@ internal sealed partial class EditorToolkitWindows
 
     internal void KeepModalOnTop()
     {
-        if (!_view.IsVisible("ConflictShield"))
+        if (!Modal)
             return;
+        if (Interacting)
+            CancelInteraction();
         DismissMenus();
         _view.DismissDropdowns();
         _view.Element("ConflictShield").BringToFront();
     }
 
-    internal void SetTooltip(string id, string text)
+    internal void BrowseCategory()
     {
-        _tips[id] = text;
-        _view.Element(id).tooltip = text;
-        if (_view.Element(id) is Label)
-            _view.Element(id).pickingMode = PickingMode.Position;
-    }
-
-    internal void ShowTooltip(string id, string fallback, VisualElement? anchor = null)
-    {
-        if (_walkthrough || _view.IsVisible("ConflictShield"))
-            return;
-        var text = _tips.GetValueOrDefault(id, fallback);
-        if (string.IsNullOrWhiteSpace(text))
+        ActiveTool = _view.ToolContext;
+        var id = "Tool:" + ActiveTool;
+        if (!Docked(id) && !_opened.Contains(id))
         {
-            HideTooltip();
-            return;
+            var target = EditorDockLayout
+                .Nodes(_dock)
+                .AsValueEnumerable()
+                .FirstOrDefault(n => n.Kind == "tabs" && n.Tabs.AsValueEnumerable().Any(t => t.StartsWith("Tool:")));
+            if (target != null)
+                _dock = EditorDockLayout.Dock(_dock, id, target.Id, "center");
         }
-        _tooltipAnchor = anchor ?? _view.Element(id);
-        _tooltip.text = text;
-        _tooltip.style.maxWidth = Math.Min(360, _view.Document.Width - 16);
-        _tooltip.style.visibility = Visibility.Hidden;
-        _tooltip.style.display = DisplayStyle.Flex;
-        _tooltip.BringToFront();
+        _opened.Add(id);
+        ShowPanel(id, true);
+        FitContents();
     }
-
-    private void PlaceTooltip()
-    {
-        if (_tooltip.style.display.value == DisplayStyle.None)
-            return;
-        if (_tooltipAnchor?.panel == null)
-        {
-            HideTooltip();
-            return;
-        }
-        var size = _tooltip.layout.size;
-        if (!float.IsFinite(size.x) || !float.IsFinite(size.y) || size.x <= 0 || size.y <= 0)
-            return;
-        // Element bounds and the tooltip parent share panel coordinates. Using
-        // the measured width avoids reserving 360px for a short toolbar hint.
-        var parent = _view.Document.Content;
-        var min = parent.WorldToLocal(_tooltipAnchor.worldBound.min);
-        var max = parent.WorldToLocal(_tooltipAnchor.worldBound.max);
-        var position = EditorTooltipPlacement.Place(
-            min.x,
-            max.x,
-            min.y,
-            max.y,
-            size.x,
-            size.y,
-            _view.Document.Width,
-            _view.Document.Height
-        );
-        _tooltip.style.left = position.X;
-        _tooltip.style.top = position.Y;
-        _tooltip.style.visibility = Visibility.Visible;
-    }
-
-    internal void HideTooltip()
-    {
-        _tooltipAnchor = null;
-        _tooltip.style.display = DisplayStyle.None;
-    }
-
-    internal void BrowseCategory() => ShowPanel("Library", true);
 
     internal void Select(string category, string selection)
     {
+        ActiveTool = category == "Maps" ? "Layouts" : category.Split('/')[0];
         if (_category == category && _selection == selection)
             return;
-        var changed = _category != category;
         _category = category;
         _selection = selection;
-        ShowPanel("Inspector", selection.Length > 0);
-        if (changed && selection.Length == 0)
-            ShowPanel("Library", true);
+        if (selection.Length > 0 && !IsOpen("Inspector"))
+            ShowPanel("Inspector", true);
         ((ScrollView)_view.Element("PropertyScroll")).scrollOffset = Vector2.zero;
     }
 
     internal void SetWalkthrough(bool active)
     {
-        _walkthrough = active;
         CancelInteraction();
+        _walkthrough = active;
         DismissMenus();
         Visible("Workspace", !active);
         Visible("EditorWalkStatus", active);
-        ApplyVisibility();
+        FitPanels();
     }
 
-    private void ApplyVisibility()
+    private bool Docked(string id) => EditorDockLayout.Nodes(_dock).AsValueEnumerable().Any(n => n.Tabs.AsValueEnumerable().Contains(id));
+
+    internal void FitContents()
     {
-        foreach (var pair in _panels)
-            Visible(pair.Key, pair.Value.Visible && !_walkthrough);
+        var id = "Tool:" + _view.ToolContext;
+        if (!_panels.TryGetValue(id, out var p) || p.ManualSize || _sized.Contains(id))
+            return;
+        var count = Math.Max(_view.TreeVisibleCount, _view.VisibleRowCount);
+        p.Height = Math.Clamp(150 + Math.Min(12, Math.Max(1, count)) * 28 + (_view.ToolContext == "AI" ? 170 : 50), 180, 620);
+        if (count > 0)
+            _sized.Add(id);
+        FitPanels();
     }
-
-    private void FitContents() { }
 
     private void FitPanels()
     {
-        foreach (var id in new[] { "Library", "Inspector", "EnvironmentMenu", "Controls" })
-            Apply(id, _panels[id]);
+        var area = Area;
+        var open = OpenIds();
+        _dockRects = EditorDockLayout.Arrange(_dock, area, open);
+        foreach (var pair in _panels)
+        {
+            var id = pair.Key;
+            var p = pair.Value;
+            var group = EditorDockLayout.Nodes(_dock).AsValueEnumerable().FirstOrDefault(n => n.Tabs.AsValueEnumerable().Contains(id));
+            var visible = p.Visible && !_walkthrough;
+            Rect rect;
+            if (group != null)
+            {
+                var active =
+                    group.Tabs.AsValueEnumerable().Contains(group.Active) && open.Contains(group.Active)
+                        ? group.Active
+                        : group.Tabs.AsValueEnumerable().FirstOrDefault(t => open.Contains(t));
+                visible &= active == id;
+                var r = _dockRects.GetValueOrDefault(group.Id);
+                rect = new(r.X, r.Y + EditorDockLayout.TabHeight, r.Width, Math.Max(0, r.Height - EditorDockLayout.TabHeight));
+            }
+            else
+            {
+                var width = Math.Clamp(float.IsFinite(p.Width) ? p.Width : 360, Math.Min(280, area.Width), area.Width);
+                var height = Math.Clamp(float.IsFinite(p.Height) ? p.Height : 360, Math.Min(180, area.Height), area.Height);
+                var x = _view.Document.Width * (.5f + (float.IsFinite(p.X) ? p.X : 0)) - width / 2;
+                var y = _view.Document.Height * (.5f - (float.IsFinite(p.Y) ? p.Y : 0)) - height / 2;
+                rect = new(
+                    Math.Clamp(x, area.X, area.X + area.Width - width),
+                    Math.Clamp(y, area.Y, area.Y + area.Height - height),
+                    width,
+                    height
+                );
+            }
+            _windowBounds[id] = rect;
+            var window = _view.WindowElement(id);
+            window.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            Place(window, rect);
+            _view.WindowElement(id, "Resize").style.display = group == null ? DisplayStyle.Flex : DisplayStyle.None;
+            _view.WindowElement(id, "TitleBar").style.height = 28;
+        }
+        foreach (var node in EditorDockLayout.Nodes(_dock))
+        {
+            if (!_dockRects.TryGetValue(node.Id, out var r))
+                continue;
+            if (_bars.TryGetValue(node.Id, out var bar))
+                Place(bar, new(r.X, r.Y, r.Width, EditorDockLayout.TabHeight));
+            if (
+                _dividers.TryGetValue(node.Id, out var divider)
+                && node.First != null
+                && node.Second != null
+                && _dockRects.TryGetValue(node.First.Id, out var a)
+                && _dockRects.ContainsKey(node.Second.Id)
+            )
+                Place(divider, node.Kind == "horizontal" ? new(a.X + a.Width, r.Y, 6, r.Height) : new(r.X, a.Y + a.Height, r.Width, 6));
+        }
+        foreach (var tool in RaidEditorView.ToolIds)
+        {
+            var button = _view.Element(tool);
+            button.style.borderLeftWidth = IsOpen("Tool:" + tool) ? 3 : 1;
+            button.style.borderLeftColor = IsOpen("Tool:" + tool) ? new Color(.65f, .6f, .4f) : new Color(.38f, .39f, .36f);
+            _view.Highlight(tool, ActiveTool == tool);
+        }
     }
 
-    private Vector2 Minimum(string id) =>
-        id == "Library" ? new Vector2(400, 480)
-        : id == "Controls" ? new Vector2(440, 220)
-        : new Vector2(360, 320);
-
-    private void Apply(string id, EditorWindowPlacement placement)
+    private static void Place(VisualElement element, Rect r)
     {
-        var doc = _view.Document;
-        var min = Minimum(id);
-        var fit = EditorWindowPlacement.Fit(placement, doc.Width, doc.Height, min.x, min.y, _capture ? 88 : 40);
-        _panels[id] = fit;
-        var style = _view.Element(id).style;
-        style.left = doc.Width / 2 + fit.X * doc.Width - fit.Width / 2;
-        style.top = doc.Height / 2 - fit.Y * doc.Height - fit.Height / 2;
-        style.width = fit.Width;
-        style.height = fit.Height;
+        element.style.position = Position.Absolute;
+        element.style.left = r.x;
+        element.style.top = r.y;
+        element.style.width = r.width;
+        element.style.height = r.height;
     }
 
-    internal EditorWindowLayout CaptureLayout() => new() { Windows = _panels.Values.AsValueEnumerable().ToArray() };
+    internal EditorWindowLayout CaptureLayout() => new() { Windows = _panels.Values.AsValueEnumerable().ToArray(), Dock = _dock };
+
+    private static T Clone<T>(T source) => JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(source))!;
 
     internal void RestoreLayout(EditorWindowLayout? layout)
     {
-        if (layout?.Version != 1 || layout.Windows == null)
+        var restored = EditorWindowLayout.Restore(layout, CaptureLayout());
+        if (restored == null)
             return;
-        foreach (var placement in layout.Windows)
-            if (placement != null && _panels.ContainsKey(placement.Id))
-                Apply(placement.Id, placement);
-        ApplyVisibility();
+        LayoutRestored = true;
+        _dock = restored.Dock!;
+        foreach (var placement in restored.Windows)
+        {
+            _panels[placement.Id] = placement;
+            if (placement.ManualSize)
+                _sized.Add(placement.Id);
+            if (placement.Opened || placement.Visible || placement.ManualSize || Docked(placement.Id))
+                _opened.Add(placement.Id);
+        }
+        RebuildChrome();
+        FitPanels();
     }
 
     internal void ResetLayout()
     {
-        var doc = _view.Document;
-        foreach (var id in new[] { "Library", "Inspector", "EnvironmentMenu", "Controls" })
-        {
-            var width =
-                id == "Library" ? 440
-                : id == "Inspector" ? 380
-                : id == "Controls" ? 560
-                : 360;
-            Apply(
-                id,
-                new EditorWindowPlacement
-                {
-                    Id = id,
-                    Width = width,
-                    Height = id == "Controls" ? 290 : 620,
-                    X =
-                        id == "Library" ? (-doc.Width / 2 + 232) / doc.Width
-                        : id == "Inspector" ? (doc.Width / 2 - 202) / doc.Width
-                        : 0,
-                    Y = (doc.Height / 2 - 410) / doc.Height,
-                    Visible = id == "Library" || id == "Inspector" && _selection.Length > 0,
-                }
-            );
-        }
+        CancelInteraction();
+        _dock = EditorDockNode.Default();
+        _sized.Clear();
+        _opened.Clear();
+        foreach (var id in _panels.Keys.AsValueEnumerable().ToArray())
+            _panels[id] = new()
+            {
+                Id = id,
+                Width = id is "Tool:Scene" or "Tool:AI" ? 420 : 360,
+                Height = 400,
+                X = -.15f,
+                Y = .05f,
+                Visible = id == "Tool:Layouts" || id == "Inspector" && _selection.Length > 0,
+            };
         DismissMenus();
-        ApplyVisibility();
+        RebuildChrome();
+        FitPanels();
         LayoutChanged?.Invoke();
-    }
-
-    private void BindDrag(string id, VisualElement handle, bool resize)
-    {
-        handle.RegisterCallback<PointerDownEvent>(evt =>
-        {
-            if (evt.button != 0 || evt.target is Button || _view.IsVisible("ConflictShield"))
-                return;
-            _dragId = id;
-            _resize = resize;
-            _dragHandle = handle;
-            _pointerId = evt.pointerId;
-            _start = evt.position;
-            _before = _panels[id];
-            handle.CapturePointer(evt.pointerId);
-            Focus(id);
-            evt.StopPropagation();
-        });
-        handle.RegisterCallback<PointerMoveEvent>(evt =>
-        {
-            if (_dragHandle != handle || _before == null)
-                return;
-            var delta = (Vector2)evt.position - _start;
-            var doc = _view.Document;
-            Apply(
-                id,
-                new EditorWindowPlacement
-                {
-                    Id = id,
-                    Visible = true,
-                    Width = _before.Width + (_resize ? delta.x : 0),
-                    Height = _before.Height + (_resize ? delta.y : 0),
-                    X = _before.X + delta.x / doc.Width * (_resize ? .5f : 1),
-                    Y = _before.Y - delta.y / doc.Height * (_resize ? .5f : 1),
-                }
-            );
-            evt.StopPropagation();
-        });
-        handle.RegisterCallback<PointerUpEvent>(evt =>
-        {
-            if (_dragHandle == handle)
-            {
-                CancelInteraction();
-                LayoutChanged?.Invoke();
-                evt.StopPropagation();
-            }
-        });
-        handle.RegisterCallback<PointerCaptureOutEvent>(_ =>
-        {
-            if (_dragHandle == handle)
-            {
-                _dragHandle = null;
-                _before = null;
-            }
-        });
-    }
-
-    internal void CancelInteraction()
-    {
-        var handle = _dragHandle;
-        _dragHandle = null;
-        _before = null;
-        if (handle != null && handle.HasPointerCapture(_pointerId))
-            handle.ReleasePointer(_pointerId);
     }
 
     internal void Tick()
     {
+        if (_scalePercent != EditorLayoutPreferences.ScalePercent)
+        {
+            _scalePercent = EditorLayoutPreferences.ScalePercent;
+            _view.Document.ScalePercent = _scalePercent;
+            _view.Get<EditorLabel>("UiSizeLabel").text = $"UI size: {_scalePercent}%";
+            _view.Element("UiSizeSmaller").SetEnabled(_scalePercent > EditorUiScale.MinimumPercent);
+            _view.Element("UiSizeLarger").SetEnabled(_scalePercent < EditorUiScale.MaximumPercent);
+        }
         var size = new Vector2(_view.Document.Width, _view.Document.Height);
         if (_size != size)
         {
+            if (Interacting)
+                CancelInteraction();
             _size = size;
+            RebuildChrome();
             FitPanels();
         }
         UpdateDetails();
         KeepModalOnTop();
+        if (_openMenu.Length > 0)
+            PositionMenu();
         if (_tooltip.style.display.value != DisplayStyle.None)
             PlaceTooltip();
     }

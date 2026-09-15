@@ -12,6 +12,33 @@ internal static class EditorSessionChecks
 {
     internal static async Task Run(Action<bool, string> check)
     {
+        var now = DateTimeOffset.UtcNow;
+        var serverSession = new WTT.Campaigns.Server.Editor.EditorSessionRegistry.Session
+        {
+            Owner = "owner", Ready = true, Location = "Interchange", Contact = now,
+        };
+        var request = new AuthoringRequest { EditorSessionId = serverSession.Id, Location = "Interchange" };
+        foreach (var version in new[] { 2, 3, 4, 5 })
+        {
+            request.Version = version;
+            check(serverSession.AcceptsMapRequest("owner", request, now), "Editor map connection accepts protocol " + version);
+        }
+        foreach (var version in new[] { 0, 1, 6 })
+        {
+            request.Version = version;
+            check(!serverSession.AcceptsMapRequest("owner", request, now), "Editor map connection rejects protocol " + version);
+        }
+        request.Version = 5;
+        check(!serverSession.AcceptsMapRequest("other", request, now), "Protocol 5 retains the owner check");
+        check(!serverSession.AcceptsMapRequest("owner", request, now.AddMinutes(2)), "Protocol 5 retains session expiry");
+        request.EditorSessionId = "wrong";
+        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 5 retains the session token check");
+        request.EditorSessionId = serverSession.Id;
+        request.Location = "woods";
+        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 5 retains the exact map check");
+        serverSession.UnloadMap();
+        request.Location = "";
+        check(!serverSession.AcceptsMapRequest("owner", request, now), "A matching empty map cannot authorize an editor connection");
         var folder = Path.Combine(Path.GetTempPath(), "campaigns-session-" + Guid.NewGuid().ToString("N"));
         BepInEx.Paths.ConfigPath = folder;
         var socket = new ReplySocket();

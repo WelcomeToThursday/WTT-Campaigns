@@ -13,32 +13,33 @@ internal sealed partial class RaidEditorView : IDisposable
     internal GameObject Root => Document.Host;
     private readonly Dictionary<string, EditorControl> _controls = new(StringComparer.Ordinal);
     private readonly List<EditorInput> _inputs = new();
-    private readonly List<EditorButton> _rows = new();
+    private List<EditorButton> _rows => Browser.Rows;
     private bool _disposed;
     private string _context = "";
     private VisualElement? _choicePopup;
     private RouteOverlay _routeOverlay = null!;
     internal bool Valid => !_disposed && Root;
     internal bool PointerOver => Document.PointerOver;
-    internal bool Typing => Document.Typing || Windows.Interacting || _choicePopup != null;
+    internal bool Typing => Document.Typing || Windows.Interacting || Windows.MenuDismissedThisFrame || _choicePopup != null;
     internal bool RowPressed
     {
         get
         {
-            foreach (var row in _rows)
-                if (row.Pressed)
+            foreach (var browser in _browsers.Values)
+            foreach (var row in browser.Rows)
+                if (row.Pressed || browser.PointerHeld)
                     return true;
             return false;
         }
     }
     internal Shader PreviewShader => Document.PreviewShader;
 
-    internal VisualElement Element(string name) => _controls[name].Element;
+    internal VisualElement Element(string name) => Control(name).Element;
 
-    internal bool IsVisible(string name) => _controls[name].Visible;
+    internal bool IsVisible(string name) => Control(name).Visible;
 
     internal T Get<T>(string name)
-        where T : EditorControl => _controls[name] as T ?? throw new InvalidOperationException("Wrong Editor control type: " + name);
+        where T : EditorControl => Control(name) as T ?? throw new InvalidOperationException("Wrong Editor control type: " + name);
 
     internal RaidEditorView()
     {
@@ -48,10 +49,19 @@ internal sealed partial class RaidEditorView : IDisposable
             Build();
             Windows = new EditorToolkitWindows(this);
             EditorLayoutPreferences.Attach(Windows);
-            Document.Tick = Windows.Tick;
+            Document.Tick = () =>
+            {
+                Windows.Tick();
+                PollCatalogCapacity();
+            };
             Document.Escape = () =>
             {
-                if (DismissDropdowns() || Windows.DismissMenus())
+                if (Windows.Interacting)
+                {
+                    Windows.CancelInteraction();
+                    Document.EscapeFrame = Time.frameCount;
+                }
+                else if (DismissDropdowns() || Windows.DismissMenus())
                     Document.EscapeFrame = Time.frameCount;
             };
         }
@@ -74,7 +84,7 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal void ReleaseFocus() => Document.ReleaseFocus();
 
-    internal void Visible(string name, bool visible) => _controls[name].Visible = visible;
+    internal void Visible(string name, bool visible) => Control(name).Visible = visible;
 
     internal void Text(string name, string value) => Get<EditorLabel>(name).text = value;
 
@@ -88,11 +98,35 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal void Highlight(string name, bool selected) => Element(name).EnableInClassList("editor-selected", selected);
 
-    internal void Button(string name, Action action) => Get<EditorButton>(name).onClick.AddListener(() => action());
+    internal void Button(string name, Action action)
+    {
+        foreach (var (tool, control) in Matching(name))
+            ((EditorButton)control).onClick.AddListener(() =>
+            {
+                if (Activate(tool))
+                    action();
+            });
+    }
 
-    internal void Input(string name, Action<string> action) => Get<EditorInput>(name).onEndEdit.AddListener(value => action(value));
+    internal void Input(string name, Action<string> action)
+    {
+        foreach (var (tool, control) in Matching(name))
+            ((EditorInput)control).onEndEdit.AddListener(value =>
+            {
+                if (Activate(tool))
+                    action(value);
+            });
+    }
 
-    internal void Dropdown(string name, Action<int> action) => Get<EditorChoice>(name).onValueChanged.AddListener(value => action(value));
+    internal void Dropdown(string name, Action<int> action)
+    {
+        foreach (var (tool, control) in Matching(name))
+            ((EditorChoice)control).onValueChanged.AddListener(value =>
+            {
+                if (Activate(tool))
+                    action(value);
+            });
+    }
 
     internal void Value(string name, string value)
     {

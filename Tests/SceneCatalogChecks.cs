@@ -64,6 +64,25 @@ internal sealed class SceneCatalogChecks : WTT.Campaigns.Server.Editor.EditorSes
                 updated.Error == null && updated.Definition?.MapLayouts[0].Loot[0].Position.X == 12,
                 "Version 3 editor submissions persist actual loot transforms"
             );
+            request.Version = 4;
+            request.Revision = updated.Revision;
+            request.Definition = SeasonCompiler.Copy(updated.Definition!);
+            var assetLayout = request.Definition.MapLayouts[0];
+            var assetTarget = new MapTarget { Kind = "AssetProp", Bundle = "assets/crate.bundle", Asset = "assets/crate.prefab" };
+            assetTarget.Fingerprint = SceneAssetRules.Identity(assetTarget.Bundle, assetTarget.Asset);
+            assetLayout.Objects.Add(new MapObjectEdit { Id = SeasonRepository.NewId(), Name = "Independent crate", Location = assetLayout.Location,
+                Scene = assetLayout.Loot[0].Scene, Target = assetTarget, Operation = "Copy" });
+            request.OperationId = Guid.NewGuid().ToString("N");
+            denied = false;
+            try { service.Submit(owner, profile, request); } catch (InvalidOperationException e) { denied = e.Message.Contains("Update the client"); }
+            check(denied, "Version 4 client cannot submit new independent assets");
+            request.Version = 5;
+            request.OperationId = Guid.NewGuid().ToString("N");
+            var assetsSaved = service.Submit(owner, profile, request);
+            check(assetsSaved.Error == null && assetsSaved.Definition?.FormatVersion == 8
+                && assetsSaved.Definition.MapLayouts[0].Objects.Any(o => o.Target.Asset == assetTarget.Asset),
+                "Version 5 client persists independent assets in format 8");
+
         }
         finally
         {
@@ -116,7 +135,7 @@ internal sealed class SceneCatalogChecks : WTT.Campaigns.Server.Editor.EditorSes
         );
         check(MapLayoutRules.OwnedIds(copy).Contains(copy.Loot[0].Items[0].Id), "Placed item tree IDs participate in campaign duplication");
         copy.Objects[0].Operation = "Copy";
-        check(MapLayoutRules.Errors(copy).Any(e => e.Contains("Only static props")), "Native gameplay containers cannot be cloned");
+        check(MapLayoutRules.Errors(copy).Any(e => e.Contains("native template identity")), "Copied containers require an installed native template identity");
         copy.Objects[0].Operation = "Hide";
         copy.Loot[0].Items[0].ParentId = copy.Loot[0].Items[0].Id;
         check(MapLayoutRules.Errors(copy).Count > 0, "Cyclic placed item trees are rejected");

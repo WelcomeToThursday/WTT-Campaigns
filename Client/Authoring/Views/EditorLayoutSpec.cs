@@ -58,26 +58,27 @@ internal static class EditorLayoutSpec
             B("Scale", "Scale"),
             B("Snap", "Snap"),
             T("CameraSpeedLabel", "Fly m/s"),
-            B("CameraSlower", "−"),
+            B("CameraSlower", "-"),
             I("CameraSpeed", ""),
             B("CameraFaster", "+"),
             R("EditorMapToolbar", B("EditorWalk", "Walkthrough"), B("EditorReset", "Reset preview"))
         ),
+        R(
+            "CategoryRail",
+            B("Layouts", "Layouts"),
+            B("Routes", "Routes"),
+            B("Zones", "Zones"),
+            B("Bindings", "Events"),
+            B("Captures", "Captures"),
+            B("Scene", "Scene"),
+            B("AI", "AI")
+        ),
         G(
             "Library",
-            R(
-                "CategoryRail",
-                B("Layouts", "Layouts"),
-                B("Routes", "Routes"),
-                B("Zones", "Zones"),
-                B("Bindings", "Events"),
-                B("Captures", "Captures"),
-                B("Scene", "Scene"),
-                B("AI", "AI")
-            ),
             I("Search", "Search"),
             R("SceneTabs", B("SceneCatalog", "Catalog"), B("SceneExisting", "In scene"), B("SceneChanges", "Changes")),
-            R("SceneFilters", B("SceneProps", "Props"), B("SceneLoot", "Loot"), B("ScenePresets", "Presets")),
+            R("SceneFilters", new Node("choice", "SceneSource", "Source"), B("SceneProps", "Props"), B("SceneContainers", "Containers"), B("SceneLoot", "Loot"), B("ScenePresets", "Presets")),
+            R("CatalogViews", B("CatalogGrid", "Grid"), B("CatalogList", "List")),
             new Node("browser", "LibraryScroll", ""),
             T("LibraryCount", "No records"),
             R("Paging", B("Previous", "Previous"), B("Next", "Next")),
@@ -128,7 +129,7 @@ internal static class EditorLayoutSpec
                     A("ScenePreviewRetryGroup", "ScenePreviewRetry", "Retry preview"),
                     R("SceneFocusGroup", B("SceneFrame", "Frame (F)"), B("SceneAnchor", "Anchor: Center")),
                     A("ScenePlaceGroup", "ScenePlace", "Place"),
-                    R("SceneEditGroup", B("SceneMove", "Move"), B("SceneRotate", "Rotate"), B("SceneRemove", "Remove")),
+                    R("SceneEditGroup", B("SceneMove", "Move (W)"), B("SceneRotate", "Rotate (E)"), B("SceneScale", "Scale (R)"), B("SceneRemove", "Remove")),
                     R("SceneRestoreGroup", B("SceneRestore", "Restore original"), B("SceneRebind", "Rebind to picked")),
                     G("SceneInfoGroup", T("SceneInfo", ""))
                 ),
@@ -253,7 +254,7 @@ internal static class EditorLayoutSpec
                 "",
                 T(
                     "Help",
-                    "RMB + WASD: fly · Q / E: elevation\nFly m/s: speed · Shift: 4× · Ctrl: precision\nDrag handles · Alt: bypass snap · Ctrl+Z/Y: undo/redo\nDrag a title to move a window; drag its lower-right corner to resize.\nWindows reopens tools. Reset layout restores their positions.\nEscape dismisses menus, releases a field, cancels a tool, then closes."
+                    "RMB + WASD: fly · Q / E: elevation\nFly m/s: speed · Shift: 4× · Ctrl: precision\nDrag handles · Alt: bypass snap · Ctrl+Z/Y: undo/redo\nDrag titles or dock tabs to float, split or group tools. Drag dividers to resize docks.\nThe left rail opens tools. Drag a floating corner to resize. Reset layout restores defaults.\nEscape dismisses menus, releases a field, cancels a tool, then closes."
                 )
             )
         ),
@@ -263,6 +264,9 @@ internal static class EditorLayoutSpec
             B("InspectorToggle", "Properties"),
             B("EnvironmentWindowToggle", "Environment"),
             B("HelpWindowToggle", "Editor controls"),
+            T("UiSizeLabel", "UI size: 85%"),
+            R("UiSizeActions", B("UiSizeSmaller", "Smaller"), B("UiSizeLarger", "Larger")),
+            B("UiSizeReset", "Reset UI size"),
             B("ResetLayout", "Reset layout")
         ),
         G("ContextMenu", B("EditorUnload", "Unload map / return home"), B("EnvironmentToggle", "Environment / time and weather")),

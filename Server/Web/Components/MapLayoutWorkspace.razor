@@ -14,6 +14,11 @@
             <p>@map.Objects.Count scenery edits · @map.Doors.Count doors · @map.Barriers.Count barriers · @ZoneLayoutRules.OwnedByLayout(Season.Zones, map.Id).Count() zones</p>
             @foreach (var error in MapLayoutRules.Errors(map, true)) { <p class="validation-warning">@error</p> }
             <p>Choose this layout in the client's Layouts tab, then use Scene, Routes, Zones or AI to edit its content.</p>
+            @foreach (var placement in map.Objects.Where(o => o.Target.IsAsset || SceneAssetRules.IsContainer(o)))
+            {
+                <p>@placement.Name � @(SceneAssetRules.IsContainer(placement) ? "Native random-loot container" : "Game asset")<br />
+                    <small>@(placement.Target.IsAsset ? placement.Target.Bundle + " / " + placement.Target.Asset : placement.Target.Scene + " / " + placement.Target.Path)</small></p>
+            }
             <EncounterInspection Layout="map" />
             <button disabled="@(Raid?.Connected != true)" @onclick="() => Focus(map)">Edit in connected editor</button>
             <button @onclick="() => Duplicate(map)">Duplicate layout</button>

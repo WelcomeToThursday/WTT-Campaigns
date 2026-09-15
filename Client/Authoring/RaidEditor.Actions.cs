@@ -28,7 +28,6 @@ public sealed partial class RaidEditor
     }
 
     private string _bindingTarget = "";
-    private readonly Dictionary<string, (string Selection, int Page)> _moduleSelection = new();
     private readonly List<string> _zoneScopeIds = new();
 
     // Shared is an explicit choice; the other scope always follows the current
@@ -89,43 +88,25 @@ public sealed partial class RaidEditor
                     mode,
                     () =>
                     {
-                        CancelPlacement();
-                        _sceneRebindId = "";
-                        _picking = false;
-                        CancelDrag();
-                        _moduleSelection[_mode] = (_selected, _page);
-                        _mode = value;
-                        var previous = _moduleSelection.GetValueOrDefault(value);
-                        _selected = previous.Selection ?? "";
-                        if (value == "Layouts" && _session?.Definition != null)
-                        {
-                            // Layouts owns layout records. Returning from Scene
-                            // or Routes always follows the active layout.
-                            _selected = _layoutId;
-                        }
-                        if (value == "Zones" && EditorMode.Ready && _session?.Definition != null)
-                        {
-                            if (!FilterZonesForLayout(_layoutId).AsValueEnumerable().Any(z => z.Id == _selected))
-                                _selected = "";
-                        }
-                        _page = previous.Page;
-                        Refresh();
+                        ActivateTool(value);
                         view.Windows.BrowseCategory();
                     }
                 );
             }
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < CatalogGridLayout.MaximumItems; i++)
             {
-                var binding = view.Get<Button>("Row" + i);
-                Button("Row" + i, () => SelectRow(binding.Consume()));
+                var rowId = "Row" + i;
+                Button(rowId, () => SelectRow(view.Get<Button>(rowId).Consume()));
             }
             view.BindTreeSelection(SelectRow);
-            view.Get<InputField>("Search")
-                .onValueChanged.AddListener(_ =>
-                {
-                    _page = 0;
-                    Refresh(false);
-                });
+            view.CatalogCapacityChanged = () => Refresh(false);
+            view.ToolActivated = ActivateTool;
+            view.SearchChanged(() =>
+            {
+                _page = 0;
+                _libraryKey = "";
+                Refresh(false);
+            });
             Button(
                 "Previous",
                 () =>
@@ -138,7 +119,7 @@ public sealed partial class RaidEditor
                 "Next",
                 () =>
                 {
-                    if ((_page + 1) * 10 < LibraryTotal)
+                    if ((_page + 1) * LibraryPageSize < LibraryTotal)
                     {
                         _page++;
                     }
@@ -403,6 +384,9 @@ public sealed partial class RaidEditor
             BindMapControls(view);
             BindSceneControls(view);
             BindAiControls(view);
+            view.ToolContext = _mode == "Maps" ? "Layouts" : _mode;
+            if (!view.Windows.LayoutRestored)
+                view.Windows.BrowseCategory();
             return view;
         }
         catch
@@ -935,10 +919,13 @@ public sealed partial class RaidEditor
         Refresh(true);
     }
 
-    private string _libraryKey = "";
-
     private void Refresh(bool geometry)
     {
+        if (_presentingOtherTools)
+        {
+            _passiveState = "";
+            return;
+        }
         using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.Presentation);
         if (_view?.Valid != true || !_open || _session == null)
         {
@@ -946,6 +933,8 @@ public sealed partial class RaidEditor
         }
 
         var view = _view;
+        view.ToolContext = _mode == "Maps" ? "Layouts" : _mode;
+        ValidateToolSelection();
         view.SetToolkitContext(ToolkitContext);
         view.Text(
             "Connection",
@@ -968,10 +957,97 @@ public sealed partial class RaidEditor
         }
         foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene", "AI" })
             view.Highlight(mode, _mode == mode);
+        RefreshToolBrowser();
+        view.Caption("Snap", _snap ? "Snap: on" : "Snap: off");
+        var point = Selected;
+        view.Caption("AddBox", _mode == "Bindings" ? "+ Trigger" : "+ Box");
+        view.Caption("AddSphere", _mode == "Bindings" ? "+ Interaction" : "+ Sphere");
+        var zone = point as SeasonZone;
+        RefreshZoneScope(view, zone);
+        var ownerName = zone == null ? "Shared" : ZoneOwnerName(zone);
+        if (!EditorMode.Ready || Layout == null)
+            _zoneCreateShared = true;
+        var creationScopes = new List<Dropdown.OptionData> { new("New: Shared") };
+        if (EditorMode.Ready && Layout != null)
+            creationScopes.Add(new Dropdown.OptionData("New: Layout"));
+        view.SetDropdown("ZoneCreateScope", creationScopes, _zoneCreateShared ? 0 : creationScopes.Count - 1);
+        view.Visible("EventKind", _mode == "Bindings" && Binding != null);
+        view.Visible("Identity", _mode != "Bindings" || Binding == null);
+        view.Get<Button>("Complete").interactable = _task != null && !_session.Busy && _session.Conflict == null;
+        view.Caption("EventKind", "Event kind: " + (Binding?.Kind ?? "Trigger"));
+        view.Value("Name", point?.Name ?? (_mode == "Bindings" ? Binding?.Name : "") ?? "");
+        view.Text("Identity", point == null ? Binding?.Id ?? "Select a record" : point.Id + " Ã‚Â· " + point.Scene);
+        foreach (var group in new[] { "Position", "Rotation", "Size" })
+        {
+            var vector =
+                group == "Position" ? point?.Position
+                : group == "Rotation" ? point?.Rotation
+                : (point as SeasonZone)?.Size;
+            var values = vector == null ? new[] { 0f, 0f, 0f } : new[] { vector.X, vector.Y, vector.Z };
+            for (var i = 0; i < 3; i++)
+            {
+                view.Value(group + "XYZ"[i], values[i].ToString("0.###", CultureInfo.InvariantCulture));
+            }
+        }
+        view.Value("Radius", ((point as SeasonZone)?.Radius ?? 0).ToString("0.###", CultureInfo.InvariantCulture));
+        foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation" })
+        {
+            view.Caption(
+                use,
+                ((point as SeasonZone)?.Uses.Contains(use) == true ? "Ã¢Å“â€œ " : "")
+                    + (
+                        use == "InZone" ? "In zone"
+                        : use == "VisitPlace" ? "Visit"
+                        : "Place item"
+                    )
+            );
+        }
+
+        var details = point is SeasonZone z
+            ? "Ownership: "
+                + ownerName
+                + "\n"
+                + z.Shape
+                + " Ã‚Â· "
+                + (Inside(z, _player!.Transform.position) ? "Player inside" : "Player outside")
+                + "\nPreview only Ã‚Â· "
+                + _tool
+                + " handles\n"
+                + string.Join(", ", SpatialRules.Uses(_session.Definition!, z.Id))
+            : "Preview only Ã‚Â· no gameplay changes";
+        if (_picked)
+        {
+            details =
+                PickedPath
+                + "\n"
+                + _picked!.GetComponents<Component>().AsValueEnumerable().Where(c => c).Select(c => c.GetType().Name).JoinToString(", ")
+                + "\n"
+                + ObjectError();
+        }
+
+        view.Text("Details", details);
+        view.Caption("UseObject", point is SeasonZone && Binding != null ? "Bind selected zone" : "Use scene target");
+        RefreshMaps(geometry);
+        RefreshWorkspace();
+        RefreshAiWorkspace();
+        PresentScene();
+        RefreshOtherToolBrowsers();
+    }
+
+    private void RefreshToolBrowser()
+    {
+        var view = _view!;
+        var capacity = SceneWorkspace && _sceneTab == "Catalog" ? view.CatalogPageSize : 10;
+        if (_catalogPageSize != capacity && _mode == "Scene")
+        {
+            _page = CatalogGridLayout.Repage(_page, _catalogPageSize, capacity);
+            _catalogPageSize = capacity;
+            _libraryKey = "";
+        }
         var search = view.Get<InputField>("Search").text;
         var treeMode = _mode == "AI" || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
         var libraryKey =
-            $"{_mode}|{_sceneTab}|{_sceneFilter}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
+            $"{_mode}|{_sceneTab}|{_sceneFilter}|{_catalogSource}|{_assetCatalog?.Revision}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
         if (_libraryKey != libraryKey)
         {
             _libraryKey = libraryKey;
@@ -1086,88 +1162,17 @@ public sealed partial class RaidEditor
             view.HideTree();
         }
         if (!RemoteCatalog)
-            _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / 10));
-        for (var i = 0; i < 10 && !treeMode; i++)
+            _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / LibraryPageSize));
+        for (var i = 0; i < view.RowCapacity && !treeMode; i++)
         {
             var index = LibraryOffset + i;
             view.Get<EditorButton>("Row" + i).Identity = index < _rows.Count ? _rows[index].Id : "";
             view.Caption("Row" + i, index < _rows.Count ? _rows[index].Label : "");
             view.Get<Button>("Row" + i).interactable = index < _rows.Count;
-            view.Visible("Row" + i, index < _rows.Count);
+            view.Visible("Row" + i, i < LibraryPageSize && index < _rows.Count);
         }
-        view.Caption("Snap", _snap ? "Snap: on" : "Snap: off");
-        var point = Selected;
-        view.Caption("AddBox", _mode == "Bindings" ? "+ Trigger" : "+ Box");
-        view.Caption("AddSphere", _mode == "Bindings" ? "+ Interaction" : "+ Sphere");
-        var zone = point as SeasonZone;
-        RefreshZoneScope(view, zone);
-        var ownerName = zone == null ? "Shared" : ZoneOwnerName(zone);
-        if (!EditorMode.Ready || Layout == null)
-            _zoneCreateShared = true;
-        var creationScopes = new List<Dropdown.OptionData> { new("New: Shared") };
-        if (EditorMode.Ready && Layout != null)
-            creationScopes.Add(new Dropdown.OptionData("New: Layout"));
-        view.SetDropdown("ZoneCreateScope", creationScopes, _zoneCreateShared ? 0 : creationScopes.Count - 1);
-        view.Visible("EventKind", _mode == "Bindings" && Binding != null);
-        view.Visible("Identity", _mode != "Bindings" || Binding == null);
-        view.Get<Button>("Complete").interactable = _task != null && !_session.Busy && _session.Conflict == null;
-        view.Caption("EventKind", "Event kind: " + (Binding?.Kind ?? "Trigger"));
-        view.Value("Name", point?.Name ?? (_mode == "Bindings" ? Binding?.Name : "") ?? "");
-        view.Text("Identity", point == null ? Binding?.Id ?? "Select a record" : point.Id + " Ã‚Â· " + point.Scene);
-        foreach (var group in new[] { "Position", "Rotation", "Size" })
-        {
-            var vector =
-                group == "Position" ? point?.Position
-                : group == "Rotation" ? point?.Rotation
-                : (point as SeasonZone)?.Size;
-            var values = vector == null ? new[] { 0f, 0f, 0f } : new[] { vector.X, vector.Y, vector.Z };
-            for (var i = 0; i < 3; i++)
-            {
-                view.Value(group + "XYZ"[i], values[i].ToString("0.###", CultureInfo.InvariantCulture));
-            }
-        }
-        view.Value("Radius", ((point as SeasonZone)?.Radius ?? 0).ToString("0.###", CultureInfo.InvariantCulture));
-        foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation" })
-        {
-            view.Caption(
-                use,
-                ((point as SeasonZone)?.Uses.Contains(use) == true ? "Ã¢Å“â€œ " : "")
-                    + (
-                        use == "InZone" ? "In zone"
-                        : use == "VisitPlace" ? "Visit"
-                        : "Place item"
-                    )
-            );
-        }
-
-        var details = point is SeasonZone z
-            ? "Ownership: "
-                + ownerName
-                + "\n"
-                + z.Shape
-                + " Ã‚Â· "
-                + (Inside(z, _player!.Transform.position) ? "Player inside" : "Player outside")
-                + "\nPreview only Ã‚Â· "
-                + _tool
-                + " handles\n"
-                + string.Join(", ", SpatialRules.Uses(_session.Definition!, z.Id))
-            : "Preview only Ã‚Â· no gameplay changes";
-        if (_picked)
-        {
-            details =
-                PickedPath
-                + "\n"
-                + _picked!.GetComponents<Component>().AsValueEnumerable().Where(c => c).Select(c => c.GetType().Name).JoinToString(", ")
-                + "\n"
-                + ObjectError();
-        }
-
-        view.Text("Details", details);
-        view.Caption("UseObject", point is SeasonZone && Binding != null ? "Bind selected zone" : "Use scene target");
-        RefreshMaps(geometry);
-        RefreshWorkspace();
-        RefreshAiWorkspace();
-        PresentScene();
+        RefreshToolBrowserSummary();
+        RefreshToolActions();
     }
 
     private string ZoneOwnerName(SeasonZone zone)

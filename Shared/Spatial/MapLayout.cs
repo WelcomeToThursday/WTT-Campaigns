@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using WTT.Campaigns.Shared.Native;
 using WTT.Campaigns.Shared.Seasons;
 
@@ -24,6 +25,12 @@ public sealed class MapLayout
 
 public sealed class MapTarget
 {
+    public string Bundle { get; set; } = "";
+    public string Asset { get; set; } = "";
+    public bool ShouldSerializeBundle() => !string.IsNullOrEmpty(Bundle);
+    public bool ShouldSerializeAsset() => !string.IsNullOrEmpty(Asset);
+    [JsonIgnore]
+    public bool IsAsset => Kind is "AssetProp" or "AssetContainer";
     public string Kind { get; set; } = "Prop";
     public string Template { get; set; } = "";
     public SpatialVector Origin { get; set; } = new();
@@ -98,6 +105,7 @@ public sealed class MapVolume : SpatialCapture
 
 public static class MapLayoutRules
 {
+    public static bool NeedsFormat8(MapLayout layout) => layout.Objects?.Any(o => o?.Target?.IsAsset == true || (o != null && SceneAssetRules.IsContainer(o))) == true;
     public static bool NeedsFormat5(MapLayout layout) =>
         layout.Loot?.Count > 0 || layout.Objects?.Any(o => o?.Target?.Kind != "Prop") == true;
 
@@ -105,7 +113,8 @@ public static class MapLayoutRules
         layout.SpawnPoints?.Count > 0 || layout.Encounters?.Count > 0 || layout.PatrolRoutes?.Count > 0;
 
     public static int Format(IEnumerable<MapLayout> layouts) =>
-        layouts.Any(NeedsFormat6) ? 6
+        layouts.Any(NeedsFormat8) ? 8
+        : layouts.Any(NeedsFormat6) ? 6
         : layouts.Any(NeedsFormat5) ? 5
         : 4;
 
@@ -201,8 +210,11 @@ public static class MapLayoutRules
         foreach (var edit in layout.Objects)
         {
             Need(edit.Operation is "Move" or "Hide" or "Copy", "Unknown object operation: " + edit.Name);
-            Need(edit.Target != null && edit.Target.Kind is "Prop" or "Loot" or "Container", "Unknown scene target kind.");
-            Need(edit.Operation != "Copy" || edit.Target?.Kind == "Prop", "Only static props can be copied.");
+            Need(edit.Target != null && edit.Target.Kind is "Prop" or "Loot" or "Container" or "AssetProp" or "AssetContainer", "Unknown scene target kind.");
+            Need(edit.Operation != "Copy" || edit.Target?.Kind is "Prop" or "Container" || edit.Target?.IsAsset == true, "Only props and supported assets can be copied.");
+            Need(edit.Target?.IsAsset != true || (edit.Operation == "Copy" && SceneAssetRules.Valid(edit.Target)), "Invalid asset placement reference.");
+            Need(!SceneAssetRules.IsContainer(edit) || (edit.Scale != null && edit.Scale.X == 1 && edit.Scale.Y == 1 && edit.Scale.Z == 1), "Native containers retain their original size.");
+            Need(!SceneAssetRules.IsContainer(edit) || SeasonValidator.IsId(edit.Target.Template), "Placed containers require a native template identity.");
             Need(Positive(edit.Scale), "Invalid object scale: " + edit.Name);
         }
         foreach (var loot in layout.Loot)
@@ -219,10 +231,10 @@ public static class MapLayoutRules
             errors.Add(error);
         foreach (var target in layout.Objects.Select(o => o.Target).Concat(layout.Doors.Select(d => d.Target)))
             Need(
-                target != null
-                    && !string.IsNullOrWhiteSpace(target.Scene)
+                target != null && (target.IsAsset ? SceneAssetRules.Valid(target) :
+                     !string.IsNullOrWhiteSpace(target.Scene)
                     && !string.IsNullOrWhiteSpace(target.Path)
-                    && target.Fingerprint?.Length == 64,
+                    && target.Fingerprint?.Length == 64),
                 "Capture or rebind the scene target."
             );
         foreach (var target in layout.Objects.Select(o => o.Target).Where(t => t != null && t.Kind != "Prop"))

@@ -7,9 +7,37 @@ namespace WTT.Campaigns.Client.Authoring.Views;
 internal static class EditorLayoutPreferences
 {
     private static ConfigEntry<string>? _layout;
+    private static ConfigEntry<int>? _scale;
+
+    internal static int ScalePercent => _scale?.Value ?? EditorUiScale.DefaultPercent;
+
+    internal static void SetScale(int percent)
+    {
+        if (_scale == null)
+            return;
+        try
+        {
+            _scale.Value = Math.Clamp(percent, EditorUiScale.MinimumPercent, EditorUiScale.MaximumPercent);
+            if (!Plugin.Instance.Config.SaveOnConfigSet)
+                Plugin.Instance.Config.Save();
+        }
+        catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+        {
+            Plugin.Error(error);
+        }
+    }
 
     internal static void Attach(EditorToolkitWindows windows)
     {
+        _scale ??= Plugin.Instance.Config.Bind(
+            "Campaign editor",
+            "UI size percent",
+            EditorUiScale.DefaultPercent,
+            new ConfigDescription(
+                "Size of in-raid editor controls, text and floating windows. Adjustable from the Windows menu.",
+                new AcceptableValueRange<int>(EditorUiScale.MinimumPercent, EditorUiScale.MaximumPercent)
+            )
+        );
         _layout ??= Plugin.Instance.Config.Bind(
             "Campaign editor",
             "Tool window layout",

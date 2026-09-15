@@ -7,10 +7,10 @@ namespace WTT.Campaigns.Client.Authoring.Scenes;
 
 internal static class ScenePicking
 {
-    // Scene owns world selection. Other categories keep their capture/zone tools.
+    // The viewport is shared by all editor tools; its selection is not tab-gated.
     internal static bool Dispatch(bool editor, string mode, Action pick)
     {
-        if (!editor || (mode != "Maps" && mode != "Scene"))
+        if (!editor)
             return false;
         pick();
         return true;

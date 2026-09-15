@@ -289,11 +289,11 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
             // ordinary raids remain untouched.
             EncounterSpawnAdmissionGate.SetMissionContext(_missionContext);
             _scene = new MapSceneAdapter();
-            _scene.ApplyMission(descriptor.Layout);
+            await _scene.ApplyAsync(descriptor.Layout, true, lifetime.Token, runtime: true);
             await MapSceneAdapter.WaitForNavigationAsync(lifetime.Token);
             EnsureStartupWorld();
             _loot = new MissionLoot();
-            await _loot.ApplyAsync(descriptor.Layout, run.RunId, lifetime.Token);
+            await _loot.ApplyAsync(descriptor.Layout, run.RunId, lifetime.Token, descriptor.ContainerLoot);
             EnsureStartupWorld();
             ZoneRuntime.Instance?.BeginMission(descriptor.Zones.AsValueEnumerable().Where(z => !ZoneLayoutRules.IsShared(z)).ToArray());
             CreateRouteVolumes(descriptor.Layout);

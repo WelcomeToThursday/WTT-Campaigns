@@ -78,6 +78,12 @@ public class EditorSessionRegistry
 
         public bool Accepts(string owner, string token, DateTimeOffset now) =>
             Ready && Owner == owner && Id == token && now - Contact <= TimeSpan.FromMinutes(1);
+
+        public bool AcceptsMapRequest(string owner, WTT.Campaigns.Shared.Authoring.AuthoringRequest request, DateTimeOffset now) =>
+            request.Version is 2 or 3 or 4 or 5
+            && Accepts(owner, request.EditorSessionId, now)
+            && Location.Length > 0
+            && request.Location == Location;
     }
 
     protected static readonly ConcurrentDictionary<string, Session> Profiles = new();

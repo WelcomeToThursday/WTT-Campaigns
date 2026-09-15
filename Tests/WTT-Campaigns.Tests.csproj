@@ -5,10 +5,13 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Authoring\EditorStartupRecovery.cs" Link="Client\EditorStartupRecovery.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorLayoutSpec.cs" Link="Client\EditorLayoutSpec.cs" />
     <Compile Include="..\Client\Encounters\EncounterCorePlan.cs" Link="Client\EncounterCorePlan.cs" />
     <Compile Include="..\Client\Encounters\EncounterMovementPolicy.cs" Link="Client\EncounterMovementPolicy.cs" />
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
+    <Compile Include="..\UI\Controls\EditorToolSession.cs" Link="UI\EditorToolSession.cs" />
+    <Compile Include="..\UI\Controls\EditorDockLayout.cs" Link="UI\EditorDockLayout.cs" />
     <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
     <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
     <Compile Include="..\Client\Authoring\EditorOpenState.cs" Link="Client\EditorOpenState.cs" />
@@ -44,7 +47,10 @@
     <Compile Include="..\Client\Authoring\Scenes\ScenePropSupport.cs" Link="Client\ScenePropSupport.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneSelectionEdit.cs" Link="Client\SceneSelectionEdit.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\PreviewMaterialPolicy.cs" Link="Client\PreviewMaterialPolicy.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorTooltipPlacement.cs" Link="Client\EditorTooltipPlacement.cs" />
+    <Compile Include="..\Client\Authoring\Views\EditorUiScale.cs" Link="Client\EditorUiScale.cs" />
+    <Compile Include="..\Client\Authoring\Views\CatalogGridLayout.cs" Link="Client\CatalogGridLayout.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneObjectIndex.cs" Link="Client\SceneObjectIndex.cs" />
     <Compile Include="..\Client\Authoring\Rendering\EditorRenderSize.cs" Link="Client\EditorRenderSize.cs" />
     <Compile Include="..\Client\Authoring\EditorTiming.cs" Link="Client\EditorTiming.cs" />

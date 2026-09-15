@@ -227,6 +227,8 @@ internal static class TraderOfferChecks
                 + circleId
                 + "\",\"_name\":\"Modded hideout stash\",\"_props\":{}}"
         )!;
+        foreach (var template in templates.Values)
+            if (template.Properties != null) template.Properties.Prefab = new() { Path = "test/item.bundle" };
         var itemHelper = NativeItemHelperFixture.Create(table);
         var catalogue = new TraderOfferCatalogue(table, traders, null!, locale, json, itemHelper);
         check(
@@ -244,6 +246,10 @@ internal static class TraderOfferChecks
             catalogue.Search("Root").Any(i => i.Id == Tpl) && catalogue.IsInventoryItem(ChildTpl),
             "Valid installed inventory items and attachments remain available without existing trader offers"
         );
+        var sceneOnlyCatalogue = new TraderOfferCatalogue(table, traders, null!, locale, json, NativeItemHelperFixture.Create(table, new MongoId(Tpl)));
+        check(!sceneOnlyCatalogue.IsInventoryItem(Tpl) && sceneOnlyCatalogue.IsSceneItem(Tpl)
+            && sceneOnlyCatalogue.SceneCatalog(new SceneCatalogRequest { Id = Tpl }).Entries.Single().Error.Length == 0,
+            "Trader blacklists do not hide supported scene items");
         var scenePage = catalogue.SceneCatalog(new WTT.Campaigns.Shared.Authoring.SceneCatalogRequest { Search = "Root" });
         check(scenePage.Entries.Any(e => e.Id == Tpl && e.Items.Count == 1), "Scene catalog uses installed native item templates");
         check(
@@ -263,6 +269,8 @@ internal static class TraderOfferChecks
         templates[new MongoId(boxId)] = json.Deserialize<TemplateItem>(
             $$$"""{"_id":"{{{boxId}}}","_type":"Item","_parent":"{{{SPTarkov.Server.Core.Models.Enums.BaseClasses.AMMO_BOX}}}","_name":"Test ammo box","_props":{"StackSlots":[{"_name":"cartridges","_max_count":25,"_props":{"filters":[{"Filter":["{{{ammoId}}}"]}]}}]}}"""
         )!;
+        templates[new MongoId(ammoId)].Properties!.Prefab = new() { Path = "test/ammo.bundle" };
+        templates[new MongoId(boxId)].Properties!.Prefab = new() { Path = "test/box.bundle" };
         var ammoCatalogue = new TraderOfferCatalogue(table, traders, null!, locale, json, NativeItemHelperFixture.Create(table));
         var filledBox = ammoCatalogue.SceneCatalog(new SceneCatalogRequest { Id = boxId }).Entries.Single().Items;
         var boxRoot = filledBox.Single(i => i.ParentId == null);
@@ -274,6 +282,17 @@ internal static class TraderOfferChecks
                 && rounds.All(i => i.Upd!.StackObjectsCount <= 20),
             "Scene ammo boxes contain their native ammunition capacity split into legal stacks"
         );
+        check(ammoCatalogue.SceneCatalog(new SceneCatalogRequest { TemplateIds = new() }).Total == 0,
+            "Current-map catalog with no loaded inventory items stays empty");
+        check(ammoCatalogue.SceneCatalog(new SceneCatalogRequest { TemplateIds = new() { ammoId } }).Entries.All(e => e.Id == ammoId),
+            "Current-map inventory filtering happens before paging");
+        var nativeCapacity = templates[new MongoId(boxId)].Properties!.StackSlots!.First().MaxCount;
+        templates[new MongoId(boxId)].Properties!.StackSlots!.First().MaxCount = 0;
+        var brokenBox = ammoCatalogue.SceneCatalog(new SceneCatalogRequest { Id = boxId });
+        check(brokenBox.Entries.Single().Error.Length > 0 && brokenBox.Entries.Single().Items.Count == 0
+            && ammoCatalogue.SceneCatalog(new SceneCatalogRequest { Id = ammoId }).Entries.Single().Error.Length == 0,
+            "A malformed asset reports an entry error without breaking healthy catalog items");
+        templates[new MongoId(boxId)].Properties!.StackSlots!.First().MaxCount = nativeCapacity;
         var filledValidation = new SeasonValidationResult();
         SeasonValidator.ItemTree(filledBox, "Ammo box", filledValidation);
         check(filledValidation.CanPublish, "Filled catalog ammo boxes remain valid serializable item trees");

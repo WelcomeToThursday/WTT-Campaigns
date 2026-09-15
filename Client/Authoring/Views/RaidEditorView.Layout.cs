@@ -10,10 +10,13 @@ internal sealed partial class RaidEditorView
     private void Register(string id, EditorControl control)
     {
         control.Element.name = id;
-        _controls.Add(id, control);
+        if (_registerLocal)
+            _toolControls[ToolContext].Add(id, control);
+        else
+            _controls.Add(id, control);
         if (control is EditorInput input)
             _inputs.Add(input);
-        control.Element.RegisterCallback<PointerEnterEvent>(_ => Windows?.ShowTooltip(id, control.Element.tooltip));
+        control.Element.RegisterCallback<PointerEnterEvent>(_ => Windows?.ShowTooltip(id, control.Element.tooltip, control.Element));
         control.Element.RegisterCallback<PointerLeaveEvent>(_ => Windows?.HideTooltip());
     }
 
@@ -25,6 +28,7 @@ internal sealed partial class RaidEditorView
         {
             case "button":
                 var button = new Button { text = node.Text, tooltip = node.Text };
+                EditorControlLayout.Action(button);
                 element = button;
                 control = new EditorButton(button);
                 break;
@@ -41,6 +45,8 @@ internal sealed partial class RaidEditorView
                 break;
             case "choice":
                 var choice = new Button { text = node.Text };
+                EditorControlLayout.Action(choice);
+                choice.style.minWidth = 160;
                 element = choice;
                 control = new EditorChoice(choice, OpenChoice);
                 break;
@@ -74,10 +80,13 @@ internal sealed partial class RaidEditorView
         if (node.Kind == "row")
         {
             element.AddToClassList("editor-actions");
-            element.style.flexShrink = 0;
+            EditorControlLayout.Row(element);
         }
         if (node.Kind == "input")
+        {
             element.style.flexShrink = 0;
+            EditorControlLayout.Field((TextField)element, false);
+        }
         if (node.Kind == "group")
             element.AddToClassList("editor-group");
         if (node.Id.EndsWith("Axes"))
@@ -151,6 +160,28 @@ internal sealed partial class RaidEditorView
         }
         Element("CameraSpeed").style.width = 66;
         Element("CameraSpeed").style.flexGrow = 0;
+        var speed = (TextField)Element("CameraSpeed");
+        speed.labelElement.style.display = DisplayStyle.None;
+        foreach (var id in new[] { "CameraSlower", "CameraSpeed", "CameraFaster" })
+        {
+            var element = Element(id);
+            element.style.alignSelf = Align.Center;
+            element.style.height = element.style.minHeight = element.style.maxHeight = 30;
+            element.style.marginTop = element.style.marginBottom = 0;
+            element.style.marginLeft = element.style.marginRight = 2;
+            element.style.paddingTop = element.style.paddingBottom = 0;
+            if (id != "CameraSpeed")
+            {
+                element.style.width = element.style.minWidth = 26;
+                element.style.paddingLeft = element.style.paddingRight = 0;
+                element.style.unityTextAlign = TextAnchor.MiddleCenter;
+            }
+        }
+        var speedInput = speed.Q(className: "unity-base-text-field__input");
+        if (speedInput != null)
+            speedInput.style.unityTextAlign = TextAnchor.MiddleLeft;
+        foreach (var (id, hint) in new[] { ("Move", "Move selected object (W)"), ("Rotate", "Rotate selected object (E)"), ("Scale", "Scale selected object (R)") })
+            Element(id).tooltip = hint;
         Element("CategoryRail").AddToClassList("editor-grid");
         Element("CreationTools").AddToClassList("editor-grid");
         Visible("AiTools", false);
@@ -221,15 +252,20 @@ internal sealed partial class RaidEditorView
             Visible(id, false);
         foreach (var id in RaidEditorAiView.InspectorGroups)
             Visible(id, false);
+        _browsers.Add("Layouts", new());
         BuildBrowser();
         ApplyIcons();
+        BuildIndependentTools();
     }
 
     private void ApplyIcons()
     {
         foreach (var pair in EditorToolkitIcons.Names)
         {
-            if (!_controls.TryGetValue(pair.Key, out var control) || control is not EditorButton button)
+            if (
+                !(_registerLocal ? _toolControls[ToolContext] : _controls).TryGetValue(pair.Key, out var control)
+                || control is not EditorButton button
+            )
                 continue;
             var image = new Image
             {

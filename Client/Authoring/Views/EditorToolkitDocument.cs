@@ -23,6 +23,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     internal Action? Tick;
     internal Action? Escape;
     internal int EscapeFrame = -1;
+    internal int ScalePercent = 100;
     internal float Scale => Settings.scale;
     internal float Width => Screen.width / Scale;
     internal float Height => Screen.height / Scale;
@@ -34,6 +35,7 @@ internal sealed class EditorToolkitDocument : IDisposable
         try
         {
             Settings = UnityEngine.Object.Instantiate(_template!);
+            Settings.scaleMode = PanelScaleMode.ConstantPixelSize;
             Settings.sortingOrder = order;
             Host = new GameObject(name);
             // Native owners dispose their documents; scene unload must not destroy
@@ -110,7 +112,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     {
         if (_disposed)
             return;
-        Settings.scale = Mathf.Max(1, Screen.height / 1080f);
+        Settings.scale = EditorUiScale.Resolve(Screen.width, Screen.height, ScalePercent);
         if (Visible)
             Tick?.Invoke();
     }

@@ -33,10 +33,12 @@ internal sealed partial class MapSceneAdapter
         internal HotObject[] Heat = Array.Empty<HotObject>();
         internal StaticDeferredDecal[] Decals = Array.Empty<StaticDeferredDecal>();
         internal StencilShadow[] Shadows = Array.Empty<StencilShadow>();
+        internal WorldInteractiveObject[] Interactions = Array.Empty<WorldInteractiveObject>();
 
         internal void RefreshVisuals()
         {
             VisualsDirty = false;
+            ScenePropMovement.Refresh(Interactions);
             foreach (var heat in Heat)
                 if (heat)
                     heat.SyncPosition();
@@ -94,8 +96,9 @@ internal sealed partial class MapSceneAdapter
         internal string Definition = "";
         internal GameObject? Model;
         internal SceneModelLease<GameObject>? Lease;
-        internal bool Pending => Lease?.Pending == true;
-        internal string Error => Lease?.Error ?? "";
+        internal SceneModelLease<SceneAssetCatalog.Model>? AssetLease;
+        internal bool Pending => Lease?.Pending == true || AssetLease?.Pending == true;
+        internal string Error => AssetLease?.Error ?? Lease?.Error ?? "";
         internal SpatialCapture Pose = null!;
         internal SceneNavigation? Navigation;
 
@@ -104,7 +107,8 @@ internal sealed partial class MapSceneAdapter
             Navigation?.Dispose();
             Navigation = null;
             Lease?.Dispose();
-            if (Lease == null && Model)
+            AssetLease?.Dispose();
+            if (Lease == null && AssetLease == null && Model)
                 Remove(Model!);
             Model = null;
         }
@@ -298,6 +302,37 @@ internal sealed partial class MapSceneAdapter
             foreach (var edit in edits)
                 try
                 {
+                    if (edit.Target.IsAsset || SceneAssetRules.IsContainer(edit))
+                    {
+                        if (edit.Operation != "Copy" || !MapLayoutRules.Positive(edit.Scale)
+                            || (SceneAssetRules.IsContainer(edit) && ZoneRuntime.Vector(edit.Scale) != Vector3.one))
+                            throw new InvalidOperationException("Invalid asset placement or unsupported container scale.");
+                        if (runtime && SceneAssetRules.IsContainer(edit)) continue;
+                        needed.Add(edit.Id);
+                        var signature = JsonConvert.SerializeObject(edit.Target);
+                        if (_spawns.TryGetValue(edit.Id, out var previous) && previous.Definition != signature)
+                        {
+                            previous.Dispose();
+                            _spawns.Remove(edit.Id);
+                        }
+                        if (!_spawns.TryGetValue(edit.Id, out var assetSpawn))
+                        {
+                            assetSpawn = new Spawn { Definition = signature, Pose = edit, AssetLease = new(m => m.Dispose()) };
+                            _spawns.Add(edit.Id, assetSpawn);
+                            _ = LoadAsset(assetSpawn, edit);
+                        }
+                        assetSpawn.Pose = edit;
+                        if (assetSpawn.Model)
+                        {
+                            var restriction = ScaleRestriction(assetSpawn.Model!.transform);
+                            if (ZoneRuntime.Vector(edit.Scale) != Vector3.one && restriction.Length > 0)
+                                throw new InvalidOperationException(restriction);
+                            Pose(assetSpawn.Model!.transform, edit, true);
+                            assetSpawn.Navigation ??= new SceneNavigation(assetSpawn.Model.transform);
+                        }
+                        if (assetSpawn.Error.Length > 0) TargetErrors.Add(edit.Name + ": " + assetSpawn.Error);
+                        continue;
+                    }
                     var key = Key(edit.Target);
                     if (!_originals.TryGetValue(key, out var original))
                     {
@@ -317,6 +352,7 @@ internal sealed partial class MapSceneAdapter
                             Heat = t.GetComponentsInChildren<HotObject>(true),
                             Decals = t.GetComponentsInChildren<StaticDeferredDecal>(true),
                             Shadows = t.GetComponentsInChildren<StencilShadow>(true),
+                            Interactions = t.GetComponentsInChildren<WorldInteractiveObject>(true),
                         };
                         foreach (var body in t.GetComponentsInChildren<Rigidbody>(true))
                             original.Bodies.Add(new SceneBodyState(body));
@@ -451,6 +487,31 @@ internal sealed partial class MapSceneAdapter
             _doors.Remove(id);
         }
         Physics.SyncTransforms();
+    }
+
+    private async Task LoadAsset(Spawn spawn, MapObjectEdit edit)
+    {
+        await spawn.AssetLease!.Load(async token =>
+        {
+            var model = await SceneAssetCatalog.Load(edit.Target, token);
+            try
+            {
+                var pose = (MapObjectEdit)spawn.Pose;
+                var restriction = ScaleRestriction(model.Object.transform);
+                if (ZoneRuntime.Vector(pose.Scale) != Vector3.one && restriction.Length > 0)
+                    throw new InvalidOperationException(restriction);
+                return model;
+            }
+            catch { model.Dispose(); throw; }
+        });
+        if (_disposed) return;
+        spawn.Model = spawn.AssetLease.Model?.Object;
+        if (spawn.Model)
+        {
+            if (spawn.Model!.GetComponentInChildren<LootableContainer>(true) is { } container) container.enabled = false;
+            Pose(spawn.Model.transform, (MapObjectEdit)spawn.Pose, true);
+            spawn.Model.SetActive(true);
+        }
     }
 
     private async Task Load(Spawn spawn, MapLootPlacement loot)

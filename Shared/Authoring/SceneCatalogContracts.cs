@@ -9,11 +9,14 @@ public class SceneCatalogRequest
     public string Search { get; set; } = "";
     public string Category { get; set; } = "Items";
     public string Id { get; set; } = "";
+    public List<string>? TemplateIds { get; set; }
     public int Page { get; set; }
 }
 
 public sealed class SceneCatalogEntry
 {
+    public string Error { get; set; } = "";
+    public WTT.Campaigns.Shared.Spatial.MapTarget? AssetTarget { get; set; }
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
     public List<NativeItem> Items { get; set; } = new();

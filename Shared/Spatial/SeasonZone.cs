@@ -214,7 +214,7 @@ public static class SpatialRules
 
         errors.AddRange(ZoneLayoutRules.Errors(season));
 
-        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7))
+        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7 or 8))
         {
             errors.Add("Spatial content requires campaign format 2 or later.");
         }
