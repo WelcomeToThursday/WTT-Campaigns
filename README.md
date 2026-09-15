@@ -1,8 +1,8 @@
 # WTT-Campaigns
 
-**0.8.0 — Editor milestone**
+**0.8.0 — Campaign Editor and missions**
 
-[Campaign Editor and mission map layouts](wiki/editor-mode.md): open a disposable editor character, reshape supported scenery, and walk through a saved route.
+[Campaign Editor and mission map layouts](wiki/editor-mode.md): open a disposable editor character, reshape supported scenery, author AI encounters and patrols, and build [playable missions](wiki/missions.md).
 
 **[Documentation home](wiki/Home.md)** · [Player guides](wiki/Home.md#playing) · [Campaign creation](wiki/Home.md#creating-campaigns)
 
@@ -23,6 +23,8 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 - **UnityToolkit 2.0.2 or later**, including its plugin libraries and prepatcher.
 - **WTT-CommonLib 3.0.6 or later**, with matching client and server components, for salvage quest interactions.
 - **WTT-ContentBackport 2.0.1 or later** and its dependencies, which supply the document and crate models.
+
+AI encounters and patrol previews target **SPT 4.1.5** with compatible **BigBrain 1.5.0** and **SAIN 4.5.1**. See the [AI guide](wiki/ai-encounters.md).
 
 Install the dependencies separately. They are not bundled with WTT-Campaigns. Use matching client and server components from the same release.
 

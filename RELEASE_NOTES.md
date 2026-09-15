@@ -1,33 +1,21 @@
-# WTT-Campaigns 0.8.0 — Editor milestone
+# WTT-Campaigns 0.8.0 — Campaign Editor and missions
 
-- Added Campaign Editor entry and a separate Normal / Editor startup preference.
-- Added disposable editor sessions, restricted native map loading, editor home and direct map exit.
-- Extended the existing raid editor bundle with map layouts, scenery overrides, door previews, barriers and ordered walkthrough routes.
-- Added reversible scene previews, target rebinding, format 4 map data, draft recovery and concurrent editing support.
-- Existing ordinary-raid authoring remains opt-in. Dedicated playable missions, encounters and rewards are a later milestone.
+This beta adds an in-game workspace for building campaign maps, authored AI encounters and patrols, and playable missions linked to campaign quests.
 
-See the [Editor mode guide](wiki/editor-mode.md) for controls and the user-controlled acceptance pass. Offline validation does not replace that in-game pass.
+## Preview
 
-# WTT-Campaigns 0.7.0
-
-Beta release expanding campaign authoring, trader assortments and character customization, with progression fixes since [0.6.1](https://github.com/CJ-SPT/SeasonalPerks/releases/tag/V0.6.1).
+[Watch the 0.8.0 preview on YouTube](https://www.youtube.com/watch?v=wcW27lK7Ai4)
 
 ## New and improved
 
-- **Campaign trader assortments.** Choose an installed trader and edit, add, remove or replace their offers for a campaign. Configure item assemblies, currency or barter payments, loyalty requirements, stock and per-player purchase limits. Offers can use normal trader access or require a Battle Pass or campaign reward unlock. Stock and purchase limits follow the trader's native restock schedule. Clear and restore actions include a review and undo.
-- **Standalone trader editor.** Open `/wtt-campaigns/creator/traders` to edit an assortment without a campaign draft. Save an independent workspace and export a native `assort.json`, preserving retained offer and child IDs. Exporting does not install the file or change live traders.
-- **Client-rendered item previews.** Enable **Web item previews → Enable item authoring** in the game's settings, stay at the main menu and select that client in the web editor. Preview assembled items and installed modded content using the game's item images. Cached images remain available offline; campaign publication requires successful local client verification of authored assemblies. The preview worker creates detached items without changing inventory or making purchases.
-- **Guided quest and dialogue editing.** Navigate chapters and quests in a searchable tree, edit objectives and rewards in dedicated steps, and create linked journal notes and conversations. Conversation writing, conditions, effects and presentation have separate controls. Deleting chapters or conversations shows affected content and reference checks before applying changes.
-- **Connected raid authoring.** Improve in-raid editing and synchronization through SPT's existing notification WebSocket, with named references, draft recovery and conflict handling. Install matching client and server components.
-- **Salvage quest zones.** Author salvage interactions for quests using WTT-CommonLib. This feature requires its matching client and server components.
-- **Character appearance selection.** Add the backported customization screen to character creation.
-- **Documentation in the web interface.** Read the player and author guides from the web interface, including expanded dialogue and creator workflows.
-
-## Progression fixes
-
-- Add Peacekeeper's **Demonstration Model** after auditing missing quests for compatibility. Unsupported objectives, unverified zones, incomplete rewards and dependent quests remain excluded.
-- Rebalance completion reputation so the seven regular traders have offline-verified routes to maximum loyalty without event quests, Arena, repeatables or edition bonuses. **Supplier** now awards **+0.50 Ragman reputation** to resolve the early Ragman progression bottleneck. Native level requirements and prerequisite chains still apply.
-- Older regular and campaign characters receive the positive reputation difference for affected completed quests once per character. A verified full profile backup is required before adjustment; a saved receipt prevents duplicate credits. Quest progress and other rewards are preserved.
+- **Campaign Editor.** Enter from the main menu or choose Editor as your startup preference. Work with a disposable editor character, open a draft and map layout, and return to your original character when finished.
+- **Map and scene authoring.** Move, rotate, resize, duplicate or hide supported scenery; configure doors and barriers; place loot and weapon presets; and build ordered checkpoint routes. Preview changes without rewriting the game's map bundles. Saved layouts support undo/redo, draft recovery, conflict handling and explicit rebinding of changed scene targets.
+- **Editor workspace.** Browse scene objects, routes, zones and AI in searchable trees, edit selections in the properties panel, and arrange resizable panels. Selection highlights and transform controls help position objects directly in the map.
+- **AI encounters and patrols.** Configure triggers, ordered waves, bot rosters, spawn points and patrol routes. Patrols support waypoint waits, walking or running, and loop, ping-pong or stop-at-end behavior. Placement and paths are checked against the map's existing navigation mesh. Authored patrols yield to SAIN combat behavior.
+- **Observe and playtest.** Watch encounters from the free camera or rehearse with copied equipment on disposable editor state. Reset previews and retry without transferring test loot, damage or progress to your original character. This release also addresses repeated playtest startup and cleanup.
+- **Playable missions.** Link an authored layout, briefing and story quest. Accept the quest, deploy from Missions, complete checkpoints in order and reach the authored exit. Missions use authored enemies and normal character equipment; quest rewards are handled by normal turn-in and are not repeated on replay.
+- **Mission testing.** Test a saved mission directly from the editor, or use a disposable campaign flow to exercise quest acceptance, mission deployment, extraction, turn-in and replay. Campaign format 7 supports mission content while retaining support for older campaign formats.
+- **Editor stability and performance.** Improvements cover map loading and exit recovery, scene selection, terrain visibility, idle synchronization and memory handling, and small-frame rendering during display transitions.
 
 ## Requirements and updating
 
@@ -36,15 +24,21 @@ Targets **SPT 4.1.x / EFT 0.16.9.40743**. Install these dependencies separately:
 - **UnityToolkit 2.0.2 or later**, including its prepatcher.
 - **WTT-CommonLib 3.0.6 or later**, with matching client and server components.
 - **WTT-ContentBackport 2.0.1 or later**, with its dependencies.
+- For AI encounters and patrol previews, the integration targets **SPT 4.1.5** with compatible **BigBrain 1.5.0** and **SAIN 4.5.1**.
 
-Close the game and server, back up your profiles, then extract the archive's `BepInEx` and `SPT_Runtime` folders into your SPT installation. Use the full matching package. Preserve configuration, regular and campaign profiles, and the server mod's entire `creator` folder, including standalone assortment drafts. Manually start the server and game when ready.
+Close the game and server and back up profiles before updating. Extract the archive's `BepInEx` and `SPT_Runtime` folders into your SPT installation. Install the full matching 0.8.0 package, including the editor UI bundle. Preserve configuration, regular and campaign profiles, and the server mod's entire `creator` folder. Start the server and game manually when ready.
 
-## Known limitations
+## Limitations
 
-- Fika is not supported.
-- Fence is not supported by the assortment editor. Ref and Fence retain their existing reputation progression.
-- Standalone exports contain `assort.json` only. Update your trader mod's external quest-assortment or code references if you remove referenced offers.
-- Imported authored assemblies must be verified on the receiving author's installation before republishing. Missing client content can prevent verification.
-- The bundled campaign does not include Kord Breach quests or a complete authored story campaign; some artwork remains placeholder content.
+- This is a beta authoring release; it does not include a complete authored story campaign. Local test drafts described in the guides are not promised as bundled campaign content.
+- Fika is not supported. AI integration and real map behavior still require in-game verification with your installed mods.
+- Unsupported scene objects remain read-only. Missing or ambiguous scene targets require rebinding. The editor does not rebuild navigation meshes, and invalid spawn or patrol paths cannot run.
+- Ordinary mission runs use your real campaign character and normal raid consequences. Use the disposable testing paths for rehearsal.
+- Offline contracts, native assembly checks and package hashes do not establish live gameplay acceptance.
 
-See the [README](https://github.com/CJ-SPT/SeasonalPerks/blob/V0.7.0/README.md), [creator guide](https://github.com/CJ-SPT/SeasonalPerks/blob/V0.7.0/wiki/season-creator.md) and [compatibility guide](https://github.com/CJ-SPT/SeasonalPerks/blob/V0.7.0/wiki/compatibility.md).
+## Guides
+
+- [Installation and overview](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.8.0/README.md)
+- [Campaign Editor](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.8.0/wiki/editor-mode.md)
+- [AI encounters and patrols](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.8.0/wiki/ai-encounters.md)
+- [Missions and disposable testing](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.8.0/wiki/missions.md)

@@ -1,6 +1,6 @@
 # AI encounters and patrol previews
 
-AI authoring belongs to a selected map layout in Campaign Editor. It is separate from the player checkpoint route. This milestone previews encounters in the disposable editor session; selecting and launching playable campaign missions remains future work.
+AI authoring belongs to a selected map layout in Campaign Editor. It is separate from the player checkpoint route. Preview encounters in a disposable editor session, then use them in [playable campaign missions](missions.md).
 
 ## Build an encounter
 
