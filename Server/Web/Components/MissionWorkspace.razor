@@ -1,0 +1,277 @@
+@using WTT.Campaigns.Shared.Missions
+@using WTT.Campaigns.Shared.Native
+@using WTT.Campaigns.Shared.Spatial
+@using WTT.Campaigns.Server.Web.Authoring
+
+<section class="editor-section mission-workspace">
+    <p>Each mission joins an authored walkthrough layout to a story quest. Accept the quest in the lobby, then deploy from the Missions list.</p>
+    <div class="content-workspace">
+        <aside class="content-list" aria-label="Missions">
+            <label>Search missions<input type="search" @bind="_search" @bind:event="oninput" placeholder="Name or ID…" /></label>
+            <button class="primary" disabled="@(!CanAdd)" @onclick="Add">Add mission</button>
+            @if (!CanAdd)
+            {
+                <p class="navigator-empty">Add a walkthrough layout and a story-backed quest before creating a mission.</p>
+            }
+            @foreach (var entry in Records)
+            {
+                <button class="content-row @(entry.Id == Selected?.Id ? "selected" : "")" aria-current="@(entry.Id == Selected?.Id ? "page" : null)" @onclick="@(() => Select(entry.Id))">
+                    <span>@DisplayName(entry)</span>
+                    <small>@LayoutName(entry) · @QuestName(entry)</small>
+                </button>
+            }
+            @if (!Records.Any() && CanAdd)
+            {
+                <p class="navigator-empty">No missions yet. Add one to link a layout and story quest.</p>
+            }
+        </aside>
+        <div class="content-detail">
+            @if (Selected is { } mission)
+            {
+                <div class="record-heading">
+                    <h3>@DisplayName(mission)</h3>
+                    <details class="reference-details"><summary>Reference ID</summary><code>@mission.Id</code></details>
+                    <div class="row"><button @onclick="Duplicate">Duplicate mission</button><button class="danger" @onclick="Delete">Delete mission</button></div>
+                </div>
+                <EditorSection Title="Mission briefing" Description="This text is shown before deployment. Keep route instructions clear for the player.">
+                    <div class="form-grid">
+                        <label>Mission name<input maxlength="120" @bind="mission.Name" @bind:event="oninput" @bind:after="NotifyChanged" /></label>
+                    </div>
+                    <label>Briefing<textarea maxlength="4000" rows="5" @bind="mission.Briefing" @bind:event="oninput" @bind:after="NotifyChanged"></textarea></label>
+                </EditorSection>
+                <EditorSection Title="Mission links" Description="Choose existing authored records. A mission requires a story-backed quest and a completion objective from that quest.">
+                    <label>Mission layout<select value="@mission.LayoutId" @onchange="@(e => SetLayout(mission, e.Value?.ToString() ?? ""))">
+                        <option value="">Choose a layout…</option>
+                        @foreach (var candidate in Season.MapLayouts.OrderBy(l => l.Name))
+                        {
+                            <option value="@candidate.Id">@candidate.Name · @candidate.Location</option>
+                        }
+                    </select></label>
+                    <label>Story quest<select value="@mission.QuestId" @onchange="@(e => SetQuest(mission, e.Value?.ToString() ?? ""))">
+                        <option value="">Choose a story quest…</option>
+                        @foreach (var quest in StoryQuests.OrderBy(QuestName))
+                        {
+                            <option value="@quest.Id">@QuestName(quest)</option>
+                        }
+                    </select></label>
+                    <label>Completion objective<select value="@mission.CompletionConditionId" @onchange="@(e => SetCondition(mission, e.Value?.ToString() ?? ""))">
+                        <option value="">Choose an objective…</option>
+                        @foreach (var condition in FinishConditions(mission))
+                        {
+                            <option value="@condition.Id">@ConditionName(condition)</option>
+                        }
+                    </select></label>
+                    @if (!FinishConditions(mission).Any() && mission.QuestId.Length > 0)
+                    {
+                        <p class="validation-warning">The selected quest needs a completion objective backed by a profile story variable. Add that objective in the quest editor first.</p>
+                    }
+                </EditorSection>
+                <EditorSection Title="Route and mission zones" Description="Route checkpoints are completed in authored order. Layout-owned zones are available to this mission's quest context.">
+                    @if (Layout(mission) is { } routeLayout)
+                    {
+                        <p>Start: <strong>@PointState(routeLayout.Start)</strong> · Checkpoints: <strong>@routeLayout.Checkpoints.Count</strong> · Exit: <strong>@PointState(routeLayout.Exit)</strong></p>
+                        <p>Mission-scoped zones: <strong>@ZoneLayoutRules.OwnedByLayout(Season.Zones, routeLayout.Id).Count()</strong></p>
+                        @if (routeLayout.Checkpoints.Count == 0 || routeLayout.Start == null || routeLayout.Exit == null)
+                        {
+                            <p class="validation-warning">Open this layout in Layouts to author a start, one or more checkpoints, and an exit.</p>
+                        }
+                        else
+                        {
+                            <ol class="route-list">
+                                @foreach (var checkpoint in routeLayout.Checkpoints)
+                                {
+                                    <li>@checkpoint.Name · @checkpoint.Scene</li>
+                                }
+                            </ol>
+                        }
+                    }
+                    else
+                    {
+                        <p class="validation-warning">Choose an existing layout before authoring the route.</p>
+                    }
+                    <p>Mission-start encounters are authored on the selected layout. Ordinary raids keep their existing encounter behavior.</p>
+                </EditorSection>
+            }
+            else
+            {
+                <div class="empty-selection"><strong>Select a mission</strong><p>Choose an entry from the list or create one.</p></div>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public string FocusId { get; set; } = "";
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private string _selectedId = "";
+    private string _search = "";
+    private string _lastFocus = "";
+
+    protected override void OnParametersSet()
+    {
+        if (FocusId.Length > 0 && FocusId != _lastFocus && Season.Missions.Any(mission => mission.Id == FocusId))
+        {
+            _selectedId = FocusId;
+        }
+
+        _lastFocus = FocusId;
+    }
+
+    private IEnumerable<MissionDefinition> Records
+    {
+        get
+        {
+            return Season.Missions.Where(mission =>
+                _search.Length == 0
+                || mission.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
+                || mission.Id.Contains(_search, StringComparison.OrdinalIgnoreCase)
+                || LayoutName(mission).Contains(_search, StringComparison.OrdinalIgnoreCase)
+                || QuestName(mission).Contains(_search, StringComparison.OrdinalIgnoreCase)
+            );
+        }
+    }
+
+    private MissionDefinition? Selected
+    {
+        get { return Season.Missions.FirstOrDefault(mission => mission.Id == _selectedId) ?? Records.FirstOrDefault(); }
+    }
+
+    private IEnumerable<NativeQuest> StoryQuests
+    {
+        get
+        {
+            var ids = (Season.Story?.Quests ?? []).Select(membership => membership.QuestId).ToHashSet(StringComparer.Ordinal);
+            return Season.Quests.Where(quest => ids.Contains(quest.Id));
+        }
+    }
+
+    private bool CanAdd => Season.MapLayouts.Count > 0 && StoryQuests.Any();
+
+    private static string DisplayName(MissionDefinition mission) => string.IsNullOrWhiteSpace(mission.Name) ? "Unnamed mission" : mission.Name;
+
+    private MapLayout? Layout(MissionDefinition mission)
+    {
+        return Season.MapLayouts.FirstOrDefault(layout => layout.Id == mission.LayoutId);
+    }
+
+    private string LayoutName(MissionDefinition mission)
+    {
+        return Layout(mission)?.Name ?? (mission.LayoutId.Length == 0 ? "No layout" : "Unresolved layout");
+    }
+
+    private NativeQuest? Quest(MissionDefinition mission)
+    {
+        return Season.Quests.FirstOrDefault(quest => quest.Id == mission.QuestId);
+    }
+
+    private static string QuestName(NativeQuest quest)
+    {
+        return NativeQuestAuthoring.QuestName(quest);
+    }
+
+    private string QuestName(MissionDefinition mission)
+    {
+        return Quest(mission) is { } quest ? QuestName(quest) : mission.QuestId.Length == 0 ? "No story quest" : "Unresolved quest";
+    }
+
+    private IEnumerable<NativeCondition> FinishConditions(MissionDefinition mission)
+    {
+        return (Quest(mission)?.Conditions?.AvailableForFinish ?? []).Where(condition =>
+            condition.ConditionType == "GlobalVariableValue" && condition.Value is >= 1 and <= 1_000_000
+            && (condition.CompareMethod == null || condition.CompareMethod == ">="));
+    }
+
+    private static string ConditionName(NativeCondition condition)
+    {
+        return condition.Id + " · " + (string.IsNullOrWhiteSpace(condition.ConditionType) ? "objective" : condition.ConditionType);
+    }
+
+    private static string PointState(SpatialCapture? point)
+    {
+        return point == null ? "missing" : point.Scene.Length == 0 ? "unresolved" : point.Scene;
+    }
+
+    private async Task Select(string id)
+    {
+        _selectedId = id;
+        await Task.CompletedTask;
+    }
+
+    private async Task Add()
+    {
+        if (!CanAdd)
+        {
+            return;
+        }
+
+        var mission = new MissionDefinition
+        {
+            Id = SeasonRepository.NewId(),
+            Name = "New mission",
+            Briefing = "Complete the route and extract.",
+            LayoutId = Season.MapLayouts[0].Id,
+            QuestId = StoryQuests.First().Id,
+        };
+        mission.CompletionConditionId = FinishConditions(mission).FirstOrDefault()?.Id ?? "";
+        Season.Missions.Add(mission);
+        Season.FormatVersion = Math.Max(Season.FormatVersion, 7);
+        _selectedId = mission.Id;
+        await NotifyChanged();
+    }
+
+    private async Task Duplicate()
+    {
+        if (Selected is not { } selected)
+        {
+            return;
+        }
+
+        var copy = SeasonCompiler.Copy(selected);
+        copy.Id = SeasonRepository.NewId();
+        copy.Name += " copy";
+        Season.Missions.Insert(Season.Missions.IndexOf(selected) + 1, copy);
+        _selectedId = copy.Id;
+        await NotifyChanged();
+    }
+
+    private async Task Delete()
+    {
+        if (Selected is not { } selected)
+        {
+            return;
+        }
+
+        Season.Missions.Remove(selected);
+        _selectedId = Season.Missions.FirstOrDefault()?.Id ?? "";
+        await NotifyChanged();
+    }
+
+    private async Task SetLayout(MissionDefinition mission, string id)
+    {
+        mission.LayoutId = id;
+        await NotifyChanged();
+    }
+
+    private async Task SetQuest(MissionDefinition mission, string id)
+    {
+        mission.QuestId = id;
+        if (!FinishConditions(mission).Any(condition => condition.Id == mission.CompletionConditionId))
+        {
+            mission.CompletionConditionId = FinishConditions(mission).FirstOrDefault()?.Id ?? "";
+        }
+        await NotifyChanged();
+    }
+
+    private async Task SetCondition(MissionDefinition mission, string id)
+    {
+        mission.CompletionConditionId = id;
+        await NotifyChanged();
+    }
+
+    private Task NotifyChanged()
+    {
+        return Changed.InvokeAsync();
+    }
+}

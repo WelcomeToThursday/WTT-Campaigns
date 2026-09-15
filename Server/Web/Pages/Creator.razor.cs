@@ -32,6 +32,7 @@ public partial class Creator
         "Items and crates",
         "Trader offers",
         "Quests",
+        "Missions",
         "Chapters",
         "Journal notes",
         "Conversations",
@@ -58,6 +59,7 @@ public partial class Creator
             "Items and crates" => "Reuse installed models and configure exchanges and weighted loot pools.",
             "Trader offers" => "Choose a trader, enter edit mode, and edit, clear or replace their assortment for this campaign.",
             "Quests" => "Create and edit quests that do not belong to a story chapter.",
+            "Missions" => "Link an authored map layout, route and story quest into a replayable mission.",
             "Chapters" => "Select a chapter to create and edit its quests in one workspace.",
             "Journal notes" => "Write the entries players discover, and connect related items, offers and crafts.",
             "Conversations" => "Build conditional NPC lines and player replies with ordered actions.",
@@ -730,6 +732,19 @@ public partial class Creator
             if (key == doc.Id + " name")
             {
                 doc.Name = value;
+            }
+        }
+
+        foreach (var mission in S.Missions)
+        {
+            if (key == mission.Id + " name")
+            {
+                mission.Name = value;
+            }
+
+            if (key == mission.Id + " briefing")
+            {
+                mission.Briefing = value;
             }
         }
 

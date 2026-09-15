@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text;
@@ -36,6 +37,34 @@ public sealed class SeasonRuntimeSnapshot
     }
 }
 
+/// <summary>
+/// A disposable, in-memory campaign registration used by offline editor and
+/// campaign-flow tests. It never writes a pack, selection, or used marker.
+/// </summary>
+public sealed class IsolatedSnapshotRegistration : IDisposable
+{
+    private readonly Action _release;
+    private int _disposed;
+
+    internal IsolatedSnapshotRegistration(string seasonId, SeasonRuntimeSnapshot snapshot, Action release)
+    {
+        SeasonId = seasonId;
+        Snapshot = snapshot;
+        _release = release;
+    }
+
+    public string SeasonId { get; }
+    public SeasonRuntimeSnapshot Snapshot { get; }
+
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) == 0)
+        {
+            _release();
+        }
+    }
+}
+
 public sealed class SeasonSelection
 {
     public string Active { get; set; } = "legacy";
@@ -64,9 +93,27 @@ public sealed class SeasonRepository
 {
     private readonly object _gate = new();
     private readonly string _root;
+    private readonly HashSet<string> _isolatedSnapshotIds = new(StringComparer.Ordinal);
     public const string LegacyId = "69e232a764dfe95549003f0f";
     public SeasonRuntimeSnapshot Current { get; private set; }
-    public Dictionary<string, SeasonRuntimeSnapshot> Playable { get; } = new();
+    public ConcurrentDictionary<string, SeasonRuntimeSnapshot> Playable { get; } = new();
+
+    /// <summary>Returns runtime snapshots available to normal campaign lists.</summary>
+    public IEnumerable<SeasonRuntimeSnapshot> OrdinaryPlayable()
+    {
+        lock (_gate)
+        {
+            return Playable.Where(pair => !_isolatedSnapshotIds.Contains(pair.Key)).Select(pair => pair.Value).ToArray();
+        }
+    }
+
+    public bool IsIsolatedSnapshot(string seasonId)
+    {
+        lock (_gate)
+        {
+            return _isolatedSnapshotIds.Contains(seasonId);
+        }
+    }
 
     public SeasonRuntimeSnapshot Runtime(string id)
     {
@@ -77,6 +124,60 @@ public sealed class SeasonRepository
         return Playable.TryGetValue(id, out var runtime)
             ? runtime
             : throw new InvalidOperationException("This campaign is unavailable. Install its pack and restart the server.");
+    }
+
+    /// <summary>
+    /// Registers a frozen campaign definition only in the repository's runtime
+    /// lookup. The returned lease removes it on disposal, keeping disposable
+    /// test campaigns out of creator storage and publication state.
+    /// </summary>
+    public IsolatedSnapshotRegistration RegisterIsolatedSnapshot(SeasonDefinition definition)
+    {
+        if (definition == null || !SeasonValidator.IsId(definition.Id))
+        {
+            throw new InvalidDataException("An isolated campaign requires a valid identity.");
+        }
+
+        var snapshot = new SeasonRuntimeSnapshot(SeasonCompiler.Copy(definition));
+        lock (_gate)
+        {
+            if (Playable.ContainsKey(definition.Id))
+            {
+                throw new InvalidOperationException("This campaign is already registered.");
+            }
+
+            if (!Playable.TryAdd(definition.Id, snapshot))
+            {
+                throw new InvalidOperationException("This campaign is already registered.");
+            }
+            _isolatedSnapshotIds.Add(definition.Id);
+        }
+
+        return new IsolatedSnapshotRegistration(definition.Id, snapshot, () => UnregisterIsolatedSnapshot(definition.Id, snapshot));
+    }
+
+    /// <summary>Removes a previously registered isolated snapshot.</summary>
+    public bool UnregisterIsolatedSnapshot(string seasonId)
+    {
+        return UnregisterIsolatedSnapshot(seasonId, expected: null);
+    }
+
+    private bool UnregisterIsolatedSnapshot(string seasonId, SeasonRuntimeSnapshot? expected)
+    {
+        lock (_gate)
+        {
+            if (
+                !_isolatedSnapshotIds.Contains(seasonId)
+                || !Playable.TryGetValue(seasonId, out var current)
+                || expected != null && !ReferenceEquals(current, expected)
+            )
+            {
+                return false;
+            }
+
+            _isolatedSnapshotIds.Remove(seasonId);
+            return Playable.TryRemove(seasonId, out _);
+        }
     }
 
     public SeasonSelection Selection { get; private set; }
@@ -352,6 +453,7 @@ public sealed class SeasonRepository
             definition.Pages = new() { new() };
             definition.SeasonalRewards.Clear();
             definition.Quests = new();
+            definition.Missions = new();
             definition.Story = null;
             definition.Offers = new();
             definition.TraderOffers = new();
@@ -389,6 +491,7 @@ public sealed class SeasonRepository
                 .Concat(source.ImportedItems.Keys)
                 .Concat(source.AllRewards.Select(r => r.Id))
                 .Concat(source.Quests.Select(q => q.Id))
+                .Concat(source.Missions.Select(m => m.Id))
         )
         {
             source.Id,
@@ -555,7 +658,7 @@ public sealed class SeasonRepository
         var folder = Path.Combine(_root, "packs", CheckId(key));
         var manifest = Read<SeasonManifest>(Path.Combine(folder, "manifest.json"));
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
         )
@@ -841,7 +944,7 @@ public sealed class SeasonRepository
         }
         var manifest = JsonConvert.DeserializeObject<SeasonManifest>(Encoding.UTF8.GetString(Entry("manifest.json")))!;
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
             || manifest.Files.Count != zip.Entries.Count - 1

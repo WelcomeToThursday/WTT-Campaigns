@@ -63,6 +63,11 @@ internal static class SceneLootModel
         try
         {
             model.transform.SetParent(root.transform, false);
+            // Raid pools park unused models below the map. That staging pose
+            // must not become a local offset in the authored preview wrapper.
+            model.transform.localPosition = Vector3.zero;
+            model.transform.localRotation = Quaternion.identity;
+            model.transform.localScale = Vector3.one;
             model.SetActive(true);
             foreach (var body in model.GetComponentsInChildren<Rigidbody>(true))
             {

@@ -218,6 +218,81 @@ internal static class UiCompatibilityChecks
                     "Original-prop movement uses the installed native render adapter: " + type + "." + method
                 );
             var sceneAdapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.MapSceneAdapter");
+            var resolveCalls = sceneAdapter.Methods.Single(m => m.Name == "Resolve")
+                .Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().Select(m => m.Name).ToList();
+            Check(
+                resolveCalls.Contains("FindTargetPath") && resolveCalls.Contains("Capture")
+                    && !resolveCalls.Contains("FindObjectsOfTypeAll"),
+                "Scene binding follows the saved hierarchy without a per-prop global scan and retains fingerprint validation"
+            );
+            var previewModelCalls = AsyncBody("WTT.Campaigns.Client.Authoring.SceneLootModel", "Create")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            foreach (var pose in new[] { "set_localPosition", "set_localRotation", "set_localScale" })
+                Check(
+                    previewModelCalls.IndexOf(pose) > previewModelCalls.IndexOf("SetParent")
+                        && previewModelCalls.IndexOf(pose) < previewModelCalls.IndexOf("get_bounds"),
+                    "Loot preview clears the pooled pose before measuring placement bounds: " + pose
+                );
+            var equipCalls = AsyncBody("WTT.Campaigns.Client.Authoring.EditorPreviewPlayer", "Equip")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                equipCalls.IndexOf("UncoverContent") > equipCalls.LastIndexOf("Replace"),
+                "Fresh preview gear receives native search knowledge after entering equipped slots"
+            );
+            var restoreGearCalls = AsyncBody("WTT.Campaigns.Client.Authoring.EditorPreviewPlayer", "Restore")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                restoreGearCalls.IndexOf("StopSearching") >= 0
+                    && restoreGearCalls.IndexOf("StopSearching") < restoreGearCalls.IndexOf("Replace")
+                    && restoreGearCalls.Contains("ForgetItem"),
+                "Preview reset stops active searches before removing their items and retires temporary search knowledge"
+            );
+            var preparePreview = AsyncBody(editor.FullName, "BeginAiPreview")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                preparePreview.IndexOf("ApplyAsync") >= 0
+                    && preparePreview.IndexOf("ApplyAsync") < preparePreview.IndexOf("Equip")
+                    && !preparePreview.Contains("Apply"),
+                "Mission and AI preview wait for scene preparation before equipping the player"
+            );
+            var missionLootCalls = AsyncBody("WTT.Campaigns.Client.Missions.MissionLoot", "ApplyAsync")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .ToList();
+            var lootOwner = missionLootCalls.FindIndex(m =>
+                m.Name == ".ctor" && m.DeclaringType.FullName == "EFT.InventoryLogic.ItemController"
+            );
+            Check(
+                lootOwner >= 0
+                    && lootOwner < missionLootCalls.FindIndex(m => m.Name == "CreateLootPrefab")
+                    && lootOwner < missionLootCalls.FindIndex(m => m.Name == "CreateStaticLoot"),
+                "Mission loot receives a native root owner before prefab creation and world registration"
+            );
+            var prepareScene = AsyncBody(sceneAdapter.FullName, "ApplyAsync")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                prepareScene.IndexOf("Reconcile") >= 0
+                    && prepareScene.IndexOf("Reconcile") < prepareScene.IndexOf("get_Loading")
+                    && prepareScene.IndexOf("Delay") < prepareScene.IndexOf("Apply")
+                    && prepareScene.Count(m => m == "ThrowIfCancellationRequested") >= 2
+                    && prepareScene.Contains("GetResult"),
+                "Scene preparation starts model loads, awaits readiness with cancellation, and then validates the applied layout"
+            );
             var scaleRestriction = sceneAdapter.Methods.Single(m => m.Name == "ScaleRestriction").Body.Instructions;
             Check(
                 scaleRestriction.Any(i =>
@@ -255,6 +330,12 @@ internal static class UiCompatibilityChecks
             var visualUpdates = original.Methods.Single(m => m.Name == "RefreshVisuals").Body.Instructions;
             foreach (var name in new[] { "SyncPosition", "set_Bounds", "UnregisterDecal", "RegisterDecal" })
                 Check(visualUpdates.Any(i => i.Operand is MethodReference m && m.Name == name), "Moved originals refresh " + name);
+            var restore = original.Methods.Single(m => m.Name == "Restore").Body.Instructions;
+            foreach (var name in new[] { "set_localPosition", "set_localRotation" })
+                Check(
+                    restore.Any(i => i.Operand is MethodReference m && m.Name == name),
+                    "Scene restore preserves exact local transforms: " + name
+                );
             Check(
                 editor
                     .Methods.Single(m => m.Name == "LateUpdate")

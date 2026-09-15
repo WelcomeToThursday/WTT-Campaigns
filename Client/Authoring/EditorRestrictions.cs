@@ -41,6 +41,12 @@ internal static class EditorRestrictions
         commands.Remove(ECommand.Escape);
         if (!RaidEditor.AiPlaytestActive)
             commands.RemoveAll(c => !MovementCommands.Contains(c.ToString()));
+        else if (RaidEditor.MissionTestActive)
+            // The quick mission owns a disposable raid state, so native loot
+            // and inventory interactions are safe to exercise in this mode.
+            // Escape is still filtered above; RaidEditor consumes it to return
+            // to the editor and restore the source character.
+            return;
         else
             // Combat rehearsal does not transfer items into native world containers.
             // Weapon, reload, quick-slot and medical controls remain native.
@@ -144,15 +150,17 @@ internal static class EditorRestrictions
 
     private static bool NoTask(ref Task __result)
     {
-        if (!EditorMode.Active)
+        if (!EditorMode.Active || MissionGameplayActive)
             return true;
         __result = Task.CompletedTask;
         return false;
     }
 
-    private static bool NoAction() => !EditorMode.Active;
+    private static bool NoAction() => !EditorMode.Active || MissionGameplayActive;
 
-    private static bool InventoryOpened(bool opened) => !EditorMode.Active || !opened;
+    private static bool InventoryOpened(bool opened) => !EditorMode.Active || MissionGameplayActive || !opened;
+
+    private static bool MissionGameplayActive => RaidEditor.MissionTestActive && RaidEditor.AiPlaytestActive;
 
     private static bool ReturnHome(TarkovApplication __instance, ref Task __result)
     {

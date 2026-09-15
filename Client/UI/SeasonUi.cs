@@ -38,7 +38,7 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     internal void ShowStartupSelection()
     {
-        if (Authoring.EditorMode.Active)
+        if (Authoring.EditorMode.Active || Authoring.CampaignTestMode.Restricted)
             return;
         if (_startupShown)
         {
@@ -70,7 +70,7 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     private void Update()
     {
-        if (Authoring.EditorMode.Active)
+        if (Authoring.EditorMode.Active || Authoring.CampaignTestMode.Restricted)
         {
             if (IsOpen)
                 Close();
@@ -108,7 +108,7 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     internal async void Open(ScreenPage page = ScreenPage.Characters)
     {
-        if (Authoring.EditorMode.Active || Plugin.InRaid || Plugin.Busy || _opening)
+        if (Authoring.EditorMode.Active || Authoring.CampaignTestMode.Restricted || Plugin.InRaid || Plugin.Busy || _opening)
         {
             return;
         }
@@ -278,6 +278,12 @@ public sealed partial class SeasonUi : MonoBehaviour
         _screen?.DismissDialog();
         _screen?.Root.SetActive(false);
         _inputBlockedThrough = Time.frameCount + 1;
+    }
+
+    internal void CloseForNavigation()
+    {
+        if (!Plugin.Busy && !_opening)
+            Close();
     }
 
     private async void Save()

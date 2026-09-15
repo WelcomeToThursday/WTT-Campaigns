@@ -22,7 +22,7 @@ namespace WTT.Campaigns.Server.Seasons;
 public sealed record ContentChoice(string Id, string Name);
 
 [Injectable(InjectionType.Singleton, OnLoadOrder.Preload + 90000)]
-public sealed class SeasonContentService(
+public sealed partial class SeasonContentService(
     SeasonRepository repository,
     TemplateTable templates,
     TradersTable traders,
@@ -166,7 +166,7 @@ public sealed class SeasonContentService(
 
     public List<CampaignTraderOffer> InstalledTraderOffers(string trader)
     {
-        var owned = repository.Playable.Values.SelectMany(p => p.Definition.TraderOffers).Select(o => o.Id).ToHashSet();
+        var owned = repository.OrdinaryPlayable().SelectMany(p => p.Definition.TraderOffers).Select(o => o.Id).ToHashSet();
         return offerCatalogue.InstalledOffers(trader).Where(o => !owned.Contains(o.Id)).ToList();
     }
 
@@ -296,7 +296,8 @@ public sealed class SeasonContentService(
                 ?? [];
             var installedOfferIds = traders.Values.SelectMany(t => t.Assort?.Items ?? []).Select(i => i.Id.ToString()).ToHashSet();
             var otherCampaignIds = repository
-                .Playable.Values.Where(p => p.Definition.Id != definition.Id)
+                .OrdinaryPlayable()
+                .Where(p => p.Definition.Id != definition.Id)
                 .SelectMany(p => p.Definition.TraderOffers)
                 .SelectMany(o => o.Items)
                 .Select(i => i.Id)

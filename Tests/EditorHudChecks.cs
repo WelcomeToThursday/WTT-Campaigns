@@ -40,9 +40,17 @@ internal static class EditorHudChecks
             native && native.alpha == .35f && !native.interactable && native.blocksRaycasts && native.ignoreParentGroups,
             "Closing restores the exact original native HUD state and retains its component"
         );
-        check(!owned, "Closing removes only editor-created groups");
+        check(
+            owned && owned.alpha == 1 && owned.interactable && owned.blocksRaycasts,
+            "Closing retains editor-created groups for native fade lifetimes"
+        );
         hud.Dispose();
         check(native && native.alpha == .35f, "Repeated cleanup does not change restored native state");
+        owned.alpha = .6f; // A native fade resumes after editor suppression ends.
+        hud.Suppress(root.Transform);
+        check(root.AddAttempts == 1 && owned.alpha == 0, "Reopening reuses the retained group without accumulating components");
+        hud.Dispose();
+        check(owned && owned.alpha == .6f, "A second close restores the resumed native fade state");
 
         var rejected = new GameObject { RejectAdd = true };
         hud.Suppress(rejected.Transform);

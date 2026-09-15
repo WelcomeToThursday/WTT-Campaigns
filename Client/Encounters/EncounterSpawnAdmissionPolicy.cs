@@ -14,13 +14,13 @@ internal enum EncounterSpawnTaskDecision
 internal static class EncounterSpawnAdmissionPolicy
 {
     internal static EncounterSpawnTaskDecision DecideTask(
-        bool editorActive,
+        bool admissionActive,
         bool argumentsMatchCurrentScope,
         bool hasExplicitAdmissionArguments,
         string? declaringTypeName
     )
     {
-        if (!editorActive || argumentsMatchCurrentScope)
+        if (!admissionActive || argumentsMatchCurrentScope)
         {
             return EncounterSpawnTaskDecision.PassThrough;
         }

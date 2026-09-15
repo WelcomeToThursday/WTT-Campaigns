@@ -62,12 +62,15 @@ public sealed class Plugin : BaseUnityPlugin
     {
         Instance = this;
         gameObject.AddComponent<Authoring.EditorMode>();
+        gameObject.AddComponent<Authoring.CampaignTestMode>();
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
         WTT.Campaigns.UI.Media.StoryUiArtwork.SharedStatusIcon = name =>
             SeasonUi.Instance.UiBundle.LoadAsset<UnityEngine.Sprite>("assets/mods/wtt-campaigns.assets/storystatusicons/" + name + ".png");
         gameObject.AddComponent<SeasonHubUi>();
         gameObject.AddComponent<Spatial.ZoneRuntime>();
+        gameObject.AddComponent<Missions.MissionUi>();
+        gameObject.AddComponent<Missions.MissionRaidRuntime>();
         gameObject.AddComponent<Authoring.RaidEditor>();
         gameObject.AddComponent<Authoring.ItemPreviewClient>();
         gameObject.AddComponent<Story.StoryRaidRuntime>();

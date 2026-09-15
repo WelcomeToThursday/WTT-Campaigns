@@ -18,9 +18,12 @@ internal sealed partial class MapSceneAdapter
         internal Transform Target = null!;
         internal MapTarget Binding = null!;
         internal Vector3 Position,
+            LocalPosition,
             LocalScale,
             WorldScale;
-        internal Quaternion Rotation;
+        internal Quaternion Rotation,
+            LocalRotation;
+        internal Transform Parent = null!;
         internal bool Active;
         internal readonly List<SceneBodyState> Bodies = new();
         internal bool Applied,
@@ -57,8 +60,23 @@ internal sealed partial class MapSceneAdapter
             Hidden = false;
             if (!Target)
                 return;
-            Target.SetPositionAndRotation(Position, Rotation);
-            Target.localScale = LocalScale;
+            // Restoring a world pose through a scaled/rotated parent performs
+            // an inverse transform round-trip. Unity can quantize that result
+            // by a few ULPs, which changes the exact prop fingerprint when a
+            // fresh adapter validates the same target after preview teardown.
+            // Restore the captured local transform while the hierarchy is
+            // unchanged; keep the world-pose fallback for a moved parent.
+            if (Target.parent == Parent)
+            {
+                Target.localPosition = LocalPosition;
+                Target.localRotation = LocalRotation;
+                Target.localScale = LocalScale;
+            }
+            else
+            {
+                Target.SetPositionAndRotation(Position, Rotation);
+                Target.localScale = LocalScale;
+            }
             Target.gameObject.SetActive(Active);
             foreach (var state in Bodies)
                 state.Restore();
@@ -173,6 +191,19 @@ internal sealed partial class MapSceneAdapter
             .Where(t => t && t.gameObject.scene.IsValid() && t.gameObject.scene.name == target.Scene)
             .Where(t =>
             {
+                // Reject unrelated loot before traversing meshes and hashing its
+                // fingerprint. A map can contain thousands of native loot items.
+                var loot = t.GetComponent<LootItem>();
+                var container = t.GetComponent<LootableContainer>();
+                var nativeId = loot ? loot.StaticId ?? "" : container.Id;
+                var template = loot ? loot.TemplateId : container.Template ?? "";
+                if (template != target.Template || (target.NativeId.Length > 0 && target.NativeId != nativeId))
+                    return false;
+                if (target.NativeId.Length == 0 && target.Kind == "Loot")
+                {
+                    if (target.Origin?.Finite != true || (t.position - ZoneRuntime.Vector(target.Origin)).sqrMagnitude >= .15f * .15f)
+                        return false;
+                }
                 var actual = CaptureNative(t);
                 return SceneTargetRules.Matches(target, actual);
             })
@@ -239,9 +270,9 @@ internal sealed partial class MapSceneAdapter
         return null;
     }
 
-    internal void Reconcile(MapLayout? layout, MapObjectEdit? preview = null)
+    internal void Reconcile(MapLayout? layout, MapObjectEdit? preview = null, bool runtime = false)
     {
-        if (_disposed || !EditorMode.Ready)
+        if (_disposed || (!EditorMode.Ready && !runtime))
             return;
         TargetErrors.Clear();
         var edits = layout?.Objects.AsValueEnumerable().ToList() ?? new List<MapObjectEdit>();
@@ -270,9 +301,12 @@ internal sealed partial class MapSceneAdapter
                             Target = t,
                             Binding = RaidEditorSession.Copy(edit.Target),
                             Position = t.position,
+                            LocalPosition = t.localPosition,
                             LocalScale = t.localScale,
                             WorldScale = t.lossyScale,
                             Rotation = t.rotation,
+                            LocalRotation = t.localRotation,
+                            Parent = t.parent,
                             Active = t.gameObject.activeSelf,
                             Heat = t.GetComponentsInChildren<HotObject>(true),
                             Decals = t.GetComponentsInChildren<StaticDeferredDecal>(true),
@@ -341,32 +375,35 @@ internal sealed partial class MapSceneAdapter
                         failed.Restore();
                     TargetErrors.Add(edit.Name + ": " + e.Message);
                 }
-            foreach (var loot in layout.Loot)
-            {
-                needed.Add(loot.Id);
-                var signature = JsonConvert.SerializeObject(loot.Items);
-                if (_spawns.TryGetValue(loot.Id, out var old) && old.Definition != signature)
+            // Editor layouts use preview models while a mission runtime owns
+            // native loot activation and cleanup through MissionLoot.
+            if (!runtime)
+                foreach (var loot in layout.Loot)
                 {
-                    old.Dispose();
-                    _spawns.Remove(loot.Id);
-                }
-                if (!_spawns.TryGetValue(loot.Id, out var spawn))
-                {
-                    spawn = new Spawn
+                    needed.Add(loot.Id);
+                    var signature = JsonConvert.SerializeObject(loot.Items);
+                    if (_spawns.TryGetValue(loot.Id, out var old) && old.Definition != signature)
                     {
-                        Definition = signature,
-                        Lease = new(SceneLootModel.Release),
-                        Pose = loot,
-                    };
-                    _spawns.Add(loot.Id, spawn);
-                    _ = Load(spawn, loot);
+                        old.Dispose();
+                        _spawns.Remove(loot.Id);
+                    }
+                    if (!_spawns.TryGetValue(loot.Id, out var spawn))
+                    {
+                        spawn = new Spawn
+                        {
+                            Definition = signature,
+                            Lease = new(SceneLootModel.Release),
+                            Pose = loot,
+                        };
+                        _spawns.Add(loot.Id, spawn);
+                        _ = Load(spawn, loot);
+                    }
+                    spawn.Pose = loot;
+                    if (spawn.Model)
+                        SetPose(spawn.Model!.transform, loot);
+                    if (spawn.Error.Length > 0)
+                        TargetErrors.Add(loot.Name + ": " + spawn.Error);
                 }
-                spawn.Pose = loot;
-                if (spawn.Model)
-                    SetPose(spawn.Model!.transform, loot);
-                if (spawn.Error.Length > 0)
-                    TargetErrors.Add(loot.Name + ": " + spawn.Error);
-            }
             foreach (var edit in layout.Doors)
                 try
                 {

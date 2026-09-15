@@ -38,6 +38,8 @@ public sealed partial class RaidEditor
         var session = _session;
         var player = _player!;
         var lifetime = _aiLifetime = new CancellationTokenSource();
+        var transitionTimer = System.Diagnostics.Stopwatch.StartNew();
+        var transitionStage = "scene preparation";
         _aiPreparing = true;
         _aiPreviewStatus = "Preparing AI preview…";
         _notice = "";
@@ -51,9 +53,28 @@ public sealed partial class RaidEditor
             var compatibility = EncounterPreviewRuntime.CompatibilityError;
             if (compatibility.Length > 0)
                 throw new InvalidOperationException(compatibility);
-            var layout = RaidEditorSession.Copy(Layout);
+            // Mission rehearsals use the server-frozen descriptor returned by
+            // prepare. Ordinary AI preview continues to use the live editor
+            // session definition.
+            var layout =
+                _editorMissionRequested && _editorMissionLayout != null
+                    ? RaidEditorSession.Copy(_editorMissionLayout)
+                    : RaidEditorSession.Copy(Layout);
+            if (_editorMissionRequested && !_editorMissionUseEncounters)
+                layout.Encounters.Clear();
             _mapScene ??= new();
-            _mapScene.Apply(layout, false);
+            _notice = _aiPreviewStatus = _editorMissionRequested
+                ? "Preparing mission test · loading item models…"
+                : "Preparing AI preview · loading item models…";
+            if (_view?.Valid == true)
+                Refresh(false);
+            await _mapScene.ApplyAsync(layout, false, lifetime.Token);
+            Plugin.LogInfo($"Preview transition: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
+            transitionTimer.Restart();
+            transitionStage = "validation and equipment";
+            lifetime.Token.ThrowIfCancellationRequested();
+            if (_session != session || !EditorMode.Ready || !player)
+                throw new OperationCanceledException();
             Physics.SyncTransforms();
             var errors = MapEncounterRules.Errors(layout, new EncounterNavigation(), true, true);
             if (errors.Count > 0)
@@ -74,6 +95,9 @@ public sealed partial class RaidEditor
             if (_session != session || !EditorMode.Ready || !player)
                 throw new OperationCanceledException();
             _aiRuntime = new EncounterPreviewRuntime();
+            Plugin.LogInfo($"Preview transition: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
+            transitionTimer.Restart();
+            transitionStage = "native encounter preparation";
             await _aiRuntime.BeginAsync(
                 new EncounterRuntimeContext
                 {
@@ -104,6 +128,10 @@ public sealed partial class RaidEditor
             _aiPreview = true;
             _aiPlaytest = playtest;
             _aiPreviewStatus = playtest ? "Combat playtest · Esc to reset" : "Observe · simulate an event or mission start";
+            Plugin.LogInfo($"Preview transition: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
+            transitionTimer.Restart();
+            transitionStage = "mission route and loot";
+            await BeginEditorMissionRoute(layout, lifetime.Token);
             _aiRuntime.MissionStart();
             _notice = "";
         }
@@ -113,12 +141,13 @@ public sealed partial class RaidEditor
         }
         catch (Exception error)
         {
-            _notice = "AI preview unavailable: " + error.Message;
+            _notice = (_editorMissionRequested ? "Mission test unavailable: " : "AI preview unavailable: ") + error.Message;
             Plugin.Error(error);
             EndAiPreview();
         }
         finally
         {
+            Plugin.LogInfo($"Preview transition finished: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
             _aiPreparing = false;
             if (_aiLifetime == lifetime && !_aiPreview)
                 session.Previewing = session.Hold = _aiCleanupFailed;
@@ -132,6 +161,7 @@ public sealed partial class RaidEditor
     private void EndAiPreview(bool reopen)
     {
         _aiRequested = null;
+        EndEditorMissionRoute(_editorMissionRetrying);
         if (!AiPreviewBusy && _aiRuntime == null && _aiPlayer == null)
             return;
         _aiLifetime?.Cancel();
@@ -157,6 +187,7 @@ public sealed partial class RaidEditor
 
     private async Task RestoreAiPreview(bool reopen)
     {
+        var transitionTimer = System.Diagnostics.Stopwatch.StartNew();
         var session = _session;
         var player = _player;
         var gear = _aiPlayer;
@@ -171,8 +202,12 @@ public sealed partial class RaidEditor
         try
         {
             scene?.Dispose();
+            Plugin.LogInfo($"Preview reset: scene cleanup {transitionTimer.ElapsedMilliseconds} ms");
+            transitionTimer.Restart();
             if (gear != null)
                 await gear.Restore();
+            Plugin.LogInfo($"Preview reset: equipment restoration {transitionTimer.ElapsedMilliseconds} ms");
+            transitionTimer.Restart();
             if (_session == session)
                 _aiCleanupFailed = false;
         }
@@ -211,6 +246,7 @@ public sealed partial class RaidEditor
                     Refresh(false);
                 }
             }
+            Plugin.LogInfo($"Preview reset: editor restoration {transitionTimer.ElapsedMilliseconds} ms");
         }
     }
 
@@ -237,6 +273,11 @@ public sealed partial class RaidEditor
     {
         if (!AiPreviewBusy)
             return false;
+        if (_editorMissionCompleted && Input.GetKeyDown(KeyCode.R))
+        {
+            _ = RetryEditorMissionTest();
+            return true;
+        }
         if (
             _aiDefeatPending
             || !EditorMode.Ready
@@ -267,7 +308,7 @@ public sealed partial class RaidEditor
             EndAiPreview();
             return true;
         }
-        if (_aiRuntime != null)
+        if (_aiRuntime != null && !_editorMissionRequested)
             _aiPreviewStatus = _aiRuntime.Status;
         if (_view?.Valid == true && _aiPlaytest)
             _view.Text("EditorWalkStatus", _aiPreviewStatus + " · Esc to return to editing");

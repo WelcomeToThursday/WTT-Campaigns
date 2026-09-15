@@ -46,14 +46,43 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         if (!TryToVector(position, out var world))
             return false;
 
+        return HasStandingClearance(world, null);
+    }
+
+    /// <summary>
+    /// Validates the standing capsule while allowing the caller's own player
+    /// collider to remain in the world. Every other solid wall, prop, barrier
+    /// or player blocks the authored position.
+    /// </summary>
+    internal bool HasStandingClearance(SpatialVector position, EFT.Player ignoredPlayer)
+    {
+        if (!TryToVector(position, out var world))
+            return false;
+
+        return HasStandingClearance(world, ignoredPlayer);
+    }
+
+    private bool HasStandingClearance(Vector3 world, EFT.Player? ignoredPlayer)
+    {
         try
         {
             // Capture positions are feet positions.  Lift the capsule a small amount so
             // touching the floor does not make a valid standing point look obstructed.
             var bottom = world + Vector3.up * (AgentRadius + 0.05f);
             var top = world + Vector3.up * (AgentHeight - AgentRadius + 0.05f);
-            return ClearAuthoredBarriers(world, world)
-                && !Physics.CheckCapsule(bottom, top, AgentRadius, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            if (!ClearAuthoredBarriers(world, world))
+                return false;
+            var colliders = Physics.OverlapCapsule(bottom, top, AgentRadius, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            foreach (var collider in colliders)
+            {
+                if (!collider)
+                    continue;
+                var owner = collider.GetComponentInParent<EFT.Player>();
+                if (ignoredPlayer != null && owner != null && ReferenceEquals(owner, ignoredPlayer))
+                    continue;
+                return false;
+            }
+            return true;
         }
         catch
         {

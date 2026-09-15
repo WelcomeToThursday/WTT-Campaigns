@@ -8,16 +8,14 @@ internal sealed class EditorHud : IDisposable
     private sealed class State
     {
         internal readonly CanvasGroup Group;
-        private readonly bool _owned,
-            _interactable,
+        private readonly bool _interactable,
             _raycasts,
             _ignoreParents;
         private readonly float _alpha;
 
-        internal State(CanvasGroup group, bool owned)
+        internal State(CanvasGroup group)
         {
             Group = group;
-            _owned = owned;
             _alpha = group.alpha;
             _interactable = group.interactable;
             _raycasts = group.blocksRaycasts;
@@ -42,8 +40,13 @@ internal sealed class EditorHud : IDisposable
             Group.interactable = _interactable;
             Group.blocksRaycasts = _raycasts;
             Group.ignoreParentGroups = _ignoreParents;
-            if (_owned)
-                UnityEngine.Object.Destroy(Group);
+            // Native UI transitions can keep a reference to this group in a
+            // running VisualExtensions fade coroutine. Destroying an editor-
+            // created group during a transition leaves that coroutine with a
+            // missing Unity object and produces CanvasGroup.get_alpha errors on
+            // its next tick. Keep the small editor-owned component reusable;
+            // Dispose restores its state and the target's native lifecycle can
+            // remove it with the target object.
         }
     }
 
@@ -77,7 +80,7 @@ internal sealed class EditorHud : IDisposable
                 group = target.AddComponent<CanvasGroup>();
             if (!group)
                 return;
-            _states[target] = state = new State(group, owned);
+            _states[target] = state = new State(group);
         }
         state.Hide();
     }

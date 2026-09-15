@@ -22,13 +22,20 @@
     <Compile Include="..\Server\Progression\QuestBackportCompatibility.cs" Link="Progression\QuestBackportCompatibility.cs" />
     <Compile Include="..\Server\Progression\ReputationMigration.cs" Link="Progression\ReputationMigration.cs" />
     <Compile Include="..\Server\Profiles\ProfileStateSerialization.cs" Link="Profiles\ProfileStateSerialization.cs" />
+    <Compile Include="..\Server\Missions\MissionStore.cs" Link="Missions\MissionStore.cs" />
+    <Compile Include="..\Server\Profiles\RaidFinalization.cs" Link="Profiles\RaidFinalization.cs" />
     <Compile Include="..\Server\Seasons\SeasonRepository.cs" Link="Storage\SeasonRepository.cs" />
+    <Compile Include="..\Server\Seasons\IsolatedLocaleLayers.cs" Link="Storage\IsolatedLocaleLayers.cs" />
+    <Compile Include="..\Server\Missions\MissionLaunchContext.cs" Link="Missions\MissionLaunchContext.cs" />
     <Compile Include="..\Server\Seasons\SeasonItemBundles.cs" Link="Storage\SeasonItemBundles.cs" />
     <Compile Include="..\Server\Seasons\TraderOfferCatalogue.cs" Link="Storage\TraderOfferCatalogue.cs" />
     <Compile Include="..\Server\Seasons\CampaignTraderStock.cs" Link="Storage\CampaignTraderStock.cs" />
     <Compile Include="..\Client\UI\ImageRequestCache.cs" Link="Client\ImageRequestCache.cs" />
     <Compile Include="..\Client\Encounters\EncounterSpawnAdmissionPolicy.cs" Link="Client\EncounterSpawnAdmissionPolicy.cs" />
+    <Compile Include="..\Client\Missions\MissionLootRecords.cs" Link="Client\MissionLootRecords.cs" />
+    <Compile Include="..\Client\Missions\MissionProgressCallbackGuard.cs" Link="Client\MissionProgressCallbackGuard.cs" />
     <Compile Include="..\Client\Authoring\SceneModelLease.cs" Link="Client\SceneModelLease.cs" />
+    <Compile Include="..\Client\Authoring\ItemStackPosition.cs" Link="Client\ItemStackPosition.cs" />
     <Compile Include="..\Client\Authoring\PlayerRoute.cs" Link="Client\PlayerRoute.cs" />
     <Compile Include="..\Client\Authoring\RouteVisuals.cs" Link="Client\RouteVisuals.cs" />
     <Compile Include="..\Client\Authoring\ScenePropSupport.cs" Link="Client\ScenePropSupport.cs" />

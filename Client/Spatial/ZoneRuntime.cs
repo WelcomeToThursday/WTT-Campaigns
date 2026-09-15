@@ -13,6 +13,7 @@ public sealed class ZoneRuntime : MonoBehaviour
     internal static ZoneRuntime? Instance;
     private Player? _player;
     private readonly Dictionary<string, GameObject> _zones = new();
+    private readonly HashSet<string> _missionZoneIds = new(StringComparer.Ordinal);
     internal static string Location
     {
         get { return Singleton<GameWorld>.Instantiated ? Singleton<GameWorld>.Instance.LocationId ?? "" : ""; }
@@ -36,6 +37,67 @@ public sealed class ZoneRuntime : MonoBehaviour
     internal GameObject? Find(string id)
     {
         return _zones.TryGetValue(id, out var zone) ? zone : null;
+    }
+
+    /// <summary>
+    /// Installs the server-supplied zones for one active mission.  Layout-owned
+    /// zones are kept separate from shared campaign zones so ending a mission
+    /// cannot remove ordinary quest triggers.
+    /// </summary>
+    internal void BeginMission(IEnumerable<SeasonZone> zones)
+    {
+        if (!Plugin.InRaid || !Plugin.SeasonalPlayer || Plugin.Player == null)
+            throw new InvalidOperationException("Mission zones require an active seasonal raid.");
+
+        EndMission();
+        _player = Plugin.Player;
+        var existing = Resources
+            .FindObjectsOfTypeAll<TriggerWithId>()
+            .AsValueEnumerable()
+            .Where(static t => t && t.gameObject.scene.IsValid())
+            .Select(t => t.Id)
+            .ToHashSet(StringComparer.Ordinal);
+        foreach (var zone in (zones ?? Array.Empty<SeasonZone>()).AsValueEnumerable())
+        {
+            if (zone == null || string.IsNullOrWhiteSpace(zone.Id))
+                throw new InvalidOperationException("The mission descriptor contains an invalid zone.");
+            if (!string.Equals(zone.Location, Location, StringComparison.Ordinal))
+                throw new InvalidOperationException("Mission zone map does not match the active raid: " + zone.Id);
+            if (_zones.ContainsKey(zone.Id) || existing.Contains(zone.Id))
+                throw new InvalidOperationException("Mission zone ID collides with a native or campaign zone: " + zone.Id);
+
+            var scene = UnityEngine.SceneManagement.SceneManager.GetSceneByName(zone.Scene);
+            if (!scene.IsValid() || !scene.isLoaded)
+                throw new InvalidOperationException("Mission zone scene is unavailable: " + zone.Scene);
+            var root = Volume(zone);
+            try
+            {
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, scene);
+                root.AddComponent<NativeZoneBridge>().Initialize(zone);
+                _zones.Add(zone.Id, root);
+                _missionZoneIds.Add(zone.Id);
+            }
+            catch
+            {
+                if (root)
+                    Destroy(root);
+                throw;
+            }
+        }
+    }
+
+    internal void EndMission()
+    {
+        foreach (var id in _missionZoneIds.AsValueEnumerable().ToArray())
+        {
+            if (_zones.TryGetValue(id, out var zone) && zone)
+            {
+                zone.GetComponent<NativeZoneBridge>()?.Clear();
+                Destroy(zone);
+            }
+            _zones.Remove(id);
+        }
+        _missionZoneIds.Clear();
     }
 
     private void Awake()
@@ -66,8 +128,6 @@ public sealed class ZoneRuntime : MonoBehaviour
                 .Where(static t => t.gameObject.scene.IsValid())
                 .Select(t => t.Id)
                 .ToHashSet();
-            // Layout-owned zones are authoring content until a layout runtime exists.
-            // Shared zones retain the ordinary raid behavior used by legacy campaigns.
             foreach (
                 var zone in Plugin.Current!.Zones.AsValueEnumerable().Where(z => z.Location == Location && ZoneLayoutRules.IsShared(z))
             )
@@ -124,6 +184,7 @@ public sealed class ZoneRuntime : MonoBehaviour
             Destroy(zone);
         }
         _zones.Clear();
+        _missionZoneIds.Clear();
         _player = null;
     }
 

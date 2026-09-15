@@ -111,6 +111,17 @@ public static class CreatorGuidance
             "Auto start accepts an eligible quest. Auto complete finishes it and grants native rewards once required objectives pass. Raid counter filters belong inside CounterCreator."
         ),
         new(
+            "Missions",
+            "Link a playable route to a story quest.",
+            [
+                "Open Missions after creating a map layout and a story-backed quest. Add a mission, then enter its name and briefing.",
+                "Choose the authored layout, story quest and an AvailableForFinish GlobalVariableValue objective. Mission completion sets that profile story variable through the native quest condition.",
+                "Open Layouts to author a start, ordered checkpoints and an exit. Use Mission start for optional authored encounters; layout-owned zones are available to that mission's quest context.",
+                "Save and validate before publishing. Accept the linked quest in the lobby, deploy from the native Missions screen, complete the route and extract before turning in the quest.",
+            ],
+            "Retries begin at the start. Ordinary raids retain their normal extracts and encounter behavior. Replays keep ordinary loot and experience rules."
+        ),
+        new(
             "Chapters",
             "Create and edit story quests inside their chapter.",
             [

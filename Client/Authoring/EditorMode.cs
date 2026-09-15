@@ -120,7 +120,7 @@ public sealed class EditorMode : MonoBehaviour
 
     internal async void Enter()
     {
-        if (_busy || Plugin.InRaid)
+        if (_busy || Plugin.InRaid || CampaignTestMode.Restricted)
             return;
         _busy = true;
         try
@@ -142,6 +142,54 @@ public sealed class EditorMode : MonoBehaviour
         finally
         {
             _busy = false;
+        }
+    }
+
+    internal void SuspendForCampaignTest()
+    {
+        if (Plugin.InRaid || _mapLoading)
+            throw new InvalidOperationException("Unload the editor map before testing the campaign flow.");
+        _requested = false;
+        _pendingMenu = null;
+        RestoreHud();
+        if (_home)
+            _home!.Close();
+    }
+
+    internal async Task ResumeAfterCampaignTest(string draft, string layout)
+    {
+        _requested = true;
+        _connectionFailed = false;
+        _mapReady = _mapLoading = _hadMap = false;
+        _session = null;
+        try
+        {
+            await Call("begin");
+            if (draft.Length > 0)
+                await Call("select", draft, layout: layout);
+            PrepareBackend();
+            await Plugin.App!.RecreateBackend(Plugin.App.Session.SessionMode, force: true);
+            if (!Authenticated)
+                throw new InvalidOperationException("Editor did not finish loading. Use Retry connection to return.");
+            CampaignTestMode.EditorResumed();
+            _status = "Campaign test ended. Your source draft and real character are unchanged.";
+        }
+        catch
+        {
+            _connectionFailed = true;
+            _status = "Test ended. Retry connection to return to the editor.";
+            if (_home && !_home!.IsOpen)
+            {
+                try
+                {
+                    await new EditorHomeScreen.Controller().ShowScreenAsync(EScreenState.Root);
+                }
+                catch (Exception e)
+                {
+                    Plugin.Error(e);
+                }
+            }
+            throw;
         }
     }
 
@@ -209,6 +257,8 @@ public sealed class EditorMode : MonoBehaviour
 
     internal void MenuReady(MenuScreen menu)
     {
+        if (Authenticated)
+            CampaignTestMode.EditorResumed();
         _pendingMenu = menu;
         _homeAfterFrame = Time.frameCount + 1;
         // Let the native Show finish registering its input before switching controllers.
@@ -307,6 +357,19 @@ public sealed class EditorMode : MonoBehaviour
             }
         );
         _home.Button("EditorOpen", () => Run(OpenMap));
+        _home.Button("EditorCampaignTest", () => Run(() => CampaignTestMode.Enter(SessionId, DraftId, SelectedLayout)));
+        _home.Button(
+            "EditorMissionTest",
+            () =>
+                Run(async () =>
+                {
+                    await OpenMap();
+                    var response = await EditorMissionTestClient.PrepareAsync(DraftId, SelectedLayout, useEncounters: true);
+                    if (!RaidEditor.Instance)
+                        throw new InvalidOperationException("The map editor is not ready for mission testing.");
+                    RaidEditor.Instance.StartEditorMissionTest(response);
+                })
+        );
         _home.Button(
             "EditorRefresh",
             () =>
@@ -374,6 +437,8 @@ public sealed class EditorMode : MonoBehaviour
         _home.Interactable("EditorLayout", available && hasDraft);
         _home.Interactable("EditorMap", available && hasDraft && layout == null);
         _home.Interactable("EditorOpen", available && hasDraft && _map.Length > 0);
+        _home.Interactable("EditorCampaignTest", available && hasDraft);
+        _home.Interactable("EditorMissionTest", available && hasDraft && layout != null);
         _home.Interactable("EditorRefresh", available);
         _home.Interactable("EditorReturn", !_busy && !_returning);
         _home.Interactable("EditorRetry", !_busy && !_returning);

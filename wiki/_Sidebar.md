@@ -11,6 +11,7 @@
 
 - [Documents and rewards](battle-pass-gameplay.md)
 - [Story and quests](story-system.md)
+- [Missions and safe testing](missions.md)
 - [Trader visits](trader-media-and-visit.md)
 - [Trader progression](trader-progression.md)
 - [Perk details](Home.md#perk-details)

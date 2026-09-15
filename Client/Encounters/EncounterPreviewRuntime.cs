@@ -3,7 +3,9 @@ using EFT.HealthSystem;
 using Newtonsoft.Json;
 using SPT.Common.Http;
 using UnityEngine;
+using WTT.Campaigns.Client.Missions;
 using WTT.Campaigns.Shared.Authoring;
+using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
@@ -36,6 +38,7 @@ internal sealed class EncounterPreviewRuntime
     private EncounterRuntimeContext _context = null!;
     private MapLayout _layout = null!;
     private Player _player = null!;
+    private string _encounterToken = "";
     private EncounterPatrolRuntime? _patrol;
     private CancellationTokenSource? _lifetime;
     private bool _ready,
@@ -46,15 +49,27 @@ internal sealed class EncounterPreviewRuntime
     internal string Status { get; private set; } = "Preparing AI preview";
     internal string? Failure { get; private set; }
 
-    internal async Task BeginAsync(EncounterRuntimeContext context, MapLayout layout, Player player, bool observe, CancellationToken token)
+    internal async Task BeginAsync(
+        EncounterRuntimeContext context,
+        MapLayout layout,
+        Player player,
+        bool observe,
+        CancellationToken token,
+        string encounterToken = ""
+    )
     {
         if (_lifetime != null || _ended)
             throw new InvalidOperationException("Create a fresh encounter runtime for every preview.");
-        if (!context.IsPreview || !context.HasIdentity)
-            throw new InvalidOperationException("Mission spawning requires a future server-confirmed published-layout activation.");
+        if (!context.HasIdentity || (!context.IsPreview && context.Mode != EncounterRuntimeModes.Mission))
+            throw new InvalidOperationException("Encounter spawning requires a server-confirmed mission or editor preview context.");
+        if (!context.IsPreview && !context.PublishedLayoutConfirmed)
+            throw new InvalidOperationException("Mission spawning requires a server-confirmed published-layout activation.");
+        if (!context.IsPreview && string.IsNullOrWhiteSpace(encounterToken))
+            throw new InvalidOperationException("Mission spawning requires a server-issued encounter token.");
         _context = context;
         _layout = layout;
         _player = player;
+        _encounterToken = encounterToken;
         _lifetime = CancellationTokenSource.CreateLinkedTokenSource(token);
         Failure = null;
         var lifetime = _lifetime;
@@ -236,18 +251,41 @@ internal sealed class EncounterPreviewRuntime
                 {
                     token.ThrowIfCancellationRequested();
                     var count = Math.Min(16, roster.Count - profiles.Count);
-                    var body = JsonConvert.SerializeObject(
-                        new EditorEncounterProfilesRequest
-                        {
-                            SessionId = _context.SessionId,
-                            LayoutId = _layout.Id,
-                            Role = roster.Role,
-                            Difficulty = roster.Difficulty,
-                            Count = count,
-                        }
-                    );
+                    var body =
+                        _context.Mode == EncounterRuntimeModes.Mission
+                            ? JsonConvert.SerializeObject(
+                                new MissionEncounterProfilesRequest
+                                {
+                                    Version = 1,
+                                    SeasonId = MissionClient.SeasonId,
+                                    CharacterId = MissionClient.CharacterId,
+                                    RunId = _context.PreviewGeneration,
+                                    RaidId = _context.RaidId,
+                                    EncounterToken = _encounterToken,
+                                    EncounterId = state.Encounter.Id,
+                                    WaveId = wave.Id,
+                                    RosterId = roster.Id,
+                                    Offset = profiles.Count,
+                                    Count = count,
+                                }
+                            )
+                            : JsonConvert.SerializeObject(
+                                new EditorEncounterProfilesRequest
+                                {
+                                    SessionId = _context.SessionId,
+                                    LayoutId = _layout.Id,
+                                    Role = roster.Role,
+                                    Difficulty = roster.Difficulty,
+                                    Count = count,
+                                }
+                            );
                     var response = JsonConvert.DeserializeObject<EditorEncounterProfilesResponse>(
-                        await RequestHandler.PostJsonAsync("/wtt-campaigns/editor/encounter-profiles", body)
+                        await RequestHandler.PostJsonAsync(
+                            _context.Mode == EncounterRuntimeModes.Mission
+                                ? "/wtt-campaigns/missions/encounter-profiles"
+                                : "/wtt-campaigns/editor/encounter-profiles",
+                            body
+                        )
                     );
                     token.ThrowIfCancellationRequested();
                     if (response == null || !string.IsNullOrEmpty(response.Error))
@@ -346,6 +384,7 @@ internal sealed class EncounterPreviewRuntime
             _patrol?.Reset();
         }
         _patrol = null;
+        _encounterToken = "";
         foreach (var record in _bots)
             record.Health.DiedEvent -= record.OnDeath;
         _bots.Clear();

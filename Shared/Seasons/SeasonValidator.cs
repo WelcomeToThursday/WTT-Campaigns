@@ -1,6 +1,7 @@
 using WTT.Campaigns.Shared.Effects;
 using WTT.Campaigns.Shared.Native;
 using WTT.Campaigns.Shared.Serialization;
+using WTT.Campaigns.Shared.Story;
 
 namespace WTT.Campaigns.Shared.Seasons;
 
@@ -41,17 +42,19 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6, "Overview", "Unsupported campaign format version.");
+        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7, "Overview", "Unsupported campaign format version.");
         foreach (var zone in s.Zones)
         {
-            if (!string.IsNullOrEmpty(zone.LayoutId) && Spatial.SpatialRules.Uses(s, zone.Id).Any())
+            if (!string.IsNullOrEmpty(zone.LayoutId) && Spatial.SpatialRules.Uses(s, zone.Id).Any() && !MissionOwnsZoneReferences(s, zone))
             {
-                r.Add("Zones/" + zone.Id, "Live quest/story zone references must use a Shared zone until layout raids are supported.");
+                r.Add("Zones/" + zone.Id, "Layout-owned zones cannot be used by published quest/story content: " + zone.Id);
             }
         }
         TraderOfferRules.Validate(s, r);
         if (s.MapLayouts.Count > 0 && s.FormatVersion < Spatial.MapLayoutRules.Format(s.MapLayouts))
             r.Add("Maps", "Map layouts require format 4; loot and container edits require format 5; AI encounters require format 6.");
+        if (s.Missions.Count > 0 && s.FormatVersion < 7)
+            r.Add("Missions", "Mission definitions require campaign format 7.");
         if (s.MapLayouts.Count > 128 || s.MapLayouts.SelectMany(Spatial.MapLayoutRules.OwnedIds).GroupBy(x => x).Any(g => g.Count() > 1))
             r.Add("Maps", "Layouts require unique identities (at most 128 layouts).");
         foreach (var layout in s.MapLayouts)
@@ -378,6 +381,8 @@ public static class SeasonValidator
             }
             Visit(quest.Key, new HashSet<string>());
         }
+
+        ValidateMissions(s, quests, r, Need, Identity);
         foreach (var faction in new[] { s.Starting.Usec, s.Starting.Bear })
         {
             Need(faction.Skills.Values.All(n => n is >= 0 and <= 51), "Starting character", "Starting skill levels must be 0–51.");
@@ -393,6 +398,100 @@ public static class SeasonValidator
                 "Only one replacement per equipment slot."
             );
         }
+
+        static void ValidateMissions(
+            SeasonDefinition s,
+            IReadOnlyDictionary<string, NativeQuest> quests,
+            SeasonValidationResult result,
+            Action<bool, string, string> need,
+            Action<string, string> identity
+        )
+        {
+            need(s.Missions.Count <= 1000, "Missions", "Use at most 1000 mission definitions.");
+            var layouts = s.MapLayouts.ToDictionary(l => l.Id);
+            var missionIds = new HashSet<string>();
+            foreach (var mission in s.Missions)
+            {
+                var path = "Missions/" + mission.Id;
+                identity(mission.Id, path);
+                need(missionIds.Add(mission.Id), path, "Mission identities must be unique.");
+                need(
+                    !string.IsNullOrWhiteSpace(mission.Name) && mission.Name.Length <= 120,
+                    path,
+                    "Mission name is required (up to 120 characters)."
+                );
+                need(
+                    !string.IsNullOrWhiteSpace(mission.Briefing) && mission.Briefing.Length <= 4000,
+                    path,
+                    "Mission briefing is required (up to 4000 characters)."
+                );
+                need(IsId(mission.LayoutId) && layouts.ContainsKey(mission.LayoutId), path, "Choose an existing mission layout.");
+                need(IsId(mission.QuestId) && quests.ContainsKey(mission.QuestId), path, "Choose an existing native quest.");
+                need(
+                    IsId(mission.QuestId) && s.Story?.Quests.Any(q => q.QuestId == mission.QuestId) == true,
+                    path,
+                    "Mission quests must belong to the campaign story."
+                );
+
+                if (!layouts.TryGetValue(mission.LayoutId, out var layout))
+                {
+                    continue;
+                }
+
+                foreach (var error in Spatial.MapLayoutRules.Errors(layout, walkthrough: true))
+                {
+                    result.Add(path, error);
+                }
+
+                if (!quests.TryGetValue(mission.QuestId, out var quest))
+                {
+                    continue;
+                }
+
+                var condition = quest.Conditions?.AvailableForFinish?.FirstOrDefault(c => (string?)c.Id == mission.CompletionConditionId);
+                need(IsId(mission.CompletionConditionId), path, "Choose the mission completion objective.");
+                need(condition != null, path, "Mission completion objective must be in AvailableForFinish.");
+                need(condition?.ConditionType == "GlobalVariableValue", path, "Mission completion objective must use GlobalVariableValue.");
+                var variableId = condition?.Target?.Values is { Count: 1 } values ? values[0] : "";
+                var variable = s.Story?.Variables.FirstOrDefault(v => v.Id == variableId);
+                need(
+                    variable != null && variable.Scope == StoryVariableScope.Profile && variable.InitialValue == 0,
+                    path,
+                    "Mission completion target must be a profile story variable initialized to zero."
+                );
+                need(condition?.Value is >= 1 and <= 1_000_000, path, "Mission completion objective value must be one or greater.");
+                need(
+                    condition?.CompareMethod == null || condition.CompareMethod == ">=",
+                    path,
+                    "Mission completion objective must use a minimum comparison."
+                );
+            }
+        }
+
+        static bool MissionOwnsZoneReferences(SeasonDefinition season, Spatial.SeasonZone zone)
+        {
+            // A layout-owned zone is available during a mission run only when every
+            // quest reference belongs to a mission using that same layout. Story raid
+            // bindings have no mission identity and remain ordinary-raid data.
+            if (season.Story?.RaidBindings.Any(binding => binding.ZoneId == zone.Id) == true)
+            {
+                return false;
+            }
+
+            var missionQuestIds = season
+                .Missions.Where(mission => mission.LayoutId == zone.LayoutId && IsId(mission.QuestId))
+                .Select(mission => mission.QuestId)
+                .ToHashSet(StringComparer.Ordinal);
+            if (missionQuestIds.Count == 0)
+            {
+                return false;
+            }
+
+            return season
+                .Quests.Where(quest => quest.AllConditions().Any(condition => Spatial.SpatialRules.References(condition).Contains(zone.Id)))
+                .All(quest => missionQuestIds.Contains(quest.Id));
+        }
+
         void Visit(string id, HashSet<string> visiting)
         {
             if (visitedQuests.Contains(id) || !quests.TryGetValue(id, out var quest))

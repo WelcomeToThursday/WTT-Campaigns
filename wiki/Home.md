@@ -26,6 +26,7 @@ These guides cover **0.8.0 — editor milestone**, targeting **SPT 4.1.x / EFT 0
 | [Battle Pass controls](battle-pass-ui.md) | Browse rewards, use the tutorial and make exchanges. |
 | [Documents and rewards](battle-pass-gameplay.md) | Collection limits, claims, Classified documents and reward locks. |
 | [Story and quests](story-system.md) | Chapters, dialogue, objectives and cinematics. |
+| [Missions](missions.md) | Quest-unlocked mission raids, replay, and disposable draft tests. |
 | [Trader visits](trader-media-and-visit.md) | Open rooms, choose replies and hand over items. |
 | [Chapter notifications](story-notifications.md) | Understand chapter availability and status banners. |
 | [Trader progression](trader-progression.md) | Loyalty requirements and grouped task lists. |

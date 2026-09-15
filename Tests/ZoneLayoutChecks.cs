@@ -136,9 +136,7 @@ internal static class ZoneLayoutChecks
         check(SpatialRules.Errors(season).Count == 0, "Draft spatial validation permits a referenced layout zone while authoring");
         var publication = SeasonValidator.Validate(season);
         check(
-            publication.Issues.Any(issue =>
-                issue.Path == "Zones/" + conditionZone.Id && issue.Message.Contains("layout raids are supported", StringComparison.Ordinal)
-            ),
+            publication.Issues.Any(issue => issue.Path == "Zones/" + conditionZone.Id && issue.Severity == "error"),
             "Publication validation rejects live quest references to layout zones"
         );
         conditionZone.LayoutId = "";

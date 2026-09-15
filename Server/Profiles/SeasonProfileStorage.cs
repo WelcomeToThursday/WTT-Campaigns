@@ -172,6 +172,7 @@ public sealed class SeasonProfileStorage
     public static List<string> BackupFiles(FileUtil files, string directory, bool recursive, string searchPattern)
     {
         var result = files.GetFiles(directory, recursive, searchPattern);
+        result.RemoveAll(path => Editor.CampaignTestSessions.IsTest(Path.GetFileNameWithoutExtension(path).Split('-')[0]));
         if (Directory.Exists(DirectoryPath))
         {
             result.AddRange(

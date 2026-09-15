@@ -276,7 +276,7 @@
                     @if (_reward != null && Tiles.Contains(_reward)) { <p class="selection-name">@_reward.Name</p><RewardEditor @key="_reward.Id" Reward="_reward" Columns="Columns" Rows="Rows" Documents="S.Documents" ArtAssets="ArtAssets" OwnedItems="OwnedItems" OwnedQuests="OwnedQuests" TraderOffers="S.TraderOffers" OpenOffer="OpenTraderOffer" /> }
                     else { <div class="empty-selection"><span aria-hidden="true">▦</span><strong>No tile selected</strong><p>Select a reward in the grid to edit its artwork, size, costs and contents.</p></div> }
                     </section>
-                    
+
                     break;
                 case "Items and crates":
                     <EditorSection Title="Custom item catalogue" Description="Select a source model and define inventory size and stack limit.">
@@ -301,6 +301,9 @@
                     break;
                 case "Quests":
                     <QuestWorkspace Season="S" ViewState="_questViews" FocusId="@_focusId" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
+                    break;
+                case "Missions":
+                    <MissionWorkspace Season="S" FocusId="@_focusId" Changed="Dirty" />
                     break;
                 case "Chapters":
                 case "Journal notes":

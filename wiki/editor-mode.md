@@ -1,6 +1,6 @@
 # Campaign Editor and mission map layouts
 
-Campaign Editor provides a restricted workspace for authoring the spatial part of a mission. Detailed story, quest and item forms remain in the web Creator. AI encounter authoring and previews are covered in [AI encounters and patrols](ai-encounters.md). Playable mission raids, rewards and retries remain a later milestone.
+Campaign Editor provides a restricted workspace for authoring the spatial part of a mission. Detailed story, quest and item forms remain in the web Creator. AI encounter authoring and previews are covered in [AI encounters and patrols](ai-encounters.md). See [Missions](missions.md) for playable mission raids, quest unlocks, replays, and disposable testing.
 
 ## Enter the workspace
 
@@ -92,7 +92,7 @@ The native editor home groups draft selection and map settings in a compact fram
 
 The server creates the editor character from a clean native template, with inventory roots and the native empty pockets container for traversal, and no carried gameplay items. It is not linked as an account or campaign character and is excluded from launcher profile lists. Native scratch saves are discarded; a separate editor storage path also prevents scratch files entering gameplay profile storage. Ending a session removes its scratch profile. Sessions expire after one minute without a heartbeat; normal requests then retire abandoned editor state. After a client crash, wait for this lease to expire before retrying a Normal startup. Expired sessions are replaced on editor retry, and abandoned scratch files are cleaned on server startup. Drafts are retained separately.
 
-Map layouts use campaign format **4**; loot placements and native loot/container overrides use format **5**; AI encounters, spawn points and patrol routes use format **6**. Formats 1–5 remain supported. Matching client and server components are required for map editing. The authoring service preserves layouts when older authoring clients submit other spatial edits, and rejects older map-editor submissions that could discard format 5 or 6 records. Existing draft conflict handling, local recovery, campaign duplication and pack import/export include layouts. Incoming changes wait until walkthrough finishes.
+Map layouts use campaign format **4**; loot placements and native loot/container overrides use format **5**; AI encounters, spawn points and patrol routes use format **6**; playable mission definitions use format **7**. Formats 1–6 remain supported. Matching client and server components are required for map editing. The authoring service preserves layouts when older authoring clients submit other spatial edits, and rejects older map-editor submissions that could discard newer records. Existing draft conflict handling, local recovery, campaign duplication and pack import/export include layouts and missions. Incoming changes wait until walkthrough or testing finishes.
 
 Source map bundles are never rewritten. Targets use map, scene, hierarchy and structural fingerprint; native door IDs are included. Missing, ambiguous or changed targets require explicit rebinding. AI placement and patrols are validated against the existing navigation mesh; this milestone does not rebuild it.
 

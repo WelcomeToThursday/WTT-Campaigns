@@ -177,6 +177,20 @@ public static class ZoneLayoutRules
             return false;
         }
 
+        if (deleteLayout)
+        {
+            var missions = season
+                .Missions.Where(mission => string.Equals(mission.LayoutId, layoutId, StringComparison.Ordinal))
+                .Select(mission => mission.Name + " · Mission " + mission.Id)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray();
+            if (missions.Length > 0)
+            {
+                error = "Reassign mission references before deleting layout " + layout.Name + ": " + string.Join(", ", missions);
+                return false;
+            }
+        }
+
         var zones = OwnedByLayout(season.Zones, layoutId).ToArray();
         var uses = zones
             .SelectMany(z => SpatialRules.Uses(season, z.Id).Select(use => z.Name + " · " + use))

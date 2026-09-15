@@ -95,6 +95,7 @@ public partial class Creator
             [
                 "Chapters",
                 "Quests",
+                "Missions",
                 "Journal notes",
                 "Conversations",
                 "Variables",
@@ -129,6 +130,8 @@ public partial class Creator
             "Items and crates" =>
                 "Clone an installed item model, then define dimensions and stack size. Crate pool weights are relative chances, not percentages.",
             "Quests" => "Create non-story quests here. Story quests are created and edited inside their chapter in Chapters and quests.",
+            "Missions" =>
+                "Link a walkthrough layout to a story-backed quest and choose its AvailableForFinish GlobalVariableValue objective. Author the start, ordered checkpoints, exit, encounters and layout-owned zones in Layouts and Zones and captures.",
             "Chapters" =>
                 "Choose a chapter, then create or select one of its quests here. Chapter settings, objectives, rewards and story behavior stay in this workspace.",
             "Journal notes" =>

@@ -5,6 +5,7 @@ using EFT;
 using HarmonyLib;
 using UnityEngine;
 using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Missions;
 using WTT.Campaigns.Shared.Spatial;
 
 namespace WTT.Campaigns.Client.Encounters;
@@ -264,6 +265,7 @@ internal static class EncounterSpawnAdmissionGate
     private static readonly AsyncLocal<Scope?> Current = new();
     private static readonly object Gate = new();
     private static readonly Dictionary<string, Scope> Scopes = new(StringComparer.Ordinal);
+    private static readonly Dictionary<string, EncounterRuntimeContext> MissionContexts = new(StringComparer.Ordinal);
     private static readonly HashSet<string> InvalidatedContexts = new(StringComparer.Ordinal);
     private static Harmony? _harmony;
     private static bool _installed;
@@ -525,6 +527,45 @@ internal static class EncounterSpawnAdmissionGate
             && AllowNativeSpawn();
     }
 
+    /// <summary>
+    /// A mission has the same strict native admission boundary as editor AI, but it
+    /// runs in an ordinary local raid where EditorMode.Active is false. Keep the
+    /// context ledger explicit so ambient bot schedulers are suppressed only for
+    /// an authenticated mission run and ordinary raids pass through unchanged.
+    /// </summary>
+    internal static void SetMissionContext(EncounterRuntimeContext context)
+    {
+        if (context == null || !context.HasIdentity || context.Mode != EncounterRuntimeModes.Mission)
+            throw new InvalidOperationException("A server-bound mission encounter context is required.");
+        lock (Gate)
+        {
+            MissionContexts[ContextKey(context)] = context;
+        }
+    }
+
+    internal static void ClearMissionContext(EncounterRuntimeContext? context)
+    {
+        if (context == null)
+            return;
+        lock (Gate)
+        {
+            MissionContexts.Remove(ContextKey(context));
+        }
+    }
+
+    private static bool AdmissionActive
+    {
+        get
+        {
+            if (EditorMode.Active)
+                return true;
+            lock (Gate)
+            {
+                return MissionContexts.Count > 0;
+            }
+        }
+    }
+
     private static bool Matches(EncounterRuntimeContext context, EncounterSpawnReservation reservation)
     {
         return context.HasIdentity
@@ -655,14 +696,14 @@ internal static class EncounterSpawnAdmissionGate
     private static bool NativeSpawnVoidPrefix(object[] __args)
     {
         // The editor's existing restriction patch remains authoritative for ordinary editor
-        // gameplay.  This prefix adds the reservation requirement to every native entry point.
-        return !EditorMode.Active || ArgumentsMatchCurrentScope(__args);
+        // gameplay. This prefix adds the reservation requirement to editor and mission runs.
+        return !AdmissionActive || ArgumentsMatchCurrentScope(__args);
     }
 
     private static bool NativeSpawnTaskPrefix(object[] __args, ref Task __result, MethodBase __originalMethod)
     {
         var decision = EncounterSpawnAdmissionPolicy.DecideTask(
-            EditorMode.Active,
+            AdmissionActive,
             ArgumentsMatchCurrentScope(__args),
             HasExplicitAdmissionArguments(__args),
             __originalMethod?.DeclaringType?.FullName
@@ -670,7 +711,7 @@ internal static class EncounterSpawnAdmissionGate
         if (decision == EncounterSpawnTaskDecision.PassThrough)
         {
             if (
-                EditorMode.Active
+                AdmissionActive
                 && __originalMethod != null
                 && __originalMethod.DeclaringType == typeof(BotCreatorClient)
                 && string.Equals(__originalMethod.Name, "CreateBot", StringComparison.Ordinal)
@@ -703,7 +744,7 @@ internal static class EncounterSpawnAdmissionGate
 
     private static bool BotActivationPrefix(object[] __args)
     {
-        if (!EditorMode.Active || ArgumentsMatchCurrentScope(__args))
+        if (!AdmissionActive || ArgumentsMatchCurrentScope(__args))
             return true;
 
         DisposeDeniedBot(FindBot(__args));
@@ -712,7 +753,7 @@ internal static class EncounterSpawnAdmissionGate
 
     private static bool StoreRenderersPrefix(BotCreatorClient __instance, Player __0)
     {
-        if (!EditorMode.Active)
+        if (!AdmissionActive)
             return true;
         var scope = Current.Value;
         if (scope == null || !AllowNativeSpawn() || !scope.HasPlayer(__0))
@@ -723,7 +764,7 @@ internal static class EncounterSpawnAdmissionGate
 
     private static bool BotPreActivatePrefix(BotOwner __instance)
     {
-        if (!EditorMode.Active)
+        if (!AdmissionActive)
             return true;
 
         if (__instance != null && MatchesCurrentProfile(__instance.ProfileId) && HasCurrentOwner(__instance))
@@ -735,7 +776,7 @@ internal static class EncounterSpawnAdmissionGate
 
     private static bool RegisterPlayerPrefix(IPlayer __0)
     {
-        if (!EditorMode.Active)
+        if (!AdmissionActive)
             return true;
         if (__0 == null)
             return false;
@@ -744,6 +785,12 @@ internal static class EncounterSpawnAdmissionGate
         // scratch identity is established before the local player is registered, so it is the
         // only non-AI identity admitted while editor mode is active.
         if (!__0.IsAI && string.Equals(__0.ProfileId, EditorMode.ScratchProfileId, StringComparison.Ordinal))
+            return true;
+
+        // The campaign player is registered by native raid setup outside an
+        // encounter reservation. Preserve that registration while still requiring
+        // an exact reservation for every AI player.
+        if (!__0.IsAI && MissionRaidRuntime.IsMissionPlayer(__0))
             return true;
 
         if (!MatchesCurrentProfile(__0.ProfileId))
@@ -764,7 +811,7 @@ internal static class EncounterSpawnAdmissionGate
 
     private static bool BotOwnerCreatePrefix(Player __0, ref BotOwner __result)
     {
-        if (!EditorMode.Active)
+        if (!AdmissionActive)
             return true;
 
         var current = Current.Value;
@@ -800,7 +847,7 @@ internal static class EncounterSpawnAdmissionGate
 
     private static void BotOwnerCreatePostfix(Player __0, ref BotOwner __result)
     {
-        if (!EditorMode.Active || __result == null)
+        if (!AdmissionActive || __result == null)
             return;
 
         var current = Current.Value;

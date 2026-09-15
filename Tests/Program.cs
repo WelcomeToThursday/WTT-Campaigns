@@ -75,6 +75,18 @@ if (args.Length == 3 && args[0] == "--raid-startup-hooks")
     return;
 }
 
+if (args.Length == 4 && args[0] == "--prepare-test-mission")
+{
+    WTT.Campaigns.Tests.MissionTestCampaign.Prepare(args[1], args[2], args[3]);
+    return;
+}
+
+if (args.Length == 3 && args[0] == "--install-test-mission")
+{
+    WTT.Campaigns.Tests.MissionTestCampaign.Install(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 3 && args[0] == "--encounter-hooks")
 {
     WTT.Campaigns.Tests.EncounterHookChecks.Run(args[1], args[2]);
@@ -153,8 +165,16 @@ if (args.Length > 0 && File.Exists(args[0]))
 {
     WTT.Campaigns.Tests.ProgressionChecks.Hooks(args[0], Check);
     WTT.Campaigns.Tests.QuestBackportClientChecks.Run(args[0], Check);
+    WTT.Campaigns.Tests.MissionNativeQuestChecks.Run(args[0], Check);
 }
 WTT.Campaigns.Tests.CreatorChecks.Run(Check);
+WTT.Campaigns.Tests.MissionTestCampaign.Run(Check);
+WTT.Campaigns.Tests.MissionAuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.MissionRuntimeChecks.Run(Check);
+WTT.Campaigns.Tests.RaidFinalizationChecks.Run(Check);
+WTT.Campaigns.Tests.MissionServiceChecks.Run(Check);
+WTT.Campaigns.Tests.IsolatedLocaleChecks.Run(Check);
+WTT.Campaigns.Tests.MissionLaunchContextChecks.Run(Check);
 WTT.Campaigns.Tests.HubGameplayChecks.Run(Check);
 WTT.Campaigns.Tests.HubDocumentLootChecks.Run(Check);
 var seasoned = new RuntimeEffects(c, new[] { "69c41adf883efd5e3b09ccae" });

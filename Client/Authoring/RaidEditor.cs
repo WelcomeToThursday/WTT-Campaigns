@@ -159,6 +159,10 @@ public sealed partial class RaidEditor : MonoBehaviour
                     _ = _session.Retire();
                     _session = null;
                 }
+                else if (EditorMissionTestActive && (_editorMissionPending == null || !player || !AuthoringEnabled))
+                {
+                    EndEditorMissionRoute();
+                }
                 ClearSceneIndex();
                 _player = player;
                 _openState.Reset();
@@ -197,6 +201,8 @@ public sealed partial class RaidEditor : MonoBehaviour
             {
                 return;
             }
+
+            StartPendingEditorMissionTest();
 
             if (UpdateAiPreview())
                 return;
@@ -558,6 +564,7 @@ public sealed partial class RaidEditor : MonoBehaviour
     private void OnDestroy()
     {
         EndWalkthrough();
+        EndEditorMissionRoute();
         Close();
         if (_session != null)
         {

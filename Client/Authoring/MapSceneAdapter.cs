@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.Interactive;
 using UnityEngine;
@@ -135,12 +136,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
     {
         if (target.Kind != "Prop")
             return ResolveNative(target);
-        var matches = Resources
-            .FindObjectsOfTypeAll<Transform>()
-            .AsValueEnumerable()
-            .Where(t => t && t.gameObject.scene.IsValid() && t.gameObject.scene.name == target.Scene && PathOf(t) == target.Path)
-            .ToArray();
-        if (matches.Length != 1)
+        var matches = FindTargetPath(target);
+        if (matches.Count != 1)
             throw new InvalidOperationException("Missing or ambiguous target; rebind " + target.Path);
         var captured = Capture(matches[0], door);
         if (captured.Fingerprint != target.Fingerprint || captured.NativeId != target.NativeId)
@@ -148,9 +145,68 @@ internal sealed partial class MapSceneAdapter : IDisposable
         return matches[0];
     }
 
-    internal void Apply(MapLayout layout, bool requirePlayerRoute = true)
+    private static List<Transform> FindTargetPath(MapTarget target)
     {
+        var matches = new List<Transform>();
+        var foundScene = false;
+        for (var index = 0; index < SceneManager.sceneCount; index++)
+        {
+            var scene = SceneManager.GetSceneAt(index);
+            if (!scene.IsValid() || !scene.isLoaded || scene.name != target.Scene)
+                continue;
+            foundScene = true;
+            VisitRoots(scene);
+        }
+        // EFT may keep geometry in the persistent scene, outside sceneCount.
+        if (!foundScene)
+            VisitRoots(LoadedScene(target.Scene));
+        return matches;
+
+        void VisitRoots(Scene scene)
+        {
+            foreach (var root in scene.GetRootGameObjects())
+                Visit(root.transform, "");
+        }
+
+        void Visit(Transform node, string parentPath)
+        {
+            var path = parentPath + node.name + "[" + node.GetSiblingIndex() + "]";
+            if (string.Equals(path, target.Path, StringComparison.Ordinal))
+                matches.Add(node);
+            // Follow only matching ancestors, including inactive objects. Do not
+            // split on '/' because Unity object names can contain that character.
+            var prefix = path + "/";
+            if (!target.Path.StartsWith(prefix, StringComparison.Ordinal))
+                return;
+            for (var child = 0; child < node.childCount; child++)
+                Visit(node.GetChild(child), prefix);
+        }
+    }
+
+    internal async Task ApplyAsync(MapLayout layout, bool requirePlayerRoute, CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
         Reconcile(layout);
+        var timer = System.Diagnostics.Stopwatch.StartNew();
+        while (Loading)
+        {
+            if (_disposed)
+                throw new OperationCanceledException("The scene preview was closed.");
+            if (timer.ElapsedMilliseconds > 60000)
+                throw new TimeoutException("Item models did not finish loading within one minute.");
+            await UniTask.Delay(25, delayType: DelayType.Realtime, cancellationToken: token);
+        }
+        token.ThrowIfCancellationRequested();
+        if (_disposed)
+            throw new OperationCanceledException("The scene preview was closed.");
+        Apply(layout, requirePlayerRoute);
+    }
+
+    internal void ApplyMission(MapLayout layout) => Apply(layout, true, true);
+
+    internal void Apply(MapLayout layout, bool requirePlayerRoute = true, bool runtime = false)
+    {
+        Reconcile(layout, runtime: runtime);
         FlushVisuals();
         var errors = MapLayoutRules.Errors(layout, requirePlayerRoute);
         errors.AddRange(TargetErrors);

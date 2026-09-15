@@ -191,9 +191,7 @@ public sealed class TraderOfferCatalogue(
         foreach (var entry in response.Entries)
         {
             entry.Items =
-                request.Category == "Presets"
-                    ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id))
-                    : [new NativeItem { Id = SeasonRepository.NewId(), Template = entry.Id }];
+                request.Category == "Presets" ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id)) : SceneItem(entry.Id);
             if (entry.Items.Any(i => !IsInventoryItem(i.Template)))
                 throw new InvalidOperationException("This preset contains unavailable inventory items.");
             var validation = new SeasonValidationResult();
@@ -202,6 +200,30 @@ public sealed class TraderOfferCatalogue(
                 throw new InvalidOperationException(validation.Issues[0].Message);
         }
         return response;
+    }
+
+    internal List<NativeItem> SceneItem(string templateId)
+    {
+        var root = new NativeItem { Id = SeasonRepository.NewId(), Template = templateId };
+        if (!itemHelper.IsOfBaseclass(new MongoId(templateId), BaseClasses.AMMO_BOX))
+            return [root];
+        var template = templates.Items[new MongoId(templateId)];
+        var slot = template.Properties?.StackSlots?.FirstOrDefault();
+        var ammoId = slot?.Properties?.Filters?.FirstOrDefault()?.Filter?.FirstOrDefault();
+        if (
+            slot?.MaxCount is not > 0
+            || ammoId == null
+            || !templates.Items.TryGetValue(ammoId.Value, out var ammo)
+            || ammo.Properties?.StackMaxSize is not > 0
+            || !IsInventoryItem(ammoId.Value.ToString())
+        )
+            throw new InvalidOperationException("This ammunition box has no valid native contents.");
+        var items = new List<SPTarkov.Server.Core.Models.Eft.Common.Tables.Item>
+        {
+            new() { Id = new MongoId(root.Id), Template = new MongoId(templateId) },
+        };
+        itemHelper.AddCartridgesToAmmoBox(items, template);
+        return JsonConvert.DeserializeObject<List<NativeItem>>(json.Serialize(items)!)!;
     }
 
     public List<List<NativeBarter>> OfferCosts(string composite)

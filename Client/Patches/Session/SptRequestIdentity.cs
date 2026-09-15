@@ -15,6 +15,13 @@ internal class SptRequestIdentity : ModulePatch
     [PatchPostfix]
     private static void Postfix(SPT.Common.Http.Client __instance, string path, HttpRequestMessage __result)
     {
-        RequestIdentity.Apply(ReferenceEquals(__instance, RequestHandler.HttpClient), path, Plugin.SessionId, __result);
+        RequestIdentity.Apply(
+            ReferenceEquals(__instance, RequestHandler.HttpClient),
+            path,
+            Plugin.SessionId,
+            __result,
+            Authoring.CampaignTestMode.Active,
+            Missions.MissionRaidRuntime.PendingRunId
+        );
     }
 }

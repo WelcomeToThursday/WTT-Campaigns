@@ -85,6 +85,12 @@ internal sealed class EditorPreviewPlayer
             Replace(entry.Key, null);
         foreach (var entry in prepared)
             Replace(entry.Key, entry.Value);
+        // The native search controller initialized before these fresh item
+        // identities existed. Repeat its own equipped-content initialization.
+        if (_player.SearchController is ActiveSearchController search)
+            search.UncoverContent(_player.Equipment);
+        else
+            throw new InvalidOperationException("The native equipment search controller is unavailable.");
         var boundItems = _player.InventoryController.FastAccess.BoundItems;
         boundItems.Clear();
         foreach (var binding in response.FastPanel)
@@ -129,6 +135,11 @@ internal sealed class EditorPreviewPlayer
             var removed = slot.RemoveItemWithoutRestrictions();
             if (removed.Failed)
                 throw new InvalidOperationException(removed.Error.ToString());
+            // Native immediate operations pair Begin/Succeed after mutation
+            // so ItemController can retire the matching inventory activity.
+            _player.InventoryController.RaiseRemoveEvent(
+                new RemoveItemEventArgs(old, address, CommandStatus.Begin, _player.InventoryController)
+            );
             _player.InventoryController.RaiseRemoveEvent(
                 new RemoveItemEventArgs(old, address, CommandStatus.Succeed, _player.InventoryController)
             );
@@ -138,6 +149,9 @@ internal sealed class EditorPreviewPlayer
         var added = slot.AddWithoutRestrictions(item);
         if (added.Failed)
             throw new InvalidOperationException(added.Error.ToString());
+        _player.InventoryController.RaiseAddEvent(
+            new AddItemEventArgs(item, item.Parent, CommandStatus.Begin, _player.InventoryController)
+        );
         _player.InventoryController.RaiseAddEvent(
             new AddItemEventArgs(item, item.Parent, CommandStatus.Succeed, _player.InventoryController)
         );
@@ -149,6 +163,8 @@ internal sealed class EditorPreviewPlayer
             return;
         if (_player && _original.Count > 0)
         {
+            foreach (var operation in _player.SearchController.SearchOperations.AsValueEnumerable().ToArray())
+                _player.SearchController.StopSearching(operation.Item.Id);
             await EmptyHands(_player);
             if (_player)
             {
@@ -162,6 +178,14 @@ internal sealed class EditorPreviewPlayer
                     bindings[entry.Key] = entry.Value;
                 FreshHealth(_player);
                 _player.RecalculateEquipmentParams();
+                if (_player.SearchController is ActiveSearchController search)
+                {
+                    foreach (var item in search._knownItems.Keys.AsValueEnumerable().Where(i => _temporaryItems.Contains(i.Id)).ToArray())
+                        search.ForgetItem(item);
+                    search._searchedItems.RemoveWhere(i => _temporaryItems.Contains(i.Id));
+                    search._discoveredItems.RemoveWhere(i => _temporaryItems.Contains(i.Id));
+                    search._temporaryKnownItems.RemoveWhere(i => _temporaryItems.Contains(i.Id));
+                }
             }
         }
         if (_world)
