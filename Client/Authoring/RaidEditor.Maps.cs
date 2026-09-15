@@ -1,10 +1,12 @@
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Scenes;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
-using Button = WTT.Campaigns.Client.Authoring.EditorButton;
-using InputField = WTT.Campaigns.Client.Authoring.EditorInput;
-using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
+using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
+using InputField = WTT.Campaigns.Client.Authoring.Views.EditorInput;
+using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 

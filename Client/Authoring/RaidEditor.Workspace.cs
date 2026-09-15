@@ -1,11 +1,12 @@
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
-using Button = WTT.Campaigns.Client.Authoring.EditorButton;
-using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
+using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
+using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 

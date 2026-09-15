@@ -1,11 +1,13 @@
 using Cysharp.Threading.Tasks;
 using EFT.UI.DragAndDrop;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Scenes;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
-using Button = WTT.Campaigns.Client.Authoring.EditorButton;
-using RawImage = WTT.Campaigns.Client.Authoring.EditorImage;
-using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
+using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
+using RawImage = WTT.Campaigns.Client.Authoring.Views.EditorImage;
+using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 

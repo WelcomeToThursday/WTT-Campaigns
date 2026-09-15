@@ -8,7 +8,7 @@ internal static class EditorHomeCompatibilityChecks
     internal static void Run(AssemblyDefinition native, AssemblyDefinition client)
     {
         var types = native.MainModule.GetTypes().ToDictionary(t => t.FullName);
-        var screen = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorHomeScreen");
+        var screen = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.EditorHomeScreen");
         var controller = screen.NestedTypes.Single(t => t.Name == "Controller");
         var checks = 0;
         void Check(bool valid, string message)

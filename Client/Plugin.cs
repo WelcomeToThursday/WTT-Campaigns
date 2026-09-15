@@ -2,6 +2,7 @@ using BepInEx;
 using EFT;
 using Newtonsoft.Json;
 using SPT.Common.Http;
+using WTT.Campaigns.Client.Authoring.Preview;
 using WTT.Campaigns.Client.Hub;
 using WTT.Campaigns.Client.Profiles;
 using WTT.Campaigns.Client.UI;
@@ -12,7 +13,7 @@ using WTT.Campaigns.Shared.Profiles;
 
 namespace WTT.Campaigns.Client;
 
-[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.8.0")]
+[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.9.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 [BepInDependency("com.wtt.commonlib", "3.0.6")]
@@ -72,7 +73,7 @@ public sealed class Plugin : BaseUnityPlugin
         gameObject.AddComponent<Missions.MissionUi>();
         gameObject.AddComponent<Missions.MissionRaidRuntime>();
         gameObject.AddComponent<Authoring.RaidEditor>();
-        gameObject.AddComponent<Authoring.ItemPreviewClient>();
+        gameObject.AddComponent<ItemPreviewClient>();
         gameObject.AddComponent<Story.StoryRaidRuntime>();
         gameObject.AddComponent<Story.StoryVisitRuntime>();
         gameObject.AddComponent<Story.StoryCinematicRuntime>();

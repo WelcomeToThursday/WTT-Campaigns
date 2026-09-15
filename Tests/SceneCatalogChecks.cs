@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Server.Seasons;
 using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Spatial;

@@ -35,7 +35,7 @@ internal static class EditorBarrierChecks
             "EFT's installed player collision test mask must include LowPolyCollider."
         );
 
-        var adapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.MapSceneAdapter");
+        var adapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Scenes.MapSceneAdapter");
         var volume = adapter.Methods.Single(m => m.Name == "Volume");
         var volumeCalls = volume
             .Body.Instructions.Where(i => i.Operand is MethodReference)

@@ -3,7 +3,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Rendering;
 using FlowControl = Mono.Cecil.Cil.FlowControl;
 using OpCodes = Mono.Cecil.Cil.OpCodes;
 
@@ -95,7 +95,7 @@ internal static class EditorRenderChecks
     {
         var game = context.LoadFromAssemblyName(new AssemblyName(type.Module.Assembly.Name.Name));
         var instructionType = harmony.GetType("HarmonyLib.CodeInstruction")!;
-        var patch = compiled.GetType("WTT.Campaigns.Client.Authoring.EditorRenderGuard")!;
+        var patch = compiled.GetType("WTT.Campaigns.Client.Authoring.Rendering.EditorRenderGuard")!;
         var transpiler = patch.GetMethod("Transpiler", BindingFlags.NonPublic | BindingFlags.Static)!;
         var labelsField = instructionType.GetField("labels")!;
         var operandField = instructionType.GetField("operand")!;

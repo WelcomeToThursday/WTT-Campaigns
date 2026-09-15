@@ -1,3 +1,13 @@
+# WTT-Campaigns 0.9.0 — Unreleased
+
+The 0.9.0 development cycle is underway.
+
+## Maintenance
+
+- Organized Campaign Editor client code into focused view, scene, rendering, and preview namespaces. This is an internal code cleanup with no intended gameplay changes.
+
+---
+
 # WTT-Campaigns 0.8.0 — Campaign Editor and missions
 
 This beta adds an in-game workspace for building campaign maps, authored AI encounters and patrols, and playable missions linked to campaign quests.

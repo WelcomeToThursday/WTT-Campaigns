@@ -62,7 +62,7 @@ internal static class EditorMemoryChecks
             .ToArray();
         if (calls.Any(m => m.Name is "Collect" or "CollectIncremental" or "EmptyWorkingSet"))
             throw new Exception("Editor memory policy must not force GC or trim the working set.");
-        var environment = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorEnvironment");
+        var environment = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Rendering.EditorEnvironment");
         var syncCalls = environment
             .Methods.Single(m => m.Name == "Sync")
             .Body.Instructions.Select(i => i.Operand)

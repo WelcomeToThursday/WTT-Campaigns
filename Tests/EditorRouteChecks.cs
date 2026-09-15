@@ -110,7 +110,7 @@ internal static class EditorRouteChecks
             Reads(mode.Methods.Single(m => m.Name == "UpdateHud"), "EftBattleUIScreen"),
             "HUD suppression must include CommonUI's battle screen, not only GameUI."
         );
-        var hud = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorHud");
+        var hud = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Rendering.EditorHud");
         Require(
             Calls(hud.Methods.Single(m => m.Name == "Suppress"), "GetComponentsInChildren"),
             "HUD suppression must also cover independently animated child canvas groups."

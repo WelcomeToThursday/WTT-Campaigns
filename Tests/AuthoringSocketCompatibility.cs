@@ -68,7 +68,7 @@ internal static class AuthoringSocketCompatibility
             "Editor uses SPT's synchronized notification sender"
         );
         var sender = spt.MainModule.GetType("SPTarkov.Server.Core.Servers.Ws.SptWebSocketConnectionHandler");
-        var previewCalls = Calls(client.MainModule.GetType("WTT.Campaigns.Client.Authoring.ItemPreviewClient"));
+        var previewCalls = Calls(client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Preview.ItemPreviewClient"));
         Require(
             previewCalls.Any(c => c.DeclaringType.Name == "AuthoringSocket" && c.Name == "Send"),
             "Item previews use the existing authoring transport"

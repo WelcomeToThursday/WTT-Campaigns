@@ -1,4 +1,4 @@
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Shared.Spatial;
 
 namespace WTT.Campaigns.Tests;

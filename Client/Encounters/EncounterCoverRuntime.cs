@@ -4,7 +4,7 @@ using SAIN.Components;
 using SAIN.Components.CoverFinder;
 using SAIN.SAINComponent.SubComponents.CoverFinder;
 using UnityEngine;
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Scenes;
 
 namespace WTT.Campaigns.Client.Encounters;
 

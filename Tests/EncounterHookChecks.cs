@@ -216,7 +216,7 @@ internal static class EncounterHookChecks
             Path.Combine(gameRoot, "EscapeFromTarkov_Data", "Managed", "UnityEngine.AIModule.dll")
         );
         var obstacle = RequireType(ai, "UnityEngine.AI.NavMeshObstacle");
-        var navigation = RequireType(client, "WTT.Campaigns.Client.Authoring.SceneNavigation");
+        var navigation = RequireType(client, "WTT.Campaigns.Client.Authoring.Scenes.SceneNavigation");
         var constructor = RequireMethod(navigation, ".ctor");
         var references = constructor
             .Body.Instructions.Select(i => i.Operand)
@@ -231,7 +231,7 @@ internal static class EncounterHookChecks
                 reference.ReturnType.FullName,
                 reference.Parameters.Select(p => p.ParameterType.FullName).ToArray()
             );
-        var follower = RequireType(client, "WTT.Campaigns.Client.Authoring.SceneNavigationFollower");
+        var follower = RequireType(client, "WTT.Campaigns.Client.Authoring.Scenes.SceneNavigationFollower");
         Require(Calls(RequireMethod(follower, "Sync"), "get_activeInHierarchy"), "Hidden scenery must stop carving");
         Require(Calls(RequireMethod(navigation, "Dispose"), "SetActive"), "Navigation cuts must disable before deferred destruction");
         Console.WriteLine("Scene navigation: carving APIs resolve against installed Unity; hide and disposal contracts passed offline.");

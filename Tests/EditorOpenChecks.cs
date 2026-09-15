@@ -24,7 +24,7 @@ internal static class EditorOpenChecks
 
     internal static void Client(AssemblyDefinition assembly, Action<bool, string> check)
     {
-        var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditorView");
+        var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.RaidEditorView");
         var constructor = view.Methods.Single(m => m.IsConstructor && !m.IsStatic);
         var calls = constructor
             .Body.Instructions.Where(i => i.Operand is MethodReference)

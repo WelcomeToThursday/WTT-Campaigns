@@ -19,7 +19,7 @@ internal static class AiControlsChecks
 
     internal static void Run(AssemblyDefinition assembly, Action<bool, string> check)
     {
-        var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditorAiView");
+        var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.RaidEditorAiView");
         var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
 
         var refresh = Method(editor, "RefreshAiWorkspace");

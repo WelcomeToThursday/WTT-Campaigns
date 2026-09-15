@@ -1,4 +1,4 @@
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Scenes;
 
 namespace WTT.Campaigns.Tests;
 

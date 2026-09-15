@@ -6,6 +6,7 @@ using SPTarkov.Server.Core.Models.Spt.Tables;
 using SPTarkov.Server.Core.Services.Locales;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Json;
+using WTT.Campaigns.Client.Authoring.Preview;
 using WTT.Campaigns.Server.Seasons;
 using WTT.Campaigns.Server.Web.Authoring;
 using WTT.Campaigns.Shared.Authoring;
@@ -276,22 +277,16 @@ internal static class TraderOfferChecks
         var filledValidation = new SeasonValidationResult();
         SeasonValidator.ItemTree(filledBox, "Ammo box", filledValidation);
         check(filledValidation.CanPublish, "Filled catalog ammo boxes remain valid serializable item trees");
-        var positions = rounds.Select(i => WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(i.Location, true)).Order().ToArray();
+        var positions = rounds.Select(i => ItemStackPosition.Require(i.Location, true)).Order().ToArray();
         check(
             rounds.Any(i => i.Location == null) && positions.SequenceEqual(new[] { 0, 1 }),
             "Actual SPT ammo-box output assembles both the omitted zero position and explicit upper stack"
         );
-        check(
-            WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(new NativeItemLocation(0), true) == 0,
-            "Explicit ammo-box zero positions remain supported"
-        );
-        Reject(() => WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(null, false), "Missing magazine positions still fail closed");
+        check(ItemStackPosition.Require(new NativeItemLocation(0), true) == 0, "Explicit ammo-box zero positions remain supported");
+        Reject(() => ItemStackPosition.Require(null, false), "Missing magazine positions still fail closed");
+        Reject(() => ItemStackPosition.Require(new NativeItemLocation(-1), true), "Negative ammo-box positions remain invalid");
         Reject(
-            () => WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(new NativeItemLocation(-1), true),
-            "Negative ammo-box positions remain invalid"
-        );
-        Reject(
-            () => WTT.Campaigns.Client.Authoring.ItemStackPosition.Require(new NativeItemLocation(new NativeGridLocation()), true),
+            () => ItemStackPosition.Require(new NativeItemLocation(new NativeGridLocation()), true),
             "A grid location cannot be interpreted as an ammo-box stack position"
         );
         var secondBox = ammoCatalogue.SceneItem(boxId);

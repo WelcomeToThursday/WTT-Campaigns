@@ -3,6 +3,8 @@ using Comfort.Common;
 using EFT;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using WTT.Campaigns.Client.Authoring.Rendering;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Authoring;

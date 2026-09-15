@@ -1,10 +1,18 @@
 using Mono.Cecil;
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Views;
 
 namespace WTT.Campaigns.Tests;
 
 internal static class EditorToolkitChecks
 {
+    private static bool IsAuthoring(TypeDefinition type)
+    {
+        while (type.DeclaringType != null)
+            type = type.DeclaringType;
+        return type.Namespace == "WTT.Campaigns.Client.Authoring"
+            || type.Namespace.StartsWith("WTT.Campaigns.Client.Authoring.", StringComparison.Ordinal);
+    }
+
     internal static IEnumerable<EditorLayoutSpec.Node> Nodes()
     {
         static IEnumerable<EditorLayoutSpec.Node> Walk(EditorLayoutSpec.Node node)
@@ -35,7 +43,7 @@ internal static class EditorToolkitChecks
                 throw new InvalidOperationException("Installed Unity does not support " + reference.FullName);
         if (client.MainModule.AssemblyReferences.Any(reference => reference.Name.StartsWith("UnityEditor")))
             throw new InvalidOperationException("The runtime client must not depend on Unity Editor assemblies.");
-        var document = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorToolkitDocument");
+        var document = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.EditorToolkitDocument");
         var constructor = document.Methods.Single(m => m.IsConstructor && !m.IsStatic);
         if (!constructor.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "DontDestroyOnLoad"))
             throw new InvalidOperationException("Toolkit hosts must survive native scene transitions until their owner disposes them.");
@@ -58,9 +66,7 @@ internal static class EditorToolkitChecks
             "EditorTarkovTheme",
             "EditorRowSelection",
         };
-        var types = client
-            .MainModule.GetTypes()
-            .Where(t => t.Namespace == "WTT.Campaigns.Client.Authoring" || t.DeclaringType?.Namespace == "WTT.Campaigns.Client.Authoring");
+        var types = client.MainModule.GetTypes().Where(t => IsAuthoring(t));
         var inspected = 0;
         foreach (var type in types)
         {

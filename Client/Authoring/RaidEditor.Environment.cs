@@ -1,7 +1,9 @@
 using System.Globalization;
-using Button = WTT.Campaigns.Client.Authoring.EditorButton;
-using InputField = WTT.Campaigns.Client.Authoring.EditorInput;
-using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
+using WTT.Campaigns.Client.Authoring.Rendering;
+using WTT.Campaigns.Client.Authoring.Views;
+using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
+using InputField = WTT.Campaigns.Client.Authoring.Views.EditorInput;
+using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
+using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Spatial;

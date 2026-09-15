@@ -7,7 +7,7 @@ using EFT.Interactive;
 using EFT.InventoryLogic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;

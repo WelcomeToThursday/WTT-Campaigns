@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using WTT.Campaigns.Client.Authoring.Scenes;
 
 namespace WTT.Campaigns.Client.Authoring;
 

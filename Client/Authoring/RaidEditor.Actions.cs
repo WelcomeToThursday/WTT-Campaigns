@@ -1,16 +1,17 @@
 using System.Globalization;
 using EFT.Ballistics;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.Shared.Story;
 using WTT.Campaigns.UI.Controls;
 using ZLinq;
-using Button = WTT.Campaigns.Client.Authoring.EditorButton;
-using Dropdown = WTT.Campaigns.Client.Authoring.EditorChoice;
-using InputField = WTT.Campaigns.Client.Authoring.EditorInput;
-using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
+using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
+using Dropdown = WTT.Campaigns.Client.Authoring.Views.EditorChoice;
+using InputField = WTT.Campaigns.Client.Authoring.Views.EditorInput;
+using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 

@@ -229,7 +229,7 @@ internal static class UiCompatibilityChecks
                     types[type].Methods.Any(m => m.Name == method && m.IsPublic && m.Parameters.Count == arguments),
                     "Original-prop movement uses the installed native render adapter: " + type + "." + method
                 );
-            var sceneAdapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.MapSceneAdapter");
+            var sceneAdapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Scenes.MapSceneAdapter");
             var resolveCalls = sceneAdapter
                 .Methods.Single(m => m.Name == "Resolve")
                 .Body.Instructions.Select(i => i.Operand)
@@ -242,7 +242,7 @@ internal static class UiCompatibilityChecks
                     && !resolveCalls.Contains("FindObjectsOfTypeAll"),
                 "Scene binding follows the saved hierarchy without a per-prop global scan and retains fingerprint validation"
             );
-            var previewModelCalls = AsyncBody("WTT.Campaigns.Client.Authoring.SceneLootModel", "Create")
+            var previewModelCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Scenes.SceneLootModel", "Create")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()
                 .Select(m => m.Name)
@@ -253,7 +253,7 @@ internal static class UiCompatibilityChecks
                         && previewModelCalls.IndexOf(pose) < previewModelCalls.IndexOf("get_bounds"),
                     "Loot preview clears the pooled pose before measuring placement bounds: " + pose
                 );
-            var equipCalls = AsyncBody("WTT.Campaigns.Client.Authoring.EditorPreviewPlayer", "Equip")
+            var equipCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Preview.EditorPreviewPlayer", "Equip")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()
                 .Select(m => m.Name)
@@ -262,7 +262,7 @@ internal static class UiCompatibilityChecks
                 equipCalls.IndexOf("UncoverContent") > equipCalls.LastIndexOf("Replace"),
                 "Fresh preview gear receives native search knowledge after entering equipped slots"
             );
-            var restoreGearCalls = AsyncBody("WTT.Campaigns.Client.Authoring.EditorPreviewPlayer", "Restore")
+            var restoreGearCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Preview.EditorPreviewPlayer", "Restore")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()
                 .Select(m => m.Name)
