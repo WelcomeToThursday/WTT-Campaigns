@@ -31,11 +31,15 @@ internal static class EditorRouteChecks
             ),
             "A new editor must start walkthroughs at the start marker by default."
         );
-        var walkMethod = editor.NestedTypes.Single(t => t.Name.StartsWith("<BeginWalkthrough>", StringComparison.Ordinal)).Methods.Single(m => m.Name == "MoveNext");
+        var walkMethod = editor
+            .NestedTypes.Single(t => t.Name.StartsWith("<BeginWalkthrough>", StringComparison.Ordinal))
+            .Methods.Single(m => m.Name == "MoveNext");
         var walk = walkMethod.Body.Instructions;
         int CallIndex(string name) => walk.ToList().FindIndex(i => i.Operand is MethodReference m && m.Name == name);
         Require(
-            CallIndex("ApplyAsync") >= 0 && CallIndex("ApplyAsync") < CallIndex("SyncTransforms") && CallIndex("SyncTransforms") < CallIndex("ClearPosition"),
+            CallIndex("ApplyAsync") >= 0
+                && CallIndex("ApplyAsync") < CallIndex("SyncTransforms")
+                && CallIndex("SyncTransforms") < CallIndex("ClearPosition"),
             "Spawn clearance must see the applied layout's current colliders."
         );
         Require(

@@ -41,7 +41,11 @@ internal sealed partial class EditorToolkitWindows
                 button.style.flexGrow = 0;
                 button.style.height = button.style.minHeight = 28;
                 button.style.marginLeft = button.style.marginRight = button.style.marginTop = button.style.marginBottom = 0;
-                button.style.borderLeftWidth = button.style.borderRightWidth = button.style.borderTopWidth = button.style.borderBottomWidth = 0;
+                button.style.borderLeftWidth =
+                    button.style.borderRightWidth =
+                    button.style.borderTopWidth =
+                    button.style.borderBottomWidth =
+                        0;
                 button.style.paddingLeft = button.style.paddingRight = 12;
                 button.style.paddingTop = button.style.paddingBottom = 0;
                 button.style.unityTextAlign = TextAnchor.MiddleLeft;
@@ -55,11 +59,13 @@ internal sealed partial class EditorToolkitWindows
             }
         }
         foreach (var (button, menu) in new[] { ("WindowsToggle", "WindowsMenu"), ("ContextToggle", "ContextMenu") })
-            _view.Element(button).RegisterCallback<PointerEnterEvent>(_ =>
-            {
-                if (_openMenu.Length > 0 && _openMenu != menu)
-                    ToggleMenu(menu);
-            });
+            _view
+                .Element(button)
+                .RegisterCallback<PointerEnterEvent>(_ =>
+                {
+                    if (_openMenu.Length > 0 && _openMenu != menu)
+                        ToggleMenu(menu);
+                });
     }
 
     private void OpenMenu(string id)
@@ -77,8 +83,12 @@ internal sealed partial class EditorToolkitWindows
             buttons[0].Focus();
     }
 
-    private List<Button> MenuButtons() => _view.Element(_openMenu).Query<Button>().ToList()
-        .FindAll(b => b.enabledInHierarchy && b.resolvedStyle.display != DisplayStyle.None);
+    private List<Button> MenuButtons() =>
+        _view
+            .Element(_openMenu)
+            .Query<Button>()
+            .ToList()
+            .FindAll(b => b.enabledInHierarchy && b.resolvedStyle.display != DisplayStyle.None);
 
     private void PositionMenu()
     {

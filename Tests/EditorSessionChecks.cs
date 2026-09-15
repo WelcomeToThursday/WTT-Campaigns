@@ -15,7 +15,10 @@ internal static class EditorSessionChecks
         var now = DateTimeOffset.UtcNow;
         var serverSession = new WTT.Campaigns.Server.Editor.EditorSessionRegistry.Session
         {
-            Owner = "owner", Ready = true, Location = "Interchange", Contact = now,
+            Owner = "owner",
+            Ready = true,
+            Location = "Interchange",
+            Contact = now,
         };
         var request = new AuthoringRequest { EditorSessionId = serverSession.Id, Location = "Interchange" };
         foreach (var version in new[] { 2, 3, 4, 5 })

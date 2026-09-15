@@ -341,14 +341,23 @@ public sealed partial class RaidEditor : MonoBehaviour
 
                 if (Input.GetKeyDown(KeyCode.F))
                     FrameSceneSelection();
-                if (!Input.GetMouseButton(1) && _drag == null && _placementLifetime == null
-                    && !Input.GetKey(KeyCode.LeftControl) && !Input.GetKey(KeyCode.RightControl)
-                    && !Input.GetKey(KeyCode.LeftAlt) && !Input.GetKey(KeyCode.RightAlt)
-                    && !Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+                if (
+                    !Input.GetMouseButton(1)
+                    && _drag == null
+                    && _placementLifetime == null
+                    && !Input.GetKey(KeyCode.LeftControl)
+                    && !Input.GetKey(KeyCode.RightControl)
+                    && !Input.GetKey(KeyCode.LeftAlt)
+                    && !Input.GetKey(KeyCode.RightAlt)
+                    && !Input.GetKey(KeyCode.LeftShift)
+                    && !Input.GetKey(KeyCode.RightShift)
+                )
                 {
-                    var tool = Input.GetKeyDown(KeyCode.W) ? "Move"
+                    var tool =
+                        Input.GetKeyDown(KeyCode.W) ? "Move"
                         : Input.GetKeyDown(KeyCode.E) ? "Rotate"
-                        : Input.GetKeyDown(KeyCode.R) ? "Scale" : "";
+                        : Input.GetKeyDown(KeyCode.R) ? "Scale"
+                        : "";
                     if (tool.Length > 0 && (SceneWorkspace ? CanTransformScene(tool) : Selected != null || MapPoint != null))
                     {
                         if (SceneWorkspace)

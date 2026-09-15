@@ -666,14 +666,23 @@ public sealed partial class RaidEditor
 
     private async void BeginWalkthrough()
     {
-        if (!EditorMode.Ready || _walking || _walkAssetLifetime != null || AiPreviewBusy || Layout == null || _session?.Conflict != null || _session?.Busy == true || _session?.Dirty == true)
+        if (
+            !EditorMode.Ready
+            || _walking
+            || _walkAssetLifetime != null
+            || AiPreviewBusy
+            || Layout == null
+            || _session?.Conflict != null
+            || _session?.Busy == true
+            || _session?.Dirty == true
+        )
             return;
         _mapScene ??= new();
         _walkAssetLifetime?.Cancel();
         _walkAssetLifetime = new CancellationTokenSource();
         var walkLifetime = _walkAssetLifetime;
         _session!.Previewing = _session.Hold = true;
-        _notice = "Preparing walkthrough scenery and containers…";
+        _notice = "Preparing walkthrough scenery and containersï¿½";
         try
         {
             _walkLayout = RaidEditorSession.Copy(Layout);
@@ -711,7 +720,12 @@ public sealed partial class RaidEditor
         }
         catch (Exception e)
         {
-            if (ReferenceEquals(_walkAssetLifetime, walkLifetime)) { EndWalkthrough(); _notice = e.Message; Refresh(false); }
+            if (ReferenceEquals(_walkAssetLifetime, walkLifetime))
+            {
+                EndWalkthrough();
+                _notice = e.Message;
+                Refresh(false);
+            }
         }
     }
 

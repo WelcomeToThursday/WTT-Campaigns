@@ -16,10 +16,16 @@ internal static class ScenePropSupport
 
     // These require ownership checks as well as preserving their native components.
     internal static bool OwnedComponent(string name) =>
-        name is "TreeInteractivePart" or "DoorHandle" or "GripPose"
-            or "EFT.Interactive.Trunk" or "EFT.Interactive.LootableContainer"
-            or "EFT.Interactive.LootPointViewer" or "EFT.Interactive.LootPoint"
-            or "EFT.Interactive.GroupLootPoint" or "UnityEngine.AI.NavMeshObstacle";
+        name
+            is "TreeInteractivePart"
+                or "DoorHandle"
+                or "GripPose"
+                or "EFT.Interactive.Trunk"
+                or "EFT.Interactive.LootableContainer"
+                or "EFT.Interactive.LootPointViewer"
+                or "EFT.Interactive.LootPoint"
+                or "EFT.Interactive.GroupLootPoint"
+                or "UnityEngine.AI.NavMeshObstacle";
 
     internal static string Restriction(string name) =>
         name switch

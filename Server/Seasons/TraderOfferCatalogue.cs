@@ -32,12 +32,22 @@ public sealed class TraderOfferCatalogue(
         && !itemHelper.IsOfBaseclass(item.Id, BaseClasses.HIDEOUT_AREA_CONTAINER);
 
     // Scene placement has no price or trader blacklist requirement. Infrastructure and quest objects stay excluded.
-    public bool IsSceneItem(string id) => SeasonValidator.IsId(id)
+    public bool IsSceneItem(string id) =>
+        SeasonValidator.IsId(id)
         && templates.Items.TryGetValue(new MongoId(id), out var item)
-        && string.Equals(item.Type, "Item", StringComparison.OrdinalIgnoreCase) && item.Properties?.QuestItem != true
-        && !new[] { BaseClasses.LOOT_CONTAINER, BaseClasses.MOB_CONTAINER, BaseClasses.STASH, BaseClasses.SORTING_TABLE,
-            BaseClasses.INVENTORY, BaseClasses.STATIONARY_CONTAINER, BaseClasses.POCKETS, BaseClasses.HIDEOUT_AREA_CONTAINER }
-            .Any(b => itemHelper.IsOfBaseclass(item.Id, b));
+        && string.Equals(item.Type, "Item", StringComparison.OrdinalIgnoreCase)
+        && item.Properties?.QuestItem != true
+        && !new[]
+        {
+            BaseClasses.LOOT_CONTAINER,
+            BaseClasses.MOB_CONTAINER,
+            BaseClasses.STASH,
+            BaseClasses.SORTING_TABLE,
+            BaseClasses.INVENTORY,
+            BaseClasses.STATIONARY_CONTAINER,
+            BaseClasses.POCKETS,
+            BaseClasses.HIDEOUT_AREA_CONTAINER,
+        }.Any(b => itemHelper.IsOfBaseclass(item.Id, b));
 
     private sealed class Shape
     {
@@ -197,8 +207,11 @@ public sealed class TraderOfferCatalogue(
         if (request.TemplateIds != null)
         {
             var ids = request.TemplateIds.ToHashSet();
-            entries = entries.Where(e => request.Category == "Items" ? ids.Contains(e.Id)
-                : globals.ItemPresets[new MongoId(e.Id)].Items.Any(i => i.ParentId == null && ids.Contains(i.Template.ToString())));
+            entries = entries.Where(e =>
+                request.Category == "Items"
+                    ? ids.Contains(e.Id)
+                    : globals.ItemPresets[new MongoId(e.Id)].Items.Any(i => i.ParentId == null && ids.Contains(i.Template.ToString()))
+            );
         }
         if (request.Id.Length > 0)
             entries = entries.Where(e => e.Id == request.Id);
@@ -208,14 +221,16 @@ public sealed class TraderOfferCatalogue(
         {
             try
             {
-            entry.Items =
-                request.Category == "Presets" ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id)) : SceneItem(entry.Id);
-            if (entry.Items.Any(i => !IsSceneItem(i.Template)))
-                throw new InvalidOperationException("This preset contains unavailable inventory items.");
-            var validation = new SeasonValidationResult();
-            SeasonValidator.ItemTree(entry.Items, "Catalog item", validation);
-            if (!validation.CanPublish)
-                throw new InvalidOperationException(validation.Issues[0].Message);
+                entry.Items =
+                    request.Category == "Presets"
+                        ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id))
+                        : SceneItem(entry.Id);
+                if (entry.Items.Any(i => !IsSceneItem(i.Template)))
+                    throw new InvalidOperationException("This preset contains unavailable inventory items.");
+                var validation = new SeasonValidationResult();
+                SeasonValidator.ItemTree(entry.Items, "Catalog item", validation);
+                if (!validation.CanPublish)
+                    throw new InvalidOperationException(validation.Issues[0].Message);
             }
             catch (Exception e)
             {

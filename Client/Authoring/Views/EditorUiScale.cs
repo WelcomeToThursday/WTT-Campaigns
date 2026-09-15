@@ -8,6 +8,5 @@ internal static class EditorUiScale
 
     // Fit both dimensions; a pixel-size floor prevents small windows from fitting.
     internal static float Resolve(int width, int height, int percent) =>
-        Math.Min(Math.Max(1, width) / 1920f, Math.Max(1, height) / 1080f)
-        * Math.Clamp(percent, MinimumPercent, MaximumPercent) / 100f;
+        Math.Min(Math.Max(1, width) / 1920f, Math.Max(1, height) / 1080f) * Math.Clamp(percent, MinimumPercent, MaximumPercent) / 100f;
 }

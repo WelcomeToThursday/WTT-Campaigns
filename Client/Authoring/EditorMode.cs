@@ -90,15 +90,19 @@ public sealed class EditorMode : MonoBehaviour
     }
 
     internal static bool PrepareBackendForStartup(bool initialBackend) =>
-        EditorStartupRecovery.Prepare(initialBackend, PrepareBackend, error =>
-        {
-            // Keep the normal backend reachable for native raid recovery. Never
-            // clear the server's raid guard or change the saved startup preference.
-            Instance._requested = false;
-            Instance._connectionFailed = true;
-            Instance._startupError = "Campaign Editor could not open.\n" + error.Message;
-            Plugin.Error(error);
-        });
+        EditorStartupRecovery.Prepare(
+            initialBackend,
+            PrepareBackend,
+            error =>
+            {
+                // Keep the normal backend reachable for native raid recovery. Never
+                // clear the server's raid guard or change the saved startup preference.
+                Instance._requested = false;
+                Instance._connectionFailed = true;
+                Instance._startupError = "Campaign Editor could not open.\n" + error.Message;
+                Plugin.Error(error);
+            }
+        );
 
     internal void NormalMenuReady(MenuScreen menu)
     {
@@ -148,11 +152,20 @@ public sealed class EditorMode : MonoBehaviour
         if (Plugin.InRaid || MapLoadActive || Instance._session!.Location.Length == 0)
             return;
         var current = Instance._session;
-        var restored = JsonConvert.DeserializeObject<EditorSessionResponse>(RequestHandler.PostJson(
-            "/wtt-campaigns/editor/unload",
-            JsonConvert.SerializeObject(new EditorSessionRequest { SessionId = current.SessionId })));
-        if (restored == null || restored.Error != null || restored.Version != 2
-            || restored.SessionId != current.SessionId || restored.ProfileId != current.ProfileId || restored.Location.Length != 0)
+        var restored = JsonConvert.DeserializeObject<EditorSessionResponse>(
+            RequestHandler.PostJson(
+                "/wtt-campaigns/editor/unload",
+                JsonConvert.SerializeObject(new EditorSessionRequest { SessionId = current.SessionId })
+            )
+        );
+        if (
+            restored == null
+            || restored.Error != null
+            || restored.Version != 2
+            || restored.SessionId != current.SessionId
+            || restored.ProfileId != current.ProfileId
+            || restored.Location.Length != 0
+        )
             throw new InvalidOperationException(restored?.Error ?? "Editor session could not return to home. Retry connection.");
         Instance._session = restored;
     }

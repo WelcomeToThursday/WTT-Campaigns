@@ -121,7 +121,11 @@ public sealed partial class RaidEditor
                 }
                 volume.Size = ZoneRuntime.Vector(size);
             }
-            if (_tool == "Scale" && point is MapObjectEdit { Target.Kind: "Prop" or "AssetProp" } obj && before is MapObjectEdit sourceObject)
+            if (
+                _tool == "Scale"
+                && point is MapObjectEdit { Target.Kind: "Prop" or "AssetProp" } obj
+                && before is MapObjectEdit sourceObject
+            )
             {
                 var scale = ZoneRuntime.Vector(sourceObject.Scale);
                 scale[_drag.Axis] = WTT.Campaigns.UI.Controls.SceneSelectionGeometry.Resize(

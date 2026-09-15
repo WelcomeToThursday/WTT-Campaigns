@@ -304,10 +304,14 @@ internal sealed partial class MapSceneAdapter
                 {
                     if (edit.Target.IsAsset || SceneAssetRules.IsContainer(edit))
                     {
-                        if (edit.Operation != "Copy" || !MapLayoutRules.Positive(edit.Scale)
-                            || (SceneAssetRules.IsContainer(edit) && ZoneRuntime.Vector(edit.Scale) != Vector3.one))
+                        if (
+                            edit.Operation != "Copy"
+                            || !MapLayoutRules.Positive(edit.Scale)
+                            || (SceneAssetRules.IsContainer(edit) && ZoneRuntime.Vector(edit.Scale) != Vector3.one)
+                        )
                             throw new InvalidOperationException("Invalid asset placement or unsupported container scale.");
-                        if (runtime && SceneAssetRules.IsContainer(edit)) continue;
+                        if (runtime && SceneAssetRules.IsContainer(edit))
+                            continue;
                         needed.Add(edit.Id);
                         var signature = JsonConvert.SerializeObject(edit.Target);
                         if (_spawns.TryGetValue(edit.Id, out var previous) && previous.Definition != signature)
@@ -317,7 +321,12 @@ internal sealed partial class MapSceneAdapter
                         }
                         if (!_spawns.TryGetValue(edit.Id, out var assetSpawn))
                         {
-                            assetSpawn = new Spawn { Definition = signature, Pose = edit, AssetLease = new(m => m.Dispose()) };
+                            assetSpawn = new Spawn
+                            {
+                                Definition = signature,
+                                Pose = edit,
+                                AssetLease = new(m => m.Dispose()),
+                            };
                             _spawns.Add(edit.Id, assetSpawn);
                             _ = LoadAsset(assetSpawn, edit);
                         }
@@ -330,7 +339,8 @@ internal sealed partial class MapSceneAdapter
                             Pose(assetSpawn.Model!.transform, edit, true);
                             assetSpawn.Navigation ??= new SceneNavigation(assetSpawn.Model.transform);
                         }
-                        if (assetSpawn.Error.Length > 0) TargetErrors.Add(edit.Name + ": " + assetSpawn.Error);
+                        if (assetSpawn.Error.Length > 0)
+                            TargetErrors.Add(edit.Name + ": " + assetSpawn.Error);
                         continue;
                     }
                     var key = Key(edit.Target);
@@ -502,13 +512,19 @@ internal sealed partial class MapSceneAdapter
                     throw new InvalidOperationException(restriction);
                 return model;
             }
-            catch { model.Dispose(); throw; }
+            catch
+            {
+                model.Dispose();
+                throw;
+            }
         });
-        if (_disposed) return;
+        if (_disposed)
+            return;
         spawn.Model = spawn.AssetLease.Model?.Object;
         if (spawn.Model)
         {
-            if (spawn.Model!.GetComponentInChildren<LootableContainer>(true) is { } container) container.enabled = false;
+            if (spawn.Model!.GetComponentInChildren<LootableContainer>(true) is { } container)
+                container.enabled = false;
             Pose(spawn.Model.transform, (MapObjectEdit)spawn.Pose, true);
             spawn.Model.SetActive(true);
         }

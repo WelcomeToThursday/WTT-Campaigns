@@ -1,5 +1,5 @@
-using EFT.Interactive;
 using Cysharp.Threading.Tasks;
+using EFT.Interactive;
 using EFT.UI.DragAndDrop;
 using UnityEngine;
 using WTT.Campaigns.Client.Authoring.Scenes;
@@ -54,12 +54,20 @@ public sealed partial class RaidEditor
             view.Highlight("Scene" + tab, _sceneTab == tab);
         foreach (var filter in new[] { "Props", "Containers", "Loot", "Presets" })
             view.Highlight("Scene" + filter, _sceneFilter == filter);
-        view.SetDropdown("SceneSource", new List<EditorChoice.OptionData> { new("All game"), new("Current map") }, _catalogSource == "All game" ? 0 : 1);
+        view.SetDropdown(
+            "SceneSource",
+            new List<EditorChoice.OptionData> { new("All game"), new("Current map") },
+            _catalogSource == "All game" ? 0 : 1
+        );
         var point = ScenePoint;
         var catalog = _sceneTab == "Catalog";
         var removed = sceneKind == "Hide";
         var selected = catalog ? _catalogSelection.Length > 0 : point != null || MapDoor != null || _picked;
-        view.Get<Button>("ScenePlace").interactable = CanSceneEdit && selected && _placementLifetime == null && (_selectedCatalogEntry == null || CatalogError(_selectedCatalogEntry).Length == 0);
+        view.Get<Button>("ScenePlace").interactable =
+            CanSceneEdit
+            && selected
+            && _placementLifetime == null
+            && (_selectedCatalogEntry == null || CatalogError(_selectedCatalogEntry).Length == 0);
         view.Get<Button>("SceneMove").interactable = CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
         view.Get<Button>("SceneRotate").interactable = CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
         view.Get<Button>("SceneScale").interactable = CanTransformScene("Scale");
@@ -80,7 +88,12 @@ public sealed partial class RaidEditor
             "SceneInfo",
             Layout == null ? "Select or create a layout in Layouts first."
                 : removed ? "Removed from this layout. Restore original returns it to its original position."
-                : catalog ? (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0 ? CatalogError(_selectedCatalogEntry) : "Place on a surface, then refine with the transform handles. Escape cancels.")
+                : catalog
+                    ? (
+                        _selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0
+                            ? CatalogError(_selectedCatalogEntry)
+                            : "Place on a surface, then refine with the transform handles. Escape cancels."
+                    )
                 : sceneKind == "Door" ? "Use Door state to cycle the saved native state. Remove clears it from this layout."
                 : point == null ? "Choose Move or Rotate to edit this object. Remove hides it in this layout."
                 : "Saved in " + Layout.Name + ". Undo and redo restore scene changes."
@@ -91,7 +104,8 @@ public sealed partial class RaidEditor
                 : LibraryTotal == 0 ? "No matching objects"
                 : LibraryTotal + " objects · " + (_page + 1) + " / " + ((LibraryTotal + LibraryPageSize - 1) / LibraryPageSize)
         );
-        if (AssetCatalog) view.Text("LibraryCount", LibraryTotal + " objects � " + _assetCatalog?.Status);
+        if (AssetCatalog)
+            view.Text("LibraryCount", LibraryTotal + " objects � " + _assetCatalog?.Status);
         view.Windows.Select(
             "Scene/" + _sceneTab,
             selected
@@ -172,7 +186,8 @@ public sealed partial class RaidEditor
             return;
         var selectedKey = _sceneFilter + ":" + _catalogSelection;
         SetThumbnail(view.Get<RawImage>("ScenePreview"), selectedKey);
-        var failed = _previews.Error(selectedKey).Length > 0 || (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0);
+        var failed =
+            _previews.Error(selectedKey).Length > 0 || (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0);
         view.Visible("ScenePreviewStatus", catalog && _previews.Get(selectedKey) == null);
         view.Text("ScenePreviewStatus", failed ? "Preview unavailable" : "Loading preview…");
         view.Visible("ScenePreviewRetryGroup", catalog && failed);
@@ -184,10 +199,17 @@ public sealed partial class RaidEditor
         if (AssetCatalog)
         {
             _selectedCatalogEntry = null;
-            _assetCatalog?.Retry(_catalogSelection, () => { _libraryKey = ""; });
+            _assetCatalog?.Retry(
+                _catalogSelection,
+                () =>
+                {
+                    _libraryKey = "";
+                }
+            );
             _ = LoadContainerTemplates();
         }
-        if (_previews.Error(key).Length == 0) return;
+        if (_previews.Error(key).Length == 0)
+            return;
         _previews.Retry(key);
         RequestThumbnail(_catalogSelection, key);
         PresentSceneThumbnails();
@@ -250,7 +272,8 @@ public sealed partial class RaidEditor
                     }
                     else if (job.Entry?.AssetTarget != null)
                     {
-                        if (job.Entry.Error.Length > 0) throw new InvalidOperationException(job.Entry.Error);
+                        if (job.Entry.Error.Length > 0)
+                            throw new InvalidOperationException(job.Entry.Error);
                         using var model = await SceneAssetCatalog.Load(job.Entry.AssetTarget, token);
                         texture = RenderPropThumbnail(model.Object.transform, model.Object);
                         owned = true;
@@ -321,7 +344,8 @@ public sealed partial class RaidEditor
         var previous = RenderTexture.active;
         try
         {
-            if (model.GetComponentInChildren<LootableContainer>(true) is { } container) container.enabled = false;
+            if (model.GetComponentInChildren<LootableContainer>(true) is { } container)
+                container.enabled = false;
             model.SetActive(true);
             model.transform.SetPositionAndRotation(new Vector3(0, -10000, 0), Quaternion.identity);
             foreach (var lod in model.GetComponentsInChildren<LODGroup>(true))
@@ -344,10 +368,14 @@ public sealed partial class RaidEditor
                     var original = originals[i];
                     var material = new Material(_view!.PreviewShader);
                     materials.Add(material);
-                    var opacity = original && PreviewMaterialPolicy.UsesOpacity(
-                        original.GetTag("RenderType", false, ""), original.shader ? original.shader.name : "",
-                        original.IsKeywordEnabled("_ALPHATEST_ON"),
-                        original.IsKeywordEnabled("_ALPHABLEND_ON") || original.IsKeywordEnabled("_ALPHAPREMULTIPLY_ON"));
+                    var opacity =
+                        original
+                        && PreviewMaterialPolicy.UsesOpacity(
+                            original.GetTag("RenderType", false, ""),
+                            original.shader ? original.shader.name : "",
+                            original.IsKeywordEnabled("_ALPHATEST_ON"),
+                            original.IsKeywordEnabled("_ALPHABLEND_ON") || original.IsKeywordEnabled("_ALPHAPREMULTIPLY_ON")
+                        );
                     if (original && original.HasProperty("_MainTex"))
                     {
                         var diffuse = original.GetTexture("_MainTex");

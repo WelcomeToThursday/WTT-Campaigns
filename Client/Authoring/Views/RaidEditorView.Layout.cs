@@ -180,7 +180,14 @@ internal sealed partial class RaidEditorView
         var speedInput = speed.Q(className: "unity-base-text-field__input");
         if (speedInput != null)
             speedInput.style.unityTextAlign = TextAnchor.MiddleLeft;
-        foreach (var (id, hint) in new[] { ("Move", "Move selected object (W)"), ("Rotate", "Rotate selected object (E)"), ("Scale", "Scale selected object (R)") })
+        foreach (
+            var (id, hint) in new[]
+            {
+                ("Move", "Move selected object (W)"),
+                ("Rotate", "Rotate selected object (E)"),
+                ("Scale", "Scale selected object (R)"),
+            }
+        )
             Element(id).tooltip = hint;
         Element("CategoryRail").AddToClassList("editor-grid");
         Element("CreationTools").AddToClassList("editor-grid");

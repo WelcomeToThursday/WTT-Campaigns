@@ -22,8 +22,12 @@ internal static class ScenePropMovement
                 return "Select the whole prop, including the parent of its animated interaction.";
             if (string.IsNullOrEmpty(interaction.Id))
                 return "This interaction has no stable native identity.";
-            if (!Inside(root, interaction.LockHandle) || !Inside(root, interaction._handle)
-                || !Inside(root, interaction.Obstacle) || !Inside(root, interaction.Collider))
+            if (
+                !Inside(root, interaction.LockHandle)
+                || !Inside(root, interaction._handle)
+                || !Inside(root, interaction.Obstacle)
+                || !Inside(root, interaction.Collider)
+            )
                 return "This interaction has linked parts outside the selected prop; select their common parent.";
             if (interaction.TriggersMap is { Length: > 0 })
                 return "This interaction drives map triggers and cannot be relocated as a prop.";

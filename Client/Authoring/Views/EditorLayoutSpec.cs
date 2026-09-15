@@ -77,7 +77,14 @@ internal static class EditorLayoutSpec
             "Library",
             I("Search", "Search"),
             R("SceneTabs", B("SceneCatalog", "Catalog"), B("SceneExisting", "In scene"), B("SceneChanges", "Changes")),
-            R("SceneFilters", new Node("choice", "SceneSource", "Source"), B("SceneProps", "Props"), B("SceneContainers", "Containers"), B("SceneLoot", "Loot"), B("ScenePresets", "Presets")),
+            R(
+                "SceneFilters",
+                new Node("choice", "SceneSource", "Source"),
+                B("SceneProps", "Props"),
+                B("SceneContainers", "Containers"),
+                B("SceneLoot", "Loot"),
+                B("ScenePresets", "Presets")
+            ),
             R("CatalogViews", B("CatalogGrid", "Grid"), B("CatalogList", "List")),
             new Node("browser", "LibraryScroll", ""),
             T("LibraryCount", "No records"),
@@ -129,7 +136,13 @@ internal static class EditorLayoutSpec
                     A("ScenePreviewRetryGroup", "ScenePreviewRetry", "Retry preview"),
                     R("SceneFocusGroup", B("SceneFrame", "Frame (F)"), B("SceneAnchor", "Anchor: Center")),
                     A("ScenePlaceGroup", "ScenePlace", "Place"),
-                    R("SceneEditGroup", B("SceneMove", "Move (W)"), B("SceneRotate", "Rotate (E)"), B("SceneScale", "Scale (R)"), B("SceneRemove", "Remove")),
+                    R(
+                        "SceneEditGroup",
+                        B("SceneMove", "Move (W)"),
+                        B("SceneRotate", "Rotate (E)"),
+                        B("SceneScale", "Scale (R)"),
+                        B("SceneRemove", "Remove")
+                    ),
                     R("SceneRestoreGroup", B("SceneRestore", "Restore original"), B("SceneRebind", "Rebind to picked")),
                     G("SceneInfoGroup", T("SceneInfo", ""))
                 ),

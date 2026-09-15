@@ -324,7 +324,14 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                         )
                     )
                         throw new InvalidOperationException("Update the client before editing layouts with scene catalog records.");
-                    if (r.Version < 5 && (baseline.MapLayouts.Any(MapLayoutRules.NeedsFormat8) || draft.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat8) || r.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat8)))
+                    if (
+                        r.Version < 5
+                        && (
+                            baseline.MapLayouts.Any(MapLayoutRules.NeedsFormat8)
+                            || draft.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat8)
+                            || r.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat8)
+                        )
+                    )
                         throw new InvalidOperationException("Update the client before editing layouts with game asset placements.");
                     proposed.MapLayouts = Copy(r.Definition.MapLayouts);
                     foreach (

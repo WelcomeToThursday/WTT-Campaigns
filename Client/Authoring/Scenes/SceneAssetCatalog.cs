@@ -1,5 +1,4 @@
 using System.IO;
-using ZLinq;
 using System.Threading;
 using Comfort.Common;
 using Cysharp.Threading.Tasks;
@@ -11,6 +10,7 @@ using Newtonsoft.Json;
 using UnityEngine;
 using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Spatial;
+using ZLinq;
 using Object = UnityEngine.Object;
 
 namespace WTT.Campaigns.Client.Authoring.Scenes;
@@ -55,7 +55,16 @@ internal sealed class SceneAssetCatalog : IDisposable
         {
             if (File.Exists(_path))
                 foreach (var pair in JsonConvert.DeserializeObject<Dictionary<string, CachedBundle>>(File.ReadAllText(_path)) ?? new())
-                    if (pair.Value?.Entries != null && pair.Value.Entries.AsValueEnumerable().All(e => e != null && e.AssetTarget != null && SceneAssetRules.SafePath(e.AssetTarget.Bundle) && SceneAssetRules.SafePath(e.AssetTarget.Asset)))
+                    if (
+                        pair.Value?.Entries != null
+                        && pair.Value.Entries.AsValueEnumerable()
+                            .All(e =>
+                                e != null
+                                && e.AssetTarget != null
+                                && SceneAssetRules.SafePath(e.AssetTarget.Bundle)
+                                && SceneAssetRules.SafePath(e.AssetTarget.Asset)
+                            )
+                    )
                         _stored[pair.Key] = pair.Value;
         }
         catch (Exception e)
@@ -73,7 +82,13 @@ internal sealed class SceneAssetCatalog : IDisposable
 
     internal void Retry(string id, Action changed)
     {
-        foreach (var key in _cache.AsValueEnumerable().Where(p => p.Value.Entries.AsValueEnumerable().Any(e => e.Id == id)).Select(p => p.Key).ToArray())
+        foreach (
+            var key in _cache
+                .AsValueEnumerable()
+                .Where(p => p.Value.Entries.AsValueEnumerable().Any(e => e.Id == id))
+                .Select(p => p.Key)
+                .ToArray()
+        )
         {
             _cache.Remove(key);
             _stored.Remove(key);
@@ -93,7 +108,8 @@ internal sealed class SceneAssetCatalog : IDisposable
             var assets = Singleton<ObjectsFactory>.Instance.EasyAssets;
             var nodes = assets.System.Nodes;
             var keys = nodes
-                .Keys.AsValueEnumerable().OrderBy(k => k.IndexOf("location_objects", StringComparison.OrdinalIgnoreCase) >= 0 ? 0 : 1)
+                .Keys.AsValueEnumerable()
+                .OrderBy(k => k.IndexOf("location_objects", StringComparison.OrdinalIgnoreCase) >= 0 ? 0 : 1)
                 .ThenBy(k => k, StringComparer.Ordinal)
                 .ToArray();
             // Inventory resources have their own native placement path, including attachments and presets.
@@ -304,11 +320,16 @@ internal sealed class SceneAssetCatalog : IDisposable
                 continue;
             return ScenePropSupport.Restriction(type);
         }
-        if (components.AsValueEnumerable().OfType<Renderer>().Any(r =>
-            {
-                var materials = r.sharedMaterials;
-                return materials.Length == 0 || materials.AsValueEnumerable().Any(m => !m || !m.shader);
-            }))
+        if (
+            components
+                .AsValueEnumerable()
+                .OfType<Renderer>()
+                .Any(r =>
+                {
+                    var materials = r.sharedMaterials;
+                    return materials.Length == 0 || materials.AsValueEnumerable().Any(m => !m || !m.shader);
+                })
+        )
             return "A required material or shader is missing.";
         if (components.AsValueEnumerable().OfType<MeshFilter>().Any(m => !m.sharedMesh))
             return "A required mesh is missing.";

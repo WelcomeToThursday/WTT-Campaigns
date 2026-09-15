@@ -16,9 +16,14 @@ internal static class CatalogGridLayoutChecks
         for (var page = 0; page < 12; page++)
         {
             var start = page * size;
-            var indexes = CatalogGridLayout.Requests(page, size)
-                .SelectMany(r => Enumerable.Range(r.Page * 10, 10).Skip(r.Skip).Take(r.Take)).ToArray();
-            check(indexes.SequenceEqual(Enumerable.Range(start, size)), "Catalog server batches cover each grid page without gaps or duplicates");
+            var indexes = CatalogGridLayout
+                .Requests(page, size)
+                .SelectMany(r => Enumerable.Range(r.Page * 10, 10).Skip(r.Skip).Take(r.Take))
+                .ToArray();
+            check(
+                indexes.SequenceEqual(Enumerable.Range(start, size)),
+                "Catalog server batches cover each grid page without gaps or duplicates"
+            );
         }
     }
 }

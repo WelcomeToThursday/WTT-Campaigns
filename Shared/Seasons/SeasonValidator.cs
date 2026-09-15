@@ -52,7 +52,10 @@ public static class SeasonValidator
         }
         TraderOfferRules.Validate(s, r);
         if (s.MapLayouts.Count > 0 && s.FormatVersion < Spatial.MapLayoutRules.Format(s.MapLayouts))
-            r.Add("Maps", "Map layouts require format 4; loot and container edits require format 5; AI encounters require format 6; game asset placements require format 8.");
+            r.Add(
+                "Maps",
+                "Map layouts require format 4; loot and container edits require format 5; AI encounters require format 6; game asset placements require format 8."
+            );
         if (s.Missions.Count > 0 && s.FormatVersion < 7)
             r.Add("Missions", "Mission definitions require campaign format 7.");
         if (s.MapLayouts.Count > 128 || s.MapLayouts.SelectMany(Spatial.MapLayoutRules.OwnedIds).GroupBy(x => x).Any(g => g.Count() > 1))

@@ -308,15 +308,28 @@ internal static class UiCompatibilityChecks
                     && lootOwner < missionLootCalls.FindIndex(m => m.Name == "CreateStaticLoot"),
                 "Mission loot receives a native root owner before prefab creation and world registration"
             );
-            Check(missionLootCalls.Any(m => m.Name == "CreateLootContainer" && m.DeclaringType.FullName == "EFT.Interactive.LootItem"),
-                "Placed containers use native initialization and world item-owner registration");
-            Check(missionLootCalls.Any(m => m.Name == ".ctor" && m.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.Scenes.SceneNavigation")
-                && missionLootCalls.Any(m => m.Name == "WaitForNavigationAsync"), "Placed containers prepare owned navigation before the run continues");
+            Check(
+                missionLootCalls.Any(m => m.Name == "CreateLootContainer" && m.DeclaringType.FullName == "EFT.Interactive.LootItem"),
+                "Placed containers use native initialization and world item-owner registration"
+            );
+            Check(
+                missionLootCalls.Any(m =>
+                    m.Name == ".ctor" && m.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.Scenes.SceneNavigation"
+                ) && missionLootCalls.Any(m => m.Name == "WaitForNavigationAsync"),
+                "Placed containers prepare owned navigation before the run continues"
+            );
             var assetLoadCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Scenes.SceneAssetCatalog", "Load")
-                .Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().Select(m => m.Name).ToList();
-            Check(assetLoadCalls.IndexOf("Retain") >= 0 && assetLoadCalls.IndexOf("Retain") < assetLoadCalls.IndexOf("LoadAssetAsync")
-                && assetLoadCalls.Contains("ThrowIfCancellationRequested") && !assetLoadCalls.Any(n => n is "LoadScene" or "LoadSceneAsync"),
-                "Independent asset loads retain native dependencies, observe cancellation and never load another map");
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                assetLoadCalls.IndexOf("Retain") >= 0
+                    && assetLoadCalls.IndexOf("Retain") < assetLoadCalls.IndexOf("LoadAssetAsync")
+                    && assetLoadCalls.Contains("ThrowIfCancellationRequested")
+                    && !assetLoadCalls.Any(n => n is "LoadScene" or "LoadSceneAsync"),
+                "Independent asset loads retain native dependencies, observe cancellation and never load another map"
+            );
             var prepareScene = AsyncBody(sceneAdapter.FullName, "ApplyAsync")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()

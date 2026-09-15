@@ -63,26 +63,37 @@ internal static class EditorHomeCompatibilityChecks
         );
         var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorMode");
         var restore = editor.Methods.Single(m => m.Name == "RestoreBackendMapState").Body.Instructions;
-        Check(restore.Any(i => i.Operand is MethodReference m && m.Name == "get_InRaid")
-            && restore.Any(i => i.Operand is MethodReference m && m.Name == "get_MapLoadActive")
-            && restore.Any(i => Equals(i.Operand, "/wtt-campaigns/editor/unload"))
-            && !restore.Any(i => Equals(i.Operand, "/wtt-campaigns/editor/end")),
-            "Backend reconnection releases a stale map lease without retiring the draft session or touching a live map.");
-        var backend = client.MainModule.GetType("WTT.Campaigns.Client.Patches.Session.BackendIdentity")
-            .Methods.Single(m => m.Name == "Prefix").Body.Instructions;
-        Check(backend.Any(i => i.Operand is MethodReference m && m.Name == "PrepareBackendForStartup")
-            && backend.Any(i => i.Operand is MethodReference m && m.Name == "get_Session")
-            && backend.Any(i => i.Operand is FieldReference f && f.Name == "SessionId"),
-            "Only an initial backend may fall back from rejected automatic editor entry.");
-        Check(editor.Methods.Single(m => m.Name == "PrepareBackend").Body.Instructions.Any(i => i.OpCode.Code == Code.Throw),
-            "Explicit editor transitions retain their rejection path.");
+        Check(
+            restore.Any(i => i.Operand is MethodReference m && m.Name == "get_InRaid")
+                && restore.Any(i => i.Operand is MethodReference m && m.Name == "get_MapLoadActive")
+                && restore.Any(i => Equals(i.Operand, "/wtt-campaigns/editor/unload"))
+                && !restore.Any(i => Equals(i.Operand, "/wtt-campaigns/editor/end")),
+            "Backend reconnection releases a stale map lease without retiring the draft session or touching a live map."
+        );
+        var backend = client
+            .MainModule.GetType("WTT.Campaigns.Client.Patches.Session.BackendIdentity")
+            .Methods.Single(m => m.Name == "Prefix")
+            .Body.Instructions;
+        Check(
+            backend.Any(i => i.Operand is MethodReference m && m.Name == "PrepareBackendForStartup")
+                && backend.Any(i => i.Operand is MethodReference m && m.Name == "get_Session")
+                && backend.Any(i => i.Operand is FieldReference f && f.Name == "SessionId"),
+            "Only an initial backend may fall back from rejected automatic editor entry."
+        );
+        Check(
+            editor.Methods.Single(m => m.Name == "PrepareBackend").Body.Instructions.Any(i => i.OpCode.Code == Code.Throw),
+            "Explicit editor transitions retain their rejection path."
+        );
         Check(
             !editor.Fields.Any(f => f.FieldType.Name == "RaidEditorView"),
             "Startup home no longer depends on the in-raid prefab or its overlay sorting order."
         );
         var menu = client.MainModule.GetType("WTT.Campaigns.Client.Patches.UI.MenuEntry");
-        Check(menu.Methods.Single(m => m.Name == "Postfix").Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "NormalMenuReady"),
-            "Startup rejection is presented after the normal menu becomes available.");
+        Check(
+            menu.Methods.Single(m => m.Name == "Postfix")
+                .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "NormalMenuReady"),
+            "Startup rejection is presented after the normal menu becomes available."
+        );
         Check(
             menu.Methods.Single(m => m.Name == "Postfix")
                 .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "MenuReady"),

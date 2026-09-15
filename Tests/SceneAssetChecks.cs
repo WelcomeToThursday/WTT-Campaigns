@@ -14,8 +14,10 @@ internal static class SceneAssetChecks
     internal static void Run(string nativeAssembly, Action<bool, string> check)
     {
         var legacyTarget = Newtonsoft.Json.Linq.JObject.FromObject(new MapTarget());
-        check(legacyTarget.Property("Bundle") == null && legacyTarget.Property("Asset") == null && legacyTarget.Property("IsAsset") == null,
-            "New optional asset fields do not alter old scene-target serialization or package hashes");
+        check(
+            legacyTarget.Property("Bundle") == null && legacyTarget.Property("Asset") == null && legacyTarget.Property("IsAsset") == null,
+            "New optional asset fields do not alter old scene-target serialization or package hashes"
+        );
         var layout = MapEditorChecks.Example();
         var target = new MapTarget
         {
@@ -65,9 +67,18 @@ internal static class SceneAssetChecks
         );
 
         var stamp = SceneAssetRules.CacheFingerprint(new[] { "crate:100:10", "materials:200:20" });
-        check(stamp == SceneAssetRules.CacheFingerprint(new[] { "materials:200:20", "crate:100:10" }), "Cache identity is independent of graph enumeration order");
-        check(stamp != SceneAssetRules.CacheFingerprint(new[] { "crate:100:10", "materials:200:21" }), "Changed dependency metadata invalidates the cached catalog classification");
-        check(stamp != SceneAssetRules.CacheFingerprint(new[] { "crate:100:10", "materials:missing" }), "Missing dependencies invalidate cached availability");
+        check(
+            stamp == SceneAssetRules.CacheFingerprint(new[] { "materials:200:20", "crate:100:10" }),
+            "Cache identity is independent of graph enumeration order"
+        );
+        check(
+            stamp != SceneAssetRules.CacheFingerprint(new[] { "crate:100:10", "materials:200:21" }),
+            "Changed dependency metadata invalidates the cached catalog classification"
+        );
+        check(
+            stamp != SceneAssetRules.CacheFingerprint(new[] { "crate:100:10", "materials:missing" }),
+            "Missing dependencies invalidate cached availability"
+        );
 
         var cache = new SceneContainerRunCache(2);
         var run = SeasonRepository.NewId();

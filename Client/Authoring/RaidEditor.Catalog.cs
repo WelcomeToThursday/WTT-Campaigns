@@ -33,7 +33,10 @@ public sealed partial class RaidEditor
     private SceneAssetCatalog? _assetCatalog;
     private SceneAssetCatalog.Model? _placementAsset;
     private HashSet<string>? _containerTemplates;
-    private bool AssetCatalog => SceneWorkspace && _sceneTab == "Catalog" && (_sceneFilter == "Containers" || (_sceneFilter == "Props" && _catalogSource == "All game"));
+    private bool AssetCatalog =>
+        SceneWorkspace
+        && _sceneTab == "Catalog"
+        && (_sceneFilter == "Containers" || (_sceneFilter == "Props" && _catalogSource == "All game"));
     private SceneCatalogResponse? _catalog;
     private SceneCatalogEntry? _selectedCatalogEntry;
     private readonly Dictionary<string, (string Id, SceneCatalogEntry? Entry)> _filterSelections = new();
@@ -80,7 +83,8 @@ public sealed partial class RaidEditor
         for (var parent = node; parent; parent = parent.parent)
             if (_discoveredRoots.Contains(parent))
                 return;
-        if (node.GetComponentInParent<EFT.Player>() || node.GetComponentInParent<Canvas>()) return;
+        if (node.GetComponentInParent<EFT.Player>() || node.GetComponentInParent<Canvas>())
+            return;
         var root = MapSceneAdapter.Root(node) ?? WTT.Campaigns.UI.Controls.SceneSelectionGeometry.VisualRoot(node);
         if (!root || _sceneRoots.ContainsKey(root!.GetInstanceID().ToString()))
             return;
@@ -91,7 +95,8 @@ public sealed partial class RaidEditor
             return;
         }
         _discoveredRoots.Add(root);
-        if (root.GetComponent<LootItem>() || root.GetComponent<LootableContainer>()) return;
+        if (root.GetComponent<LootItem>() || root.GetComponent<LootableContainer>())
+            return;
         if (MapSceneAdapter.Supported(root, copy: true).Length > 0)
         {
             _unsupportedSceneIds.Add(root.GetInstanceID().ToString());
@@ -168,18 +173,21 @@ public sealed partial class RaidEditor
                 Refresh();
             }
         );
-        view.Dropdown("SceneSource", index =>
-        {
-            CancelPlacement();
-            _filterSelections[_catalogSource + ":" + _sceneFilter] = (_catalogSelection, _selectedCatalogEntry);
-            _catalogSource = index == 0 ? "All game" : "Current map";
-            var saved = _filterSelections.GetValueOrDefault(_catalogSource + ":" + _sceneFilter);
-            _catalogSelection = saved.Id ?? "";
-            _selectedCatalogEntry = saved.Entry;
-            _page = 0;
-            _catalogKey = _libraryKey = "";
-            Refresh();
-        });
+        view.Dropdown(
+            "SceneSource",
+            index =>
+            {
+                CancelPlacement();
+                _filterSelections[_catalogSource + ":" + _sceneFilter] = (_catalogSelection, _selectedCatalogEntry);
+                _catalogSource = index == 0 ? "All game" : "Current map";
+                var saved = _filterSelections.GetValueOrDefault(_catalogSource + ":" + _sceneFilter);
+                _catalogSelection = saved.Id ?? "";
+                _selectedCatalogEntry = saved.Entry;
+                _page = 0;
+                _catalogKey = _libraryKey = "";
+                Refresh();
+            }
+        );
         foreach (var filter in new[] { "Props", "Containers", "Loot", "Presets" })
         {
             var value = filter;
@@ -251,38 +259,91 @@ public sealed partial class RaidEditor
             {
                 _assetCatalog = new SceneAssetCatalog();
                 _ = LoadContainerTemplates();
-                _assetCatalog.Start(() => { _libraryKey = ""; }, () => AssetCatalog && _open);
+                _assetCatalog.Start(
+                    () =>
+                    {
+                        _libraryKey = "";
+                    },
+                    () => AssetCatalog && _open
+                );
             }
             var entries = new List<SceneCatalogEntry>();
             foreach (var entry in _assetCatalog.Entries)
             {
-                if ((_sceneFilter == "Containers") != (entry.AssetTarget?.Kind == "AssetContainer")) continue;
-                if (_catalogSource == "Current map" && !_sceneRoots.Values.AsValueEnumerable().Any(t => t && t.GetComponent<LootableContainer>()?.Template == entry.AssetTarget?.Template)) continue;
-                if (entry.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0 && entry.AssetTarget!.Bundle.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0) continue;
+                if ((_sceneFilter == "Containers") != (entry.AssetTarget?.Kind == "AssetContainer"))
+                    continue;
+                if (
+                    _catalogSource == "Current map"
+                    && !_sceneRoots
+                        .Values.AsValueEnumerable()
+                        .Any(t => t && t.GetComponent<LootableContainer>()?.Template == entry.AssetTarget?.Template)
+                )
+                    continue;
+                if (
+                    entry.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
+                    && entry.AssetTarget!.Bundle.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
+                )
+                    continue;
                 entries.Add(entry);
             }
-            var sourceIds = _sceneFilter == "Containers" ? _sceneRoots.Keys.AsValueEnumerable().ToArray()
-                : _propShapes.Values.AsValueEnumerable().Concat(_unsupportedSceneIds.AsValueEnumerable()).Distinct().ToArray();
+            var sourceIds =
+                _sceneFilter == "Containers"
+                    ? _sceneRoots.Keys.AsValueEnumerable().ToArray()
+                    : _propShapes.Values.AsValueEnumerable().Concat(_unsupportedSceneIds.AsValueEnumerable()).Distinct().ToArray();
             foreach (var id in sourceIds)
             {
-                if (!_sceneRoots.TryGetValue(id, out var source) || !source) continue;
+                if (!_sceneRoots.TryGetValue(id, out var source) || !source)
+                    continue;
                 var container = source.GetComponent<LootableContainer>();
-                if ((_sceneFilter == "Containers") != (container != null)) continue;
-                if (source.name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0) continue;
-                if (_localCatalogEntries.TryGetValue(id, out var localEntry)) { entries.Add(localEntry); continue; }
+                if ((_sceneFilter == "Containers") != (container != null))
+                    continue;
+                if (source.name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+                if (_localCatalogEntries.TryGetValue(id, out var localEntry))
+                {
+                    entries.Add(localEntry);
+                    continue;
+                }
                 try
                 {
                     var binding = (_mapScene ??= new()).CaptureOriginal(source);
-                    entries.Add(new SceneCatalogEntry { Id = "scene:" + id, Name = source.name + " · Current map", AssetTarget = binding,
-                        Error = container ? MapSceneAdapter.ContainerCopyRestriction(source) : MapSceneAdapter.Supported(source, copy: true) });
+                    entries.Add(
+                        new SceneCatalogEntry
+                        {
+                            Id = "scene:" + id,
+                            Name = source.name + " ï¿½ Current map",
+                            AssetTarget = binding,
+                            Error = container
+                                ? MapSceneAdapter.ContainerCopyRestriction(source)
+                                : MapSceneAdapter.Supported(source, copy: true),
+                        }
+                    );
                 }
-                catch (Exception e) { entries.Add(new SceneCatalogEntry { Id = "scene:" + id, Name = source.name, Error = e.Message }); }
+                catch (Exception e)
+                {
+                    entries.Add(
+                        new SceneCatalogEntry
+                        {
+                            Id = "scene:" + id,
+                            Name = source.name,
+                            Error = e.Message,
+                        }
+                    );
+                }
                 _localCatalogEntries[id] = entries[entries.Count - 1];
             }
-            entries.Sort((a,b) => { var order = string.Compare(a.Name,b.Name,StringComparison.OrdinalIgnoreCase); return order != 0 ? order : string.CompareOrdinal(a.Id,b.Id); });
+            entries.Sort(
+                (a, b) =>
+                {
+                    var order = string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+                    return order != 0 ? order : string.CompareOrdinal(a.Id, b.Id);
+                }
+            );
             _catalog = new SceneCatalogResponse { Entries = entries, Total = entries.Count };
-            if (_catalogSelection.Length > 0) _selectedCatalogEntry = entries.AsValueEnumerable().FirstOrDefault(e => e.Id == _catalogSelection) ?? _selectedCatalogEntry;
-            foreach (var entry in entries) _rows.Add((entry.Id, entry.Name + (CatalogError(entry).Length > 0 ? " · Unavailable" : "")));
+            if (_catalogSelection.Length > 0)
+                _selectedCatalogEntry = entries.AsValueEnumerable().FirstOrDefault(e => e.Id == _catalogSelection) ?? _selectedCatalogEntry;
+            foreach (var entry in entries)
+                _rows.Add((entry.Id, entry.Name + (CatalogError(entry).Length > 0 ? " ï¿½ Unavailable" : "")));
             return;
         }
         else if (RemoteCatalog)
@@ -349,7 +410,16 @@ public sealed partial class RaidEditor
                                 Search = search,
                                 Page = request.Page,
                                 Category = category,
-                                TemplateIds = _catalogSource == "Current map" ? _sceneRoots.Values.AsValueEnumerable().Where(t => t && t.GetComponent<LootItem>()).Select(t => t.GetComponent<LootItem>().TemplateId).Where(id => WTT.Campaigns.Shared.Seasons.SeasonValidator.IsId(id)).Distinct().ToList() : null,
+                                TemplateIds =
+                                    _catalogSource == "Current map"
+                                        ? _sceneRoots
+                                            .Values.AsValueEnumerable()
+                                            .Where(t => t && t.GetComponent<LootItem>())
+                                            .Select(t => t.GetComponent<LootItem>().TemplateId)
+                                            .Where(id => WTT.Campaigns.Shared.Seasons.SeasonValidator.IsId(id))
+                                            .Distinct()
+                                            .ToList()
+                                        : null,
                             }
                         )
                     )
@@ -499,7 +569,13 @@ public sealed partial class RaidEditor
     }
 
     private bool CanSceneEdit =>
-        EditorMode.Ready && !_walking && _walkAssetLifetime == null && Layout != null && _session?.Definition != null && _session.Conflict == null && !_session.Retired;
+        EditorMode.Ready
+        && !_walking
+        && _walkAssetLifetime == null
+        && Layout != null
+        && _session?.Definition != null
+        && _session.Conflict == null
+        && !_session.Retired;
 
     private void RemoveSceneObject()
     {
@@ -526,12 +602,18 @@ public sealed partial class RaidEditor
             if (_selectedCatalogEntry?.AssetTarget != null && AssetCatalog)
             {
                 var error = CatalogError(_selectedCatalogEntry);
-                if (error.Length > 0) throw new InvalidOperationException(error);
+                if (error.Length > 0)
+                    throw new InvalidOperationException(error);
                 var loaded = await SceneAssetCatalog.Load(_selectedCatalogEntry.AssetTarget, token);
-                if (token.IsCancellationRequested) { loaded.Dispose(); return; }
+                if (token.IsCancellationRequested)
+                {
+                    loaded.Dispose();
+                    return;
+                }
                 _placementAsset = loaded;
                 model = loaded.Object;
-                if (model.GetComponentInChildren<LootableContainer>(true) is { } container) container.enabled = false;
+                if (model.GetComponentInChildren<LootableContainer>(true) is { } container)
+                    container.enabled = false;
             }
             else if (_sceneFilter == "Props" && _sceneRoots.TryGetValue(_catalogSelection, out var target) && target)
             {
@@ -618,12 +700,27 @@ public sealed partial class RaidEditor
             MapEdit(l =>
             {
                 if (asset?.AssetTarget != null)
-                    l.Objects.Add(new MapObjectEdit
-                    {
-                        Id = id, Name = asset.Name, Location = l.Location, Scene = hit.transform.gameObject.scene.name,
-                        Target = RaidEditorSession.Copy(asset.AssetTarget), Operation = "Copy", Position = ZoneRuntime.Vector(position),
-                        Rotation = rotation, Scale = asset.AssetTarget.Kind is "AssetContainer" or "Container" ? new SpatialVector { X = 1, Y = 1, Z = 1 } : scale,
-                    });
+                    l.Objects.Add(
+                        new MapObjectEdit
+                        {
+                            Id = id,
+                            Name = asset.Name,
+                            Location = l.Location,
+                            Scene = hit.transform.gameObject.scene.name,
+                            Target = RaidEditorSession.Copy(asset.AssetTarget),
+                            Operation = "Copy",
+                            Position = ZoneRuntime.Vector(position),
+                            Rotation = rotation,
+                            Scale = asset.AssetTarget.Kind is "AssetContainer" or "Container"
+                                ? new SpatialVector
+                                {
+                                    X = 1,
+                                    Y = 1,
+                                    Z = 1,
+                                }
+                                : scale,
+                        }
+                    );
                 else if (prop != null)
                     l.Objects.Add(
                         new MapObjectEdit
@@ -701,23 +798,39 @@ public sealed partial class RaidEditor
         _placementPooled = false;
     }
 
-    private string CatalogError(SceneCatalogEntry entry) => entry.Error.Length > 0 ? entry.Error
-        : (entry.AssetTarget?.Kind is "AssetContainer" or "Container") && (_containerTemplates == null || !_containerTemplates.Contains(entry.AssetTarget.Template))
-            ? (_containerTemplates == null ? "Checking native container loot mapping…" : "No native loot mapping is available for this container.") : "";
+    private string CatalogError(SceneCatalogEntry entry) =>
+        entry.Error.Length > 0 ? entry.Error
+        : (entry.AssetTarget?.Kind is "AssetContainer" or "Container")
+        && (_containerTemplates == null || !_containerTemplates.Contains(entry.AssetTarget.Template))
+            ? (
+                _containerTemplates == null
+                    ? "Checking native container loot mappingï¿½"
+                    : "No native loot mapping is available for this container."
+            )
+        : "";
 
     private async Task LoadContainerTemplates()
     {
         try
         {
             var sessionId = EditorMode.SessionId;
-            var response = JsonConvert.DeserializeObject<SceneContainerResponse>(await RequestHandler.PostJsonAsync("/wtt-campaigns/editor/containers",
-                JsonConvert.SerializeObject(new SceneContainerRequest { SessionId = EditorMode.SessionId })));
-            if (sessionId != EditorMode.SessionId || _assetCatalog == null) return;
-            if (response == null || response.Error != null) throw new InvalidOperationException(response?.Error ?? "No container response.");
+            var response = JsonConvert.DeserializeObject<SceneContainerResponse>(
+                await RequestHandler.PostJsonAsync(
+                    "/wtt-campaigns/editor/containers",
+                    JsonConvert.SerializeObject(new SceneContainerRequest { SessionId = EditorMode.SessionId })
+                )
+            );
+            if (sessionId != EditorMode.SessionId || _assetCatalog == null)
+                return;
+            if (response == null || response.Error != null)
+                throw new InvalidOperationException(response?.Error ?? "No container response.");
             _containerTemplates = new HashSet<string>(response.Templates);
             _libraryKey = "";
         }
-        catch (Exception e) { _notice = e.Message; }
+        catch (Exception e)
+        {
+            _notice = e.Message;
+        }
     }
 
     private void ClearSceneCatalog()

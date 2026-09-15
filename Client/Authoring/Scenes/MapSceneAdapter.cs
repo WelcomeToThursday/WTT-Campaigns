@@ -279,10 +279,13 @@ internal sealed partial class MapSceneAdapter : IDisposable
     internal static SceneAssetCatalog.Model LoadSceneCopy(MapTarget target)
     {
         var source = Resolve(target, false);
-        if (target.Kind == "Prop") return new SceneAssetCatalog.Model { Object = CopyProp(source, true) };
-        if (target.Kind != "Container") throw new InvalidOperationException("Unsupported scene copy.");
+        if (target.Kind == "Prop")
+            return new SceneAssetCatalog.Model { Object = CopyProp(source, true) };
+        if (target.Kind != "Container")
+            throw new InvalidOperationException("Unsupported scene copy.");
         var restriction = ContainerCopyRestriction(source);
-        if (restriction.Length > 0) throw new InvalidOperationException(restriction);
+        if (restriction.Length > 0)
+            throw new InvalidOperationException(restriction);
         var wrapper = new GameObject("CampaignEditor container");
         wrapper.SetActive(false);
         try
@@ -303,7 +306,11 @@ internal sealed partial class MapSceneAdapter : IDisposable
             clone.SetActive(true);
             return new SceneAssetCatalog.Model { Object = wrapper };
         }
-        catch { Remove(wrapper); throw; }
+        catch
+        {
+            Remove(wrapper);
+            throw;
+        }
     }
 
     private static GameObject CopyProp(Transform source, bool collision)

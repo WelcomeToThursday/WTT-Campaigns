@@ -7,9 +7,10 @@ internal sealed partial class RaidEditorView
 {
     internal Action? CatalogCapacityChanged;
     internal int RowCapacity => _rows.Count;
-    internal int CatalogPageSize => Browser.Grid
-        ? CatalogGridLayout.Capacity(_paged.contentViewport.resolvedStyle.width, _paged.contentViewport.resolvedStyle.height)
-        : 10;
+    internal int CatalogPageSize =>
+        Browser.Grid
+            ? CatalogGridLayout.Capacity(_paged.contentViewport.resolvedStyle.width, _paged.contentViewport.resolvedStyle.height)
+            : 10;
     private int _lastCatalogCapacity;
 
     internal void PollCatalogCapacity()
@@ -22,6 +23,7 @@ internal sealed partial class RaidEditorView
         _lastCatalogCapacity = size;
         CatalogCapacityChanged?.Invoke();
     }
+
     private void SetCatalogGrid(string tool, bool grid)
     {
         if (!Activate(tool))
@@ -34,7 +36,10 @@ internal sealed partial class RaidEditorView
     private void ApplyCatalogPresentation(bool thumbnails)
     {
         var grid = thumbnails && Browser.Grid;
-        var presentation = grid ? 2 : thumbnails ? 1 : 0;
+        var presentation =
+            grid ? 2
+            : thumbnails ? 1
+            : 0;
         if (Browser.Presentation == presentation)
             return;
         Browser.Presentation = presentation;
@@ -57,13 +62,19 @@ internal sealed partial class RaidEditorView
             var row = _rows[i].Element;
             row.style.width = grid ? new StyleLength(144) : new StyleLength(StyleKeyword.Auto);
             row.style.height = grid ? new StyleLength(136) : new StyleLength(StyleKeyword.Auto);
-            row.style.minHeight = grid ? 136 : thumbnails ? 50 : 28;
+            row.style.minHeight =
+                grid ? 136
+                : thumbnails ? 50
+                : 28;
             row.style.maxHeight = grid ? new StyleLength(136) : new StyleLength(StyleKeyword.None);
             row.style.flexGrow = row.style.flexShrink = 0;
             row.style.alignSelf = grid ? Align.FlexStart : Align.Stretch;
             row.style.marginLeft = row.style.marginRight = grid ? 3 : 0;
             row.style.marginTop = row.style.marginBottom = grid ? 3 : 1;
-            row.style.paddingLeft = grid ? 6 : thumbnails ? 54 : 8;
+            row.style.paddingLeft =
+                grid ? 6
+                : thumbnails ? 54
+                : 8;
             row.style.paddingRight = 6;
             row.style.paddingTop = grid ? 94 : 4;
             row.style.paddingBottom = 4;
