@@ -42,17 +42,19 @@ public sealed partial class RaidEditor : MonoBehaviour
         _flyRotation;
     private bool _savedCursor;
     private bool _looking;
+
     // Latch before native input locks/centers the pointer, so crossing a panel
     // while flying cannot release capture. Release on RMB up or blocked input.
     internal bool CameraLooking =>
-        _looking = _open
-        && Application.isFocused
-        && Input.GetMouseButton(1)
-        && _view?.Typing != true
-        && _drag == null
-        && _session?.Conflict == null
-        && _view?.Windows.HasMenu != true
-        && (_looking || EventSystem.current?.IsPointerOverGameObject() != true && _view?.PointerOver != true);
+        _looking =
+            _open
+            && Application.isFocused
+            && Input.GetMouseButton(1)
+            && _view?.Typing != true
+            && _drag == null
+            && _session?.Conflict == null
+            && _view?.Windows.HasMenu != true
+            && (_looking || EventSystem.current?.IsPointerOverGameObject() != true && _view?.PointerOver != true);
     private CursorLockMode _savedLock;
     private GameObject? _events;
     private readonly List<EventSystem> _disabledEvents = new();

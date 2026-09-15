@@ -615,8 +615,10 @@ internal static class UiCompatibilityChecks
         Check(types["EFT.InputSystem.ECursorResult"].Fields.Any(value => value.Name == "ShowCursor"), "Overlay cursor state");
         Check(types["EFT.InputSystem.ECursorResult"].Fields.Any(value => value.Name == "LockCursor"), "Editor flight cursor state");
         Check(
-            types["EFT.Player"].Methods.Any(value => value.Name == "get_CameraPosition" && value.ReturnType.FullName == "UnityEngine.Transform")
-                && types["EFT.Player"].Methods.Any(value => value.Name == "get_LookDirection" && value.ReturnType.FullName == "UnityEngine.Vector3"),
+            types["EFT.Player"]
+                .Methods.Any(value => value.Name == "get_CameraPosition" && value.ReturnType.FullName == "UnityEngine.Transform")
+                && types["EFT.Player"]
+                    .Methods.Any(value => value.Name == "get_LookDirection" && value.ReturnType.FullName == "UnityEngine.Vector3"),
             "Editor initial pose uses the current player's native camera anchor and facing"
         );
         Check(
