@@ -57,6 +57,7 @@ public sealed class CampaignTestSessions(
         public string LayoutId { get; init; } = "";
         public string MissionId { get; init; } = "";
         public string QuestId { get; init; } = "";
+
         // Campaign test control traffic heartbeats this value. Recovery is
         // request-driven, so an abandoned test cannot retain native
         // registrations indefinitely when its editor process disappears.
@@ -152,10 +153,7 @@ public sealed class CampaignTestSessions(
         seasons.EnsureNotInRaid(old.TestId);
 
         var draft = LoadDraft(old.DraftId);
-        var replacement = await Build(
-            new EditorSessionIdentity(old.EditorSessionId, old.Owner, old.ReturnProfileId, old.DraftId),
-            draft
-        );
+        var replacement = await Build(new EditorSessionIdentity(old.EditorSessionId, old.Owner, old.ReturnProfileId, old.DraftId), draft);
         try
         {
             await Retire(old);
@@ -295,8 +293,10 @@ public sealed class CampaignTestSessions(
             )
             .GroupBy(v => v.Parent)
             .ToDictionary(g => g.Key, g => g.OrderBy(v => v.Id.ToString(), StringComparer.Ordinal).First().Id);
-        if (!cosmetic.TryGetValue("5cc085e214c02e000c6bea67", out var head)
-            || !cosmetic.TryGetValue("5fc100cf95572123ae738483", out var voice))
+        if (
+            !cosmetic.TryGetValue("5cc085e214c02e000c6bea67", out var head)
+            || !cosmetic.TryGetValue("5fc100cf95572123ae738483", out var voice)
+        )
             throw new InvalidOperationException("SPT has no default PMC appearance for a campaign test.");
 
         saves.CreateProfile(
@@ -482,8 +482,13 @@ public sealed class CampaignTestSessions(
             QuestId = state.QuestId,
             RunId = missionState.ActiveRun?.RunId ?? "",
             Revision = Math.Max(campaignState.Revision, missionState.Revision),
-            Status = inRaid ? "InRaid" : completed ? "Completed" : "Ready",
-            Message = completed ? "Mission complete. Turn in the native quest or replay it." : "Disposable native campaign profile is ready.",
+            Status =
+                inRaid ? "InRaid"
+                : completed ? "Completed"
+                : "Ready",
+            Message = completed
+                ? "Mission complete. Turn in the native quest or replay it."
+                : "Disposable native campaign profile is ready.",
             QuestAccepted = quest?.Status is QuestStatusEnum.Started or QuestStatusEnum.AvailableForFinish or QuestStatusEnum.Success,
             MissionCompleted = completed,
             QuestCompleted = quest?.Status == QuestStatusEnum.Success,
@@ -512,8 +517,10 @@ public sealed class CampaignTestSessions(
 
     private CampaignTestResponse OwnedEnded(string transportIdentity, CampaignTestResponse response)
     {
-        if (transportIdentity != response.ReturnProfileId
-            && (!_endedOwners.TryGetValue(response.TestId, out var owner) || transportIdentity != owner))
+        if (
+            transportIdentity != response.ReturnProfileId
+            && (!_endedOwners.TryGetValue(response.TestId, out var owner) || transportIdentity != owner)
+        )
             throw new InvalidOperationException("The disposable campaign test does not belong to this account.");
         var copy = JsonConvert.DeserializeObject<CampaignTestResponse>(JsonConvert.SerializeObject(response))!;
         copy.Replayed = true;
@@ -524,7 +531,8 @@ public sealed class CampaignTestSessions(
     {
         if (request.TestId.Length == 0)
             throw new InvalidOperationException("A disposable campaign test id is required.");
-        var state = ResolveActive(request.TestId, transportIdentity)
+        var state =
+            ResolveActive(request.TestId, transportIdentity)
             ?? throw new InvalidOperationException("The disposable campaign test is unavailable. Create it again.");
         if (request.EditorSessionId.Length > 0 && request.EditorSessionId != state.EditorSessionId)
             throw new InvalidOperationException("The editor session does not belong to this disposable test.");
@@ -567,12 +575,16 @@ public sealed class CampaignTestSessions(
         if (string.IsNullOrWhiteSpace(sessionId) || !SeasonValidator.IsId(draftId))
             throw new InvalidOperationException("Choose an editor session and saved draft before starting a campaign test.");
         var resolution = EditorSessionRegistry.Resolve(identity, sessionId, DateTimeOffset.UtcNow);
-        if (resolution.Session == null
-            || resolution.Status is not (EditorSessionRegistry.ResolutionStatus.Accepted or EditorSessionRegistry.ResolutionStatus.MissingMap))
+        if (
+            resolution.Session == null
+            || resolution.Status
+                is not (EditorSessionRegistry.ResolutionStatus.Accepted or EditorSessionRegistry.ResolutionStatus.MissingMap)
+        )
             throw new InvalidOperationException(
-                resolution.Status is EditorSessionRegistry.ResolutionStatus.Expired
-                    or EditorSessionRegistry.ResolutionStatus.NotReady
-                    or EditorSessionRegistry.ResolutionStatus.RetiredScratch
+                resolution.Status
+                    is EditorSessionRegistry.ResolutionStatus.Expired
+                        or EditorSessionRegistry.ResolutionStatus.NotReady
+                        or EditorSessionRegistry.ResolutionStatus.RetiredScratch
                     ? "Editor session expired. Return to editor home and reconnect."
                     : "Editor session does not match."
             );

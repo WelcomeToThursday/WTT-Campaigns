@@ -17,8 +17,10 @@ internal static class MissionLaunchContextChecks
         async Task Observe()
         {
             await resume.Task;
-            check(MissionLaunchContext.Current?.RunId == "run" && MissionLaunchContext.Current.SessionId == "character",
-                "The native asynchronous start retains its authenticated mission marker");
+            check(
+                MissionLaunchContext.Current?.RunId == "run" && MissionLaunchContext.Current.SessionId == "character",
+                "The native asynchronous start retains its authenticated mission marker"
+            );
         }
         var pending = Observe();
         scope.Restore();

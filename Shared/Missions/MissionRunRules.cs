@@ -17,13 +17,7 @@ public static class MissionRunRules
         "transit",
     };
 
-    public static bool MatchesIdentity(
-        MissionRun run,
-        string characterId,
-        string runId,
-        string raidId,
-        string? encounterToken = null
-    )
+    public static bool MatchesIdentity(MissionRun run, string characterId, string runId, string raidId, string? encounterToken = null)
     {
         if (run == null || string.IsNullOrWhiteSpace(characterId) || string.IsNullOrWhiteSpace(runId) || string.IsNullOrWhiteSpace(raidId))
             return false;
@@ -33,12 +27,7 @@ public static class MissionRunRules
             && (encounterToken == null || string.Equals(run.EncounterToken, encounterToken, StringComparison.Ordinal));
     }
 
-    public static bool TryCheckpoint(
-        MissionRun run,
-        IReadOnlyList<MapVolume> checkpoints,
-        string checkpointId,
-        out string error
-    )
+    public static bool TryCheckpoint(MissionRun run, IReadOnlyList<MapVolume> checkpoints, string checkpointId, out string error)
     {
         error = "";
         if (run == null)
@@ -76,13 +65,7 @@ public static class MissionRunRules
         return true;
     }
 
-    public static bool TryExit(
-        MissionRun run,
-        IReadOnlyList<MapVolume> checkpoints,
-        MapVolume? exit,
-        string exitId,
-        out string error
-    )
+    public static bool TryExit(MissionRun run, IReadOnlyList<MapVolume> checkpoints, MapVolume? exit, string exitId, out string error)
     {
         error = "";
         if (run == null || exit == null || string.IsNullOrWhiteSpace(exitId) || !string.Equals(exit.Id, exitId, StringComparison.Ordinal))

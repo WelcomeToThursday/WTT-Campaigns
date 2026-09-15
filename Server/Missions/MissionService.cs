@@ -1,23 +1,23 @@
 using System.Security.Cryptography;
 using Newtonsoft.Json;
 using SPTarkov.DI.Annotations;
-using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Controllers;
+using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Bot;
 using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Eft.Match;
 using SPTarkov.Server.Core.Models.Eft.Profile;
+using SPTarkov.Server.Core.Servers;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
-using SPTarkov.Server.Core.Servers;
 using WTT.Campaigns.Server.Hub;
 using WTT.Campaigns.Server.Profiles;
 using WTT.Campaigns.Server.Seasons;
 using WTT.Campaigns.Server.Story;
-using WTT.Campaigns.Shared.Missions;
-using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.Shared.Authoring;
+using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Spatial;
 
 namespace WTT.Campaigns.Server.Missions;
 
@@ -207,10 +207,7 @@ public sealed class MissionService(
     /// request is checked before and after generation, and the result is cached in
     /// the run so retries cannot create extra profiles.
     /// </summary>
-    public async Task<EditorEncounterProfilesResponse> EncounterProfiles(
-        string sessionId,
-        MissionEncounterProfilesRequest request
-    )
+    public async Task<EditorEncounterProfilesResponse> EncounterProfiles(string sessionId, MissionEncounterProfilesRequest request)
     {
         var root = seasons.ResolveRoot(sessionId);
         string role;
@@ -299,11 +296,7 @@ public sealed class MissionService(
         var active = ResolveSession(sessionId);
         var state = MissionStore.Read(active.Profile.CharacterData!.PmcData!, active.SeasonId);
         var run = state.ActiveRun;
-        if (
-            run == null
-            || run.Status != MissionRunStatuses.Prepared
-            || !string.Equals(run.RunId, runId, StringComparison.Ordinal)
-        )
+        if (run == null || run.Status != MissionRunStatuses.Prepared || !string.Equals(run.RunId, runId, StringComparison.Ordinal))
             throw new InvalidOperationException("This mission launch is no longer prepared.");
 
         if (DateTimeOffset.UtcNow - DateTimeOffset.FromUnixTimeSeconds(run.PreparedAt) > PreparedLifetime)
@@ -461,7 +454,8 @@ public sealed class MissionService(
 
         var staged = cloner.Clone(original)!;
         var stagedPmc = staged.CharacterData!.PmcData!;
-        var contentCurrent = run.ContentRevision == active.Runtime.Definition.Revision
+        var contentCurrent =
+            run.ContentRevision == active.Runtime.Definition.Revision
             && run.ContentHash == SeasonRepository.GameplayHash(active.Runtime.Definition);
         if (!contentCurrent)
         {
@@ -574,25 +568,35 @@ public sealed class MissionService(
     private MissionResponse Snapshot(Active active, MissionProgress state)
     {
         var pmc = active.Profile.CharacterData!.PmcData!;
-        var summaries = active.Runtime.Definition.Missions.Select(mission =>
-        {
-            var accepted = pmc.Quests?.FirstOrDefault(q => q.QId.ToString() == mission.QuestId)?.Status.ToString() is
-                "Started" or "AvailableForFinish" or "Success";
-            var unlocked = state.UnlockedMissionIds.Contains(mission.Id) || accepted;
-            var completed = state.CompletedMissionIds.Contains(mission.Id);
-            var activeRun = state.ActiveRun is { } run && run.MissionId == mission.Id && !MissionRunStatuses.IsTerminal(run.Status);
-            return new MissionSummary
+        var summaries = active
+            .Runtime.Definition.Missions.Select(mission =>
             {
-                Definition = mission,
-                Status = completed ? "Completed" : activeRun ? "Active" : unlocked ? "Available" : "Locked",
-                Unlocked = unlocked,
-                Completed = completed,
-                Active = activeRun,
-                FailureReason = state.ActiveRun is { MissionId: var id } failed && id == mission.Id && failed.Status == MissionRunStatuses.Failed
-                    ? failed.FailureReason
-                    : "",
-            };
-        }).ToList();
+                var accepted =
+                    pmc.Quests?.FirstOrDefault(q => q.QId.ToString() == mission.QuestId)?.Status.ToString()
+                    is "Started"
+                        or "AvailableForFinish"
+                        or "Success";
+                var unlocked = state.UnlockedMissionIds.Contains(mission.Id) || accepted;
+                var completed = state.CompletedMissionIds.Contains(mission.Id);
+                var activeRun = state.ActiveRun is { } run && run.MissionId == mission.Id && !MissionRunStatuses.IsTerminal(run.Status);
+                return new MissionSummary
+                {
+                    Definition = mission,
+                    Status =
+                        completed ? "Completed"
+                        : activeRun ? "Active"
+                        : unlocked ? "Available"
+                        : "Locked",
+                    Unlocked = unlocked,
+                    Completed = completed,
+                    Active = activeRun,
+                    FailureReason =
+                        state.ActiveRun is { MissionId: var id } failed && id == mission.Id && failed.Status == MissionRunStatuses.Failed
+                            ? failed.FailureReason
+                            : "",
+                };
+            })
+            .ToList();
         return new MissionResponse
         {
             SeasonId = active.SeasonId,
@@ -604,7 +608,13 @@ public sealed class MissionService(
         };
     }
 
-    private MissionResponse Response(Active active, MissionProgress state, string message, MissionDescriptor? descriptor, bool committed = false)
+    private MissionResponse Response(
+        Active active,
+        MissionProgress state,
+        string message,
+        MissionDescriptor? descriptor,
+        bool committed = false
+    )
     {
         var output = Snapshot(active, state);
         output.Descriptor = descriptor;
@@ -617,8 +627,8 @@ public sealed class MissionService(
     {
         var mission = FindMission(active.Runtime.Definition, run.MissionId);
         var layout = ValidateMission(active.Runtime.Definition, mission);
-        var zones = active.Runtime.Definition.Zones
-            .Where(z => z != null && (string.IsNullOrEmpty(z.LayoutId) || z.LayoutId == layout.Id))
+        var zones = active
+            .Runtime.Definition.Zones.Where(z => z != null && (string.IsNullOrEmpty(z.LayoutId) || z.LayoutId == layout.Id))
             .Select(z => cloner.Clone(z)!)
             .ToList();
         return new MissionDescriptor
@@ -641,13 +651,13 @@ public sealed class MissionService(
     {
         if (string.IsNullOrWhiteSpace(id))
             throw new InvalidOperationException("Choose a mission.");
-        return definition.Missions.SingleOrDefault(m => m.Id == id)
-            ?? throw new InvalidOperationException("This mission is unavailable.");
+        return definition.Missions.SingleOrDefault(m => m.Id == id) ?? throw new InvalidOperationException("This mission is unavailable.");
     }
 
     private static MapLayout ValidateMission(SeasonDefinition definition, MissionDefinition mission)
     {
-        var layout = definition.MapLayouts.SingleOrDefault(l => l.Id == mission.LayoutId)
+        var layout =
+            definition.MapLayouts.SingleOrDefault(l => l.Id == mission.LayoutId)
             ?? throw new InvalidOperationException("The mission layout is unavailable.");
         if (layout.Start == null || layout.Exit == null || layout.Checkpoints is not { Count: > 0 })
             throw new InvalidOperationException("The mission layout requires a start, checkpoint sequence and exit.");
@@ -691,9 +701,11 @@ public sealed class MissionService(
     {
         var mission = FindMission(active.Runtime.Definition, run.MissionId);
         var layout = ValidateMission(active.Runtime.Definition, mission);
-        encounter = layout.Encounters.SingleOrDefault(e => e.Id == request.EncounterId)
+        encounter =
+            layout.Encounters.SingleOrDefault(e => e.Id == request.EncounterId)
             ?? throw new InvalidOperationException("This encounter is not part of the mission layout.");
-        wave = encounter.Waves.SingleOrDefault(w => w.Id == request.WaveId)
+        wave =
+            encounter.Waves.SingleOrDefault(w => w.Id == request.WaveId)
             ?? throw new InvalidOperationException("This encounter wave is not part of the mission layout.");
         return wave.Roster.SingleOrDefault(r => r.Id == request.RosterId)
             ?? throw new InvalidOperationException("This encounter roster is not part of the mission layout.");
@@ -731,11 +743,7 @@ public sealed class MissionService(
 
     private static void VerifyCurrentContent(Active active, MissionRun run)
     {
-        MissionTransaction.VerifyContent(
-            run,
-            active.Runtime.Definition.Revision,
-            SeasonRepository.GameplayHash(active.Runtime.Definition)
-        );
+        MissionTransaction.VerifyContent(run, active.Runtime.Definition.Revision, SeasonRepository.GameplayHash(active.Runtime.Definition));
     }
 
     private static void RequireOperation(MissionRequest request)
@@ -779,18 +787,20 @@ public sealed class MissionService(
 
     private string Fingerprint(string operation, MissionRequest request)
     {
-        return json.Serialize(new
-        {
-            operation,
-            request.Version,
-            request.SeasonId,
-            request.CharacterId,
-            request.MissionId,
-            request.RunId,
-            request.RaidId,
-            request.CheckpointId,
-            request.Kind,
-        })!;
+        return json.Serialize(
+            new
+            {
+                operation,
+                request.Version,
+                request.SeasonId,
+                request.CharacterId,
+                request.MissionId,
+                request.RunId,
+                request.RaidId,
+                request.CheckpointId,
+                request.Kind,
+            }
+        )!;
     }
 
     private static string NewId() => Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(12));

@@ -17,7 +17,8 @@ internal static class MissionStore
             return new MissionProgress { SeasonId = seasonId };
         }
 
-        var state = ProfileStateSerialization.Read<MissionProgress>(pmc, key)
+        var state =
+            ProfileStateSerialization.Read<MissionProgress>(pmc, key)
             ?? throw new InvalidDataException("The saved mission state is invalid.");
         if (state.Version != 1 || state.SeasonId != seasonId)
         {

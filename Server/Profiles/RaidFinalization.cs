@@ -5,8 +5,14 @@ internal static class RaidFinalization
 {
     internal static bool RequiresNative(bool hubFinished, bool missionFinished) => !hubFinished && !missionFinished;
 
-    internal static async Task Complete(Task native, IDisposable lease, Func<Task> hub, Func<Task> story,
-        Func<Task> mission, Func<Task> clearRaid)
+    internal static async Task Complete(
+        Task native,
+        IDisposable lease,
+        Func<Task> hub,
+        Func<Task> story,
+        Func<Task> mission,
+        Func<Task> clearRaid
+    )
     {
         using (lease)
         {

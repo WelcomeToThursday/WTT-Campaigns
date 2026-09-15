@@ -48,11 +48,10 @@ internal sealed class MissionHud : IDisposable
     {
         if (_disposed)
             return;
-        _objective.text = exitReached
-            ? "Exit reached · completing mission"
-            : completed >= total
-                ? "All checkpoints complete · reach the authored exit"
-                : "Checkpoint " + Math.Min(completed + 1, total) + " of " + total;
+        _objective.text =
+            exitReached ? "Exit reached · completing mission"
+            : completed >= total ? "All checkpoints complete · reach the authored exit"
+            : "Checkpoint " + Math.Min(completed + 1, total) + " of " + total;
         _status.text = status ?? "";
     }
 
@@ -74,7 +73,10 @@ internal sealed class MissionHud : IDisposable
         {
             // The fallback keeps the in-raid HUD available if an optional UI asset is absent.
         }
-        return Resources.FindObjectsOfTypeAll<Font>().AsValueEnumerable().FirstOrDefault(font => font.name.Equals("Jovanny Lemonad - Bender", StringComparison.OrdinalIgnoreCase))
+        return Resources
+                .FindObjectsOfTypeAll<Font>()
+                .AsValueEnumerable()
+                .FirstOrDefault(font => font.name.Equals("Jovanny Lemonad - Bender", StringComparison.OrdinalIgnoreCase))
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
     }
 

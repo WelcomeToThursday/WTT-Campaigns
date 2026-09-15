@@ -57,14 +57,9 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         };
     }
 
-    private EditorSessionRegistry.Session RequireSession(
-        string transportIdentity,
-        EditorTestMissionRequest request,
-        string operation
-    )
+    private EditorSessionRegistry.Session RequireSession(string transportIdentity, EditorTestMissionRequest request, string operation)
     {
-        var session = EditorSessionRegistry.Resolve(transportIdentity, request.SessionId, DateTimeOffset.UtcNow)
-            .RequireMap(operation);
+        var session = EditorSessionRegistry.Resolve(transportIdentity, request.SessionId, DateTimeOffset.UtcNow).RequireMap(operation);
         using var lease = seasons.Enter(session.Owner);
         // The lease is deliberately held only while validating and touching the
         // editor session.  The route state itself is independent disposable data.
@@ -87,7 +82,8 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         var mission = SelectMission(draft.Definition, session.Layout, request.MissionId);
         if (!string.Equals(mission.LayoutId, session.Layout, StringComparison.Ordinal))
             throw new InvalidOperationException("Select the mission's linked layout before testing it.");
-        var layout = draft.Definition.MapLayouts.SingleOrDefault(l => l.Id == mission.LayoutId)
+        var layout =
+            draft.Definition.MapLayouts.SingleOrDefault(l => l.Id == mission.LayoutId)
             ?? throw new InvalidOperationException("The mission layout is unavailable in this draft.");
         if (!string.Equals(layout.Location, session.Location, StringComparison.Ordinal))
             throw new InvalidOperationException("Open the mission layout's map before testing it.");
@@ -165,9 +161,13 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
 
             state.ProgressOperations[request.OperationId] = operationValue;
 
-            return Response(state, request.Kind.Equals("Exit", StringComparison.OrdinalIgnoreCase)
-                ? "Authored exit reached. Finalizing the mission test."
-                : "Checkpoint secured.", state.Completed);
+            return Response(
+                state,
+                request.Kind.Equals("Exit", StringComparison.OrdinalIgnoreCase)
+                    ? "Authored exit reached. Finalizing the mission test."
+                    : "Checkpoint secured.",
+                state.Completed
+            );
         }
     }
 
@@ -181,14 +181,16 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
                 return Response(state, "Mission test complete.", state.Completed, committed: true);
             if (state.Run.Status != MissionRunStatuses.Active)
                 return Response(state, "Mission test failed.", state.Completed);
-            if (!MissionRunRules.IsSuccessfulExtraction(
+            if (
+                !MissionRunRules.IsSuccessfulExtraction(
                     state.Run,
                     state.Layout.Checkpoints,
                     state.Layout.Exit,
                     "Survived",
                     state.Layout.Exit?.Name,
                     out var error
-                ))
+                )
+            )
             {
                 state.Run.Status = MissionRunStatuses.Failed;
                 state.Run.FailureReason = error;
@@ -205,9 +207,11 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
 
     private EditorTestMissionResponse Reset(EditorSessionRegistry.Session session, EditorTestMissionRequest request)
     {
-        if (!string.IsNullOrWhiteSpace(request.RunId)
+        if (
+            !string.IsNullOrWhiteSpace(request.RunId)
             && _runs.TryGetValue(session.Id, out var current)
-            && current.Run.RunId != request.RunId)
+            && current.Run.RunId != request.RunId
+        )
             throw new InvalidOperationException("The mission test run has already been replaced.");
         _runs.TryRemove(session.Id, out _);
         return new EditorTestMissionResponse
@@ -236,17 +240,15 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
     private void EnsureCurrentContent(RunState state)
     {
         var draft = repository.Load(state.DraftId);
-        if (draft.Status != DraftStatus.Active || draft.Revision != state.DraftRevision
-            || !string.Equals(SeasonRepository.GameplayHash(draft.Definition), state.ContentHash, StringComparison.Ordinal))
+        if (
+            draft.Status != DraftStatus.Active
+            || draft.Revision != state.DraftRevision
+            || !string.Equals(SeasonRepository.GameplayHash(draft.Definition), state.ContentHash, StringComparison.Ordinal)
+        )
             throw new InvalidOperationException("The draft changed during the mission test. Reset and prepare it again.");
     }
 
-    private EditorTestMissionResponse Response(
-        RunState state,
-        string message,
-        bool replayed = false,
-        bool committed = false
-    )
+    private EditorTestMissionResponse Response(RunState state, string message, bool replayed = false, bool committed = false)
     {
         var descriptor = new MissionDescriptor
         {
@@ -288,11 +290,12 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         var mission = string.IsNullOrWhiteSpace(requestedId)
             ? definition.Missions.SingleOrDefault(m => m.LayoutId == layoutId)
             : definition.Missions.SingleOrDefault(m => m.Id == requestedId);
-        return mission ?? throw new InvalidOperationException(
-            string.IsNullOrWhiteSpace(requestedId)
-                ? "The selected layout is not linked to a mission in this draft."
-                : "The selected mission is unavailable in this draft."
-        );
+        return mission
+            ?? throw new InvalidOperationException(
+                string.IsNullOrWhiteSpace(requestedId)
+                    ? "The selected layout is not linked to a mission in this draft."
+                    : "The selected mission is unavailable in this draft."
+            );
     }
 
     private void PruneExpiredRuns(DateTimeOffset now)

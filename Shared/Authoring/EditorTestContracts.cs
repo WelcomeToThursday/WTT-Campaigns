@@ -31,6 +31,7 @@ public class EditorTestMissionRequest
     public string RunId { get; set; } = "";
     public string CheckpointId { get; set; } = "";
     public string Kind { get; set; } = "";
+
     /// <summary>
     /// Stable identity for one route transition. The client reuses it if the
     /// response is lost, allowing the server to treat the retry as the same

@@ -89,7 +89,8 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
         {
             var pending = _pending;
             var character = MissionClient.CharacterId;
-            return pending?.Run != null
+            return
+                pending?.Run != null
                 && !string.IsNullOrWhiteSpace(character)
                 && string.Equals(pending.Run.CharacterId, character, StringComparison.Ordinal)
                 ? pending.Run.RunId
@@ -111,7 +112,12 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
             throw new InvalidOperationException("The mission runtime is not initialized.");
         if (descriptor == null || run == null || string.IsNullOrWhiteSpace(run.RunId))
             throw new InvalidOperationException("The mission server returned an incomplete run descriptor.");
-        _pending = new Pending { Descriptor = descriptor, Run = run, Revision = revision };
+        _pending = new Pending
+        {
+            Descriptor = descriptor,
+            Run = run,
+            Revision = revision,
+        };
     }
 
     internal static void ClearPending() => _pending = null;
@@ -165,7 +171,10 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
         if (_starting)
         {
             MissionStartupGuard.Hold(player);
-            if (_startupWorld != null && (!Singleton<GameWorld>.Instantiated || !ReferenceEquals(_startupWorld, Singleton<GameWorld>.Instance)))
+            if (
+                _startupWorld != null
+                && (!Singleton<GameWorld>.Instantiated || !ReferenceEquals(_startupWorld, Singleton<GameWorld>.Instance))
+            )
                 EndRuntime();
             return;
         }
@@ -244,7 +253,9 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
                     }
                     if (response.Descriptor != null && response.Run?.Status == MissionRunStatuses.Active)
                         break;
-                    last = new InvalidOperationException(response.Message.Length > 0 ? response.Message : "Mission raid is not active yet.");
+                    last = new InvalidOperationException(
+                        response.Message.Length > 0 ? response.Message : "Mission raid is not active yet."
+                    );
                 }
                 catch (Exception exception)
                 {
@@ -255,7 +266,8 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
 
             EnsureStartupWorld();
 
-            var descriptor = response?.Descriptor ?? throw (last ?? new InvalidOperationException("The mission descriptor is unavailable."));
+            var descriptor =
+                response?.Descriptor ?? throw (last ?? new InvalidOperationException("The mission descriptor is unavailable."));
             var run = response.Run ?? throw new InvalidOperationException("The mission run state is unavailable.");
             ValidateDescriptor(descriptor, run);
             _descriptor = descriptor;
@@ -451,7 +463,12 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
     private static bool ClearPlayerPosition(Vector3 position, Player player, MapLayout layout)
     {
         var navigation = new EncounterNavigation(() => layout);
-        var authored = new SpatialVector { X = position.x, Y = position.y, Z = position.z };
+        var authored = new SpatialVector
+        {
+            X = position.x,
+            Y = position.y,
+            Z = position.z,
+        };
         if (!navigation.HasStandingClearance(authored, player))
             return false;
         var mask = Physics.DefaultRaycastLayers;
@@ -477,8 +494,15 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
             throw new InvalidOperationException("The native extraction controller is unavailable for a mission raid.");
         foreach (var memberName in new[] { "ExfiltrationPoints", "ScavExfiltrationPoints", "SecretExfiltrationPoints" })
         {
-            var member = controller.GetType().GetProperty(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(controller)
-                ?? controller.GetType().GetField(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(controller);
+            var member =
+                controller
+                    .GetType()
+                    .GetProperty(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    ?.GetValue(controller)
+                ?? controller
+                    .GetType()
+                    .GetField(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                    ?.GetValue(controller);
             if (member is not IEnumerable points)
                 continue;
             foreach (var point in points)

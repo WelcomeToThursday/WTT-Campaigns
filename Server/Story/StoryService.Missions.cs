@@ -1,5 +1,5 @@
-using SPTarkov.Server.Core.Models.Eft.Common;
 using SPTarkov.Server.Core.Models.Common;
+using SPTarkov.Server.Core.Models.Eft.Common;
 using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Story;
 
@@ -14,16 +14,17 @@ public sealed partial class StoryService
     /// </summary>
     internal void ApplyMissionCompletionUnderLease(PmcData pmc, string seasonId, MissionDefinition mission)
     {
-        var storyDefinition = repository.Runtime(seasonId).Definition.Story
+        var storyDefinition =
+            repository.Runtime(seasonId).Definition.Story
             ?? throw new InvalidOperationException("Mission completion requires a story-backed quest.");
         if (!storyDefinition.Quests.Any(q => q.QuestId == mission.QuestId))
             throw new InvalidOperationException("The mission quest is not registered in the campaign story.");
 
-        var questTemplate = repository.Runtime(seasonId).Definition.Quests
-            .SingleOrDefault(q => (string?)q.Id == mission.QuestId)
+        var questTemplate =
+            repository.Runtime(seasonId).Definition.Quests.SingleOrDefault(q => (string?)q.Id == mission.QuestId)
             ?? throw new InvalidOperationException("The mission quest definition is unavailable.");
-        var condition = questTemplate.Conditions.AvailableForFinish
-            .SingleOrDefault(c => (string?)c.Id == mission.CompletionConditionId)
+        var condition =
+            questTemplate.Conditions.AvailableForFinish.SingleOrDefault(c => (string?)c.Id == mission.CompletionConditionId)
             ?? throw new InvalidOperationException("The mission completion objective is unavailable.");
         if (condition.ConditionType != "GlobalVariableValue" || condition.Target?.Values is not { Count: 1 } targets)
             throw new InvalidOperationException("The mission completion objective is not a profile variable objective.");
@@ -37,11 +38,15 @@ public sealed partial class StoryService
         var quest = pmc.Quests?.SingleOrDefault(q => q.QId.ToString() == mission.QuestId);
         // Mission access is permanent after acceptance. A later failed or
         // removed quest cannot prevent replay loot and mission finalization.
-        if (quest == null || quest.Status is not (
-            SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.Started
-            or SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.AvailableForFinish
-            or SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.Success
-        ))
+        if (
+            quest == null
+            || quest.Status
+                is not (
+                    SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.Started
+                    or SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.AvailableForFinish
+                    or SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.Success
+                )
+        )
             return;
 
         var state = StoryStore.Read(pmc, seasonId);

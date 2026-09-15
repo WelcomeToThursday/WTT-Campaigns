@@ -5,10 +5,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using WTT.Campaigns.Client.Hub;
 using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.UI.Audio;
 using WTT.Campaigns.UI.Models;
 using WTT.Campaigns.UI.Screens;
-using WTT.Campaigns.Shared.Missions;
 using ZLinq;
 
 namespace WTT.Campaigns.Client.Missions;
@@ -144,8 +144,10 @@ internal sealed class MissionUi : MonoBehaviour
         {
             // The native fallback keeps the list usable when the optional UI bundle is unavailable.
         }
-        return Resources.FindObjectsOfTypeAll<Font>().AsValueEnumerable().FirstOrDefault(font =>
-                font.name.Equals("Jovanny Lemonad - Bender", StringComparison.OrdinalIgnoreCase))
+        return Resources
+                .FindObjectsOfTypeAll<Font>()
+                .AsValueEnumerable()
+                .FirstOrDefault(font => font.name.Equals("Jovanny Lemonad - Bender", StringComparison.OrdinalIgnoreCase))
             ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
     }
 
@@ -171,9 +173,8 @@ internal sealed class MissionUi : MonoBehaviour
                     Active = summary.Active,
                     CanDeploy = summary.Unlocked && !summary.Active,
                     CanReplay = summary.Completed,
-                    CanResume = summary.Active
-                        && response.Run?.MissionId == definition.Id
-                        && response.Run?.Status == MissionRunStatuses.Prepared,
+                    CanResume =
+                        summary.Active && response.Run?.MissionId == definition.Id && response.Run?.Status == MissionRunStatuses.Prepared,
                     CanCancel = summary.Active && response.Run?.MissionId == definition.Id,
                 };
             })
@@ -249,7 +250,9 @@ internal sealed class MissionUi : MonoBehaviour
         var run = prepared.Run;
         MissionRaidRuntime.SetPending(descriptor, run, prepared.Revision);
         var app = Plugin.App ?? throw new InvalidOperationException("The game menu is not ready.");
-        var location = app.Session.LocationSettings.locations.Values.AsValueEnumerable().SingleOrDefault(l => l.Id == descriptor.Layout.Location);
+        var location = app
+            .Session.LocationSettings.locations.Values.AsValueEnumerable()
+            .SingleOrDefault(l => l.Id == descriptor.Layout.Location);
         if (location == null)
             throw new InvalidOperationException("The mission map is not installed: " + descriptor.Layout.Location);
         app.CurrentRaidSettings.SelectedLocation = location;

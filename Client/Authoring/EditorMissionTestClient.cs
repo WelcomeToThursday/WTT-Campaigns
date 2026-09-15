@@ -76,10 +76,7 @@ internal static class EditorMissionTestClient
         );
     }
 
-    internal static Task<EditorTestMissionResponse> ResetAsync(
-        EditorTestMissionResponse run,
-        CancellationToken cancellationToken = default
-    )
+    internal static Task<EditorTestMissionResponse> ResetAsync(EditorTestMissionResponse run, CancellationToken cancellationToken = default)
     {
         if (run == null || string.IsNullOrWhiteSpace(run.RunId))
             throw new InvalidOperationException("The editor mission test run is unavailable.");
@@ -97,10 +94,7 @@ internal static class EditorMissionTestClient
         );
     }
 
-    private static async Task<EditorTestMissionResponse> PostAsync(
-        EditorTestMissionRequest request,
-        CancellationToken cancellationToken
-    )
+    private static async Task<EditorTestMissionResponse> PostAsync(EditorTestMissionRequest request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         request.Version = 1;
@@ -121,6 +115,5 @@ internal static class EditorMissionTestClient
         return response;
     }
 
-    private static string OperationId(string runId, string kind, string id) =>
-        runId + ":" + kind.Trim().ToLowerInvariant() + ":" + id;
+    private static string OperationId(string runId, string kind, string id) => runId + ":" + kind.Trim().ToLowerInvariant() + ":" + id;
 }

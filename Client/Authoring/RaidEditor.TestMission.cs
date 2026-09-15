@@ -180,15 +180,23 @@ public sealed partial class RaidEditor
 
     private void EditorMissionRouteEntered(string kind, string id, Collider other)
     {
-        if (!_editorMissionRequested || _editorMissionCompleted || _editorMissionProgressPending || _editorMissionLayout == null || !Singleton<GameWorld>.Instantiated)
+        if (
+            !_editorMissionRequested
+            || _editorMissionCompleted
+            || _editorMissionProgressPending
+            || _editorMissionLayout == null
+            || !Singleton<GameWorld>.Instantiated
+        )
             return;
         var player = Singleton<GameWorld>.Instance.GetPlayerByCollider(other);
         if (!player || player != _player)
             return;
         if (kind == "Checkpoint")
         {
-            if (_editorMissionCheckpoint >= _editorMissionLayout.Checkpoints.Count
-                || _editorMissionLayout.Checkpoints[_editorMissionCheckpoint].Id != id)
+            if (
+                _editorMissionCheckpoint >= _editorMissionLayout.Checkpoints.Count
+                || _editorMissionLayout.Checkpoints[_editorMissionCheckpoint].Id != id
+            )
                 return;
             _ = ReportEditorMissionProgress(id, "Checkpoint");
         }
@@ -223,16 +231,17 @@ public sealed partial class RaidEditor
             _editorMissionCheckpoint = nextCheckpoint;
             if (kind == "Checkpoint")
             {
-                _aiPreviewStatus = _editorMissionCheckpoint == _editorMissionLayout.Checkpoints.Count
-                    ? "Mission test · reach the authored exit"
-                    : "Mission test · reach checkpoint " + (_editorMissionCheckpoint + 1) + " of " + _editorMissionLayout.Checkpoints.Count;
+                _aiPreviewStatus =
+                    _editorMissionCheckpoint == _editorMissionLayout.Checkpoints.Count
+                        ? "Mission test · reach the authored exit"
+                        : "Mission test · reach checkpoint "
+                            + (_editorMissionCheckpoint + 1)
+                            + " of "
+                            + _editorMissionLayout.Checkpoints.Count;
             }
             else
             {
-                _editorMissionTest = await EditorMissionTestClient.EndAsync(
-                    _editorMissionTest,
-                    lifetime?.Token ?? CancellationToken.None
-                );
+                _editorMissionTest = await EditorMissionTestClient.EndAsync(_editorMissionTest, lifetime?.Token ?? CancellationToken.None);
                 if (!IsCurrentEditorMission(generation, runId, lifetime))
                     return;
                 _editorMissionCompleted = true;
@@ -271,7 +280,12 @@ public sealed partial class RaidEditor
             EndAiPreview();
             if (_aiReset != null)
                 await _aiReset;
-            var next = await EditorMissionTestClient.PrepareAsync(previous.DraftId, previous.LayoutId, previous.MissionId, previous.UseEncounters);
+            var next = await EditorMissionTestClient.PrepareAsync(
+                previous.DraftId,
+                previous.LayoutId,
+                previous.MissionId,
+                previous.UseEncounters
+            );
             _editorMissionTest = next;
             _editorMissionLayout = next.Descriptor?.Layout == null ? null : RaidEditorSession.Copy(next.Descriptor.Layout);
             _editorMissionGeneration++;

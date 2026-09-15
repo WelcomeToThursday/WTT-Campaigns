@@ -41,12 +41,7 @@ public static class MissionTransaction
     /// current run. The service uses the returned receipt to assemble a replay
     /// response; this helper deliberately does not build that response.
     /// </summary>
-    public static bool TryReplayReceipt(
-        MissionProgress state,
-        string operationId,
-        string fingerprint,
-        out MissionReceipt? receipt
-    )
+    public static bool TryReplayReceipt(MissionProgress state, string operationId, string fingerprint, out MissionReceipt? receipt)
     {
         receipt = null;
         if (string.IsNullOrWhiteSpace(operationId) || !state.Receipts.TryGetValue(operationId, out var existing))

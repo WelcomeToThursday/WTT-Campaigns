@@ -188,19 +188,44 @@ public sealed class MissionsScreen : IDisposable
         var title = _ui.Label(row, "Name", mission.Name, 25, 730, 34, -width / 2 + 26, height / 2 - 30);
         title.alignment = TextAnchor.MiddleLeft;
         title.color = mission.Unlocked ? UiElements.Ink : UiElements.Muted;
-        var location = _ui.Label(row, "Location", mission.Location.Length > 0 ? mission.Location : "Unknown map", 16, 500, 28, -width / 2 + 28, height / 2 - 62);
+        var location = _ui.Label(
+            row,
+            "Location",
+            mission.Location.Length > 0 ? mission.Location : "Unknown map",
+            16,
+            500,
+            28,
+            -width / 2 + 28,
+            height / 2 - 62
+        );
         location.color = UiElements.Muted;
-        var briefing = _ui.Label(row, "Briefing", mission.Briefing.Length > 0 ? mission.Briefing : "No briefing supplied.", 17, 770, 50, -width / 2 + 28, height / 2 - 115);
+        var briefing = _ui.Label(
+            row,
+            "Briefing",
+            mission.Briefing.Length > 0 ? mission.Briefing : "No briefing supplied.",
+            17,
+            770,
+            50,
+            -width / 2 + 28,
+            height / 2 - 115
+        );
         briefing.color = new Color(.68f, .69f, .64f);
 
-        var objectives = mission.Objectives.Length == 0 ? "Route: complete all checkpoints, then extract" : string.Join("  ·  ", mission.Objectives);
+        var objectives =
+            mission.Objectives.Length == 0 ? "Route: complete all checkpoints, then extract" : string.Join("  ·  ", mission.Objectives);
         var objectiveText = _ui.Label(row, "Objectives", objectives, 16, 770, 30, -width / 2 + 28, -height / 2 + 28);
         objectiveText.color = mission.Completed ? UiElements.Positive : UiElements.Muted;
 
-        var status = mission.Completed ? "COMPLETED" : mission.Unlocked ? (mission.Active ? "IN PROGRESS" : mission.Status.ToUpperInvariant()) : "LOCKED";
+        var status =
+            mission.Completed ? "COMPLETED"
+            : mission.Unlocked ? (mission.Active ? "IN PROGRESS" : mission.Status.ToUpperInvariant())
+            : "LOCKED";
         var statusLabel = _ui.Label(row, "Status", status, 16, 300, 30, width / 2 - 405, height / 2 - 34);
         statusLabel.alignment = TextAnchor.MiddleRight;
-        statusLabel.color = mission.Completed ? UiElements.Positive : mission.Unlocked ? UiElements.Accent : UiElements.Muted;
+        statusLabel.color =
+            mission.Completed ? UiElements.Positive
+            : mission.Unlocked ? UiElements.Accent
+            : UiElements.Muted;
         if (mission.FailureReason.Length > 0)
         {
             var failure = _ui.Label(row, "Failure", mission.FailureReason, 14, 300, 36, width / 2 - 405, -height / 2 + 45);

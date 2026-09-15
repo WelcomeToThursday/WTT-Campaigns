@@ -42,10 +42,12 @@ public sealed class MissionRun
     public long StartedAt { get; set; }
     public long FinishedAt { get; set; }
     public string FailureReason { get; set; } = "";
+
     // Native raid finalization is separate from the mission attempt state. A
     // cancelled/failed run still has to pass through SPT's normal end-raid
     // reconciliation before a repeated end request can be suppressed.
     public bool NativeFinishCommitted { get; set; }
+
     // Generated native bot profiles are cached by roster chunk so retries cannot
     // mint additional profiles for the same server-issued mission run.
     public Dictionary<string, string> EncounterProfileChunks { get; set; } = new();

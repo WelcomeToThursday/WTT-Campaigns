@@ -218,10 +218,15 @@ internal static class UiCompatibilityChecks
                     "Original-prop movement uses the installed native render adapter: " + type + "." + method
                 );
             var sceneAdapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.MapSceneAdapter");
-            var resolveCalls = sceneAdapter.Methods.Single(m => m.Name == "Resolve")
-                .Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().Select(m => m.Name).ToList();
+            var resolveCalls = sceneAdapter
+                .Methods.Single(m => m.Name == "Resolve")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
             Check(
-                resolveCalls.Contains("FindTargetPath") && resolveCalls.Contains("Capture")
+                resolveCalls.Contains("FindTargetPath")
+                    && resolveCalls.Contains("Capture")
                     && !resolveCalls.Contains("FindObjectsOfTypeAll"),
                 "Scene binding follows the saved hierarchy without a per-prop global scan and retains fingerprint validation"
             );

@@ -10,24 +10,24 @@ namespace WTT.Campaigns.Server.Editor;
 public sealed class CampaignTestRouter(JsonUtil json, CampaignTestSessions tests) : StaticRouter(json, Routes(tests))
 {
     private static List<RouteAction> Routes(CampaignTestSessions tests) =>
-    [
-        new RouteAction<CampaignTestRouteRequest>(
-            CampaignTestRoutes.Create,
-            (_, request, id, _, _) => Respond(() => tests.Create(id.ToString(), request))
-        ),
-        new RouteAction<CampaignTestRouteRequest>(
-            CampaignTestRoutes.Status,
-            (_, request, id, _, _) => Respond(() => tests.Status(id.ToString(), request))
-        ),
-        new RouteAction<CampaignTestRouteRequest>(
-            CampaignTestRoutes.Reset,
-            (_, request, id, _, _) => Respond(() => tests.Reset(id.ToString(), request))
-        ),
-        new RouteAction<CampaignTestRouteRequest>(
-            CampaignTestRoutes.End,
-            (_, request, id, _, _) => Respond(() => tests.End(id.ToString(), request))
-        ),
-    ];
+        [
+            new RouteAction<CampaignTestRouteRequest>(
+                CampaignTestRoutes.Create,
+                (_, request, id, _, _) => Respond(() => tests.Create(id.ToString(), request))
+            ),
+            new RouteAction<CampaignTestRouteRequest>(
+                CampaignTestRoutes.Status,
+                (_, request, id, _, _) => Respond(() => tests.Status(id.ToString(), request))
+            ),
+            new RouteAction<CampaignTestRouteRequest>(
+                CampaignTestRoutes.Reset,
+                (_, request, id, _, _) => Respond(() => tests.Reset(id.ToString(), request))
+            ),
+            new RouteAction<CampaignTestRouteRequest>(
+                CampaignTestRoutes.End,
+                (_, request, id, _, _) => Respond(() => tests.End(id.ToString(), request))
+            ),
+        ];
 
     private static async ValueTask<string> Respond(Func<Task<CampaignTestResponse>> action)
     {

@@ -32,8 +32,10 @@ internal static class MissionServiceChecks
         foreach (var status in new string?[] { null, "", "Locked", "AvailableForStart", "Fail", "MarkedAsFailed" })
         {
             check(
-                Throws(() => MissionTransaction.Unlock(denied, "denied-" + (status ?? "null"), status),
-                    "Accept the linked quest before deploying this mission."),
+                Throws(
+                    () => MissionTransaction.Unlock(denied, "denied-" + (status ?? "null"), status),
+                    "Accept the linked quest before deploying this mission."
+                ),
                 "Unaccepted quest status cannot unlock a mission: " + (status ?? "null")
             );
         }
@@ -52,19 +54,36 @@ internal static class MissionServiceChecks
         check(restored.Revision == 13 && restored.SeasonId == "season", "MissionStore preserves revision and season identity");
         check(restored.ActiveRun == null && restored.Receipts.Count == 0, "MissionStore initializes absent transient mission state");
 
-        var request = new MissionRequest { Version = 1, CharacterId = "character", SeasonId = "season" };
+        var request = new MissionRequest
+        {
+            Version = 1,
+            CharacterId = "character",
+            SeasonId = "season",
+        };
         MissionTransaction.RequireRequestIdentity(request, "character", "season");
         check(true, "Exact active character and campaign identity is accepted");
         request.CharacterId = "other";
-        check(Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), IdentityError), "Wrong character identity is rejected");
+        check(
+            Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), IdentityError),
+            "Wrong character identity is rejected"
+        );
         request.CharacterId = "character";
         request.Version = 2;
-        check(Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), IdentityError), "Unsupported mission protocol is rejected");
+        check(
+            Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), IdentityError),
+            "Unsupported mission protocol is rejected"
+        );
         request.Version = 1;
         request.SeasonId = "";
-        check(Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), IdentityError), "Missing campaign identity is rejected");
+        check(
+            Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), IdentityError),
+            "Missing campaign identity is rejected"
+        );
         request.SeasonId = "other-season";
-        check(Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), CampaignError), "Wrong campaign identity is rejected");
+        check(
+            Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), CampaignError),
+            "Wrong campaign identity is rejected"
+        );
 
         request.SeasonId = "season";
         request.OperationId = Guid.NewGuid().ToString("N");
@@ -83,11 +102,28 @@ internal static class MissionServiceChecks
         var contentRun = new MissionRun { ContentRevision = 7, ContentHash = "content-hash" };
         MissionTransaction.VerifyContent(contentRun, 7, "content-hash");
         check(true, "Prepared content revision and hash are accepted");
-        check(Throws(() => MissionTransaction.VerifyContent(contentRun, 8, "content-hash"), ContentError), "Changed content revision is rejected");
-        check(Throws(() => MissionTransaction.VerifyContent(contentRun, 7, "other-hash"), ContentError), "Changed content hash is rejected");
+        check(
+            Throws(() => MissionTransaction.VerifyContent(contentRun, 8, "content-hash"), ContentError),
+            "Changed content revision is rejected"
+        );
+        check(
+            Throws(() => MissionTransaction.VerifyContent(contentRun, 7, "other-hash"), ContentError),
+            "Changed content hash is rejected"
+        );
 
-        var active = new MissionRun { RunId = "run", CharacterId = "character", RaidId = "raid", Status = MissionRunStatuses.Active };
-        var receiptState = new MissionProgress { SeasonId = "season", Revision = 9, ActiveRun = active };
+        var active = new MissionRun
+        {
+            RunId = "run",
+            CharacterId = "character",
+            RaidId = "raid",
+            Status = MissionRunStatuses.Active,
+        };
+        var receiptState = new MissionProgress
+        {
+            SeasonId = "season",
+            Revision = 9,
+            ActiveRun = active,
+        };
         MissionTransaction.AddReceipt(receiptState, "operation", "fingerprint", "progress", active, 100);
         check(
             MissionTransaction.TryReplayReceipt(receiptState, "operation", "fingerprint", out var replay)
@@ -96,10 +132,15 @@ internal static class MissionServiceChecks
                 && replay.RunId == "run",
             "Committed mission operation can be replayed after a lost response"
         );
-        check(!MissionTransaction.TryReplayReceipt(receiptState, "missing", "fingerprint", out _), "Unknown operation is not treated as a replay");
         check(
-            Throws(() => MissionTransaction.TryReplayReceipt(receiptState, "operation", "different", out _),
-                "Mission operation identifier was reused for different inputs."),
+            !MissionTransaction.TryReplayReceipt(receiptState, "missing", "fingerprint", out _),
+            "Unknown operation is not treated as a replay"
+        );
+        check(
+            Throws(
+                () => MissionTransaction.TryReplayReceipt(receiptState, "operation", "different", out _),
+                "Mission operation identifier was reused for different inputs."
+            ),
             "Reusing an operation identity with different inputs is rejected"
         );
 
@@ -113,8 +154,10 @@ internal static class MissionServiceChecks
             },
         };
         check(
-            Throws(() => MissionTransaction.TryReplayReceipt(oldRunState, "old-operation", "fingerprint", out _),
-                "This mission operation belongs to an older run. Refresh the mission list."),
+            Throws(
+                () => MissionTransaction.TryReplayReceipt(oldRunState, "old-operation", "fingerprint", out _),
+                "This mission operation belongs to an older run. Refresh the mission list."
+            ),
             "A receipt from a prior retry cannot address the current run"
         );
 
@@ -138,11 +181,12 @@ internal static class MissionServiceChecks
         MissionTransaction.AddReceipt(bounded, "latest", "latest", "progress", bounded.ActiveRun, 4, maxReceipts: 3);
         check(bounded.Receipts.Count == 3, "Receipt history stays within its configured bound");
         check(!bounded.Receipts.ContainsKey("terminal-old"), "Old terminal receipt is evicted before active receipts");
-        check(bounded.Receipts.ContainsKey("active-old") && bounded.Receipts.ContainsKey("active-new"), "Active receipt history is retained when the bound is reached");
         check(
-            MissionTransaction.TryReplayReceipt(bounded, "latest", "latest", out var latest)
-                && latest != null
-                && latest.Timestamp == 4,
+            bounded.Receipts.ContainsKey("active-old") && bounded.Receipts.ContainsKey("active-new"),
+            "Active receipt history is retained when the bound is reached"
+        );
+        check(
+            MissionTransaction.TryReplayReceipt(bounded, "latest", "latest", out var latest) && latest != null && latest.Timestamp == 4,
             "The latest committed receipt is protected from eviction"
         );
 

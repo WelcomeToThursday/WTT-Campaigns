@@ -86,7 +86,10 @@ internal sealed class MissionLoot : IDisposable
                     loot = model.GetComponent<LootItem>();
                     model.transform.SetParent(null, false);
                     SceneManager.MoveGameObjectToScene(model, scene);
-                    model.transform.SetPositionAndRotation(ZoneRuntime.Vector(placement.Position), Quaternion.Euler(ZoneRuntime.Vector(placement.Rotation)));
+                    model.transform.SetPositionAndRotation(
+                        ZoneRuntime.Vector(placement.Position),
+                        Quaternion.Euler(ZoneRuntime.Vector(placement.Rotation))
+                    );
                     model.SetActive(true);
                     // Null means ordinary public loot. An empty allowlist makes
                     // the native IsValidForProfile check reject every player.

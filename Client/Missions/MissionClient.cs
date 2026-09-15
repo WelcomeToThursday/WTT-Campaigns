@@ -14,14 +14,13 @@ internal static class MissionClient
     internal static string SeasonId => Plugin.Current?.SeasonId ?? "";
 
     internal static Task<MissionResponse> ListAsync(CancellationToken cancellationToken = default) =>
-        PostAsync(
-            "/wtt-campaigns/missions/list",
-            new MissionRequest(),
-            cancellationToken
-        );
+        PostAsync("/wtt-campaigns/missions/list", new MissionRequest(), cancellationToken);
 
-    internal static Task<MissionResponse> PrepareAsync(string missionId, long expectedRevision, CancellationToken cancellationToken = default) =>
-        PrepareAsync(missionId, expectedRevision, NewOperationId(), cancellationToken);
+    internal static Task<MissionResponse> PrepareAsync(
+        string missionId,
+        long expectedRevision,
+        CancellationToken cancellationToken = default
+    ) => PrepareAsync(missionId, expectedRevision, NewOperationId(), cancellationToken);
 
     internal static Task<MissionResponse> PrepareAsync(
         string missionId,
@@ -65,17 +64,7 @@ internal static class MissionClient
         string kind,
         long expectedRevision,
         CancellationToken cancellationToken = default
-    ) =>
-        ProgressAsync(
-            missionId,
-            runId,
-            raidId,
-            checkpointId,
-            kind,
-            expectedRevision,
-            NewOperationId(),
-            cancellationToken
-        );
+    ) => ProgressAsync(missionId, runId, raidId, checkpointId, kind, expectedRevision, NewOperationId(), cancellationToken);
 
     internal static Task<MissionResponse> ProgressAsync(
         string missionId,
@@ -108,8 +97,7 @@ internal static class MissionClient
         string raidId,
         long expectedRevision,
         CancellationToken cancellationToken = default
-    ) =>
-        CancelAsync(missionId, runId, raidId, expectedRevision, NewOperationId(), cancellationToken);
+    ) => CancelAsync(missionId, runId, raidId, expectedRevision, NewOperationId(), cancellationToken);
 
     internal static Task<MissionResponse> CancelAsync(
         string missionId,
@@ -134,11 +122,7 @@ internal static class MissionClient
 
     internal static string NewOperationId() => Guid.NewGuid().ToString("N");
 
-    private static async Task<MissionResponse> PostMutationAsync(
-        string route,
-        MissionRequest request,
-        CancellationToken cancellationToken
-    )
+    private static async Task<MissionResponse> PostMutationAsync(string route, MissionRequest request, CancellationToken cancellationToken)
     {
         Exception? last = null;
         for (var attempt = 0; attempt < 2; attempt++)
@@ -149,7 +133,8 @@ internal static class MissionClient
                 // server receipt makes a committed mutation replayable.
                 return await PostAsync(route, request, cancellationToken);
             }
-            catch (Exception exception) when (attempt == 0 && exception is not InvalidOperationException && exception is not OperationCanceledException)
+            catch (Exception exception)
+                when (attempt == 0 && exception is not InvalidOperationException && exception is not OperationCanceledException)
             {
                 last = exception;
                 await UniTask.Delay(150, delayType: DelayType.Realtime, cancellationToken: cancellationToken);
@@ -159,11 +144,7 @@ internal static class MissionClient
         throw last ?? new InvalidOperationException("The mission operation was not acknowledged.");
     }
 
-    private static async Task<MissionResponse> PostAsync(
-        string route,
-        MissionRequest request,
-        CancellationToken cancellationToken
-    )
+    private static async Task<MissionResponse> PostAsync(string route, MissionRequest request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
         request.Version = 1;
@@ -188,5 +169,4 @@ internal static class MissionClient
             throw new InvalidDataException("The mission response belongs to another campaign character.");
         return response;
     }
-
 }

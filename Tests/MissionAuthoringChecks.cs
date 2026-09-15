@@ -129,7 +129,12 @@ internal static class MissionAuthoringChecks
 
         var unrelatedQuest = new NativeQuest { Id = Id(), Conditions = new() };
         unrelatedQuest.Conditions.AvailableForFinish.Add(
-            new NativeCondition { Id = Id(), ConditionType = "InZone", ZoneIds = [ownedZone.Id] }
+            new NativeCondition
+            {
+                Id = Id(),
+                ConditionType = "InZone",
+                ZoneIds = [ownedZone.Id],
+            }
         );
         season.Quests.Add(unrelatedQuest);
         var ordinaryPublication = SeasonValidator.Validate(season);
