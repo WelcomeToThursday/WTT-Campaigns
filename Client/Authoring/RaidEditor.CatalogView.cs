@@ -1,14 +1,23 @@
 using Cysharp.Threading.Tasks;
 using EFT.UI.DragAndDrop;
 using UnityEngine;
-using UnityEngine.UI;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
+using Button = WTT.Campaigns.Client.Authoring.EditorButton;
+using RawImage = WTT.Campaigns.Client.Authoring.EditorImage;
+using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 
 public sealed partial class RaidEditor
 {
+    private string ToolkitSelection =>
+        _sceneTab == "Catalog" ? _catalogSelection : MapPoint?.Id ?? MapDoor?.Id ?? (_picked ? _picked!.GetInstanceID().ToString() : "");
+    private string ToolkitContext =>
+        !SceneWorkspace
+            ? _mode + ":" + _layoutId + ":" + _selected
+            : _sceneTab + ":" + _sceneFilter + ":" + _layoutId + ":" + ToolkitSelection;
+
     private void PresentScene()
     {
         var view = _view!;
@@ -35,13 +44,6 @@ public sealed partial class RaidEditor
             {
                 view.Visible("SceneIcon" + i, false);
                 view.Visible("SceneIconStatus" + i, false);
-                WTT.Campaigns.UI.Controls.UiElements.Stretch(
-                    view.Get<Button>("Row" + i).GetComponentInChildren<Text>(true).rectTransform,
-                    8,
-                    8,
-                    2,
-                    2
-                );
             }
             return;
         }
@@ -109,15 +111,6 @@ public sealed partial class RaidEditor
         image.texture = preview?.Texture;
         image.uvRect = preview?.Uv ?? new Rect(0, 0, 1, 1);
         image.color = image.texture ? Color.white : Color.clear;
-        var texture = image.texture;
-        if (texture)
-        {
-            var ratio = texture!.width * image.uvRect.width / Mathf.Max(1, texture.height * image.uvRect.height);
-            var width = image.name == "ScenePreview" ? 300f : 40f;
-            var height = image.name == "ScenePreview" ? 180f : 40f;
-            image.rectTransform.sizeDelta =
-                ratio > width / height ? new Vector2(width, width / ratio) : new Vector2(height * ratio, height);
-        }
     }
 
     private sealed class ThumbnailJob
@@ -152,8 +145,7 @@ public sealed partial class RaidEditor
             var index = LibraryOffset + i;
             var visible = catalog && index < _rows.Count;
             view.Visible("SceneIcon" + i, visible);
-            var label = view.Get<Button>("Row" + i).GetComponentInChildren<Text>(true);
-            WTT.Campaigns.UI.Controls.UiElements.Stretch(label.rectTransform, visible ? 54 : 8, 8, 2, 2);
+            view.Element("Row" + i).style.paddingLeft = visible ? 54 : 8;
             if (!visible)
             {
                 view.Visible("SceneIconStatus" + i, false);

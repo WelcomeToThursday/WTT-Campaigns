@@ -1,8 +1,10 @@
 using UnityEngine;
-using UnityEngine.UI;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
+using Button = WTT.Campaigns.Client.Authoring.EditorButton;
+using InputField = WTT.Campaigns.Client.Authoring.EditorInput;
+using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -203,6 +205,12 @@ public sealed partial class RaidEditor
         view.Input(
             "MapName",
             text =>
+            {
+                if (SceneWorkspace && ScenePoint != null)
+                {
+                    EditPoint(point => point.Name = text.Trim());
+                    return;
+                }
                 MapEdit(l =>
                 {
                     var point = MapLayoutRules.Points(l).AsValueEnumerable().FirstOrDefault(p => p.Id == _selected);
@@ -213,7 +221,8 @@ public sealed partial class RaidEditor
                         door.Name = text.Trim();
                     else
                         l.Name = text.Trim();
-                })
+                });
+            }
         );
         foreach (var group in new[] { "Position", "Rotation", "Size" })
             for (var i = 0; i < 3; i++)
@@ -226,6 +235,14 @@ public sealed partial class RaidEditor
                         Number(
                             value,
                             number =>
+                            {
+                                if (SceneWorkspace)
+                                {
+                                    if (field == "Size" && number <= 0)
+                                        return;
+                                    EditTransformProperty(field, point => SceneSelectionEdit.SetAxis(point, field, axis, number));
+                                    return;
+                                }
                                 MapEdit(l =>
                                 {
                                     var point = MapLayoutRules.Points(l).AsValueEnumerable().FirstOrDefault(p => p.Id == _selected);
@@ -253,7 +270,8 @@ public sealed partial class RaidEditor
                                             Z = number,
                                         };
                                     }
-                                })
+                                });
+                            }
                         )
                 );
             }
@@ -494,7 +512,7 @@ public sealed partial class RaidEditor
         view.Get<Button>("Layouts").interactable = EditorMode.Ready;
         view.Get<Button>("Routes").interactable = EditorMode.Ready;
 
-        view.Get<Transform>("EditorMapToolbar").gameObject.SetActive(EditorMode.Ready);
+        view.Visible("EditorMapToolbar", EditorMode.Ready);
         if (EditorMode.Ready)
             view.Text("Request", "EDITOR MODE · Gameplay and progression disabled");
         if (EditorMode.Ready && !_walking)
@@ -667,7 +685,7 @@ public sealed partial class RaidEditor
                 _player!.Teleport(destination.Value);
                 _player.Rotation = new Vector2(_walkLayout.Start!.Rotation.Y, _walkLayout.Start.Rotation.X);
             }
-            _view!.Root.SetActive(true);
+            _view!.SetVisible(true);
             _view.Windows.SetWalkthrough(true);
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;

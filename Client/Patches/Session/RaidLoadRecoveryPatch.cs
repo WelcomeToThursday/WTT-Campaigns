@@ -28,6 +28,8 @@ internal sealed class RaidLoadRecoveryPatch : ModulePatch
     private static void Prefix(out LoadState __state)
     {
         __state = new LoadState { CharacterId = Plugin.SessionId, EditorMapLoad = EditorMode.MapLoadActive };
+        if (__state.EditorMapLoad)
+            Plugin.LogInfo("Editor loading: native LocalGameCreate entered");
     }
 
     [PatchPostfix]

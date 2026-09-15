@@ -1,10 +1,11 @@
 using UnityEngine;
-using UnityEngine.UI;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
+using Button = WTT.Campaigns.Client.Authoring.EditorButton;
+using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -190,9 +191,8 @@ public sealed partial class RaidEditor
                         ? _mode == "Routes"
                         : _mode == "Scene" && (name == "MapBarrier" || name == "MapDoor" || _picked)
                 );
-        view.Get<WTT.Campaigns.UI.Controls.EditorDropdown>("ZoneCreateScope").interactable = canEdit && _mode == "Zones";
-        view.Get<WTT.Campaigns.UI.Controls.EditorDropdown>("ZoneScope").interactable =
-            canEdit && _mode == "Zones" && EditorMode.Ready && point is SeasonZone;
+        view.Get<EditorChoice>("ZoneCreateScope").interactable = canEdit && _mode == "Zones";
+        view.Get<EditorChoice>("ZoneScope").interactable = canEdit && _mode == "Zones" && EditorMode.Ready && point is SeasonZone;
         view.Get<Button>("UseObject").interactable =
             canEdit && (point is SeasonZone && Binding != null || _picked && _sceneIndex.Complete && !_sceneIndex.Limited);
         var routeIndex = Layout?.Checkpoints.FindIndex(p => p.Id == _selected) ?? -1;

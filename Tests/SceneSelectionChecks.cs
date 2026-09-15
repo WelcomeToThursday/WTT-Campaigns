@@ -75,6 +75,30 @@ internal static class SceneSelectionChecks
         );
         resized.Target.Path = "changed copy";
         check(selection.Target.Path == "Scene/crate", "Prepared edits never alias selection bindings");
+        var propertyEdit = SceneSelectionEdit.Prepare(selection, p => SceneSelectionEdit.SetAxis(p, "Position", 0, 12))!;
+        check(propertyEdit.Position.X == 12 && selection.Position.X == 3, "Inspector first edit detaches the original scene pose");
+        SceneSelectionEdit.SetAxis(propertyEdit, "Rotation", 1, 90);
+        SceneSelectionEdit.SetAxis(propertyEdit, "Size", 2, 6);
+        check(propertyEdit.Rotation.Y == 90 && propertyEdit.Scale.Z == 6, "Inspector rotates and scales an original Move record");
+        foreach (var invalid in new[] { 0f, -1f, float.NaN, float.PositiveInfinity })
+            check(
+                SceneSelectionEdit.Prepare(selection, p => SceneSelectionEdit.SetAxis(p, "Size", 0, invalid)) == null,
+                "Invalid inspector scale never creates a draft edit"
+            );
+        check(
+            SceneSelectionEdit.Prepare(selection, p => SceneSelectionEdit.SetAxis(p, "Position", 0, float.NaN)) == null,
+            "Inspector rejects non-finite positions"
+        );
+        check(
+            SceneSelectionEdit.Prepare(selection, p => SceneSelectionEdit.SetAxis(p, "Unknown", 0, 5)) == null,
+            "Unknown inspector fields do not alter scene data"
+        );
+        var sphere = new MapVolume { Shape = "Sphere" };
+        SceneSelectionEdit.SetAxis(sphere, "Size", 1, 8);
+        check(
+            sphere.Radius == 4 && sphere.Size.X == 8 && sphere.Size.Y == 8 && sphere.Size.Z == 8,
+            "Inspector sphere diameter updates radius and all dimensions together"
+        );
         check(
             SceneSelectionEdit.Prepare(
                 selection,

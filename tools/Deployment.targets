@@ -36,7 +36,7 @@
             var local = relative.Substring(separator + 1).Replace('\\', '/');
             // Only shipped runtime files are eligible. Never deploy user configuration or saves.
             var runtime = local.StartsWith("WTT-Campaigns.", StringComparison.Ordinal) && (local.EndsWith(".dll", StringComparison.Ordinal) || local == "WTT-Campaigns.Server.deps.json");
-            var allowed = runtime || (component == "client" && (local == "wtt_campaigns_ui.bundle" || local == "wtt_campaigns_raid_editor.bundle" || local == "wtt_campaigns_story_notifications.bundle" || local.StartsWith("StoryMedia/", StringComparison.Ordinal)))
+            var allowed = runtime || (component == "client" && (local == "wtt_campaigns_ui.bundle" || local == "wtt_campaigns_editor_toolkit.bundle" || local == "wtt_campaigns_story_notifications.bundle" || local.StartsWith("StoryMedia/", StringComparison.Ordinal)))
                 || (component == "server" && (local == "Markdig.dll" || local == "Newtonsoft.Json.dll" || local.StartsWith("data/", StringComparison.Ordinal) || local.StartsWith("icons/", StringComparison.Ordinal) || local.StartsWith("hub-images/", StringComparison.Ordinal) || local.StartsWith("wwwroot/", StringComparison.Ordinal)));
             if (!allowed || local.Contains("../")) { Log.LogError("Not a shipped runtime file: " + relative); continue; }
             var item = new Microsoft.Build.Utilities.TaskItem(file);

@@ -31,8 +31,8 @@ internal static class EditorOpenChecks
             .Select(i => (MethodReference)i.Operand)
             .ToArray();
         check(
-            calls.Any(m => m.DeclaringType.Name == "RaidEditorLayout" && m.Name == "Prepare"),
-            "Client and SDK validation use the same prefab upgrade sequence"
+            calls.Any(m => m.DeclaringType.Name == "RaidEditorView" && m.Name == "Build"),
+            "Editor constructs the complete Toolkit control inventory"
         );
         var cleanup = constructor
             .Body.ExceptionHandlers.Where(h => h.HandlerType == Mono.Cecil.Cil.ExceptionHandlerType.Catch)
@@ -41,12 +41,12 @@ internal static class EditorOpenChecks
             .Select(i => (MethodReference)i.Operand)
             .ToArray();
         check(
-            cleanup.Any(m => m.DeclaringType.Name == "AssetBundle" && m.Name == "Unload"),
+            cleanup.Any(m => m.DeclaringType.Name == "EditorToolkitDocument" && m.Name == "Dispose"),
             "Failed construction releases its newly loaded bundle"
         );
         check(
-            cleanup.Any(m => m.Name == "Destroy") && cleanup.Any(m => m.Name == "SetActive"),
-            "Failed construction deactivates and destroys its partial window hierarchy"
+            cleanup.Any(m => m.DeclaringType.Name == "EditorToolkitDocument" && m.Name == "Dispose"),
+            "Failed construction disposes its partial Toolkit document"
         );
         var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
         check(

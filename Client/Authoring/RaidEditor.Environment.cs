@@ -1,5 +1,7 @@
 using System.Globalization;
-using UnityEngine.UI;
+using Button = WTT.Campaigns.Client.Authoring.EditorButton;
+using InputField = WTT.Campaigns.Client.Authoring.EditorInput;
+using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 

@@ -29,6 +29,10 @@ internal static class EditorLoadingChecks
                 && loading[clock - 1].Operand is MethodReference { Name: "get_Now", DeclaringType.Name: "DateTimeExtensions" },
             "Every map load must initialize the native clock before its loading screen opens."
         );
+        var closeHome = loading.FindIndex(i =>
+            i.Operand is MethodReference { Name: "Close" } && i.Previous?.Operand is FieldReference { Name: "_home" }
+        );
+        Require(closeHome >= 0 && closeHome < match, "Toolkit home must close before native map loading starts.");
         var mapReady = loading.FindIndex(match + 1, i => i.OpCode.Name == "stfld" && i.Operand is FieldReference { Name: "_mapReady" });
         Require(
             mapReady > match && loading[mapReady - 1].OpCode.Name == "ldc.i4.1",

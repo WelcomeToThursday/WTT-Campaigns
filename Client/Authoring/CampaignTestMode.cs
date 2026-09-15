@@ -1,12 +1,10 @@
 using EFT.UI;
 using Newtonsoft.Json;
 using SPT.Common.Http;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using WTT.Campaigns.Client.Profiles;
 using WTT.Campaigns.Shared.Authoring;
-using ZLinq;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -26,8 +24,10 @@ internal sealed class CampaignTestMode : MonoBehaviour
     private static string? _resetTestId;
     private static string _status = "";
     private float _nextHeartbeat;
-    private static TextMeshProUGUI? _label;
-    private static DefaultUIButton? _reset,
+    private static EditorToolkitDocument? _menuDocument;
+    private static MenuScreen? _menu;
+    private static Label? _label;
+    private static Button? _reset,
         _return;
     internal static bool Restricted => _session != null;
     internal static bool Active => Restricted && !_ended;
@@ -201,15 +201,21 @@ internal sealed class CampaignTestMode : MonoBehaviour
 
     private async void Update()
     {
-        if (_label)
+        if (_menuDocument != null)
         {
-            _label!.text = _status;
-            _label.gameObject.SetActive(Restricted && !Plugin.InRaid);
+            if (!_menu)
+            {
+                _menuDocument.Dispose();
+                _menuDocument = null;
+            }
+            else
+            {
+                _menuDocument.SetVisible(Restricted && !Plugin.InRaid && _menu!.gameObject.activeInHierarchy);
+                _label!.text = _status;
+                _reset!.SetEnabled(Active && !_busy && !Plugin.InRaid);
+                _return!.SetEnabled(!_busy && !Plugin.InRaid);
+            }
         }
-        if (_reset)
-            _reset!.Interactable = Active && !_busy && !Plugin.InRaid;
-        if (_return)
-            _return!.Interactable = !_busy && !Plugin.InRaid;
         if (!Active || _busy || _heartbeat || Time.realtimeSinceStartup < _nextHeartbeat)
             return;
         _nextHeartbeat = Time.realtimeSinceStartup + 20;
@@ -238,51 +244,35 @@ internal sealed class CampaignTestMode : MonoBehaviour
 
     internal static void AttachMenu(MenuScreen menu)
     {
-        _reset = Button(menu, "CampaignTestReset", "RESET TEST", 225, Reset);
-        _return = Button(menu, "CampaignTestReturn", "RETURN TO EDITOR", 280, Return);
-        _reset.gameObject.SetActive(Restricted);
-        _return.gameObject.SetActive(Restricted);
-        var existing = menu.transform.Find("CampaignTestStatus");
-        if (existing)
-            _label = existing.GetComponent<TextMeshProUGUI>();
-        else
-        {
-            _label = Instantiate(menu._playerButton._headerLabel, menu.transform, false);
-            _label.name = "CampaignTestStatus";
-            _label.enableWordWrapping = true;
-            _label.fontSize = 20;
-            _label.alignment = TextAlignmentOptions.BottomLeft;
-            _label.raycastTarget = false;
-            var rect = _label.rectTransform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0, 0);
-            rect.anchoredPosition = new Vector2(45, 70);
-            rect.sizeDelta = new Vector2(650, 80);
-        }
-        _label!.gameObject.SetActive(Restricted);
-        _label.text = _status;
+        _menuDocument?.Dispose();
+        _menuDocument = null;
+        _menu = menu;
+        if (!Restricted)
+            return;
+        _menuDocument = new EditorToolkitDocument("Campaign Test", 32100);
+        var controls = new VisualElement();
+        controls.style.position = Position.Absolute;
+        controls.style.right = 45;
+        controls.style.top = 225;
+        controls.style.width = 280;
+        _menuDocument.Content.Add(controls);
+        _reset = new Button(Reset) { text = "RESET TEST" };
+        _return = new Button(Return) { text = "RETURN TO EDITOR" };
+        controls.Add(_reset);
+        controls.Add(_return);
+        _label = new Label(_status) { enableRichText = false, pickingMode = PickingMode.Ignore };
+        _label.style.position = Position.Absolute;
+        _label.style.left = 45;
+        _label.style.bottom = 70;
+        _label.style.width = 650;
+        _label.style.whiteSpace = WhiteSpace.Normal;
+        _menuDocument.Content.Add(_label);
+        _menuDocument.SetVisible(true);
     }
 
-    private static DefaultUIButton Button(MenuScreen screen, string name, string caption, float top, UnityEngine.Events.UnityAction click)
+    private void OnDestroy()
     {
-        var button = screen.GetComponentsInChildren<DefaultUIButton>(true).AsValueEnumerable().FirstOrDefault(b => b.name == name);
-        if (button)
-            return button!;
-        var source = screen._playerButton;
-        var parent = source.transform.parent;
-        var list = parent.GetComponent<VerticalLayoutGroup>() != null;
-        button = Instantiate(source, list ? parent : screen.transform, false);
-        button.name = name;
-        button.OnClick.RemoveAllListeners();
-        button.OnClick.AddListener(click);
-        button.SetRawText(caption, list ? (int)source._headerLabel.fontSize : 24);
-        button.SetIcon(null);
-        if (!list)
-        {
-            var rect = (RectTransform)button.transform;
-            rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one;
-            rect.anchoredPosition = new Vector2(-45, -top);
-            rect.sizeDelta = new Vector2(280, 46);
-        }
-        return button;
+        _menuDocument?.Dispose();
+        _menuDocument = null;
     }
 }

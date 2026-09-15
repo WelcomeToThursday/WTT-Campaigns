@@ -69,6 +69,12 @@ if (args.Length == 3 && args[0] == "--unity-toolkit")
     return;
 }
 
+if (args.Length == 3 && args[0] == "--editor-toolkit")
+{
+    WTT.Campaigns.Tests.EditorToolkitChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 3 && args[0] == "--raid-startup-hooks")
 {
     WTT.Campaigns.Tests.RaidStartupHookChecks.Run(args[1], args[2]);

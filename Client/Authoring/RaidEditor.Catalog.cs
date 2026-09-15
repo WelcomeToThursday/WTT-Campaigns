@@ -6,11 +6,12 @@ using Newtonsoft.Json;
 using SPT.Common.Http;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
+using Button = WTT.Campaigns.Client.Authoring.EditorButton;
+using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -491,7 +492,7 @@ public sealed partial class RaidEditor
         }
         if (!_placement || !_camera)
             return true;
-        var overUi = EventSystem.current?.IsPointerOverGameObject() == true;
+        var overUi = EventSystem.current?.IsPointerOverGameObject() == true || _view?.PointerOver == true;
         var hitSurface =
             !overUi && Physics.Raycast(_camera!.ScreenPointToRay(Input.mousePosition), out _, 1000, ~0, QueryTriggerInteraction.Ignore);
         _placement!.SetActive(hitSurface);

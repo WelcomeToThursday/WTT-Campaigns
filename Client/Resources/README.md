@@ -4,6 +4,12 @@ Place the generated `wtt_campaigns_ui.bundle` here, or build it from the compani
 
 Client code can compile without this bundle, but running the seasonal UI and creating a complete release package require it. Perk icons are supplied separately from the local `WTT-Campaigns.Assets` directory and copied into the server build.
 
+## Editor Toolkit
+
+The entire Editor requires `wtt_campaigns_editor_toolkit.bundle` and its local `editor-toolkit-validation.json` build evidence. Rebuild these with **Unity 2022.3.43f1**, matching EFT: copy `tools/unity/CampaignsEditorToolkitBuilder.cs` into the companion CJ-SDK project's Editor folder, then run its `CampaignsEditorToolkitBuilder.Build` method. The builder copies the repository's UXML/USS, includes the recovered Bender font and embeds copies of all three runtime UI Toolkit shaders plus the scene-preview shader. It checks import, bundle dependencies and asset reload before writing the SHA-256 evidence.
+
+These generated files remain ignored like the other recovered game assets. `dotnet msbuild build.proj` validates and installs the bundle with its matching client assembly. See [the Editor guide](../../wiki/editor-toolkit.md) for scope and live acceptance checks.
+
 ## Story media
 
 `wtt_campaigns_story_notifications.bundle` holds the custom chapter notification GameObjects, backgrounds, animations and sounds. Shared status icons live in `wtt_campaigns_ui.bundle`; build and install both together. `story-notification-validation.json` is local build evidence used to verify the matching bundle hashes. Use `tools/recover_story_notifications.py` and `tools/unity/CampaignsStoryNotificationBuilder.cs` to rebuild the paired bundles in the matching CJ-SDK.

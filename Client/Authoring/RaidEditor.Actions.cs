@@ -1,13 +1,16 @@
 using System.Globalization;
 using EFT.Ballistics;
 using UnityEngine;
-using UnityEngine.UI;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.Shared.Story;
 using WTT.Campaigns.UI.Controls;
 using ZLinq;
+using Button = WTT.Campaigns.Client.Authoring.EditorButton;
+using Dropdown = WTT.Campaigns.Client.Authoring.EditorChoice;
+using InputField = WTT.Campaigns.Client.Authoring.EditorInput;
+using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -112,7 +115,7 @@ public sealed partial class RaidEditor
             }
             for (var i = 0; i < 10; i++)
             {
-                var binding = view.Get<Button>("Row" + i).gameObject.AddComponent<WTT.Campaigns.UI.Controls.EditorRowSelection>();
+                var binding = view.Get<Button>("Row" + i);
                 Button("Row" + i, () => SelectRow(binding.Consume()));
             }
             view.BindTreeSelection(SelectRow);
@@ -942,6 +945,7 @@ public sealed partial class RaidEditor
         }
 
         var view = _view;
+        view.SetToolkitContext(ToolkitContext);
         view.Text(
             "Connection",
             (_session.Definition?.Name ?? "Waiting for a connected draft")
@@ -956,7 +960,7 @@ public sealed partial class RaidEditor
         view.Text("Status", _session.Status + (_notice.Length > 0 ? "\n" + _notice : ""));
         view.Conflict(_session);
         // Do not repurpose or hide a row between pointer-down and pointer-up.
-        if (view.Root.GetComponentsInChildren<WTT.Campaigns.UI.Controls.EditorRowSelection>().AsValueEnumerable().Any(row => row.Pressed))
+        if (view.RowPressed)
         {
             _passiveState = "";
             return;
@@ -1085,7 +1089,7 @@ public sealed partial class RaidEditor
         for (var i = 0; i < 10 && !treeMode; i++)
         {
             var index = LibraryOffset + i;
-            view.Get<WTT.Campaigns.UI.Controls.EditorRowSelection>("Row" + i).Identity = index < _rows.Count ? _rows[index].Id : "";
+            view.Get<EditorButton>("Row" + i).Identity = index < _rows.Count ? _rows[index].Id : "";
             view.Caption("Row" + i, index < _rows.Count ? _rows[index].Label : "");
             view.Get<Button>("Row" + i).interactable = index < _rows.Count;
             view.Visible("Row" + i, index < _rows.Count);
@@ -1103,8 +1107,8 @@ public sealed partial class RaidEditor
         if (EditorMode.Ready && Layout != null)
             creationScopes.Add(new Dropdown.OptionData("New: Layout"));
         view.SetDropdown("ZoneCreateScope", creationScopes, _zoneCreateShared ? 0 : creationScopes.Count - 1);
-        view.Get<Button>("EventKind").gameObject.SetActive(_mode == "Bindings" && Binding != null);
-        view.Get<UnityEngine.UI.Text>("Identity").gameObject.SetActive(_mode != "Bindings" || Binding == null);
+        view.Visible("EventKind", _mode == "Bindings" && Binding != null);
+        view.Visible("Identity", _mode != "Bindings" || Binding == null);
         view.Get<Button>("Complete").interactable = _task != null && !_session.Busy && _session.Conflict == null;
         view.Caption("EventKind", "Event kind: " + (Binding?.Kind ?? "Trigger"));
         view.Value("Name", point?.Name ?? (_mode == "Bindings" ? Binding?.Name : "") ?? "");

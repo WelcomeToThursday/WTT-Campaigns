@@ -1,0 +1,74 @@
+.editor-surface {
+    position: absolute;
+    background-color: rgb(19, 20, 20);
+    color: rgb(204, 209, 204);
+    font-size: 16px;
+    overflow: hidden;
+}
+.editor-root .unity-base-field { margin: 3px 0; min-height: 30px; }
+.editor-root .unity-base-text-field__input {
+    background-color: rgb(32, 33, 32);
+    color: rgb(220, 223, 220);
+    border-width: 1px;
+    border-color: rgb(97, 99, 92);
+    padding: 4px;
+}
+.editor-root .unity-base-text-field__input:focus { border-color: rgb(167, 153, 104); }
+.editor-root .unity-button {
+    min-height: 30px;
+    margin: 3px;
+    padding: 4px 8px;
+    color: rgb(204, 209, 204);
+    background-color: rgb(32, 33, 32);
+    border-width: 1px;
+    border-color: rgb(97, 99, 92);
+    border-radius: 2px;
+}
+.editor-root .unity-button:hover { background-color: rgb(57, 59, 54); }
+.editor-root .unity-button:active { background-color: rgb(77, 71, 51); }
+.editor-root .unity-disabled { opacity: 0.45; }
+.editor-group { margin: 0 4px 10px 4px; flex-shrink: 0; }
+.editor-actions { flex-direction: row; flex-wrap: wrap; }
+.editor-actions .unity-button { flex-grow: 1; }
+.editor-label { white-space: normal; margin: 3px 0; flex-shrink: 0; }
+.editor-row { flex-direction: row; align-items: center; padding: 3px 6px; height: 52px; }
+.editor-row .editor-label { flex-grow: 1; }
+.editor-row .unity-image { width: 40px; height: 40px; margin-right: 8px; }
+.editor-list { flex-grow: 1; }
+.editor-list .unity-collection-view__item--selected { background-color: rgb(77, 71, 51); }
+.editor-preview { height: 180px; flex-shrink: 0; }
+
+.editor-root { color: rgb(204, 209, 204); font-size: 15px; }
+.editor-window { padding: 5px 8px 18px 8px; margin: 0; border-width: 1px; border-color: rgb(97, 99, 92); }
+.editor-window-title { flex-direction: row; align-items: center; height: 36px; flex-shrink: 0; background-color: rgb(32, 33, 32); margin-bottom: 6px; }
+.editor-window-title .unity-label { flex-grow: 1; padding-left: 6px; }
+.editor-window-title .unity-button { width: 30px; min-height: 26px; padding: 0; }
+.editor-resize { position: absolute; right: 0; bottom: 0; width: 20px; height: 20px; align-items: flex-end; }
+.editor-toolbar { position: absolute; left: 0; right: 0; height: 38px; background-color: rgb(19, 20, 20); align-items: center; flex-wrap: nowrap; padding: 0 8px; }
+.editor-toolbar .unity-button { flex-grow: 0; }
+.editor-toolbar .editor-label { margin: 0 8px; white-space: nowrap; }
+.editor-root .editor-icon-button { width: 34px; height: 30px; flex-grow: 0; flex-shrink: 0; padding: 2px; align-items: center; justify-content: center; }
+.editor-grid { flex-wrap: wrap; flex-shrink: 0; }
+.editor-grid .unity-button { flex-grow: 0; }
+.editor-axes { flex-wrap: nowrap; }
+.editor-axes .unity-base-field { width: 30%; flex-grow: 1; min-width: 0; }
+.editor-axes .unity-base-field__label { min-width: 12px; width: 12px; }
+.editor-root .unity-base-field__label { min-width: 100px; width: 40%; white-space: normal; }
+.editor-root .unity-base-text-field__input { min-width: 0; }
+.editor-axes .unity-base-field__label { min-width: 12px; width: 12px; }
+.editor-root .editor-selected, .editor-root .unity-collection-view__item--selected { background-color: rgb(77, 71, 51); border-color: rgb(167, 153, 104); }
+.editor-menu { position: absolute; top: 40px; right: 12px; width: 280px; background-color: rgb(19, 20, 20); padding: 8px; border-width: 1px; border-color: rgb(97, 99, 92); }
+.editor-modal-shield, .editor-popup-shield { position: absolute; left: 0; right: 0; top: 0; bottom: 0; }
+.editor-modal-shield { background-color: rgba(0, 0, 0, .7); align-items: center; justify-content: center; }
+.editor-modal { width: 650px; max-width: 95%; max-height: 95%; background-color: rgb(19, 20, 20); padding: 16px; border-width: 1px; border-color: rgb(167, 153, 104); }
+.editor-choice-menu { position: absolute; background-color: rgb(19, 20, 20); border-width: 1px; border-color: rgb(167, 153, 104); padding: 4px; }
+.editor-tooltip { position: absolute; max-width: 360px; background-color: rgb(19, 20, 20); color: rgb(220, 223, 220); white-space: normal; padding: 8px; border-width: 1px; border-color: rgb(97, 99, 92); }
+.editor-root .editor-browser-row { min-height: 50px; flex-shrink: 0; white-space: normal; -unity-text-align: middle-left; }
+.editor-browser-icon { position: absolute; left: 4px; top: 4px; width: 40px; height: 40px; }
+.editor-browser-status { position: absolute; left: 4px; bottom: 2px; font-size: 10px; }
+.editor-tree-row { flex-direction: row; align-items: center; height: 30px; }
+.editor-tree-row .unity-label { flex-grow: 1; overflow: hidden; }
+.editor-root .editor-tree-row .unity-button { min-height: 24px; height: 24px; padding: 0; margin: 0 4px 0 0; }
+.editor-home-stage { position: absolute; width: 1280px; height: 720px; }
+.editor-home-panel { background-color: rgba(19, 20, 20, .96); border-width: 1px; border-color: rgb(97, 99, 92); }
+.editor-modal .unity-list-view .unity-label { padding: 8px; }

@@ -1,203 +1,177 @@
 using UnityEngine;
-using UnityEngine.UI;
-using WTT.Campaigns.Client.UI;
+using UnityEngine.UIElements;
 using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
 namespace WTT.Campaigns.Client.Authoring;
 
-internal sealed class RaidEditorView : IDisposable
+internal sealed partial class RaidEditorView : IDisposable
 {
-    internal readonly GameObject Root;
-    internal readonly RaidEditorWindows Windows;
-    private readonly Dictionary<string, Transform> _controls;
-    private readonly InputField[] _inputs;
-    private readonly EditorDropdown[] _dropdowns;
-    private readonly AssetBundle _bundle;
-    private static AssetBundle? _sharedBundle;
-    private static int _bundleUsers;
+    internal readonly EditorToolkitDocument Document;
+    internal readonly EditorToolkitWindows Windows;
+    internal GameObject Root => Document.Host;
+    private readonly Dictionary<string, EditorControl> _controls = new(StringComparer.Ordinal);
+    private readonly List<EditorInput> _inputs = new();
+    private readonly List<EditorButton> _rows = new();
     private bool _disposed;
-    private EditorTreeView? _libraryTree;
-    private RouteOverlay? _routeOverlay;
+    private string _context = "";
+    private VisualElement? _choicePopup;
+    private RouteOverlay _routeOverlay = null!;
     internal bool Valid => !_disposed && Root;
-    internal Shader PreviewShader =>
-        _bundle.LoadAsset<Shader>("assets/mods/wtt-campaigns.assets/raideditor/campaignscenepreview.shader")
-        ?? throw new InvalidOperationException("Install the matching scene preview shader bundle.");
+    internal bool PointerOver => Document.PointerOver;
+    internal bool Typing => Document.Typing || Windows.Interacting || _choicePopup != null;
+    internal bool RowPressed
+    {
+        get
+        {
+            foreach (var row in _rows)
+                if (row.Pressed)
+                    return true;
+            return false;
+        }
+    }
+    internal Shader PreviewShader => Document.PreviewShader;
+
+    internal VisualElement Element(string name) => _controls[name].Element;
+
+    internal bool IsVisible(string name) => _controls[name].Visible;
+
+    internal T Get<T>(string name)
+        where T : EditorControl => _controls[name] as T ?? throw new InvalidOperationException("Wrong Editor control type: " + name);
 
     internal RaidEditorView()
     {
-        var borrowed = _sharedBundle;
-        _bundle = _sharedBundle
-            ? _sharedBundle!
-            : AssetBundle.LoadFromFile(Path.Combine(Plugin.Folder, "wtt_campaigns_raid_editor.bundle"))
-                ?? throw new InvalidOperationException("Install the CJ-SDK raid editor UI bundle.");
+        Document = new EditorToolkitDocument("Campaign Editor", 32100);
         try
         {
-            var prefab =
-                _bundle.LoadAsset<GameObject>("assets/mods/wtt-campaigns.assets/raideditor/seasonalraideditor.prefab")
-                ?? throw new InvalidOperationException("The raid editor prefab is missing.");
-            Root = UnityEngine.Object.Instantiate(prefab);
-            WTT.Campaigns.UI.Screens.RaidEditorLayout.Prepare(Root);
-            RaidEditorAiView.Prepare(Root);
-            _controls = Root.GetComponentsInChildren<Transform>(true)
-                .AsValueEnumerable()
-                .GroupBy(t => t.name)
-                .ToDictionary(g => g.Key, g => g.AsValueEnumerable().First());
-            _libraryTree = new EditorTreeView(_controls["LibraryScroll"].GetComponent<ScrollRect>());
-            var ui = new UiElements(Root.GetComponentInChildren<Text>().font, sound => SeasonUi.Instance.PlayInterfaceSound(sound));
-            foreach (var button in Root.GetComponentsInChildren<Button>(true))
-            {
-                ui.Feedback(button);
-            }
-
-            Windows = Root.AddComponent<RaidEditorWindows>();
-            Windows.Initialize();
-            _libraryTree!.BindTooltips(Windows.ShowTooltip, Windows.HideTooltip);
+            Build();
+            Windows = new EditorToolkitWindows(this);
             EditorLayoutPreferences.Attach(Windows);
-            _inputs = Root.GetComponentsInChildren<InputField>(true);
-            _dropdowns = Root.GetComponentsInChildren<EditorDropdown>(true);
-
-            Root.SetActive(false);
+            Document.Tick = Windows.Tick;
+            Document.Escape = () =>
+            {
+                if (DismissDropdowns() || Windows.DismissMenus())
+                    Document.EscapeFrame = Time.frameCount;
+            };
         }
         catch
         {
-            if (Root)
-            {
-                Root!.SetActive(false);
-                UnityEngine.Object.Destroy(Root);
-            }
-            // A failed constructor never registered a shared-bundle user.
-            if (!borrowed)
-                _bundle.Unload(true);
+            Document.Dispose();
             throw;
         }
-        _sharedBundle = _bundle;
-        _bundleUsers++;
     }
 
-    internal T Get<T>(string name)
-        where T : Component
+    internal void SetVisible(bool visible)
     {
-        return _controls[name].GetComponent<T>();
+        if (!visible)
+        {
+            DismissDropdowns();
+            Windows.CancelInteraction();
+        }
+        Document.SetVisible(visible);
     }
 
-    internal void Visible(string name, bool visible)
-    {
-        var go = _controls[name].gameObject;
-        if (go.activeSelf != visible)
-            go.SetActive(visible);
-    }
+    internal void ReleaseFocus() => Document.ReleaseFocus();
 
-    internal void Text(string name, string value)
-    {
-        var label = Get<Text>(name);
-        if (label.text != value)
-            label.text = value;
-    }
+    internal void Visible(string name, bool visible) => _controls[name].Visible = visible;
+
+    internal void Text(string name, string value) => Get<EditorLabel>(name).text = value;
 
     internal void Caption(string name, string value)
     {
-        var label = Get<Button>(name).GetComponentInChildren<Text>(true);
-        if (label.text != value)
-            label.text = value;
+        var button = Get<EditorButton>(name);
+        button.Element.tooltip = value;
+        if (!button.Element.ClassListContains("editor-icon-button"))
+            button.text = value;
     }
 
-    internal void Highlight(string name, bool selected)
+    internal void Highlight(string name, bool selected) => Element(name).EnableInClassList("editor-selected", selected);
+
+    internal void Button(string name, Action action) => Get<EditorButton>(name).onClick.AddListener(() => action());
+
+    internal void Input(string name, Action<string> action) => Get<EditorInput>(name).onEndEdit.AddListener(value => action(value));
+
+    internal void Dropdown(string name, Action<int> action) => Get<EditorChoice>(name).onValueChanged.AddListener(value => action(value));
+
+    internal void Value(string name, string value)
     {
-        var graphic = Get<Button>(name).targetGraphic;
-        var color = selected ? new Color(.36f, .33f, .23f) : new Color(.18f, .18f, .15f);
-        if (graphic.color != color)
-            graphic.color = color;
+        var input = Get<EditorInput>(name);
+        if (!input.isFocused && input.text != value)
+            input.SetTextWithoutNotify(value);
     }
 
-    internal void Button(string name, Action action)
+    internal void SetDropdown(string name, List<EditorChoice.OptionData> options, int value)
     {
-        Get<Button>(name).onClick.AddListener(() => action());
-    }
-
-    internal void Input(string name, Action<string> action)
-    {
-        Get<InputField>(name).onEndEdit.AddListener(value => action(value));
-    }
-
-    internal void Dropdown(string name, Action<int> action)
-    {
-        Get<EditorDropdown>(name).onValueChanged.AddListener(value => action(value));
-    }
-
-    internal void BindTreeSelection(Action<string> action) => _libraryTree?.BindSelection(action);
-
-    internal void RefreshTree(
-        string contextId,
-        long revision,
-        string search,
-        string selection,
-        Func<ISet<string>, EditorTreeModel> build
-    ) => _libraryTree?.Refresh(contextId, revision, search, selection, build);
-
-    internal void HideTree() => _libraryTree?.SetActive(false);
-
-    internal int TreeRecordCount => _libraryTree?.RecordCount ?? 0;
-    internal int TreeVisibleCount => _libraryTree?.VisibleCount ?? 0;
-
-    internal void SetDropdown(string name, List<Dropdown.OptionData> options, int value)
-    {
-        var dropdown = Get<EditorDropdown>(name);
-        dropdown.options = options;
-        dropdown.SetValueWithoutNotify(Mathf.Clamp(value, 0, Math.Max(0, options.Count - 1)));
-        dropdown.RefreshShownValue();
+        var choice = Get<EditorChoice>(name);
+        choice.options = options;
+        choice.SetValueWithoutNotify(Mathf.Clamp(value, 0, Math.Max(0, options.Count - 1)));
     }
 
     internal bool DismissDropdowns()
     {
-        var dismissed = false;
-        foreach (var dropdown in _dropdowns)
-        {
-            if (!dropdown || !dropdown.IsOpen)
-                continue;
-            dropdown.Dismiss();
-            dismissed = true;
-        }
-        return dismissed;
-    }
-
-    internal void Value(string name, string value)
-    {
-        var field = Get<InputField>(name);
-        if (!field.isFocused && field.text != value)
-        {
-            field.SetTextWithoutNotify(value);
-        }
-    }
-
-    internal bool Typing
-    {
-        get
-        {
-            if (!Valid)
-                return false;
-            if (Windows.Interacting)
-                return true;
-            foreach (var dropdown in _dropdowns)
-                if (dropdown && dropdown.gameObject.activeInHierarchy && dropdown.IsOpen)
-                    return true;
-            foreach (var input in _inputs)
-                if (input && input.gameObject.activeInHierarchy && input.isFocused)
-                    return true;
+        if (_choicePopup == null)
             return false;
+        _choicePopup.RemoveFromHierarchy();
+        _choicePopup = null;
+        return true;
+    }
+
+    private void OpenChoice(EditorChoice choice)
+    {
+        if (!choice.interactable)
+            return;
+        DismissDropdowns();
+        var shield = new VisualElement();
+        shield.AddToClassList("editor-popup-shield");
+        _choicePopup = shield;
+        Document.Content.Add(shield);
+        shield.RegisterCallback<PointerDownEvent>(evt =>
+        {
+            if (evt.target == shield)
+                DismissDropdowns();
+        });
+        var list = new ScrollView();
+        list.AddToClassList("editor-choice-menu");
+        var rect = choice.Element.worldBound;
+        list.style.left = Mathf.Clamp(rect.x, 8, Document.Width - 308);
+        list.style.top = Mathf.Clamp(rect.yMax, 8, Document.Height - 248);
+        list.style.width = Mathf.Max(250, Mathf.Min(rect.width, Document.Width - 16));
+        list.style.maxHeight = 240;
+        shield.Add(list);
+        for (var i = 0; i < choice.options.Count; i++)
+        {
+            var index = i;
+            var button = new Button(() =>
+            {
+                DismissDropdowns();
+                choice.SetValueWithoutNotify(index);
+                choice.onValueChanged.Invoke(index);
+            })
+            {
+                text = choice.options[i].text,
+            };
+            button.EnableInClassList("editor-selected", i == choice.value);
+            list.Add(button);
         }
+    }
+
+    internal void SetToolkitContext(string context)
+    {
+        if (_context == context)
+            return;
+        foreach (var input in _inputs)
+            input.CancelEdit();
+        DismissDropdowns();
+        _context = context;
     }
 
     internal void Conflict(RaidEditorSession session)
     {
         var conflict = session.Conflict;
-        _controls["ConflictShield"].gameObject.SetActive(conflict != null);
-        Root.GetComponent<RaidEditorWindows>().KeepModalOnTop();
+        Visible("ConflictShield", conflict != null);
+        Windows.KeepModalOnTop();
         if (conflict == null)
-        {
             return;
-        }
-
         Text("ConflictPath", conflict.Conflicts.AsValueEnumerable().Select(c => c.Path).JoinToString("\n"));
         Value("LocalConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Local).JoinToString("\n\n"));
         Value("RemoteConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Remote).JoinToString("\n\n"));
@@ -210,43 +184,21 @@ internal sealed class RaidEditorView : IDisposable
             HideRoute();
             return;
         }
-        if (!_routeOverlay)
-        {
-            var overlay = new GameObject("Route overlay", typeof(RectTransform), typeof(CanvasRenderer), typeof(RouteOverlay));
-            overlay.transform.SetParent(_controls["Workspace"], false);
-            overlay.transform.SetAsFirstSibling();
-            var rect = (RectTransform)overlay.transform;
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = rect.offsetMax = Vector2.zero;
-            _routeOverlay = overlay.GetComponent<RouteOverlay>();
-            _routeOverlay.Initialize(Root.GetComponentInChildren<Text>(true).font);
-        }
-        _routeOverlay!.gameObject.SetActive(true);
+        _routeOverlay.style.display = DisplayStyle.Flex;
         _routeOverlay.Refresh(layout, camera!, selected, layoutRevision);
     }
 
-    internal void HideRoute()
-    {
-        if (_routeOverlay)
-            _routeOverlay!.gameObject.SetActive(false);
-    }
+    internal void HideRoute() => _routeOverlay.style.display = DisplayStyle.None;
 
     public void Dispose()
     {
         if (_disposed)
             return;
         _disposed = true;
-        _libraryTree?.Dispose();
-        if (Root)
-        {
-            EditorLayoutPreferences.Save(Windows);
-            UnityEngine.Object.Destroy(Root);
-        }
-        if (--_bundleUsers == 0 && _bundle)
-        {
-            _bundle.Unload(false);
-            _sharedBundle = null;
-        }
+        Windows.CancelInteraction();
+        foreach (var input in _inputs)
+            input.CancelEdit();
+        EditorLayoutPreferences.Save(Windows);
+        Document.Dispose();
     }
 }

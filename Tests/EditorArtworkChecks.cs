@@ -10,8 +10,8 @@ internal static class EditorArtworkChecks
     {
         using var assembly = AssemblyDefinition.ReadAssembly(path);
         var theme =
-            assembly.MainModule.GetType("WTT.Campaigns.UI.Controls.EditorTarkovTheme")
-            ?? throw new InvalidOperationException("EditorTarkovTheme is missing from the UI assembly.");
+            assembly.MainModule.GetType("WTT.Campaigns.UI.Controls.EditorToolkitIcons")
+            ?? throw new InvalidOperationException("EditorToolkitIcons is missing from the UI assembly.");
         var mappings = ReadIconMappings(theme);
         var literalLoads = ReadLiteralLoads(assembly);
         var names = new HashSet<string>(StringComparer.Ordinal);
@@ -59,7 +59,7 @@ internal static class EditorArtworkChecks
     {
         var initializer =
             theme.Methods.SingleOrDefault(method => method.Name == ".cctor")
-            ?? throw new InvalidOperationException("EditorTarkovTheme has no static initializer.");
+            ?? throw new InvalidOperationException("EditorToolkitIcons has no static initializer.");
         var instructions = initializer.Body.Instructions;
         var mappings = new List<(string Key, string Value)>();
         for (var index = 2; index < instructions.Count; index++)
@@ -76,7 +76,7 @@ internal static class EditorArtworkChecks
         }
 
         if (mappings.Count == 0)
-            throw new InvalidOperationException("EditorTarkovTheme icon mappings were not found in its static initializer.");
+            throw new InvalidOperationException("EditorToolkitIcons icon mappings were not found in its static initializer.");
         return mappings;
     }
 

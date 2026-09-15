@@ -8,7 +8,7 @@ internal static class EditorLayoutPreferences
 {
     private static ConfigEntry<string>? _layout;
 
-    internal static void Attach(RaidEditorWindows windows)
+    internal static void Attach(EditorToolkitWindows windows)
     {
         _layout ??= Plugin.Instance.Config.Bind(
             "Campaign editor",
@@ -28,9 +28,9 @@ internal static class EditorLayoutPreferences
         windows.LayoutChanged = () => Save(windows);
     }
 
-    internal static void Save(RaidEditorWindows windows)
+    internal static void Save(EditorToolkitWindows windows)
     {
-        if (_layout == null || !windows)
+        if (_layout == null)
             return;
         var value = JsonConvert.SerializeObject(windows.CaptureLayout());
         if (_layout.Value == value)

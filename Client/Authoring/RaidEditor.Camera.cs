@@ -13,8 +13,7 @@ public sealed partial class RaidEditor
         void Set(float value)
         {
             _cameraSpeed.Value = Mathf.Clamp(value, .25f, 96f);
-            view.Get<UnityEngine.UI.InputField>("CameraSpeed")
-                .SetTextWithoutNotify(CameraSpeed.ToString("0.##", CultureInfo.InvariantCulture));
+            view.Get<EditorInput>("CameraSpeed").SetTextWithoutNotify(CameraSpeed.ToString("0.##", CultureInfo.InvariantCulture));
             Refresh(false);
         }
         view.Button("CameraSlower", () => Set(CameraSpeed / 2));
@@ -34,8 +33,7 @@ public sealed partial class RaidEditor
                 else
                 {
                     _notice = "Camera speed must be 0.25–96 metres per second.";
-                    view.Get<UnityEngine.UI.InputField>("CameraSpeed")
-                        .SetTextWithoutNotify(CameraSpeed.ToString("0.##", CultureInfo.InvariantCulture));
+                    view.Get<EditorInput>("CameraSpeed").SetTextWithoutNotify(CameraSpeed.ToString("0.##", CultureInfo.InvariantCulture));
                     Refresh(false);
                 }
             }

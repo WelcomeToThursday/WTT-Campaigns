@@ -1,24 +1,23 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
+using UnityEngine.UIElements;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 
 namespace WTT.Campaigns.Client.Authoring;
 
-// One reusable canvas mesh; labels are pooled children and never receive pointer events.
-internal sealed class RouteOverlay : MaskableGraphic
+// Toolkit vector overlay; labels and marker batches are pooled and ignore pointer events.
+internal sealed class RouteOverlay : VisualElement
 {
     private readonly List<(SpatialCapture Point, RouteRole Role, int Number)> _points = new();
     private readonly List<(SpatialCapture Point, RouteRole Role, int Number, string Caption, string Selection)> _aiPoints = new();
     private readonly List<(SpatialCapture From, SpatialCapture To, Color Color)> _aiSegments = new();
     private readonly List<(Vector2 A, Vector2 B, Color Color)> _segments = new();
     private readonly List<(Vector2 Position, RouteRole Role, bool Selected, Color Color)> _markers = new();
-    private readonly List<Text> _labels = new();
-    private readonly List<RouteOverlayBatch> _batches = new();
+    private readonly List<Label> _labels = new();
+    private readonly List<VisualElement> _batches = new();
     private const int BatchSize = 400;
-    private Font _font = null!;
     private static readonly Color Dark = new(.025f, .03f, .035f, .95f);
     private readonly Dictionary<string, string> _patrolCaptions = new(StringComparer.Ordinal);
     private MapLayout? _captionLayout;
@@ -26,11 +25,12 @@ internal sealed class RouteOverlay : MaskableGraphic
     private MapLayout? _aiDescriptorLayout;
     private long _aiDescriptorRevision = long.MinValue;
 
-    internal void Initialize(Font font)
+    internal RouteOverlay()
     {
-        _font = font;
-        raycastTarget = false;
-        maskable = false;
+        pickingMode = PickingMode.Ignore;
+        style.position = Position.Absolute;
+        style.left = style.right = style.top = style.bottom = 0;
+        generateVisualContent += context => Populate(context, -1);
     }
 
     internal static Color RoleColor(RouteRole role)
@@ -83,31 +83,26 @@ internal sealed class RouteOverlay : MaskableGraphic
         foreach (var point in _aiPoints)
             AddMarker(point.Point, point.Role, point.Selection == selected, point.Caption, camera, near, ref labelIndex);
         for (var i = labelIndex; i < _labels.Count; i++)
-            _labels[i].gameObject.SetActive(false);
+            _labels[i].style.display = DisplayStyle.None;
         var extra = (_markers.Count + BatchSize - 1) / BatchSize;
         for (var i = 0; i < extra; i++)
         {
             if (i == _batches.Count)
             {
-                var root = new GameObject("Route mesh batch", typeof(RectTransform), typeof(CanvasRenderer), typeof(RouteOverlayBatch));
-                root.transform.SetParent(transform, false);
-                root.transform.SetAsFirstSibling();
-                var rect = (RectTransform)root.transform;
-                rect.anchorMin = Vector2.zero;
-                rect.anchorMax = Vector2.one;
-                rect.offsetMin = rect.offsetMax = Vector2.zero;
-                var batch = root.GetComponent<RouteOverlayBatch>();
-                batch.Owner = this;
-                batch.Index = i;
-                batch.raycastTarget = false;
+                var index = i;
+                var batch = new VisualElement { pickingMode = PickingMode.Ignore };
+                batch.style.position = Position.Absolute;
+                batch.style.left = batch.style.right = batch.style.top = batch.style.bottom = 0;
+                batch.generateVisualContent += context => Populate(context, index);
+                Insert(0, batch);
                 _batches.Add(batch);
             }
-            _batches[i].gameObject.SetActive(true);
-            _batches[i].SetVerticesDirty();
+            _batches[i].style.display = DisplayStyle.Flex;
+            _batches[i].MarkDirtyRepaint();
         }
         for (var i = Math.Max(0, extra); i < _batches.Count; i++)
-            _batches[i].gameObject.SetActive(false);
-        SetVerticesDirty();
+            _batches[i].style.display = DisplayStyle.None;
+        MarkDirtyRepaint();
     }
 
     private void RefreshAiDescriptors(MapLayout layout, long layoutRevision)
@@ -178,14 +173,10 @@ internal sealed class RouteOverlay : MaskableGraphic
         var label = Label(labelIndex++);
         if (label.text != caption)
             label.text = caption;
-        label.color = RoleColor(role);
-        var rect = rectTransform.rect;
-        // Keep captions inside the viewport, including markers at its right edge.
-        label.rectTransform.anchoredPosition = new Vector2(
-            Mathf.Clamp(local.x + 17, rect.xMin + 4, Mathf.Max(rect.xMin + 4, rect.xMax - 144)),
-            Mathf.Clamp(local.y, rect.yMin + 12, Mathf.Max(rect.yMin + 12, rect.yMax - 12))
-        );
-        label.gameObject.SetActive(true);
+        label.style.color = RoleColor(role);
+        label.style.left = Mathf.Clamp(local.x + 17, 4, Mathf.Max(4, contentRect.width - 144));
+        label.style.top = Mathf.Clamp(local.y - 12, 4, Mathf.Max(4, contentRect.height - 24));
+        label.style.display = DisplayStyle.Flex;
     }
 
     private void AddSegment(SpatialCapture from, SpatialCapture to, Camera camera, float near, Color color)
@@ -235,47 +226,37 @@ internal sealed class RouteOverlay : MaskableGraphic
         }
     }
 
-    private bool Local(Vector2 screen, out Vector2 local) =>
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screen, null, out local);
+    private bool Local(Vector2 screen, out Vector2 local)
+    {
+        local = panel == null ? Vector2.zero : RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, Screen.height - screen.y));
+        return panel != null;
+    }
 
-    private Text Label(int index)
+    private Label Label(int index)
     {
         if (index == _labels.Count)
         {
-            var root = new GameObject("Route waypoint label", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text), typeof(Outline));
-            root.transform.SetParent(transform, false);
-            var label = root.GetComponent<Text>();
-            label.font = _font;
-            label.fontSize = 14;
-            label.fontStyle = FontStyle.Bold;
-            label.alignment = TextAnchor.MiddleLeft;
-            label.horizontalOverflow = HorizontalWrapMode.Overflow;
-            label.verticalOverflow = VerticalWrapMode.Overflow;
-            label.supportRichText = false;
-            label.raycastTarget = false;
-            label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(.5f, .5f);
-            label.rectTransform.pivot = new Vector2(0, .5f);
-            label.rectTransform.sizeDelta = new Vector2(140, 24);
-            var outline = root.GetComponent<Outline>();
-            outline.effectColor = Color.black;
-            outline.effectDistance = new Vector2(1, -1);
+            var label = new Label { pickingMode = PickingMode.Ignore, enableRichText = false };
+            label.style.position = Position.Absolute;
+            label.style.fontSize = 14;
+            label.style.unityFontStyleAndWeight = FontStyle.Bold;
+            label.style.backgroundColor = Dark;
+            label.style.paddingLeft = label.style.paddingRight = 4;
+            label.style.maxWidth = 240;
+            label.style.overflow = Overflow.Hidden;
+            Add(label);
             _labels.Add(label);
         }
         return _labels[index];
     }
 
-    // The parent draws all connections; its children draw only markers, so even
-    // connections crossing a batch boundary remain beneath every waypoint.
-    protected override void OnPopulateMesh(VertexHelper mesh) => Populate(mesh, -1);
-
-    internal void Populate(VertexHelper mesh, int batch)
+    internal void Populate(MeshGenerationContext context, int batch)
     {
-        mesh.Clear();
-        var pixel = 1 / Mathf.Max(.001f, canvas ? canvas.scaleFactor : 1);
+        var mesh = context.painter2D;
+        var pixel = 1 / Mathf.Max(1, Screen.height / 1080f);
         if (batch < 0)
         {
-            // A valid layout has at most 2,000 points: both connection passes
-            // together stay below 16,000 vertices in this parent mesh.
+            // Draw connections behind the separately pooled marker batches.
             foreach (var segment in _segments)
                 Stroke(mesh, segment.A, segment.B, 8 * pixel, Dark);
             foreach (var segment in _segments)
@@ -293,9 +274,9 @@ internal sealed class RouteOverlay : MaskableGraphic
         }
     }
 
-    private static void Glyph(VertexHelper mesh, Vector2 p, RouteRole role, float width, Color color)
+    private static void Glyph(Painter2D mesh, Vector2 p, RouteRole role, float width, Color color)
     {
-        void Edge(float ax, float ay, float bx, float by) => Stroke(mesh, p + new Vector2(ax, ay), p + new Vector2(bx, by), width, color);
+        void Edge(float ax, float ay, float bx, float by) => Stroke(mesh, p + new Vector2(ax, -ay), p + new Vector2(bx, -by), width, color);
         if (role == RouteRole.Start)
         {
             Edge(-7, -11, -7, 11);
@@ -318,33 +299,15 @@ internal sealed class RouteOverlay : MaskableGraphic
         }
     }
 
-    private static void Stroke(VertexHelper mesh, Vector2 a, Vector2 b, float width, Color color)
+    private static void Stroke(Painter2D painter, Vector2 a, Vector2 b, float width, Color color)
     {
-        var delta = b - a;
-        if (delta.sqrMagnitude < .001f)
+        if ((b - a).sqrMagnitude < .001f)
             return;
-        var normal = new Vector2(-delta.y, delta.x).normalized * (width * .5f);
-        var index = mesh.currentVertCount;
-        mesh.AddVert(a - normal, color, Vector2.zero);
-        mesh.AddVert(a + normal, color, Vector2.zero);
-        mesh.AddVert(b + normal, color, Vector2.zero);
-        mesh.AddVert(b - normal, color, Vector2.zero);
-        mesh.AddTriangle(index, index + 1, index + 2);
-        mesh.AddTriangle(index, index + 2, index + 3);
-    }
-}
-
-// Keep each mesh below Unity UI's 65k vertex limit even for the largest valid layout.
-internal sealed class RouteOverlayBatch : MaskableGraphic
-{
-    internal RouteOverlay Owner = null!;
-    internal int Index;
-
-    protected override void OnPopulateMesh(VertexHelper mesh)
-    {
-        if (Owner)
-            Owner.Populate(mesh, Index);
-        else
-            mesh.Clear();
+        painter.lineWidth = width;
+        painter.strokeColor = color;
+        painter.BeginPath();
+        painter.MoveTo(a);
+        painter.LineTo(b);
+        painter.Stroke();
     }
 }

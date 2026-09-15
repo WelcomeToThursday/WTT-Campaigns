@@ -37,6 +37,7 @@
     <Reference Include="UnityEngine.DirectorModule" HintPath="$(ManagedDir)UnityEngine.DirectorModule.dll" Private="false" />
     <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedDir)UnityEngine.CoreModule.dll" Private="false" />
     <Reference Include="UnityEngine.UI" HintPath="$(ManagedDir)UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIElementsModule" HintPath="$(ManagedDir)UnityEngine.UIElementsModule.dll" Private="false" />
     <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedDir)UnityEngine.UIModule.dll" Private="false" />
     <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedDir)UnityEngine.InputLegacyModule.dll" Private="false" />
     <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedDir)UnityEngine.TextRenderingModule.dll" Private="false" />
@@ -54,11 +55,15 @@
     <Reference Include="SAIN" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\raid-editor-validation.json" CopyToOutputDirectory="PreserveNewest" TargetPath="raid-editor-validation.json" />
     <None
-      Include="Resources\wtt_campaigns_raid_editor.bundle"
+      Include="Resources\wtt_campaigns_editor_toolkit.bundle"
       CopyToOutputDirectory="PreserveNewest"
-      TargetPath="wtt_campaigns_raid_editor.bundle"
+      TargetPath="wtt_campaigns_editor_toolkit.bundle"
+    />
+    <None
+      Include="Resources\editor-toolkit-validation.json"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="editor-toolkit-validation.json"
     />
     <None
       Include="Resources\wtt_campaigns_story_notifications.bundle"

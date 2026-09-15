@@ -139,7 +139,12 @@ public sealed partial class RaidEditor
             Refresh();
             return;
         }
-        if (!Input.GetMouseButtonDown(0) || Input.GetMouseButton(1) || EventSystem.current?.IsPointerOverGameObject() == true)
+        if (
+            !Input.GetMouseButtonDown(0)
+            || Input.GetMouseButton(1)
+            || EventSystem.current?.IsPointerOverGameObject() == true
+            || _view?.PointerOver == true
+        )
         {
             return;
         }

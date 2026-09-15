@@ -20,9 +20,18 @@ internal static class EditorHomeCompatibilityChecks
         Check(screen.BaseType.Name == "EftScreen`2", "Home participates in the native screen lifecycle.");
         Check(controller.BaseType.Name == "EftScreenController`2", "Home uses native environment and navigation state.");
         Check(
-            EveryReturnCreatesPointerCanvas(screen.Methods.Single(m => m.Name == "Create")),
-            "Every canvas-parent branch must create the editor's own canvas and raycaster before returning its screen."
+            screen
+                .Methods.Single(m => m.Name == "Build")
+                .Body.Instructions.Any(i => i.Operand is MethodReference m && m.DeclaringType.Name == "EditorToolkitDocument"),
+            "Home creates its Toolkit document."
         );
+        foreach (var method in new[] { "Close", "OnDestroy" })
+            Check(
+                screen
+                    .Methods.Single(m => m.Name == method)
+                    .Body.Instructions.Any(i => i.Operand is MethodReference m && m.DeclaringType.Name == "EditorToolkitDocument"),
+                "Home owns Toolkit lifecycle: " + method
+            );
         var screenId = (int)screen.Fields.Single(f => f.Name == "ScreenType").Constant;
         Check(
             !types["EFT.UI.Screens.EEftScreenType"].Fields.Any(f => f.HasConstant && Equals(f.Constant, screenId)),
@@ -46,13 +55,6 @@ internal static class EditorHomeCompatibilityChecks
                 "Native environment switch: " + property.Name
             );
         }
-        var button = types["EFT.UI.DefaultUIButton"];
-        foreach (var field in new[] { "_headerLabel", "_minWidth", "OnClick", "OnMouseOver", "OnMouseOut" })
-            Check(button.Fields.Any(f => f.Name == field && f.IsPublic), "Native button cloning API: " + field);
-        Check(
-            button.Fields.Single(f => f.Name == "OnClick").IsInitOnly,
-            "Cloning a menu button must not inherit its character-navigation click listener."
-        );
         Check(
             types["EFT.UI.MenuTaskBar"]
                 .Methods.Single(m => m.Name == "OnScreenChanged")
@@ -71,47 +73,5 @@ internal static class EditorHomeCompatibilityChecks
             "Authenticated menu startup dispatches the editor screen handoff."
         );
         Console.WriteLine($"Editor home: {checks} native screen, navigation and button contracts passed offline.");
-    }
-
-    // Follow both sides of the inherited-canvas branch. Merely finding AddComponent
-    // in the method missed the original path that rendered without its own raycaster.
-    private static bool EveryReturnCreatesPointerCanvas(MethodDefinition method)
-    {
-        var pending = new Queue<(Instruction Instruction, int Components)>();
-        var visited = new HashSet<(Instruction, int)>();
-        pending.Enqueue((method.Body.Instructions[0], 0));
-        var returned = false;
-        while (pending.TryDequeue(out var state))
-        {
-            if (!visited.Add(state))
-                continue;
-            var (instruction, components) = state;
-            if (instruction.Operand is GenericInstanceMethod { Name: "AddComponent" } add)
-            {
-                components |= add.GenericArguments[0].FullName switch
-                {
-                    "UnityEngine.Canvas" => 1,
-                    "UnityEngine.UI.GraphicRaycaster" => 2,
-                    _ => 0,
-                };
-            }
-            if (instruction.OpCode.FlowControl == FlowControl.Return)
-            {
-                if (components != 3)
-                    return false;
-                returned = true;
-                continue;
-            }
-            if (instruction.OpCode.FlowControl == FlowControl.Throw)
-                continue;
-            if (instruction.Operand is Instruction target)
-                pending.Enqueue((target, components));
-            if (instruction.Operand is Instruction[] targets)
-                foreach (var branch in targets)
-                    pending.Enqueue((branch, components));
-            if (instruction.OpCode.FlowControl != FlowControl.Branch && instruction.Next != null)
-                pending.Enqueue((instruction.Next, components));
-        }
-        return returned;
     }
 }

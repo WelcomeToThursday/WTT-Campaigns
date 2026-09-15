@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.UI;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;
@@ -123,7 +122,12 @@ public sealed partial class RaidEditor
 
     private int HoverHandle(SpatialCapture point)
     {
-        if (!_camera || !CanUseHandle(point) || UnityEngine.EventSystems.EventSystem.current?.IsPointerOverGameObject() == true)
+        if (
+            !_camera
+            || !CanUseHandle(point)
+            || UnityEngine.EventSystems.EventSystem.current?.IsPointerOverGameObject() == true
+            || _view?.PointerOver == true
+        )
             return -1;
         var best = -1;
         var nearest = 12f;

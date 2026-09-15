@@ -286,6 +286,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     return;
                 if (_view.Typing)
                 {
+                    _view.ReleaseFocus();
                     EventSystem.current?.SetSelectedGameObject(null);
                     return;
                 }
@@ -395,7 +396,9 @@ public sealed partial class RaidEditor : MonoBehaviour
         if (_view?.Valid != true)
         {
             _view?.Dispose();
+            Plugin.LogInfo("Editor loading: constructing workspace");
             _view = BuildView();
+            Plugin.LogInfo("Editor loading: workspace constructed");
         }
         _camera = Camera.main;
         if (!_camera)
@@ -427,8 +430,10 @@ public sealed partial class RaidEditor : MonoBehaviour
         Camera.onPreCull += CameraPose;
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
-        _view.Root.SetActive(true);
+        _view.SetVisible(true);
+        Plugin.LogInfo("Editor loading: indexing scene");
         IndexScene();
+        Plugin.LogInfo("Editor loading: presenting workspace");
         Refresh();
         RefreshEnvironment();
         RefreshWeather();
@@ -457,7 +462,10 @@ public sealed partial class RaidEditor : MonoBehaviour
             {
                 var look =
                     Input.GetMouseButton(1)
-                    && (Cursor.lockState == CursorLockMode.Locked || EventSystem.current?.IsPointerOverGameObject() != true);
+                    && (
+                        Cursor.lockState == CursorLockMode.Locked
+                        || EventSystem.current?.IsPointerOverGameObject() != true && _view?.PointerOver != true
+                    );
                 Cursor.visible = !look;
                 Cursor.lockState = look ? CursorLockMode.Locked : CursorLockMode.None;
                 if (look)
@@ -554,7 +562,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             Cursor.visible = _savedCursor;
             Cursor.lockState = _savedLock;
             if (_view?.Valid == true)
-                _view.Root.SetActive(false);
+                _view.SetVisible(false);
             ClearLines();
             ClearAiRoutes();
             _camera = null;

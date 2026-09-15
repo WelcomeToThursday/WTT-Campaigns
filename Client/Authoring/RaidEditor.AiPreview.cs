@@ -120,7 +120,7 @@ public sealed partial class RaidEditor
                 player.Teleport(ZoneRuntime.Vector(layout.Start!.Position));
                 player.Rotation = new Vector2(layout.Start.Rotation.Y, layout.Start.Rotation.X);
                 _aiPlayer?.Arm();
-                _view!.Root.SetActive(true);
+                _view!.SetVisible(true);
                 _view.Windows.SetWalkthrough(true);
                 Cursor.visible = false;
                 Cursor.lockState = CursorLockMode.Locked;
