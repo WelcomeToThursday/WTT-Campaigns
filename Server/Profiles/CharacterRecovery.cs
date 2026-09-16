@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 namespace WTT.Campaigns.Server.Profiles;
 
 public sealed record RecoverableCharacter(string Id, string Name, string Campaign, string PreviousAccount, string PendingAccount);
+
 public sealed record RecoveryAccount(string Id, string Name);
 
 // Persisted before the first ownership write; retries always finish the same transfer.
@@ -16,13 +17,29 @@ public sealed class CharacterRecoveryOperation
 
 public static class CharacterRecovery
 {
-    public static void ValidateOwnership(string characterId, string previousAccount, string targetAccount,
-        string? currentOwner, long revision, bool originalAccountExists, CharacterRecoveryOperation? pending)
+    public static void ValidateOwnership(
+        string characterId,
+        string previousAccount,
+        string targetAccount,
+        string? currentOwner,
+        long revision,
+        bool originalAccountExists,
+        CharacterRecoveryOperation? pending
+    )
     {
         if (originalAccountExists)
-            throw new InvalidOperationException("The original account still exists or is loaded. After deleting it in the launcher, restart SPT manually and refresh this page.");
-        if (pending != null && (pending.CharacterId != characterId || pending.Character.ProfileId != characterId
-            || pending.PreviousAccount != previousAccount || pending.TargetAccount != targetAccount))
+            throw new InvalidOperationException(
+                "The original account still exists or is loaded. After deleting it in the launcher, restart SPT manually and refresh this page."
+            );
+        if (
+            pending != null
+            && (
+                pending.CharacterId != characterId
+                || pending.Character.ProfileId != characterId
+                || pending.PreviousAccount != previousAccount
+                || pending.TargetAccount != targetAccount
+            )
+        )
             throw new InvalidOperationException("An interrupted recovery must be completed to its original destination account.");
         if (revision <= 0 || (currentOwner != previousAccount && !(pending != null && currentOwner == targetAccount)))
             throw new InvalidOperationException("Character ownership changed. Refresh the page before recovering it.");
