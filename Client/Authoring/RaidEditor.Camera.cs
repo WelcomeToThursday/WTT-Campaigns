@@ -9,7 +9,8 @@ namespace WTT.Campaigns.Client.Authoring;
 public sealed partial class RaidEditor
 {
     private ConfigEntry<string>? _cameraBookmarks;
-    private string _cameraBookmarkDraft = "", _cameraBookmarkMap = "";
+    private string _cameraBookmarkDraft = "",
+        _cameraBookmarkMap = "";
 
     private EditorCameraBookmarks ReadCameraBookmarks()
     {
@@ -52,11 +53,17 @@ public sealed partial class RaidEditor
         try
         {
             var bookmarks = ReadCameraBookmarks();
-            if (!bookmarks.Save(_cameraBookmarkDraft, _cameraBookmarkMap, new EditorCameraBookmarks.Pose
-            {
-                Position = new[] { _flyPosition.x, _flyPosition.y, _flyPosition.z },
-                Rotation = new[] { _flyRotation.x, _flyRotation.y, _flyRotation.z, _flyRotation.w },
-            }))
+            if (
+                !bookmarks.Save(
+                    _cameraBookmarkDraft,
+                    _cameraBookmarkMap,
+                    new EditorCameraBookmarks.Pose
+                    {
+                        Position = new[] { _flyPosition.x, _flyPosition.y, _flyPosition.z },
+                        Rotation = new[] { _flyRotation.x, _flyRotation.y, _flyRotation.z, _flyRotation.w },
+                    }
+                )
+            )
                 return;
             var json = JsonConvert.SerializeObject(bookmarks);
             if (_cameraBookmarks!.Value == json)

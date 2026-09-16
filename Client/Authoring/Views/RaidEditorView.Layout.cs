@@ -298,7 +298,22 @@ internal sealed partial class RaidEditorView
         preview.style.maxWidth = StyleKeyword.None;
         preview.style.flexShrink = 0;
         preview.style.height = 30;
-        foreach (var id in new[] { "Undo", "Redo", "Move", "Rotate", "Scale", "Snap", "EditorWalk", "AiObserve", "AiPlaytest", "AiPlaytestGear", "EditorReset" })
+        foreach (
+            var id in new[]
+            {
+                "Undo",
+                "Redo",
+                "Move",
+                "Rotate",
+                "Scale",
+                "Snap",
+                "EditorWalk",
+                "AiObserve",
+                "AiPlaytest",
+                "AiPlaytestGear",
+                "EditorReset",
+            }
+        )
         {
             var control = Element(id);
             control.style.alignSelf = Align.Center;
@@ -340,16 +355,19 @@ internal sealed partial class RaidEditorView
         while (toolbar.childCount > 0)
             scroll.Add(toolbar[0]);
         toolbar.Add(scroll);
-        scroll.RegisterCallback<WheelEvent>(evt =>
-        {
-            var delta = Mathf.Abs(evt.delta.x) > Mathf.Abs(evt.delta.y) ? evt.delta.x : evt.delta.y;
-            scroll.horizontalScroller.value = Mathf.Clamp(
-                scroll.horizontalScroller.value + delta * 30,
-                scroll.horizontalScroller.lowValue,
-                scroll.horizontalScroller.highValue
-            );
-            evt.StopPropagation();
-        }, TrickleDown.TrickleDown);
+        scroll.RegisterCallback<WheelEvent>(
+            evt =>
+            {
+                var delta = Mathf.Abs(evt.delta.x) > Mathf.Abs(evt.delta.y) ? evt.delta.x : evt.delta.y;
+                scroll.horizontalScroller.value = Mathf.Clamp(
+                    scroll.horizontalScroller.value + delta * 30,
+                    scroll.horizontalScroller.lowValue,
+                    scroll.horizontalScroller.highValue
+                );
+                evt.StopPropagation();
+            },
+            TrickleDown.TrickleDown
+        );
     }
 
     private void ApplyIcons()

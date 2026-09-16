@@ -20,7 +20,8 @@ internal sealed partial class RaidEditorView : IDisposable
     private RouteOverlay _routeOverlay = null!;
     internal bool Valid => !_disposed && Root;
     internal bool PointerOver => Document.PointerOver;
-    internal bool Typing => Document.Typing || NumericDragging || Windows.Interacting || Windows.MenuDismissedThisFrame || _choicePopup != null;
+    internal bool Typing =>
+        Document.Typing || NumericDragging || Windows.Interacting || Windows.MenuDismissedThisFrame || _choicePopup != null;
     private bool NumericDragging
     {
         get
