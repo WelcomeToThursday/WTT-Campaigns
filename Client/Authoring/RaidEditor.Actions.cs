@@ -229,17 +229,20 @@ public sealed partial class RaidEditor
                     Refresh();
                 }
             );
-            Dropdown("ZoneUses", index =>
-            {
-                if (index <= 0 || index > ZoneUseIds.Length)
-                    return;
-                var use = ZoneUseIds[index - 1];
-                EditPoint(point =>
+            Dropdown(
+                "ZoneUses",
+                index =>
                 {
-                    if (point is SeasonZone zone && !zone.Uses.Remove(use))
-                        zone.Uses.Add(use);
-                });
-            });
+                    if (index <= 0 || index > ZoneUseIds.Length)
+                        return;
+                    var use = ZoneUseIds[index - 1];
+                    EditPoint(point =>
+                    {
+                        if (point is SeasonZone zone && !zone.Uses.Remove(use))
+                            zone.Uses.Add(use);
+                    });
+                }
+            );
             view.Input(
                 "Name",
                 value =>
