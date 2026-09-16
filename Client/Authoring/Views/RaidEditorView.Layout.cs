@@ -94,6 +94,21 @@ internal sealed partial class RaidEditorView
             element.AddToClassList("editor-axes");
         foreach (var child in node.Children)
             BuildNode(child, element);
+        if (node.Id is "PlacementGroup" or "ZoneUsesGroup" or "SceneActionsGroup" or "RecordActionsGroup")
+        {
+            element.style.borderTopWidth = 1;
+            element.style.borderTopColor = (Color)new Color32(75, 78, 71, 255);
+            element.style.marginTop = 8;
+            element.style.paddingTop = 8;
+            element.style.marginBottom = 4;
+            if (node.Kind == "row")
+                foreach (var child in element.Children())
+                {
+                    child.style.flexGrow = 1;
+                    child.style.flexBasis = 0;
+                    child.style.minWidth = 0;
+                }
+        }
         return element;
     }
 

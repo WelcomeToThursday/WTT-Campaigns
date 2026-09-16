@@ -201,14 +201,8 @@ internal static class EditorLayoutSpec
                     V("Rotation", "ROTATION · degrees"),
                     V("Size", "BOX DIMENSIONS · metres"),
                     F("Radius", "SPHERE RADIUS · metres"),
-                    R("PlacementGroup", B("AtFeet", "At player"), B("AtAim", "At aim point")),
-                    R(
-                        "ZoneUsesGroup",
-                        B("InZone", "In zone"),
-                        B("VisitPlace", "Visit"),
-                        B("LeaveItemAtLocation", "Place item"),
-                        B("Salvage", "Salvage")
-                    ),
+                    R("PlacementGroup", B("AtAim", "At aim point")),
+                    G("ZoneUsesGroup", T("ZoneUsesCaption", "ZONE TYPE"), new Node("choice", "ZoneUses", "Select zone types")),
                     C("ZoneScope", "ZONE SCOPE"),
                     R("SceneActionsGroup", B("Parent", "Select parent"), B("UseObject", "Use scene target")),
                     R("RecordActionsGroup", B("Duplicate", "Duplicate"), B("Delete", "Delete")),

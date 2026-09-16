@@ -29,6 +29,8 @@ public sealed partial class RaidEditor
 
     private string _bindingTarget = "";
     private readonly List<string> _zoneScopeIds = new();
+    private static readonly string[] ZoneUseIds = { "InZone", "VisitPlace", "LeaveItemAtLocation", "Salvage" };
+    private static readonly string[] ZoneUseLabels = { "In zone", "Visit", "Place item", "Salvage" };
 
     // Shared is an explicit choice; the other scope always follows the current
     // layout so changing layouts cannot create an invisible zone under an old
@@ -190,7 +192,6 @@ public sealed partial class RaidEditor
             );
             Button("Duplicate", Duplicate);
             Button("Delete", Delete);
-            Button("AtFeet", () => Place(false));
             Button("AtAim", () => Place(true));
             Button(
                 "Parent",
@@ -228,24 +229,17 @@ public sealed partial class RaidEditor
                     Refresh();
                 }
             );
-            foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation", "Salvage" })
+            Dropdown("ZoneUses", index =>
             {
-                var value = use;
-                Button(
-                    use,
-                    () =>
-                        EditPoint(point =>
-                        {
-                            if (point is SeasonZone zone)
-                            {
-                                if (!zone.Uses.Remove(value))
-                                {
-                                    zone.Uses.Add(value);
-                                }
-                            }
-                        })
-                );
-            }
+                if (index <= 0 || index > ZoneUseIds.Length)
+                    return;
+                var use = ZoneUseIds[index - 1];
+                EditPoint(point =>
+                {
+                    if (point is SeasonZone zone && !zone.Uses.Remove(use))
+                        zone.Uses.Add(use);
+                });
+            });
             view.Input(
                 "Name",
                 value =>
@@ -945,7 +939,7 @@ public sealed partial class RaidEditor
         );
         view.Text(
             "Request",
-            _task == null ? "RAID CONTINUES Ã‚Â· Player remains in place" : "RAID CONTINUES Ã‚Â· " + _task.Tool + " capture requested"
+            _task == null ? "RAID CONTINUES \u00B7 Player remains in place" : "RAID CONTINUES \u00B7 " + _task.Tool + " capture requested"
         );
         view.Text("Status", _session.Status + (_notice.Length > 0 ? "\n" + _notice : ""));
         view.Conflict(_session);
@@ -976,7 +970,7 @@ public sealed partial class RaidEditor
         view.Get<Button>("Complete").interactable = _task != null && !_session.Busy && _session.Conflict == null;
         view.Caption("EventKind", "Event kind: " + (Binding?.Kind ?? "Trigger"));
         view.Value("Name", point?.Name ?? (_mode == "Bindings" ? Binding?.Name : "") ?? "");
-        view.Text("Identity", point == null ? Binding?.Id ?? "Select a record" : point.Id + " Ã‚Â· " + point.Scene);
+        view.Text("Identity", point == null ? Binding?.Id ?? "Select a record" : point.Id + " \u00B7 " + point.Scene);
         foreach (var group in new[] { "Position", "Rotation", "Size" })
         {
             var vector =
@@ -990,32 +984,31 @@ public sealed partial class RaidEditor
             }
         }
         view.Value("Radius", ((point as SeasonZone)?.Radius ?? 0).ToString("0.###", CultureInfo.InvariantCulture));
-        foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation", "Salvage" })
+        var selectedUses = new List<string>();
+        var useOptions = new List<Dropdown.OptionData> { new("Select zone types") };
+        for (var i = 0; i < ZoneUseIds.Length; i++)
         {
-            view.Caption(
-                use,
-                ((point as SeasonZone)?.Uses.Contains(use) == true ? "Ã¢Å“â€œ " : "")
-                    + (
-                        use == "InZone" ? "In zone"
-                        : use == "VisitPlace" ? "Visit"
-                        : use == "Salvage" ? "Salvage"
-                        : "Place item"
-                    )
-            );
+            var enabled = (point as SeasonZone)?.Uses.Contains(ZoneUseIds[i]) == true;
+            if (enabled)
+                selectedUses.Add(ZoneUseLabels[i]);
+            useOptions.Add(new Dropdown.OptionData((enabled ? "[x] " : "[ ] ") + ZoneUseLabels[i]));
         }
+        useOptions[0].text = selectedUses.Count == 0 ? "Select zone types" : string.Join(", ", selectedUses);
+        view.SetDropdown("ZoneUses", useOptions, 0);
+        view.Windows.SetTooltip("ZoneUses", "Select a type to enable or disable it. A zone can have multiple types.");
 
         var details = point is SeasonZone z
             ? "Ownership: "
                 + ownerName
                 + "\n"
                 + z.Shape
-                + " Ã‚Â· "
+                + " \u00B7 "
                 + (Inside(z, _player!.Transform.position) ? "Player inside" : "Player outside")
-                + "\nPreview only Ã‚Â· "
+                + "\nPreview only \u00B7 "
                 + _tool
                 + " handles\n"
                 + string.Join(", ", SpatialRules.Uses(_session.Definition!, z.Id))
-            : "Preview only Ã‚Â· no gameplay changes";
+            : "Preview only \u00B7 no gameplay changes";
         if (_picked)
         {
             details =
@@ -1068,7 +1061,7 @@ public sealed partial class RaidEditor
                 (_session.Definition?.Story?.RaidBindings ?? new())
                     .AsValueEnumerable()
                     .Where(b => b.Location.Length == 0 || b.Location == _session.Location)
-                    .Select(b => (b.Id, b.Name + " Ã‚Â· " + b.Kind + " Ã‚Â· " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
+                    .Select(b => (b.Id, b.Name + " \u00B7 " + b.Kind + " \u00B7 " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
                     .CopyTo(_rows);
             }
             else if (_mode == "AI")
@@ -1084,7 +1077,7 @@ public sealed partial class RaidEditor
                     FilterZonesForLayout(_layoutId)
                         .AsValueEnumerable()
                         .Where(r => r.Location == _session.Location)
-                        .Select(r => (r.Id, r.Name + " Ã‚Â· " + ZoneOwnerName(r)))
+                        .Select(r => (r.Id, r.Name + " \u00B7 " + ZoneOwnerName(r)))
                         .CopyTo(_rows);
                 }
                 else
@@ -1206,7 +1199,7 @@ public sealed partial class RaidEditor
         if (zone != null && !string.IsNullOrEmpty(zone.LayoutId) && !_zoneScopeIds.Contains(zone.LayoutId))
         {
             _zoneScopeIds.Add(zone.LayoutId);
-            options.Add(new Dropdown.OptionData("Missing layout Ã‚Â· " + zone.LayoutId));
+            options.Add(new Dropdown.OptionData("Missing layout \u00B7 " + zone.LayoutId));
         }
 
         var selected = zone == null ? 0 : _zoneScopeIds.IndexOf(zone.LayoutId ?? "");

@@ -103,14 +103,9 @@ public sealed partial class RaidEditor
                 "Capture",
                 "Duplicate",
                 "Delete",
-                "AtFeet",
                 "AtAim",
                 "UseObject",
                 "EventKind",
-                "InZone",
-                "VisitPlace",
-                "LeaveItemAtLocation",
-                "Salvage",
                 "MapNew",
                 "MapCopy",
                 "MapDelete",
@@ -155,6 +150,7 @@ public sealed partial class RaidEditor
                         : _mode == "Scene" && (name == "MapBarrier" || name == "MapDoor" || _picked)
                 );
         view.Get<EditorChoice>("ZoneCreateScope").interactable = canEdit && _mode == "Zones";
+        view.Get<EditorChoice>("ZoneUses").interactable = canEdit && _mode == "Zones" && point is SeasonZone;
         view.Get<EditorChoice>("ZoneScope").interactable = canEdit && _mode == "Zones" && EditorMode.Ready && point is SeasonZone;
         view.Get<Button>("UseObject").interactable =
             canEdit && (point is SeasonZone && Binding != null || _picked && _sceneIndex.Complete && !_sceneIndex.Limited);
