@@ -8,6 +8,13 @@ namespace WTT.Campaigns.Server.Editor;
 /// <summary>File-independent copying rules. No source item or profile is mutated.</summary>
 public static class EditorPreviewGearCopy
 {
+    public static EditorPreviewGearResponse Placeholder(EditorSessionRegistry.Session session)
+    {
+        if (string.IsNullOrWhiteSpace(session.PreviewEquipmentId) || session.PreviewItems.Count == 0)
+            throw new InvalidOperationException("Reconnect the editor to prepare its placeholder equipment.");
+        return Copy(session.PreviewItems, session.PreviewEquipmentId, session.PreviewBindings);
+    }
+
     public static EditorPreviewGearResponse Copy(
         IEnumerable<NativeItem> source,
         string equipmentId,

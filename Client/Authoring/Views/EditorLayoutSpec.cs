@@ -61,7 +61,11 @@ internal static class EditorLayoutSpec
             B("CameraSlower", "-"),
             I("CameraSpeed", ""),
             B("CameraFaster", "+"),
-            R("EditorMapToolbar", B("EditorWalk", "Walkthrough"), B("EditorReset", "Reset preview"))
+            R("EditorMapToolbar",
+                B("EditorWalk", "Walkthrough"),
+                B("AiObserve", "Observe"), B("AiPlaytest", "Playtest"),
+                new Node("choice", "AiPlaytestGear", "Playtest kit"),
+                B("EditorReset", "Reset preview"))
         ),
         R(
             "CategoryRail",
@@ -71,6 +75,7 @@ internal static class EditorLayoutSpec
             B("Bindings", "Events"),
             B("Captures", "Captures"),
             B("Scene", "Scene"),
+            B("LootTool", "Loot"),
             B("AI", "AI")
         ),
         G(
@@ -118,11 +123,34 @@ internal static class EditorLayoutSpec
                 G(
                     "AiPreviewSection",
                     T("AiPreviewHeading", "TEST ENCOUNTERS"),
-                    R("AiPreviewRow", B("AiObserve", "Observe"), B("AiPlaytest", "Playtest")),
                     R("AiRunRow", B("AiSimulate", "Trigger selected"), B("AiReset", "Reset preview"))
                 )
             )
         ),
+        G("LootConfiguration",
+            new Node("scroll", "ContainerScroll", "",
+                T("ContainerSelection", "Select a lootable container"),
+                T("ContainerEmpty", "Click a placed container in the scene to configure its loot."),
+                G("ContainerSettingsGroup",
+                    G("ContainerLootSection",
+                        T("ContainerHeading", "CONTENTS"),
+                        C("ContainerMode", "Contents"), C("ContainerPool", "Loot pool"),
+                        F("ContainerChance", "Spawn chance (%)")),
+                    G("ContainerFixedSection",
+                        T("ContainerFixedHeading", "FIXED CONTENTS"),
+                        F("ContainerSearch", "Find an item"),
+                        C("ContainerItem", "Search results"), F("ContainerQuantity", "Quantity"),
+                        A("ContainerItemActions", "ContainerAdd", "Add item"),
+                        C("ContainerContents", "Contents"),
+                        A("ContainerRemoveGroup", "ContainerRemove", "Remove selected item")),
+                    G("ContainerAccessSection",
+                        T("ContainerAccessHeading", "ACCESS"),
+                        A("ContainerLockGroup", "ContainerLock", "Unlocked"),
+                        T("ContainerKey", "No key selected"),
+                        F("ContainerKeySearch", "Find a key"),
+                        C("ContainerKeyItem", "Keys"),
+                        A("ContainerKeyActions", "ContainerUseKey", "Use selected key"))
+                ))),
         G(
             "Inspector",
             new Node(
@@ -275,6 +303,7 @@ internal static class EditorLayoutSpec
             "WindowsMenu",
             B("LibraryToggle", "Browser"),
             B("InspectorToggle", "Properties"),
+            B("LootWindowToggle", "Loot configuration"),
             B("EnvironmentWindowToggle", "Environment"),
             B("HelpWindowToggle", "Editor controls"),
             T("UiSizeLabel", "UI size: 85%"),

@@ -54,7 +54,7 @@ internal sealed partial class EditorToolkitWindows
             var id in RaidEditorView
                 .ToolIds.AsValueEnumerable()
                 .Select(t => "Tool:" + t)
-                .Concat(new[] { "Inspector", "EnvironmentMenu", "Controls" })
+                .Concat(new[] { "Inspector", "EnvironmentMenu", "Controls", "LootConfiguration" })
         )
         {
             _panels.Add(id, new() { Id = id });
@@ -72,6 +72,9 @@ internal sealed partial class EditorToolkitWindows
             });
         }
         Bind("LibraryCollapse", () => ShowPanel("Library", false));
+        Bind("LootClose", () => ShowPanel("LootConfiguration", false));
+        Bind("LootTool", () => ToggleWindow("LootConfiguration"));
+        Bind("LootWindowToggle", () => ToggleWindow("LootConfiguration"));
         Bind("InspectorCollapse", () => ShowPanel("Inspector", false));
         Bind("EnvironmentClose", () => ShowPanel("EnvironmentMenu", false));
         Bind("HelpClose", () => ShowPanel("Controls", false));
@@ -371,8 +374,8 @@ internal sealed partial class EditorToolkitWindows
             _panels[id] = new()
             {
                 Id = id,
-                Width = id is "Tool:Scene" or "Tool:AI" ? 420 : 360,
-                Height = 400,
+                Width = id == "LootConfiguration" ? 460 : id is "Tool:Scene" or "Tool:AI" ? 420 : 360,
+                Height = id == "LootConfiguration" ? 620 : 400,
                 X = -.15f,
                 Y = .05f,
                 Visible = id == "Tool:Layouts" || id == "Inspector" && _selection.Length > 0,

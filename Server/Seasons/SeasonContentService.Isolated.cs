@@ -29,9 +29,19 @@ public sealed partial class SeasonContentService
         var crateIds = definition.Crates.Select(c => new MongoId(c.ItemId)).ToHashSet();
         var beforeCrates = crateIds.ToDictionary(id => id, id => inventory.RandomLootContainers.GetValueOrDefault(id));
         var localeRegistrations = new List<IDisposable>();
+        var craftIds = definition.Crafts.Select(c => c.Id).ToHashSet();
+        var beforeCrafts = hideout.Production.Recipes.Where(r => craftIds.Contains(r.Id.ToString())).ToArray();
+        var beforeCraftOwners = craftIds.ToDictionary(id => id, id => _craftOwners.GetValueOrDefault(id));
 
         void Restore()
         {
+            hideout.Production.Recipes.RemoveAll(r => craftIds.Contains(r.Id.ToString()));
+            hideout.Production.Recipes.AddRange(beforeCrafts);
+            foreach (var id in craftIds)
+                if (beforeCraftOwners[id] is { } owner)
+                    _craftOwners[id] = owner;
+                else
+                    _craftOwners.Remove(id);
             foreach (var id in ids)
             {
                 if (beforeItems[id] is { } item)

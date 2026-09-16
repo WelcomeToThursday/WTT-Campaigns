@@ -14,6 +14,11 @@ using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Story;
 
 // Render the real Creator components in memory; no host, SPT runtime or profile is opened.
+if (args.Length == 3 && args[0] == "--kord-content")
+{
+    KordInstalledContentChecks.Run(args[1], args[2]);
+    return;
+}
 await using var services = new ServiceCollection()
     .AddLogging()
     .AddSingleton<IJSRuntime, OfflineJsRuntime>()

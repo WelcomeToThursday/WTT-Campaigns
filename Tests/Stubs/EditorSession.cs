@@ -21,7 +21,7 @@ namespace WTT.Campaigns.Client.Authoring
 {
     internal static class EditorMode
     {
-        internal static bool Ready => false;
-        internal static string SessionId => "";
+        internal static bool Ready { get; set; }
+        internal static string SessionId { get; set; } = "";
     }
 }

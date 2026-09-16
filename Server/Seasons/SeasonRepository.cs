@@ -444,6 +444,7 @@ public sealed class SeasonRepository
         var definition = Duplicate(source);
         if (!duplicate)
         {
+            definition.FormatVersion = 1;
             var document = definition.Documents.First();
             definition.Name = "New campaign";
             definition.Description = "";
@@ -453,6 +454,12 @@ public sealed class SeasonRepository
             definition.Pages = new() { new() };
             definition.SeasonalRewards.Clear();
             definition.Quests = new();
+            definition.QuestLoot.Clear();
+            definition.Crafts.Clear();
+            definition.Zones.Clear();
+            definition.Captures.Clear();
+            definition.MapLayouts.Clear();
+            definition.Dependencies.Clear();
             definition.Missions = new();
             definition.Story = null;
             definition.Offers = new();
@@ -483,6 +490,7 @@ public sealed class SeasonRepository
 
     public static SeasonDefinition Duplicate(SeasonDefinition source)
     {
+        source = BuiltInCampaignCopy.Prepare(source);
         var owned = new HashSet<string>(
             source
                 .Perks.All.Select(p => p.Id)
@@ -507,6 +515,7 @@ public sealed class SeasonRepository
         owned.UnionWith(WTT.Campaigns.Shared.Story.StoryContent.OwnedIds(source.Story));
         owned.UnionWith(source.TraderOffers.SelectMany(o => o.Items).Select(i => i.Id));
         owned.UnionWith(source.Zones.Select(z => z.Id));
+        owned.UnionWith(source.Crafts.Select(c => c.Id));
         owned.UnionWith(source.Captures.Select(c => c.Id));
         owned.UnionWith(source.MapLayouts.SelectMany(WTT.Campaigns.Shared.Spatial.MapLayoutRules.OwnedIds));
         var replacements = owned.ToDictionary(id => id, _ => NewId());
@@ -553,7 +562,65 @@ public sealed class SeasonRepository
             }
         }
 
+        if (source.Legacy)
+        {
+            PrepareBuiltInCopy(copy);
+        }
         return copy;
+    }
+
+    private static void PrepareBuiltInCopy(SeasonDefinition copy)
+    {
+        // Captured native rewards can contain several independent items. SPT's
+        // reward processor expects one target tree per reward, as does the editor.
+        foreach (var quest in copy.Quests)
+        {
+            foreach (var stage in quest.Rewards.Keys.ToArray())
+            {
+                var rewards = new List<NativeReward>();
+                foreach (var reward in quest.Rewards[stage])
+                {
+                    var ids = reward.Items.Select(item => item.Id).ToHashSet();
+                    var roots = reward.Items.Where(item => item.ParentId == null || !ids.Contains(item.ParentId)).ToArray();
+                    if (reward.Type != "Item" || roots.Length <= 1)
+                    {
+                        rewards.Add(reward);
+                        continue;
+                    }
+                    var parts = new List<NativeReward>();
+                    foreach (var root in roots)
+                    {
+                        var tree = new HashSet<string> { root.Id };
+                        while (reward.Items.Any(item => item.ParentId != null && tree.Contains(item.ParentId) && tree.Add(item.Id))) { }
+                        var part = SeasonCompiler.Copy(reward);
+                        part.Id = NewId();
+                        part.Target = root.Id;
+                        part.Items = part.Items.Where(item => tree.Contains(item.Id)).ToList();
+                        part.Value = root.Upd?.StackObjectsCount ?? 1;
+                        parts.Add(part);
+                    }
+                    var validation = new SeasonValidationResult();
+                    foreach (var part in parts)
+                    {
+                        SeasonValidator.ItemTree(part.Items, "Reward", validation);
+                    }
+                    if (
+                        validation.CanPublish
+                        && parts.Sum(part => part.Items.Count) == reward.Items.Count
+                        && ids.Count == reward.Items.Count
+                    )
+                    {
+                        rewards.AddRange(parts);
+                    }
+                    else
+                    {
+                        // Keep malformed payloads intact so validation can report them.
+                        rewards.Add(reward);
+                    }
+                }
+                quest.Rewards[stage] = rewards;
+            }
+        }
     }
 
     public void MarkUsed(SeasonDefinition definition)
@@ -658,7 +725,7 @@ public sealed class SeasonRepository
         var folder = Path.Combine(_root, "packs", CheckId(key));
         var manifest = Read<SeasonManifest>(Path.Combine(folder, "manifest.json"));
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
         )
@@ -944,7 +1011,7 @@ public sealed class SeasonRepository
         }
         var manifest = JsonConvert.DeserializeObject<SeasonManifest>(Encoding.UTF8.GetString(Entry("manifest.json")))!;
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
             || manifest.Files.Count != zip.Entries.Count - 1

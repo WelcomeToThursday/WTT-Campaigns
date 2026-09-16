@@ -7,6 +7,18 @@ namespace WTT.Campaigns.Shared.Seasons;
 
 public static class SeasonValidator
 {
+    public static bool SupportsQuestReward(string type) =>
+        type
+            is "Item"
+                or "Experience"
+                or "TraderStanding"
+                or "TraderUnlock"
+                or "AssortmentUnlock"
+                or "TraderStandingRestore"
+                or "Skill"
+                or "Customization"
+                or "ProductionScheme";
+
     public static bool IsId(string? id)
     {
         return id != null && id.Length == 24 && id.All(c => "0123456789abcdef".Contains(c));
@@ -24,6 +36,7 @@ public static class SeasonValidator
             }
 
             Story.StoryValidator.Validate(season, result);
+            CampaignQuestResources.Validate(season, result);
         }
         catch (Exception e)
             when (e is NullReferenceException or InvalidCastException or ArgumentException or FormatException or OverflowException)
@@ -42,7 +55,7 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8, "Overview", "Unsupported campaign format version.");
+        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9, "Overview", "Unsupported campaign format version.");
         foreach (var zone in s.Zones)
         {
             if (!string.IsNullOrEmpty(zone.LayoutId) && Spatial.SpatialRules.Uses(s, zone.Id).Any() && !MissionOwnsZoneReferences(s, zone))
@@ -140,7 +153,7 @@ public static class SeasonValidator
             Identity(perk.Id, path);
             Need(IsId(perk.ImageUrl), path, "Choose a perk icon.");
             var unavailable = EffectSupport.UnavailableReason(perk);
-            if (unavailable != null)
+            if (unavailable != null && perk.Enabled)
             {
                 r.Add(path, unavailable, s.Legacy || !perk.Enabled ? "warning" : "error");
             }
@@ -275,7 +288,15 @@ public static class SeasonValidator
         }
 
         var quests = s.Quests.ToDictionary(q => q.Id);
-        var visitedQuests = new HashSet<string>();
+        var disabledQuests = s.Quests.Count(q => q.SeasonalEnabled == false);
+        if (disabledQuests > 0)
+        {
+            r.Add(
+                "Quests",
+                $"{disabledQuests} quests are disabled and will not be playable. They are retained for editing; enable them only after resolving their compatibility and prerequisites.",
+                "info"
+            );
+        }
         foreach (var quest in quests)
         {
             var storyQuest = s.Story?.Quests.Any(q => q.QuestId == quest.Key) == true;
@@ -314,7 +335,7 @@ public static class SeasonValidator
                 {
                     var kind = (string?)condition.ConditionType;
                     Need(IsId((string?)condition.Id), path, "Objective requires an identity.");
-                    if (!storyQuest)
+                    if (!storyQuest && kind != "Quest")
                     {
                         Need((double?)condition.Value is >= 1 and <= 1000000, path, "Objective requires a positive quantity or level.");
                     }
@@ -354,35 +375,49 @@ public static class SeasonValidator
                     if (kind == "Quest" && !storyQuest)
                     {
                         Need(
-                            condition.Status is { Count: 1 } statuses && statuses[0] is "4" or "Success",
+                            condition.Status is { Count: > 0 } statuses
+                                && statuses.All(status =>
+                                    status
+                                        is "0"
+                                            or "1"
+                                            or "2"
+                                            or "3"
+                                            or "4"
+                                            or "5"
+                                            or "6"
+                                            or "7"
+                                            or "8"
+                                            or "9"
+                                            or "Locked"
+                                            or "AvailableForStart"
+                                            or "Started"
+                                            or "AvailableForFinish"
+                                            or "Success"
+                                            or "Fail"
+                                            or "FailRestartable"
+                                            or "MarkedAsFailed"
+                                            or "Expired"
+                                            or "AvailableAfter"
+                                ),
                             path,
-                            "Quest prerequisites require completed quests."
+                            "Quest conditions require valid quest states."
                         );
                     }
                 }
                 foreach (var grant in quest.Value.AllRewards())
                 {
                     var kind = (string?)grant.Type;
-                    Need(
-                        kind
-                            is "Item"
-                                or "Experience"
-                                or "TraderStanding"
-                                or "TraderUnlock"
-                                or "AssortmentUnlock"
-                                or "TraderStandingRestore"
-                                or "Skill"
-                                or "Customization",
-                        path,
-                        "Unsupported native quest reward: " + kind
-                    );
+                    Need(SupportsQuestReward(kind!), path, "Unsupported native quest reward: " + kind);
                     if (kind is "Item" or "AssortmentUnlock")
                     {
                         ItemTree(grant.Items, path, r);
                     }
                 }
             }
-            Visit(quest.Key, new HashSet<string>());
+        }
+        foreach (var id in QuestDependencyRules.Cycles(s.Quests))
+        {
+            r.Add("Quests/" + id, "Quest dependency cycle.", s.Legacy ? "warning" : "error");
         }
 
         ValidateMissions(s, quests, r, Need, Identity);
@@ -495,36 +530,6 @@ public static class SeasonValidator
                 .All(quest => missionQuestIds.Contains(quest.Id));
         }
 
-        void Visit(string id, HashSet<string> visiting)
-        {
-            if (visitedQuests.Contains(id) || !quests.TryGetValue(id, out var quest))
-            {
-                return;
-            }
-
-            if (visiting.Count > 128)
-            {
-                r.Add("Quests/" + id, "Quest chain exceeds 128 levels.");
-                return;
-            }
-            if (!visiting.Add(id))
-            {
-                r.Add("Quests/" + id, "Quest dependency cycle.", s.Legacy ? "warning" : "error");
-                return;
-            }
-            foreach (var c in quest.AllConditions().Where(c => c.ConditionType == "Quest"))
-            {
-                foreach (var target in c.Target ?? new StringTargets(Array.Empty<string>()))
-                {
-                    if (target != null)
-                    {
-                        Visit(target, new HashSet<string>(visiting));
-                    }
-                }
-            }
-
-            visitedQuests.Add(id);
-        }
         void Grid(IEnumerable<SeasonReward> rewards, int columns, int rows, string path)
         {
             var cells = new HashSet<(int, int)>();

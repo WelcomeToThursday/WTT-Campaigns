@@ -29,6 +29,8 @@ public sealed partial class RaidEditor
 
     internal void AiDefeated() => _aiDefeatPending = true;
 
+    private bool _aiUseProfileKit;
+
     private async void BeginAiPreview(bool playtest)
     {
         if (AiPreviewBusy || _walking || !EditorMode.Ready || !_open || Layout == null || _session?.Conflict != null)
@@ -93,7 +95,7 @@ public sealed partial class RaidEditor
             if (playtest)
             {
                 _aiPlayer = new EditorPreviewPlayer(player);
-                await _aiPlayer.Equip(lifetime.Token);
+                await _aiPlayer.Equip(lifetime.Token, _aiUseProfileKit);
             }
             lifetime.Token.ThrowIfCancellationRequested();
             if (_session != session || !EditorMode.Ready || !player)

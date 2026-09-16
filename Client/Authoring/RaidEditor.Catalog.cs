@@ -80,15 +80,18 @@ public sealed partial class RaidEditor
             || (!node.GetComponent<MeshRenderer>() && !node.GetComponent<LootItem>() && !node.GetComponent<LootableContainer>())
         )
             return;
-        for (var parent = node; parent; parent = parent.parent)
-            if (_discoveredRoots.Contains(parent))
-                return;
+        // Native interactables own their identity even inside an indexed visual root.
+        if (!node.GetComponent<LootItem>() && !node.GetComponent<LootableContainer>())
+            for (var parent = node; parent; parent = parent.parent)
+                if (_discoveredRoots.Contains(parent))
+                    return;
         if (node.GetComponentInParent<EFT.Player>() || node.GetComponentInParent<Canvas>())
             return;
         var root = MapSceneAdapter.Root(node) ?? WTT.Campaigns.UI.Controls.SceneSelectionGeometry.VisualRoot(node);
         if (!root || _sceneRoots.ContainsKey(root!.GetInstanceID().ToString()))
             return;
         _sceneRoots[root!.GetInstanceID().ToString()] = root;
+        _libraryKey = "";
         if (MapSceneAdapter.Supported(root).Length > 0)
         {
             _unsupportedSceneIds.Add(root.GetInstanceID().ToString());
@@ -129,6 +132,7 @@ public sealed partial class RaidEditor
 
     private void BindSceneControls(RaidEditorView view)
     {
+        BindContainerControls(view);
         void Button(string name, Action action) =>
             view.Button(
                 name,
@@ -268,7 +272,9 @@ public sealed partial class RaidEditor
                 );
             }
             var entries = new List<SceneCatalogEntry>();
-            foreach (var entry in _assetCatalog.Entries)
+            var nativeEntries = NativeContainerLibrary.Entries().AsValueEnumerable().ToArray();
+            var nativeTemplates = new HashSet<string>(nativeEntries.AsValueEnumerable().Select(e => e.AssetTarget!.Template).ToArray());
+            foreach (var entry in nativeEntries.AsValueEnumerable().Concat(_assetCatalog.Entries.AsValueEnumerable()))
             {
                 if ((_sceneFilter == "Containers") != (entry.AssetTarget?.Kind == "AssetContainer"))
                     continue;
@@ -295,6 +301,7 @@ public sealed partial class RaidEditor
                 if (!_sceneRoots.TryGetValue(id, out var source) || !source)
                     continue;
                 var container = source.GetComponent<LootableContainer>();
+                if (container && nativeTemplates.Contains(container.Template)) continue;
                 if ((_sceneFilter == "Containers") != (container != null))
                     continue;
                 if (source.name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0)
@@ -496,7 +503,7 @@ public sealed partial class RaidEditor
             if (_tool == "Scale" && !CanTransformScene("Scale"))
                 _tool = "Move";
             Refresh();
-            _view?.Windows.ShowPanel("Inspector", true);
+            _view?.Windows.ShowPanel(ConfiguredContainer != null ? "LootConfiguration" : "Inspector", true);
             return;
         }
         var root = MapSceneAdapter.Root(hit) ?? WTT.Campaigns.UI.Controls.SceneSelectionGeometry.VisualRoot(hit);
@@ -554,7 +561,7 @@ public sealed partial class RaidEditor
         SetSceneSelectionPose(root!, binding, error);
         _notice = error.Length > 0 ? "Selected for inspection. " + error : "Selected " + root!.name;
         Refresh();
-        _view?.Windows.ShowPanel("Inspector", true);
+        _view?.Windows.ShowPanel(ConfiguredContainer != null ? "LootConfiguration" : "Inspector", true);
     }
 
     private void SceneTransform(string tool)
@@ -711,6 +718,7 @@ public sealed partial class RaidEditor
                             Operation = "Copy",
                             Position = ZoneRuntime.Vector(position),
                             Rotation = rotation,
+                            Container = asset.AssetTarget.Kind is "AssetContainer" or "Container" ? new ContainerSettings { Mode = _containerTemplates?.Contains(asset.AssetTarget.Template) == true ? "Native" : "Empty" } : null,
                             Scale = asset.AssetTarget.Kind is "AssetContainer" or "Container"
                                 ? new SpatialVector
                                 {
@@ -800,7 +808,7 @@ public sealed partial class RaidEditor
 
     private string CatalogError(SceneCatalogEntry entry) =>
         entry.Error.Length > 0 ? entry.Error
-        : (entry.AssetTarget?.Kind is "AssetContainer" or "Container")
+        : entry.AssetTarget?.Bundle != NativeContainerLibrary.BundleKey && (entry.AssetTarget?.Kind is "AssetContainer" or "Container")
         && (_containerTemplates == null || !_containerTemplates.Contains(entry.AssetTarget.Template))
             ? (
                 _containerTemplates == null
@@ -835,6 +843,7 @@ public sealed partial class RaidEditor
 
     private void ClearSceneCatalog()
     {
+        ClearContainerControls();
         _assetCatalog?.Dispose();
         _assetCatalog = null;
         _containerTemplates = null;

@@ -94,6 +94,7 @@ public sealed partial class RaidEditor
         view.Button("AiWaypoint", AddAiWaypoint);
         view.Button("AiTrigger", CycleAiTrigger);
         view.Button("AiObserve", () => BeginAiPreview(false));
+        view.Dropdown("AiPlaytestGear", i => { if (!AiPreviewBusy) _aiUseProfileKit = i == 1; Refresh(); });
         view.Button("AiPlaytest", () => BeginAiPreview(true));
         view.Button("AiReset", EndAiPreview);
         view.Button("AiSimulate", SimulateSelectedAiEvent);
@@ -901,8 +902,6 @@ public sealed partial class RaidEditor
 
         _view.Text("Details", selected.Valid ? AiDetails(selected) : "AI authoring and preview. Select a record to edit.");
         _view.Get<Button>("AiReset").interactable = AiPreviewBusy;
-        _view.Get<Button>("AiObserve").interactable = !AiPreviewBusy;
-        _view.Get<Button>("AiPlaytest").interactable = !AiPreviewBusy;
         _view.Get<Button>("AiSimulate").interactable = _aiPreview;
         _view.Windows.SetTooltip(
             "AiSimulate",

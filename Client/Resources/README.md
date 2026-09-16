@@ -10,6 +10,14 @@ The entire Editor requires `wtt_campaigns_editor_toolkit.bundle` and its local `
 
 These generated files remain ignored like the other recovered game assets. `dotnet msbuild build.proj` validates and installs the bundle with its matching client assembly. See [the Editor guide](../../wiki/editor-toolkit.md) for scope and live acceptance checks.
 
+## Native container library
+
+`ContainerLibrary/catalog.json` and `ContainerLibrary/native-containers.bundle` are generated locally from the installed game's serialized map objects. They preserve the native container body, lid, colliders, interaction settings, materials, sounds and dependencies. These recovered assets remain ignored by Git.
+
+Run `.tools/Scripts/python.exe tools/export_container_library.py --output Client/Resources/ContainerLibrary` to scan the installed maps and rebuild the library. The importer reads game files without loading maps or launching the game. Use `--game` to override the default installation. The generated catalog records the native assembly fingerprint and bundle hash; `--verify` checks those hashes, native template coverage and every serialized object reference. MSBuild includes that check and deploys the library alongside the client.
+
+For an engine-side asset check, copy `tools/unity/CampaignsContainerLibraryCheck.cs` into a Unity 2022.3.43f1 Editor folder, set `WTT_CONTAINER_BUNDLE` to the generated bundle's absolute path, and execute `CampaignsContainerLibraryCheck.Run`. The SDK check covers models, meshes and material references; native interaction and loot ownership still require an in-game check after the user restarts the client and server.
+
 ## Story media
 
 `wtt_campaigns_story_notifications.bundle` holds the custom chapter notification GameObjects, backgrounds, animations and sounds. Shared status icons live in `wtt_campaigns_ui.bundle`; build and install both together. `story-notification-validation.json` is local build evidence used to verify the matching bundle hashes. Use `tools/recover_story_notifications.py` and `tools/unity/CampaignsStoryNotificationBuilder.cs` to rebuild the paired bundles in the matching CJ-SDK.

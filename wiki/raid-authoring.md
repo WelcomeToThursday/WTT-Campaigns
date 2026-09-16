@@ -170,6 +170,18 @@ Asset placements save their bundle and asset identity in campaign format **8**, 
 
 **Containers** preserve native opening, searching and item transfer. Supported current-map containers can be copied on that map; independently loadable container prefabs can be placed elsewhere when they have a supported native loot template. Containers retain their original size. Linked map triggers/glass, special event components and unsupported external references remain unavailable. Editing shows inert previews. Walkthroughs and playable tests obtain random native contents from the server, using the target map's mapping when present or a deterministic source-map mapping for that container type. Repeated requests in a run return the same generated items. Mission contents are persisted with the prepared run, including across server reloads. Each fresh run generates its own contents; catalog browsing never generates takeable loot.
 
+The locally generated **native container library** adds map-embedded containers to **All game → Containers**, independently of the loaded map or background prop scan. The installed game scan currently supplies 45 native container templates, including weapon boxes, sports bags, wooden supply crates, jackets, safes and caches. Current map filters that library to templates discovered in the loaded map. Models retain native bodies, lids, collision and interaction components; no other map is loaded for placement.
+
+Click a placed container in the scene, or select it in **Changes** or **In scene**, to open its dedicated **Loot configuration** tool. Move, resize, dock or close this window, and reopen it with **Loot** on the tool rail or **Windows > Loot configuration**. Selecting another object clears the tool. It provides:
+
+- **Contents:** random native loot, fixed contents, or empty.
+- **Loot pool:** use this container's pool or another native container pool. The placed model retains its own capacity.
+- **Spawn chance:** 0–100%, rolled once for each new run. A missed spawn is saved with that run too.
+- **Fixed contents:** search by item name, select a match, enter a quantity, and choose **Add item**. Weapons and other compound items use SPT's native assembly defaults. Quantities split into legal stacks. Oversized contents report an error instead of silently dropping items.
+- **Lock:** use the separate key search under **Access**, choose **Use selected key**, then toggle **Locked**. Unlocking uses the native interaction and key rules.
+
+Configured containers require campaign format **9** and authoring protocol **6**. Older clients cannot overwrite a layout containing these settings. Catalog previews remain inert; fresh walkthroughs and mission runs apply the saved configuration.
+
 The editor retains up to 64 container-run receipts per connected session without eviction, preventing retries from rerolling old results. Reconnect the editor session if that limit is reached. Scene-item eligibility is independent of trader prices/blacklists, but quest objects and inventory infrastructure remain excluded. Missing world models and malformed item assemblies report individual catalog errors.
 
 After installation, manually restart the client and server. Check a cross-map asset's placement, collision, save/reload and removal; then start a fresh walkthrough, search a container, transfer an item, reopen it to confirm no reroll, and return to editing to check cleanup. Offline validation does not establish live Unity visuals or other-mod compatibility.

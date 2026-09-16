@@ -106,6 +106,21 @@ internal sealed class SceneCatalogChecks : WTT.Campaigns.Server.Editor.EditorSes
                     && assetsSaved.Definition.MapLayouts[0].Objects.Any(o => o.Target.Asset == assetTarget.Asset),
                 "Version 5 client persists independent assets in format 8"
             );
+            request.Revision = assetsSaved.Revision;
+            request.Definition = SeasonCompiler.Copy(assetsSaved.Definition!);
+            var configured = request.Definition.MapLayouts[0].Objects.Last();
+            configured.Target.Kind = "AssetContainer";
+            configured.Target.Template = "578f8778245977358849a9b5";
+            configured.Container = new WTT.Campaigns.Shared.Spatial.ContainerSettings { Mode = "Empty" };
+            request.OperationId = Guid.NewGuid().ToString("N");
+            denied = false;
+            try { service.Submit(owner, profile, request); } catch (InvalidOperationException e) { denied = e.Message.Contains("Update the client"); }
+            check(denied, "Version 5 clients cannot silently omit configured container settings");
+            request.Version = 6;
+            request.OperationId = Guid.NewGuid().ToString("N");
+            var configuredSaved = service.Submit(owner, profile, request);
+            check(configuredSaved.Error == null && configuredSaved.Definition?.FormatVersion == 9,
+                "Version 6 authoring persists configured containers in format 9");
         }
         finally
         {

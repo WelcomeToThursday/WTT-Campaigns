@@ -160,7 +160,7 @@ internal sealed class RaidEditorSession
     {
         return new()
         {
-            Version = EditorMode.Ready ? 5 : 1,
+            Version = EditorMode.Ready ? 6 : 1,
             EditorSessionId = EditorMode.SessionId,
             ClientId = ClientId,
             RaidId = RaidId,

@@ -109,7 +109,7 @@ internal sealed partial class RaidEditorView
         {
             var parent = section.Id == "EditorWalkStatus" || section.Id == "ConflictShield" ? Document.Content : workspace;
             var element = BuildNode(section, parent);
-            if (section.Id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls")
+            if (section.Id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration")
             {
                 element.AddToClassList("editor-window");
                 element.AddToClassList("editor-surface");
@@ -118,6 +118,7 @@ internal sealed partial class RaidEditorView
                 var label = new Label(
                     section.Id == "Library" ? "BROWSER"
                     : section.Id == "Inspector" ? "PROPERTIES"
+                    : section.Id == "LootConfiguration" ? "LOOT CONFIGURATION"
                     : section.Id == "Controls" ? "EDITOR CONTROLS"
                     : "ENVIRONMENT"
                 );
@@ -127,6 +128,7 @@ internal sealed partial class RaidEditorView
                 var closeId =
                     section.Id == "Library" ? "LibraryCollapse"
                     : section.Id == "Inspector" ? "InspectorCollapse"
+                    : section.Id == "LootConfiguration" ? "LootClose"
                     : section.Id == "Controls" ? "HelpClose"
                     : "EnvironmentClose";
                 var close = new Button { text = "×", tooltip = "Hide window" };
@@ -141,6 +143,22 @@ internal sealed partial class RaidEditorView
                 element.Add(handle);
             }
         }
+        foreach (var id in new[] { "ContainerLootSection", "ContainerFixedSection", "ContainerAccessSection" })
+        {
+            var section = Element(id);
+            section.style.marginBottom = 14;
+            section.style.paddingBottom = 12;
+            section.style.borderBottomWidth = 1;
+            section.style.borderBottomColor = new Color(.3f, .3f, .27f);
+        }
+        foreach (var id in new[] { "ContainerMode", "ContainerPool", "ContainerItem", "ContainerContents", "ContainerKeyItem" })
+        {
+            Element(id).style.alignSelf = Align.Stretch;
+            Element(id).style.marginBottom = 6;
+        }
+        Element("ContainerSelection").style.fontSize = 18;
+        Element("ContainerSelection").style.marginBottom = 12;
+        Element("ContainerScroll").style.paddingLeft = Element("ContainerScroll").style.paddingRight = 12;
         foreach (var id in new[] { "WorkspaceTitleBar", "TransformToolbar", "StatusBar", "CaptureTask" })
             Element(id).AddToClassList("editor-toolbar");
         Element("WorkspaceTitleBar").style.top = 0;

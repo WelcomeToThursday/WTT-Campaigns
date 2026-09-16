@@ -24,7 +24,7 @@ public sealed class EditorPreviewGearRouter(JsonUtil json, SaveServer saves, Sea
                 {
                     try
                     {
-                        if (request.Version != 1)
+                        if (request.Version != 2)
                             throw new InvalidOperationException("Update both editor components together.");
                         var transportIdentity = profile.ToString();
                         var session = EditorSessionRegistry
@@ -37,13 +37,15 @@ public sealed class EditorPreviewGearRouter(JsonUtil json, SaveServer saves, Sea
                         session = current.RequireMap("preparing a playtest");
                         var now = DateTimeOffset.UtcNow;
                         session.Contact = now;
-                        var source = saves.GetProfile(new MongoId(session.ReturnProfile)).CharacterData!.PmcData!.Inventory!;
-                        var items = JsonConvert.DeserializeObject<List<NativeItem>>(json.Serialize(source.Items)!)!;
-                        var equipmentId = source.Equipment?.ToString();
-                        if (string.IsNullOrWhiteSpace(equipmentId))
-                            throw new InvalidOperationException("The selected character has no equipment root.");
-                        var bindings = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.Serialize(source.FastPanel)!);
-                        return new ValueTask<string>(JsonConvert.SerializeObject(EditorPreviewGearCopy.Copy(items, equipmentId, bindings)));
+                        if (request.UseProfileKit)
+                        {
+                            var source = saves.GetProfile(new MongoId(session.ReturnProfile)).CharacterData!.PmcData!.Inventory!;
+                            var items = JsonConvert.DeserializeObject<List<NativeItem>>(json.Serialize(source.Items)!)!;
+                            var equipment = source.Equipment.ToString();
+                            var bindings = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.Serialize(source.FastPanel)!);
+                            return new ValueTask<string>(JsonConvert.SerializeObject(EditorPreviewGearCopy.Copy(items, equipment, bindings)));
+                        }
+                        return new ValueTask<string>(JsonConvert.SerializeObject(EditorPreviewGearCopy.Placeholder(session)));
                     }
                     catch (Exception error)
                     {

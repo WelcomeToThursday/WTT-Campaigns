@@ -174,6 +174,10 @@ public sealed partial class RaidEditor
             scopes.Add(new("New: Layout"));
         view.SetDropdown("ZoneCreateScope", scopes, _zoneCreateShared ? 0 : scopes.Count - 1);
         view.Get<EditorChoice>("ZoneCreateScope").interactable = editable && _mode == "Zones";
+        view.SetDropdown("AiPlaytestGear", new() { new("Placeholder kit"), new("Copy main-profile kit") }, _aiUseProfileKit ? 1 : 0);
+        view.Get<EditorChoice>("AiPlaytestGear").interactable = !AiPreviewBusy;
+        view.Get<EditorButton>("AiObserve").interactable = editable && EditorMode.Ready && !_walking && !AiPreviewBusy && Layout != null;
+        view.Get<EditorButton>("AiPlaytest").interactable = editable && EditorMode.Ready && !_walking && !AiPreviewBusy && Layout != null;
         if (_mode != "AI")
             return;
         var selected = AiSelected(out _);
@@ -184,8 +188,6 @@ public sealed partial class RaidEditor
         view.Get<EditorButton>("AiRoster").interactable = canAuthor && selected.Wave != null;
         view.Get<EditorButton>("AiWaypoint").interactable = canAuthor && selected.Route != null;
         view.Get<EditorButton>("AiReset").interactable = AiPreviewBusy;
-        view.Get<EditorButton>("AiObserve").interactable = editable && !AiPreviewBusy && Layout != null;
-        view.Get<EditorButton>("AiPlaytest").interactable = editable && !AiPreviewBusy && Layout != null;
         view.Get<EditorButton>("AiSimulate").interactable = editable && _aiPreview;
         view.Caption("AiNavigation", "Inspect navigation: " + (_inspectAiNavigation ? "on" : "off"));
     }

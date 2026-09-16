@@ -114,6 +114,7 @@ public sealed partial class RaidEditor
                     : MapPoint?.Id ?? MapDoor?.Id ?? (_picked ? _picked!.GetInstanceID().ToString() : "")
                 : ""
         );
+        PresentContainerControls();
         view.Get<Button>("SceneFrame").interactable = CanFrameScene;
         view.Get<Button>("SceneAnchor").interactable = _drag == null && _placementLifetime == null && !_walking;
         view.Caption("SceneAnchor", _centerAnchor ? "Anchor: Center" : "Anchor: Pivot");

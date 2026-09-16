@@ -186,7 +186,7 @@ public sealed class TraderOfferCatalogue(
             || request.Id == null
             || request.Search == null
             || request.Search.Length > 120
-            || request.Category is not ("Items" or "Presets")
+            || request.Category is not ("Items" or "Presets" or "Keys")
         )
             throw new InvalidOperationException("Invalid catalog query.");
         var locale = locales.GetLocaleDb("en");
@@ -194,7 +194,7 @@ public sealed class TraderOfferCatalogue(
             request.Category == "Presets"
                 ? globals.ItemPresets.Values.Select(p => new SceneCatalogEntry { Id = p.Id.ToString(), Name = p.Name ?? p.Id.ToString() })
                 : templates
-                    .Items.Values.Where(t => IsSceneItem(t.Id.ToString()))
+                    .Items.Values.Where(t => IsSceneItem(t.Id.ToString()) && (request.Category != "Keys" || itemHelper.IsOfBaseclass(t.Id, BaseClasses.KEY)))
                     .Select(t => new SceneCatalogEntry
                     {
                         Id = t.Id.ToString(),
@@ -208,7 +208,7 @@ public sealed class TraderOfferCatalogue(
         {
             var ids = request.TemplateIds.ToHashSet();
             entries = entries.Where(e =>
-                request.Category == "Items"
+                request.Category != "Presets"
                     ? ids.Contains(e.Id)
                     : globals.ItemPresets[new MongoId(e.Id)].Items.Any(i => i.ParentId == null && ids.Contains(i.Template.ToString()))
             );

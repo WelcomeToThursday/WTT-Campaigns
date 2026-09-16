@@ -37,6 +37,7 @@
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; &quot;$(_NativeAssembly)&quot;" />
     <Exec Condition="'@(_WebTestAssembly)' != ''" Command="dotnet &quot;@(_WebTestAssembly)&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\test_quest_backports.py&quot;" />
+    <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\build_kord_copy.py&quot; --check" />
     <CallTarget Targets="ValidateCapturedQuests" Condition="('$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server') and Exists('$(MSBuildProjectDirectory)\..\1.0 Dump\gw-pve.escapefromtarkov.com\client\quest\list\response')" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --progression-data &quot;$(ServerDir)SPT_Data\database&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --appearance-data &quot;$(ServerDir)SPT_Data\database&quot;" />
@@ -46,6 +47,7 @@
       <_SharedAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Shared.dll'" />
       <_UiAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.UI.dll'" />
     </ItemGroup>
+    <Exec Condition="'@(_WebTestAssembly)' != '' and Exists('$(ServerDir)user\mods\BlackDivServer') and Exists('$(ServerDir)user\mods\WTT-ContentBackport')" Command="dotnet &quot;@(_WebTestAssembly)&quot; --kord-content &quot;$(TarkovDir).&quot; &quot;@(_ServerAssembly->'%(RootDir)%(Directory).')&quot;" />
     <Exec Condition="'@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-hooks &quot;$(ServerDir).&quot; &quot;@(_ServerAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != '' and '@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --mod-identity &quot;@(_ClientAssembly)&quot; &quot;@(_ServerAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != '' and '@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --authoring-socket &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot; &quot;@(_ServerAssembly)&quot;" />
@@ -57,6 +59,8 @@
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-toolkit &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --raid-startup-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --encounter-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --recovery-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_container_library.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\bin\$(Configuration)\netstandard2.1\ContainerLibrary&quot;" />
     <Exec Condition="'@(_UiAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-artwork &quot;@(_UiAssembly)&quot;" />
     <GetFileHash Files="@(_SharedAssembly)" Condition="'$(DeploymentScope)' == 'Client' or '$(DeploymentScope)' == 'Server'">
       <Output TaskParameter="Hash" PropertyName="_SharedHash" />

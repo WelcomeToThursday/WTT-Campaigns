@@ -62,13 +62,38 @@ public sealed partial class RaidEditor
         return path.ToString();
     }
 
-    private static IEnumerable<Transform> WalkScene()
+    private IEnumerable<Transform> WalkScene()
     {
-        var roots = new List<GameObject>();
-        for (var sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+        // EFT can pool native containers outside the ordinary map scenes. Index
+        // them first so the scenery limit cannot hide the map's loot containers.
+        var containers = new HashSet<Transform>();
+        foreach (var container in Resources.FindObjectsOfTypeAll<EFT.Interactive.LootableContainer>())
         {
-            var scene = SceneManager.GetSceneAt(sceneIndex);
-            if (!scene.isLoaded)
+            if (!container || !container.gameObject.scene.IsValid() || !container.gameObject.scene.isLoaded
+                || string.IsNullOrEmpty(container.Id))
+                continue;
+            var excluded = false;
+            for (var parent = container.transform; parent; parent = parent.parent)
+                if (ExcludedSceneBranch(parent.gameObject))
+                {
+                    excluded = true;
+                    break;
+                }
+            if (excluded) continue;
+            containers.Add(container.transform);
+            yield return container.transform;
+        }
+
+        var scenes = new HashSet<Scene>();
+        for (var i = 0; i < SceneManager.sceneCount; i++)
+            scenes.Add(SceneManager.GetSceneAt(i));
+        // Keep discovery consistent with the scenes exposed by RefreshLoadedScenes.
+        if (_player) scenes.Add(_player!.gameObject.scene);
+        scenes.Add(gameObject.scene);
+        var roots = new List<GameObject>();
+        foreach (var scene in scenes)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
                 continue;
             roots.Clear();
             scene.GetRootGameObjects(roots);
@@ -86,14 +111,10 @@ public sealed partial class RaidEditor
                     if (frame.Next == -1)
                     {
                         var go = frame.Node.gameObject;
-                        if (
-                            go.GetComponent<Canvas>()
-                            || go.GetComponent<EFT.Player>()
-                            || go.name.StartsWith("CampaignEditor", StringComparison.Ordinal)
-                            || go.name.StartsWith("SeasonalRaidEditor", StringComparison.Ordinal)
-                        )
+                        if (ExcludedSceneBranch(go))
                             continue;
-                        yield return frame.Node;
+                        if (!containers.Contains(frame.Node))
+                            yield return frame.Node;
                         frame.Next = 0;
                     }
                     if (frame.Next >= frame.Node.childCount)
@@ -107,6 +128,11 @@ public sealed partial class RaidEditor
             }
         }
     }
+
+    private static bool ExcludedSceneBranch(GameObject go) =>
+        go.GetComponent<Canvas>() || go.GetComponent<EFT.Player>()
+        || go.name.StartsWith("CampaignEditor", StringComparison.Ordinal)
+        || go.name.StartsWith("SeasonalRaidEditor", StringComparison.Ordinal);
 
     private void IndexScene()
     {

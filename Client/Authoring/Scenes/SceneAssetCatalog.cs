@@ -364,6 +364,7 @@ internal sealed class SceneAssetCatalog : IDisposable
     {
         internal GameObject Object = null!;
         internal DependencyGraph<IEasyBundle>.Token? Lease;
+        internal Action? ReleaseLibrary;
 
         public void Dispose()
         {
@@ -374,11 +375,15 @@ internal sealed class SceneAssetCatalog : IDisposable
             }
             Lease?.Release();
             Lease = null;
+            ReleaseLibrary?.Invoke();
+            ReleaseLibrary = null;
         }
     }
 
     internal static async Task<Model> Load(MapTarget target, CancellationToken token)
     {
+        if (target.Bundle == NativeContainerLibrary.BundleKey)
+            return await NativeContainerLibrary.Load(target, token);
         if (!target.IsAsset)
             return MapSceneAdapter.LoadSceneCopy(target);
         if (!SceneAssetRules.Valid(target))

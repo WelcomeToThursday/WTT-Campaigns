@@ -21,24 +21,24 @@ internal static class EditorSessionChecks
             Contact = now,
         };
         var request = new AuthoringRequest { EditorSessionId = serverSession.Id, Location = "Interchange" };
-        foreach (var version in new[] { 2, 3, 4, 5 })
+        foreach (var version in new[] { 2, 3, 4, 5, 6 })
         {
             request.Version = version;
             check(serverSession.AcceptsMapRequest("owner", request, now), "Editor map connection accepts protocol " + version);
         }
-        foreach (var version in new[] { 0, 1, 6 })
+        foreach (var version in new[] { 0, 1, 7 })
         {
             request.Version = version;
             check(!serverSession.AcceptsMapRequest("owner", request, now), "Editor map connection rejects protocol " + version);
         }
-        request.Version = 5;
-        check(!serverSession.AcceptsMapRequest("other", request, now), "Protocol 5 retains the owner check");
-        check(!serverSession.AcceptsMapRequest("owner", request, now.AddMinutes(2)), "Protocol 5 retains session expiry");
+        request.Version = 6;
+        check(!serverSession.AcceptsMapRequest("other", request, now), "Protocol 6 retains the owner check");
+        check(!serverSession.AcceptsMapRequest("owner", request, now.AddMinutes(2)), "Protocol 6 retains session expiry");
         request.EditorSessionId = "wrong";
-        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 5 retains the session token check");
+        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 6 retains the session token check");
         request.EditorSessionId = serverSession.Id;
         request.Location = "woods";
-        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 5 retains the exact map check");
+        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 6 retains the exact map check");
         serverSession.UnloadMap();
         request.Location = "";
         check(!serverSession.AcceptsMapRequest("owner", request, now), "A matching empty map cannot authorize an editor connection");
@@ -63,6 +63,26 @@ internal static class EditorSessionChecks
                         Location = "interchange",
                     }
                 );
+            // Exercise the actual client request builder against the live server gate,
+            // so a future client protocol bump cannot leave map connections behind.
+            serverSession.Location = "Interchange";
+            EditorMode.Ready = true;
+            EditorMode.SessionId = serverSession.Id;
+            socket.Reply = message =>
+            {
+                check(serverSession.AcceptsMapRequest("owner", message.Request, now),
+                    "The actual editor client request passes the server map-session gate");
+                return Response(baseline);
+            };
+            try
+            {
+                await new RaidEditorSession("Interchange") { Hold = true }.Tick();
+            }
+            finally
+            {
+                EditorMode.Ready = false;
+                EditorMode.SessionId = "";
+            }
             var session = new RaidEditorSession("interchange") { Hold = true };
             var notifications = 0;
             session.Changed += () => notifications++;

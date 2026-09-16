@@ -99,6 +99,12 @@ if (args.Length == 3 && args[0] == "--encounter-hooks")
     return;
 }
 
+if (args.Length == 3 && args[0] == "--recovery-hooks")
+{
+    WTT.Campaigns.Tests.RecoveryHookChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--editor-artwork")
 {
     WTT.Campaigns.Tests.EditorArtworkChecks.Run(args[1]);

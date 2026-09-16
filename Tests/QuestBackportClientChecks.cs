@@ -43,6 +43,25 @@ internal static class QuestBackportClientChecks
             options.Converters.Add(converter);
         }
         var manifest = JObject.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "data/quest-backports.json")));
+        using (
+            var stream = typeof(WTT.Campaigns.Server.Seasons.SeasonRepository).Assembly.GetManifestResourceStream(
+                "WTT.Campaigns.KordCopy.json"
+            )!
+        )
+        using (var reader = new StreamReader(stream))
+        {
+            var copy = JObject.Parse(reader.ReadToEnd());
+            foreach (var quest in copy["Quests"]!)
+            {
+                var server = System.Text.Json.JsonSerializer.Deserialize<Quest>(quest.ToString(), options)!;
+                var wire = JObject.Parse(System.Text.Json.JsonSerializer.Serialize(server, options));
+                foreach (var stage in new[] { "conditions", "rewards" })
+                {
+                    JsonConvert.DeserializeObject(wire[stage]!.ToString(), stagesType);
+                    check(true, "Released KORD " + stage + " survives native server and client stage conversion");
+                }
+            }
+        }
         foreach (var entry in manifest["Quests"]!)
         {
             var packaged = (JObject)entry["Quest"]!;

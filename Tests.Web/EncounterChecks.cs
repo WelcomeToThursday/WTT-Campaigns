@@ -109,6 +109,24 @@ internal static class EncounterChecks
             new() { Id = "stash", Template = "stash-tpl" },
         };
         var before = JsonConvert.SerializeObject(source);
+        var session = new EditorSessionRegistry.Session
+        {
+            ReturnProfile = "main-profile-must-not-be-read",
+            PreviewEquipmentId = "equipment",
+            PreviewItems = source,
+        };
+        var placeholder = EditorPreviewGearCopy.Placeholder(session);
+        var retry = EditorPreviewGearCopy.Placeholder(session);
+        check(placeholder.Slots.Any(s => s.Items.Any(i => i.Template == "rig-tpl")), "Playtest uses the editor starter snapshot");
+        var firstIds = placeholder.Slots.SelectMany(s => s.Items).Select(i => i.Id).ToHashSet();
+        check(!retry.Slots.SelectMany(s => s.Items).Any(i => firstIds.Contains(i.Id)), "Each playtest gets fresh placeholder identities");
+        check(!new EditorPreviewGearRequest().UseProfileKit, "Playtest defaults to the placeholder kit");
+        check(JsonConvert.DeserializeObject<EditorPreviewGearRequest>("{\"UseProfileKit\":true}")!.UseProfileKit,
+            "Main-profile equipment requires an explicit playtest choice");
+        var missingPlaceholder = false;
+        try { EditorPreviewGearCopy.Placeholder(new EditorSessionRegistry.Session { ReturnProfile = "main" }); }
+        catch (InvalidOperationException) { missingPlaceholder = true; }
+        check(missingPlaceholder, "Missing placeholder never falls back to the main profile kit");
         var preview = EditorPreviewGearCopy.Copy(source, "equipment");
         check(JsonConvert.SerializeObject(source) == before, "Preview gear copy does not mutate the source profile");
         check(

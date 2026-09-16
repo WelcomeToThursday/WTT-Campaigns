@@ -39,6 +39,7 @@ internal sealed partial class EditorToolkitWindows
                 {
                     var tab = new Label(
                         id.StartsWith("Tool:") ? RaidEditorView.ToolTitle(id.Substring(5))
+                        : id == "LootConfiguration" ? "Loot configuration"
                         : id == "Inspector" ? "Properties"
                         : id == "Controls" ? "Help"
                         : "Environment"

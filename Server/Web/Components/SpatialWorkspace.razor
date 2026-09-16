@@ -20,13 +20,15 @@
         <label>Shape<select @bind="zone.Shape"><option>Box</option><option>Sphere</option></select></label>
         @if (zone.Shape == "Box") { <SpatialVectorFields Value="zone.Size" Label="Size (metres)" Changed="Changed" /> }
         else { <label>Radius (metres)<input type="number" min="0.05" step="0.05" @bind="zone.Radius" /></label> }
-        @foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation", "Salvage" }) { <label class="check"><input type="checkbox" checked="@zone.Uses.Contains(use)" @onchange="@(e => Use(zone, use, (bool)e.Value!))" />@use</label> }
+        @foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation", "Salvage", "Shoot" }) { <label class="check"><input type="checkbox" checked="@zone.Uses.Contains(use)" @onchange="@(e => Use(zone, use, (bool)e.Value!))" />@use</label> }
+        <label>Available during quest<select @bind="zone.RequiredQuestId" @bind:after="NotifyChanged"><option value="">Any time</option>@foreach (var quest in Season.Quests) { <option value="@quest.Id">@WTT.Campaigns.Server.Web.Authoring.NativeQuestAuthoring.QuestName(quest)</option> }</select></label>
         @if (zone.Uses.Contains("Salvage"))
         {
             <fieldset class="field-section"><legend>CommonLib salvage</legend>
                 <ContentPicker Kind="items" Label="Required salvage item" Value="@zone.Salvage.RequiredItemTpl" Additional="OwnedItems" ValueChanged="@(async id => { zone.Salvage.RequiredItemTpl = id; await NotifyChanged(); })" />
                 <label>Salvage time (seconds)<input type="number" min="0.1" step="0.1" @bind="zone.Salvage.SalvageTime" @bind:after="NotifyChanged" /></label>
                 <label class="check"><input type="checkbox" @bind="zone.Salvage.ConsumeRequiredItem" @bind:after="NotifyChanged" />Consume required item</label>
+                <label class="check"><input type="checkbox" @bind="zone.Salvage.Recovery" @bind:after="NotifyChanged" />Recovery interaction (retry if the reward item is lost)</label>
                 <p>Rewards are granted during the raid. Enable quest inventory only for quest items.</p>
                 @foreach (var reward in zone.Salvage.Rewards.ToArray())
                 {

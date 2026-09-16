@@ -187,6 +187,8 @@ public sealed class HubQuestService(
             .Where(q => (bool?)q.SeasonalEnabled != false)
             .GroupBy(q => (string)q.Id!)
             .ToDictionary(g => g.Key, g => g.First());
+        foreach (var id in WTT.Campaigns.Shared.Native.QuestDependencyRules.Cycles(_captured.Values))
+            _unavailable[id] = "The quest has a circular activation or completion requirement.";
         foreach (var id in _captured.Keys)
         {
             Validate(id, new HashSet<string>());
@@ -215,7 +217,7 @@ public sealed class HubQuestService(
     {
         if (id == "6a4f82e11b7350af050b2e1c" && !templates.Quests.ContainsKey(new MongoId(id)))
         {
-            return "Historical Perspectives is unavailable until its full quest definition is recovered.";
+            return "Historical Perspectives has not been released yet.";
         }
         return _unavailable.GetValueOrDefault(id)
             ?? (templates.Quests.ContainsKey(new MongoId(id)) ? "" : "The required quest definition has not been recovered.");
@@ -245,7 +247,9 @@ public sealed class HubQuestService(
 
         if (!visiting.Add(id))
         {
-            return Fail("The quest has a cyclic dependency requiring a compatibility adapter.");
+            // Structural validation checks activation/completion milestones.
+            // Here a repeated reference only closes the content-availability walk.
+            return true;
         }
 
         if (QuestBackportCompatibility.Blocker(Newtonsoft.Json.Linq.JObject.FromObject(quest)) is { } stageBlocker)

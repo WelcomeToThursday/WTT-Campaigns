@@ -5,6 +5,7 @@ using BepInEx;
 using BepInEx.Configuration;
 using Comfort.Common;
 using Cysharp.Threading.Tasks;
+using Diz.LanguageExtensions;
 using EFT;
 using EFT.InventoryLogic;
 using EFT.UI.DragAndDrop;
@@ -328,9 +329,11 @@ public sealed class ItemPreviewClient : MonoBehaviour
                 var container =
                     parent.Containers.AsValueEnumerable().SingleOrDefault(c => c.ID == record.SlotId)
                     ?? throw new InvalidOperationException("Unknown item slot: " + record.SlotId);
-                if (container is Slot slot)
+                  if (container is Slot slot)
                 {
-                    var added = slot.Add(item, false);
+                    // These are newly constructed, detached items, not an inventory
+                    // move. Built-in armor parts occupy immutable native slots.
+                    var added = slot.Locked ? RestoreLockedPart(slot, item) : slot.Add(item, false);
                     if (!added.Succeeded)
                         throw new InvalidOperationException(added.Error.ToString());
                 }
@@ -372,6 +375,20 @@ public sealed class ItemPreviewClient : MonoBehaviour
             })
             .ToList();
         return items[rootRecord.Id];
+    }
+
+    private static OperationResult<ContainerAddResult> RestoreLockedPart(Slot slot, Item item)
+    {
+        if (!slot.Locked || slot.ContainedItem != null || !slot.CheckCompatibility(item)
+            || slot.BlockerSlots.Count > 0 || (item.IsSpecialSlotOnly && !slot.IsSpecial)
+            || slot.GetConflictingSlot(item).AsValueEnumerable().Any(s => s.ContainedItem != null))
+            throw new InvalidOperationException("Incompatible built-in item in slot " + slot.ID);
+        var conflicts = slot.CheckConflictingItems(item);
+        if (conflicts.Failed)
+            throw new InvalidOperationException(conflicts.Error.ToString());
+        // Keep the slot locked. Only this detached reconstruction skips the
+        // gameplay move restriction, after validating its contents above.
+        return slot.AddWithoutRestrictions(item);
     }
 
     private static byte[] Encode(Sprite sprite)

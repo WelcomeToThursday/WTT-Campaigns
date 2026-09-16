@@ -4,6 +4,7 @@ using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Extensions;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
+using SPTarkov.Server.Core.Models.Eft.Hideout;
 using SPTarkov.Server.Core.Models.Enums;
 using SPTarkov.Server.Core.Models.Spt.Config;
 using SPTarkov.Server.Core.Models.Spt.Mod;
@@ -334,6 +335,20 @@ public sealed partial class SeasonContentService(
                 }
             }
 
+            foreach (var loot in definition.QuestLoot)
+                Item(loot.ItemTemplate, "Quest loot/" + loot.QuestId);
+            foreach (var craft in definition.Crafts)
+            {
+                Item(craft.EndProduct, "Crafts/" + craft.Id);
+                foreach (var ingredient in craft.Requirements.Where(r => r.Type == "Item"))
+                    Item(ingredient.TemplateId, "Crafts/" + craft.Id);
+                if (
+                    hideout.Production.Recipes.Any(r => r.Id.ToString() == craft.Id)
+                    && (!_craftOwners.TryGetValue(craft.Id, out var owner) || owner != definition.Id)
+                )
+                    result.Add("Crafts/" + craft.Id, "Owned recipe collides with installed content.");
+            }
+
             foreach (var item in definition.Items)
             {
                 Item(item.CloneFrom, "Items/" + item.Id);
@@ -430,7 +445,7 @@ public sealed partial class SeasonContentService(
                         )
                     )
                     {
-                        result.Add(path, "Customization is not installed.", "dependency");
+                        result.Add(path, "Customization is not installed: " + grant.Target, "dependency");
                     }
 
                     if ((string?)grant.Type == "AssortmentUnlock" && !definition.TraderOffers.Any(o => o.Id == grant.Target))
@@ -634,6 +649,7 @@ public sealed partial class SeasonContentService(
                             "quest" => questIds.Contains(parts[1]),
                             "trader" => SeasonValidator.IsId(parts[1]) && traders.ContainsKey(new MongoId(parts[1])),
                             "preset" => templates.Profiles.ContainsKey(parts[1]),
+                            "mod" => loadedMods.Any(mod => mod.ModMetadata.ModGuid == parts[1]),
                             _ => false,
                         }
                     );
@@ -775,6 +791,19 @@ public sealed partial class SeasonContentService(
             }
         }
 
+        foreach (var craft in definition.Crafts)
+        {
+            if (
+                hideout.Production.Recipes.Any(r => r.Id.ToString() == craft.Id)
+                && (!_craftOwners.TryGetValue(craft.Id, out var owner) || owner != definition.Id)
+            )
+                throw new InvalidDataException("Campaign recipe collides with installed content: " + craft.Id);
+            var native = json.Deserialize<HideoutProduction>(JsonConvert.SerializeObject(craft))!;
+            hideout.Production.Recipes.RemoveAll(r => r.Id == native.Id);
+            hideout.Production.Recipes.Add(native);
+            _craftOwners[craft.Id] = definition.Id;
+        }
+
         if (crates)
         {
             foreach (var crate in definition.Crates)
@@ -790,4 +819,6 @@ public sealed partial class SeasonContentService(
             }
         }
     }
+
+    private readonly Dictionary<string, string> _craftOwners = new();
 }

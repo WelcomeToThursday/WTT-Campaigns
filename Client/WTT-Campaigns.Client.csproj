@@ -5,6 +5,7 @@
     <Version>0.9.0</Version>
   </PropertyGroup>
   <ItemGroup>
+    <None Include="Resources\ContainerLibrary\catalog.json;Resources\ContainerLibrary\native-containers.bundle" CopyToOutputDirectory="PreserveNewest" TargetPath="ContainerLibrary\%(Filename)%(Extension)" />
     <Using Remove="System.Linq" />
     <EmbeddedResource Include="Customization\Assets\face.png" LogicalName="WTT.Campaigns.Customization.face.png" />
     <Reference

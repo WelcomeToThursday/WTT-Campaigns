@@ -74,6 +74,8 @@ public static class SceneTargetRules
 
 public sealed class MapObjectEdit : SpatialCapture
 {
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public ContainerSettings? Container { get; set; }
     public MapTarget Target { get; set; } = new();
     public string Operation { get; set; } = "Move";
     public SpatialVector Scale { get; set; } =
@@ -83,6 +85,22 @@ public sealed class MapObjectEdit : SpatialCapture
             Y = 1,
             Z = 1,
         };
+}
+
+public sealed class ContainerSettings
+{
+    public string Mode { get; set; } = "Native";
+    public string LootPool { get; set; } = "";
+    public int SpawnChance { get; set; } = 100;
+    public bool Locked { get; set; }
+    public string KeyTemplate { get; set; } = "";
+    public List<ContainerContent> Contents { get; set; } = new();
+}
+
+public sealed class ContainerContent
+{
+    public string Template { get; set; } = "";
+    public int Count { get; set; } = 1;
 }
 
 public sealed class MapDoorEdit
@@ -108,6 +126,7 @@ public sealed class MapVolume : SpatialCapture
 
 public static class MapLayoutRules
 {
+    public static bool NeedsFormat9(MapLayout layout) => layout.Objects?.Any(o => o?.Container != null) == true;
     public static bool NeedsFormat8(MapLayout layout) =>
         layout.Objects?.Any(o => o?.Target?.IsAsset == true || (o != null && SceneAssetRules.IsContainer(o))) == true;
 
@@ -118,7 +137,8 @@ public static class MapLayoutRules
         layout.SpawnPoints?.Count > 0 || layout.Encounters?.Count > 0 || layout.PatrolRoutes?.Count > 0;
 
     public static int Format(IEnumerable<MapLayout> layouts) =>
-        layouts.Any(NeedsFormat8) ? 8
+        layouts.Any(NeedsFormat9) ? 9
+        : layouts.Any(NeedsFormat8) ? 8
         : layouts.Any(NeedsFormat6) ? 6
         : layouts.Any(NeedsFormat5) ? 5
         : 4;
@@ -236,6 +256,18 @@ public static class MapLayoutRules
                 "Placed containers require a native template identity."
             );
             Need(Positive(edit.Scale), "Invalid object scale: " + edit.Name);
+            if (edit.Container is { } settings)
+            {
+                Need(SceneAssetRules.IsContainer(edit), "Container settings require a placed loot container.");
+                Need(settings.Mode is "Native" or "Fixed" or "Empty", "Unknown container loot mode.");
+                Need(settings.SpawnChance is >= 0 and <= 100, "Container spawn chance must be between 0 and 100.");
+                Need(settings.LootPool == "" || SeasonValidator.IsId(settings.LootPool), "Invalid container loot pool.");
+                Need(settings.KeyTemplate == "" || SeasonValidator.IsId(settings.KeyTemplate), "Invalid container key.");
+                Need(!settings.Locked || SeasonValidator.IsId(settings.KeyTemplate), "Choose a key for the locked container.");
+                Need(settings.Contents != null && settings.Contents.Count <= 100, "A container supports up to 100 fixed item entries.");
+                foreach (var content in settings.Contents ?? new())
+                    Need(content != null && SeasonValidator.IsId(content.Template) && content.Count is > 0 and <= 10000, "Invalid fixed container item or quantity.");
+            }
         }
         foreach (var loot in layout.Loot)
         {

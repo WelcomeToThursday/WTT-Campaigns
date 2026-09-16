@@ -17,7 +17,8 @@ public sealed class EditorSessions(
     CreateProfileService creator,
     TemplateTable templates,
     SeasonService seasons,
-    SeasonRepository repository
+    SeasonRepository repository,
+    SPTarkov.Server.Core.Utils.JsonUtil json
 ) : EditorSessionRegistry
 {
     public void RecoverAbandoned(string identity)
@@ -91,6 +92,12 @@ public sealed class EditorSessions(
                 }
             );
             var pmc = saves.GetProfile(new MongoId(id)).CharacterData!.PmcData!;
+            var inventory = pmc.Inventory ?? throw new InvalidOperationException("Editor template has no inventory.");
+            session.PreviewItems = Newtonsoft.Json.JsonConvert.DeserializeObject<List<WTT.Campaigns.Shared.Native.NativeItem>>(
+                json.Serialize(inventory.Items)!)!;
+            session.PreviewEquipmentId = inventory.Equipment.ToString();
+            session.PreviewBindings = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, string>>(
+                json.Serialize(inventory.FastPanel)!) ?? new();
             EditorScratchInventory.Prepare(pmc);
             session.Ready = true;
             return Response(session);

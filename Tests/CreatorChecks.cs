@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using WTT.Campaigns.Server.Seasons;
 using WTT.Campaigns.Shared.Hub;
+using WTT.Campaigns.Shared.Native;
 using WTT.Campaigns.Shared.Seasons;
 
 namespace WTT.Campaigns.Tests;
@@ -150,7 +151,38 @@ internal static class CreatorChecks
             var corruptDraftPath = Path.Combine(directory, "creator", "drafts", first.Id + ".json");
             File.WriteAllText(corruptDraftPath, "{");
             check(store.Load(first.Id).Revision == first.Revision - 1, "Corrupt draft recovers previous atomic backup");
-            var duplicate = SeasonRepository.Duplicate(store.Legacy);
+            var sourceJson = JsonConvert.SerializeObject(store.Legacy);
+            var duplicate = store.Load(store.Create(true, store.Legacy).Id).Definition;
+            var duplicateValidation = SeasonValidator.Validate(duplicate);
+            check(
+                duplicateValidation.CanPublish,
+                "Built-in campaign duplicate validates: " + JsonConvert.SerializeObject(duplicateValidation.Issues)
+            );
+            check(
+                duplicateValidation.Issues.All(issue => issue.Severity == "info"),
+                "Clean built-in copy reports disabled content without spurious errors or warnings"
+            );
+            check(JsonConvert.SerializeObject(store.Legacy) == sourceJson, "Duplicating preserves built-in source content");
+            check(
+                !duplicate.Legacy && duplicate.Quests.Count == 12 && duplicate.Quests.All(q => q.SeasonalEnabled != false),
+                "Copy enables every released KORD quest under normal validation"
+            );
+            var disabledIds = duplicate.Quests.Where(q => q.SeasonalEnabled == false).Select(q => q.Id).ToHashSet();
+            check(
+                duplicate
+                    .Quests.Where(q => q.SeasonalEnabled != false)
+                    .All(q => !q.AllConditions().Any(c => c.ConditionType == "Quest" && c.Target?.Any(disabledIds.Contains) == true)),
+                "Playable copied quests do not depend on disabled copied quests"
+            );
+            check(
+                duplicate.Quests.SelectMany(q => q.AllRewards()).SelectMany(r => r.Items).Count()
+                    == BuiltInCampaignCopy.Prepare(store.Legacy).Quests.SelectMany(q => q.AllRewards()).SelectMany(r => r.Items).Count(),
+                "Reward normalization preserves every item and attachment"
+            );
+            BuiltInCopyChecks.Run(first.Definition, duplicate, check);
+            Console.WriteLine(
+                $"Built-in duplication: {duplicate.Quests.Count(q => q.SeasonalEnabled != false)} playable quests; {disabledIds.Count} incompatible or dependent quests retained disabled; no validation errors."
+            );
             check(
                 !duplicate.Perks.All.Select(p => p.Id).Intersect(store.Legacy.Perks.All.Select(p => p.Id)).Any(),
                 "Duplication replaces owned perk identities"

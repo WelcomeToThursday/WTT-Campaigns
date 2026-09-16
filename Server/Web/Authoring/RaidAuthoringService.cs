@@ -134,7 +134,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         {
             Expire();
             if (
-                r.Version is not (1 or 2 or 3 or 4 or 5)
+                r.Version is not (1 or 2 or 3 or 4 or 5 or 6)
                 || !Guid.TryParseExact(r.ClientId, "N", out _)
                 || !Guid.TryParseExact(r.RaidId, "N", out _)
                 || r.Location.Length is 0 or > 120
@@ -226,7 +226,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         {
             Expire();
             if (
-                r.Version is not (1 or 2 or 3 or 4 or 5)
+                r.Version is not (1 or 2 or 3 or 4 or 5 or 6)
                 || !_clients.TryGetValue(r.ClientId, out var c)
                 || c.Owner != owner
                 || c.Client.CharacterId != character
@@ -324,6 +324,8 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                         )
                     )
                         throw new InvalidOperationException("Update the client before editing layouts with scene catalog records.");
+                    if (r.Version < 6 && (baseline.MapLayouts.Any(MapLayoutRules.NeedsFormat9) || draft.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat9) || r.Definition.MapLayouts.Any(MapLayoutRules.NeedsFormat9)))
+                        throw new InvalidOperationException("Update the client to preserve configured loot containers.");
                     if (
                         r.Version < 5
                         && (

@@ -95,6 +95,14 @@ internal static class EditorToolkitChecks
         var nodes = Nodes().ToArray();
         if (nodes.Select(n => n.Id).Distinct().Count() != nodes.Length)
             throw new InvalidOperationException("Duplicate Toolkit control ids.");
+        var lootWindow = EditorLayoutSpec.Sections.Single(n => n.Id == "LootConfiguration");
+        if (lootWindow.Children.Single().Id != "ContainerScroll"
+            || !lootWindow.Children.Single().Children.Any(n => n.Id == "ContainerSettingsGroup"))
+            throw new InvalidOperationException("Loot configuration must have its own scrollable tool window.");
+        var inspector = EditorLayoutSpec.Sections.Single(n => n.Id == "Inspector");
+        bool ContainsContainer(EditorLayoutSpec.Node node) => node.Id == "ContainerSettingsGroup" || node.Children.Any(ContainsContainer);
+        if (ContainsContainer(inspector))
+            throw new InvalidOperationException("Container controls must not crowd the Properties inspector.");
         var inventory = nodes.ToDictionary(n => n.Id, n => n.Kind);
         foreach (var id in new[] { "Library", "Inspector", "EnvironmentMenu", "Controls" })
             inventory[id + "Heading"] = "text";
@@ -131,6 +139,33 @@ internal static class EditorToolkitChecks
         foreach (var id in new[] { "KeepLocal", "KeepRemote", "Cancel", "Complete", "CloseEditor" })
             if (!nodes.Any(n => n.Id == id && n.Kind == "button"))
                 throw new InvalidOperationException("Missing Editor action: " + id);
+        // The typed wrappers also call Get<T>, but their control name is an
+        // argument rather than a literal inside Get. Check the container caller
+        // against the actual layout, including captions chosen by a branch.
+        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        foreach (var name in new[] { "PresentContainerControls", "BindContainerControls" })
+        {
+            string? control = null;
+            foreach (var instruction in editor.Methods.Single(m => m.Name == name).Body.Instructions)
+            {
+                if (instruction.OpCode.Code == Mono.Cecil.Cil.Code.Ldstr
+                    && instruction.Operand is string id && inventory.ContainsKey(id))
+                    control = id;
+                if (instruction.Operand is not MethodReference call || call.DeclaringType.Name != "RaidEditorView")
+                    continue;
+                var expected = call.Name switch
+                {
+                    "Text" => "text",
+                    "Caption" or "Button" => "button",
+                    "Input" or "Value" => "input",
+                    "Dropdown" or "SetDropdown" => "choice",
+                    _ => null,
+                };
+                if (control != null && expected != null && inventory[control] != expected)
+                    throw new InvalidOperationException($"Wrong container control: {control} is {inventory[control]}, but {name} calls {call.Name}.");
+                control = null;
+            }
+        }
         Console.WriteLine(
             $"Editor Toolkit: {references.Length} installed runtime APIs resolve; {inspected} Editor references have no uGUI controls; {nodes.Length} unique controls checked offline."
         );

@@ -35,6 +35,10 @@ public class SpatialCapture
 
 public sealed class SeasonZone : SpatialCapture
 {
+    public string RequiredQuestId { get; set; } = "";
+
+    public bool ShouldSerializeRequiredQuestId() => RequiredQuestId.Length > 0;
+
     // Empty means Shared and keeps zones authored before layout ownership was introduced global.
     public string LayoutId { get; set; } = "";
     public SalvageZoneSettings Salvage { get; set; } = new();
@@ -54,6 +58,10 @@ public sealed class SeasonZone : SpatialCapture
 
 public sealed class SalvageZoneSettings
 {
+    public bool Recovery { get; set; }
+
+    public bool ShouldSerializeRecovery() => Recovery;
+
     public string RequiredItemTpl { get; set; } = "";
     public float SalvageTime { get; set; } = 10;
     public bool ConsumeRequiredItem { get; set; } = true;
@@ -157,13 +165,27 @@ public static class SpatialRules
                     errors.Add("Zone dimensions must be positive and finite: " + zone.Id);
                 }
 
-                if (zone.Uses == null || zone.Uses.Any(u => u is not ("InZone" or "VisitPlace" or "LeaveItemAtLocation" or "Salvage")))
+                if (
+                    zone.Uses == null
+                    || zone.Uses.Any(u => u is not ("InZone" or "VisitPlace" or "LeaveItemAtLocation" or "Salvage" or "Shoot"))
+                )
                 {
                     errors.Add("Unsupported quest zone use: " + zone.Id);
                 }
+                if (zone.RequiredQuestId.Length > 0 && !season.Quests.Any(q => q.Id == zone.RequiredQuestId && q.SeasonalEnabled != false))
+                    errors.Add("Zone quest gate must reference an active owned quest: " + zone.Id);
                 if (zone.Uses?.Contains("Salvage") == true)
                 {
                     var salvage = zone.Salvage;
+                    if (
+                        salvage?.Recovery == true
+                        && (
+                            zone.RequiredQuestId.Length == 0
+                            || salvage.Rewards.Count != 1
+                            || salvage.Rewards.Any(r => r.ToQuestInventory || r.Count != 1)
+                        )
+                    )
+                        errors.Add("Recovery interactions require a quest gate and ordinary inventory rewards: " + zone.Id);
                     if (
                         requireCompleteSalvage
                         && (
@@ -181,6 +203,8 @@ public static class SpatialRules
                     if (zone.Uses.Contains("LeaveItemAtLocation"))
                         errors.Add("Salvage and item placement require separate zones: " + zone.Id);
                 }
+                if (zone.Uses?.Contains("Shoot") == true && (zone.Uses.Count != 1 || zone.Shape != "Box"))
+                    errors.Add("Shooting targets require a dedicated box volume: " + zone.Id);
             }
         }
         foreach (var binding in season.Story?.RaidBindings ?? new())
@@ -194,11 +218,11 @@ public static class SpatialRules
             if (
                 zone == null
                 || zone.Location != binding.Location
-                || binding.Kind is not ("Trigger" or "Cinematic")
+                || (binding.Kind is not ("Trigger" or "Cinematic") && !(binding.Kind == "Shoot" && zone.Uses.Contains("Shoot")))
                 || binding.ObjectPath.Length > 0
             )
             {
-                errors.Add("A zone binding requires a matching map, Trigger/Cinematic kind and no object path: " + binding.Id);
+                errors.Add("A zone binding requires a matching map, supported trigger or shooting zone, and no object path: " + binding.Id);
             }
         }
         foreach (var condition in Conditions(season))
@@ -214,7 +238,7 @@ public static class SpatialRules
 
         errors.AddRange(ZoneLayoutRules.Errors(season));
 
-        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7 or 8))
+        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7 or 8 or 9))
         {
             errors.Add("Spatial content requires campaign format 2 or later.");
         }

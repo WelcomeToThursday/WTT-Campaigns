@@ -65,6 +65,28 @@ internal static class SceneAssetChecks
             MapLayoutRules.Errors(layout).Any(e => e.Contains("original size")),
             "Container scaling cannot break native grips and animation"
         );
+        edit.Scale.X = 1;
+        edit.Container = new ContainerSettings { Mode = "Fixed", SpawnChance = 35,
+            Contents = [new ContainerContent { Template = "544fb45d4bdc2dee738b4568", Count = 3 }] };
+        check(MapLayoutRules.Format([layout]) == 9 && MapLayoutRules.Errors(layout).Count == 0,
+            "Configured containers require format 9 and accept fixed item quantities and spawn chance");
+        var configured = JsonConvert.DeserializeObject<MapObjectEdit>(JsonConvert.SerializeObject(edit))!;
+        check(configured.Container?.SpawnChance == 35 && configured.Container.Contents.Single().Count == 3,
+            "Container settings survive layout persistence");
+        foreach (var chance in new[] { -1, 101 })
+        {
+            edit.Container.SpawnChance = chance;
+            check(MapLayoutRules.Errors(layout).Any(e => e.Contains("spawn chance")), "Reject invalid container spawn chance");
+        }
+        edit.Container.SpawnChance = 0;
+        check(MapLayoutRules.Errors(layout).Count == 0, "A zero-percent container remains a valid authored placement");
+        edit.Container.Locked = true;
+        check(MapLayoutRules.Errors(layout).Any(e => e.Contains("Choose a key")), "Locked containers require an unlock key");
+        edit.Container.KeyTemplate = "5938144586f77473c2087145";
+        check(MapLayoutRules.Errors(layout).Count == 0, "Locked containers preserve an authored key identity");
+        edit.Container.Contents[0].Count = 0;
+        check(MapLayoutRules.Errors(layout).Any(e => e.Contains("fixed container")), "Zero fixed quantities are rejected");
+        edit.Container = null;
 
         var stamp = SceneAssetRules.CacheFingerprint(new[] { "crate:100:10", "materials:200:20" });
         check(

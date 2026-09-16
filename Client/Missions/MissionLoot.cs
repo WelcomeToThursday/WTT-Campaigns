@@ -75,6 +75,7 @@ internal sealed class MissionLoot : IDisposable
                         continue;
                     if (containerLoot == null || !containerLoot.TryGetValue(placement.Id, out var contents))
                         throw new InvalidOperationException("This run has no server-generated contents for " + placement.Name);
+                    if (contents.Count == 0) continue; // Persisted spawn-chance miss.
                     var model = await SceneAssetCatalog.Load(placement.Target, token);
                     LootableContainer? container = null;
                     SceneNavigation? navigation = null;
@@ -118,6 +119,11 @@ internal sealed class MissionLoot : IDisposable
                             foreach (var child in containerItems.GetAllItemsFromCollection())
                                 child.SpawnedInSession = true;
                         LootItem.CreateLootContainer(container, item, placement.Name, world, container.Id);
+                        if (placement.Container is { } settings)
+                        {
+                            container.KeyId = settings.KeyTemplate;
+                            container.DoorState = settings.Locked ? EDoorState.Locked : EDoorState.Shut;
+                        }
                         model.Object.SetActive(true);
                         navigation = new SceneNavigation(model.Object.transform);
                         _containers.Add((model, container, navigation));

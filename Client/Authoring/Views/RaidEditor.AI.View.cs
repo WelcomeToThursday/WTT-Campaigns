@@ -10,8 +10,6 @@ internal static class RaidEditorAiView
         "AiSpawn",
         "AiPatrol",
         "AiWaypoint",
-        "AiObserve",
-        "AiPlaytest",
         "AiReset",
         "AiSimulate",
         "AiNavigation",

@@ -17,8 +17,10 @@ namespace WTT.Campaigns.Client;
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 [BepInDependency("com.wtt.commonlib", "3.0.6")]
-[BepInDependency("xyz.drakia.bigbrain", BepInDependency.DependencyFlags.SoftDependency)]
-[BepInDependency("me.sol.sain", BepInDependency.DependencyFlags.SoftDependency)]
+[BepInDependency("xyz.drakia.bigbrain", "1.5.0")]
+[BepInDependency("me.sol.sain", "4.5.1")]
+[BepInDependency("com.morebotsapi.tacticaltoaster", "2.1.1")]
+[BepInDependency("com.blackdiv.tacticaltoaster", "1.3.1")]
 public sealed class Plugin : BaseUnityPlugin
 {
     internal static Plugin Instance = null!;
