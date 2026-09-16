@@ -11,5 +11,6 @@ public sealed class StoryAction
     public double StandingChange { get; set; }
 
     public bool ShouldSerializeStandingChange() => Type == StoryActionType.TraderStanding;
+
     public StoryVariableScope Scope { get; set; }
 }

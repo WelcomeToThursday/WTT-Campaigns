@@ -386,7 +386,8 @@ public static class EditorFieldGuide
                     StoryActionType.EmbedQuestDialog => "Embeds the selected quest conversation in the current story flow.",
                     StoryActionType.AcceptQuest => "Accepts the selected owned quest when its start requirements allow it.",
                     StoryActionType.FinishQuest => "Finishes the selected owned quest when its required objectives allow completion.",
-                    StoryActionType.FailQuest => "Fails the selected active owned quest through the native quest system, including its failure rewards. Completed or unstarted quests cannot be failed.",
+                    StoryActionType.FailQuest =>
+                        "Fails the selected active owned quest through the native quest system, including its failure rewards. Completed or unstarted quests cannot be failed.",
                     StoryActionType.HandoverItem =>
                         "Hands eligible items to the selected owned quest's handover objective. Choose that objective below.",
                     StoryActionType.PlayerReward => "Requests the native rewards for the selected owned quest through the quest adapter.",

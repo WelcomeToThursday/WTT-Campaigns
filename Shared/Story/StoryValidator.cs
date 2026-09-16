@@ -126,7 +126,11 @@ public static class StoryValidator
             if (a.Type == StoryActionType.TraderStanding)
             {
                 Need(SeasonValidator.IsId(a.Target), path, "A valid trader target is required.");
-                Need(!double.IsNaN(a.StandingChange) && !double.IsInfinity(a.StandingChange), path, "Trader standing change must be finite.");
+                Need(
+                    !double.IsNaN(a.StandingChange) && !double.IsInfinity(a.StandingChange),
+                    path,
+                    "Trader standing change must be finite."
+                );
             }
             if (a.Type == StoryActionType.CompleteItem)
             {
