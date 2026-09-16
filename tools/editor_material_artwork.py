@@ -19,7 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--refresh', action='store_true')
     args = parser.parse_args()
-    names = sorted(set(re.findall(r'\["[^"]+"\] = "([^"]+)"', (ROOT / 'UI/Controls/EditorTarkovTheme.cs').read_text())) | {'dock-to-right-rounded'})
+    names = sorted(set(re.findall(r'\["[^"]+"\] = "([^"]+)"', (ROOT / 'UI/Controls/EditorToolkitIcons.cs').read_text())) | {'dock-to-right-rounded'})
     DEST.mkdir(parents=True, exist_ok=True)
     if args.refresh:
         request = urllib.request.Request('https://api.github.com/repos/iconify/icon-sets/commits?path=json/material-symbols.json&per_page=1', headers={'User-Agent': 'WTT-Campaigns-artwork'})

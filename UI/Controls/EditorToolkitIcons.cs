@@ -20,7 +20,7 @@ public static class EditorToolkitIcons
         ["Bindings"] = "bolt-rounded",
         ["Captures"] = "photo-camera-outline-rounded",
         ["Scene"] = "forest-outline-rounded",
-        ["LootTool"] = "deployed-code-outline-rounded",
+        ["LootTool"] = "inventory-2-outline-rounded",
         ["AI"] = "psychology-rounded",
         ["CloseEditor"] = "close-rounded",
         ["HelpToggle"] = "help-outline-rounded",
