@@ -1,12 +1,42 @@
-# WTT-Campaigns 0.9.0 — Unreleased
+# WTT-Campaigns 0.9.0 — Editor tools, containers and character recovery
 
-The 0.9.0 development cycle is underway.
+This beta expands the Campaign Editor with a game-wide asset catalog, configurable native loot containers and a more flexible workspace. It also adds recovery for surviving campaign characters and updates the built-in KORD campaign copy.
 
-## Maintenance
+## New and improved
 
-- Fixed startup type-loading errors when SAIN or BigBrain is absent, which could leave game serialization uninitialized and prevent raids from loading (issue #10). The optional AI integration now loads only after its dependency checks pass.
+- **Game-wide scene catalog.** Browse All game or Current map, with separate Props, Containers, Loot and Presets categories. Search installed asset names and bundle paths, preview supported objects and save cross-map asset placements. Discovery runs incrementally while the catalog is open and caches its results between sessions.
+- **Native searchable containers.** Place supported containers with normal opening, searching and item transfer in walkthroughs and missions. The included native container library covers 45 templates, including weapon boxes, bags, jackets, safes and caches. Editing previews remain inert.
+- **Loot configuration.** Give placed containers random native loot, fixed contents or no contents; select a loot pool, set spawn chance, and configure a key and lock. Contents and spawn results remain stable within a run, and a fresh run generates new results. Mission container state survives server reloads.
+- **Flexible editor workspace.** Dock, resize and arrange tool windows, retain separate tool selections, and use the dedicated Loot configuration window. Improvements include catalog grids, tooltips, numeric dragging, UI scaling and panel separators. The editor remembers camera positions across map sessions.
+- **Scene editing improvements.** More original props support movement and rotation while preserving their native effects and physics state. Selection from Maps opens the corresponding Scene inspector. Unsupported copying or resizing is explained in the inspector, including props with unreadable collision meshes.
+- **Character recovery.** An administrator can link surviving campaign characters whose launcher account is missing to a replacement account. Recovery preserves inventory and campaign progress, keeps existing destination characters available, and backs up data before changing ownership. It cannot recreate deleted character saves.
+- **Updated KORD campaign copies.** Fresh copies use the 12 released KORD BREACH quests with campaign-owned identities, adapted prerequisites, native camera placement and recovery, quest loot on Black Division operatives, shootable radio objectives, the Intelligence Center recipe and the Skier rifle offer. Existing drafts retain their edits; create a fresh copy to receive the updated template.
+- **Compatibility and recovery fixes.** Optional AI code is isolated so missing SAIN or BigBrain no longer causes the startup type-loading failure reported in issue #10. This release also improves editor startup recovery, mission loot handling and client/server map-session compatibility.
 
-- Organized Campaign Editor client code into focused view, scene, rendering, and preview namespaces. This is an internal code cleanup with no intended gameplay changes.
+## Requirements and updating
+
+Targets **SPT 4.1.x / EFT 0.16.9.40743**, with AI integration targeting **SPT 4.1.5**. Install dependencies separately: **UnityToolkit 2.0.2+** with its prepatcher, **WTT-CommonLib 3.0.6+**, **WTT-ContentBackport 2.0.1+** and its dependencies, **BigBrain 1.5.0+**, **SAIN 4.5.1+**, **MoreBotsAPI 2.1.1+**, and **Black Division 1.3.1+**. Use matching client/server components where supplied. See the README for the full requirements.
+
+Close the game and server and back up your profiles before updating. Extract the archive's `BepInEx` and `SPT_Runtime` folders into your SPT installation. Install the **full matching 0.9.0 package**, including its UI bundles, AI integration and container library. Preserve configuration, regular and campaign profiles, and the server mod's entire `creator` folder. Start the server and game manually when ready.
+
+Configured containers use **campaign format 9 / authoring protocol 6**. Cross-map asset placements use format 8; older campaign content remains supported. Update client and server together before editing these layouts.
+
+## Beta limitations
+
+- Fika is not supported. Offline validation does not establish live Unity visuals, raid behavior or compatibility with every installed mod.
+- Asset discovery does not make every object placeable. Unsupported linked gameplay components, missing resources and ambiguous scene targets still require resolution. The editor does not rebuild navigation meshes.
+- Containers retain their original size. An editor connection retains up to 64 container-run receipts; reconnect if that limit is reached.
+- KORD copies require the installed Black Division and ContentBackport content. Unreleased Historical Perspectives rewards and nine unavailable cosmetics remain disabled. Authored trader offers still require item-preview validation before publication.
+- Normal missions use your actual campaign character and normal raid consequences. Use disposable editor tests for rehearsal.
+
+## Guides
+
+- [Installation and overview](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.9.0/README.md)
+- [Campaign Editor](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.9.0/wiki/editor-mode.md)
+- [Scene catalog and container configuration](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.9.0/wiki/raid-authoring.md#game-wide-scene-catalog)
+- [Built-in KORD campaign copies](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.9.0/wiki/built-in-campaign-copy.md)
+- [AI encounters and patrols](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.9.0/wiki/ai-encounters.md)
+- [Missions and disposable testing](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.9.0/wiki/missions.md)
 
 ---
 
