@@ -114,13 +114,22 @@ internal sealed class SceneCatalogChecks : WTT.Campaigns.Server.Editor.EditorSes
             configured.Container = new WTT.Campaigns.Shared.Spatial.ContainerSettings { Mode = "Empty" };
             request.OperationId = Guid.NewGuid().ToString("N");
             denied = false;
-            try { service.Submit(owner, profile, request); } catch (InvalidOperationException e) { denied = e.Message.Contains("Update the client"); }
+            try
+            {
+                service.Submit(owner, profile, request);
+            }
+            catch (InvalidOperationException e)
+            {
+                denied = e.Message.Contains("Update the client");
+            }
             check(denied, "Version 5 clients cannot silently omit configured container settings");
             request.Version = 6;
             request.OperationId = Guid.NewGuid().ToString("N");
             var configuredSaved = service.Submit(owner, profile, request);
-            check(configuredSaved.Error == null && configuredSaved.Definition?.FormatVersion == 9,
-                "Version 6 authoring persists configured containers in format 9");
+            check(
+                configuredSaved.Error == null && configuredSaved.Definition?.FormatVersion == 9,
+                "Version 6 authoring persists configured containers in format 9"
+            );
         }
         finally
         {

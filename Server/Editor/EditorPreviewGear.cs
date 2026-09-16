@@ -43,7 +43,9 @@ public sealed class EditorPreviewGearRouter(JsonUtil json, SaveServer saves, Sea
                             var items = JsonConvert.DeserializeObject<List<NativeItem>>(json.Serialize(source.Items)!)!;
                             var equipment = source.Equipment.ToString();
                             var bindings = JsonConvert.DeserializeObject<Dictionary<string, string>>(json.Serialize(source.FastPanel)!);
-                            return new ValueTask<string>(JsonConvert.SerializeObject(EditorPreviewGearCopy.Copy(items, equipment, bindings)));
+                            return new ValueTask<string>(
+                                JsonConvert.SerializeObject(EditorPreviewGearCopy.Copy(items, equipment, bindings))
+                            );
                         }
                         return new ValueTask<string>(JsonConvert.SerializeObject(EditorPreviewGearCopy.Placeholder(session)));
                     }

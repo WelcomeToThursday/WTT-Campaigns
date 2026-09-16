@@ -194,7 +194,9 @@ public sealed class TraderOfferCatalogue(
             request.Category == "Presets"
                 ? globals.ItemPresets.Values.Select(p => new SceneCatalogEntry { Id = p.Id.ToString(), Name = p.Name ?? p.Id.ToString() })
                 : templates
-                    .Items.Values.Where(t => IsSceneItem(t.Id.ToString()) && (request.Category != "Keys" || itemHelper.IsOfBaseclass(t.Id, BaseClasses.KEY)))
+                    .Items.Values.Where(t =>
+                        IsSceneItem(t.Id.ToString()) && (request.Category != "Keys" || itemHelper.IsOfBaseclass(t.Id, BaseClasses.KEY))
+                    )
                     .Select(t => new SceneCatalogEntry
                     {
                         Id = t.Id.ToString(),

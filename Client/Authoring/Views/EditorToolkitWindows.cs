@@ -374,7 +374,10 @@ internal sealed partial class EditorToolkitWindows
             _panels[id] = new()
             {
                 Id = id,
-                Width = id == "LootConfiguration" ? 460 : id is "Tool:Scene" or "Tool:AI" ? 420 : 360,
+                Width =
+                    id == "LootConfiguration" ? 460
+                    : id is "Tool:Scene" or "Tool:AI" ? 420
+                    : 360,
                 Height = id == "LootConfiguration" ? 620 : 400,
                 X = -.15f,
                 Y = .05f,

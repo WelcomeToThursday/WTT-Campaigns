@@ -61,11 +61,14 @@ internal static class EditorLayoutSpec
             B("CameraSlower", "-"),
             I("CameraSpeed", ""),
             B("CameraFaster", "+"),
-            R("EditorMapToolbar",
+            R(
+                "EditorMapToolbar",
                 B("EditorWalk", "Walkthrough"),
-                B("AiObserve", "Observe"), B("AiPlaytest", "Playtest"),
+                B("AiObserve", "Observe"),
+                B("AiPlaytest", "Playtest"),
                 new Node("choice", "AiPlaytestGear", "Playtest kit"),
-                B("EditorReset", "Reset preview"))
+                B("EditorReset", "Reset preview")
+            )
         ),
         R(
             "CategoryRail",
@@ -127,30 +130,45 @@ internal static class EditorLayoutSpec
                 )
             )
         ),
-        G("LootConfiguration",
-            new Node("scroll", "ContainerScroll", "",
+        G(
+            "LootConfiguration",
+            new Node(
+                "scroll",
+                "ContainerScroll",
+                "",
                 T("ContainerSelection", "Select a lootable container"),
                 T("ContainerEmpty", "Click a placed container in the scene to configure its loot."),
-                G("ContainerSettingsGroup",
-                    G("ContainerLootSection",
+                G(
+                    "ContainerSettingsGroup",
+                    G(
+                        "ContainerLootSection",
                         T("ContainerHeading", "CONTENTS"),
-                        C("ContainerMode", "Contents"), C("ContainerPool", "Loot pool"),
-                        F("ContainerChance", "Spawn chance (%)")),
-                    G("ContainerFixedSection",
+                        C("ContainerMode", "Contents"),
+                        C("ContainerPool", "Loot pool"),
+                        F("ContainerChance", "Spawn chance (%)")
+                    ),
+                    G(
+                        "ContainerFixedSection",
                         T("ContainerFixedHeading", "FIXED CONTENTS"),
                         F("ContainerSearch", "Find an item"),
-                        C("ContainerItem", "Search results"), F("ContainerQuantity", "Quantity"),
+                        C("ContainerItem", "Search results"),
+                        F("ContainerQuantity", "Quantity"),
                         A("ContainerItemActions", "ContainerAdd", "Add item"),
                         C("ContainerContents", "Contents"),
-                        A("ContainerRemoveGroup", "ContainerRemove", "Remove selected item")),
-                    G("ContainerAccessSection",
+                        A("ContainerRemoveGroup", "ContainerRemove", "Remove selected item")
+                    ),
+                    G(
+                        "ContainerAccessSection",
                         T("ContainerAccessHeading", "ACCESS"),
                         A("ContainerLockGroup", "ContainerLock", "Unlocked"),
                         T("ContainerKey", "No key selected"),
                         F("ContainerKeySearch", "Find a key"),
                         C("ContainerKeyItem", "Keys"),
-                        A("ContainerKeyActions", "ContainerUseKey", "Use selected key"))
-                ))),
+                        A("ContainerKeyActions", "ContainerUseKey", "Use selected key")
+                    )
+                )
+            )
+        ),
         G(
             "Inspector",
             new Node(

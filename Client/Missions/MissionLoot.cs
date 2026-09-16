@@ -75,7 +75,8 @@ internal sealed class MissionLoot : IDisposable
                         continue;
                     if (containerLoot == null || !containerLoot.TryGetValue(placement.Id, out var contents))
                         throw new InvalidOperationException("This run has no server-generated contents for " + placement.Name);
-                    if (contents.Count == 0) continue; // Persisted spawn-chance miss.
+                    if (contents.Count == 0)
+                        continue; // Persisted spawn-chance miss.
                     var model = await SceneAssetCatalog.Load(placement.Target, token);
                     LootableContainer? container = null;
                     SceneNavigation? navigation = null;

@@ -127,6 +127,7 @@ public sealed class MapVolume : SpatialCapture
 public static class MapLayoutRules
 {
     public static bool NeedsFormat9(MapLayout layout) => layout.Objects?.Any(o => o?.Container != null) == true;
+
     public static bool NeedsFormat8(MapLayout layout) =>
         layout.Objects?.Any(o => o?.Target?.IsAsset == true || (o != null && SceneAssetRules.IsContainer(o))) == true;
 
@@ -266,7 +267,10 @@ public static class MapLayoutRules
                 Need(!settings.Locked || SeasonValidator.IsId(settings.KeyTemplate), "Choose a key for the locked container.");
                 Need(settings.Contents != null && settings.Contents.Count <= 100, "A container supports up to 100 fixed item entries.");
                 foreach (var content in settings.Contents ?? new())
-                    Need(content != null && SeasonValidator.IsId(content.Template) && content.Count is > 0 and <= 10000, "Invalid fixed container item or quantity.");
+                    Need(
+                        content != null && SeasonValidator.IsId(content.Template) && content.Count is > 0 and <= 10000,
+                        "Invalid fixed container item or quantity."
+                    );
             }
         }
         foreach (var loot in layout.Loot)

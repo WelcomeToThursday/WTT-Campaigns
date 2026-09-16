@@ -96,8 +96,10 @@ internal static class EditorToolkitChecks
         if (nodes.Select(n => n.Id).Distinct().Count() != nodes.Length)
             throw new InvalidOperationException("Duplicate Toolkit control ids.");
         var lootWindow = EditorLayoutSpec.Sections.Single(n => n.Id == "LootConfiguration");
-        if (lootWindow.Children.Single().Id != "ContainerScroll"
-            || !lootWindow.Children.Single().Children.Any(n => n.Id == "ContainerSettingsGroup"))
+        if (
+            lootWindow.Children.Single().Id != "ContainerScroll"
+            || !lootWindow.Children.Single().Children.Any(n => n.Id == "ContainerSettingsGroup")
+        )
             throw new InvalidOperationException("Loot configuration must have its own scrollable tool window.");
         var inspector = EditorLayoutSpec.Sections.Single(n => n.Id == "Inspector");
         bool ContainsContainer(EditorLayoutSpec.Node node) => node.Id == "ContainerSettingsGroup" || node.Children.Any(ContainsContainer);
@@ -148,8 +150,7 @@ internal static class EditorToolkitChecks
             string? control = null;
             foreach (var instruction in editor.Methods.Single(m => m.Name == name).Body.Instructions)
             {
-                if (instruction.OpCode.Code == Mono.Cecil.Cil.Code.Ldstr
-                    && instruction.Operand is string id && inventory.ContainsKey(id))
+                if (instruction.OpCode.Code == Mono.Cecil.Cil.Code.Ldstr && instruction.Operand is string id && inventory.ContainsKey(id))
                     control = id;
                 if (instruction.Operand is not MethodReference call || call.DeclaringType.Name != "RaidEditorView")
                     continue;
@@ -162,7 +163,9 @@ internal static class EditorToolkitChecks
                     _ => null,
                 };
                 if (control != null && expected != null && inventory[control] != expected)
-                    throw new InvalidOperationException($"Wrong container control: {control} is {inventory[control]}, but {name} calls {call.Name}.");
+                    throw new InvalidOperationException(
+                        $"Wrong container control: {control} is {inventory[control]}, but {name} calls {call.Name}."
+                    );
                 control = null;
             }
         }
