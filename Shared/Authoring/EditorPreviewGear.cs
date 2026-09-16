@@ -4,8 +4,9 @@ namespace WTT.Campaigns.Shared.Authoring;
 
 public class EditorPreviewGearRequest
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
     public string SessionId { get; set; } = "";
+    public bool UseProfileKit { get; set; }
 }
 
 public sealed class EditorPreviewGearResponse

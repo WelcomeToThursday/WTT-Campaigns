@@ -1,5 +1,5 @@
 using Mono.Cecil;
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Rendering;
 
 namespace WTT.Campaigns.Tests;
 
@@ -66,7 +66,7 @@ internal static class EditorEnvironmentChecks
             types["TOD_Time"].Fields.Any(f => f.Name == "LockCurrentTime" && f.IsPublic && f.FieldType.FullName == "System.Boolean"),
             "Sky preview can hold time without changing the raid clock."
         );
-        var environment = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorEnvironment");
+        var environment = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Rendering.EditorEnvironment");
         Require(
             Calls(types["DisablerTerrainCullingObject"].Methods.Single(m => m.Name == "SetComponentsEnabled"), "set_drawHeightmap")
                 && Calls(types["DisablerCullingObjectBase"].Methods.Single(m => m.Name == "ManualUpdate"), "get_HasEntered"),

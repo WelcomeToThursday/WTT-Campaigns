@@ -6,6 +6,7 @@
   </Configurations>
   <Folder Name="/Client/">
     <Project Path="Client/WTT-Campaigns.Client.csproj" />
+    <Project Path="AiIntegration/WTT-Campaigns.AI.csproj" />
   </Folder>
   <Folder Name="/Server/">
     <Project Path="Server/WTT-Campaigns.Server.csproj" />

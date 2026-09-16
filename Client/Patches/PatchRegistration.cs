@@ -26,6 +26,7 @@ internal static class PatchRegistration
         WTT.Campaigns.Client.UI.NativeLoadingStatus.Enable();
         new Story.StoryTraderPatch().Enable();
         new Story.StoryCollectiblePatch().Enable();
+        new Spatial.CampaignRecoveryPatch().Enable();
     }
 
     private static void EnableSession()

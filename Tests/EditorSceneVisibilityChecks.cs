@@ -28,7 +28,7 @@ internal static class EditorSceneVisibilityChecks
                 .Body.Instructions.Any(i => i.Operand is MethodReference { Name: "get_IsEmpty" }),
             "Native visibility rejects objects when the free camera has no baked visibility cell."
         );
-        var compiledType = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorSceneVisibility");
+        var compiledType = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Rendering.EditorSceneVisibility");
         var dispose = compiledType.Methods.Single(m => m.Name == "Dispose").Body.Instructions;
         Require(
             dispose.Any(i => i.Operand is MethodReference { Name: "get_IsEnabled" })
@@ -42,7 +42,7 @@ internal static class EditorSceneVisibilityChecks
                 .Any(i => i.Operand is MethodReference m && m.Name is "SetActive" or "set_IsEnabled" or "ForceLOD"),
             "Visibility bypass preserves authored hidden objects, requested culling state and native LOD selection."
         );
-        var environment = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorEnvironment");
+        var environment = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Rendering.EditorEnvironment");
         var advance = compiledType.Methods.Single(m => m.Name == "Advance").Body.Instructions;
         Require(
             advance.Any(i => i.Operand is MethodReference { Name: "get_frameCount" })
@@ -73,7 +73,7 @@ internal static class EditorSceneVisibilityChecks
                 trigger.Fields.Any(f => f.Name == name && f.IsPrivate && f.FieldType.FullName == "System.Collections.IEnumerator"),
                 "Pending native hide worker can be stopped: " + name
             );
-        var triggerLease = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorTriggerVisibility");
+        var triggerLease = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Rendering.EditorTriggerVisibility");
         var calls = triggerLease
             .Methods.Where(m => m.HasBody)
             .SelectMany(m => m.Body.Instructions)

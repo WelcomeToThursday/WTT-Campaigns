@@ -1,4 +1,4 @@
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;
 

@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
+using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Spatial;
@@ -120,7 +121,11 @@ public sealed partial class RaidEditor
                 }
                 volume.Size = ZoneRuntime.Vector(size);
             }
-            if (_tool == "Scale" && point is MapObjectEdit { Target.Kind: "Prop" } obj && before is MapObjectEdit sourceObject)
+            if (
+                _tool == "Scale"
+                && point is MapObjectEdit { Target.Kind: "Prop" or "AssetProp" } obj
+                && before is MapObjectEdit sourceObject
+            )
             {
                 var scale = ZoneRuntime.Vector(sourceObject.Scale);
                 scale[_drag.Axis] = WTT.Campaigns.UI.Controls.SceneSelectionGeometry.Resize(
@@ -151,7 +156,7 @@ public sealed partial class RaidEditor
 
         if (_picking)
         {
-            if (ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
+            if ((_mode == "Maps" || _mode == "Scene") && ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
             {
                 _picking = _sceneRebindId.Length > 0;
                 return;
@@ -203,7 +208,7 @@ public sealed partial class RaidEditor
                 return;
             }
         }
-        if (ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
+        if (_mode != "Zones" && ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
             return;
         var closest = FilterZonesForLayout(_layoutId)
             .AsValueEnumerable()
@@ -217,7 +222,10 @@ public sealed partial class RaidEditor
             _mode = "Zones";
             _picked = null;
             Refresh();
+            return;
         }
+        if (EditorMode.Ready)
+            PickScene();
     }
 
     private static SpatialCapture CopyPoint(SpatialCapture point) =>

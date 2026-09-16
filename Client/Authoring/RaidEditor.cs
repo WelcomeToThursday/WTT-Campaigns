@@ -3,6 +3,8 @@ using Comfort.Common;
 using EFT;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using WTT.Campaigns.Client.Authoring.Rendering;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Authoring;
@@ -39,6 +41,20 @@ public sealed partial class RaidEditor : MonoBehaviour
     private Quaternion _savedRotation,
         _flyRotation;
     private bool _savedCursor;
+    private bool _looking;
+
+    // Latch before native input locks/centers the pointer, so crossing a panel
+    // while flying cannot release capture. Release on RMB up or blocked input.
+    internal bool CameraLooking =>
+        _looking =
+            _open
+            && Application.isFocused
+            && Input.GetMouseButton(1)
+            && _view?.Typing != true
+            && _drag == null
+            && _session?.Conflict == null
+            && _view?.Windows.HasMenu != true
+            && (_looking || EventSystem.current?.IsPointerOverGameObject() != true && _view?.PointerOver != true);
     private CursorLockMode _savedLock;
     private GameObject? _events;
     private readonly List<EventSystem> _disabledEvents = new();
@@ -50,7 +66,7 @@ public sealed partial class RaidEditor : MonoBehaviour
     private int _page;
     private Transform? _picked;
     private CaptureTask? _task;
-    private readonly List<(string Id, string Label)> _rows = new();
+
     private SpatialCapture? Selected
     {
         get
@@ -169,7 +185,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 _task = null;
                 if (player && AuthoringEnabled && ZoneRuntime.Location.Length > 0)
                 {
-                    _moduleSelection.Clear();
+                    _toolStates.Clear();
                     _session = new RaidEditorSession(ZoneRuntime.Location);
                     if (EditorMode.Ready)
                     {
@@ -325,6 +341,32 @@ public sealed partial class RaidEditor : MonoBehaviour
 
                 if (Input.GetKeyDown(KeyCode.F))
                     FrameSceneSelection();
+                if (
+                    !Input.GetMouseButton(1)
+                    && _drag == null
+                    && _placementLifetime == null
+                    && !Input.GetKey(KeyCode.LeftControl)
+                    && !Input.GetKey(KeyCode.RightControl)
+                    && !Input.GetKey(KeyCode.LeftAlt)
+                    && !Input.GetKey(KeyCode.RightAlt)
+                    && !Input.GetKey(KeyCode.LeftShift)
+                    && !Input.GetKey(KeyCode.RightShift)
+                )
+                {
+                    var tool =
+                        Input.GetKeyDown(KeyCode.W) ? "Move"
+                        : Input.GetKeyDown(KeyCode.E) ? "Rotate"
+                        : Input.GetKeyDown(KeyCode.R) ? "Scale"
+                        : "";
+                    if (tool.Length > 0 && (SceneWorkspace ? CanTransformScene(tool) : Selected != null || MapPoint != null))
+                    {
+                        if (SceneWorkspace)
+                            SceneTransform(tool);
+                        else
+                            _tool = tool;
+                        Refresh();
+                    }
+                }
                 if (!PlacementInput())
                     GeometryInput();
             }
@@ -369,7 +411,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             _task = null;
             Close();
         }
-        if (_walkRequested)
+        if (_walkRequested && !session.Dirty && !session.Busy)
         {
             _walkRequested = false;
             if (_open && session.Grant.Length > 0 && session.Conflict == null)
@@ -406,8 +448,14 @@ public sealed partial class RaidEditor : MonoBehaviour
             throw new InvalidOperationException("The raid camera is not ready.");
         }
 
-        _savedPosition = _flyPosition = _camera!.transform.position;
-        _savedRotation = _flyRotation = _camera.transform.rotation;
+        _savedPosition = _camera!.transform.position;
+        _savedRotation = _camera.transform.rotation;
+        // Camera.main can still carry the previous editor/map pose. The current
+        // player's Cam anchor belongs to this raid and is independent of free flight.
+        _flyPosition = _player!.CameraPosition.position;
+        _flyRotation = Quaternion.LookRotation(_player.LookDirection);
+        _looking = false;
+        RestoreCameraBookmark();
         RestoreWalkCamera();
         _camera.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
         _savedCursor = Cursor.visible;
@@ -458,39 +506,31 @@ public sealed partial class RaidEditor : MonoBehaviour
 
         try
         {
-            if (_view?.Typing != true && _drag == null && _session?.Conflict == null && _view?.Windows.HasMenu != true)
+            _looking = CameraLooking;
+            Cursor.lockState = _looking ? CursorLockMode.Locked : CursorLockMode.None;
+            Cursor.visible = !_looking;
+            if (_looking)
             {
-                var look =
-                    Input.GetMouseButton(1)
-                    && (
-                        Cursor.lockState == CursorLockMode.Locked
-                        || EventSystem.current?.IsPointerOverGameObject() != true && _view?.PointerOver != true
+                var angles = _flyRotation.eulerAngles;
+                angles.x -= Input.GetAxis("Mouse Y") * 2;
+                angles.y += Input.GetAxis("Mouse X") * 2;
+                _flyRotation = Quaternion.Euler(angles);
+                var direction = new Vector3(
+                    (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0),
+                    0,
+                    (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)
+                );
+                direction = _flyRotation * direction;
+                direction.y += (Input.GetKey(KeyCode.E) ? 1 : 0) - (Input.GetKey(KeyCode.Q) ? 1 : 0);
+                _flyPosition +=
+                    Vector3.ClampMagnitude(direction, 1)
+                    * Time.unscaledDeltaTime
+                    * CameraSpeed
+                    * (
+                        Input.GetKey(KeyCode.LeftShift) ? 4
+                        : Input.GetKey(KeyCode.LeftControl) ? .25f
+                        : 1
                     );
-                Cursor.visible = !look;
-                Cursor.lockState = look ? CursorLockMode.Locked : CursorLockMode.None;
-                if (look)
-                {
-                    var angles = _flyRotation.eulerAngles;
-                    angles.x -= Input.GetAxis("Mouse Y") * 2;
-                    angles.y += Input.GetAxis("Mouse X") * 2;
-                    _flyRotation = Quaternion.Euler(angles);
-                    var direction = new Vector3(
-                        (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0),
-                        0,
-                        (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)
-                    );
-                    direction = _flyRotation * direction;
-                    direction.y += (Input.GetKey(KeyCode.E) ? 1 : 0) - (Input.GetKey(KeyCode.Q) ? 1 : 0);
-                    _flyPosition +=
-                        Vector3.ClampMagnitude(direction, 1)
-                        * Time.unscaledDeltaTime
-                        * CameraSpeed
-                        * (
-                            Input.GetKey(KeyCode.LeftShift) ? 4
-                            : Input.GetKey(KeyCode.LeftControl) ? .25f
-                            : 1
-                        );
-                }
             }
             _camera!.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
             _environment?.Pose(_flyPosition, _flyRotation);
@@ -517,6 +557,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
         try
         {
+            SaveCameraBookmark();
             CancelDrag();
             _picking = false;
             _sceneRebindId = "";
@@ -527,6 +568,7 @@ public sealed partial class RaidEditor : MonoBehaviour
         finally
         {
             _open = false;
+            _looking = false;
             Camera.onPreCull -= CameraPose;
             if (_camera)
             {

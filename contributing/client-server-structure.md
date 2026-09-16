@@ -11,8 +11,21 @@ Namespaces match folders beneath each project, such as `WTT.Campaigns.Client.Pro
 | `UI` | `SeasonUi` and the native skills-tab adapter |
 | `Hub` | Hub presentation and transactions, document tracking, banner sound and video lifecycle |
 | `Patches` | Explicit patch registration and hooks grouped by game feature |
+| `Authoring` | Editor entry points, session and transport state, diagnostics, and the `RaidEditor` coordinator |
+| `Authoring.Views` | Toolkit documents, controls, windows, layout, tree models, and editor screens |
+| `Authoring.Scenes` | Scene discovery, selection, model ownership, navigation, and route overlays |
+| `Authoring.Rendering` | Editor camera environment, weather, visibility, HUD suppression, and render guards |
+| `Authoring.Preview` | Item previews, equipment preview players, and item identity helpers |
+| `Encounters` | Authored AI spawning, movement, patrols, and native compatibility |
+| `Missions` | Mission startup, raid state, loot, and mission HUD |
+| `Story` | Story state, interactions, trader presentation, cinematics, and media |
+| `Spatial` | Runtime zone integration |
+| `Progression` | Progression state and native task-list presentation |
+| `Customization` | Native appearance views and customization-tab integration |
 
 The `UI` namespace here contains EFT integration. Game-independent Unity views remain in the separate [UI project](ui-structure.md). Client components are added at runtime; their namespace changes do not require rebuilding the artwork bundle.
+
+Keep the authoring root for coordination. Put new helpers in the area that owns their behavior and import that namespace explicitly; avoid project-wide global imports. All `RaidEditor` partial declarations stay in the root because they are one type, even when an individual file handles scene or view operations. Helper types that are not partial declarations belong in their own area. Keep namespace depth shallow and introduce another area only when it has a distinct responsibility shared by several types.
 
 ## Server
 

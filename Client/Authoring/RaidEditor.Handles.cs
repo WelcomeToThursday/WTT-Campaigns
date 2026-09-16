@@ -1,4 +1,5 @@
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;

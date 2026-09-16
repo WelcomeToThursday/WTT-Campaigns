@@ -158,6 +158,22 @@ public sealed class ZoneRuntime : MonoBehaviour
 
     internal static GameObject Volume(SeasonZone zone)
     {
+        if (zone.Uses.Contains("Shoot"))
+        {
+            var target = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            target.name = "Campaign radio relay " + zone.Id;
+            target.SetActive(false);
+            target.transform.SetPositionAndRotation(Vector(zone.Position), Quaternion.Euler(Vector(zone.Rotation)));
+            target.transform.localScale = Vector(zone.Size);
+            target.layer = LayerMask.NameToLayer("LowPolyCollider");
+            var ballistic = target.AddComponent<EFT.Ballistics.BallisticCollider>();
+            ballistic.TypeOfMaterial = EFT.Ballistics.MaterialType.MetalThin;
+            var color = new MaterialPropertyBlock();
+            color.SetColor("_Color", new Color(.19f, .23f, .15f));
+            target.GetComponent<Renderer>().SetPropertyBlock(color);
+            target.SetActive(true);
+            return target;
+        }
         var root = new GameObject("Campaign zone " + zone.Id);
         root.transform.SetPositionAndRotation(Vector(zone.Position), Quaternion.Euler(Vector(zone.Rotation)));
         root.layer = LayerMask.NameToLayer("Triggers");
@@ -210,9 +226,11 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
     private readonly HashSet<Collider> _inside = new();
     private readonly List<TriggerWithId> _native = new();
     private Player? _owner;
+    private string _requiredQuestId = "";
 
     internal void Initialize(SeasonZone zone)
     {
+        _requiredQuestId = zone.RequiredQuestId;
         void Add<T>()
             where T : TriggerWithId
         {
@@ -293,6 +311,12 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
 
     public void OnTriggerEnter(Collider other)
     {
+        if (
+            _requiredQuestId.Length > 0
+            && Story.StoryClient.Current?.Facts?.QuestStatuses.GetValueOrDefault(_requiredQuestId)
+                is not ("Started" or "AvailableForFinish")
+        )
+            return;
         if (!Singleton<GameWorld>.Instantiated)
         {
             return;

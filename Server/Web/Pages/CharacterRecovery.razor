@@ -1,0 +1,101 @@
+@page "/wtt-campaigns/characters/recovery"
+@using WTT.Campaigns.Server.Profiles
+@attribute [Authorize(Policy = "Administrator")]
+@rendermode InteractiveServer
+@layout SPTarkov.Server.Web.Layout.BaseMudBlazorLayout
+@inject SeasonService Characters
+@inject Microsoft.AspNetCore.Authorization.IAuthorizationService Authorization
+@inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider Authentication
+
+<PageTitle>Character recovery · WTT-Campaigns administration</PageTitle>
+<HeadContent>
+    <link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=080-editor-beta" />
+    <link rel="stylesheet" href="/wtt-campaigns-creator-assets/recovery.css?v=090-compact-pmc" />
+</HeadContent>
+<main class="season-creator character-recovery">
+    <header class="creator-header">
+        <div><h1>Character recovery</h1><p>Administrator tools · Link surviving campaign characters to a replacement launcher account.</p></div>
+        <nav class="row"><a class="button subtle" href="/wtt-campaigns">Home</a><a class="button subtle" href="/wtt-campaigns/creator">Campaign Creator</a><a class="button subtle" href="/wtt-campaigns/docs">Documentation</a></nav>
+    </header>
+    <section class="recovery-toolbar">
+        <div><strong>@_characters.Count recoverable characters</strong><p>Keep the game closed. Create a replacement launcher account, manually restart SPT, then refresh.</p>
+            <details><summary>How recovery works</summary><p>Inventory and campaign progress are preserved. Existing destination characters remain available. A backup is saved before ownership changes.</p></details>
+        </div>
+        <button disabled="@_busy" @onclick="Refresh">Refresh</button>
+    </section>
+    @if (_message.Length > 0) { <p class="notice" role="status">@_message</p> }
+    @if (_error.Length > 0) { <p class="notice error" role="alert">@_error</p> }
+    @if (_characters.Count == 0 && _error.Length == 0)
+    {
+        <section class="editor-card"><h2>No orphaned characters found</h2><p>Only saved campaign characters whose original launcher account is missing appear here. Deleted character saves cannot be recreated by relinking.</p></section>
+    }
+    @if (_accounts.Count == 0) { <p class="notice">No destination accounts are available. Create a launcher account, manually restart SPT, and refresh.</p> }
+    <div class="recovery-list">
+    @foreach (var character in _characters)
+    {
+        <section class="recovery-entry" @key="character.Id">
+            <div class="recovery-entry-row">
+                <div class="recovery-identity"><h2><small>PMC</small> @character.Name</h2><span>Character <code>@character.Id</code></span></div>
+                <div class="recovery-meta"><span>Campaign <code>@character.Campaign</code></span><span>Previous account <code>@character.PreviousAccount</code></span></div>
+                <button disabled="@(_busy || _accounts.Count == 0)" @onclick="@(() => Select(character))">Recover…</button>
+            </div>
+            @if (character.PendingAccount.Length > 0) { <p>An interrupted recovery is waiting to finish for account <code>@character.PendingAccount</code>. Select that account to retry.</p> }
+            @if (_selected?.Id == character.Id)
+            {
+                <section class="recovery-confirm" aria-label="Confirm character recovery">
+                    <label for="recovery-account">Destination launcher account</label>
+                    <select id="recovery-account" @bind="_target" disabled="@_busy">
+                        <option value="">Choose an account</option>
+                        @foreach (var account in _accounts.Where(a => _selected.PendingAccount.Length == 0 || a.Id == _selected.PendingAccount))
+                        { <option value="@account.Id">@account.Name (@account.Id)</option> }
+                    </select>
+                    <p>This will attach <strong>@_selected.Name</strong> to the chosen account. It will not select the character automatically.</p>
+                    <label class="check"><input type="checkbox" @bind="_confirmed" disabled="@_busy" />The game is closed and I have checked the destination account.</label>
+                    <div class="row"><button class="primary" disabled="@(_busy || !_confirmed || _target.Length == 0)" @onclick="Recover">@(_busy ? "Recovering…" : "Confirm recovery")</button><button disabled="@_busy" @onclick="@(() => _selected = null)">Cancel</button></div>
+                </section>
+            }
+                </section>
+    }
+    </div>
+</main>
+
+@code {
+    private List<RecoverableCharacter> _characters = [];
+    private List<RecoveryAccount> _accounts = [];
+    private RecoverableCharacter? _selected;
+    private string _target = "", _message = "", _error = "";
+    private bool _busy, _confirmed;
+
+    protected override void OnInitialized() => Refresh();
+    private void Refresh()
+    {
+        _selected = null;
+        _error = "";
+        try { _accounts = Characters.RecoveryAccounts(); _characters = Characters.RecoverableCharacters(); }
+        catch (Exception e) { _error = e.Message; }
+    }
+    private void Select(RecoverableCharacter character)
+    {
+        _selected = character;
+        _target = character.PendingAccount;
+        _confirmed = false;
+        _message = _error = "";
+    }
+    private async Task Recover()
+    {
+        if (_busy || !_confirmed || _selected == null || _target.Length == 0) return;
+        _busy = true;
+        _error = "";
+        try
+        {
+            var identity = await Authentication.GetAuthenticationStateAsync();
+            if (!(await Authorization.AuthorizeAsync(identity.User, null, "Administrator")).Succeeded)
+                throw new UnauthorizedAccessException("Administrator access is required to recover characters.");
+            await Characters.RecoverCharacter(_selected.Id, _selected.PreviousAccount, _target);
+            _message = $"Recovered {_selected.Name}. Launch the game with the destination account and select the recovered campaign character.";
+            Refresh();
+        }
+        catch (Exception e) { _error = e.Message + " If recovery was interrupted, retry with the same destination account."; }
+        finally { _busy = false; }
+    }
+}

@@ -54,7 +54,10 @@ internal sealed class CampaignUiInputPatch : ModulePatch
         // Block the underlying EFT UI before input is dispatched to its children.
         // Unity's input fields and buttons continue receiving their own EventSystem input.
         commands.Clear();
-        shouldLockCursor = ECursorResult.ShowCursor;
+        shouldLockCursor =
+            editorBlocked && !storyBlocked && !missionBlocked && Authoring.RaidEditor.Instance!.CameraLooking
+                ? ECursorResult.LockCursor
+                : ECursorResult.ShowCursor;
         if (axes != null)
         {
             Array.Clear(axes, 0, axes.Length);

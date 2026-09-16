@@ -1,5 +1,5 @@
 using UnityEngine;
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Rendering;
 
 namespace WTT.Campaigns.Tests;
 

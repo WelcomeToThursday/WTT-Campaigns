@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using SPT.Common.Http;
 using UnityEngine;
 using UnityEngine.UIElements;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Profiles;
 using WTT.Campaigns.Shared.Authoring;
 

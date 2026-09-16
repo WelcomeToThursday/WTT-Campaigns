@@ -31,10 +31,15 @@ internal static class EditorRouteChecks
             ),
             "A new editor must start walkthroughs at the start marker by default."
         );
-        var walk = editor.Methods.Single(m => m.Name == "BeginWalkthrough").Body.Instructions;
+        var walkMethod = editor
+            .NestedTypes.Single(t => t.Name.StartsWith("<BeginWalkthrough>", StringComparison.Ordinal))
+            .Methods.Single(m => m.Name == "MoveNext");
+        var walk = walkMethod.Body.Instructions;
         int CallIndex(string name) => walk.ToList().FindIndex(i => i.Operand is MethodReference m && m.Name == name);
         Require(
-            CallIndex("Apply") < CallIndex("SyncTransforms") && CallIndex("SyncTransforms") < CallIndex("ClearPosition"),
+            CallIndex("ApplyAsync") >= 0
+                && CallIndex("ApplyAsync") < CallIndex("SyncTransforms")
+                && CallIndex("SyncTransforms") < CallIndex("ClearPosition"),
             "Spawn clearance must see the applied layout's current colliders."
         );
         Require(
@@ -42,8 +47,8 @@ internal static class EditorRouteChecks
             "Native camera restoration must finish before walkthrough teleport."
         );
         Require(
-            Reads(editor.Methods.Single(m => m.Name == "BeginWalkthrough"), "_flyPosition")
-                && Reads(editor.Methods.Single(m => m.Name == "BeginWalkthrough"), "_flyRotation")
+            Reads(walkMethod, "_flyPosition")
+                && Reads(walkMethod, "_flyRotation")
                 && Calls(editor.Methods.Single(m => m.Name == "Open"), "RestoreWalkCamera"),
             "Walkthrough must bookmark and restore the authoring camera separately from the player."
         );
@@ -110,7 +115,7 @@ internal static class EditorRouteChecks
             Reads(mode.Methods.Single(m => m.Name == "UpdateHud"), "EftBattleUIScreen"),
             "HUD suppression must include CommonUI's battle screen, not only GameUI."
         );
-        var hud = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorHud");
+        var hud = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Rendering.EditorHud");
         Require(
             Calls(hud.Methods.Single(m => m.Name == "Suppress"), "GetComponentsInChildren"),
             "HUD suppression must also cover independently animated child canvas groups."

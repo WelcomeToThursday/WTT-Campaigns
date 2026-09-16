@@ -19,13 +19,26 @@ internal static class AiControlsChecks
 
     internal static void Run(AssemblyDefinition assembly, Action<bool, string> check)
     {
-        var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditorAiView");
+        var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.RaidEditorAiView");
         var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
 
         var refresh = Method(editor, "RefreshAiWorkspace");
         var bind = Method(editor, "BindAiControls");
 
         var nodes = EditorToolkitChecks.Nodes().Where(n => n.Id.StartsWith("Ai")).ToArray();
+        check(
+            nodes.Any(n => n.Id == "AiPlaytestGear" && n.Kind == "choice") && CallArguments(bind, "Dropdown").Contains("AiPlaytestGear"),
+            "Playtest loadout choice is declared and bound in the AI tool"
+        );
+        var toolbar = WTT
+            .Campaigns.Client.Authoring.Views.EditorLayoutSpec.Sections.Single(n => n.Id == "TransformToolbar")
+            .Children.Single(n => n.Id == "EditorMapToolbar");
+        foreach (var id in new[] { "AiObserve", "AiPlaytest", "AiPlaytestGear" })
+            check(toolbar.Children.Any(n => n.Id == id), "Preview control belongs to the shared main toolbar: " + id);
+        check(
+            !StringOperands(view.Methods.Single(m => m.IsConstructor && m.IsStatic)).Any(s => s is "AiObserve" or "AiPlaytest"),
+            "Switching away from AI does not hide global preview actions"
+        );
         var generated = (
             Groups: nodes.Where(n => n.Id.EndsWith("Group")).Select(n => n.Id).ToHashSet(),
             Buttons: nodes.Where(n => n.Kind == "button").Select(n => n.Id).ToHashSet(),

@@ -18,6 +18,19 @@ Campaign characters use separate save files linked to your launcher account. Kee
 
 Do not remove linked campaign profiles manually. Use the character selector's confirmed [Delete or Wipe actions](characters.md#delete-or-wipe) when you intend to remove a character.
 
+## Recover characters after deleting a launcher account
+
+Open the WTT-Campaigns link in the launcher to reach the mod home hub, then choose **Character recovery**. This page requires website Administrator access.
+
+1. Close the game and create a replacement account in the launcher.
+2. Restart SPT manually so it reloads the launcher accounts, then refresh the recovery page.
+3. Choose a surviving character, select the destination account, and confirm recovery.
+4. Launch the game with that account and select the recovered campaign character.
+
+Recovery preserves the character save, inventory, and campaign progress, and keeps the destination account's existing characters and selection. It removes stale ownership references from the deleted account and clears the recovered character's stale raid location. Characters whose original account still exists cannot be transferred here. Wiped, retired, or missing character saves cannot be restored by relinking.
+
+Before changing ownership, the server creates verified backups under `SPT_Runtime/user/seasonal/recovery/backups`. If a write is interrupted, return to the page and retry with the same destination account; the saved recovery record prevents accidentally redirecting a partial transfer. Keep that destination account until recovery finishes.
+
 ## Older profile locations
 
 The mod moves recognized older campaign profiles into `user/seasonal/profiles` automatically. It backs them up under `user/seasonal/migration-backups` and verifies the copies before removing the old file.

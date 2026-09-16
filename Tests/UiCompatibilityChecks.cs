@@ -9,6 +9,7 @@ internal static class UiCompatibilityChecks
         using var assembly = AssemblyDefinition.ReadAssembly(path);
         PreviewNativeChecks.Run(assembly.MainModule);
         var types = assembly.MainModule.GetTypes().ToDictionary(type => type.FullName);
+        SceneMovementNativeChecks.Run(types);
         var count = 0;
         void Check(bool value, string description)
         {
@@ -199,7 +200,7 @@ internal static class UiCompatibilityChecks
                 geometry.Body.Instructions.Count(i =>
                     i.Operand is MethodReference m && m.DeclaringType.Name == "ScenePicking" && m.Name == "Dispatch"
                 ) == 2,
-                "Ordinary clicks and armed picking both use Maps/Scene selection routing"
+                "Ordinary clicks use viewport selection; armed scene picking retains its dedicated path"
             );
             var pick = editor.Methods.Single(m => m.Name == "PickScene");
             var calls = pick
@@ -229,7 +230,7 @@ internal static class UiCompatibilityChecks
                     types[type].Methods.Any(m => m.Name == method && m.IsPublic && m.Parameters.Count == arguments),
                     "Original-prop movement uses the installed native render adapter: " + type + "." + method
                 );
-            var sceneAdapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.MapSceneAdapter");
+            var sceneAdapter = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Scenes.MapSceneAdapter");
             var resolveCalls = sceneAdapter
                 .Methods.Single(m => m.Name == "Resolve")
                 .Body.Instructions.Select(i => i.Operand)
@@ -242,7 +243,7 @@ internal static class UiCompatibilityChecks
                     && !resolveCalls.Contains("FindObjectsOfTypeAll"),
                 "Scene binding follows the saved hierarchy without a per-prop global scan and retains fingerprint validation"
             );
-            var previewModelCalls = AsyncBody("WTT.Campaigns.Client.Authoring.SceneLootModel", "Create")
+            var previewModelCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Scenes.SceneLootModel", "Create")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()
                 .Select(m => m.Name)
@@ -253,7 +254,7 @@ internal static class UiCompatibilityChecks
                         && previewModelCalls.IndexOf(pose) < previewModelCalls.IndexOf("get_bounds"),
                     "Loot preview clears the pooled pose before measuring placement bounds: " + pose
                 );
-            var equipCalls = AsyncBody("WTT.Campaigns.Client.Authoring.EditorPreviewPlayer", "Equip")
+            var equipCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Preview.EditorPreviewPlayer", "Equip")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()
                 .Select(m => m.Name)
@@ -262,7 +263,7 @@ internal static class UiCompatibilityChecks
                 equipCalls.IndexOf("UncoverContent") > equipCalls.LastIndexOf("Replace"),
                 "Fresh preview gear receives native search knowledge after entering equipped slots"
             );
-            var restoreGearCalls = AsyncBody("WTT.Campaigns.Client.Authoring.EditorPreviewPlayer", "Restore")
+            var restoreGearCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Preview.EditorPreviewPlayer", "Restore")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()
                 .Select(m => m.Name)
@@ -281,7 +282,7 @@ internal static class UiCompatibilityChecks
             Check(
                 preparePreview.IndexOf("ApplyAsync") >= 0
                     && preparePreview.IndexOf("ApplyAsync") < preparePreview.IndexOf("Equip")
-                    && preparePreview.IndexOf("Apply") > preparePreview.IndexOf("Equip"),
+                    && preparePreview.LastIndexOf("ApplyAsync") > preparePreview.IndexOf("Equip"),
                 "Mission and AI preview wait for scene preparation before equipping the player"
             );
             var previewLootCalls = AsyncBody(editor.FullName, "BeginAiPreview")
@@ -306,6 +307,28 @@ internal static class UiCompatibilityChecks
                     && lootOwner < missionLootCalls.FindIndex(m => m.Name == "CreateLootPrefab")
                     && lootOwner < missionLootCalls.FindIndex(m => m.Name == "CreateStaticLoot"),
                 "Mission loot receives a native root owner before prefab creation and world registration"
+            );
+            Check(
+                missionLootCalls.Any(m => m.Name == "CreateLootContainer" && m.DeclaringType.FullName == "EFT.Interactive.LootItem"),
+                "Placed containers use native initialization and world item-owner registration"
+            );
+            Check(
+                missionLootCalls.Any(m =>
+                    m.Name == ".ctor" && m.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.Scenes.SceneNavigation"
+                ) && missionLootCalls.Any(m => m.Name == "WaitForNavigationAsync"),
+                "Placed containers prepare owned navigation before the run continues"
+            );
+            var assetLoadCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Scenes.SceneAssetCatalog", "Load")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToList();
+            Check(
+                assetLoadCalls.IndexOf("Retain") >= 0
+                    && assetLoadCalls.IndexOf("Retain") < assetLoadCalls.IndexOf("LoadAssetAsync")
+                    && assetLoadCalls.Contains("ThrowIfCancellationRequested")
+                    && !assetLoadCalls.Any(n => n is "LoadScene" or "LoadSceneAsync"),
+                "Independent asset loads retain native dependencies, observe cancellation and never load another map"
             );
             var prepareScene = AsyncBody(sceneAdapter.FullName, "ApplyAsync")
                 .Body.Instructions.Select(i => i.Operand)
@@ -613,6 +636,14 @@ internal static class UiCompatibilityChecks
         );
         Check(types["EFT.InputSystem.UIInputRoot"].BaseType.FullName == "EFT.InputSystem.InputNode", "UI root input interception");
         Check(types["EFT.InputSystem.ECursorResult"].Fields.Any(value => value.Name == "ShowCursor"), "Overlay cursor state");
+        Check(types["EFT.InputSystem.ECursorResult"].Fields.Any(value => value.Name == "LockCursor"), "Editor flight cursor state");
+        Check(
+            types["EFT.Player"]
+                .Methods.Any(value => value.Name == "get_CameraPosition" && value.ReturnType.FullName == "UnityEngine.Transform")
+                && types["EFT.Player"]
+                    .Methods.Any(value => value.Name == "get_LookDirection" && value.ReturnType.FullName == "UnityEngine.Vector3"),
+            "Editor initial pose uses the current player's native camera anchor and facing"
+        );
         Check(
             types["EFT.UI.PlayerModelView"]
                 .Methods.Any(value =>

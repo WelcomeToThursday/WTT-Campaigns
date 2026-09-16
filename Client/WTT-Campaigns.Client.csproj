@@ -2,9 +2,14 @@
   <PropertyGroup>
     <RootNamespace>WTT.Campaigns.Client</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.8.0</Version>
+    <Version>0.9.0</Version>
   </PropertyGroup>
   <ItemGroup>
+    <None
+      Include="Resources\ContainerLibrary\catalog.json;Resources\ContainerLibrary\native-containers.bundle"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="ContainerLibrary\%(Filename)%(Extension)"
+    />
     <Using Remove="System.Linq" />
     <EmbeddedResource Include="Customization\Assets\face.png" LogicalName="WTT.Campaigns.Customization.face.png" />
     <Reference
@@ -51,9 +56,6 @@
     <Reference Include="BepInEx" HintPath="$(TarkovDir)BepInEx\core\BepInEx.dll" Private="false" />
     <Reference Include="spt-common" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-common.dll" Private="false" />
     <Reference Include="spt-custom" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-custom.dll" Private="false" />
-    <Reference Include="DrakiaXYZ-BigBrain" HintPath="$(TarkovDir)BepInEx\plugins\DrakiaXYZ-BigBrain.dll" Private="false" />
-    <Reference Include="SAIN" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.dll" Private="false" />
-    <Reference Include="SAIN.Preset.Shared" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.Preset.Shared.dll" Private="false" />
   </ItemGroup>
   <ItemGroup>
     <None

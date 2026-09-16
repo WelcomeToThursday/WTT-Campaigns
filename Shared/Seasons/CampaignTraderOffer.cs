@@ -27,6 +27,9 @@ public sealed class CampaignTraderOffer : ExtensibleJsonModel
     public int Stock { get; set; } = 100;
     public int PurchaseLimit { get; set; }
     public bool RequiresUnlock { get; set; }
+    public string UnlockQuestId { get; set; } = "";
+
+    public bool ShouldSerializeUnlockQuestId() => UnlockQuestId.Length > 0;
 
     public NativeReward Reference() =>
         new()
@@ -80,7 +83,7 @@ public static class TraderOfferRules
         {
             var path = "Trader offers/" + assort.TraderId;
             if (
-                definition.FormatVersion is not (3 or 4 or 5 or 6 or 7)
+                definition.FormatVersion is not (3 or 4 or 5 or 6 or 7 or 8 or 9)
                 || !SeasonValidator.IsId(assort.TraderId)
                 || assort.TraderId == Fence
                 || !traders.Add(assort.TraderId)
@@ -108,7 +111,7 @@ public static class TraderOfferRules
                 if (!valid)
                     result.Add(path, message);
             }
-            Need(definition.FormatVersion is 3 or 4 or 5 or 6 or 7, "Trader offers require campaign format 3.");
+            Need(definition.FormatVersion is 3 or 4 or 5 or 6 or 7 or 8 or 9, "Trader offers require campaign format 3.");
             Need(
                 SeasonValidator.IsId(offer.Id) && SeasonValidator.IsId(offer.TraderId) && offer.TraderId != Fence,
                 "Choose a fixed-assort trader and valid offer identity."
@@ -154,8 +157,20 @@ public static class TraderOfferRules
             );
             if (offer.RequiresUnlock)
                 Need(
-                    definition.AllRewards.Any(r => r.Enabled && r.Grants.Any(g => g.Type == "AssortmentUnlock" && g.Target == offer.Id)),
+                    definition.AllRewards.Any(r => r.Enabled && r.Grants.Any(g => g.Type == "AssortmentUnlock" && g.Target == offer.Id))
+                        || definition.Quests.Any(q =>
+                            q.SeasonalEnabled != false
+                            && q.Id == offer.UnlockQuestId
+                            && (q.Rewards.GetValueOrDefault("Success") ?? new()).Any(g =>
+                                g.Type == "AssortmentUnlock" && g.Target == offer.Id
+                            )
+                        ),
                     "An unlock-only offer needs an enabled reward that unlocks it."
+                );
+            if (offer.UnlockQuestId.Length > 0)
+                Need(
+                    offer.RequiresUnlock && definition.Quests.Any(q => q.Id == offer.UnlockQuestId && q.SeasonalEnabled != false),
+                    "A quest offer requires an active owned quest and an unlock gate."
                 );
         }
         foreach (var grant in definition.AllRewards.SelectMany(r => r.Grants).Where(g => g.Type == "AssortmentUnlock"))

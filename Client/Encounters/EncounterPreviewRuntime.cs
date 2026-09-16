@@ -39,9 +39,7 @@ internal sealed class EncounterPreviewRuntime
     private MapLayout _layout = null!;
     private Player _player = null!;
     private string _encounterToken = "";
-    private EncounterPatrolRuntime? _patrol;
-    private readonly EncounterHoldRuntime _holds = new();
-    private readonly EncounterCoverRuntime _cover = new();
+    private IEncounterAiRuntime? _ai;
     private CancellationTokenSource? _lifetime;
     private bool _ready,
         _ended;
@@ -83,7 +81,7 @@ internal sealed class EncounterPreviewRuntime
             _encounters.Add(new(encounter));
         await _native.BeginAsync(context, layout, player, observe, lifetime.Token);
         lifetime.Token.ThrowIfCancellationRequested();
-        _patrol = new EncounterPatrolRuntime(layout);
+        _ai = EncounterCompatibility.Create(layout);
         _ready = true;
         Status = "AI preview ready";
     }
@@ -128,20 +126,13 @@ internal sealed class EncounterPreviewRuntime
         _lifetime!.Token.ThrowIfCancellationRequested();
         if (!_player)
             throw new InvalidOperationException("The preview player is no longer available.");
-        _patrol?.Tick();
+        _ai?.Tick();
         if (Time.time >= _nextBotTrace)
         {
             _nextBotTrace = Time.time + 5;
             foreach (var record in _bots)
                 if (!record.Finished && !record.DeathConfirmed && record.Bot)
-                    Plugin.LogInfo(
-                        "AI movement: bot="
-                            + record.ProfileId
-                            + "; "
-                            + EncounterPatrolRuntime.Describe(record.Bot)
-                            + "; "
-                            + EncounterCoverRuntime.Describe(record.Bot)
-                    );
+                    Plugin.LogInfo("AI movement: bot=" + record.ProfileId + "; " + _ai!.Describe(record.Bot));
         }
         if (Time.time < _nextUpdate)
             return;
@@ -229,7 +220,7 @@ internal sealed class EncounterPreviewRuntime
             "AI preview · "
             + _bots.AsValueEnumerable().Count(b => !b.Finished)
             + " bots · "
-            + (_patrol?.Status ?? "No patrols")
+            + (_ai?.Status ?? "No patrols")
             + (details.Count == 0 ? "" : "\n" + string.Join("\n", details));
     }
 
@@ -356,11 +347,7 @@ internal sealed class EncounterPreviewRuntime
                     record.DeathConfirmed = !record.Health.IsAlive;
                     record.Health.DiedEvent += record.OnDeath;
                     _bots.Add(record);
-                    _cover.Add(bot);
-                    if (roster.PatrolRouteId.Length > 0)
-                        _patrol!.Add(bot, squad, roster.PatrolRouteId);
-                    else
-                        _holds.Add(bot, point);
+                    _ai!.Add(bot, squad, roster.PatrolRouteId, point);
                 }
             }
             if (!state.TryCommitGeneration(waveIndex, generation, Time.time, out var failure))
@@ -402,11 +389,9 @@ internal sealed class EncounterPreviewRuntime
         }
         finally
         {
-            _patrol?.Reset();
-            _holds.Reset();
-            _cover.Reset();
+            _ai?.Reset();
         }
-        _patrol = null;
+        _ai = null;
         _encounterToken = "";
         foreach (var record in _bots)
             record.Health.DiedEvent -= record.OnDeath;

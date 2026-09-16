@@ -31,6 +31,24 @@ public sealed class TraderOfferCatalogue(
         && itemHelper.IsValidItem(item)
         && !itemHelper.IsOfBaseclass(item.Id, BaseClasses.HIDEOUT_AREA_CONTAINER);
 
+    // Scene placement has no price or trader blacklist requirement. Infrastructure and quest objects stay excluded.
+    public bool IsSceneItem(string id) =>
+        SeasonValidator.IsId(id)
+        && templates.Items.TryGetValue(new MongoId(id), out var item)
+        && string.Equals(item.Type, "Item", StringComparison.OrdinalIgnoreCase)
+        && item.Properties?.QuestItem != true
+        && !new[]
+        {
+            BaseClasses.LOOT_CONTAINER,
+            BaseClasses.MOB_CONTAINER,
+            BaseClasses.STASH,
+            BaseClasses.SORTING_TABLE,
+            BaseClasses.INVENTORY,
+            BaseClasses.STATIONARY_CONTAINER,
+            BaseClasses.POCKETS,
+            BaseClasses.HIDEOUT_AREA_CONTAINER,
+        }.Any(b => itemHelper.IsOfBaseclass(item.Id, b));
+
     private sealed class Shape
     {
         public int Width { get; set; } = 1;
@@ -162,11 +180,13 @@ public sealed class TraderOfferCatalogue(
     public SceneCatalogResponse SceneCatalog(SceneCatalogRequest request)
     {
         if (
-            request.Page < 0
+            (request.TemplateIds != null && (request.TemplateIds.Count > 10000 || request.TemplateIds.Any(id => !SeasonValidator.IsId(id))))
+            || request.Page < 0
             || request.Page > 10000
+            || request.Id == null
             || request.Search == null
             || request.Search.Length > 120
-            || request.Category is not ("Items" or "Presets")
+            || request.Category is not ("Items" or "Presets" or "Keys")
         )
             throw new InvalidOperationException("Invalid catalog query.");
         var locale = locales.GetLocaleDb("en");
@@ -174,7 +194,9 @@ public sealed class TraderOfferCatalogue(
             request.Category == "Presets"
                 ? globals.ItemPresets.Values.Select(p => new SceneCatalogEntry { Id = p.Id.ToString(), Name = p.Name ?? p.Id.ToString() })
                 : templates
-                    .Items.Values.Where(t => IsInventoryItem(t.Id.ToString()))
+                    .Items.Values.Where(t =>
+                        IsSceneItem(t.Id.ToString()) && (request.Category != "Keys" || itemHelper.IsOfBaseclass(t.Id, BaseClasses.KEY))
+                    )
                     .Select(t => new SceneCatalogEntry
                     {
                         Id = t.Id.ToString(),
@@ -184,26 +206,47 @@ public sealed class TraderOfferCatalogue(
             e.Name.Contains(request.Search, StringComparison.OrdinalIgnoreCase)
             || e.Id.Contains(request.Search, StringComparison.OrdinalIgnoreCase)
         );
+        if (request.TemplateIds != null)
+        {
+            var ids = request.TemplateIds.ToHashSet();
+            entries = entries.Where(e =>
+                request.Category != "Presets"
+                    ? ids.Contains(e.Id)
+                    : globals.ItemPresets[new MongoId(e.Id)].Items.Any(i => i.ParentId == null && ids.Contains(i.Template.ToString()))
+            );
+        }
         if (request.Id.Length > 0)
             entries = entries.Where(e => e.Id == request.Id);
-        var sorted = entries.OrderBy(e => e.Name).ThenBy(e => e.Id).ToList();
+        var sorted = entries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ThenBy(e => e.Id, StringComparer.Ordinal).ToList();
         var response = new SceneCatalogResponse { Total = sorted.Count, Entries = sorted.Skip(request.Page * 10).Take(10).ToList() };
         foreach (var entry in response.Entries)
         {
-            entry.Items =
-                request.Category == "Presets" ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id)) : SceneItem(entry.Id);
-            if (entry.Items.Any(i => !IsInventoryItem(i.Template)))
-                throw new InvalidOperationException("This preset contains unavailable inventory items.");
-            var validation = new SeasonValidationResult();
-            SeasonValidator.ItemTree(entry.Items, "Catalog item", validation);
-            if (!validation.CanPublish)
-                throw new InvalidOperationException(validation.Issues[0].Message);
+            try
+            {
+                entry.Items =
+                    request.Category == "Presets"
+                        ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id))
+                        : SceneItem(entry.Id);
+                if (entry.Items.Any(i => !IsSceneItem(i.Template)))
+                    throw new InvalidOperationException("This preset contains unavailable inventory items.");
+                var validation = new SeasonValidationResult();
+                SeasonValidator.ItemTree(entry.Items, "Catalog item", validation);
+                if (!validation.CanPublish)
+                    throw new InvalidOperationException(validation.Issues[0].Message);
+            }
+            catch (Exception e)
+            {
+                entry.Items = new();
+                entry.Error = e.Message;
+            }
         }
         return response;
     }
 
     internal List<NativeItem> SceneItem(string templateId)
     {
+        if (string.IsNullOrWhiteSpace(templates.Items[new MongoId(templateId)].Properties?.Prefab?.Path))
+            throw new InvalidOperationException("This item has no registered world model.");
         var root = new NativeItem { Id = SeasonRepository.NewId(), Template = templateId };
         if (!itemHelper.IsOfBaseclass(new MongoId(templateId), BaseClasses.AMMO_BOX))
             return [root];
@@ -215,7 +258,7 @@ public sealed class TraderOfferCatalogue(
             || ammoId == null
             || !templates.Items.TryGetValue(ammoId.Value, out var ammo)
             || ammo.Properties?.StackMaxSize is not > 0
-            || !IsInventoryItem(ammoId.Value.ToString())
+            || !IsSceneItem(ammoId.Value.ToString())
         )
             throw new InvalidOperationException("This ammunition box has no valid native contents.");
         var items = new List<SPTarkov.Server.Core.Models.Eft.Common.Tables.Item>

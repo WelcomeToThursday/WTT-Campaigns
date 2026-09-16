@@ -7,6 +7,8 @@ using EFT.UI.Screens;
 using Newtonsoft.Json;
 using SPT.Common.Http;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Rendering;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Authoring;
 using ZLinq;
 
@@ -59,6 +61,7 @@ public sealed class EditorMode : MonoBehaviour
     private float _nextHeartbeat;
     private readonly EditorHud _hud = new();
     private bool _hudError;
+    private string? _startupError;
     private ConfigEntry<bool> _memoryDiagnostics = null!;
 
     private void Awake()
@@ -86,6 +89,29 @@ public sealed class EditorMode : MonoBehaviour
         Canvas.willRenderCanvases += UpdateHud;
     }
 
+    internal static bool PrepareBackendForStartup(bool initialBackend) =>
+        EditorStartupRecovery.Prepare(
+            initialBackend,
+            PrepareBackend,
+            error =>
+            {
+                // Keep the normal backend reachable for native raid recovery. Never
+                // clear the server's raid guard or change the saved startup preference.
+                Instance._requested = false;
+                Instance._connectionFailed = true;
+                Instance._startupError = "Campaign Editor could not open.\n" + error.Message;
+                Plugin.Error(error);
+            }
+        );
+
+    internal void NormalMenuReady(MenuScreen menu)
+    {
+        if (_startupError == null)
+            return;
+        _pendingMenu = menu;
+        _homeAfterFrame = Time.frameCount + 1;
+    }
+
     internal static bool PrepareBackend()
     {
         if (!Active || Returning)
@@ -105,6 +131,7 @@ public sealed class EditorMode : MonoBehaviour
                 throw new InvalidOperationException(result?.Error ?? "Editor server did not respond.");
             Instance._session = result;
         }
+        RestoreBackendMapState();
         Instance._connectionFailed = false;
         Plugin.SessionId = Instance._session.ProfileId;
         Plugin.Accept(
@@ -116,6 +143,31 @@ public sealed class EditorMode : MonoBehaviour
             }
         );
         return true;
+    }
+
+    private static void RestoreBackendMapState()
+    {
+        // A reconnected backend can reuse a server session whose old client
+        // disappeared in a map. Only clear that map lease when no local map exists.
+        if (Plugin.InRaid || MapLoadActive || Instance._session!.Location.Length == 0)
+            return;
+        var current = Instance._session;
+        var restored = JsonConvert.DeserializeObject<EditorSessionResponse>(
+            RequestHandler.PostJson(
+                "/wtt-campaigns/editor/unload",
+                JsonConvert.SerializeObject(new EditorSessionRequest { SessionId = current.SessionId })
+            )
+        );
+        if (
+            restored == null
+            || restored.Error != null
+            || restored.Version != 2
+            || restored.SessionId != current.SessionId
+            || restored.ProfileId != current.ProfileId
+            || restored.Location.Length != 0
+        )
+            throw new InvalidOperationException(restored?.Error ?? "Editor session could not return to home. Retry connection.");
+        Instance._session = restored;
     }
 
     internal async void Enter()
@@ -617,6 +669,13 @@ public sealed class EditorMode : MonoBehaviour
 
     private void Update()
     {
+        if (!Active && _startupError != null && _pendingMenu && Time.frameCount >= _homeAfterFrame && !Plugin.InRaid)
+        {
+            var message = _startupError;
+            _startupError = null;
+            _pendingMenu = null;
+            ItemUiContext.Instance.ShowMessageWindow(message, null, null, "OK", 0f, forceShow: true);
+        }
         EditorDiagnostics.Enabled = _memoryDiagnostics.Value;
         EditorMemory.Tick(Active && Plugin.InRaid);
         EditorDiagnostics.Tick(Active && Plugin.InRaid);

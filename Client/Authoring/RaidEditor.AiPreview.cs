@@ -1,5 +1,6 @@
 using EFT.UI.Screens;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Preview;
 using WTT.Campaigns.Client.Encounters;
 using WTT.Campaigns.Client.Missions;
 using WTT.Campaigns.Client.Spatial;
@@ -27,6 +28,8 @@ public sealed partial class RaidEditor
     internal static bool AiPlaytestActive => Instance && Instance!._aiPreview && Instance._aiPlaytest && !Instance._aiDefeatPending;
 
     internal void AiDefeated() => _aiDefeatPending = true;
+
+    private bool _aiUseProfileKit;
 
     private async void BeginAiPreview(bool playtest)
     {
@@ -92,7 +95,7 @@ public sealed partial class RaidEditor
             if (playtest)
             {
                 _aiPlayer = new EditorPreviewPlayer(player);
-                await _aiPlayer.Equip(lifetime.Token);
+                await _aiPlayer.Equip(lifetime.Token, _aiUseProfileKit);
             }
             lifetime.Token.ThrowIfCancellationRequested();
             if (_session != session || !EditorMode.Ready || !player)
@@ -137,7 +140,7 @@ public sealed partial class RaidEditor
             if (playtest && !_editorMissionRequested)
             {
                 // Replace inert editor models with native, collectable loot.
-                _mapScene.Apply(layout, requirePlayerRoute: false, runtime: true);
+                await _mapScene.ApplyAsync(layout, false, lifetime.Token, runtime: true);
                 _aiLoot = new MissionLoot();
                 await _aiLoot.ApplyAsync(layout, Guid.NewGuid().ToString("N"), lifetime.Token);
                 lifetime.Token.ThrowIfCancellationRequested();

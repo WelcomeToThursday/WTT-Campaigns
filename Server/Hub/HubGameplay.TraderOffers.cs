@@ -49,7 +49,11 @@ public sealed partial class HubGameplay
             seasons.SeasonIdFor(pmc),
             info.Unlocked == true,
             (int)(info.LoyaltyLevel ?? 0),
-            Progress(pmc).UnlockedOffers.Contains(offer.Id)
+            offer.UnlockQuestId.Length > 0
+                ? pmc.Quests?.Any(q =>
+                    q.QId.ToString() == offer.UnlockQuestId && q.Status == SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.Success
+                ) == true
+                : Progress(pmc).UnlockedOffers.Contains(offer.Id)
         );
     }
 

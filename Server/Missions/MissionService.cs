@@ -30,7 +30,8 @@ public sealed class MissionService(
     HubGameplay commits,
     StoryService story,
     JsonUtil json,
-    BotController bots
+    BotController bots,
+    WTT.Campaigns.Server.Editor.SceneContainerLoot? containers = null
 )
 {
     private static readonly TimeSpan PreparedLifetime = TimeSpan.FromMinutes(15);
@@ -87,6 +88,9 @@ public sealed class MissionService(
             Status = MissionRunStatuses.Prepared,
             PreparedAt = now,
         };
+        run.ContainerLoot = containers?.Create(layout) ?? new();
+        if (layout.Objects.Any(o => SceneAssetRules.IsContainer(o)) && containers == null)
+            throw new InvalidOperationException("Container generation service is unavailable.");
         state.ActiveRun = run;
         state.Revision++;
         AddReceipt(state, request.OperationId, fingerprint, "prepare", run, now);
@@ -633,6 +637,7 @@ public sealed class MissionService(
             .ToList();
         return new MissionDescriptor
         {
+            ContainerLoot = cloner.Clone(run.ContainerLoot)!,
             Definition = cloner.Clone(mission)!,
             Layout = cloner.Clone(layout)!,
             Zones = zones,

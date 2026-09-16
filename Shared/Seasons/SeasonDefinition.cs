@@ -54,6 +54,12 @@ public sealed class SeasonDefinition : ExtensibleJsonModel
     public List<SeasonItem> Items { get; set; } = new();
     public List<SeasonCrate> Crates { get; set; } = new();
     public List<NativeQuest> Quests { get; set; } = new();
+    public List<CampaignQuestLoot> QuestLoot { get; set; } = new();
+    public List<CampaignCraft> Crafts { get; set; } = new();
+
+    public bool ShouldSerializeQuestLoot() => QuestLoot.Count > 0;
+
+    public bool ShouldSerializeCrafts() => Crafts.Count > 0;
 
     // Mission definitions are optional so format 1-6 campaigns remain byte-for-byte
     // compatible until an author adds the v7 mission surface.

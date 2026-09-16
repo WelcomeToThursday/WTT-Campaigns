@@ -13,10 +13,11 @@
       <_CampaignsComponent Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Server'">server</_CampaignsComponent>
       <_CampaignsComponent Condition="'$(MSBuildProjectName)' != 'WTT-Campaigns.Server'">client</_CampaignsComponent>
     </PropertyGroup>
-    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.UI'">
+    <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.UI' or '$(MSBuildProjectName)' == 'WTT-Campaigns.AI'">
       <_CampaignsRuntimeFile Include="$(TargetPath)" />
     </ItemGroup>
     <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Client'">
+      <_CampaignsRuntimeFile Include="$(TargetDir)ContainerLibrary\catalog.json;$(TargetDir)ContainerLibrary\native-containers.bundle" />
       <_CampaignsRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Campaigns.UI.dll;$(TargetDir)WTT-Campaigns.Shared.dll;$(TargetDir)wtt_campaigns_ui.bundle;$(TargetDir)wtt_campaigns_editor_toolkit.bundle;$(TargetDir)wtt_campaigns_story_notifications.bundle;$(TargetDir)StoryMedia\**\*" />
     </ItemGroup>
     <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Server'">

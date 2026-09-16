@@ -8,7 +8,7 @@ internal static class ItemTemplateFingerprintChecks
     internal static void Run(Assembly client, Action<bool, string> check)
     {
         var capture = client
-            .GetType("WTT.Campaigns.Client.Authoring.ItemTemplateFingerprint", true)!
+            .GetType("WTT.Campaigns.Client.Authoring.Preview.ItemTemplateFingerprint", true)!
             .GetMethod("Capture", BindingFlags.Static | BindingFlags.NonPublic)!;
         var templateType = capture.GetParameters()[0].ParameterType.GetGenericArguments()[0];
         var native = templateType.Assembly;

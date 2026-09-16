@@ -89,7 +89,7 @@ if __name__ == '__main__':
     count = sync_sources(project / 'UI', assets / 'Editor/Generated', assets / 'PreviewRuntime')
     (assets / 'RaidEditor/CampaignScenePreview.shader').write_text((project / 'tools/unity/CampaignScenePreview.shader').read_text(encoding='utf-8'), encoding='utf-8')
     for helper in ['ScenePicking.cs', 'ScenePropSupport.cs', 'SceneBodyState.cs']:
-        picking = (project / 'Client/Authoring' / helper).read_text(encoding='utf-8').replace('namespace WTT.Campaigns.Client.Authoring;', 'namespace WTT.Campaigns.Client.Authoring\n{') + '\n}\n'
+        picking = (project / 'Client/Authoring/Scenes' / helper).read_text(encoding='utf-8').replace('namespace WTT.Campaigns.Client.Authoring.Scenes;', 'namespace WTT.Campaigns.Client.Authoring.Scenes\n{') + '\n}\n'
         (assets / 'Editor' / helper).write_text('#nullable enable\n' + picking, encoding='utf-8')
     builder = 'CampaignsEditorToolkitBuilder.cs'
     (assets / 'Editor' / builder).write_text((project / 'tools/unity' / builder).read_text(encoding='utf-8'), encoding='utf-8')

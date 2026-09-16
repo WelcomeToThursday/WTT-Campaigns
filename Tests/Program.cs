@@ -99,6 +99,12 @@ if (args.Length == 3 && args[0] == "--encounter-hooks")
     return;
 }
 
+if (args.Length == 3 && args[0] == "--recovery-hooks")
+{
+    WTT.Campaigns.Tests.RecoveryHookChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--editor-artwork")
 {
     WTT.Campaigns.Tests.EditorArtworkChecks.Run(args[1]);
@@ -138,13 +144,19 @@ WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.MapEditorChecks.Run(Check);
 WTT.Campaigns.Tests.ZoneLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.EditorDockChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);
+WTT.Campaigns.Tests.EditorUiScaleChecks.Run(Check);
+WTT.Campaigns.Tests.CatalogGridLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
+WTT.Campaigns.Tests.EditorCameraBookmarkChecks.Run(Check);
 WTT.Campaigns.Tests.PlayerRouteChecks.Run(Check);
 WTT.Campaigns.Tests.AiTreeChecks.Run(Check);
 WTT.Campaigns.Tests.EditorLibraryTreeChecks.Run(Check);
 WTT.Campaigns.Tests.RouteVisualChecks.Run(Check);
 WTT.Campaigns.Tests.SceneCatalogChecks.Run(Check);
+WTT.Campaigns.Tests.SceneAssetChecks.Run(args[0], Check);
+WTT.Campaigns.Tests.EditorStartupRecoveryChecks.Run(Check);
 WTT.Campaigns.Tests.SceneObjectIndexChecks.Run(Check);
 WTT.Campaigns.Tests.ScenePreviewChecks.Run(Check);
 await WTT.Campaigns.Tests.EditorSessionChecks.Run(Check);

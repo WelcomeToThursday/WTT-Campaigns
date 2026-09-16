@@ -1,4 +1,4 @@
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Scenes;
 
 namespace WTT.Campaigns.Tests;
 
@@ -6,6 +6,21 @@ internal static class ScenePreviewChecks
 {
     internal static void Run(Action<bool, string> check)
     {
+        check(
+            !PreviewMaterialPolicy.UsesOpacity("Opaque", "Custom/Bumped Specular", false, false),
+            "Opaque prop surface masks must not cut holes in thumbnails"
+        );
+        check(!PreviewMaterialPolicy.UsesOpacity("", "Custom/Container", false, false), "Untagged solid props default to opaque previews");
+        check(
+            PreviewMaterialPolicy.UsesOpacity("TransparentCutout", "Custom/Fence", false, false),
+            "Cutout fence textures retain their holes"
+        );
+        check(
+            PreviewMaterialPolicy.UsesOpacity("", "Custom/Leaves", false, false),
+            "Leaf shaders retain opacity even without a render tag"
+        );
+        check(PreviewMaterialPolicy.UsesOpacity("Opaque", "Standard", true, false), "Alpha-test keyword overrides an opaque render tag");
+        check(PreviewMaterialPolicy.UsesOpacity("", "Standard", false, true), "Blended materials retain texture opacity");
         var released = new List<string>();
         var cache = new ScenePreviewCache<string>(2, released.Add);
         var generation = cache.Generation;

@@ -26,7 +26,7 @@ internal static class EditorRoutingCompatibility
         {
             var mod = context.LoadFromAssemblyPath(Path.GetFullPath(serverAssembly));
             var core = context.LoadFromAssemblyPath(Path.Combine(nativeDirectory, "SPTarkov.Server.Core.dll"));
-            var sessions = Activator.CreateInstance(mod.GetType("WTT.Campaigns.Server.Editor.EditorSessions", true)!, new object?[5]);
+            var sessions = Activator.CreateInstance(mod.GetType("WTT.Campaigns.Server.Editor.EditorSessions", true)!, new object?[6]);
             var patchType = mod.GetType("WTT.Campaigns.Server.Editor.EditorRequestGate", true)!;
             var patch = Activator.CreateInstance(patchType, sessions)!;
             var target = (MethodInfo?)

@@ -24,7 +24,7 @@ internal static class EditorOpenChecks
 
     internal static void Client(AssemblyDefinition assembly, Action<bool, string> check)
     {
-        var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditorView");
+        var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.RaidEditorView");
         var constructor = view.Methods.Single(m => m.IsConstructor && !m.IsStatic);
         var calls = constructor
             .Body.Instructions.Where(i => i.Operand is MethodReference)
@@ -49,6 +49,22 @@ internal static class EditorOpenChecks
             "Failed construction disposes its partial Toolkit document"
         );
         var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var cameraOpenCalls = editor
+            .Methods.Single(m => m.Name == "Open")
+            .Body.Instructions.Where(i => i.Operand is MethodReference)
+            .Select(i => ((MethodReference)i.Operand).Name)
+            .ToList();
+        var persistedCamera = cameraOpenCalls.IndexOf("RestoreCameraBookmark");
+        check(
+            persistedCamera >= 0 && persistedCamera < cameraOpenCalls.IndexOf("RestoreWalkCamera"),
+            "New sessions restore persisted camera before the same-raid preview bookmark override"
+        );
+        check(
+            editor
+                .Methods.Single(m => m.Name == "Close")
+                .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "SaveCameraBookmark"),
+            "Editor departure persists the free-camera pose before teardown"
+        );
         check(
             editor.Methods.Single(m => m.Name == "Open").Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "TryBegin"),
             "Every automatic editor opening respects the failure latch"

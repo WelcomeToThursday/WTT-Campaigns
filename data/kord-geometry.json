@@ -1,0 +1,299 @@
+{
+  "Sources": [
+    {
+      "File": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level29",
+      "Sha256": "2c22d53688588bc9aff6468ef9ec0359d1949e90ffe8713ff8a753f9cd31db6b"
+    },
+    {
+      "File": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level395",
+      "Sha256": "e2148468ba9fa25a90f73cd065c4aa5438de4ee05d891806c754615f376c4406"
+    },
+    {
+      "File": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level506",
+      "Sha256": "e1b1a456e7e895355215335fd7422cded9349f5575b67cf5ea9b6826c0e8b7e3"
+    },
+    {
+      "File": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level514",
+      "Sha256": "3d4a0985248a2f69b8c82681025e6a5f20343539117c998e8d115025fa53c512"
+    },
+    {
+      "File": "E:\\EscapeFromTarkov\\EscapeFromTarkov_Data\\level522",
+      "Sha256": "8160ffa441bdd173fc6f8a5d4987b429f7b1cdb21b61b97f71f3d77b5493a06b"
+    }
+  ],
+  "Volumes": [
+    {
+      "Target": "shoreline_kord_house",
+      "Component": "EFT.Interactive.ExperienceTrigger",
+      "Location": "shoreline",
+      "Scene": "Shoreline_DesignMain",
+      "Position": {
+        "X": -512.66309,
+        "Y": -21.171,
+        "Z": 237.04789
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": 1.56478,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 12.0,
+        "Y": 2.0,
+        "Z": 10.0
+      }
+    },
+    {
+      "Target": "kord_breach_wifi_02",
+      "Component": "EFT.Interactive.PlaceItemTrigger",
+      "Location": "shoreline",
+      "Scene": "Shoreline_DesignMain",
+      "Position": {
+        "X": -593.02999,
+        "Y": -29.71182,
+        "Z": -200.47357
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": -36.51021,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 1.98,
+        "Y": 4.0,
+        "Z": 2.7
+      }
+    },
+    {
+      "Target": "shoreline_kord_ges",
+      "Component": "EFT.Interactive.ExperienceTrigger",
+      "Location": "shoreline",
+      "Scene": "Shoreline_DesignMain",
+      "Position": {
+        "X": -227.98609,
+        "Y": -33.845,
+        "Z": 188.82292
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": 1.56478,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 12.0,
+        "Y": 2.0,
+        "Z": 10.0
+      }
+    },
+    {
+      "Target": "shoreline_kord_mts",
+      "Component": "EFT.Interactive.ExperienceTrigger",
+      "Location": "shoreline",
+      "Scene": "Shoreline_DesignMain",
+      "Position": {
+        "X": -708.86207,
+        "Y": -25.461,
+        "Z": 98.08091
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": 1.56478,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 3.0,
+        "Y": 5.0,
+        "Z": 3.0
+      }
+    },
+    {
+      "Target": "kord_breach_wifi_01",
+      "Component": "EFT.Interactive.PlaceItemTrigger",
+      "Location": "shoreline",
+      "Scene": "Shoreline_DesignMain",
+      "Position": {
+        "X": -176.84049,
+        "Y": -40.11183,
+        "Z": 141.37297
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": -5.77066,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 1.98,
+        "Y": 4.0,
+        "Z": 2.7
+      }
+    },
+    {
+      "Target": "kord_breach_wifi_03",
+      "Component": "EFT.Interactive.PlaceItemTrigger",
+      "Location": "tarkovstreets",
+      "Scene": "City_Quests",
+      "Position": {
+        "X": 203.31,
+        "Y": 4.631,
+        "Z": 258.20999
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": -42.67152,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 4.0,
+        "Y": 3.5484,
+        "Z": 6.0
+      }
+    },
+    {
+      "Target": "kord_breach_wifi_04",
+      "Component": "EFT.Interactive.PlaceItemTrigger",
+      "Location": "tarkovstreets",
+      "Scene": "City_Quests",
+      "Position": {
+        "X": -47.15,
+        "Y": 0.37,
+        "Z": 386.82001
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": 0.0,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 4.0,
+        "Y": 3.5484,
+        "Z": 6.0
+      }
+    },
+    {
+      "Target": "kord_breach_wifi_06",
+      "Component": "EFT.Interactive.PlaceItemTrigger",
+      "Location": "sandbox_high",
+      "Scene": "Sandbox_Quests",
+      "Position": {
+        "X": 81.879,
+        "Y": 15.581,
+        "Z": 120.757
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": -41.57162,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 3.5,
+        "Y": 2.0,
+        "Z": 1.64
+      }
+    },
+    {
+      "Target": "kord_breach_wifi_05",
+      "Component": "EFT.Interactive.PlaceItemTrigger",
+      "Location": "sandbox_high",
+      "Scene": "Sandbox_Quests",
+      "Position": {
+        "X": 117.088,
+        "Y": 23.012,
+        "Z": 62.88
+      },
+      "Rotation": {
+        "X": -0.0,
+        "Y": -23.06521,
+        "Z": 0.0
+      },
+      "Size": {
+        "X": 3.0,
+        "Y": 3.0,
+        "Z": 3.0
+      }
+    },
+    {
+      "Target": "customs_destroy_cord_02",
+      "Component": "EFT.Quests.ShootableQuestLocationObject",
+      "Location": "bigmap",
+      "Scene": "custom_DesignMain",
+      "Position": {
+        "X": 402.44129,
+        "Y": 42.50003,
+        "Z": 212.53953
+      },
+      "Rotation": {
+        "X": -79.29603,
+        "Y": -0.74406,
+        "Z": 157.41954
+      },
+      "Size": {
+        "X": 0.397,
+        "Y": 0.10262,
+        "Z": 0.46542
+      }
+    },
+    {
+      "Target": "customs_destroy_cord_01",
+      "Component": "EFT.Quests.ShootableQuestLocationObject",
+      "Location": "bigmap",
+      "Scene": "custom_DesignMain",
+      "Position": {
+        "X": 120.58405,
+        "Y": 64.01659,
+        "Z": -66.73568
+      },
+      "Rotation": {
+        "X": -81.49865,
+        "Y": 37.15805,
+        "Z": 178.64049
+      },
+      "Size": {
+        "X": 0.397,
+        "Y": 0.10262,
+        "Z": 0.46542
+      }
+    },
+    {
+      "Target": "woods_destroy_cord_04",
+      "Component": "EFT.Quests.ShootableQuestLocationObject",
+      "Location": "woods",
+      "Scene": "woods_DesignMain",
+      "Position": {
+        "X": 223.53549,
+        "Y": 62.43652,
+        "Z": -713.18614
+      },
+      "Rotation": {
+        "X": -89.0221,
+        "Y": 42.04835,
+        "Z": -48.54677
+      },
+      "Size": {
+        "X": 0.397,
+        "Y": 0.10262,
+        "Z": 0.46542
+      }
+    },
+    {
+      "Target": "woods_destroy_cord_03",
+      "Component": "EFT.Quests.ShootableQuestLocationObject",
+      "Location": "woods",
+      "Scene": "woods_DesignMain",
+      "Position": {
+        "X": -173.86875,
+        "Y": 118.39219,
+        "Z": -262.26135
+      },
+      "Rotation": {
+        "X": -83.18968,
+        "Y": 168.63755,
+        "Z": -150.44929
+      },
+      "Size": {
+        "X": 0.397,
+        "Y": 0.10262,
+        "Z": 0.46542
+      }
+    }
+  ]
+}

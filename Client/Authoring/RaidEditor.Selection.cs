@@ -1,11 +1,13 @@
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Scenes;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;
 using ZLinq;
-using Button = WTT.Campaigns.Client.Authoring.EditorButton;
-using InputField = WTT.Campaigns.Client.Authoring.EditorInput;
-using Text = WTT.Campaigns.Client.Authoring.EditorLabel;
+using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
+using InputField = WTT.Campaigns.Client.Authoring.Views.EditorInput;
+using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -27,7 +29,7 @@ public sealed partial class RaidEditor
         && (
             tool != "Scale"
             || ScenePoint is MapVolume
-            || ScenePoint is MapObjectEdit { Target.Kind: "Prop" }
+            || ScenePoint is MapObjectEdit { Target.Kind: "Prop" or "AssetProp" }
                 && SceneSelectionTarget
                 && MapSceneAdapter.ScaleRestriction(SceneSelectionTarget!).Length == 0
         );
@@ -130,9 +132,17 @@ public sealed partial class RaidEditor
     {
         if (_mode == "Scene")
             return;
-        _moduleSelection[_mode] = (_selected, _page);
+        var previous = ToolStateFor(_mode);
+        previous.Selection = _selected;
+        previous.Page = _page;
+        previous.Picked = _picked;
         _mode = "Scene";
         _sceneTab = "Existing";
+        if (_view != null)
+        {
+            _view.ToolContext = "Scene";
+            _view.Windows.BrowseCategory();
+        }
         _page = 0;
         _libraryKey = "";
     }
@@ -236,7 +246,7 @@ public sealed partial class RaidEditor
         if (
             editable
             && target
-            && point is MapObjectEdit { Target.Kind: "Prop", Operation: "Move" }
+            && point is MapObjectEdit { Target.Kind: "Prop" or "AssetProp", Operation: "Move" }
             && MapSceneAdapter.Supported(target, copy: true) is { Length: > 0 } copyReason
         )
             view.Text("SceneInfo", copyReason);
@@ -245,7 +255,7 @@ public sealed partial class RaidEditor
                 "SceneInfo",
                 "Move and rotate are available. "
                     + (
-                        point is MapObjectEdit { Target.Kind: "Prop" } && target
+                        point is MapObjectEdit { Target.Kind: "Prop" or "AssetProp" } && target
                             ? MapSceneAdapter.ScaleRestriction(target!)
                             : "Native loot and containers retain their original size."
                     )
@@ -253,7 +263,7 @@ public sealed partial class RaidEditor
         view.Windows.SetTooltip(
             "Scale",
             editable
-            && point is MapObjectEdit { Target.Kind: "Prop" }
+            && point is MapObjectEdit { Target.Kind: "Prop" or "AssetProp" }
             && target
             && MapSceneAdapter.ScaleRestriction(target!) is { Length: > 0 } scaleReason
                 ? scaleReason

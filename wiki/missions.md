@@ -28,7 +28,7 @@ Fix validation errors before deployment. Missing scene targets require rebinding
 
 **Test mission** runs the saved draft on disposable editor state with copied equipment. Use it to check route traversal, scene changes, and combat, then retry or return to editing. Test loot, damage, ammunition use, and results do not transfer to your real character.
 
-From editor home, select **New campaign** and its **Test** layout, then choose **Test mission**. The map loads and the rehearsal starts with copied equipped gear. Complete both checkpoints and enter the authored exit; press **R** to retry after completion or **Esc** to return to editing. Unload the map to return to editor home.
+From editor home, select **New campaign** and its **Test** layout, then choose **Test mission**. The map loads and the rehearsal starts with the editor character's placeholder starting kit. Complete both checkpoints and enter the authored exit; press **R** to retry after completion or **Esc** to return to editing. Unload the map to return to editor home.
 
 **Test campaign flow** creates an isolated campaign snapshot and a disposable character. Use this path to accept the quest, select and complete the mission, turn in the quest, and replay. Resetting the test starts a fresh test character. The source draft and normal characters remain separate from the test snapshot.
 
@@ -53,3 +53,5 @@ After installing matching components, manually restart the server and client. No
 - Leave testing and check the original character's gear and progress. Load an ordinary raid and confirm mission scenery, objectives, and spawn restrictions are gone.
 
 Offline contracts and native assembly checks validate integration assumptions. Successful build and file installation do not establish in-game behavior; the above checks require a live session controlled by the user.
+
+On the main toolbar, choose **Placeholder kit** (default) or **Copy main-profile kit** before starting a playtest. Both use disposable item copies; the main profile is unchanged. The selection lasts for the current editor session. Reconnect the editor after installing this update to prepare its placeholder kit.

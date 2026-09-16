@@ -28,12 +28,12 @@ BigBrain provides the patrol layer. SAIN keeps control during combat, search, an
 
 ## Observe, playtest, and reset
 
-Compatible **BigBrain 1.5.0** and **SAIN 4.5.1** are required for the initial **SPT 4.1.5** target. Preview remains unavailable when the installed integration cannot establish safe spawn admission and AI ownership. Ordinary raids keep their normal spawning and AI behavior.
+Compatible **BigBrain 1.5.0** and **SAIN 4.5.1** are required for the initial **SPT 4.1.5** target. Preview remains unavailable when the installed integration cannot establish safe spawn admission and AI ownership. Ordinary raids keep their normal spawning and AI behavior. BigBrain, SAIN, MoreBotsAPI and Black Division are required for all campaign play; see the [requirements](../README.md#requirements) for minimum versions. The shipped `WTT-Campaigns.AI.dll` is loaded only when an authored encounter needs the integration and both dependencies pass compatibility checks; keep it alongside the matching client assembly when updating.
 
 - **Observe** keeps the free camera and excludes the editor player from combat targeting. Bots can fight and damage each other.
 - Observe sends the mission-start signal. An encounter using **Event** waits for its named event; select that encounter, wave, or roster and use **Simulate**. Selecting a patrol route alone does not select an encounter to activate. Player-entry encounters can also be activated with Simulate. To spawn automatically when Observe begins, use the **Mission start** trigger.
 - A patrol route controls movement after spawning. Assign it to the roster to use it. Each encounter runs once per preview; use **Reset preview**, then Observe again for another run.
-- **Playtest** places the editor character at the authored player start with fresh health and a disposable copy of the selected game character's equipped gear, including shortcuts for copied equipped items. Combat controls remain native; inventory/container transfers are unavailable during rehearsal. The source character is never used as the active preview identity.
+- **Playtest** places the editor character at the authored player start with fresh health and a disposable copy of the editor character's starting kit, including its equipment shortcuts. Combat controls remain native; inventory/container transfers are unavailable during rehearsal. The source character is never used as the active preview identity.
 - **Reset preview** cancels pending spawns, removes preview entities and temporary equipment, clears encounter events, and restores the editor. Escape returns directly to editing without opening the native pause menu. Player defeat, spawn failure, connection failure, and map teardown use the same cleanup path. If cleanup reports a failure, resolve it and retry reset before another preview.
 
 Layout editing is frozen while preparing or running a preview. Each new preview has fresh encounter state and gear. Quests, rewards, insurance, persistent loot, and campaign progression do not advance.
@@ -49,3 +49,5 @@ Offline checks and installed-file hashes do not establish live compatibility. Re
 - Defeat, Escape, reset, and repeated previews restore the editor and leave the source profile unchanged.
 - Ordinary raids retain their existing behavior.
 - Repeated previews do not accumulate bots or equipment, grow memory continuously, or introduce periodic frame stalls.
+
+On the main toolbar, choose **Placeholder kit** (default) or **Copy main-profile kit** before starting a playtest. Both use disposable item copies; the main profile is unchanged. The selection lasts for the current editor session. Reconnect the editor after installing this update to prepare its placeholder kit.

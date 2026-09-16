@@ -56,6 +56,14 @@ internal static class AuthoringSocketCompatibility
 
         var handler = server.MainModule.GetType("WTT.Campaigns.Server.Routing.AuthoringSocketHandler");
         Require(
+            handler
+                .Methods.Single(m => m.Name == "AcceptsMapRequest")
+                .Body.Instructions.Any(i =>
+                    i.Operand is MethodReference m && m.Name == "AcceptsMapRequest" && m.DeclaringType.Name == "Session"
+                ),
+            "The live map socket uses the tested editor protocol and identity gate"
+        );
+        Require(
             handler.Interfaces.Single().InterfaceType.Name == "ISptWebSocketMessageHandler",
             "Editor extends the existing SPT message connection"
         );
@@ -68,7 +76,7 @@ internal static class AuthoringSocketCompatibility
             "Editor uses SPT's synchronized notification sender"
         );
         var sender = spt.MainModule.GetType("SPTarkov.Server.Core.Servers.Ws.SptWebSocketConnectionHandler");
-        var previewCalls = Calls(client.MainModule.GetType("WTT.Campaigns.Client.Authoring.ItemPreviewClient"));
+        var previewCalls = Calls(client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Preview.ItemPreviewClient"));
         Require(
             previewCalls.Any(c => c.DeclaringType.Name == "AuthoringSocket" && c.Name == "Send"),
             "Item previews use the existing authoring transport"
@@ -102,8 +110,40 @@ internal static class AuthoringSocketCompatibility
             "Ammunition stacks are finalized through native capacity checks"
         );
         Require(
-            !previewCalls.Any(c => c.Name is "FlatItemsToTree" or "AddWithoutRestrictions" or "AddItemWithoutRestrictions"),
-            "Preview does not accept unrestricted deserialization as verification"
+            !previewCalls.Any(c => c.Name is "FlatItemsToTree" or "AddItemWithoutRestrictions"),
+            "Preview does not accept unrestricted tree deserialization as verification"
+        );
+        var builder = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Preview.ItemPreviewClient");
+        var lockedPart = builder.Methods.Single(m => m.Name == "RestoreLockedPart");
+        var lockedCalls = lockedPart.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().ToArray();
+        foreach (
+            var name in new[]
+            {
+                "get_Locked",
+                "get_ContainedItem",
+                "CheckCompatibility",
+                "GetConflictingSlot",
+                "CheckConflictingItems",
+                "AddWithoutRestrictions",
+            }
+        )
+            Require(lockedCalls.Any(c => c.Name == name), "Built-in parts retain native validation: " + name);
+        Require(
+            lockedPart.Body.Instructions.Any(i => i.OpCode.Code == Mono.Cecil.Cil.Code.Throw),
+            "Incompatible built-in parts are rejected"
+        );
+        Require(!previewCalls.Any(c => c.Name == "set_Locked"), "Reconstruction leaves native slot locks intact");
+        Require(
+            builder
+                .Methods.Where(m => m.HasBody && m != lockedPart)
+                .All(m => !m.Body.Instructions.Any(i => i.Operand is MethodReference c && c.Name == "AddWithoutRestrictions")),
+            "Only the validated built-in-part path can bypass a gameplay insertion lock"
+        );
+        Require(
+            builder
+                .Methods.Single(m => m.Name == "Build")
+                .Body.Instructions.Any(i => i.Operand is MethodReference c && c.Name == "RestoreLockedPart"),
+            "The preview item builder restores locked native parts"
         );
         Require(
             previewCalls.Any(c => c.Name == "ReleaseTemporary") && previewCalls.Any(c => c.Name == "Destroy"),

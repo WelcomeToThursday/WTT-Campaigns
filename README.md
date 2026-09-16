@@ -1,6 +1,6 @@
 # WTT-Campaigns
 
-**0.8.0 — Campaign Editor and missions**
+**0.9.0 — Editor tools, containers and character recovery**
 
 [Campaign Editor and mission map layouts](wiki/editor-mode.md): open a disposable editor character, reshape supported scenery, author AI encounters and patrols, and build [playable missions](wiki/missions.md).
 
@@ -21,6 +21,10 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 
 - **SPT 4.1.x / EFT 0.16.9.40743** is the target build for this beta.
 - **UnityToolkit 2.0.2 or later**, including its plugin libraries and prepatcher.
+- **BigBrain 1.5.0 or later**.
+- **SAIN 4.5.1 or later**, with matching client and server components.
+- **MoreBotsAPI 2.1.1 or later**, with matching client and server components.
+- **Black Division 1.3.1 or later**, with matching client and server components.
 - **WTT-CommonLib 3.0.6 or later**, with matching client and server components, for salvage quest interactions.
 - **WTT-ContentBackport 2.0.1 or later** and its dependencies, which supply the document and crate models.
 

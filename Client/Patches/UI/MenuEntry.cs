@@ -31,6 +31,7 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("WTT.Campaigns.Me
             return;
         }
         AttachEditor(__instance);
+        Authoring.EditorMode.Instance?.NormalMenuReady(__instance);
         Authoring.CampaignTestMode.AttachMenu(__instance);
         SeasonUi.Instance.ShowStartupSelection();
         try

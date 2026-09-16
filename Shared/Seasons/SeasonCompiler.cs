@@ -83,6 +83,14 @@ public static class SeasonCompiler
             .Items.Select(i => i.CloneFrom)
             .Concat(season.Documents.Select(d => d.ItemId))
             .Concat(season.Crates.SelectMany(c => c.Pool.Keys))
+            .Concat(season.QuestLoot.Select(l => l.ItemTemplate))
+            .Concat(season.Crafts.Select(c => c.EndProduct))
+            .Concat(season.Crafts.SelectMany(c => c.Requirements).Where(r => r.Type == "Item").Select(r => r.TemplateId!))
+            .Concat(
+                season.TraderOffers.SelectMany(o =>
+                    o.Items.Select(i => i.Template).Concat(o.Barter.SelectMany(b => b).Select(b => b.Template))
+                )
+            )
             .Concat(
                 season
                     .Zones.Where(z => z.Uses.Contains("Salvage"))
@@ -91,9 +99,10 @@ public static class SeasonCompiler
             .Concat(new[] { season.Starting.Usec, season.Starting.Bear }.SelectMany(f => f.Items.Select(i => i.Template)))
             .Concat(
                 season
-                    .AllRewards.SelectMany(r => r.Grants)
+                    .AllRewards.Where(r => r.Enabled)
+                    .SelectMany(r => r.Grants)
                     .SelectMany(g => g.Items)
-                    .Concat(season.Quests.SelectMany(q => q.AllItems()))
+                    .Concat(season.Quests.Where(q => q.SeasonalEnabled != false).SelectMany(q => q.AllItems()))
                     .Select(i => i.Template)
             );
         return season

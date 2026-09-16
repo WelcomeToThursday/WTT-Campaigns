@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 
 namespace WTT.Campaigns.UI.Controls;
 
@@ -6,8 +7,41 @@ namespace WTT.Campaigns.UI.Controls;
 [Serializable]
 public sealed class EditorWindowLayout
 {
-    public int Version = 1;
+    public int Version = 2;
     public EditorWindowPlacement[] Windows = Array.Empty<EditorWindowPlacement>();
+    public EditorDockNode? Dock;
+
+    public static EditorWindowLayout? Restore(EditorWindowLayout? saved, EditorWindowLayout defaults)
+    {
+        if (saved?.Windows == null || saved.Version is not (1 or 2))
+            return null;
+        var windows = defaults.Windows.ToDictionary(p => p.Id, p => p);
+        if (saved.Version == 2 && (saved.Dock == null || !EditorDockLayout.Valid(saved.Dock, windows.Keys.ToHashSet())))
+            return null;
+        var dock = saved.Version == 1 ? EditorDockNode.Default() : saved.Dock!;
+        foreach (var source in saved.Windows)
+        {
+            if (source == null)
+                continue;
+            var id = source.Id == "Library" ? "Tool:Layouts" : source.Id;
+            if (id == null || !windows.ContainsKey(id))
+                continue;
+            windows[id] = new EditorWindowPlacement
+            {
+                Id = id,
+                X = source.X,
+                Y = source.Y,
+                Width = source.Width,
+                Height = source.Height,
+                Visible = source.Visible,
+                ManualSize = saved.Version == 1 || source.ManualSize,
+                Opened = saved.Version == 1 || source.Opened,
+            };
+            if (saved.Version == 1)
+                dock = EditorDockLayout.Remove(dock, id)!;
+        }
+        return new() { Windows = windows.Values.ToArray(), Dock = dock };
+    }
 }
 
 [Serializable]
@@ -19,6 +53,8 @@ public sealed class EditorWindowPlacement
         Width,
         Height;
     public bool Visible;
+    public bool ManualSize;
+    public bool Opened;
 
     public static EditorWindowPlacement Fit(
         EditorWindowPlacement source,
@@ -41,6 +77,8 @@ public sealed class EditorWindowPlacement
         {
             Id = source.Id,
             Visible = source.Visible,
+            ManualSize = source.ManualSize,
+            Opened = source.Opened,
             Width = width,
             Height = height,
             X = Limit(Finite(source.X, 0) * screenWidth, -screenWidth / 2 + width / 2 + 8, screenWidth / 2 - width / 2 - 8) / screenWidth,

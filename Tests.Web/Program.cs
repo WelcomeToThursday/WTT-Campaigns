@@ -14,6 +14,11 @@ using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Story;
 
 // Render the real Creator components in memory; no host, SPT runtime or profile is opened.
+if (args.Length == 3 && args[0] == "--kord-content")
+{
+    KordInstalledContentChecks.Run(args[1], args[2]);
+    return;
+}
 await using var services = new ServiceCollection()
     .AddLogging()
     .AddSingleton<IJSRuntime, OfflineJsRuntime>()
@@ -229,6 +234,8 @@ await MapLayoutUiChecks.Run(services, Check);
 await TraderOfferUiChecks.Run(Check);
 WTT.Campaigns.Web.Tests.EncounterChecks.Run(Check);
 WTT.Campaigns.Web.Tests.AuthoringMapSessionChecks.Run(Check);
+WTT.Campaigns.Web.Tests.CharacterRecoveryChecks.Run(Check);
+await WTT.Campaigns.Web.Tests.CharacterRecoveryChecks.CheckDeniedAction(Check);
 Console.WriteLine($"PASS {count} Creator component assertions");
 
 sealed class EditorHost(SeasonDefinition season, NativeQuest quest, StoryQuest membership) : ComponentBase

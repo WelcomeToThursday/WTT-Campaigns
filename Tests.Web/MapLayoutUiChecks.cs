@@ -26,9 +26,28 @@ internal static class MapLayoutUiChecks
                 },
             },
         };
+        var asset = new MapTarget
+        {
+            Kind = "AssetContainer",
+            Bundle = "assets/crate.bundle",
+            Asset = "assets/crate.prefab",
+            Template = "578f8778245977358849a9b5",
+        };
+        asset.Fingerprint = SceneAssetRules.Identity(asset.Bundle, asset.Asset);
+        map.Objects.Add(
+            new MapObjectEdit
+            {
+                Id = SeasonRepository.NewId(),
+                Name = "Native crate",
+                Location = map.Location,
+                Scene = "woods_main",
+                Target = asset,
+                Operation = "Copy",
+            }
+        );
         var season = new SeasonDefinition
         {
-            FormatVersion = 4,
+            FormatVersion = 8,
             MapLayouts = new() { map },
         };
         var host = new MapHost(season);
@@ -40,6 +59,11 @@ internal static class MapLayoutUiChecks
             check(
                 renderer.Text(component.Id).Contains("Building route") && renderer.Text(component.Id).Contains("Walkthrough requires"),
                 "Creator shows incomplete saved layouts and route readiness"
+            );
+            check(
+                renderer.Text(component.Id).Contains("assets/crate.bundle")
+                    && renderer.Text(component.Id).Contains("Native random-loot container"),
+                "Creator displays independent asset references and container behavior"
             );
             await renderer.DispatchEventAsync(
                 renderer.Event(component.Id, "input", "", "onchange"),
@@ -56,6 +80,10 @@ internal static class MapLayoutUiChecks
             check(
                 !MapLayoutRules.OwnedIds(map).Intersect(MapLayoutRules.OwnedIds(season.MapLayouts[1])).Any(),
                 "Creator duplication gives route records independent identities"
+            );
+            check(
+                season.MapLayouts[1].Objects[0].Target.Asset == asset.Asset && season.FormatVersion == 8,
+                "Creator duplication preserves asset references and format 8"
             );
             season.MapLayouts[1].Checkpoints[0].Position.X = 9;
             check(map.Checkpoints[0].Position.X == 0, "Duplicated layout geometry is independent");

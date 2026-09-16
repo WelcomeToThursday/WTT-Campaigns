@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <OutputPath>../Client/bin/$(Configuration)/</OutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Remove="System.Linq" />
+    <ProjectReference Include="../Client/WTT-Campaigns.Client.csproj" />
+    <Reference Include="ZLinq" HintPath="$(TarkovDir)BepInEx/plugins/UnityToolkit/ZLinq.dll" Private="false" />
+    <Reference Include="Sirenix.Serialization" HintPath="$(ManagedDir)Sirenix.Serialization.dll" Private="false" />
+    <Reference Include="ItemComponent.Types" HintPath="$(ManagedDir)ItemComponent.Types.dll" Private="false" />
+    <Reference
+      Include="Assembly-CSharp"
+      HintPath="$(TarkovDir)BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll"
+      Private="false"
+    />
+    <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedDir)UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AIModule" HintPath="$(ManagedDir)UnityEngine.AIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TerrainModule" HintPath="$(ManagedDir)UnityEngine.TerrainModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedDir)UnityEngine.AudioModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AnimationModule" HintPath="$(ManagedDir)UnityEngine.AnimationModule.dll" Private="false" />
+    <Reference Include="UnityEngine.VideoModule" HintPath="$(ManagedDir)UnityEngine.VideoModule.dll" Private="false" />
+    <Reference Include="UnityEngine.DirectorModule" HintPath="$(ManagedDir)UnityEngine.DirectorModule.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(ManagedDir)UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UI" HintPath="$(ManagedDir)UnityEngine.UI.dll" Private="false" />
+    <Reference Include="UnityEngine.UIElementsModule" HintPath="$(ManagedDir)UnityEngine.UIElementsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.UIModule" HintPath="$(ManagedDir)UnityEngine.UIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(ManagedDir)UnityEngine.InputLegacyModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(ManagedDir)UnityEngine.TextRenderingModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(ManagedDir)UnityEngine.AssetBundleModule.dll" Private="false" />
+    <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(ManagedDir)UnityEngine.ImageConversionModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(ManagedDir)UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="Comfort" HintPath="$(ManagedDir)Comfort.dll" Private="false" />
+    <Reference Include="Comfort.Unity" HintPath="$(ManagedDir)Comfort.Unity.dll" Private="false" />
+    <Reference Include="Unity.TextMeshPro" HintPath="$(ManagedDir)Unity.TextMeshPro.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(TarkovDir)BepInEx\core\0Harmony.dll" Private="false" />
+    <Reference Include="BepInEx" HintPath="$(TarkovDir)BepInEx\core\BepInEx.dll" Private="false" />
+    <Reference Include="spt-common" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-common.dll" Private="false" />
+    <Reference Include="spt-custom" HintPath="$(TarkovDir)BepInEx\plugins\spt\spt-custom.dll" Private="false" />
+    <Reference Include="DrakiaXYZ-BigBrain" HintPath="$(TarkovDir)BepInEx\plugins\DrakiaXYZ-BigBrain.dll" Private="false" />
+    <Reference Include="SAIN" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.dll" Private="false" />
+    <Reference Include="SAIN.Preset.Shared" HintPath="$(TarkovDir)BepInEx\plugins\SAIN\SAIN.Preset.Shared.dll" Private="false" />
+  </ItemGroup>
+</Project>

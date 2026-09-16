@@ -115,7 +115,7 @@ public sealed partial class RaidEditor
             // Reconcile the frozen runtime layout after closing editor visuals.
             // This also removes inert loot previews before native loot is added.
             _mapScene ??= new();
-            _mapScene.ApplyMission(route);
+            await _mapScene.ApplyAsync(route, true, routeLifetime.Token, runtime: true);
             // Use the native loot owner so placed items are interactable during
             // the rehearsal and are disposed with this run. The editor source
             // profile is never used as the storage target for collected items.

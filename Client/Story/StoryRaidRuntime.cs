@@ -169,6 +169,8 @@ public sealed class StoryRaidRuntime : MonoBehaviour
             )
             {
                 var authoredZone = binding.ZoneId.Length > 0 ? Spatial.ZoneRuntime.Instance?.Find(binding.ZoneId) : null;
+                if (binding.ZoneId.Length > 0 && !authoredZone)
+                    throw new InvalidOperationException("Story zone is not ready: " + binding.ZoneId);
                 Transform[]? matches = authoredZone ? new[] { authoredZone!.transform } : null;
                 if (matches == null && (!transforms.TryGetValue(binding.ObjectPath, out matches) || matches.Length != 1))
                 {

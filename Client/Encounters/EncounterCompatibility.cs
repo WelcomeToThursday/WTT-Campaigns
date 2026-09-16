@@ -1,8 +1,6 @@
 using System.Reflection;
 using BepInEx.Bootstrap;
-using DrakiaXYZ.BigBrain.Brains;
-using EFT;
-using SAIN.Interop;
+using WTT.Campaigns.Shared.Spatial;
 
 namespace WTT.Campaigns.Client.Encounters;
 
@@ -19,6 +17,7 @@ internal static class EncounterCompatibility
 
     private static readonly object Gate = new();
     private static bool _checked;
+    private static Type? _runtimeType;
     private static string _error = "";
 
     internal static string Error
@@ -46,8 +45,21 @@ internal static class EncounterCompatibility
             {
                 RequirePlugin(BigBrainGuid, BigBrainVersion, "BigBrain");
                 RequirePlugin(SainGuid, SainVersion, "SAIN");
-                RequireNativeMethod(typeof(SAINExternal), nameof(SAINExternal.CanBotQuest));
-                RequireNativeMethod(typeof(BrainManager), nameof(BrainManager.AddCustomLayer));
+                RequireNativeMethod(
+                    Chainloader.PluginInfos[SainGuid].Instance.GetType().Assembly.GetType("SAIN.Interop.SAINExternal", true),
+                    "CanBotQuest"
+                );
+                RequireNativeMethod(
+                    Chainloader
+                        .PluginInfos[BigBrainGuid]
+                        .Instance.GetType()
+                        .Assembly.GetType("DrakiaXYZ.BigBrain.Brains.BrainManager", true),
+                    "AddCustomLayer"
+                );
+                // Load only after both plugins passed the gate. No core field, signature or base type references this assembly.
+                var integration = Assembly.LoadFrom(Path.Combine(Plugin.Folder, "WTT-Campaigns.AI.dll"));
+                integration.GetTypes();
+                _runtimeType = integration.GetType("WTT.Campaigns.Client.Encounters.EncounterAiRuntime", true);
                 _error = "";
             }
             catch (Exception exception)
@@ -59,6 +71,20 @@ internal static class EncounterCompatibility
             error = _error;
             return _error.Length == 0;
         }
+    }
+
+    internal static IEncounterAiRuntime Create(MapLayout layout)
+    {
+        if (!Ensure(out var error))
+            throw new InvalidOperationException(error);
+        return (IEncounterAiRuntime)
+            Activator.CreateInstance(
+                _runtimeType!,
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                null,
+                new object[] { layout },
+                null
+            );
     }
 
     private static void RequirePlugin(string guid, string minimum, string name)

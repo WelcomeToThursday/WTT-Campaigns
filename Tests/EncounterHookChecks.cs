@@ -14,6 +14,8 @@ namespace WTT.Campaigns.Tests;
 /// </summary>
 internal static class EncounterHookChecks
 {
+    private static AssemblyDefinition? _integration;
+
     private const string BigBrainGuid = "xyz.drakia.bigbrain";
     private const string SainGuid = "me.sol.sain";
 
@@ -29,6 +31,16 @@ internal static class EncounterHookChecks
         var sainPath = PluginPath(gameRoot, "SAIN.dll");
         using var native = AssemblyDefinition.ReadAssembly(nativePath);
         using var client = AssemblyDefinition.ReadAssembly(clientPath);
+        using var integration = AssemblyDefinition.ReadAssembly(Path.Combine(Path.GetDirectoryName(clientPath)!, "WTT-Campaigns.AI.dll"));
+        _integration = integration;
+        CheckOptionalDependencyIsolation(client, integration);
+        var context = new ClientAssemblyContext(gameRoot, clientPath, rejectOptionalAi: true);
+        var loadedTypes = context.LoadFromAssemblyPath(clientPath).GetTypes();
+        Require(
+            loadedTypes.Any(type => type.FullName == "WTT.Campaigns.Client.Encounters.EncounterPreviewRuntime"),
+            "Actual client type enumeration succeeds with all optional AI assemblies unavailable"
+        );
+        Console.WriteLine($"Optional AI absence: enumerated {loadedTypes.Length} actual client types with AI dependencies blocked.");
         using var bigBrain = AssemblyDefinition.ReadAssembly(bigBrainPath);
         using var sain = AssemblyDefinition.ReadAssembly(sainPath);
 
@@ -57,6 +69,39 @@ internal static class EncounterHookChecks
         Console.WriteLine(
             "Encounter hooks: installed native activation, preactivation, world registration, SAIN and BigBrain surfaces verified offline."
         );
+    }
+
+    private static void CheckOptionalDependencyIsolation(AssemblyDefinition client, AssemblyDefinition integration)
+    {
+        // Regression for #10: a single unloadable field/base type aborts EFT's startup type scan,
+        // leaving its JSON converters uninitialized and raid-time requests serialized incorrectly.
+        var optional = new[] { "SAIN", "SAIN.Preset.Shared", "DrakiaXYZ-BigBrain", "WTT-Campaigns.AI" };
+        Require(
+            !client.MainModule.AssemblyReferences.Any(reference => optional.Contains(reference.Name)),
+            "Core client must load and enumerate all types without optional AI assemblies"
+        );
+        foreach (var name in new[] { "SAIN", "DrakiaXYZ-BigBrain" })
+            Require(
+                integration.MainModule.AssemblyReferences.Any(reference => reference.Name == name),
+                "Optional AI implementation retains its native integration: " + name
+            );
+        var preview = client.MainModule.GetType("WTT.Campaigns.Client.Encounters.EncounterPreviewRuntime");
+        Require(
+            preview.Fields.Any(field => field.FieldType.Name == "IEncounterAiRuntime"),
+            "Preview stores only the dependency-free AI interface"
+        );
+        var ensure = RequireMethod(client.MainModule.GetType("WTT.Campaigns.Client.Encounters.EncounterCompatibility"), "Ensure");
+        var calls = ensure.Body.Instructions.Where(i => i.Operand is MethodReference).Select(i => (MethodReference)i.Operand).ToList();
+        var load = calls.FindIndex(method => method.Name == "LoadFrom");
+        Require(
+            load >= 0 && calls.Take(load).Count(method => method.Name == "RequirePlugin") == 2,
+            "Both optional plugins are checked before loading the AI assembly"
+        );
+        Require(
+            calls.Skip(load + 1).Any(method => method.Name == "GetTypes"),
+            "AI type compatibility is checked inside the guarded loader"
+        );
+        Console.WriteLine("Optional AI isolation: core has no SAIN, BigBrain or integration references; guarded loading verified.");
     }
 
     private static void CheckPlayerPoolCleanup(AssemblyDefinition native, AssemblyDefinition client)
@@ -216,7 +261,7 @@ internal static class EncounterHookChecks
             Path.Combine(gameRoot, "EscapeFromTarkov_Data", "Managed", "UnityEngine.AIModule.dll")
         );
         var obstacle = RequireType(ai, "UnityEngine.AI.NavMeshObstacle");
-        var navigation = RequireType(client, "WTT.Campaigns.Client.Authoring.SceneNavigation");
+        var navigation = RequireType(client, "WTT.Campaigns.Client.Authoring.Scenes.SceneNavigation");
         var constructor = RequireMethod(navigation, ".ctor");
         var references = constructor
             .Body.Instructions.Select(i => i.Operand)
@@ -231,7 +276,7 @@ internal static class EncounterHookChecks
                 reference.ReturnType.FullName,
                 reference.Parameters.Select(p => p.ParameterType.FullName).ToArray()
             );
-        var follower = RequireType(client, "WTT.Campaigns.Client.Authoring.SceneNavigationFollower");
+        var follower = RequireType(client, "WTT.Campaigns.Client.Authoring.Scenes.SceneNavigationFollower");
         Require(Calls(RequireMethod(follower, "Sync"), "get_activeInHierarchy"), "Hidden scenery must stop carving");
         Require(Calls(RequireMethod(navigation, "Dispose"), "SetActive"), "Navigation cuts must disable before deferred destruction");
         Console.WriteLine("Scene navigation: carving APIs resolve against installed Unity; hide and disposal contracts passed offline.");
@@ -728,8 +773,14 @@ internal static class EncounterHookChecks
         var ensure = RequireMethod(compatibility, "Ensure");
         Require(ContainsString(ensure, "CanBotQuest"), "Compatibility checks the SAIN quest eligibility signal");
         Require(ContainsString(ensure, "AddCustomLayer"), "Compatibility checks the BigBrain custom-layer registration API");
-        Require(ContainsTypeReference(ensure, "SAIN.Interop.SAINExternal"), "Compatibility binds the installed SAIN API");
-        Require(ContainsTypeReference(ensure, "DrakiaXYZ.BigBrain.Brains.BrainManager"), "Compatibility binds the installed BigBrain API");
+        Require(
+            ContainsString(ensure, "SAIN.Interop.SAINExternal"),
+            "Compatibility resolves the installed SAIN API after checking its plugin"
+        );
+        Require(
+            ContainsString(ensure, "DrakiaXYZ.BigBrain.Brains.BrainManager"),
+            "Compatibility resolves the installed BigBrain API after checking its plugin"
+        );
 
         var gateInstall = RequireMethod(gate, "Install");
         Require(ContainsString(gateInstall, "com.wtt.campaigns.encounter-admission"), "Admission uses its dedicated Harmony identity");
@@ -954,7 +1005,12 @@ internal static class EncounterHookChecks
     {
         var type =
             assembly.MainModule.GetTypes().FirstOrDefault(candidate => candidate.FullName == fullName)
-            ?? assembly.MainModule.GetTypes().FirstOrDefault(candidate => candidate.Name == fullName);
+            ?? assembly.MainModule.GetTypes().FirstOrDefault(candidate => candidate.Name == fullName)
+            ?? (
+                assembly.Name.Name == "WTT-Campaigns.Client"
+                    ? _integration?.MainModule.GetTypes().FirstOrDefault(candidate => candidate.FullName == fullName)
+                    : null
+            );
         Require(type != null, "Missing required type: " + fullName);
         return type!;
     }

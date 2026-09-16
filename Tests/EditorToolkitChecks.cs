@@ -1,10 +1,18 @@
 using Mono.Cecil;
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Views;
 
 namespace WTT.Campaigns.Tests;
 
 internal static class EditorToolkitChecks
 {
+    private static bool IsAuthoring(TypeDefinition type)
+    {
+        while (type.DeclaringType != null)
+            type = type.DeclaringType;
+        return type.Namespace == "WTT.Campaigns.Client.Authoring"
+            || type.Namespace.StartsWith("WTT.Campaigns.Client.Authoring.", StringComparison.Ordinal);
+    }
+
     internal static IEnumerable<EditorLayoutSpec.Node> Nodes()
     {
         static IEnumerable<EditorLayoutSpec.Node> Walk(EditorLayoutSpec.Node node)
@@ -35,7 +43,7 @@ internal static class EditorToolkitChecks
                 throw new InvalidOperationException("Installed Unity does not support " + reference.FullName);
         if (client.MainModule.AssemblyReferences.Any(reference => reference.Name.StartsWith("UnityEditor")))
             throw new InvalidOperationException("The runtime client must not depend on Unity Editor assemblies.");
-        var document = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorToolkitDocument");
+        var document = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.EditorToolkitDocument");
         var constructor = document.Methods.Single(m => m.IsConstructor && !m.IsStatic);
         if (!constructor.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "DontDestroyOnLoad"))
             throw new InvalidOperationException("Toolkit hosts must survive native scene transitions until their owner disposes them.");
@@ -58,9 +66,7 @@ internal static class EditorToolkitChecks
             "EditorTarkovTheme",
             "EditorRowSelection",
         };
-        var types = client
-            .MainModule.GetTypes()
-            .Where(t => t.Namespace == "WTT.Campaigns.Client.Authoring" || t.DeclaringType?.Namespace == "WTT.Campaigns.Client.Authoring");
+        var types = client.MainModule.GetTypes().Where(t => IsAuthoring(t));
         var inspected = 0;
         foreach (var type in types)
         {
@@ -89,12 +95,22 @@ internal static class EditorToolkitChecks
         var nodes = Nodes().ToArray();
         if (nodes.Select(n => n.Id).Distinct().Count() != nodes.Length)
             throw new InvalidOperationException("Duplicate Toolkit control ids.");
+        var lootWindow = EditorLayoutSpec.Sections.Single(n => n.Id == "LootConfiguration");
+        if (
+            lootWindow.Children.Single().Id != "ContainerScroll"
+            || !lootWindow.Children.Single().Children.Any(n => n.Id == "ContainerSettingsGroup")
+        )
+            throw new InvalidOperationException("Loot configuration must have its own scrollable tool window.");
+        var inspector = EditorLayoutSpec.Sections.Single(n => n.Id == "Inspector");
+        bool ContainsContainer(EditorLayoutSpec.Node node) => node.Id == "ContainerSettingsGroup" || node.Children.Any(ContainsContainer);
+        if (ContainsContainer(inspector))
+            throw new InvalidOperationException("Container controls must not crowd the Properties inspector.");
         var inventory = nodes.ToDictionary(n => n.Id, n => n.Kind);
         foreach (var id in new[] { "Library", "Inspector", "EnvironmentMenu", "Controls" })
             inventory[id + "Heading"] = "text";
         foreach (var id in new[] { "LibraryCollapse", "InspectorCollapse", "HelpClose", "EnvironmentClose" })
             inventory[id] = "button";
-        for (var i = 0; i < 10; i++)
+        for (var i = 0; i < 60; i++)
         {
             inventory["Row" + i] = "button";
             inventory["SceneIcon" + i] = "image";
@@ -125,6 +141,34 @@ internal static class EditorToolkitChecks
         foreach (var id in new[] { "KeepLocal", "KeepRemote", "Cancel", "Complete", "CloseEditor" })
             if (!nodes.Any(n => n.Id == id && n.Kind == "button"))
                 throw new InvalidOperationException("Missing Editor action: " + id);
+        // The typed wrappers also call Get<T>, but their control name is an
+        // argument rather than a literal inside Get. Check the container caller
+        // against the actual layout, including captions chosen by a branch.
+        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        foreach (var name in new[] { "PresentContainerControls", "BindContainerControls" })
+        {
+            string? control = null;
+            foreach (var instruction in editor.Methods.Single(m => m.Name == name).Body.Instructions)
+            {
+                if (instruction.OpCode.Code == Mono.Cecil.Cil.Code.Ldstr && instruction.Operand is string id && inventory.ContainsKey(id))
+                    control = id;
+                if (instruction.Operand is not MethodReference call || call.DeclaringType.Name != "RaidEditorView")
+                    continue;
+                var expected = call.Name switch
+                {
+                    "Text" => "text",
+                    "Caption" or "Button" => "button",
+                    "Input" or "Value" => "input",
+                    "Dropdown" or "SetDropdown" => "choice",
+                    _ => null,
+                };
+                if (control != null && expected != null && inventory[control] != expected)
+                    throw new InvalidOperationException(
+                        $"Wrong container control: {control} is {inventory[control]}, but {name} calls {call.Name}."
+                    );
+                control = null;
+            }
+        }
         Console.WriteLine(
             $"Editor Toolkit: {references.Length} installed runtime APIs resolve; {inspected} Editor references have no uGUI controls; {nodes.Length} unique controls checked offline."
         );

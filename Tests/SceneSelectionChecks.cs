@@ -1,4 +1,4 @@
-using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Shared.Spatial;
 
 namespace WTT.Campaigns.Tests;
@@ -7,6 +7,40 @@ internal static class SceneSelectionChecks
 {
     internal static void Run(Action<bool, string> check)
     {
+        foreach (
+            var name in new[]
+            {
+                "TreeInteractivePart",
+                "EFT.Interactive.Trunk",
+                "EFT.Interactive.LootableContainer",
+                "EFT.Interactive.LootPointViewer",
+            }
+        )
+            check(
+                ScenePropSupport.OwnedComponent(name) && !ScenePropSupport.PreservedComponent(name),
+                "Logged scene components require ownership validation before movement: " + name
+            );
+        foreach (
+            var name in new[]
+            {
+                "EFT.Interactive.Door",
+                "GPUInstancer.GPUInstancerTerrainProxy",
+                "UnityEngine.OcclusionPortal",
+                "SomeMod.Trunk",
+            }
+        )
+            check(
+                !ScenePropSupport.OwnedComponent(name) && !ScenePropSupport.PreservedComponent(name),
+                "Baked map infrastructure and unknown interactions remain protected: " + name
+            );
+        check(
+            ScenePropSupport.Restriction("UnityEngine.OcclusionPortal").Contains("baked"),
+            "Portal restriction explains baked visibility"
+        );
+        check(
+            ScenePropSupport.Restriction("GPUInstancer.GPUInstancerTerrainProxy").Contains("terrain"),
+            "Terrain restriction explains terrain ownership"
+        );
         foreach (
             var component in new[]
             {
