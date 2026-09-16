@@ -30,10 +30,6 @@ internal static class EditorRenderChecks
         // installed methods, including the effect which has no separate inner body.
         var nativePath = native.MainModule.FileName;
         var firstpassPath = Path.Combine(Path.GetDirectoryName(nativePath)!, "Assembly-CSharp-firstpass.dll");
-        if (!File.Exists(firstpassPath))
-            firstpassPath = Path.GetFullPath(
-                Path.Combine(Path.GetDirectoryName(nativePath)!, "../../../EscapeFromTarkov_Data/Managed/Assembly-CSharp-firstpass.dll")
-            );
         using var firstpass = AssemblyDefinition.ReadAssembly(firstpassPath);
         var context = new ClientAssemblyContext(
             Path.GetFullPath(Path.Combine(Path.GetDirectoryName(firstpassPath)!, "../..")),

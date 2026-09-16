@@ -9,7 +9,7 @@ namespace WTT.Campaigns.Tests;
 ///
 /// These checks intentionally read the installed assemblies with Cecil.  Loading EFT or
 /// invoking any of its types would make the check dependent on a live Unity process and would
-/// miss the most useful failure mode: a dumped method was renamed or an override was left
+/// miss the most useful failure mode: a native method was renamed or an override was left
 /// outside the admission boundary.
 /// </summary>
 internal static class EncounterHookChecks
@@ -23,8 +23,8 @@ internal static class EncounterHookChecks
     {
         gameRoot = Path.GetFullPath(gameRoot);
         clientPath = Path.GetFullPath(clientPath);
-        var nativePath = Path.Combine(gameRoot, "BepInEx", "DumpedAssemblies", "EscapeFromTarkov", "Assembly-CSharp.dll");
-        Require(File.Exists(nativePath), "The installed Assembly-CSharp dump is required for encounter hook checks.");
+        var nativePath = Path.Combine(gameRoot, "EscapeFromTarkov_Data", "Managed", "Assembly-CSharp.dll");
+        Require(File.Exists(nativePath), "The installed Managed Assembly-CSharp assembly is required for encounter hook checks.");
         Require(File.Exists(clientPath), "The compiled client assembly is required for encounter hook checks.");
 
         var bigBrainPath = PluginPath(gameRoot, "DrakiaXYZ-BigBrain.dll");

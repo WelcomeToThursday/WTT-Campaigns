@@ -6,7 +6,7 @@
     <AssetValidationPowerShell Condition="'$(AssetValidationPowerShell)' == '' and '$(OS)' == 'Windows_NT'">$(SystemRoot)\System32\WindowsPowerShell\v1.0\powershell.exe</AssetValidationPowerShell>
     <AssetValidationPowerShell Condition="'$(AssetValidationPowerShell)' == ''">pwsh</AssetValidationPowerShell>
     <_BuildProperties>Configuration=$(Configuration)</_BuildProperties>
-    <_NativeAssembly>$(TarkovDir)BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll</_NativeAssembly>
+    <_NativeAssembly>$(ManagedDir)Assembly-CSharp.dll</_NativeAssembly>
     <CampaignsPython Condition="'$(CampaignsPython)' == '' and Exists('$(MSBuildProjectDirectory)\.tools\Scripts\python.exe')">$(MSBuildProjectDirectory)\.tools\Scripts\python.exe</CampaignsPython>
     <CampaignsPython Condition="'$(CampaignsPython)' == ''">python</CampaignsPython>
   </PropertyGroup>

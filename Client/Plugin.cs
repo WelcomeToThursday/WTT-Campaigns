@@ -13,7 +13,7 @@ using WTT.Campaigns.Shared.Profiles;
 
 namespace WTT.Campaigns.Client;
 
-[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.9.0")]
+[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.10.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 [BepInDependency("com.wtt.commonlib", "3.0.6")]

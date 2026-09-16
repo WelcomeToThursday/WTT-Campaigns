@@ -59,11 +59,67 @@ internal static class EditorLoadingChecks
         ).Resolve();
         var body = machine.Methods.Single(m => m.Name == "MoveNext").Body.Instructions;
         var context = new ClientAssemblyContext(
-            Path.GetFullPath(Path.Combine(Path.GetDirectoryName(native.MainModule.FileName)!, "../../..")),
+            Path.GetFullPath(Path.Combine(Path.GetDirectoryName(native.MainModule.FileName)!, "../..")),
             client.MainModule.FileName
         );
         var game = context.LoadFromAssemblyName(new AssemblyName("Assembly-CSharp"));
         var compiled = context.LoadFromAssemblyPath(client.MainModule.FileName);
+        var factory = compiled
+            .GetType("WTT.Campaigns.Client.Missions.LocalRaidLaunch")!
+            .GetMethod("CreateSettings", BindingFlags.NonPublic | BindingFlags.Static)!;
+        var parameters = factory.GetParameters();
+        var locations = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(parameters[0].ParameterType);
+        var location = System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(parameters[1].ParameterType);
+        var settingsType = game.GetType("EFT.RaidSettings")!;
+        var selectedLocation = settingsType.GetProperty("SelectedLocation")!;
+        var apply = settingsType.GetMethod("Apply", new[] { settingsType })!;
+        object CreateSettings() => factory.Invoke(null, new[] { locations, location })!;
+        var menuSettings = CreateSettings();
+        var menuBackup = CreateSettings();
+        selectedLocation.SetValue(menuBackup, null);
+        for (var entry = 0; entry < 2; entry++)
+        {
+            var launch = CreateSettings();
+            // Native matchmaking restores its retained settings after direct launch begins.
+            apply.Invoke(menuSettings, new[] { menuBackup });
+            Require(selectedLocation.GetValue(menuSettings) == null, "Fixture reproduces a stale menu restore clearing the map.");
+            Require(
+                !ReferenceEquals(launch, menuSettings) && ReferenceEquals(selectedLocation.GetValue(launch), location),
+                "Each launch retains its map after the previous menu settings are restored."
+            );
+            Require(settingsType.GetProperty("Side")!.GetValue(launch)!.ToString() == "Pmc", "Direct launch remains PMC.");
+            Require(settingsType.GetProperty("RaidMode")!.GetValue(launch)!.ToString() == "Local", "Direct launch remains local.");
+            menuSettings = launch;
+        }
+        foreach (
+            var (typeName, methodName) in new[]
+            {
+                ("WTT.Campaigns.Client.Authoring.EditorMode", "OpenMap"),
+                ("WTT.Campaigns.Client.Missions.MissionUi", "LaunchPreparedAsync"),
+            }
+        )
+        {
+            var launchMethod = client.MainModule.GetType(typeName).Methods.Single(m => m.Name == methodName);
+            var launchMachine = (
+                (TypeReference)
+                    launchMethod
+                        .CustomAttributes.Single(a => a.AttributeType.Name == "AsyncStateMachineAttribute")
+                        .ConstructorArguments[0]
+                        .Value
+            ).Resolve();
+            var instructions = launchMachine.Methods.Single(m => m.Name == "MoveNext").Body.Instructions.ToList();
+            var install = instructions.FindIndex(i =>
+                i.OpCode.Name == "stfld" && i.Operand is FieldReference { Name: "_raidSettings", DeclaringType.Name: "TarkovApplication" }
+            );
+            var start = instructions.FindIndex(i => i.Operand is MethodReference { Name: "LocalGameMatching" });
+            Require(
+                install > 0
+                    && install < start
+                    && instructions[install - 1].Operand
+                        is MethodReference { Name: "CreateSettings", DeclaringType.Name: "LocalRaidLaunch" },
+                methodName + " installs isolated settings before native matching."
+            );
+        }
         var harmony = context.LoadFromAssemblyName(new AssemblyName("0Harmony"));
         var instructionType = harmony.GetType("HarmonyLib.CodeInstruction")!;
         var operandField = instructionType.GetField("operand")!;

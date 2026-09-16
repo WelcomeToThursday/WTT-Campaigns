@@ -13,7 +13,6 @@ internal sealed class ClientAssemblyContext(string sptRoot, string clientPath, b
         Path.GetFullPath(Path.Combine(sptRoot, "BepInEx/plugins/UnityToolkit")),
         Path.GetFullPath(Path.Combine(sptRoot, "BepInEx/plugins/WTT-ClientCommonLib")),
         Path.GetDirectoryName(Path.GetFullPath(clientPath))!,
-        Path.GetFullPath(Path.Combine(sptRoot, "BepInEx/DumpedAssemblies/EscapeFromTarkov")),
         Path.GetFullPath(Path.Combine(sptRoot, "BepInEx/core")),
         Path.GetFullPath(Path.Combine(sptRoot, "BepInEx/plugins/spt")),
         Path.GetFullPath(Path.Combine(sptRoot, "EscapeFromTarkov_Data/Managed")),

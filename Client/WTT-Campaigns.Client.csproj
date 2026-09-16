@@ -2,7 +2,7 @@
   <PropertyGroup>
     <RootNamespace>WTT.Campaigns.Client</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.9.0</Version>
+    <Version>0.10.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <None
@@ -29,7 +29,7 @@
     <Reference Include="ItemComponent.Types" HintPath="$(ManagedDir)ItemComponent.Types.dll" Private="false" />
     <Reference
       Include="Assembly-CSharp"
-      HintPath="$(TarkovDir)BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll"
+      HintPath="$(ManagedDir)Assembly-CSharp.dll"
       Private="false"
     />
     <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />

@@ -297,7 +297,7 @@ def verify_client_zones(candidates, records, inv):
                     continue
                 if generator is None:
                     generator = Generator(asset.unity_version)
-                    for dll in [data/'Managed'/name for name in ('mscorlib.dll','UnityEngine.CoreModule.dll','UnityEngine.PhysicsModule.dll')] + [inv.game/'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll']:
+                    for dll in [data/'Managed'/name for name in ('mscorlib.dll','UnityEngine.CoreModule.dll','UnityEngine.PhysicsModule.dll')] + [inv.game/'EscapeFromTarkov_Data/Managed/Assembly-CSharp.dll']:
                         contents = dll.read_bytes()
                         inv.sources[dll.resolve().as_posix()] = hashlib.sha256(contents).hexdigest()
                         generator.load_dll(contents)

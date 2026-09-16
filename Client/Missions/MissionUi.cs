@@ -1,5 +1,4 @@
 using EFT;
-using EFT.Bots;
 using EFT.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -255,16 +254,12 @@ internal sealed class MissionUi : MonoBehaviour
             .SingleOrDefault(l => l.Id == descriptor.Layout.Location);
         if (location == null)
             throw new InvalidOperationException("The mission map is not installed: " + descriptor.Layout.Location);
-        app.CurrentRaidSettings.SelectedLocation = location;
-        app.CurrentRaidSettings.RaidMode = ERaidMode.Local;
-        app.CurrentRaidSettings.BotSettings = new BotControllerSettings(false, EBotAmount.NoBots);
-        app.CurrentRaidSettings.Side = ESideType.Pmc;
-        app.CurrentRaidSettings.IsPveOffline = false;
+        app._raidSettings = LocalRaidLaunch.CreateSettings(app.Session.LocationSettings, location);
         app.Matchmaker.MatchingStartTime = DateTimeExtensions.Now;
         _screen?.Close();
         _blockedThrough = Time.frameCount + 1;
         using (UI.NativeLoadingStatus.Begin("Deploying campaign mission…"))
-            await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
+            await app.LocalGameMatching(app.CurrentRaidSettings.TimeAndWeatherSettings);
         if (!Plugin.InRaid)
             throw new InvalidOperationException("Mission loading did not create a local raid.");
     }

@@ -6,9 +6,7 @@ internal static class AuthoringSocketCompatibility
 {
     internal static void Run(string game, string clientPath, string serverPath)
     {
-        using var native = AssemblyDefinition.ReadAssembly(
-            Path.Combine(game, "BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll")
-        );
+        using var native = AssemblyDefinition.ReadAssembly(Path.Combine(game, "EscapeFromTarkov_Data/Managed/Assembly-CSharp.dll"));
         using var client = AssemblyDefinition.ReadAssembly(clientPath);
         using var server = AssemblyDefinition.ReadAssembly(serverPath);
         using var spt = AssemblyDefinition.ReadAssembly(Path.Combine(game, "SPT_Runtime/SPTarkov.Server.Core.dll"));

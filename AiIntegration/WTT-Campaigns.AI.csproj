@@ -11,7 +11,7 @@
     <Reference Include="ItemComponent.Types" HintPath="$(ManagedDir)ItemComponent.Types.dll" Private="false" />
     <Reference
       Include="Assembly-CSharp"
-      HintPath="$(TarkovDir)BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll"
+      HintPath="$(ManagedDir)Assembly-CSharp.dll"
       Private="false"
     />
     <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />

@@ -1,7 +1,6 @@
 using BepInEx.Configuration;
 using Comfort.Common;
 using EFT;
-using EFT.Bots;
 using EFT.UI;
 using EFT.UI.Screens;
 using Newtonsoft.Json;
@@ -531,11 +530,7 @@ public sealed class EditorMode : MonoBehaviour
             await Call("map");
             var app = Plugin.App!;
             var location = app.Session.LocationSettings.locations.Values.AsValueEnumerable().Single(l => l.Id == _map);
-            app.CurrentRaidSettings.SelectedLocation = location;
-            app.CurrentRaidSettings.RaidMode = ERaidMode.Local;
-            app.CurrentRaidSettings.BotSettings = new BotControllerSettings(false, EBotAmount.NoBots);
-            app.CurrentRaidSettings.Side = ESideType.Pmc;
-            app.CurrentRaidSettings.IsPveOffline = false;
+            app._raidSettings = Missions.LocalRaidLaunch.CreateSettings(app.Session.LocationSettings, location);
             // Editor entry bypasses StartSearchingForGame, which normally starts
             // the loading screen's elapsed clock. Reset it for every map load.
             app.Matchmaker.MatchingStartTime = DateTimeExtensions.Now;
@@ -544,7 +539,7 @@ public sealed class EditorMode : MonoBehaviour
                 _home!.Close();
             Plugin.LogInfo("Editor loading: entering native map load for " + _map);
             using (UI.NativeLoadingStatus.Begin("Opening Campaign Editor…"))
-                await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
+                await app.LocalGameMatching(app.CurrentRaidSettings.TimeAndWeatherSettings);
             Plugin.LogInfo("Editor loading: native map load completed");
             if (!Plugin.InRaid)
                 throw new InvalidOperationException("Map loading did not create an editor world.");

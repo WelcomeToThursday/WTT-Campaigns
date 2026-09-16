@@ -38,7 +38,7 @@ These commands validate shared contracts and compile the backend. Without icons,
 
 ## Full local build
 
-The default layout is `<SPT>/Development/SeasonalPerks` with the companion Unity project in `<SPT>/Development/CJ-SDK`. You need installed SPT 4.1.x / EFT 0.16.9.40743 references, including `BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll`, BepInEx/SPT plugins, and Unity managed assemblies.
+The default layout is `<SPT>/Development/SeasonalPerks` with the companion Unity project in `<SPT>/Development/CJ-SDK`. You need installed SPT 4.1.x / EFT 0.16.9.40743 references, including `EscapeFromTarkov_Data/Managed/Assembly-CSharp.dll`, BepInEx/SPT plugins, and Unity managed assemblies.
 
 The solution and projects are named `WTT-Campaigns`, with matching DLL names. The checkout directory can retain its existing name. MSBuild collects each project's runtime outputs after building, including local output-path overrides, and deploys only the selected components.
 

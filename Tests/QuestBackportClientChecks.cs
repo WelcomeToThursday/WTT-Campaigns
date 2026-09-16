@@ -11,7 +11,7 @@ internal static class QuestBackportClientChecks
 {
     internal static void Run(string gameAssembly, Action<bool, string> check)
     {
-        var game = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(gameAssembly)!, "../../.."));
+        var game = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(gameAssembly)!, "../.."));
         var context = new ClientAssemblyContext(game, gameAssembly);
         var assembly = context.LoadFromAssemblyPath(Path.GetFullPath(gameAssembly));
         var status = assembly.GetType("EFT.Quests.EQuestStatus", true)!;

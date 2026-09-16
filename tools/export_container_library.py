@@ -70,7 +70,7 @@ class Library:
         self.stream = bytearray()
         self.gen = Generator('2022.3.43f1')
         for p in (self.data / 'Managed').glob('*.dll'):
-            self.gen.load_dll((game / 'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll' if p.name == 'Assembly-CSharp.dll' else p).read_bytes())
+            self.gen.load_dll(p.read_bytes())
         env = UnityPy.load(str(self.data / 'StreamingAssets/Windows/assets/content/location_objects/lootable/prefab/scontainer_crate.bundle'))
         self.bundle = next(iter(env.files.values()))
         self.asset = next((f for f in self.bundle.files.values() if hasattr(f, 'objects')))
@@ -360,7 +360,7 @@ def main():
     raw = lib.build()
     a.output.mkdir(parents=True, exist_ok=True)
     (a.output / 'native-containers.bundle').write_bytes(raw)
-    manifest = {'Schema': 1, 'NativeAssemblySha256': hashlib.sha256((a.game / 'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll').read_bytes()).hexdigest().upper(), 'Sha256': hashlib.sha256(raw).hexdigest().upper(), 'Entries': lib.entries}
+    manifest = {'Schema': 1, 'NativeAssemblySha256': hashlib.sha256((a.game / 'EscapeFromTarkov_Data/Managed/Assembly-CSharp.dll').read_bytes()).hexdigest().upper(), 'Sha256': hashlib.sha256(raw).hexdigest().upper(), 'Entries': lib.entries}
     (a.output / 'catalog.json').write_text(json.dumps(manifest, indent=2))
     print('Exported', len(lib.entries), 'containers,', len(raw), 'bytes')
 
@@ -370,7 +370,7 @@ def scan_inventory(game):
     script_ids = {pid for pid, obj in scripts.items() if obj.type.name == 'MonoScript' and obj.read().m_Namespace == 'EFT.Interactive' and (obj.read().m_ClassName == 'LootableContainer')}
     generator = Generator('2022.3.43f1')
     for path in (data / 'Managed').glob('*.dll'):
-        generator.load_dll((game / 'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll' if path.name == 'Assembly-CSharp.dll' else path).read_bytes())
+        generator.load_dll(path.read_bytes())
     node = generator.get_nodes_up('Assembly-CSharp.dll', 'EFT.Interactive.LootableContainer')
     inventory = []
     for path in sorted(data.glob('level*')):
@@ -396,7 +396,7 @@ def verify_library(directory, game):
     bundle_path = directory / 'native-containers.bundle'
     assert manifest['Schema'] == 1
     assert hashlib.sha256(bundle_path.read_bytes()).hexdigest().upper() == manifest['Sha256'], 'Library hash mismatch'
-    native = game / 'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll'
+    native = game / 'EscapeFromTarkov_Data/Managed/Assembly-CSharp.dll'
     assert hashlib.sha256(native.read_bytes()).hexdigest().upper() == manifest['NativeAssemblySha256'], 'Native assembly changed; rebuild the library'
     env = UnityPy.load(str(bundle_path))
     objects = {o.path_id: o for o in env.objects}

@@ -26,12 +26,7 @@ internal static class EditorDiagnosticChecks
     internal static void Native(AssemblyDefinition native, AssemblyDefinition client)
     {
         using var core = AssemblyDefinition.ReadAssembly(
-            Path.GetFullPath(
-                Path.Combine(
-                    Path.GetDirectoryName(native.MainModule.FileName)!,
-                    "../../../EscapeFromTarkov_Data/Managed/UnityEngine.CoreModule.dll"
-                )
-            )
+            Path.GetFullPath(Path.Combine(Path.GetDirectoryName(native.MainModule.FileName)!, "UnityEngine.CoreModule.dll"))
         );
         var diagnostics = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.EditorDiagnostics");
         var calls = diagnostics
