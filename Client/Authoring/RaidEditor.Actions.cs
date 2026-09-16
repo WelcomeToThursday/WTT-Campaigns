@@ -228,7 +228,7 @@ public sealed partial class RaidEditor
                     Refresh();
                 }
             );
-            foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation" })
+            foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation", "Salvage" })
             {
                 var value = use;
                 Button(
@@ -990,7 +990,7 @@ public sealed partial class RaidEditor
             }
         }
         view.Value("Radius", ((point as SeasonZone)?.Radius ?? 0).ToString("0.###", CultureInfo.InvariantCulture));
-        foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation" })
+        foreach (var use in new[] { "InZone", "VisitPlace", "LeaveItemAtLocation", "Salvage" })
         {
             view.Caption(
                 use,
@@ -998,6 +998,7 @@ public sealed partial class RaidEditor
                     + (
                         use == "InZone" ? "In zone"
                         : use == "VisitPlace" ? "Visit"
+                        : use == "Salvage" ? "Salvage"
                         : "Place item"
                     )
             );

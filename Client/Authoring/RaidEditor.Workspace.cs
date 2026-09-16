@@ -110,6 +110,7 @@ public sealed partial class RaidEditor
                 "InZone",
                 "VisitPlace",
                 "LeaveItemAtLocation",
+                "Salvage",
                 "MapNew",
                 "MapCopy",
                 "MapDelete",
