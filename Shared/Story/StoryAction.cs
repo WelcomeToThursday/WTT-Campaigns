@@ -8,5 +8,8 @@ public sealed class StoryAction
     public string QuestId { get; set; } = "";
     public string ConditionId { get; set; } = "";
     public int Value { get; set; }
+    public double StandingChange { get; set; }
+
+    public bool ShouldSerializeStandingChange() => Type == StoryActionType.TraderStanding;
     public StoryVariableScope Scope { get; set; }
 }

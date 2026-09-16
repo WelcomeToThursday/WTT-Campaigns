@@ -277,6 +277,8 @@ public static class EditorFieldGuide
                 _ => "Value",
             },
             (StoryAction { Type: StoryActionType.SetVariable }, "Value") => "Assign value",
+            (StoryAction { Type: StoryActionType.TraderStanding }, "Target") => "Trader",
+            (StoryAction, "StandingChange") => "Reputation change",
             (StoryCondition, "Type") => "Condition type",
             (StoryAction, "Type") => "Action type",
             _ => StoryAuthoring.Friendly(field),
@@ -365,6 +367,10 @@ public static class EditorFieldGuide
         }
         if (owner is StoryAction a)
         {
+            if (a.Type == StoryActionType.TraderStanding)
+            {
+                return "Adds reputation to the selected trader. Use a positive decimal to increase standing (0.02) or a negative decimal to decrease it (-0.02).";
+            }
             if (a.Type == StoryActionType.SetVariable && field is "Target" or "Value" or "Scope")
             {
                 return $"Assigns {a.Value} to the selected variable; it does not increment it. " + VariableHelp(season, a.Target);
@@ -380,6 +386,7 @@ public static class EditorFieldGuide
                     StoryActionType.EmbedQuestDialog => "Embeds the selected quest conversation in the current story flow.",
                     StoryActionType.AcceptQuest => "Accepts the selected owned quest when its start requirements allow it.",
                     StoryActionType.FinishQuest => "Finishes the selected owned quest when its required objectives allow completion.",
+                    StoryActionType.FailQuest => "Fails the selected active owned quest through the native quest system, including its failure rewards. Completed or unstarted quests cannot be failed.",
                     StoryActionType.HandoverItem =>
                         "Hands eligible items to the selected owned quest's handover objective. Choose that objective below.",
                     StoryActionType.PlayerReward => "Requests the native rewards for the selected owned quest through the quest adapter.",

@@ -110,6 +110,7 @@ public static class StoryAuthoring
                 StoryAction a => a.Type switch
                 {
                     StoryActionType.SetVariable => "variables",
+                    StoryActionType.TraderStanding => "traders",
                     StoryActionType.DiaryNote => "notes",
                     StoryActionType.SwitchDialog or StoryActionType.EmbedQuestDialog => "dialogs",
                     StoryActionType.StartCinematic => "cinematic",
@@ -199,11 +200,14 @@ public static class StoryAuthoring
                         or StoryActionType.AcceptQuest
                         or StoryActionType.HandoverItem
                         or StoryActionType.FinishQuest
+                        or StoryActionType.FailQuest
                         or StoryActionType.PlayerReward,
                 "ConditionId" => a.Type == StoryActionType.HandoverItem,
                 "Value" or "Scope" => a.Type == StoryActionType.SetVariable,
+                "StandingChange" => a.Type == StoryActionType.TraderStanding,
                 "Target" => a.Type
                     is StoryActionType.SetVariable
+                        or StoryActionType.TraderStanding
                         or StoryActionType.DiaryNote
                         or StoryActionType.SwitchDialog
                         or StoryActionType.EmbedQuestDialog

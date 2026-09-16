@@ -26,6 +26,7 @@ public sealed partial class StoryService(
     ICloner cloner,
     HubGameplay commits,
     QuestController quests,
+    SPTarkov.Server.Core.Helpers.Traders.TraderHelper traderHelper,
     JsonUtil json,
     TemplateTable templates
 )

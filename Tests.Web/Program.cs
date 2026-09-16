@@ -94,6 +94,19 @@ foreach (var operation in new[] { "remove", "switch", "clear quest", "reassign q
             var field = renderer
                 .Components<StoryValue>()
                 .Single(c => ReferenceEquals(c.Component.Owner, action) && c.Component.Field == "Type");
+            Check(renderer.Text(field.Id).Contains("Trader Standing") && renderer.Text(field.Id).Contains("Fail Quest"), "Dialogue effects menu offers trader standing and quest failure");
+            await renderer.DispatchEventAsync(renderer.Event(field.Id, "select", "", "onchange"), null, new ChangeEventArgs { Value = "TraderStanding" });
+            var traderPicker = renderer.Components<ContentPicker>().Single(c => c.Component.Kind == "traders" && c.Component.Label == "Trader");
+            await traderPicker.Component.ValueChanged.InvokeAsync("54cb50c76803fa8b248b4571");
+            var amount = renderer.Components<StoryValue>().Single(c => ReferenceEquals(c.Component.Owner, action) && c.Component.Field == "StandingChange");
+            await renderer.DispatchEventAsync(renderer.Event(amount.Id, "input", "", "onchange"), null, new ChangeEventArgs { Value = "-0.02" });
+            Check(action.Target == "54cb50c76803fa8b248b4571" && action.StandingChange == -0.02, "Dialogue standing editor accepts a trader and negative decimal change");
+            field = renderer.Components<StoryValue>().Single(c => ReferenceEquals(c.Component.Owner, action) && c.Component.Field == "Type");
+            await renderer.DispatchEventAsync(renderer.Event(field.Id, "select", "", "onchange"), null, new ChangeEventArgs { Value = "FailQuest" });
+            var failurePicker = renderer.Components<ContentPicker>().Single(c => c.Component.Kind == "ownedquests");
+            await failurePicker.Component.ValueChanged.InvokeAsync(membership.QuestId);
+            Check(action.Type == StoryActionType.FailQuest && action.QuestId == membership.QuestId && action.Target == "", "Quest failure editor selects an owned quest and clears the trader target");
+            field = renderer.Components<StoryValue>().Single(c => ReferenceEquals(c.Component.Owner, action) && c.Component.Field == "Type");
             await renderer.DispatchEventAsync(
                 renderer.Event(field.Id, "select", "", "onchange"),
                 null,

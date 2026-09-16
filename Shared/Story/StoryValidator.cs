@@ -123,6 +123,11 @@ public static class StoryValidator
             {
                 Need(notes.Contains(a.Target), path, "Unknown note: " + a.Target);
             }
+            if (a.Type == StoryActionType.TraderStanding)
+            {
+                Need(SeasonValidator.IsId(a.Target), path, "A valid trader target is required.");
+                Need(!double.IsNaN(a.StandingChange) && !double.IsInfinity(a.StandingChange), path, "Trader standing change must be finite.");
+            }
             if (a.Type == StoryActionType.CompleteItem)
             {
                 Need(SeasonValidator.IsId(a.Target), path, "A valid 24-character completion target is required.");
@@ -136,6 +141,7 @@ public static class StoryValidator
                 a.Type
                 is StoryActionType.AcceptQuest
                     or StoryActionType.FinishQuest
+                    or StoryActionType.FailQuest
                     or StoryActionType.HandoverItem
                     or StoryActionType.SelectQuest
                     or StoryActionType.PlayerReward

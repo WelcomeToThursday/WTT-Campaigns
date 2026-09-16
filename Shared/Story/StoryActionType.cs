@@ -22,4 +22,6 @@ public enum StoryActionType
     PurchaseService,
     CompleteItem,
     StartCinematic,
+    TraderStanding,
+    FailQuest,
 }

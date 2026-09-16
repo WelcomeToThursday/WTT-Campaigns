@@ -10,6 +10,7 @@ internal static class AuthoringChecks
 {
     public static void Run(Action<bool, string> check)
     {
+        DialogueEffectChecks.Run(check);
         var traderLocale = new Dictionary<string, string>
         {
             ["trader Nickname"] = "Prapor",
