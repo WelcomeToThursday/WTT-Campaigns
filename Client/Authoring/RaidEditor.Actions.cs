@@ -43,6 +43,7 @@ public sealed partial class RaidEditor
         try
         {
             BindEnvironment(view);
+            BindHazards(view);
             BindCameraControls(view);
             view.Button("CloseEditor", Close);
             void Button(string name, Action action)
@@ -83,7 +84,7 @@ public sealed partial class RaidEditor
                 );
             }
 
-            foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene", "AI" })
+            foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Hazards", "Bindings", "Captures", "Scene", "AI" })
             {
                 var value = mode;
                 Button(
@@ -229,17 +230,20 @@ public sealed partial class RaidEditor
                     Refresh();
                 }
             );
-            Dropdown("ZoneUses", index =>
-            {
-                if (index <= 0 || index > ZoneUseIds.Length)
-                    return;
-                var use = ZoneUseIds[index - 1];
-                EditPoint(point =>
+            Dropdown(
+                "ZoneUses",
+                index =>
                 {
-                    if (point is SeasonZone zone && !zone.Uses.Remove(use))
-                        zone.Uses.Add(use);
-                });
-            });
+                    if (index <= 0 || index > ZoneUseIds.Length)
+                        return;
+                    var use = ZoneUseIds[index - 1];
+                    EditPoint(point =>
+                    {
+                        if (point is SeasonZone zone && !zone.Uses.Remove(use))
+                            zone.Uses.Add(use);
+                    });
+                }
+            );
             view.Input(
                 "Name",
                 value =>
@@ -949,7 +953,7 @@ public sealed partial class RaidEditor
             _passiveState = "";
             return;
         }
-        foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene", "AI" })
+        foreach (var mode in new[] { "Layouts", "Routes", "Zones", "Hazards", "Bindings", "Captures", "Scene", "AI" })
             view.Highlight(mode, _mode == mode);
         RefreshToolBrowser();
         view.Caption("Snap", _snap ? "Snap: on" : "Snap: off");
@@ -996,6 +1000,21 @@ public sealed partial class RaidEditor
         useOptions[0].text = selectedUses.Count == 0 ? "Select zone types" : string.Join(", ", selectedUses);
         view.SetDropdown("ZoneUses", useOptions, 0);
         view.Windows.SetTooltip("ZoneUses", "Select a type to enable or disable it. A zone can have multiple types.");
+
+        if (point is SeasonZone { Hazard: not null } hazardZone)
+            view.Text("HazardInfo", HazardDescription(hazardZone.Hazard.Kind));
+        var sniperSettings = (point as SeasonZone)?.Hazard;
+        view.Visible("SniperSoundGroup", _mode == "Hazards" && sniperSettings?.Kind == "Sniper");
+        view.SetDropdown(
+            "SniperPlaySound",
+            new() { new Dropdown.OptionData("On"), new Dropdown.OptionData("Off (silent)") },
+            sniperSettings?.PlayShotSound == false ? 1 : 0
+        );
+        view.SetDropdown(
+            "SniperSuppressed",
+            new() { new Dropdown.OptionData("Off (normal)"), new Dropdown.OptionData("On") },
+            sniperSettings?.SuppressedShots == true ? 1 : 0
+        );
 
         var details = point is SeasonZone z
             ? "Ownership: "
@@ -1063,6 +1082,11 @@ public sealed partial class RaidEditor
                     .Where(b => b.Location.Length == 0 || b.Location == _session.Location)
                     .Select(b => (b.Id, b.Name + " \u00B7 " + b.Kind + " \u00B7 " + (b.ZoneId.Length > 0 ? b.ZoneId : b.ObjectPath)))
                     .CopyTo(_rows);
+            }
+            else if (_mode == "Hazards")
+            {
+                foreach (var zone in FilterZonesForLayout(_layoutId).AsValueEnumerable().Where(z => z.Hazard != null))
+                    _rows.Add((zone.Id, zone.Name + " · " + HazardRules.Label(zone.Hazard!.Kind) + " · " + ZoneOwnerName(zone)));
             }
             else if (_mode == "AI")
             {
@@ -1144,7 +1168,10 @@ public sealed partial class RaidEditor
                     expanded =>
                         EditorTreeModel.Create(
                             contextId,
-                            EditorLibraryTrees.Zones(FilterZonesForLayout(_layoutId), _session.Definition?.MapLayouts ?? new()),
+                            EditorLibraryTrees.Zones(
+                                FilterZonesForLayout(_layoutId).AsValueEnumerable().Where(z => z.Hazard == null).ToArray(),
+                                _session.Definition?.MapLayouts ?? new()
+                            ),
                             search,
                             expanded
                         )

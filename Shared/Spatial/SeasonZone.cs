@@ -35,6 +35,10 @@ public class SpatialCapture
 
 public sealed class SeasonZone : SpatialCapture
 {
+    public HazardSettings? Hazard { get; set; }
+
+    public bool ShouldSerializeHazard() => Hazard != null;
+
     public string RequiredQuestId { get; set; } = "";
 
     public bool ShouldSerializeRequiredQuestId() => RequiredQuestId.Length > 0;
@@ -148,6 +152,7 @@ public static class SpatialRules
 
             if (point is SeasonZone zone)
             {
+                errors.AddRange(HazardRules.Errors(zone));
                 if (zone.Shape is not ("Box" or "Sphere"))
                 {
                     errors.Add("Unknown zone shape: " + zone.Id);

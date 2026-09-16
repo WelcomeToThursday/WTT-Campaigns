@@ -7,7 +7,7 @@ namespace WTT.Campaigns.Client.Authoring.Views;
 
 internal sealed partial class RaidEditorView
 {
-    internal static readonly string[] ToolIds = { "Layouts", "Routes", "Zones", "Bindings", "Captures", "Scene", "AI" };
+    internal static readonly string[] ToolIds = { "Layouts", "Routes", "Zones", "Hazards", "Bindings", "Captures", "Scene", "AI" };
     private readonly Dictionary<string, Dictionary<string, EditorControl>> _toolControls = new();
     internal string ToolContext = "Layouts";
     internal Action<string>? ToolActivated;
@@ -212,6 +212,8 @@ internal sealed partial class RaidEditorView
         Show("SceneFilters", tool == "Scene" && sceneWorkspace);
         Show("AddBox", tool is "Zones" or "Bindings");
         Show("AddSphere", tool is "Zones" or "Bindings");
+        foreach (var hazard in new[] { "Minefield", "Claymore", "Sniper", "BarbedWire" })
+            Show("Add" + hazard, tool == "Hazards" && mapReady);
         Show("Capture", tool == "Captures");
         Show("Pick", tool is "Scene" or "Captures" or "Bindings");
         foreach (
@@ -232,7 +234,7 @@ internal sealed partial class RaidEditorView
             Show(
                 id,
                 id == "MapNew" ? tool == "Layouts" && mapReady
-                    : id == "ZoneCreateScope" ? tool == "Zones"
+                    : id == "ZoneCreateScope" ? tool is "Zones" or "Hazards"
                     : id is "MapStart" or "MapCheckpoint" or "MapExit" ? tool == "Routes" && mapReady
                     : tool == "Scene" && sceneWorkspace
             );

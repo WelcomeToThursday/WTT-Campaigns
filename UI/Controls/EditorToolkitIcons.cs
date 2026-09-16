@@ -17,6 +17,7 @@ public static class EditorToolkitIcons
         ["Layouts"] = "map-outline-rounded",
         ["Routes"] = "directions-walk-rounded",
         ["Zones"] = "deployed-code-outline-rounded",
+        ["Hazards"] = "warning-outline-rounded",
         ["Bindings"] = "bolt-rounded",
         ["Captures"] = "photo-camera-outline-rounded",
         ["Scene"] = "forest-outline-rounded",

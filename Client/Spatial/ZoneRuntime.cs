@@ -73,14 +73,19 @@ public sealed class ZoneRuntime : MonoBehaviour
             try
             {
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, scene);
-                root.AddComponent<NativeZoneBridge>().Initialize(zone);
                 _zones.Add(zone.Id, root);
+                root.AddComponent<NativeZoneBridge>().Initialize(zone);
+                HazardRuntime.Attach(root, zone);
                 _missionZoneIds.Add(zone.Id);
             }
             catch
             {
+                _zones.Remove(zone.Id);
                 if (root)
+                {
+                    root.GetComponent<HazardRuntime>()?.Clear();
                     Destroy(root);
+                }
                 throw;
             }
         }
@@ -92,6 +97,7 @@ public sealed class ZoneRuntime : MonoBehaviour
         {
             if (_zones.TryGetValue(id, out var zone) && zone)
             {
+                zone.GetComponent<HazardRuntime>()?.Clear();
                 zone.GetComponent<NativeZoneBridge>()?.Clear();
                 Destroy(zone);
             }
@@ -107,7 +113,7 @@ public sealed class ZoneRuntime : MonoBehaviour
 
     private void Update()
     {
-        var player = Plugin.InRaid && Plugin.SeasonalPlayer ? Plugin.Player : null;
+        var player = Plugin.InRaid && Plugin.SeasonalPlayer && !Authoring.EditorMode.Active ? Plugin.Player : null;
         if (player == _player)
         {
             return;
@@ -145,8 +151,9 @@ public sealed class ZoneRuntime : MonoBehaviour
                 }
                 var root = Volume(zone);
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(root, scene);
-                root.AddComponent<NativeZoneBridge>().Initialize(zone);
                 _zones.Add(zone.Id, root);
+                root.AddComponent<NativeZoneBridge>().Initialize(zone);
+                HazardRuntime.Attach(root, zone);
             }
         }
         catch (Exception e)
@@ -196,6 +203,7 @@ public sealed class ZoneRuntime : MonoBehaviour
     {
         foreach (var zone in _zones.Values.AsValueEnumerable().Where(static z => z))
         {
+            zone.GetComponent<HazardRuntime>()?.Clear();
             zone.GetComponent<NativeZoneBridge>()?.Clear();
             Destroy(zone);
         }

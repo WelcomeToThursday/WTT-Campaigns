@@ -21,7 +21,7 @@ internal sealed partial class EditorToolkitWindows
         Visible("RouteFrameGroup", routes && hasSelection && kind != "Layout");
         Visible("MapWalkGroup", routes);
 
-        var zone = mode == "Zones" && hasSelection;
+        var zone = (mode is "Zones" or "Hazards") && hasSelection;
 
         var aiPoint = ai && (kind == "spawn" || kind == "waypoint" || kind == "trigger");
         var point = hasSelection && kind != "Scene" && (zone || mode == "Captures" || aiPoint);
@@ -48,7 +48,8 @@ internal sealed partial class EditorToolkitWindows
         Visible("RadiusGroup", zone && kind == "Sphere" || ai && kind == "trigger");
 
         Visible("PlacementGroup", point && !ai);
-        Visible("ZoneUsesGroup", zone);
+        Visible("ZoneUsesGroup", zone && mode != "Hazards");
+        Visible("HazardInfoGroup", zone && mode == "Hazards");
         Visible("ZoneScopeGroup", zone && mapReady);
 
         Visible("SceneActionsGroup", picked || bindZone);
@@ -103,7 +104,7 @@ internal sealed partial class EditorToolkitWindows
                 name,
                 name == "MapNew" ? layouts && !routes
                     : name == "MapStart" || name == "MapCheckpoint" || name == "MapExit" ? routes
-                    : name == "ZoneCreateScope" ? mode == "Zones"
+                    : name == "ZoneCreateScope" ? mode is "Zones" or "Hazards"
                     : sceneWorkspace
             );
 

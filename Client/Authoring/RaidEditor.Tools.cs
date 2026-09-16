@@ -1,4 +1,5 @@
 using WTT.Campaigns.Client.Authoring.Views;
+using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
@@ -69,7 +70,7 @@ public sealed partial class RaidEditor
         {
             "AI" => AiSelected(out _).Valid,
             "Layouts" => _session.Definition.MapLayouts.AsValueEnumerable().Any(l => l.Id == _selected),
-            "Zones" => (EditorMode.Ready ? FilterZonesForLayout(_layoutId) : _session.Definition.Zones)
+            "Zones" or "Hazards" => (EditorMode.Ready ? FilterZonesForLayout(_layoutId) : _session.Definition.Zones)
                 .AsValueEnumerable()
                 .Any(z => z.Id == _selected),
             "Captures" => _session.Definition.Captures.AsValueEnumerable().Any(c => c.Id == _selected),
@@ -173,7 +174,9 @@ public sealed partial class RaidEditor
         if (EditorMode.Ready && Layout != null)
             scopes.Add(new("New: Layout"));
         view.SetDropdown("ZoneCreateScope", scopes, _zoneCreateShared ? 0 : scopes.Count - 1);
-        view.Get<EditorChoice>("ZoneCreateScope").interactable = editable && _mode == "Zones";
+        view.Get<EditorChoice>("ZoneCreateScope").interactable = editable && (_mode is "Zones" or "Hazards");
+        foreach (var hazard in HazardRules.Kinds)
+            view.Get<EditorButton>("Add" + hazard).interactable = editable && EditorMode.Ready && !AiPreviewBusy;
         view.SetDropdown("AiPlaytestGear", new() { new("Placeholder kit"), new("Copy main-profile kit") }, _aiUseProfileKit ? 1 : 0);
         view.Get<EditorChoice>("AiPlaytestGear").interactable = !AiPreviewBusy;
         view.Get<EditorButton>("AiObserve").interactable = editable && EditorMode.Ready && !_walking && !AiPreviewBusy && Layout != null;

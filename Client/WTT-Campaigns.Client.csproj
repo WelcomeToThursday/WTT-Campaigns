@@ -10,6 +10,11 @@
       CopyToOutputDirectory="PreserveNewest"
       TargetPath="ContainerLibrary\%(Filename)%(Extension)"
     />
+    <None
+      Include="Resources\HazardLibrary\catalog.json;Resources\HazardLibrary\native-hazards.bundle"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="HazardLibrary\%(Filename)%(Extension)"
+    />
     <Using Remove="System.Linq" />
     <EmbeddedResource Include="Customization\Assets\face.png" LogicalName="WTT.Campaigns.Customization.face.png" />
     <Reference
@@ -27,6 +32,7 @@
   <ItemGroup>
     <Reference Include="Sirenix.Serialization" HintPath="$(ManagedDir)Sirenix.Serialization.dll" Private="false" />
     <Reference Include="ItemComponent.Types" HintPath="$(ManagedDir)ItemComponent.Types.dll" Private="false" />
+    <Reference Include="DissonanceVoip" HintPath="$(ManagedDir)DissonanceVoip.dll" Private="false" />
     <Reference Include="Assembly-CSharp" HintPath="$(ManagedDir)Assembly-CSharp.dll" Private="false" />
     <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedDir)UnityEngine.PhysicsModule.dll" Private="false" />

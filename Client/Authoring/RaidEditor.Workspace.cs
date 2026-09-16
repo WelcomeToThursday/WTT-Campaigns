@@ -149,9 +149,10 @@ public sealed partial class RaidEditor
                         ? _mode == "Routes"
                         : _mode == "Scene" && (name == "MapBarrier" || name == "MapDoor" || _picked)
                 );
-        view.Get<EditorChoice>("ZoneCreateScope").interactable = canEdit && _mode == "Zones";
+        view.Get<EditorChoice>("ZoneCreateScope").interactable = canEdit && (_mode is "Zones" or "Hazards");
         view.Get<EditorChoice>("ZoneUses").interactable = canEdit && _mode == "Zones" && point is SeasonZone;
-        view.Get<EditorChoice>("ZoneScope").interactable = canEdit && _mode == "Zones" && EditorMode.Ready && point is SeasonZone;
+        view.Get<EditorChoice>("ZoneScope").interactable =
+            canEdit && (_mode is "Zones" or "Hazards") && EditorMode.Ready && point is SeasonZone;
         view.Get<Button>("UseObject").interactable =
             canEdit && (point is SeasonZone && Binding != null || _picked && _sceneIndex.Complete && !_sceneIndex.Limited);
         var routeIndex = Layout?.Checkpoints.FindIndex(p => p.Id == _selected) ?? -1;

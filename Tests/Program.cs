@@ -9,6 +9,18 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 2 && args[0] == "--preview-gear-data")
+{
+    WTT.Campaigns.Tests.EditorPreviewGearChecks.RunDatabase(args[1]);
+    return;
+}
+
+if (args.Length == 3 && args[0] == "--hazards")
+{
+    WTT.Campaigns.Tests.HazardNativeChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--appearance-data")
 {
     await WTT.Campaigns.Tests.AppearanceChecks.Run(args[1]);
@@ -143,6 +155,7 @@ WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
 WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.MapEditorChecks.Run(Check);
 WTT.Campaigns.Tests.ZoneLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.HazardChecks.Run(Check);
 WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorDockChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);

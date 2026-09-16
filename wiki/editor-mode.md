@@ -12,7 +12,7 @@ Editor startup opens directly into the full-screen **Campaign Editor** after aut
 
 ## Build a route
 
-The workspace includes **Layouts**, **Routes**, **Scene**, **AI**, **Zones**, **Events** and **Captures**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.
+The workspace includes **Layouts**, **Routes**, **Scene**, **AI**, **Zones**, **Hazards**, **Events** and **Captures**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.
 
 Hierarchical browsers share an expandable tree: **Routes** groups ordered markers under their layouts, **AI** groups encounters, waves, rosters, and patrol waypoints, and **Zones** separates Shared zones from the selected layout's zones. Use a branch arrow to expand or collapse it and select a record's name to open its properties. Search retains the parent context of matching records; clearing it restores your branch state. Trees scroll continuously without pages. Selecting a route marker also selects its owning layout.
 
@@ -120,3 +120,16 @@ Editor mode bypasses native Bloom, BloomAndFlares and Prism effects when a frame
 Click an object in the Scene workspace to select it, highlight its bounds, and open its properties. Trigger volumes do not block clicks; collision-only children resolve to their visible parent, and scenery without colliders can be selected by its bounds. Selection does not create a draft edit. The first changed property or completed drag creates the edit; Escape restores a cancelled drag. Rotate uses colored rings, and Resize uses the objectâ€™s colored axes. Objects with unsupported gameplay components or combined static meshes remain selectable for inspection, with the restriction shown above read-only properties.
 
 Live acceptance: click an original prop without capturing it first, rotate/resize it, cancel a second drag, and undo/redo the first edit. Check a collider-free placed item, a prop behind a trigger, an LOD prop, and a restricted object. Each click should expose the matching properties without changing the draft.
+
+## Hazard areas
+
+Use the **warning-triangle icon** in the left tool rail to open **Hazards**. Choose **+ Minefield**, **+ Claymore**, **+ Sniper zone**, or **+ Barbed wire** to place an area at the aim point. Select its record to name, move, rotate, resize, duplicate or delete it. The red box shows coverage; a claymore also shows a forward direction line. **New: Shared** makes a hazard available in ordinary campaign raids on that map; **New: Layout** limits it to the selected mission layout.
+
+Hazards stay inert during authoring, Observe and Walkthrough. **Playtest** arms the selected layout's hazards and its Shared hazards. Active mission raids also use these hazards. Reset removes the runtime instances, cancels pending sniper shots, clears authored wire slowdown and restores unspent claymores for the next test.
+
+- **Minefield:** native landmine damage on entry, followed by further explosions as the player moves through the area.
+- **Claymore:** one directional explosion per run. The box is its activation area, and the mine sits at its rear edge facing the direction line. Its blast can extend beyond the activation box.
+- **Sniper zone:** native border fire, beginning with a warning shot and becoming lethal after sustained exposure. Leaving the box cancels pending shots and their sounds. **Play shot sound: On** uses a native rifle report; **Suppressed shots: On** uses the native suppressed rifle report. Turn **Play shot sound: Off (silent)** to keep completely silent zone fire. Existing zones default to normal shots.
+- **Barbed wire:** native limb contact damage and movement slowdown with BSG’s native razor-wire coils, material and contact sounds, available across maps. Overlapping authored wire areas retain slowdown until the last area is left.
+
+The initial tool uses fixed native damage settings, a simple claymore marker and generated wire geometry. Wire contact audio reuses a loaded native wire sound bank when the map supplies one. All four use box volumes and remain separate from quest trigger types.

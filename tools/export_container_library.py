@@ -60,7 +60,9 @@ class Stream:
 
 class Library:
 
-    def __init__(self, game):
+    def __init__(self, game, name="wtt-native-containers"):
+        self.name = name
+        self.cab = "CAB-" + name
         self.game = game
         self.data = game / 'EscapeFromTarkov_Data'
         self.files = {}
@@ -84,8 +86,8 @@ class Library:
         self.asset.externals = []
         self.asset.script_types = []
         self.asset._enable_type_tree = True
-        self.bundle.files = {'CAB-wtt-native-containers': self.asset}
-        self.asset.name = 'CAB-wtt-native-containers'
+        self.bundle.files = {self.cab: self.asset}
+        self.asset.name = self.cab
         self.types = {}
         self.roots = set()
         self.allowed = set()
@@ -235,7 +237,7 @@ class Library:
             if len(data) != v[sizekey]:
                 raise ValueError('Truncated resource ' + str(path))
             v[offsetkey] = len(self.stream)
-            v[pathkey] = 'archive:/CAB-wtt-native-containers/CAB-wtt-native-containers.resS'
+            v[pathkey] = f'archive:/{self.cab}/{self.cab}.resS'
             self.stream.extend(data)
 
     def build(self):
@@ -307,7 +309,7 @@ class Library:
             clone.save_typetree(t, node)
             self.asset.objects[clone.path_id] = clone
         tree = self.abtree
-        tree['m_Name'] = tree['m_AssetBundleName'] = 'wtt-native-containers'
+        tree['m_Name'] = tree['m_AssetBundleName'] = self.name
         tree['m_Dependencies'] = []
         tree['m_SceneHashes'] = []
         tree['m_IsStreamedSceneAssetBundle'] = False
@@ -330,7 +332,7 @@ class Library:
                 'asset': {'m_FileID': 0, 'm_PathID': root}}))
         tree['m_MainAsset'] = {'preloadIndex': 0, 'preloadSize': 0, 'asset': {'m_FileID': 0, 'm_PathID': 0}}
         self.asset.objects[1].save_typetree(tree)
-        self.bundle.files['CAB-wtt-native-containers.resS'] = Stream(bytes(self.stream))
+        self.bundle.files[self.cab + '.resS'] = Stream(bytes(self.stream))
         return self.bundle.save(packer='lz4')
 
 def main():

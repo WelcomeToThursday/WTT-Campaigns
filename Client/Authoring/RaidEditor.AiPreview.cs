@@ -15,6 +15,7 @@ public sealed partial class RaidEditor
     private CancellationTokenSource? _aiLifetime;
     private EditorPreviewPlayer? _aiPlayer;
     private MissionLoot? _aiLoot;
+    private readonly List<GameObject> _playtestHazards = new();
     private Task? _aiReset;
     private bool _aiPreview,
         _aiPlaytest;
@@ -146,6 +147,13 @@ public sealed partial class RaidEditor
                 lifetime.Token.ThrowIfCancellationRequested();
             }
             await BeginEditorMissionRoute(layout, lifetime.Token);
+            if (playtest)
+                await BeginPlaytestHazards(
+                    _editorMissionRequested && _editorMissionTest != null
+                        ? _editorMissionTest.Descriptor.Zones
+                        : FilterZonesForLayout(layout.Id),
+                    lifetime.Token
+                );
             _aiRuntime.MissionStart();
             _notice = "";
         }
@@ -179,6 +187,7 @@ public sealed partial class RaidEditor
         // replacing equipment that an inventory/loot screen may still observe.
         if (_player && _player!.IsInventoryOpened)
             EftScreenManager.Instance.ToggleScreen(EEftScreenType.Inventory);
+        EndPlaytestHazards();
         EndEditorMissionRoute(_editorMissionRetrying);
         if (!AiPreviewBusy && _aiRuntime == null && _aiPlayer == null)
             return;

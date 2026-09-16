@@ -37,6 +37,14 @@ public static class EditorPreviewGearCopy
                         added |= owned.Add(child.Id);
             } while (added);
             var tree = items.Where(i => owned.Contains(i.Id)).ToList();
+            // Stock SPT loadouts omit location for a magazine's only cartridge stack.
+            // Normalize the detached copy, not the source profile or arbitrary authored assemblies.
+            foreach (var cartridges in tree.Where(i => i.SlotId == "cartridges").GroupBy(i => i.ParentId))
+            {
+                var rounds = cartridges.ToArray();
+                if (rounds.Length == 1 && rounds[0].Location == null)
+                    rounds[0].Location = new NativeItemLocation(0);
+            }
             var ids = tree.ToDictionary(i => i.Id, _ => Guid.NewGuid().ToString("N")[..24]);
             if (fastPanel != null)
                 foreach (var binding in fastPanel)
