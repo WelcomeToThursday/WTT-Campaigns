@@ -149,6 +149,7 @@ WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);
 WTT.Campaigns.Tests.EditorUiScaleChecks.Run(Check);
 WTT.Campaigns.Tests.CatalogGridLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
+WTT.Campaigns.Tests.EditorCameraBookmarkChecks.Run(Check);
 WTT.Campaigns.Tests.PlayerRouteChecks.Run(Check);
 WTT.Campaigns.Tests.AiTreeChecks.Run(Check);
 WTT.Campaigns.Tests.EditorLibraryTreeChecks.Run(Check);

@@ -15,6 +15,7 @@
     <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
     <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
     <Compile Include="..\Client\Authoring\EditorOpenState.cs" Link="Client\EditorOpenState.cs" />
+    <Compile Include="..\Client\Authoring\EditorCameraBookmarks.cs" Link="Client\EditorCameraBookmarks.cs" />
     <Compile Include="..\Client\Authoring\Views\RaidEditorAiTree.cs" Link="Client\RaidEditorAiTree.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorLibraryTrees.cs" Link="Client\EditorLibraryTrees.cs" />
     <PackageReference Include="Mono.Cecil" Version="0.11.6" />

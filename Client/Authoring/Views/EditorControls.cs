@@ -93,6 +93,7 @@ internal sealed class EditorButton : EditorControl
 
 internal sealed class EditorInput : EditorControl
 {
+    internal EditorNumericDrag? NumericDrag;
     private bool _suppress;
     private string _committed = "";
     internal readonly UnityEvent<string> onEndEdit = new(),
@@ -128,6 +129,8 @@ internal sealed class EditorInput : EditorControl
     {
         get
         {
+            if (NumericDrag?.Active == true)
+                return true;
             var focus = Element.panel?.focusController.focusedElement as VisualElement;
             return focus != null && (focus == Element || Element.Contains(focus));
         }
@@ -141,6 +144,7 @@ internal sealed class EditorInput : EditorControl
 
     internal void CancelEdit()
     {
+        NumericDrag?.Cancel();
         if (!isFocused)
             return;
         _suppress = true;

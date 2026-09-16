@@ -455,6 +455,7 @@ public sealed partial class RaidEditor : MonoBehaviour
         _flyPosition = _player!.CameraPosition.position;
         _flyRotation = Quaternion.LookRotation(_player.LookDirection);
         _looking = false;
+        RestoreCameraBookmark();
         RestoreWalkCamera();
         _camera.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
         _savedCursor = Cursor.visible;
@@ -556,6 +557,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
         try
         {
+            SaveCameraBookmark();
             CancelDrag();
             _picking = false;
             _sceneRebindId = "";

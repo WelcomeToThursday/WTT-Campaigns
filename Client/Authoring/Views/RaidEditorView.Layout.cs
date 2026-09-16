@@ -86,6 +86,7 @@ internal sealed partial class RaidEditorView
         {
             element.style.flexShrink = 0;
             EditorControlLayout.Field((TextField)element, false);
+            ((EditorInput)control).NumericDrag = EditorNumericDrag.Attach((TextField)element, node.Id);
         }
         if (node.Kind == "group")
             element.AddToClassList("editor-group");
@@ -280,7 +281,75 @@ internal sealed partial class RaidEditorView
         _browsers.Add("Layouts", new());
         BuildBrowser();
         ApplyIcons();
+        BuildTransformToolbar();
         BuildIndependentTools();
+    }
+
+    private void BuildTransformToolbar()
+    {
+        var toolbar = Element("TransformToolbar");
+        var preview = Element("EditorMapToolbar");
+        // Generic action rows wrap, but this bar has only 38px of vertical space.
+        foreach (var row in new[] { toolbar, preview })
+        {
+            row.style.flexWrap = Wrap.NoWrap;
+            row.style.alignItems = Align.Center;
+        }
+        preview.style.maxWidth = StyleKeyword.None;
+        preview.style.flexShrink = 0;
+        preview.style.height = 30;
+        foreach (var id in new[] { "Undo", "Redo", "Move", "Rotate", "Scale", "Snap", "EditorWalk", "AiObserve", "AiPlaytest", "AiPlaytestGear", "EditorReset" })
+        {
+            var control = Element(id);
+            control.style.alignSelf = Align.Center;
+            control.style.height = control.style.minHeight = control.style.maxHeight = 30;
+            control.style.marginTop = control.style.marginBottom = 0;
+            control.style.whiteSpace = WhiteSpace.NoWrap;
+            control.style.maxWidth = StyleKeyword.None;
+        }
+
+        // Keep dividers with their controls so map-only groups hide together.
+        foreach (var id in new[] { "Move", "CameraSpeedLabel", "EditorWalk", "AiObserve", "EditorReset" })
+        {
+            var first = Element(id);
+            var separator = new VisualElement { pickingMode = PickingMode.Ignore };
+            separator.AddToClassList("editor-toolbar-separator");
+            separator.style.width = separator.style.minWidth = separator.style.maxWidth = 1;
+            separator.style.height = 20;
+            separator.style.flexShrink = 0;
+            separator.style.alignSelf = Align.Center;
+            separator.style.marginLeft = separator.style.marginRight = 6;
+            separator.style.backgroundColor = (Color)new Color32(75, 78, 71, 255);
+            first.parent.Insert(first.parent.IndexOf(first), separator);
+        }
+
+        // Preserve the dock boundary and allow access to the whole row on narrow windows.
+        var scroll = new ScrollView(ScrollViewMode.Horizontal)
+        {
+            horizontalScrollerVisibility = ScrollerVisibility.Hidden,
+            verticalScrollerVisibility = ScrollerVisibility.Hidden,
+            tooltip = "Scroll to reach more toolbar controls",
+        };
+        scroll.style.flexGrow = scroll.style.flexShrink = 1;
+        scroll.style.minWidth = 0;
+        scroll.style.height = 38;
+        scroll.contentContainer.style.flexDirection = FlexDirection.Row;
+        scroll.contentContainer.style.flexWrap = Wrap.NoWrap;
+        scroll.contentContainer.style.alignItems = Align.Center;
+        scroll.contentContainer.style.height = 38;
+        while (toolbar.childCount > 0)
+            scroll.Add(toolbar[0]);
+        toolbar.Add(scroll);
+        scroll.RegisterCallback<WheelEvent>(evt =>
+        {
+            var delta = Mathf.Abs(evt.delta.x) > Mathf.Abs(evt.delta.y) ? evt.delta.x : evt.delta.y;
+            scroll.horizontalScroller.value = Mathf.Clamp(
+                scroll.horizontalScroller.value + delta * 30,
+                scroll.horizontalScroller.lowValue,
+                scroll.horizontalScroller.highValue
+            );
+            evt.StopPropagation();
+        }, TrickleDown.TrickleDown);
     }
 
     private void ApplyIcons()

@@ -20,7 +20,17 @@ internal sealed partial class RaidEditorView : IDisposable
     private RouteOverlay _routeOverlay = null!;
     internal bool Valid => !_disposed && Root;
     internal bool PointerOver => Document.PointerOver;
-    internal bool Typing => Document.Typing || Windows.Interacting || Windows.MenuDismissedThisFrame || _choicePopup != null;
+    internal bool Typing => Document.Typing || NumericDragging || Windows.Interacting || Windows.MenuDismissedThisFrame || _choicePopup != null;
+    private bool NumericDragging
+    {
+        get
+        {
+            foreach (var input in _inputs)
+                if (input.NumericDrag?.Active == true)
+                    return true;
+            return false;
+        }
+    }
     internal bool RowPressed
     {
         get
@@ -56,7 +66,12 @@ internal sealed partial class RaidEditorView : IDisposable
             };
             Document.Escape = () =>
             {
-                if (Windows.Interacting)
+                if (NumericDragging)
+                {
+                    CancelNumericDrags();
+                    Document.EscapeFrame = Time.frameCount;
+                }
+                else if (Windows.Interacting)
                 {
                     Windows.CancelInteraction();
                     Document.EscapeFrame = Time.frameCount;
@@ -76,13 +91,24 @@ internal sealed partial class RaidEditorView : IDisposable
     {
         if (!visible)
         {
+            CancelNumericDrags();
             DismissDropdowns();
             Windows.CancelInteraction();
         }
         Document.SetVisible(visible);
     }
 
-    internal void ReleaseFocus() => Document.ReleaseFocus();
+    internal void ReleaseFocus()
+    {
+        CancelNumericDrags();
+        Document.ReleaseFocus();
+    }
+
+    private void CancelNumericDrags()
+    {
+        foreach (var input in _inputs)
+            input.NumericDrag?.Cancel();
+    }
 
     internal void Visible(string name, bool visible) => Control(name).Visible = visible;
 
