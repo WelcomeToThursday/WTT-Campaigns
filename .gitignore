@@ -13,6 +13,7 @@ coverage/
 # Historical local test state, releases and reverse-engineering output
 /.tools/
 /.scratch/
+/.tmp/
 /Testing/
 /Research/
 /release/
