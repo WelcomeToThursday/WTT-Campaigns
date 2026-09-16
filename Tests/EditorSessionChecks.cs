@@ -70,8 +70,10 @@ internal static class EditorSessionChecks
             EditorMode.SessionId = serverSession.Id;
             socket.Reply = message =>
             {
-                check(serverSession.AcceptsMapRequest("owner", message.Request, now),
-                    "The actual editor client request passes the server map-session gate");
+                check(
+                    serverSession.AcceptsMapRequest("owner", message.Request, now),
+                    "The actual editor client request passes the server map-session gate"
+                );
                 return Response(baseline);
             };
             try

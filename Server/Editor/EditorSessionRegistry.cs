@@ -50,12 +50,12 @@ public class EditorSessionRegistry
             Location = "";
         public DateTimeOffset Contact = DateTimeOffset.UtcNow;
         public bool Ready;
+
         // Snapshot of the disposable character's starter kit, before authoring
         // strips its inventory. Never sourced from ReturnProfile.
         public List<WTT.Campaigns.Shared.Native.NativeItem> PreviewItems = new();
         public string PreviewEquipmentId = "";
         public Dictionary<string, string> PreviewBindings = new();
-
 
         public void Select(string draft, string layout)
         {

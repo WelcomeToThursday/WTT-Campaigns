@@ -329,7 +329,7 @@ public sealed class ItemPreviewClient : MonoBehaviour
                 var container =
                     parent.Containers.AsValueEnumerable().SingleOrDefault(c => c.ID == record.SlotId)
                     ?? throw new InvalidOperationException("Unknown item slot: " + record.SlotId);
-                  if (container is Slot slot)
+                if (container is Slot slot)
                 {
                     // These are newly constructed, detached items, not an inventory
                     // move. Built-in armor parts occupy immutable native slots.
@@ -379,9 +379,14 @@ public sealed class ItemPreviewClient : MonoBehaviour
 
     private static OperationResult<ContainerAddResult> RestoreLockedPart(Slot slot, Item item)
     {
-        if (!slot.Locked || slot.ContainedItem != null || !slot.CheckCompatibility(item)
-            || slot.BlockerSlots.Count > 0 || (item.IsSpecialSlotOnly && !slot.IsSpecial)
-            || slot.GetConflictingSlot(item).AsValueEnumerable().Any(s => s.ContainedItem != null))
+        if (
+            !slot.Locked
+            || slot.ContainedItem != null
+            || !slot.CheckCompatibility(item)
+            || slot.BlockerSlots.Count > 0
+            || (item.IsSpecialSlotOnly && !slot.IsSpecial)
+            || slot.GetConflictingSlot(item).AsValueEnumerable().Any(s => s.ContainedItem != null)
+        )
             throw new InvalidOperationException("Incompatible built-in item in slot " + slot.ID);
         var conflicts = slot.CheckConflictingItems(item);
         if (conflicts.Failed)

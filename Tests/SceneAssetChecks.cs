@@ -66,13 +66,21 @@ internal static class SceneAssetChecks
             "Container scaling cannot break native grips and animation"
         );
         edit.Scale.X = 1;
-        edit.Container = new ContainerSettings { Mode = "Fixed", SpawnChance = 35,
-            Contents = [new ContainerContent { Template = "544fb45d4bdc2dee738b4568", Count = 3 }] };
-        check(MapLayoutRules.Format([layout]) == 9 && MapLayoutRules.Errors(layout).Count == 0,
-            "Configured containers require format 9 and accept fixed item quantities and spawn chance");
+        edit.Container = new ContainerSettings
+        {
+            Mode = "Fixed",
+            SpawnChance = 35,
+            Contents = [new ContainerContent { Template = "544fb45d4bdc2dee738b4568", Count = 3 }],
+        };
+        check(
+            MapLayoutRules.Format([layout]) == 9 && MapLayoutRules.Errors(layout).Count == 0,
+            "Configured containers require format 9 and accept fixed item quantities and spawn chance"
+        );
         var configured = JsonConvert.DeserializeObject<MapObjectEdit>(JsonConvert.SerializeObject(edit))!;
-        check(configured.Container?.SpawnChance == 35 && configured.Container.Contents.Single().Count == 3,
-            "Container settings survive layout persistence");
+        check(
+            configured.Container?.SpawnChance == 35 && configured.Container.Contents.Single().Count == 3,
+            "Container settings survive layout persistence"
+        );
         foreach (var chance in new[] { -1, 101 })
         {
             edit.Container.SpawnChance = chance;

@@ -69,8 +69,12 @@ public sealed partial class RaidEditor
         var containers = new HashSet<Transform>();
         foreach (var container in Resources.FindObjectsOfTypeAll<EFT.Interactive.LootableContainer>())
         {
-            if (!container || !container.gameObject.scene.IsValid() || !container.gameObject.scene.isLoaded
-                || string.IsNullOrEmpty(container.Id))
+            if (
+                !container
+                || !container.gameObject.scene.IsValid()
+                || !container.gameObject.scene.isLoaded
+                || string.IsNullOrEmpty(container.Id)
+            )
                 continue;
             var excluded = false;
             for (var parent = container.transform; parent; parent = parent.parent)
@@ -79,7 +83,8 @@ public sealed partial class RaidEditor
                     excluded = true;
                     break;
                 }
-            if (excluded) continue;
+            if (excluded)
+                continue;
             containers.Add(container.transform);
             yield return container.transform;
         }
@@ -88,7 +93,8 @@ public sealed partial class RaidEditor
         for (var i = 0; i < SceneManager.sceneCount; i++)
             scenes.Add(SceneManager.GetSceneAt(i));
         // Keep discovery consistent with the scenes exposed by RefreshLoadedScenes.
-        if (_player) scenes.Add(_player!.gameObject.scene);
+        if (_player)
+            scenes.Add(_player!.gameObject.scene);
         scenes.Add(gameObject.scene);
         var roots = new List<GameObject>();
         foreach (var scene in scenes)
@@ -130,7 +136,8 @@ public sealed partial class RaidEditor
     }
 
     private static bool ExcludedSceneBranch(GameObject go) =>
-        go.GetComponent<Canvas>() || go.GetComponent<EFT.Player>()
+        go.GetComponent<Canvas>()
+        || go.GetComponent<EFT.Player>()
         || go.name.StartsWith("CampaignEditor", StringComparison.Ordinal)
         || go.name.StartsWith("SeasonalRaidEditor", StringComparison.Ordinal);
 

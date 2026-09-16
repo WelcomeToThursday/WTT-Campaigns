@@ -94,7 +94,15 @@ public sealed partial class RaidEditor
         view.Button("AiWaypoint", AddAiWaypoint);
         view.Button("AiTrigger", CycleAiTrigger);
         view.Button("AiObserve", () => BeginAiPreview(false));
-        view.Dropdown("AiPlaytestGear", i => { if (!AiPreviewBusy) _aiUseProfileKit = i == 1; Refresh(); });
+        view.Dropdown(
+            "AiPlaytestGear",
+            i =>
+            {
+                if (!AiPreviewBusy)
+                    _aiUseProfileKit = i == 1;
+                Refresh();
+            }
+        );
         view.Button("AiPlaytest", () => BeginAiPreview(true));
         view.Button("AiReset", EndAiPreview);
         view.Button("AiSimulate", SimulateSelectedAiEvent);

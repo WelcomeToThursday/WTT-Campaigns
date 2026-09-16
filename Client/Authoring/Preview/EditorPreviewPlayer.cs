@@ -37,7 +37,9 @@ internal sealed class EditorPreviewPlayer
     internal async Task Equip(CancellationToken token, bool useProfileKit = false)
     {
         using var loading = UI.NativeLoadingStatus.Begin("Preparing playtest equipment…");
-        var payload = JsonConvert.SerializeObject(new EditorPreviewGearRequest { SessionId = EditorMode.SessionId, UseProfileKit = useProfileKit });
+        var payload = JsonConvert.SerializeObject(
+            new EditorPreviewGearRequest { SessionId = EditorMode.SessionId, UseProfileKit = useProfileKit }
+        );
         var response =
             JsonConvert.DeserializeObject<EditorPreviewGearResponse>(
                 await RequestHandler.PostJsonAsync("/wtt-campaigns/editor/preview-gear", payload)

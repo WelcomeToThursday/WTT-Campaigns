@@ -116,17 +116,35 @@ internal static class AuthoringSocketCompatibility
         var builder = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Preview.ItemPreviewClient");
         var lockedPart = builder.Methods.Single(m => m.Name == "RestoreLockedPart");
         var lockedCalls = lockedPart.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().ToArray();
-        foreach (var name in new[] { "get_Locked", "get_ContainedItem", "CheckCompatibility", "GetConflictingSlot", "CheckConflictingItems", "AddWithoutRestrictions" })
+        foreach (
+            var name in new[]
+            {
+                "get_Locked",
+                "get_ContainedItem",
+                "CheckCompatibility",
+                "GetConflictingSlot",
+                "CheckConflictingItems",
+                "AddWithoutRestrictions",
+            }
+        )
             Require(lockedCalls.Any(c => c.Name == name), "Built-in parts retain native validation: " + name);
-        Require(lockedPart.Body.Instructions.Any(i => i.OpCode.Code == Mono.Cecil.Cil.Code.Throw),
-            "Incompatible built-in parts are rejected");
+        Require(
+            lockedPart.Body.Instructions.Any(i => i.OpCode.Code == Mono.Cecil.Cil.Code.Throw),
+            "Incompatible built-in parts are rejected"
+        );
         Require(!previewCalls.Any(c => c.Name == "set_Locked"), "Reconstruction leaves native slot locks intact");
-        Require(builder.Methods.Where(m => m.HasBody && m != lockedPart)
-            .All(m => !m.Body.Instructions.Any(i => i.Operand is MethodReference c && c.Name == "AddWithoutRestrictions")),
-            "Only the validated built-in-part path can bypass a gameplay insertion lock");
-        Require(builder.Methods.Single(m => m.Name == "Build").Body.Instructions
-            .Any(i => i.Operand is MethodReference c && c.Name == "RestoreLockedPart"),
-            "The preview item builder restores locked native parts");
+        Require(
+            builder
+                .Methods.Where(m => m.HasBody && m != lockedPart)
+                .All(m => !m.Body.Instructions.Any(i => i.Operand is MethodReference c && c.Name == "AddWithoutRestrictions")),
+            "Only the validated built-in-part path can bypass a gameplay insertion lock"
+        );
+        Require(
+            builder
+                .Methods.Single(m => m.Name == "Build")
+                .Body.Instructions.Any(i => i.Operand is MethodReference c && c.Name == "RestoreLockedPart"),
+            "The preview item builder restores locked native parts"
+        );
         Require(
             previewCalls.Any(c => c.Name == "ReleaseTemporary") && previewCalls.Any(c => c.Name == "Destroy"),
             "Preview releases its own temporary graphics resources"

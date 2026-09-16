@@ -301,7 +301,8 @@ public sealed partial class RaidEditor
                 if (!_sceneRoots.TryGetValue(id, out var source) || !source)
                     continue;
                 var container = source.GetComponent<LootableContainer>();
-                if (container && nativeTemplates.Contains(container.Template)) continue;
+                if (container && nativeTemplates.Contains(container.Template))
+                    continue;
                 if ((_sceneFilter == "Containers") != (container != null))
                     continue;
                 if (source.name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0)
@@ -718,7 +719,12 @@ public sealed partial class RaidEditor
                             Operation = "Copy",
                             Position = ZoneRuntime.Vector(position),
                             Rotation = rotation,
-                            Container = asset.AssetTarget.Kind is "AssetContainer" or "Container" ? new ContainerSettings { Mode = _containerTemplates?.Contains(asset.AssetTarget.Template) == true ? "Native" : "Empty" } : null,
+                            Container = asset.AssetTarget.Kind is "AssetContainer" or "Container"
+                                ? new ContainerSettings
+                                {
+                                    Mode = _containerTemplates?.Contains(asset.AssetTarget.Template) == true ? "Native" : "Empty",
+                                }
+                                : null,
                             Scale = asset.AssetTarget.Kind is "AssetContainer" or "Container"
                                 ? new SpatialVector
                                 {
@@ -808,7 +814,8 @@ public sealed partial class RaidEditor
 
     private string CatalogError(SceneCatalogEntry entry) =>
         entry.Error.Length > 0 ? entry.Error
-        : entry.AssetTarget?.Bundle != NativeContainerLibrary.BundleKey && (entry.AssetTarget?.Kind is "AssetContainer" or "Container")
+        : entry.AssetTarget?.Bundle != NativeContainerLibrary.BundleKey
+        && (entry.AssetTarget?.Kind is "AssetContainer" or "Container")
         && (_containerTemplates == null || !_containerTemplates.Contains(entry.AssetTarget.Template))
             ? (
                 _containerTemplates == null
