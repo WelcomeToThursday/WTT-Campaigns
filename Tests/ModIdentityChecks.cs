@@ -106,7 +106,7 @@ internal static class ModIdentityChecks
                     {
                         ["ModGuid"] = "com.wtt.campaigns",
                         ["Name"] = "WTT-Campaigns",
-                        ["HomePage"] = "/wtt-campaigns/creator",
+                        ["HomePage"] = "/wtt-campaigns",
                         ["WWWRootUrl"] = "wtt-campaigns-creator-assets",
                     }
                 )

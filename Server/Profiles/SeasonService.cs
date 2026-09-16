@@ -23,7 +23,7 @@ using WTT.Campaigns.Shared.Seasons;
 namespace WTT.Campaigns.Server.Profiles;
 
 [Injectable(InjectionType.Singleton)]
-public sealed class SeasonService(
+public sealed partial class SeasonService(
     SaveServer saves,
     ProfileDataService profileData,
     CreateProfileService creator,

@@ -1,0 +1,34 @@
+@page "/wtt-campaigns"
+@attribute [Authorize(Policy = "Administrator")]
+@layout SPTarkov.Server.Web.Layout.BaseMudBlazorLayout
+
+<PageTitle>WTT-Campaigns · Home</PageTitle>
+<HeadContent>
+    <link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=080-editor-beta" />
+    <link rel="stylesheet" href="/wtt-campaigns-creator-assets/hub.css?v=090-recovery" />
+</HeadContent>
+<main class="season-creator campaigns-home">
+    <header class="creator-header">
+        <div><p class="hub-eyebrow">WTT · CAMPAIGNS</p><h1>Your campaign hub</h1><p>Build your next story, find a guide, or bring a surviving character back to a new account.</p></div>
+        <span class="editor-beta">Administration</span>
+    </header>
+    <nav class="hub-grid" aria-label="Campaign tools and guides">
+        <a class="hub-card" href="/wtt-campaigns/docs">
+            <span class="hub-eyebrow">LEARN</span><h2>Documentation</h2>
+            <p>Get started with campaign characters, explore perks, and find player and authoring guides.</p><span class="hub-action">Open the guides →</span>
+        </a>
+        <a class="hub-card" href="/wtt-campaigns/creator">
+            <span class="hub-eyebrow">CREATE · BETA</span><h2>Campaign Creator</h2>
+            <p>Build quests, stories, missions, and encounters. Preview and publish your campaigns.</p><span class="hub-action">Open Campaign Creator →</span>
+        </a>
+        <a class="hub-card" href="/wtt-campaigns/creator/traders">
+            <span class="hub-eyebrow">CUSTOMIZE · BETA</span><h2>Trader editor</h2>
+            <p>Edit installed trader assortments and export them independently of a campaign.</p><span class="hub-action">Open the trader editor →</span>
+        </a>
+        <a class="hub-card" href="/wtt-campaigns/characters/recovery">
+            <span class="hub-eyebrow">RECOVER · ADMINISTRATOR</span><h2>Character recovery</h2>
+            <p>Deleted a launcher account? Link its surviving campaign characters to a replacement account.</p><span class="hub-action">Recover characters →</span>
+        </a>
+    </nav>
+    <section class="editor-card hub-note"><h2>Ready to play?</h2><p>Launch the game with your SPT account and use the campaign character selection screen. This website provides guides and administration tools; you play your campaigns in the game.</p></section>
+</main>

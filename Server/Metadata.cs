@@ -7,8 +7,8 @@ namespace WTT.Campaigns.Server;
 public sealed record Metadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMetadata
 {
     public string? WWWRootUrl { get; init; } = "wtt-campaigns-creator-assets";
-    public string? HomePage { get; init; } = "/wtt-campaigns/creator";
-    public string? HomePageDescription { get; init; } = "Create, preview, and publish playable campaigns.";
+    public string? HomePage { get; init; } = "/wtt-campaigns";
+    public string? HomePageDescription { get; init; } = "Campaign hub, guides, creation tools, and character recovery.";
     public static string DirectoryPath
     {
         get { return Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)!; }

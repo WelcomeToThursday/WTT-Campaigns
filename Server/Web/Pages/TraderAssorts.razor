@@ -9,7 +9,7 @@
 <HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=080-editor-beta" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@_dirty" OnBeforeInternalNavigation="BeforeNavigate" />
 <main class="season-creator standalone-assorts">
-    <header class="creator-header"><div><h1>Standalone trader editor <span class="editor-beta">BETA</span></h1><p>Edit installed trader assortments and export native assort.json files independently of any campaign.</p></div><a class="button subtle" href="/wtt-campaigns/creator">Campaign Creator</a></header>
+    <header class="creator-header"><div><h1>Standalone trader editor <span class="editor-beta">BETA</span></h1><p>Edit installed trader assortments and export native assort.json files independently of any campaign.</p></div><a class="button subtle" href="/wtt-campaigns">Home</a><a class="button subtle" href="/wtt-campaigns/creator">Campaign Creator</a></header>
     @if (_draft != null)
     {
         <div class="editor-card row"><span role="status">@(_dirty ? "Unsaved draft changes" : "Draft saved")</span><button class="primary" @onclick="Save">Save draft</button><button @onclick="@(() => _confirmReload = true)">Reload saved draft…</button><button disabled="@(!CanExport)" @onclick="PrepareExport">Prepare export</button>@if (_download.Length > 0) { <a class="button primary" href="@_download" download>Download assort.json</a> }</div>
