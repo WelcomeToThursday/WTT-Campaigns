@@ -202,6 +202,8 @@ if (args.Length > 0 && File.Exists(args[0]))
 WTT.Campaigns.Tests.CreatorChecks.Run(Check);
 WTT.Campaigns.Tests.MissionTestCampaign.Run(Check);
 WTT.Campaigns.Tests.MissionAuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.MapLayerChecks.Run(Check);
+await WTT.Campaigns.Tests.PreviewLoadGuardChecks.Run(Check);
 WTT.Campaigns.Tests.MissionRuntimeChecks.Run(Check);
 WTT.Campaigns.Tests.RaidFinalizationChecks.Run(Check);
 WTT.Campaigns.Tests.MissionServiceChecks.Run(Check);

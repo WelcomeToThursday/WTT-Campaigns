@@ -96,7 +96,18 @@ public sealed partial class RaidEditor
             if (playtest)
             {
                 _aiPlayer = new EditorPreviewPlayer(player);
-                await _aiPlayer.Equip(lifetime.Token, _aiUseProfileKit);
+                await _aiPlayer.Equip(
+                    lifetime.Token,
+                    _aiUseProfileKit,
+                    stage =>
+                    {
+                        if (_aiLifetime != lifetime || lifetime.IsCancellationRequested || _session != session)
+                            return;
+                        _notice = _aiPreviewStatus = "Preparing playtest · " + stage;
+                        if (_view?.Valid == true)
+                            Refresh(false);
+                    }
+                );
             }
             lifetime.Token.ThrowIfCancellationRequested();
             if (_session != session || !EditorMode.Ready || !player)

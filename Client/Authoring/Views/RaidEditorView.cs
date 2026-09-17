@@ -118,7 +118,7 @@ internal sealed partial class RaidEditorView : IDisposable
     internal void Caption(string name, string value)
     {
         var button = Get<EditorButton>(name);
-        button.Element.tooltip = value;
+        button.Element.tooltip = button.Help.Length == 0 ? value : button.Help + "\nCurrent: " + value;
         if (!button.Element.ClassListContains("editor-icon-button"))
             button.text = value;
     }

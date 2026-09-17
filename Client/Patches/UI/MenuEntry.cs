@@ -77,6 +77,39 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("WTT.Campaigns.Me
         }
         existing!.gameObject.SetActive(!Plugin.InRaid && !Authoring.CampaignTestMode.Restricted);
         AttachMissions(__instance, existing);
+        AttachMapLayers(__instance, existing);
+    }
+
+    private static void AttachMapLayers(MenuScreen screen, DefaultUIButton campaigns)
+    {
+        var existing = screen
+            .GetComponentsInChildren<DefaultUIButton>(true)
+            .AsValueEnumerable()
+            .FirstOrDefault(button => button.name == "MapLayersEntry");
+        if (!existing)
+        {
+            var source = screen._playerButton;
+            var parent = source.transform.parent;
+            var inMenuList = parent.GetComponent<VerticalLayoutGroup>() != null;
+            existing = UnityEngine.Object.Instantiate(source, inMenuList ? parent : screen.transform, false);
+            existing.name = "MapLayersEntry";
+            existing.OnClick.RemoveAllListeners();
+            existing.OnClick.AddListener(() => Spatial.MapLayerUi.Instance.Open());
+            existing.SetRawText("MAP LAYERS", inMenuList ? (int)source._headerLabel.fontSize : 24);
+            existing.SetIcon(null);
+            existing.Interactable = true;
+            if (inMenuList)
+                existing.transform.SetSiblingIndex(campaigns.transform.GetSiblingIndex() + 1);
+            else
+            {
+                var rect = (RectTransform)existing.transform;
+                rect.anchorMin = rect.anchorMax = Vector2.one;
+                rect.pivot = Vector2.one;
+                rect.anchoredPosition = new Vector2(-45, -165);
+                rect.sizeDelta = new Vector2(280, 46);
+            }
+        }
+        existing!.gameObject.SetActive(Spatial.MapLayerUi.Available);
     }
 
     private static void AttachMissions(MenuScreen screen, DefaultUIButton campaigns)

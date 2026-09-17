@@ -60,23 +60,25 @@ internal sealed partial class RaidEditorView
         for (var i = 0; i < _rows.Count; i++)
         {
             var row = _rows[i].Element;
-            row.style.width = grid ? new StyleLength(144) : new StyleLength(StyleKeyword.Auto);
-            row.style.height = grid ? new StyleLength(136) : new StyleLength(StyleKeyword.Auto);
+            var tileWidth = CatalogGridLayout.TileWidth - 2 * CatalogGridLayout.TileMargin;
+            var tileHeight = CatalogGridLayout.TileHeight - 2 * CatalogGridLayout.TileMargin;
+            row.style.width = grid ? new StyleLength(tileWidth) : new StyleLength(StyleKeyword.Auto);
+            row.style.height = grid ? new StyleLength(tileHeight) : new StyleLength(StyleKeyword.Auto);
             row.style.minHeight =
-                grid ? 136
+                grid ? tileHeight
                 : thumbnails ? 50
                 : 28;
-            row.style.maxHeight = grid ? new StyleLength(136) : new StyleLength(StyleKeyword.None);
+            row.style.maxHeight = grid ? new StyleLength(tileHeight) : new StyleLength(StyleKeyword.None);
             row.style.flexGrow = row.style.flexShrink = 0;
             row.style.alignSelf = grid ? Align.FlexStart : Align.Stretch;
-            row.style.marginLeft = row.style.marginRight = grid ? 3 : 0;
-            row.style.marginTop = row.style.marginBottom = grid ? 3 : 1;
+            row.style.marginLeft = row.style.marginRight = grid ? CatalogGridLayout.TileMargin : 0;
+            row.style.marginTop = row.style.marginBottom = grid ? CatalogGridLayout.TileMargin : 1;
             row.style.paddingLeft =
                 grid ? 6
                 : thumbnails ? 54
                 : 8;
             row.style.paddingRight = 6;
-            row.style.paddingTop = grid ? 94 : 4;
+            row.style.paddingTop = grid ? CatalogGridLayout.ThumbnailHeight + 10 : 4;
             row.style.paddingBottom = 4;
             row.style.unityTextAlign = grid ? TextAnchor.UpperCenter : TextAnchor.MiddleLeft;
             row.style.fontSize = grid ? 13 : 15;
@@ -85,12 +87,12 @@ internal sealed partial class RaidEditorView
             var image = Element("SceneIcon" + i);
             image.style.left = grid ? 8 : 4;
             image.style.top = grid ? 6 : 4;
-            image.style.width = grid ? 128 : 40;
-            image.style.height = grid ? 84 : 40;
+            image.style.width = grid ? tileWidth - 16 : 40;
+            image.style.height = grid ? CatalogGridLayout.ThumbnailHeight : 40;
             image.pickingMode = PickingMode.Ignore;
             var status = Element("SceneIconStatus" + i);
             status.style.left = grid ? 8 : 4;
-            status.style.top = grid ? new StyleLength(38) : new StyleLength(StyleKeyword.Auto);
+            status.style.top = grid ? new StyleLength(28) : new StyleLength(StyleKeyword.Auto);
             status.style.bottom = grid ? new StyleLength(StyleKeyword.Auto) : new StyleLength(2);
             status.pickingMode = PickingMode.Ignore;
         }

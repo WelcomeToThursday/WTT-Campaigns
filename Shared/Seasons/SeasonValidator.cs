@@ -76,6 +76,8 @@ public static class SeasonValidator
         foreach (var layout in s.MapLayouts)
         foreach (var error in Spatial.MapLayoutRules.Errors(layout))
             r.Add("Maps/" + layout.Name, error);
+        foreach (var error in Spatial.MapLayerRules.Errors(s.MapLayouts))
+            r.Add("Maps", error);
         Need(IsId(s.Id) && IsId(s.BattlePassId), "Overview", "Campaign and battle pass require valid identities.");
         Need(!string.IsNullOrWhiteSpace(s.Name) && s.Name.Length <= 120, "Overview", "Name is required (up to 120 characters).");
         Need(s.Rules.StartingPoints is >= 0 and <= 100000, "Perks", "Starting budget must be 0–100000.");

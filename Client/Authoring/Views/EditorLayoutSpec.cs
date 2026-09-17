@@ -257,6 +257,14 @@ internal static class EditorLayoutSpec
                     "MapInspector",
                     G("RouteGuideGroup", T("RouteGuide", "")),
                     F("MapName", "Name"),
+                    A("MapNormalRaidGroup", "MapNormalRaid", "Apply in normal raids: off"),
+                    G(
+                        "MapLayerHelpGroup",
+                        T(
+                            "MapLayerHelp",
+                            "After publication: regular characters combine enabled layers from all published campaigns; campaign characters use their own campaign. Scenery, doors, barriers and loot apply; routes, zones and AI remain separate."
+                        )
+                    ),
                     V("MapPosition", "POSITION · metres"),
                     V("MapRotation", "ROTATION · degrees"),
                     V("MapSize", "SIZE / SCALE"),

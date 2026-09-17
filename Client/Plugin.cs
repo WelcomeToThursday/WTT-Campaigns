@@ -74,6 +74,8 @@ public sealed class Plugin : BaseUnityPlugin
         gameObject.AddComponent<Spatial.ZoneRuntime>();
         gameObject.AddComponent<Missions.MissionUi>();
         gameObject.AddComponent<Missions.MissionRaidRuntime>();
+        gameObject.AddComponent<Spatial.MapLayerRuntime>();
+        gameObject.AddComponent<Spatial.MapLayerUi>();
         gameObject.AddComponent<Authoring.RaidEditor>();
         gameObject.AddComponent<ItemPreviewClient>();
         gameObject.AddComponent<Story.StoryRaidRuntime>();

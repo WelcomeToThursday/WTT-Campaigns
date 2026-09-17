@@ -65,8 +65,7 @@ internal sealed partial class EditorToolkitWindows
             window.RegisterCallback<GeometryChangedEvent>(evt =>
             {
                 var narrow = evt.newRect.width < 340;
-                foreach (var row in window.Query<VisualElement>(className: "editor-actions").ToList())
-                    row.style.flexWrap = Wrap.Wrap;
+                // Rows own their wrapping policy. Resizing must preserve compact pairs such as paging.
                 foreach (var field in window.Query<TextField>().ToList())
                     EditorControlLayout.Field(field, narrow);
             });

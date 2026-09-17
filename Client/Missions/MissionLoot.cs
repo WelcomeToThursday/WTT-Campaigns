@@ -160,9 +160,9 @@ internal sealed class MissionLoot : IDisposable
                 {
                     if (!itemFactory.ItemTemplates.TryGetValue(record.Template, out var template))
                         throw new InvalidOperationException("Placed loot template is unavailable: " + record.Template);
-                    if (template.Prefab != null)
+                    if (template.Prefab != null && !string.IsNullOrWhiteSpace(template.Prefab.path))
                         resources.Add(template.Prefab);
-                    if (template.UsePrefab != null)
+                    if (template.UsePrefab != null && !string.IsNullOrWhiteSpace(template.UsePrefab.path))
                         resources.Add(template.UsePrefab);
                 }
                 await factory.LoadBundlesAndCreatePools(

@@ -4,6 +4,8 @@
 
 [Campaign Editor and mission map layouts](wiki/editor-mode.md): open a disposable editor character, reshape supported scenery, author AI encounters and patrols, and build [playable missions](wiki/missions.md).
 
+[Map layers](wiki/map-layers.md): reuse named layouts in ordinary raids and choose regular-character layers from the main menu, grouped by map.
+
 **[Documentation home](wiki/Home.md)** · [Player guides](wiki/Home.md#playing) · [Campaign creation](wiki/Home.md#creating-campaigns)
 
 WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass progression and campaign authoring to SPT. Create separate characters for different campaigns, build a playstyle around benefits and drawbacks, and use the Campaign Creator to make and share your own content.

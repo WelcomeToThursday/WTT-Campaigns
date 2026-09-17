@@ -44,6 +44,7 @@ internal sealed class EditorLabel : EditorControl
 
 internal sealed class EditorButton : EditorControl
 {
+    internal string Help = "";
     internal readonly UnityEvent onClick = new();
     internal string Identity = "";
     private string? _pressedIdentity;
@@ -195,6 +196,33 @@ internal sealed class EditorImage : EditorControl
 
 internal sealed class EditorChoice : EditorControl
 {
+    private Label? _valueLabel;
+
+    internal void AddFieldLabel(string caption, bool compact = false)
+    {
+        var button = (Button)Element;
+        _valueLabel = new Label(button.text) { pickingMode = PickingMode.Ignore, enableRichText = false };
+        button.text = "";
+        button.style.flexDirection = FlexDirection.Row;
+        button.style.alignItems = Align.Center;
+        var label = new Label(caption) { pickingMode = PickingMode.Ignore, enableRichText = false };
+        label.style.width = compact ? new StyleLength(StyleKeyword.Auto) : Length.Percent(35);
+        label.style.minWidth = compact ? 0 : 70;
+        label.style.maxWidth = compact ? new StyleLength(StyleKeyword.None) : new StyleLength(140);
+        label.style.marginRight = compact ? 8 : 0;
+        label.style.flexShrink = 0;
+        label.style.color = new Color(.64f, .67f, .64f);
+        label.style.whiteSpace = compact ? WhiteSpace.NoWrap : WhiteSpace.Normal;
+        _valueLabel.style.flexGrow = _valueLabel.style.flexShrink = 1;
+        _valueLabel.style.minWidth = 0;
+        _valueLabel.style.whiteSpace = WhiteSpace.Normal;
+        button.Add(label);
+        button.Add(_valueLabel);
+        var arrow = new Label("▾") { pickingMode = PickingMode.Ignore };
+        arrow.style.flexShrink = 0;
+        button.Add(arrow);
+    }
+
     internal sealed class OptionData
     {
         internal string text;
@@ -215,5 +243,12 @@ internal sealed class EditorChoice : EditorControl
         RefreshShownValue();
     }
 
-    internal void RefreshShownValue() => ((Button)Element).text = value >= 0 && value < options.Count ? options[value].text : "";
+    internal void RefreshShownValue()
+    {
+        var text = value >= 0 && value < options.Count ? options[value].text : "Select…";
+        if (_valueLabel != null)
+            _valueLabel.text = text;
+        else
+            ((Button)Element).text = text;
+    }
 }

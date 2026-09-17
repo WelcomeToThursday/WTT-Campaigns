@@ -135,7 +135,7 @@ internal sealed partial class RaidEditorView
         Element("LibraryHeading").tooltip = ToolTitle(tool);
         Text("LibraryHeading", ToolTitle(tool).ToUpperInvariant());
         // Project-style filter toolbar and a single compact status/paging footer.
-        var filters = new VisualElement();
+        var filters = new VisualElement { name = "BrowserFilters" };
         EditorControlLayout.Row(filters);
         window.Insert(window.IndexOf(Element("SceneTabs")), filters);
         filters.Add(Element("SceneTabs"));
@@ -163,7 +163,7 @@ internal sealed partial class RaidEditorView
         ((EditorButton)_toolControls[tool]["CatalogGrid"]).onClick.AddListener(() => SetCatalogGrid(tool, true));
         ((EditorButton)_toolControls[tool]["CatalogList"]).onClick.AddListener(() => SetCatalogGrid(tool, false));
         Element("CatalogViews").style.display = DisplayStyle.None;
-        var footer = new VisualElement();
+        var footer = new VisualElement { name = "BrowserFooter" };
         EditorControlLayout.Row(footer);
         window.Insert(window.IndexOf(Element("LibraryCount")), footer);
         footer.Add(Element("LibraryCount"));
@@ -186,11 +186,13 @@ internal sealed partial class RaidEditorView
         actions.Add(Element("AiToolsScroll"));
         Element("AiToolsScroll").style.maxHeight = StyleKeyword.None;
         Element("CreationTools").AddToClassList("editor-grid");
-        foreach (var row in window.Query<VisualElement>(className: "editor-actions").ToList())
-            row.style.flexWrap = Wrap.Wrap;
         window.RegisterCallback<GeometryChangedEvent>(evt =>
         {
-            actions.style.maxHeight = Math.Max(30, evt.newRect.height * .38f);
+            actions.style.maxHeight =
+                tool == "AI" ? Math.Max(30, evt.newRect.height * .38f)
+                : tool == "Scene" ? 54
+                : tool is "Hazards" or "Zones" ? Math.Clamp(evt.newRect.height * .35f, 60, 140)
+                : Math.Clamp(evt.newRect.height * .2f, 30, 100);
             foreach (var field in window.Query<TextField>().ToList())
                 EditorControlLayout.Field(field, evt.newRect.width < 340);
         });
@@ -240,6 +242,7 @@ internal sealed partial class RaidEditorView
             );
         Show("AiTools", tool == "AI" && mapReady);
         Show("AiToolsScroll", tool == "AI" && mapReady);
+        Show("CreationTools", tool != "AI" && (mapReady || tool is "Zones" or "Bindings" or "Captures"));
         foreach (var id in RaidEditorAiView.CreationControls)
             Show(id, tool == "AI" && mapReady);
     }

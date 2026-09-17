@@ -298,6 +298,7 @@ internal sealed partial class RaidEditorView
         ApplyIcons();
         BuildTransformToolbar();
         BuildIndependentTools();
+        ApplyToolWindowPresentation();
     }
 
     private void BuildTransformToolbar()
@@ -393,6 +394,9 @@ internal sealed partial class RaidEditorView
                 !(_registerLocal ? _toolControls[ToolContext] : _controls).TryGetValue(pair.Key, out var control)
                 || control is not EditorButton button
             )
+                continue;
+            // Window actions need readable captions; the fixed toolbars retain their icons.
+            if (EditorToolWindowStyle.Contains(button.Element) && !pair.Key.EndsWith("Collapse", StringComparison.Ordinal))
                 continue;
             var image = new Image
             {

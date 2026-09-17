@@ -263,6 +263,10 @@ internal static class UiCompatibilityChecks
                 equipCalls.IndexOf("UncoverContent") > equipCalls.LastIndexOf("Replace"),
                 "Fresh preview gear receives native search knowledge after entering equipped slots"
             );
+            Check(equipCalls.Count(n => n == "IsNullOrWhiteSpace") >= 2 && equipCalls.Contains("ContainsKey"),
+                "Equipment rejects empty resource keys and missing installed bundles before native loading");
+            Check(equipCalls.Contains("Run") && equipCalls.IndexOf("Run") < equipCalls.IndexOf("EmptyHands"),
+                "Equipment waits are bounded before changing hands or inventory");
             var restoreGearCalls = AsyncBody("WTT.Campaigns.Client.Authoring.Preview.EditorPreviewPlayer", "Restore")
                 .Body.Instructions.Select(i => i.Operand)
                 .OfType<MethodReference>()

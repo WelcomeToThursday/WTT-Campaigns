@@ -417,7 +417,7 @@ sealed class EditorRenderer(IServiceProvider services) : Renderer(services, Null
         }
     }
 
-    public ulong Event(int id, string element, string text, string eventName)
+    public ulong Event(int id, string element, string text, string eventName, string? inputType = null)
     {
         var frames = GetCurrentRenderTreeFrames(id);
         for (var i = 0; i < frames.Count; i++)
@@ -428,6 +428,13 @@ sealed class EditorRenderer(IServiceProvider services) : Renderer(services, Null
                 continue;
             }
             var subtree = frames.Array.Skip(i + 1).Take(frame.ElementSubtreeLength - 1).ToArray();
+            if (
+                inputType != null
+                && !subtree.Any(f =>
+                    f.FrameType == RenderTreeFrameType.Attribute && f.AttributeName == "type" && f.AttributeValue?.ToString() == inputType
+                )
+            )
+                continue;
             var label = string.Concat(
                 subtree.Select(f =>
                     f.FrameType == RenderTreeFrameType.Text ? f.TextContent

@@ -34,9 +34,15 @@ internal sealed class EditorPreviewPlayer
                     _existingLoot.Add(loot.ItemId);
     }
 
-    internal async Task Equip(CancellationToken token, bool useProfileKit = false)
+    internal async Task Equip(CancellationToken token, bool useProfileKit = false, Action<string>? report = null)
     {
         using var loading = UI.NativeLoadingStatus.Begin("Preparing playtest equipment…");
+        void Stage(string text)
+        {
+            Plugin.LogInfo("Playtest equipment: " + text);
+            report?.Invoke(text);
+        }
+        Stage("Requesting " + (useProfileKit ? "current character gear" : "default gear"));
         var payload = JsonConvert.SerializeObject(
             new EditorPreviewGearRequest { SessionId = EditorMode.SessionId, UseProfileKit = useProfileKit }
         );
@@ -47,6 +53,7 @@ internal sealed class EditorPreviewPlayer
         token.ThrowIfCancellationRequested();
         if (!string.IsNullOrEmpty(response.Error))
             throw new InvalidOperationException(response.Error);
+        Stage("Building " + response.Slots.Count + " equipment slots");
         var prepared = new Dictionary<EquipmentSlot, Item>();
         var resources = new HashSet<ResourceKey>();
         foreach (var entry in response.Slots)
@@ -59,23 +66,52 @@ internal sealed class EditorPreviewPlayer
             {
                 _temporaryItems.Add(record.Id);
                 var template = Singleton<ItemFactory>.Instance.ItemTemplates[record.Template];
-                if (template.Prefab != null)
+                if (template.Prefab != null && !string.IsNullOrWhiteSpace(template.Prefab.path))
                     resources.Add(template.Prefab);
-                if (template.UsePrefab != null)
+                if (template.UsePrefab != null && !string.IsNullOrWhiteSpace(template.UsePrefab.path))
                     resources.Add(template.UsePrefab);
             }
         }
-        await Singleton<ObjectsFactory>.Instance.LoadBundlesAndCreatePools(
-            ObjectsFactory.PoolsCategory.Raid,
-            ObjectsFactory.AssemblyType.Local,
-            resources.AsValueEnumerable().ToArray(),
-            JobYieldPriority.Immediate,
-            null,
-            token
+        var factory = Singleton<ObjectsFactory>.Instance;
+        foreach (var resource in resources)
+            if (!factory.EasyAssets.System.Nodes.ContainsKey(resource.path))
+                throw new InvalidOperationException("Playtest equipment bundle is not installed: " + resource.path);
+        var poolStage = "Loading " + resources.Count + " equipment resources";
+        Stage(poolStage);
+        var progress = new Progress<InitLevelProgress>(value =>
+        {
+            if (token.IsCancellationRequested || _restored)
+                return;
+            var next = "Equipment " + value.Stage + " · " + (value.Progress * 100).ToString("0") + "%";
+            if (next == poolStage)
+                return;
+            poolStage = next;
+            Stage(next);
+        });
+        await PreviewLoadGuard.Run(
+            loadToken =>
+                factory.LoadBundlesAndCreatePools(
+                    ObjectsFactory.PoolsCategory.Raid,
+                    ObjectsFactory.AssemblyType.Local,
+                    resources.AsValueEnumerable().ToArray(),
+                    JobYieldPriority.Immediate,
+                    progress,
+                    loadToken
+                ),
+            timerToken => UniTask.Delay(45000, delayType: DelayType.Realtime, cancellationToken: timerToken).AsTask(),
+            token,
+            () =>
+                "Playtest equipment timed out after 45 seconds at "
+                + poolStage
+                + ". Check the client asset-bundle log for a missing or failed item model."
         );
         token.ThrowIfCancellationRequested();
+        if (_restored || !_player || !Singleton<GameWorld>.Instantiated || Singleton<GameWorld>.Instance != _world)
+            throw new OperationCanceledException("The playtest world ended while loading equipment.");
+        Stage("Preparing hands");
         await EmptyHands(_player);
         token.ThrowIfCancellationRequested();
+        Stage("Equipping temporary gear");
         foreach (var binding in _player.InventoryController.FastAccess.BoundItems)
             _originalBindings.Add(binding.Key, binding.Value);
         foreach (EquipmentSlot slot in Enum.GetValues(typeof(EquipmentSlot)))
@@ -108,6 +144,7 @@ internal sealed class EditorPreviewPlayer
         }
         FreshHealth(_player);
         _player.RecalculateEquipmentParams();
+        Stage("Ready");
     }
 
     internal void Arm()

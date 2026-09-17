@@ -108,6 +108,8 @@ public sealed partial class SeasonUi : MonoBehaviour
 
     internal async void Open(ScreenPage page = ScreenPage.Characters)
     {
+        if (Spatial.MapLayerUi.Instance && Spatial.MapLayerUi.Instance.InputBlocked)
+            return;
         if (Authoring.EditorMode.Active || Authoring.CampaignTestMode.Restricted || Plugin.InRaid || Plugin.Busy || _opening)
         {
             return;

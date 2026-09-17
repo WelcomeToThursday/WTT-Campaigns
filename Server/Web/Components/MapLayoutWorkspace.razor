@@ -4,15 +4,18 @@
 
 <section class="editor-section">
     <h3>Mission map layouts</h3>
-    <p>Open Campaign Editor from the game's main menu, select this draft, then open a map. Layouts are previewed only in Editor mode; they do not change ordinary raids.</p>
+    <p>Open Campaign Editor from the game's main menu, select this draft, then open a map. Enable named layouts below and publish the campaign to apply them together in ordinary raids on their matching map. Regular characters choose their enabled layers from all published campaigns in the main-menu Map Layers screen; campaign characters use their own campaign defaults.</p>
+    <p>Normal raid layers apply scenery, doors, barriers and loot. Routes, layout-owned zones and AI encounters remain separate.</p>
+    @foreach (var error in MapLayerRules.Errors(Season.MapLayouts)) { <p class="validation-warning">@error</p> }
     @if (_error.Length > 0) { <p class="validation-warning">@_error</p> }
     @foreach (var map in Season.MapLayouts)
     {
         <details @key="map.Id">
             <summary>@map.Name · @map.Location · @map.Checkpoints.Count checkpoints</summary>
             <label>Name <input @bind="map.Name" @bind:after="Notify" /></label>
+            <label><input type="checkbox" @bind="map.ApplyInNormalRaids" @bind:after="Notify" /> Apply in normal raids</label>
             <p>@map.Objects.Count scenery edits · @map.Doors.Count doors · @map.Barriers.Count barriers · @ZoneLayoutRules.OwnedByLayout(Season.Zones, map.Id).Count() zones</p>
-            @foreach (var error in MapLayoutRules.Errors(map, true)) { <p class="validation-warning">@error</p> }
+            @foreach (var error in MapLayoutRules.Errors(map, map.Start != null || map.Checkpoints.Count > 0 || map.Exit != null)) { <p class="validation-warning">@error</p> }
             <p>Choose this layout in the client's Layouts tab, then use Scene, Routes, Zones or AI to edit its content.</p>
             @foreach (var placement in map.Objects.Where(o => o.Target.IsAsset || SceneAssetRules.IsContainer(o)))
             {

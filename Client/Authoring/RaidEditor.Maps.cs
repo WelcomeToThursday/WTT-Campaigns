@@ -84,6 +84,7 @@ public sealed partial class RaidEditor
             }
         );
         Button("MapCopy", DuplicateMapRecord);
+        Button("MapNormalRaid", () => MapEdit(l => l.ApplyInNormalRaids = !l.ApplyInNormalRaids));
         Button("MapDelete", DeleteMapRecord);
         Button(
             "MapStart",
@@ -501,7 +502,7 @@ public sealed partial class RaidEditor
     {
         foreach (var layout in _session!.Definition!.MapLayouts.AsValueEnumerable().Where(l => l.Location == _session.Location))
         {
-            _rows.Add((layout.Id, "LAYOUT · " + layout.Name));
+            _rows.Add((layout.Id, "LAYOUT · " + layout.Name + (layout.ApplyInNormalRaids ? " · NORMAL RAIDS" : "")));
             if (layout.Id != _layoutId)
                 continue;
             if (_mode != "Routes")
@@ -560,6 +561,8 @@ public sealed partial class RaidEditor
         if (!maps)
             return;
         view.Value("MapName", MapPoint?.Name ?? MapDoor?.Name ?? Layout?.Name ?? "");
+        view.Caption("MapNormalRaid", "Apply in normal raids: " + (Layout?.ApplyInNormalRaids == true ? "on" : "off"));
+        view.Get<Button>("MapNormalRaid").interactable = Layout != null && !_walking && !AiPreviewBusy;
         if (!SceneWorkspace)
         {
             view.Get<InputField>("MapName").interactable = true;
@@ -634,6 +637,8 @@ public sealed partial class RaidEditor
         }
         if (_mapScene != null)
             errors.AddRange(_mapScene.TargetErrors);
+        if (_mode == "Layouts")
+            errors.AddRange(MapLayerRules.Errors(_session!.Definition!.MapLayouts));
         view.Text("MapDetails", (_picked ? "Picked: " + _picked!.name + "\n" : "") + errors.AsValueEnumerable().Take(3).JoinToString("\n"));
     }
 

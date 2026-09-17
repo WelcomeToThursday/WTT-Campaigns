@@ -33,16 +33,25 @@ internal static class EditorControlLayout
     internal static void Field(TextField field, bool narrow)
     {
         if (field.parent?.ClassListContains("editor-axes") == true)
+        {
+            field.style.flexDirection = FlexDirection.Row;
+            field.style.flexGrow = field.style.flexShrink = 1;
+            field.style.flexBasis = 0;
+            field.style.minWidth = 0;
+            field.labelElement.style.width = field.labelElement.style.minWidth = field.labelElement.style.maxWidth = 14;
+            field.labelElement.style.flexShrink = 0;
             return;
+        }
         if (field.name == "Search")
         {
             field.style.flexDirection = FlexDirection.Row;
             field.style.alignItems = Align.Center;
-            field.style.alignSelf = Align.FlexEnd;
-            field.style.width = 320;
-            field.style.flexGrow = field.style.flexShrink = 1;
-            field.style.marginLeft = StyleKeyword.Auto;
-            field.style.maxWidth = 420;
+            field.style.alignSelf = Align.Center;
+            field.style.width = 240;
+            field.style.flexGrow = 0;
+            field.style.flexShrink = 1;
+            field.style.marginLeft = 0;
+            field.style.maxWidth = 280;
             field.style.minHeight = 26;
             field.labelElement.style.width = field.labelElement.style.minWidth = 68;
             field.labelElement.style.maxWidth = 68;
@@ -52,6 +61,9 @@ internal static class EditorControlLayout
             field.labelElement.style.flexShrink = 0;
             return;
         }
+        // Tool windows have a bounded minimum width; keep a compact label/value column.
+        if (EditorToolWindowStyle.Contains(field))
+            narrow = false;
         field.style.flexDirection = narrow ? FlexDirection.Column : FlexDirection.Row;
         field.labelElement.style.width = narrow ? Length.Percent(100) : Length.Percent(35);
         field.labelElement.style.minWidth = narrow ? 0 : 70;

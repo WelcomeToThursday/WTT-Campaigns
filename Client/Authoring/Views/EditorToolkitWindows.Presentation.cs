@@ -20,6 +20,8 @@ internal sealed partial class EditorToolkitWindows
         Visible("RouteGuideGroup", routes);
         Visible("RouteFrameGroup", routes && hasSelection && kind != "Layout");
         Visible("MapWalkGroup", routes);
+        Visible("MapNormalRaidGroup", layouts && hasSelection && kind == "Layout");
+        Visible("MapLayerHelpGroup", layouts && hasSelection && kind == "Layout");
 
         var zone = (mode is "Zones" or "Hazards") && hasSelection;
 
