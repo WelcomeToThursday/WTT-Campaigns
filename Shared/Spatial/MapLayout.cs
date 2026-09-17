@@ -10,7 +10,9 @@ public sealed class MapLayout
     public string Name { get; set; } = "New map layout";
     public string Location { get; set; } = "";
     public bool ApplyInNormalRaids { get; set; }
+
     public bool ShouldSerializeApplyInNormalRaids() => ApplyInNormalRaids;
+
     public List<MapObjectEdit> Objects { get; set; } = new();
     public List<MapLootPlacement> Loot { get; set; } = new();
     public List<MapDoorEdit> Doors { get; set; } = new();
