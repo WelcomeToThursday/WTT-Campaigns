@@ -359,7 +359,14 @@ internal static class EditorLayoutSpec
         ),
         G("ContextMenu", B("EditorUnload", "Unload map / return home"), B("EnvironmentToggle", "Environment / time and weather")),
         R("CaptureTask", T("CaptureRequest", ""), B("Complete", "Complete capture"), B("Cancel", "Cancel")),
-        R("StatusBar", T("Status", ""), T("Request", "")),
+        R(
+            "StatusBar",
+            T("Status", ""),
+            T("PreviewStatus", ""),
+            B("NoticeToggle", "Notice..."),
+            G("NoticePanel", new Node("scroll", "NoticeScroll", "", T("NoticeText", "")), B("NoticeDismiss", "Dismiss notice")),
+            T("Request", "")
+        ),
         T("EditorWalkStatus", "Esc to return to editing"),
         G(
             "ConflictShield",
@@ -369,7 +376,9 @@ internal static class EditorLayoutSpec
                 T("ConflictPath", ""),
                 I("LocalConflict", "Local version"),
                 I("RemoteConflict", "Remote version"),
-                R("ConflictActions", B("KeepLocal", "Keep local"), B("KeepRemote", "Keep remote"))
+                new Node("scroll", "ConflictRows", ""),
+                T("ConflictExplanation", ""),
+                R("ConflictActions", B("KeepLocal", "Keep all local"), B("KeepRemote", "Keep all remote"))
             )
         ),
     };

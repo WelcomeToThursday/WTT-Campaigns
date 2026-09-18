@@ -80,6 +80,30 @@ public sealed partial class RaidEditor
             _weatherError = "";
             RefreshWeather();
         }
+        // Numeric edits apply on Enter/focus loss just like transform fields.
+        // Only the committed channel changes; other invalid fields stay editable.
+        foreach (var channel in new[] { "Clouds", "Rain", "Fog", "Wind", "Thunder" })
+            view.Input(
+                "Weather" + channel,
+                text =>
+                {
+                    var weather = _environment?.Weather;
+                    if (weather == null || !EnvironmentValues.TryPercent(text, out var value))
+                        return;
+                    var clouds = (weather.Cloudiness + 1) * 50;
+                    var rain = weather.Rain * 100;
+                    var fog = (weather.Fog - .001f) / .254f * 100;
+                    var wind = weather.Wind.magnitude * 100;
+                    var thunder = weather.LightningThunderProbability * 100;
+                    Weather(
+                        channel == "Clouds" ? value : clouds,
+                        channel == "Rain" ? value : rain,
+                        channel == "Fog" ? value : fog,
+                        channel == "Wind" ? value : wind,
+                        channel == "Thunder" ? value : thunder
+                    );
+                }
+            );
         Button("WeatherPresetClear", () => Weather(0, 0, 0, 10, 0));
         Button("WeatherPresetCloudy", () => Weather(80, 0, 5, 30, 0));
         Button("WeatherPresetRain", () => Weather(100, 60, 15, 40, 0));

@@ -18,6 +18,10 @@ public static class CampaignsEditorToolkitBuilder
         "ChoiceField",
         "ChoiceOption",
         "ChoicePopup",
+        "FieldMessage",
+        "InspectorSection",
+        "InspectorHeader",
+        "ConflictRow",
         "ConflictShield",
         "ContextMenu",
         "Controls",
@@ -90,7 +94,8 @@ public static class CampaignsEditorToolkitBuilder
             string[] slots =
                 name == "HomePicker" ? new[] { "Heading:Label", "Close:Button", "Choices:ListView", "Empty:Label" }
                 : name == "PickerRow" ? new[] { "selected:Label", "name:Label" }
-                : name == "ChoicePopup" ? new[] { "Choices:ScrollView" }
+                : name == "ChoicePopup"
+                    ? new[] { "ChoicePanel:VisualElement", "ChoiceSearch:TextField", "Choices:ListView", "ChoiceEmpty:Label" }
                 : name == "ChoiceField" ? new[] { "Caption:Label", "Value:Label" }
                 : name == "TreeRow" ? new[] { "Fold:Foldout", "tree-label:Label" }
                 : name == "BrowserRow" ? new[] { "Icon:Image", "Status:Label" }
@@ -141,6 +146,30 @@ public static class CampaignsEditorToolkitBuilder
                     throw new InvalidOperationException("Browser instances share search state.");
                 if (ReferenceEquals(first.Q<ListView>("BrowserTree"), second.Q<ListView>("BrowserTree")))
                     throw new InvalidOperationException("Browser instances share their list view.");
+            }
+            if (name == "Inspector")
+            {
+                var section = (Foldout)load("InspectorSection").CloneTree()[0];
+                section.RemoveFromHierarchy();
+                var position = first.Q("PositionGroup");
+                position.parent.Insert(position.parent.IndexOf(position), section);
+                section.Add(position);
+                section.SetValueWithoutNotify(false);
+                if (section.value || !section.Contains(position))
+                    throw new InvalidOperationException("Inspector foldouts must retain their bound fields when collapsed.");
+                var field = first.Q<TextField>("PositionX");
+                var error = load("FieldMessage").CloneTree()[0];
+                error.RemoveFromHierarchy();
+                field.Add(error);
+                if (!field.Contains(error))
+                    throw new InvalidOperationException("Numeric fields must support inline validation messages.");
+                var header = load("InspectorHeader").CloneTree()[0];
+                header.RemoveFromHierarchy();
+                var scroll = first.Q<ScrollView>("PropertyScroll");
+                scroll.parent.Insert(scroll.parent.IndexOf(scroll), header);
+                header.Add(first.Q("NameGroup"));
+                if (scroll.Contains(header) || header.parent != scroll.parent)
+                    throw new InvalidOperationException("Inspector identity must remain outside scrolling properties.");
             }
             if (
                 name == "Inspector"

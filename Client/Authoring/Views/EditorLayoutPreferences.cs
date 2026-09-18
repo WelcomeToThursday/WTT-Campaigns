@@ -8,6 +8,28 @@ internal static class EditorLayoutPreferences
 {
     private static ConfigEntry<string>? _layout;
     private static ConfigEntry<int>? _scale;
+    private static ConfigEntry<string>? _sections;
+    private static Dictionary<string, bool> _expanded = new();
+
+    internal static bool Expanded(string context, string section, bool defaultValue) =>
+        EditorInteractionPolicy.Expanded(_expanded, context, section, defaultValue);
+
+    internal static void SetExpanded(string context, string section, bool value)
+    {
+        _expanded[context + "/" + section] = value;
+        if (_sections == null)
+            return;
+        try
+        {
+            _sections.Value = JsonConvert.SerializeObject(_expanded);
+            if (!Plugin.Instance.Config.SaveOnConfigSet)
+                Plugin.Instance.Config.Save();
+        }
+        catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+        {
+            Plugin.Error(error);
+        }
+    }
 
     internal static int ScalePercent => _scale?.Value ?? EditorUiScale.DefaultPercent;
 
@@ -29,6 +51,20 @@ internal static class EditorLayoutPreferences
 
     internal static void Attach(EditorToolkitWindows windows)
     {
+        _sections ??= Plugin.Instance.Config.Bind(
+            "Campaign editor",
+            "Inspector sections",
+            "",
+            "Expanded sections by tool and selection type."
+        );
+        try
+        {
+            _expanded = JsonConvert.DeserializeObject<Dictionary<string, bool>>(_sections.Value) ?? new();
+        }
+        catch (JsonException)
+        {
+            _expanded = new();
+        }
         _scale ??= Plugin.Instance.Config.Bind(
             "Campaign editor",
             "UI size percent",

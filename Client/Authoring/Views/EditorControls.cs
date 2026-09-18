@@ -96,7 +96,10 @@ internal sealed class EditorInput : EditorControl
 {
     internal EditorNumericDrag? NumericDrag;
     private bool _suppress;
-    private string _committed = "";
+    private readonly EditorEditState _edit = new();
+    private Label? _error;
+    internal bool Invalid => _edit.Invalid;
+    internal string ValidationMessage => _edit.Error;
     internal readonly UnityEvent<string> onEndEdit = new(),
         onValueChanged = new();
 
@@ -108,7 +111,12 @@ internal sealed class EditorInput : EditorControl
         {
             if (_suppress)
                 return;
-            _committed = evt.newValue;
+            if (!_edit.Accept(field.name, evt.newValue))
+            {
+                ShowValidation();
+                return;
+            }
+            ShowValidation();
             if (immediate)
                 onValueChanged.Invoke(evt.newValue);
             else
@@ -139,19 +147,40 @@ internal sealed class EditorInput : EditorControl
 
     internal void SetTextWithoutNotify(string text)
     {
-        _committed = text;
+        _edit.Reset(text);
+        ShowValidation();
         ((TextField)Element).SetValueWithoutNotify(text);
     }
 
     internal void CancelEdit()
     {
         NumericDrag?.Cancel();
-        if (!isFocused)
-            return;
         _suppress = true;
-        ((TextField)Element).SetValueWithoutNotify(_committed);
-        (Element.panel?.focusController.focusedElement as VisualElement)?.Blur();
+        ((TextField)Element).SetValueWithoutNotify(_edit.Committed);
+        _edit.Reset(_edit.Committed);
+        ShowValidation();
+        if (isFocused)
+            (Element.panel?.focusController.focusedElement as VisualElement)?.Blur();
         _suppress = false;
+    }
+
+    private void ShowValidation()
+    {
+        Element.EnableInClassList("editor-invalid", Invalid);
+        // The toolbar's scroll viewport clips children below the speed input.
+        // Its inline message is anchored beside that input by the owning view.
+        if (Element.name == "CameraSpeed")
+            return;
+        if (Invalid && _error == null)
+        {
+            _error = EditorToolkitDocument.CloneTemplate<Label>("FieldMessage");
+            Element.Add(_error);
+        }
+        if (_error != null)
+        {
+            _error.text = _edit.Error;
+            _error.style.display = Invalid ? DisplayStyle.Flex : DisplayStyle.None;
+        }
     }
 }
 

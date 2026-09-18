@@ -21,7 +21,12 @@ internal sealed partial class RaidEditorView : IDisposable
     internal bool Valid => !_disposed && Root;
     internal bool PointerOver => Document.PointerOver;
     internal bool Typing =>
-        Document.Typing || NumericDragging || Windows.Interacting || Windows.MenuDismissedThisFrame || _choicePopup != null;
+        Document.Typing
+        || _dropdownDismissFrame == Time.frameCount
+        || NumericDragging
+        || Windows.Interacting
+        || Windows.MenuDismissedThisFrame
+        || _choicePopup != null;
     private bool NumericDragging
     {
         get
@@ -60,10 +65,12 @@ internal sealed partial class RaidEditorView : IDisposable
             Build();
             Windows = new EditorToolkitWindows(this);
             EditorLayoutPreferences.Attach(Windows);
+            BuildUsability();
             Document.Tick = () =>
             {
                 Windows.Tick();
                 PollCatalogCapacity();
+                RefreshUsability();
             };
             Document.Escape = () =>
             {
@@ -79,6 +86,14 @@ internal sealed partial class RaidEditorView : IDisposable
                 }
                 else if (DismissDropdowns() || Windows.DismissMenus())
                     Document.EscapeFrame = Time.frameCount;
+            };
+            Document.CancelTyping = () =>
+            {
+                if (DismissDropdowns())
+                    return;
+                foreach (var input in _inputs)
+                    if (input.isFocused)
+                        input.CancelEdit();
             };
         }
         catch
@@ -158,7 +173,7 @@ internal sealed partial class RaidEditorView : IDisposable
     internal void Value(string name, string value)
     {
         var input = Get<EditorInput>(name);
-        if (!input.isFocused && input.text != value)
+        if (!input.isFocused && !input.Invalid && input.text != value)
             input.SetTextWithoutNotify(value);
     }
 
@@ -167,50 +182,6 @@ internal sealed partial class RaidEditorView : IDisposable
         var choice = Get<EditorChoice>(name);
         choice.options = options;
         choice.SetValueWithoutNotify(Mathf.Clamp(value, 0, Math.Max(0, options.Count - 1)));
-    }
-
-    internal bool DismissDropdowns()
-    {
-        if (_choicePopup == null)
-            return false;
-        _choicePopup.RemoveFromHierarchy();
-        _choicePopup = null;
-        return true;
-    }
-
-    private void OpenChoice(EditorChoice choice)
-    {
-        if (!choice.interactable)
-            return;
-        DismissDropdowns();
-        var shield = Document.Clone<VisualElement>("ChoicePopup");
-        _choicePopup = shield;
-        Document.Content.Add(shield);
-        shield.RegisterCallback<PointerDownEvent>(evt =>
-        {
-            if (evt.target == shield)
-                DismissDropdowns();
-        });
-        var list = shield.Q<ScrollView>("Choices");
-        EditorScrollStyle.Apply(list);
-        var rect = choice.Element.worldBound;
-        list.style.left = Mathf.Clamp(rect.x, 8, Document.Width - 308);
-        list.style.top = Mathf.Clamp(rect.yMax, 8, Document.Height - 248);
-        list.style.width = Mathf.Max(250, Mathf.Min(rect.width, Document.Width - 16));
-        for (var i = 0; i < choice.options.Count; i++)
-        {
-            var index = i;
-            var button = Document.Clone<Button>("ChoiceOption");
-            button.clicked += () =>
-            {
-                DismissDropdowns();
-                choice.SetValueWithoutNotify(index);
-                choice.onValueChanged.Invoke(index);
-            };
-            button.text = choice.options[i].text;
-            button.EnableInClassList("editor-selected", i == choice.value);
-            list.Add(button);
-        }
     }
 
     internal void SetToolkitContext(string context)
@@ -230,9 +201,7 @@ internal sealed partial class RaidEditorView : IDisposable
         Windows.KeepModalOnTop();
         if (conflict == null)
             return;
-        Text("ConflictPath", conflict.Conflicts.AsValueEnumerable().Select(c => c.Path).JoinToString("\n"));
-        Value("LocalConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Local).JoinToString("\n\n"));
-        Value("RemoteConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Remote).JoinToString("\n\n"));
+        PresentConflicts(conflict);
     }
 
     internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected, long layoutRevision = 0)

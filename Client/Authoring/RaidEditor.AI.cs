@@ -957,11 +957,7 @@ public sealed partial class RaidEditor
             }
         )
             _view.Get<InputField>(name).interactable = editable;
-        var previewStatus = _aiPreviewStatus.Length == 0 ? _session!.Status : _aiPreviewStatus;
-        if (_notice.Length > 0 && _notice != _aiPreviewStatus)
-            previewStatus += "\n" + _notice;
-        _view.Text("Status", previewStatus);
-        _view.Windows.SetTooltip("Status", previewStatus);
+        _view.Feedback(_session!.Status, _aiPreviewStatus, _notice);
         RefreshAiRoutes();
     }
 

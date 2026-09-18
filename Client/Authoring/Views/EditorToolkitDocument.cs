@@ -23,6 +23,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     internal bool Visible { get; private set; }
     internal Action? Tick;
     internal Action? Escape;
+    internal Action? CancelTyping;
     internal int EscapeFrame = -1;
     internal int ScalePercent = 100;
     internal float Scale => Settings.scale;
@@ -62,8 +63,12 @@ internal sealed class EditorToolkitDocument : IDisposable
                     if (Typing)
                     {
                         EscapeFrame = Time.frameCount;
-                        ReleaseFocus();
+                        if (CancelTyping != null)
+                            CancelTyping();
+                        else
+                            ReleaseFocus();
                         evt.StopPropagation();
+                        evt.PreventDefault();
                     }
                     else
                         Escape?.Invoke();
@@ -102,7 +107,7 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     private static void EnsureAssets()
     {
-        if (_template && _tree && _font && _previewShader && Templates.Count == 41)
+        if (_template && _tree && _font && _previewShader && Templates.Count == 45)
             return;
         Plugin.LogInfo("Editor Toolkit: loading shared assets");
         const string path = "assets/mods/wtt-campaigns.assets/editortoolkit/";
@@ -134,6 +139,10 @@ internal sealed class EditorToolkitDocument : IDisposable
                 "ChoiceField",
                 "ChoiceOption",
                 "ChoicePopup",
+                "FieldMessage",
+                "InspectorSection",
+                "InspectorHeader",
+                "ConflictRow",
                 "ConflictShield",
                 "ContextMenu",
                 "Controls",
@@ -236,6 +245,7 @@ internal sealed class EditorToolkitDocument : IDisposable
         _disposed = true;
         Tick = null;
         Escape = null;
+        CancelTyping = null;
         ReleaseFocus();
         if (Host)
         {

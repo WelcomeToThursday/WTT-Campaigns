@@ -20,6 +20,18 @@ internal sealed partial class EditorToolkitWindows
         _mapDetails,
         _recordAvailable,
         _identityAvailable;
+    private string _detailContext = "";
+
+    internal void DetailContext(string context)
+    {
+        if (_detailContext == context)
+            return;
+        _detailContext = context;
+        _recordDetails = EditorLayoutPreferences.Expanded(context, "Record details", false);
+        _mapDetails = EditorLayoutPreferences.Expanded(context, "Map details", false);
+        UpdateDetails();
+    }
+
     private Vector2 _size;
     private int _scalePercent;
     private EditorDockNode _dock = EditorDockNode.Default();
@@ -97,6 +109,7 @@ internal sealed partial class EditorToolkitWindows
             () =>
             {
                 _recordDetails = !_recordDetails;
+                EditorLayoutPreferences.SetExpanded(_detailContext, "Record details", _recordDetails);
                 UpdateDetails();
             }
         );
@@ -105,6 +118,7 @@ internal sealed partial class EditorToolkitWindows
             () =>
             {
                 _mapDetails = !_mapDetails;
+                EditorLayoutPreferences.SetExpanded(_detailContext, "Map details", _mapDetails);
                 UpdateDetails();
             }
         );

@@ -66,3 +66,34 @@ Restart the server manually as well if the matching server components changed.
 Runtime geometry remains in C#: viewport scaling, docking rectangles, popup placement,
 virtualized row data, grid capacity and scene-overlay drawing. Those are behaviors,
 not additional fixed screens waiting to be ported.
+
+## Compact editing interactions
+
+Numeric fields share validation and drag limits through `EditorInteractionPolicy`.
+Invalid edits remain visible without reaching authoring callbacks or being replaced
+by passive refresh. Enter or focus loss commits valid values; Escape restores the
+last committed value. Weather channels also apply on commit.
+
+Dropdowns virtualize their options, preserve original indices when filtered, and
+show search above ten options. Arrow keys navigate, Enter chooses, Escape closes,
+and closing restores focus. Their geometry is constrained to available viewport
+space, including placement above bottom-edge controls.
+
+The inspector pins identity and common actions outside the properties scroll.
+Foldout state is saved by tool and selection type in a separate preference; existing
+window layout and UI-size preferences retain their values. Previews and advanced
+assignment/detail sections start collapsed. Scene secondary actions use an overflow
+menu when the panel cannot fit their measured captions.
+
+Synchronization and preview status have separate slots. Operation notices stay
+available through the Notice button until dismissed or replaced. Conflict rows pair
+local and remote values by field path and highlight their differing spans; both
+resolution buttons still apply to the whole conflict set.
+
+Offline interaction checks cover invalid values, cancellation, filtered identity,
+large option lists, section defaults, conflict text preservation, and popup bounds
+at 720p, 1080p, 1440p, and ultrawide resolutions at 60%, 85%, and 130% UI size.
+The asset builder clones and reloads the authored templates and checks foldout,
+pinned-header, and validation-message composition. These checks do not establish
+live rendered readability, focus behavior, or docking acceptance in EFT; those
+still require a user-controlled game session.

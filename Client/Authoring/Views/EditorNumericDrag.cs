@@ -23,24 +23,7 @@ internal sealed class EditorNumericDrag
 
     internal static EditorNumericDrag? Attach(TextField field, string id)
     {
-        var (step, min, max, integer) = id switch
-        {
-            "CameraSpeed" => (.1, .25, 96d, false),
-            "ContainerChance" => (1d, 0d, 100d, true),
-            "ContainerQuantity" => (1d, 1d, 10000d, true),
-            "AiRosterCount" => (1d, 1d, 256d, true),
-            "AiWaveDelaySeconds" or "AiWaypointWaitSeconds" => (.1, 0d, 3600d, false),
-            "Radius" => (.1, .001, (double)float.MaxValue, false),
-            "WeatherClouds" or "WeatherRain" or "WeatherFog" or "WeatherWind" or "WeatherThunder" => (1d, 0d, 100d, false),
-            _ => (0d, 0d, 0d, false),
-        };
-        foreach (var prefix in new[] { "Position", "Rotation", "Size", "MapPosition", "MapRotation", "MapSize" })
-            if (id.Length == prefix.Length + 1 && id.StartsWith(prefix, StringComparison.Ordinal) && "XYZ".IndexOf(id[id.Length - 1]) >= 0)
-            {
-                step = prefix.Contains("Rotation") ? 1 : .1;
-                min = prefix.Contains("Size") ? .001 : -float.MaxValue;
-                max = float.MaxValue;
-            }
+        var (step, min, max, integer) = EditorInteractionPolicy.Numeric(id);
         return step == 0 ? null : new EditorNumericDrag(field, step, min, max, integer);
     }
 

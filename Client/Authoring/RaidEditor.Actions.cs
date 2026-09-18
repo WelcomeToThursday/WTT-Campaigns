@@ -945,7 +945,7 @@ public sealed partial class RaidEditor
             "Request",
             _task == null ? "RAID CONTINUES \u00B7 Player remains in place" : "RAID CONTINUES \u00B7 " + _task.Tool + " capture requested"
         );
-        view.Text("Status", _session.Status + (_notice.Length > 0 ? "\n" + _notice : ""));
+        view.Feedback(_session.Status, _aiPreviewStatus, _notice);
         view.Conflict(_session);
         // Do not repurpose or hide a row between pointer-down and pointer-up.
         if (view.RowPressed)

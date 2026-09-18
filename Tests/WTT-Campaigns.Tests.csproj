@@ -57,6 +57,7 @@
     <Compile Include="..\Client\Authoring\Scenes\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />
     <Compile Include="..\Client\Authoring\Scenes\PreviewMaterialPolicy.cs" Link="Client\PreviewMaterialPolicy.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorTooltipPlacement.cs" Link="Client\EditorTooltipPlacement.cs" />
+    <Compile Include="..\Client\Authoring\Views\EditorInteractionPolicy.cs" Link="Client\EditorInteractionPolicy.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorUiScale.cs" Link="Client\EditorUiScale.cs" />
     <Compile Include="..\Client\Authoring\Views\CatalogGridLayout.cs" Link="Client\CatalogGridLayout.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneObjectIndex.cs" Link="Client\SceneObjectIndex.cs" />

@@ -89,7 +89,7 @@ public sealed partial class RaidEditor
                 + (EditorMode.Ready ? " · EDITOR / Gameplay disabled" : " · RAID CONTINUES")
         );
         // Keep the compact status readable; hovering reveals the full operation message.
-        view.Text("Status", _session!.Status.Replace("\n", " · ") + (_notice.Length > 0 ? " · " + _notice.Replace("\n", " · ") : ""));
+        view.Feedback(_session!.Status, _aiPreviewStatus, _notice);
         if (_mode == "Scene" && _picked)
             view.Text("Identity", _picked!.name);
         view.Windows.SetTooltip("Connection", view.Get<Text>("Connection").text);

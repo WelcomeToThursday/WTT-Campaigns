@@ -13,6 +13,8 @@ internal sealed partial class EditorToolkitWindows
         bool sceneWorkspace = false
     )
     {
+        if (!sceneWorkspace)
+            _view.InspectorContext(mode, kind);
         var routes = mode == "Routes" && mapReady;
         var layouts = (mode == "Layouts" || mode == "Maps") && mapReady;
         var maps = layouts || routes;
@@ -133,6 +135,8 @@ internal sealed partial class EditorToolkitWindows
         bool hasSavedPoint = true
     )
     {
+        if (enabled)
+            _view.InspectorContext("Scene", tab + "/" + kind);
         var catalog = tab == "Catalog";
         var removed = kind == "Hide";
         Visible("SceneTabs", enabled);
@@ -164,7 +168,7 @@ internal sealed partial class EditorToolkitWindows
 
     private void UpdateDetails()
     {
-        Visible("IdentityGroup", _identityAvailable && _recordDetails);
+        Visible("IdentityGroup", _identityAvailable);
         Visible("DetailsGroup", _recordAvailable && _recordDetails);
         Visible("MapDetailsGroup", _mapDetails);
         _view.Get<EditorButton>("RecordDetailsToggle").text = _recordDetails ? "Details −" : "Details +";
