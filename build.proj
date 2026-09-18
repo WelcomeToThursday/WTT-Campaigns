@@ -19,6 +19,15 @@
     <_WebTestProject Include="Tests.Web\WTT-Campaigns.Web.Tests.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" />
   </ItemGroup>
   <Import Project="tools\Deployment.targets" />
+  <Target Name="BuildEditorToolkitAssets" BeforeTargets="Build" Condition="'$(RebuildEditorToolkit)' == 'true'">
+    <Error Condition="!Exists('$(UnityEditorExe)')" Text="Set UnityEditorExe to the Unity 2022.3.43f1 editor executable." />
+    <PropertyGroup>
+      <_ToolkitSdk>$([System.IO.Path]::GetFullPath('$(CampaignsAssetsDir)..\..\..\'))</_ToolkitSdk>
+    </PropertyGroup>
+    <Copy SourceFiles="tools\unity\CampaignsEditorToolkitBuilder.cs" DestinationFolder="$(CampaignsAssetsDir)Editor\" />
+    <MakeDir Directories="artifacts" />
+    <Exec Command="&quot;$(UnityEditorExe)&quot; -batchmode -nographics -quit -projectPath &quot;$(_ToolkitSdk).&quot; -executeMethod CampaignsEditorToolkitBuilder.Build -logFile &quot;$(MSBuildProjectDirectory)\artifacts\editor-toolkit-unity.log&quot;" />
+  </Target>
   <Target Name="Build">
     <Error Condition="'@(_DeployProject)' == ''" Text="DeploymentScope must be All, Client, Server or UI." />
     <MSBuild Projects="@(_DeployProject);@(_TestProject);@(_WebTestProject)" Targets="Restore" Properties="$(_BuildProperties)" />

@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="WindowsMenu" class="editor-menu editor-session-menu">
+        <ui:Button name="LibraryToggle" class="editor-action" text="Browser" />
+        <ui:Button name="InspectorToggle" class="editor-action" text="Properties" />
+        <ui:Button name="LootWindowToggle" class="editor-action" text="Loot configuration" />
+        <ui:Button name="EnvironmentWindowToggle" class="editor-action" text="Environment" />
+        <ui:Button name="HelpWindowToggle" class="editor-action" text="Editor controls" />
+        <ui:Label name="UiSizeLabel" class="editor-label" text="UI size: 85%" picking-mode="Ignore" />
+        <ui:VisualElement name="UiSizeActions" class="editor-actions editor-action-row">
+            <ui:Button name="UiSizeSmaller" class="editor-action" text="Smaller" />
+            <ui:Button name="UiSizeLarger" class="editor-action" text="Larger" />
+        </ui:VisualElement>
+        <ui:Button name="UiSizeReset" class="editor-action" text="Reset UI size" />
+        <ui:Button name="ResetLayout" class="editor-action" text="Reset layout" />
+    </ui:VisualElement>
+</ui:UXML>

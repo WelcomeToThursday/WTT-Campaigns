@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement class="editor-action-row editor-scene-action-group">
+        <ui:Label name="Caption" class="editor-heading" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

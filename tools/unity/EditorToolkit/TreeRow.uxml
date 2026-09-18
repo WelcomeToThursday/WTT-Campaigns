@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement class="editor-tree-row editor-native-tree-row">
+        <ui:Foldout name="Fold" text="" focusable="false" />
+        <ui:Label name="tree-label" picking-mode="Ignore" enable-rich-text="false" />
+    </ui:VisualElement>
+</ui:UXML>

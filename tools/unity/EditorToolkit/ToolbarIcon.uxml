@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:Image class="editor-toolbar-icon" picking-mode="Ignore" />
+</ui:UXML>

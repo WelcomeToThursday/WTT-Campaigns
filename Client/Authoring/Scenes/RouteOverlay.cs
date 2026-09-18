@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
+using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 
@@ -26,7 +27,7 @@ internal sealed class RouteOverlay : VisualElement
     private long _aiDescriptorRevision = long.MinValue;
     private readonly NavigationInspection _navigation = new();
     internal bool InspectNavigation;
-    private readonly Label _navigationLegend = new();
+    private readonly Label _navigationLegend = EditorToolkitDocument.CloneTemplate<Label>("RouteLegend");
 
     internal RouteOverlay()
     {
@@ -34,16 +35,6 @@ internal sealed class RouteOverlay : VisualElement
         style.position = Position.Absolute;
         style.left = style.right = style.top = style.bottom = 0;
         generateVisualContent += context => Populate(context, -1);
-        _navigationLegend.pickingMode = PickingMode.Ignore;
-        _navigationLegend.style.position = Position.Absolute;
-        _navigationLegend.style.left = 16;
-        _navigationLegend.style.bottom = 48;
-        _navigationLegend.style.maxWidth = 620;
-        _navigationLegend.style.whiteSpace = WhiteSpace.Normal;
-        _navigationLegend.style.backgroundColor = new Color(.025f, .03f, .035f, .9f);
-        _navigationLegend.style.color = Color.white;
-        _navigationLegend.style.paddingLeft = _navigationLegend.style.paddingRight = 10;
-        _navigationLegend.style.paddingTop = _navigationLegend.style.paddingBottom = 6;
         _navigationLegend.style.display = DisplayStyle.None;
         Add(_navigationLegend);
     }
@@ -115,9 +106,7 @@ internal sealed class RouteOverlay : VisualElement
             if (i == _batches.Count)
             {
                 var index = i;
-                var batch = new VisualElement { pickingMode = PickingMode.Ignore };
-                batch.style.position = Position.Absolute;
-                batch.style.left = batch.style.right = batch.style.top = batch.style.bottom = 0;
+                var batch = EditorToolkitDocument.CloneTemplate<VisualElement>("Workspace");
                 batch.generateVisualContent += context => Populate(context, index);
                 Insert(0, batch);
                 _batches.Add(batch);
@@ -267,14 +256,7 @@ internal sealed class RouteOverlay : VisualElement
     {
         if (index == _labels.Count)
         {
-            var label = new Label { pickingMode = PickingMode.Ignore, enableRichText = false };
-            label.style.position = Position.Absolute;
-            label.style.fontSize = 14;
-            label.style.unityFontStyleAndWeight = FontStyle.Bold;
-            label.style.backgroundColor = Dark;
-            label.style.paddingLeft = label.style.paddingRight = 4;
-            label.style.maxWidth = 240;
-            label.style.overflow = Overflow.Hidden;
+            var label = EditorToolkitDocument.CloneTemplate<Label>("RouteCaption");
             Add(label);
             _labels.Add(label);
         }

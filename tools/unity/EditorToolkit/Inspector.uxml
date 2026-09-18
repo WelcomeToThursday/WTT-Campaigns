@@ -1,0 +1,278 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="Inspector" class="editor-group">
+        <ui:ScrollView name="PropertyScroll" class="editor-content-scroll">
+            <ui:VisualElement name="SceneInspector" class="editor-group">
+                <ui:VisualElement name="SceneHeadingGroup" class="editor-group">
+                    <ui:Label name="SceneHeading" class="editor-label" text="Select an object" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="ScenePreviewGroup" class="editor-group">
+                    <ui:Image name="ScenePreview" class="editor-preview" />
+                    <ui:Label name="ScenePreviewStatus" class="editor-label" text="Loading preview…" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="ScenePreviewRetryGroup" class="editor-actions editor-action-row">
+                    <ui:Button name="ScenePreviewRetry" class="editor-action" text="Retry preview" />
+                </ui:VisualElement>
+                <ui:VisualElement name="SceneFocusGroup" class="editor-actions editor-action-row editor-divider">
+                    <ui:Button name="SceneFrame" class="editor-action" text="Frame (F)" />
+                    <ui:Button name="SceneAnchor" class="editor-action" text="Anchor: Center" />
+                </ui:VisualElement>
+                <ui:VisualElement name="ScenePlaceGroup" class="editor-actions editor-action-row editor-divider">
+                    <ui:Button name="ScenePlace" class="editor-action" text="Place" />
+                </ui:VisualElement>
+                <ui:VisualElement name="SceneEditGroup" class="editor-actions editor-action-row editor-divider">
+                    <ui:Button name="SceneMove" class="editor-action" text="Move (W)" />
+                    <ui:Button name="SceneRotate" class="editor-action" text="Rotate (E)" />
+                    <ui:Button name="SceneScale" class="editor-action" text="Scale (R)" />
+                    <ui:Button name="SceneRemove" class="editor-action" text="Remove" />
+                </ui:VisualElement>
+                <ui:VisualElement name="SceneRestoreGroup" class="editor-actions editor-action-row editor-divider">
+                    <ui:Label text="RESTORE / REBIND" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                    <ui:Button name="SceneRestore" class="editor-action" text="Restore original" />
+                    <ui:Button name="SceneRebind" class="editor-action" text="Rebind to picked" />
+                </ui:VisualElement>
+                <ui:VisualElement name="SceneInfoGroup" class="editor-group">
+                    <ui:Label name="SceneInfo" class="editor-label" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="RecordInspector" class="editor-group">
+                <ui:VisualElement name="NameGroup" class="editor-group">
+                    <ui:TextField name="Name" class="editor-field" label="Name" />
+                </ui:VisualElement>
+                <ui:VisualElement name="EventKindGroup" class="editor-actions editor-action-row">
+                    <ui:Label text="Event type" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                    <ui:Button name="EventKind" class="editor-action" text="Event kind" />
+                </ui:VisualElement>
+                <ui:VisualElement name="PositionGroup" class="editor-group">
+                    <ui:Label name="PositionCaption" class="editor-label" text="POSITION · metres" picking-mode="Ignore" />
+                    <ui:VisualElement name="PositionAxes" class="editor-actions editor-action-row editor-axes">
+                        <ui:TextField name="PositionX" class="editor-field" label="X" />
+                        <ui:TextField name="PositionY" class="editor-field" label="Y" />
+                        <ui:TextField name="PositionZ" class="editor-field" label="Z" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="RotationGroup" class="editor-group">
+                    <ui:Label name="RotationCaption" class="editor-label" text="ROTATION · degrees" picking-mode="Ignore" />
+                    <ui:VisualElement name="RotationAxes" class="editor-actions editor-action-row editor-axes">
+                        <ui:TextField name="RotationX" class="editor-field" label="X" />
+                        <ui:TextField name="RotationY" class="editor-field" label="Y" />
+                        <ui:TextField name="RotationZ" class="editor-field" label="Z" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="SizeGroup" class="editor-group">
+                    <ui:Label name="SizeCaption" class="editor-label" text="BOX DIMENSIONS · metres" picking-mode="Ignore" />
+                    <ui:VisualElement name="SizeAxes" class="editor-actions editor-action-row editor-axes">
+                        <ui:TextField name="SizeX" class="editor-field" label="X" />
+                        <ui:TextField name="SizeY" class="editor-field" label="Y" />
+                        <ui:TextField name="SizeZ" class="editor-field" label="Z" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="RadiusGroup" class="editor-group">
+                    <ui:TextField name="Radius" class="editor-field" label="SPHERE RADIUS · metres" />
+                </ui:VisualElement>
+                <ui:VisualElement name="PlacementGroup" class="editor-actions editor-action-row editor-separated-group">
+                    <ui:Label text="PLACEMENT" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                    <ui:Button name="AtAim" class="editor-action" text="At aim point" />
+                </ui:VisualElement>
+                <ui:VisualElement name="ZoneUsesGroup" class="editor-group editor-separated-group">
+                    <ui:Label name="ZoneUsesCaption" class="editor-label" text="ZONE TYPE" picking-mode="Ignore" />
+                    <ui:Button name="ZoneUses" class="editor-action editor-choice" text="Select zone types" />
+                </ui:VisualElement>
+                <ui:VisualElement name="ZoneScopeGroup" class="editor-group">
+                    <ui:Button name="ZoneScope" class="editor-action editor-choice" text="ZONE SCOPE" />
+                </ui:VisualElement>
+                <ui:VisualElement name="HazardInfoGroup" class="editor-group">
+                    <ui:Label name="HazardInfo" class="editor-label" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="SniperSoundGroup" class="editor-group">
+                    <ui:VisualElement name="SniperPlaySoundGroup" class="editor-group">
+                        <ui:Button name="SniperPlaySound" class="editor-action editor-choice" text="Play shot sound" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="SniperSuppressedGroup" class="editor-group">
+                        <ui:Button name="SniperSuppressed" class="editor-action editor-choice" text="Suppressed shots" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="SceneActionsGroup" class="editor-actions editor-action-row editor-separated-group">
+                    <ui:Label text="SCENE TARGET" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                    <ui:Button name="Parent" class="editor-action" text="Select parent" />
+                    <ui:Button name="UseObject" class="editor-action" text="Use scene target" />
+                </ui:VisualElement>
+                <ui:VisualElement name="AiTriggerSection" class="editor-group">
+                    <ui:Label name="AiTriggerHeading" class="editor-label" text="ACTIVATION" picking-mode="Ignore" />
+                    <ui:VisualElement name="AiTriggerGroup" class="editor-actions editor-action-row">
+                        <ui:Label text="Trigger type" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                        <ui:Button name="AiTrigger" class="editor-action" text="Trigger" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiTriggerEventIdGroup" class="editor-group">
+                        <ui:TextField name="AiTriggerEventId" class="editor-field" label="Event id" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiTriggerZoneIdGroup" class="editor-group">
+                        <ui:TextField name="AiTriggerZoneId" class="editor-field" label="Trigger zone" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="AiWaveSection" class="editor-group">
+                    <ui:Label name="AiWaveHeading" class="editor-label" text="WAVE TIMING" picking-mode="Ignore" />
+                    <ui:VisualElement name="AiWaveDelaySecondsGroup" class="editor-group">
+                        <ui:TextField name="AiWaveDelaySeconds" class="editor-field" label="Delay (seconds)" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiWaveWaitPreviousGroup" class="editor-actions editor-action-row">
+                        <ui:Label text="Wave sequencing" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                        <ui:Button name="AiWaveWaitPrevious" class="editor-action" text="Wave wait mode" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="AiRosterSection" class="editor-group">
+                    <ui:Label name="AiRosterHeading" class="editor-label" text="BOT ROSTER" picking-mode="Ignore" />
+                    <ui:VisualElement name="AiRosterRoleGroup" class="editor-actions editor-action-row">
+                        <ui:Label text="Bot role" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                        <ui:Button name="AiRosterRole" class="editor-action" text="Roster role" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiRosterDifficultyGroup" class="editor-actions editor-action-row">
+                        <ui:Label text="Roster difficulty" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                        <ui:Button name="AiRosterDifficulty" class="editor-action" text="Roster difficulty" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiRosterCountGroup" class="editor-group">
+                        <ui:TextField name="AiRosterCount" class="editor-field" label="Bot count" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiRosterSquadIdGroup" class="editor-group">
+                        <ui:TextField name="AiRosterSquadId" class="editor-field" label="Squad name" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="AiAssignmentSection" class="editor-group">
+                    <ui:Label name="AiAssignmentHeading" class="editor-label" text="SPAWN &amp; PATROL ASSIGNMENTS" picking-mode="Ignore" />
+                    <ui:VisualElement name="AiRosterSpawnNextGroup" class="editor-group">
+                        <ui:Button name="AiRosterSpawnNext" class="editor-action editor-choice" text="Choose spawn points" />
+                    </ui:VisualElement>
+                    <ui:Label name="AiAssignedSpawns" class="editor-label" text="No spawns assigned" picking-mode="Ignore" />
+                    <ui:VisualElement name="AiRosterSpawnPointsGroup" class="editor-group">
+                        <ui:TextField name="AiRosterSpawnPoints" class="editor-field" label="Spawn point ids" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiRosterPatrolNextGroup" class="editor-group">
+                        <ui:Button name="AiRosterPatrolNext" class="editor-action editor-choice" text="Choose patrol" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiRosterPatrolRouteGroup" class="editor-group">
+                        <ui:TextField name="AiRosterPatrolRoute" class="editor-field" label="Patrol route id" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="AiPatrolSection" class="editor-group">
+                    <ui:Label name="AiPatrolHeading" class="editor-label" text="PATROL MOVEMENT" picking-mode="Ignore" />
+                    <ui:VisualElement name="AiPaceGroup" class="editor-actions editor-action-row">
+                        <ui:Label text="Movement pace" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                        <ui:Button name="AiPace" class="editor-action" text="Patrol pace" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiCompletionGroup" class="editor-actions editor-action-row">
+                        <ui:Label text="At route end" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                        <ui:Button name="AiCompletion" class="editor-action" text="Patrol completion" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiWaypointWaitSecondsGroup" class="editor-group">
+                        <ui:TextField name="AiWaypointWaitSeconds" class="editor-field" label="Wait (seconds)" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="RecordActionsGroup" class="editor-actions editor-action-row editor-separated-group">
+                    <ui:Label text="SELECTION" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                    <ui:Button name="Duplicate" class="editor-action" text="Duplicate" />
+                    <ui:Button name="Delete" class="editor-action" text="Delete" />
+                </ui:VisualElement>
+                <ui:VisualElement name="RecordDetailsToggleGroup" class="editor-actions editor-action-row">
+                    <ui:Button name="RecordDetailsToggle" class="editor-action" text="Details +" />
+                </ui:VisualElement>
+                <ui:VisualElement name="IdentityGroup" class="editor-group">
+                    <ui:Label name="Identity" class="editor-label" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="DetailsGroup" class="editor-group">
+                    <ui:Label name="Details" class="editor-label" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement name="MapInspector" class="editor-group">
+                <ui:VisualElement name="RouteGuideGroup" class="editor-group">
+                    <ui:Label name="RouteGuide" class="editor-label" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapNameGroup" class="editor-group">
+                    <ui:TextField name="MapName" class="editor-field" label="Name" />
+                </ui:VisualElement>
+                <ui:VisualElement name="DoorInspectorGroup" class="editor-group">
+                    <ui:VisualElement name="DoorStartStateGroup" class="editor-group">
+                        <ui:Button name="DoorStartState" class="editor-action editor-choice" text="Starting state" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="DoorKeyIdGroup" class="editor-group">
+                        <ui:TextField name="DoorKeyId" class="editor-field" label="Key ID" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="DoorKeySearchGroup" class="editor-group">
+                        <ui:TextField name="DoorKeySearch" class="editor-field" label="Find key by name" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="DoorKeyResultsGroup" class="editor-group">
+                        <ui:Button name="DoorKeyResults" class="editor-action editor-choice" text="Matching keys" />
+                    </ui:VisualElement>
+                    <ui:Button name="DoorUseKey" class="editor-action" text="Use selected key" />
+                    <ui:Button name="DoorOriginalKey" class="editor-action" text="Use original key" />
+                    <ui:VisualElement name="DoorBreachGroup" class="editor-group">
+                        <ui:Button name="DoorBreach" class="editor-action editor-choice" text="Breaching" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="DoorOperatableGroup" class="editor-group">
+                        <ui:Button name="DoorOperatable" class="editor-action editor-choice" text="Interaction" />
+                    </ui:VisualElement>
+                    <ui:Label name="DoorHelp" class="editor-label" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapNormalRaidGroup" class="editor-actions editor-action-row">
+                    <ui:Button name="MapNormalRaid" class="editor-action" text="Apply in normal raids: off" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapLayerHelpGroup" class="editor-group">
+                    <ui:Label name="MapLayerHelp" class="editor-label" text="After publication: regular characters combine enabled layers from all published campaigns; campaign characters use their own campaign. Scenery, doors, barriers and loot apply; routes, zones and AI remain separate." picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapPositionGroup" class="editor-group">
+                    <ui:Label name="MapPositionCaption" class="editor-label" text="POSITION · metres" picking-mode="Ignore" />
+                    <ui:VisualElement name="MapPositionAxes" class="editor-actions editor-action-row editor-axes">
+                        <ui:TextField name="MapPositionX" class="editor-field" label="X" />
+                        <ui:TextField name="MapPositionY" class="editor-field" label="Y" />
+                        <ui:TextField name="MapPositionZ" class="editor-field" label="Z" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="MapRotationGroup" class="editor-group">
+                    <ui:Label name="MapRotationCaption" class="editor-label" text="ROTATION · degrees" picking-mode="Ignore" />
+                    <ui:VisualElement name="MapRotationAxes" class="editor-actions editor-action-row editor-axes">
+                        <ui:TextField name="MapRotationX" class="editor-field" label="X" />
+                        <ui:TextField name="MapRotationY" class="editor-field" label="Y" />
+                        <ui:TextField name="MapRotationZ" class="editor-field" label="Z" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="MapSizeGroup" class="editor-group">
+                    <ui:Label name="MapSizeCaption" class="editor-label" text="SIZE / SCALE" picking-mode="Ignore" />
+                    <ui:VisualElement name="MapSizeAxes" class="editor-actions editor-action-row editor-axes">
+                        <ui:TextField name="MapSizeX" class="editor-field" label="X" />
+                        <ui:TextField name="MapSizeY" class="editor-field" label="Y" />
+                        <ui:TextField name="MapSizeZ" class="editor-field" label="Z" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="MapShapeGroup" class="editor-actions editor-action-row">
+                    <ui:Label text="Volume shape" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                    <ui:Button name="MapShape" class="editor-action" text="Shape: box" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapPlacementGroup" class="editor-actions editor-action-row">
+                    <ui:Button name="MapRebind" class="editor-action" text="Rebind to picked" />
+                    <ui:Button name="MapAtPlayer" class="editor-action" text="At player" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapOrderGroup" class="editor-actions editor-action-row">
+                    <ui:Label text="CHECKPOINT ORDER" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                    <ui:Button name="MapEarlier" class="editor-action" text="Earlier checkpoint" />
+                    <ui:Button name="MapLater" class="editor-action" text="Later checkpoint" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapWalkGroup" class="editor-actions editor-action-row">
+                    <ui:Button name="MapWalkStart" class="editor-action" text="Walk from marker: off" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapRecordActions" class="editor-actions editor-action-row">
+                    <ui:Label text="SELECTION" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
+                    <ui:Button name="MapCopy" class="editor-action" text="Duplicate" />
+                    <ui:Button name="MapDelete" class="editor-action" text="Delete" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapDetailsToggleGroup" class="editor-actions editor-action-row">
+                    <ui:Button name="MapDetailsToggle" class="editor-action" text="Details +" />
+                </ui:VisualElement>
+                <ui:VisualElement name="RouteFrameGroup" class="editor-actions editor-action-row">
+                    <ui:Button name="RouteFrame" class="editor-action" text="Frame waypoint" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MapDetailsGroup" class="editor-group">
+                    <ui:Label name="MapDetails" class="editor-label" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

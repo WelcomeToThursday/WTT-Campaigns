@@ -10,7 +10,7 @@ internal sealed partial class EditorToolkitWindows
 {
     private readonly RaidEditorView _view;
     private readonly Dictionary<string, EditorWindowPlacement> _panels = new();
-    private readonly Label _tooltip = new() { pickingMode = PickingMode.Ignore, enableRichText = false };
+    private readonly Label _tooltip;
     private VisualElement? _tooltipAnchor;
     private string _selection = "",
         _category = "";
@@ -23,8 +23,8 @@ internal sealed partial class EditorToolkitWindows
     private Vector2 _size;
     private int _scalePercent;
     private EditorDockNode _dock = EditorDockNode.Default();
-    private readonly VisualElement _chrome = new() { pickingMode = PickingMode.Ignore };
-    private readonly VisualElement _dropPreview = new() { pickingMode = PickingMode.Ignore };
+    private readonly VisualElement _chrome;
+    private readonly VisualElement _dropPreview;
     private readonly Dictionary<string, VisualElement> _bars = new(),
         _dividers = new();
     private readonly Dictionary<string, Rect> _windowBounds = new();
@@ -50,6 +50,9 @@ internal sealed partial class EditorToolkitWindows
     internal EditorToolkitWindows(RaidEditorView view)
     {
         _view = view;
+        _tooltip = view.Document.Clone<Label>("Tooltip");
+        _chrome = view.Document.Clone<VisualElement>("Workspace");
+        _dropPreview = view.Document.Clone<VisualElement>("DropPreview");
         foreach (
             var id in RaidEditorView
                 .ToolIds.AsValueEnumerable()
@@ -105,11 +108,7 @@ internal sealed partial class EditorToolkitWindows
                 UpdateDetails();
             }
         );
-        _chrome.style.position = Position.Absolute;
-        _chrome.style.left = _chrome.style.top = _chrome.style.right = _chrome.style.bottom = 0;
         _view.Element("Workspace").Add(_chrome);
-        _dropPreview.style.position = Position.Absolute;
-        _dropPreview.style.backgroundColor = new Color(.65f, .60f, .40f, .28f);
         _dropPreview.style.display = DisplayStyle.None;
         _view.Element("Workspace").Add(_dropPreview);
         _tooltip.AddToClassList("editor-tooltip");
@@ -325,8 +324,7 @@ internal sealed partial class EditorToolkitWindows
         foreach (var tool in RaidEditorView.ToolIds)
         {
             var button = _view.Element(tool);
-            button.style.borderLeftWidth = IsOpen("Tool:" + tool) ? 3 : 1;
-            button.style.borderLeftColor = IsOpen("Tool:" + tool) ? new Color(.65f, .6f, .4f) : new Color(.38f, .39f, .36f);
+            button.EnableInClassList("editor-open-tool", IsOpen("Tool:" + tool));
             _view.Highlight(tool, ActiveTool == tool);
         }
     }

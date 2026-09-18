@@ -1,0 +1,87 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="Library" class="editor-group">
+        <ui:VisualElement name="BrowserFilters" class="editor-action-row editor-compact-strip">
+            <ui:VisualElement name="SceneTabs" class="editor-actions editor-action-row">
+                <ui:Button name="SceneCatalog" class="editor-action" text="Catalog" />
+                <ui:Button name="SceneExisting" class="editor-action" text="In scene" />
+                <ui:Button name="SceneChanges" class="editor-action" text="Changes" />
+            </ui:VisualElement>
+            <ui:VisualElement name="SceneFilters" class="editor-actions editor-action-row">
+                <ui:Button name="SceneSource" class="editor-action editor-choice" text="Source" />
+                <ui:Button name="SceneProps" class="editor-action" text="Props" />
+                <ui:Button name="SceneContainers" class="editor-action" text="Containers" />
+                <ui:Button name="SceneDoors" class="editor-action" text="Doors" />
+                <ui:Button name="SceneLoot" class="editor-action" text="Loot" />
+                <ui:Button name="ScenePresets" class="editor-action" text="Presets" />
+            </ui:VisualElement>
+            <ui:VisualElement name="CatalogViews" class="editor-actions editor-action-row">
+                <ui:Button name="CatalogGrid" class="editor-action" text="Grid" />
+                <ui:Button name="CatalogList" class="editor-action" text="List" />
+            </ui:VisualElement>
+            <ui:TextField name="Search" class="editor-field" label="Search" />
+        </ui:VisualElement>
+        <ui:VisualElement name="LibraryScroll" class="editor-browser-content">
+            <ui:ScrollView name="BrowserPages" class="editor-browser-view" />
+            <ui:ListView name="BrowserTree" class="editor-browser-view" />
+        </ui:VisualElement>
+        <ui:VisualElement name="BrowserFooter" class="editor-action-row">
+            <ui:Label name="LibraryCount" class="editor-label" text="No records" picking-mode="Ignore" />
+            <ui:VisualElement name="Paging" class="editor-actions editor-action-row">
+                <ui:Button name="Previous" class="editor-action" text="Previous" />
+                <ui:Button name="Next" class="editor-action" text="Next" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:ScrollView name="ToolActionsScroll" class="editor-tool-actions-scroll">
+            <ui:VisualElement name="CreationTools" class="editor-actions editor-action-row">
+                <ui:Label class="editor-heading editor-creation-heading" picking-mode="Ignore" />
+                <ui:Button name="ZoneCreateScope" class="editor-action editor-choice" text="New zone scope" />
+                <ui:Button name="AddBox" class="editor-action" text="+ Box" />
+                <ui:Button name="AddMinefield" class="editor-action" text="+ Minefield" />
+                <ui:Button name="AddClaymore" class="editor-action" text="+ Claymore" />
+                <ui:Button name="AddSniper" class="editor-action" text="+ Sniper zone" />
+                <ui:Button name="AddBarbedWire" class="editor-action" text="+ Barbed wire" />
+                <ui:Button name="AddSphere" class="editor-action" text="+ Sphere" />
+                <ui:Button name="Capture" class="editor-action" text="Capture" />
+                <ui:Button name="Pick" class="editor-action" text="Pick scenery" />
+                <ui:Button name="MapNew" class="editor-action" text="+ Layout" />
+                <ui:Button name="MapStart" class="editor-action" text="Set start" />
+                <ui:Button name="MapCheckpoint" class="editor-action" text="+ Checkpoint" />
+                <ui:Button name="MapExit" class="editor-action" text="Set exit" />
+                <ui:Button name="MapBarrier" class="editor-action" text="+ Barrier" />
+                <ui:Button name="MapMoveObject" class="editor-action" text="Move prop" />
+                <ui:Button name="MapCopyObject" class="editor-action" text="Copy prop" />
+                <ui:Button name="MapHideObject" class="editor-action" text="Hide prop" />
+                <ui:Button name="MapDoor" class="editor-action" text="Door state" />
+            </ui:VisualElement>
+            <ui:ScrollView name="AiToolsScroll" class="editor-ai-tools-scroll">
+                <ui:VisualElement name="AiTools" class="editor-group">
+                    <ui:VisualElement name="AiCreateSection" class="editor-group">
+                        <ui:Label name="AiCreateHeading" class="editor-label" text="BUILD ENCOUNTERS" picking-mode="Ignore" />
+                        <ui:VisualElement name="AiCreateRow" class="editor-actions editor-action-row">
+                            <ui:Button name="AiEncounter" class="editor-action" text="+ Encounter" />
+                            <ui:Button name="AiWave" class="editor-action" text="+ Wave" />
+                            <ui:Button name="AiRoster" class="editor-action" text="+ Roster" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="AiPlacementRow" class="editor-actions editor-action-row">
+                            <ui:Button name="AiSpawn" class="editor-action" text="+ Spawn" />
+                            <ui:Button name="AiPatrol" class="editor-action" text="+ Patrol" />
+                            <ui:Button name="AiWaypoint" class="editor-action" text="+ Waypoint" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiNavigationSection" class="editor-group">
+                        <ui:Label name="AiNavigationHeading" class="editor-label" text="NAVIGATION" picking-mode="Ignore" />
+                        <ui:Button name="AiNavigation" class="editor-action" text="Inspect navigation: off" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="AiPreviewSection" class="editor-group">
+                        <ui:Label name="AiPreviewHeading" class="editor-label" text="TEST ENCOUNTERS" picking-mode="Ignore" />
+                        <ui:VisualElement name="AiRunRow" class="editor-actions editor-action-row">
+                            <ui:Button name="AiSimulate" class="editor-action" text="Trigger selected" />
+                            <ui:Button name="AiReset" class="editor-action" text="Reset preview" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:ScrollView>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

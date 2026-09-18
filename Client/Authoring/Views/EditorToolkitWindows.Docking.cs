@@ -28,28 +28,19 @@ internal sealed partial class EditorToolkitWindows
                 continue;
             if (node.Kind == "tabs")
             {
-                var bar = new ScrollView(ScrollViewMode.Horizontal);
-                bar.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
-                bar.verticalScrollerVisibility = ScrollerVisibility.Hidden;
-                bar.contentContainer.style.flexDirection = FlexDirection.Row;
-                bar.style.backgroundColor = new Color(.09f, .095f, .09f, 1);
+                var bar = _view.Document.Clone<ScrollView>("DockTabs");
                 _bars.Add(node.Id, bar);
                 _chrome.Add(bar);
                 foreach (var id in node.Tabs.AsValueEnumerable().Where(open.Contains))
                 {
-                    var tab = new Label(
+                    var tab = _view.Document.Clone<Label>("DockTab");
+                    tab.text =
                         id.StartsWith("Tool:") ? RaidEditorView.ToolTitle(id.Substring(5))
                         : id == "LootConfiguration" ? "Loot configuration"
                         : id == "Inspector" ? "Properties"
                         : id == "Controls" ? "Help"
-                        : "Environment"
-                    );
-                    tab.style.paddingLeft = tab.style.paddingRight = 9;
-                    tab.style.height = 26;
-                    tab.style.minWidth = 65;
-                    tab.style.flexShrink = 0;
-                    tab.style.unityTextAlign = TextAnchor.MiddleCenter;
-                    tab.style.backgroundColor = id == node.Active ? new Color(.30f, .28f, .20f) : new Color(.13f, .14f, .13f);
+                        : "Environment";
+                    tab.EnableInClassList("editor-active-tab", id == node.Active);
                     tab.userData = id;
                     tab.tooltip = "Drag to reorder, dock or float";
                     bar.Add(tab);
@@ -63,8 +54,7 @@ internal sealed partial class EditorToolkitWindows
                 && EditorDockLayout.Visible(node.Second, open)
             )
             {
-                var divider = new VisualElement();
-                divider.style.backgroundColor = new Color(.22f, .23f, .21f);
+                var divider = _view.Document.Clone<VisualElement>("DockDivider");
                 _dividers.Add(node.Id, divider);
                 _chrome.Add(divider);
                 divider.RegisterCallback<PointerDownEvent>(evt =>

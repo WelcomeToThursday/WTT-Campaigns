@@ -183,8 +183,7 @@ internal sealed partial class RaidEditorView : IDisposable
         if (!choice.interactable)
             return;
         DismissDropdowns();
-        var shield = new VisualElement();
-        shield.AddToClassList("editor-popup-shield");
+        var shield = Document.Clone<VisualElement>("ChoicePopup");
         _choicePopup = shield;
         Document.Content.Add(shield);
         shield.RegisterCallback<PointerDownEvent>(evt =>
@@ -192,27 +191,23 @@ internal sealed partial class RaidEditorView : IDisposable
             if (evt.target == shield)
                 DismissDropdowns();
         });
-        var list = new ScrollView();
+        var list = shield.Q<ScrollView>("Choices");
         EditorScrollStyle.Apply(list);
-        list.AddToClassList("editor-choice-menu");
         var rect = choice.Element.worldBound;
         list.style.left = Mathf.Clamp(rect.x, 8, Document.Width - 308);
         list.style.top = Mathf.Clamp(rect.yMax, 8, Document.Height - 248);
         list.style.width = Mathf.Max(250, Mathf.Min(rect.width, Document.Width - 16));
-        list.style.maxHeight = 240;
-        shield.Add(list);
         for (var i = 0; i < choice.options.Count; i++)
         {
             var index = i;
-            var button = new Button(() =>
+            var button = Document.Clone<Button>("ChoiceOption");
+            button.clicked += () =>
             {
                 DismissDropdowns();
                 choice.SetValueWithoutNotify(index);
                 choice.onValueChanged.Invoke(index);
-            })
-            {
-                text = choice.options[i].text,
             };
+            button.text = choice.options[i].text;
             button.EnableInClassList("editor-selected", i == choice.value);
             list.Add(button);
         }

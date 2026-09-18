@@ -201,26 +201,15 @@ internal sealed class EditorChoice : EditorControl
     internal void AddFieldLabel(string caption, bool compact = false)
     {
         var button = (Button)Element;
-        _valueLabel = new Label(button.text) { pickingMode = PickingMode.Ignore, enableRichText = false };
+        var content = EditorToolkitDocument.CloneTemplate<VisualElement>("ChoiceField");
+        _valueLabel = content.Q<Label>("Value");
+        _valueLabel.text = button.text;
+        content.Q<Label>("Caption").text = caption;
         button.text = "";
-        button.style.flexDirection = FlexDirection.Row;
-        button.style.alignItems = Align.Center;
-        var label = new Label(caption) { pickingMode = PickingMode.Ignore, enableRichText = false };
-        label.style.width = compact ? new StyleLength(StyleKeyword.Auto) : Length.Percent(35);
-        label.style.minWidth = compact ? 0 : 70;
-        label.style.maxWidth = compact ? new StyleLength(StyleKeyword.None) : new StyleLength(140);
-        label.style.marginRight = compact ? 8 : 0;
-        label.style.flexShrink = 0;
-        label.style.color = new Color(.64f, .67f, .64f);
-        label.style.whiteSpace = compact ? WhiteSpace.NoWrap : WhiteSpace.Normal;
-        _valueLabel.style.flexGrow = _valueLabel.style.flexShrink = 1;
-        _valueLabel.style.minWidth = 0;
-        _valueLabel.style.whiteSpace = WhiteSpace.Normal;
-        button.Add(label);
-        button.Add(_valueLabel);
-        var arrow = new Label("▾") { pickingMode = PickingMode.Ignore };
-        arrow.style.flexShrink = 0;
-        button.Add(arrow);
+        button.AddToClassList("editor-choice-field");
+        button.EnableInClassList("editor-choice-compact", compact);
+        while (content.childCount > 0)
+            button.Add(content[0]);
     }
 
     internal sealed class OptionData

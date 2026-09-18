@@ -12,8 +12,17 @@ if ($server) {
 if ($client) {
     $notificationRoot = Split-Path $client -Parent
     $toolkitCheck = Get-Content -LiteralPath (Join-Path $notificationRoot 'editor-toolkit-validation.json') -Raw | ConvertFrom-Json
-    if ($toolkitCheck.schema -ne 1 -or !$toolkitCheck.validated -or $toolkitCheck.unity -ne '2022.3.43f1' -or (Get-FileHash -LiteralPath (Join-Path $notificationRoot 'wtt_campaigns_editor_toolkit.bundle') -Algorithm SHA256).Hash -ne $toolkitCheck.sha256) {
+    if ($toolkitCheck.schema -ne 2 -or !$toolkitCheck.validated -or $toolkitCheck.unity -ne '2022.3.43f1' -or (Get-FileHash -LiteralPath (Join-Path $notificationRoot 'wtt_campaigns_editor_toolkit.bundle') -Algorithm SHA256).Hash -ne $toolkitCheck.sha256) {
         throw 'Editor Toolkit bundle must pass matching Unity SDK import and bundle validation before installation.'
+    }
+    $toolkitSources = @('CampaignsEditorToolkitBuilder.cs') + @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'unity/EditorToolkit') -File | Where-Object { $_.Extension -in '.uxml', '.uss' } | ForEach-Object { 'EditorToolkit/' + $_.Name })
+    if ((($toolkitSources | Sort-Object) -join ',') -ne (($toolkitCheck.sources.file | Sort-Object) -join ',')) {
+        throw 'Editor Toolkit source inventory changed. Rebuild the Unity assets.'
+    }
+    foreach ($source in $toolkitCheck.sources) {
+        if ((Get-FileHash -LiteralPath (Join-Path $PSScriptRoot ('unity/' + $source.file)) -Algorithm SHA256).Hash -ne $source.sha256) {
+            throw "Editor Toolkit source changed after bundle validation: $($source.file). Rebuild the Unity assets."
+        }
     }
     $notificationCheck = Get-Content -LiteralPath (Join-Path $notificationRoot 'story-notification-validation.json') -Raw | ConvertFrom-Json
     if (@($notificationCheck.prefabs).Count -ne 3 -or @($notificationCheck.dependencies) -notcontains 'wtt_campaigns_ui.bundle') {

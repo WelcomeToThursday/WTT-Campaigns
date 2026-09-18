@@ -1,0 +1,60 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="LootConfiguration" class="editor-group">
+        <ui:ScrollView name="ContainerScroll" class="editor-content-scroll">
+            <ui:Label name="ContainerSelection" class="editor-label" text="Select a lootable container" picking-mode="Ignore" />
+            <ui:Label name="ContainerEmpty" class="editor-label" text="Click a placed container in the scene to configure its loot." picking-mode="Ignore" />
+            <ui:VisualElement name="ContainerSettingsGroup" class="editor-group">
+                <ui:VisualElement name="ContainerLootSection" class="editor-group">
+                    <ui:Label name="ContainerHeading" class="editor-label" text="CONTENTS" picking-mode="Ignore" />
+                    <ui:VisualElement name="ContainerModeGroup" class="editor-group">
+                        <ui:Button name="ContainerMode" class="editor-action editor-choice" text="Contents" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerPoolGroup" class="editor-group">
+                        <ui:Button name="ContainerPool" class="editor-action editor-choice" text="Loot pool" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerChanceGroup" class="editor-group">
+                        <ui:TextField name="ContainerChance" class="editor-field" label="Spawn chance (%)" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="ContainerFixedSection" class="editor-group">
+                    <ui:Label name="ContainerFixedHeading" class="editor-label" text="FIXED CONTENTS" picking-mode="Ignore" />
+                    <ui:VisualElement name="ContainerSearchGroup" class="editor-group">
+                        <ui:TextField name="ContainerSearch" class="editor-field" label="Find an item" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerItemGroup" class="editor-group">
+                        <ui:Button name="ContainerItem" class="editor-action editor-choice" text="Search results" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerQuantityGroup" class="editor-group">
+                        <ui:TextField name="ContainerQuantity" class="editor-field" label="Quantity" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerItemActions" class="editor-actions editor-action-row">
+                        <ui:Button name="ContainerAdd" class="editor-action" text="Add item" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerContentsGroup" class="editor-group">
+                        <ui:Button name="ContainerContents" class="editor-action editor-choice" text="Contents" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerRemoveGroup" class="editor-actions editor-action-row">
+                        <ui:Button name="ContainerRemove" class="editor-action" text="Remove selected item" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="ContainerAccessSection" class="editor-group">
+                    <ui:Label name="ContainerAccessHeading" class="editor-label" text="ACCESS" picking-mode="Ignore" />
+                    <ui:VisualElement name="ContainerLockGroup" class="editor-actions editor-action-row">
+                        <ui:Button name="ContainerLock" class="editor-action" text="Unlocked" />
+                    </ui:VisualElement>
+                    <ui:Label name="ContainerKey" class="editor-label" text="No key selected" picking-mode="Ignore" />
+                    <ui:VisualElement name="ContainerKeySearchGroup" class="editor-group">
+                        <ui:TextField name="ContainerKeySearch" class="editor-field" label="Find a key" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerKeyItemGroup" class="editor-group">
+                        <ui:Button name="ContainerKeyItem" class="editor-action editor-choice" text="Keys" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="ContainerKeyActions" class="editor-actions editor-action-row">
+                        <ui:Button name="ContainerUseKey" class="editor-action" text="Use selected key" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

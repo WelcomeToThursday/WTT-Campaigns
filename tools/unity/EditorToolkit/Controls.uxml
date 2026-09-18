@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="Controls" class="editor-group">
+        <ui:ScrollView name="ControlsScroll" class="editor-content-scroll">
+            <ui:Label name="Help" class="editor-label" text="RMB + WASD: fly · Q / E: elevation&#10;Fly m/s: speed · Shift: 4× · Ctrl: precision&#10;Drag handles · Alt: bypass snap · Ctrl+Z/Y: undo/redo&#10;Drag titles or dock tabs to float, split or group tools. Drag dividers to resize docks.&#10;The left rail opens tools. Drag a floating corner to resize. Reset layout restores defaults.&#10;Escape dismisses menus, releases a field, cancels a tool, then closes." picking-mode="Ignore" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

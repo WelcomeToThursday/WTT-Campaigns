@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="ConflictShield" class="editor-modal-shield">
+        <ui:VisualElement name="Conflict" class="editor-modal">
+            <ui:Label name="ConflictHeading" class="editor-label" text="Resolve draft conflict" picking-mode="Ignore" />
+            <ui:Label name="ConflictPath" class="editor-label" picking-mode="Ignore" />
+            <ui:TextField name="LocalConflict" class="editor-field editor-conflict-text" label="Local version" multiline="true" readonly="true" />
+            <ui:TextField name="RemoteConflict" class="editor-field editor-conflict-text" label="Remote version" multiline="true" readonly="true" />
+            <ui:VisualElement name="ConflictActions" class="editor-actions editor-action-row">
+                <ui:Button name="KeepLocal" class="editor-action" text="Keep local" />
+                <ui:Button name="KeepRemote" class="editor-action" text="Keep remote" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

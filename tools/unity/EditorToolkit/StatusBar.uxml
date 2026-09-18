@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="StatusBar" class="editor-toolbar editor-actions editor-action-row">
+        <ui:Label name="Status" text="" class="editor-label" picking-mode="Ignore" />
+        <ui:Label name="Request" text="" class="editor-label" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

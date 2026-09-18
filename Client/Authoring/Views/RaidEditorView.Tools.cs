@@ -66,31 +66,8 @@ internal sealed partial class RaidEditorView
                 _toolControls.Add(tool, new());
                 _browsers.Add(tool, new());
                 _registerLocal = true;
-                var window = BuildNode(spec, Element("Workspace"));
-                window.AddToClassList("editor-window");
-                window.AddToClassList("editor-surface");
-                var title = new VisualElement();
-                title.AddToClassList("editor-window-title");
-                var label = new Label(ToolTitle(tool).ToUpperInvariant()) { pickingMode = PickingMode.Ignore };
-                Register("LibraryHeading", new EditorLabel(label));
-                title.Add(label);
-                var close = new Button { text = "×", tooltip = "Hide window" };
-                Register("LibraryCollapse", new EditorButton(close));
-                title.Add(close);
-                Register("LibraryTitleBar", new EditorControl(title));
-                window.Insert(0, title);
-                var resize = new VisualElement();
-                resize.AddToClassList("editor-resize");
-                resize.Add(new Label("◢") { pickingMode = PickingMode.Ignore });
-                Register("LibraryResize", new EditorControl(resize));
-                window.Add(resize);
-                var aiScroll = new ScrollView();
-                EditorScrollStyle.Apply(aiScroll);
-                Register("AiToolsScroll", new EditorControl(aiScroll));
-                var ai = Element("AiTools");
-                var index = window.IndexOf(ai);
-                window.Insert(index, aiScroll);
-                aiScroll.Add(ai);
+                var window = BindAuthored(spec, Element("Workspace"));
+                BindWindowChrome(window, "Library", ToolTitle(tool).ToUpperInvariant(), "LibraryCollapse");
                 BuildBrowser();
                 ApplyIcons();
                 _registerLocal = false;
@@ -98,21 +75,7 @@ internal sealed partial class RaidEditorView
             ConfigureToolSurface(tool);
         }
         ToolContext = "Layouts";
-        var rail = Element("CategoryRail");
-        rail.style.position = Position.Absolute;
-        rail.style.left = 8;
-        rail.style.top = 84;
-        rail.style.width = 40;
-        rail.style.bottom = 44;
-        rail.style.flexDirection = FlexDirection.Column;
-        rail.style.flexWrap = Wrap.NoWrap;
-        rail.style.backgroundColor = new Color(.075f, .08f, .075f, .96f);
-        var railScroll = new ScrollView();
-        EditorScrollStyle.Apply(railScroll);
-        railScroll.style.flexGrow = 1;
-        foreach (var child in rail.Children().AsValueEnumerable().ToArray())
-            railScroll.Add(child);
-        rail.Add(railScroll);
+        EditorScrollStyle.Apply(Element("CategoryRail").Q<ScrollView>("RailScroll"));
     }
 
     private void ConfigureToolSurface(string tool)
@@ -134,58 +97,10 @@ internal sealed partial class RaidEditorView
         window.RegisterCallback<FocusInEvent>(_ => Activate(tool));
         Element("LibraryHeading").tooltip = ToolTitle(tool);
         Text("LibraryHeading", ToolTitle(tool).ToUpperInvariant());
-        // Project-style filter toolbar and a single compact status/paging footer.
-        var filters = new VisualElement { name = "BrowserFilters" };
-        EditorControlLayout.Row(filters);
-        window.Insert(window.IndexOf(Element("SceneTabs")), filters);
-        filters.Add(Element("SceneTabs"));
-        filters.Add(Element("SceneFilters"));
-        filters.Add(Element("CatalogViews"));
-        filters.Add(Element("Search"));
-        foreach (var id in new[] { "SceneTabs", "SceneFilters", "CatalogViews" })
-        {
-            // Intrinsic groups wrap as units. Percentage constraints on nested
-            // auto-sized rows made a short filter group wrap inside itself.
-            var group = Element(id);
-            group.RemoveFromClassList("editor-actions");
-            group.style.maxWidth = StyleKeyword.None;
-            group.style.flexWrap = Wrap.NoWrap;
-            group.style.flexShrink = 0;
-            group.style.alignItems = Align.Center;
-            foreach (var child in group.Children())
-            {
-                child.style.maxWidth = StyleKeyword.None;
-                child.style.whiteSpace = WhiteSpace.NoWrap;
-            }
-        }
-        Element("SceneFilters").style.marginLeft = 12;
-        Element("CatalogViews").style.marginLeft = 12;
         ((EditorButton)_toolControls[tool]["CatalogGrid"]).onClick.AddListener(() => SetCatalogGrid(tool, true));
         ((EditorButton)_toolControls[tool]["CatalogList"]).onClick.AddListener(() => SetCatalogGrid(tool, false));
         Element("CatalogViews").style.display = DisplayStyle.None;
-        var footer = new VisualElement { name = "BrowserFooter" };
-        EditorControlLayout.Row(footer);
-        window.Insert(window.IndexOf(Element("LibraryCount")), footer);
-        footer.Add(Element("LibraryCount"));
-        footer.Add(Element("Paging"));
-        Element("LibraryCount").style.flexGrow = 1;
-        Element("Paging").style.flexWrap = Wrap.NoWrap;
-        var list = Element("LibraryScroll");
-        list.style.flexGrow = list.style.flexShrink = 1;
-        list.style.flexBasis = 0;
-        list.style.minHeight = 22;
-        list.style.overflow = Overflow.Hidden;
-        var actions = new ScrollView();
-        EditorScrollStyle.Apply(actions);
-        RegisterToolControl(tool, "ToolActionsScroll", new EditorControl(actions));
-        actions.style.flexShrink = 1;
-        actions.style.minHeight = 0;
-        actions.style.maxHeight = 210;
-        window.Insert(window.IndexOf(Element("CreationTools")), actions);
-        actions.Add(Element("CreationTools"));
-        actions.Add(Element("AiToolsScroll"));
-        Element("AiToolsScroll").style.maxHeight = StyleKeyword.None;
-        Element("CreationTools").AddToClassList("editor-grid");
+        var actions = (ScrollView)Element("ToolActionsScroll");
         window.RegisterCallback<GeometryChangedEvent>(evt =>
         {
             actions.style.maxHeight =
@@ -200,12 +115,6 @@ internal sealed partial class RaidEditorView
     }
 
     private VisualElement ElementForTool(string tool, string id) => _toolControls[tool][id].Element;
-
-    private void RegisterToolControl(string tool, string id, EditorControl control)
-    {
-        control.Element.name = id;
-        _toolControls[tool].Add(id, control);
-    }
 
     internal void ConfigureToolActions(string tool, bool mapReady, bool sceneWorkspace)
     {

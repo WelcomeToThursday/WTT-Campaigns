@@ -1,0 +1,40 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="EnvironmentMenu" class="editor-group">
+        <ui:ScrollView name="EnvironmentScroll" class="editor-content-scroll">
+            <ui:Label name="EnvironmentTitle" class="editor-label" text="TIME OF DAY" picking-mode="Ignore" />
+            <ui:TextField name="EnvironmentHour" class="editor-field" label="HH:mm" />
+            <ui:Button name="EnvironmentApply" class="editor-action" text="Set time" />
+            <ui:VisualElement name="EnvironmentPresets" class="editor-actions editor-action-row">
+                <ui:Button name="EnvironmentDawn" class="editor-action" text="Dawn" />
+                <ui:Button name="EnvironmentNoon" class="editor-action" text="Noon" />
+                <ui:Button name="EnvironmentDusk" class="editor-action" text="Dusk" />
+                <ui:Button name="EnvironmentNight" class="editor-action" text="Night" />
+            </ui:VisualElement>
+            <ui:VisualElement name="EnvironmentStep" class="editor-actions editor-action-row">
+                <ui:Button name="EnvironmentEarlier" class="editor-action" text="−1 hour" />
+                <ui:Button name="EnvironmentLater" class="editor-action" text="+1 hour" />
+                <ui:Button name="EnvironmentReset" class="editor-action" text="Use raid time" />
+            </ui:VisualElement>
+            <ui:Label name="EnvironmentStatus" class="editor-label" picking-mode="Ignore" />
+            <ui:Label name="WeatherHeading" class="editor-label" text="WEATHER" picking-mode="Ignore" />
+            <ui:VisualElement name="WeatherPresets" class="editor-actions editor-action-row">
+                <ui:Button name="WeatherPresetClear" class="editor-action" text="Clear" />
+                <ui:Button name="WeatherPresetCloudy" class="editor-action" text="Cloudy" />
+                <ui:Button name="WeatherPresetRain" class="editor-action" text="Rain" />
+                <ui:Button name="WeatherPresetStorm" class="editor-action" text="Storm" />
+            </ui:VisualElement>
+            <ui:TextField name="WeatherClouds" class="editor-field" label="Clouds %" />
+            <ui:TextField name="WeatherRain" class="editor-field" label="Rain %" />
+            <ui:TextField name="WeatherFog" class="editor-field" label="Fog %" />
+            <ui:TextField name="WeatherWind" class="editor-field" label="Wind %" />
+            <ui:TextField name="WeatherThunder" class="editor-field" label="Thunder %" />
+            <ui:Button name="WeatherDirection" class="editor-action" text="Wind: raid" />
+            <ui:VisualElement name="WeatherActions" class="editor-actions editor-action-row">
+                <ui:Button name="WeatherApply" class="editor-action" text="Apply weather" />
+                <ui:Button name="WeatherReset" class="editor-action" text="Use raid weather" />
+            </ui:VisualElement>
+            <ui:Label name="WeatherStatus" class="editor-label" picking-mode="Ignore" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

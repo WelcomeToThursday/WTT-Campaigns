@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="ContextMenu" class="editor-menu editor-session-menu">
+        <ui:Button name="EditorUnload" class="editor-action" text="Unload map / return home" />
+        <ui:Button name="EnvironmentToggle" class="editor-action" text="Environment / time and weather" />
+    </ui:VisualElement>
+</ui:UXML>
