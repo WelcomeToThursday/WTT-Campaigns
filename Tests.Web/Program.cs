@@ -27,6 +27,7 @@ await using var services = new ServiceCollection()
     .AddSingleton((SeasonRepository)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(SeasonRepository)))
     .BuildServiceProvider();
 var count = 0;
+WTT.Campaigns.Web.Tests.ContainerLocationChecks.Run(Check);
 void Check(bool passed, string message)
 {
     if (!passed)

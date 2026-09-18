@@ -15,6 +15,7 @@ internal sealed class SceneDoorPlacement : IDisposable
     internal readonly SceneDoorState State;
     internal readonly string Source;
     private readonly GameWorld _world;
+    private readonly SceneDoorRegistry _registry;
 
     // Diagnostic overlays belong to the inspected original, never to an authored copy.
     private static bool Diagnostic(Component c) => c && c.GetType().FullName == "DebugPlus.Utils.OverlayProvider";
@@ -82,10 +83,12 @@ internal sealed class SceneDoorPlacement : IDisposable
         if (error.Length > 0)
             throw new InvalidOperationException(error);
         _world = Singleton<GameWorld>.Instance;
-        if (!_world || Registry.GetValue(_world.World) is not Dictionary<string, WorldInteractiveObject> registry)
-            throw new InvalidOperationException("The native door registry is not ready.");
+        if (!_world)
+            throw new InvalidOperationException("The game world is not ready.");
+        var networkWorld = _world.World;
+        _registry = new SceneDoorRegistry(networkWorld ? networkWorld : null, Registry, _world.IsLocalGame());
         var id = "wtt-door-" + edit.Id;
-        if (registry.ContainsKey(id))
+        if (_registry.Contains(id))
             throw new InvalidOperationException("A placed door already owns " + id);
         Source = Newtonsoft.Json.JsonConvert.SerializeObject(edit.Target);
         Root = new GameObject("CampaignEditor placed door " + edit.Id);
@@ -96,6 +99,9 @@ internal sealed class SceneDoorPlacement : IDisposable
             clone.name = source.name;
             clone.transform.localPosition = Vector3.zero;
             clone.transform.localScale = source.lossyScale;
+            // Map culling may have disabled the source; it does not own this copy.
+            foreach (var renderer in clone.GetComponentsInChildren<MeshRenderer>(true))
+                renderer.enabled = true;
             var door = clone.GetComponent<Door>();
             foreach (var component in clone.GetComponentsInChildren<Component>(true))
                 if (Diagnostic(component))
@@ -116,7 +122,8 @@ internal sealed class SceneDoorPlacement : IDisposable
             Root.SetActive(true);
             State = new SceneDoorState(door);
             State.Apply(edit);
-            _world.RegisterWorldInteractionObject(door);
+            if (_registry.Available)
+                _world.RegisterWorldInteractionObject(door);
             door.OnDoorStateChanged += _world.WorldInteractiveObjectOnDoorStateChanged;
         }
         catch
@@ -140,13 +147,7 @@ internal sealed class SceneDoorPlacement : IDisposable
             State.Door.OnDoorStateChanged -= _world.WorldInteractiveObjectOnDoorStateChanged;
             if (_world)
                 _world.WorldInteractiveObjectOnDoorStateChanged(State.Door, EDoorState.Interacting, EDoorState.Shut);
-            if (
-                _world
-                && Registry.GetValue(_world.World) is Dictionary<string, WorldInteractiveObject> registry
-                && registry.TryGetValue(State.Door.Id, out var found)
-                && found == State.Door
-            )
-                registry.Remove(State.Door.Id);
+            _registry.Remove(State.Door.Id, State.Door);
         }
         if (Root)
         {

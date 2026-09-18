@@ -138,6 +138,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
         using var hash = SHA256.Create();
         return new MapTarget
         {
+            Kind = door ? "Door" : "Prop",
             Scene = target.gameObject.scene.name,
             Path = PathOf(target),
             Fingerprint = BitConverter.ToString(hash.ComputeHash(Encoding.UTF8.GetBytes(shape))).Replace("-", ""),
@@ -147,7 +148,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
     private static Transform Resolve(MapTarget target, bool door)
     {
-        if (target.Kind != "Prop")
+        if (target.Kind != "Prop" && target.Kind != "Door")
             return ResolveNative(target);
         var matches = FindTargetPath(target);
         if (matches.Count != 1)

@@ -10,6 +10,7 @@ internal static class EditorPreviewGearChecks
 {
     internal static void Run()
     {
+        GeneratedContainerPositions();
         var source = new List<NativeItem>
         {
             new() { Id = "equipment", Template = "equipment-tpl" },
@@ -118,6 +119,66 @@ internal static class EditorPreviewGearChecks
     {
         if (!condition)
             throw new InvalidOperationException(message);
+    }
+
+    private static void GeneratedContainerPositions()
+    {
+        var items = new List<NativeItem>
+        {
+            new() { Id = "container", Template = "container-tpl" },
+            new()
+            {
+                Id = "mag",
+                Template = "mag-tpl",
+                ParentId = "container",
+                SlotId = "main",
+                Location = new(new NativeGridLocation { X = 1, Y = 2 }),
+            },
+            new()
+            {
+                Id = "ammo",
+                Template = "ammo-tpl",
+                ParentId = "mag",
+                SlotId = "cartridges",
+                Upd = new() { StackObjectsCount = 20 },
+            },
+            new()
+            {
+                Id = "second-ammo",
+                Template = "ammo-tpl",
+                ParentId = "another-mag",
+                SlotId = "cartridges",
+                Location = new(3),
+            },
+        };
+        GeneratedCartridgePositions.Normalize(items);
+        var response = new WTT.Campaigns.Shared.Authoring.SceneContainerResponse { Contents = new() { ["placement"] = items } };
+        var received = JsonConvert
+            .DeserializeObject<WTT.Campaigns.Shared.Authoring.SceneContainerResponse>(JsonConvert.SerializeObject(response))!
+            .Contents["placement"];
+        Check(
+            ItemStackPosition.Require(received[2].Location, false) == 0 && received[2].Upd!.StackObjectsCount == 20,
+            "Generated magazine loot survives the container response and actual client position check"
+        );
+        Check(
+            received[1].Location!.Grid!.X == 1 && received[3].Location!.Slot == 3,
+            "Generated ammo normalization preserves grid locations and explicit cartridge ordering"
+        );
+        items[2].Location = null;
+        items.Add(
+            new()
+            {
+                Id = "ambiguous",
+                ParentId = "mag",
+                SlotId = "cartridges",
+            }
+        );
+        GeneratedCartridgePositions.Normalize(items);
+        RejectPosition(items[2].Location, "Generated magazines with multiple missing positions remain invalid");
+        items.RemoveAt(items.Count - 1);
+        items[2].Location = new(-1);
+        GeneratedCartridgePositions.Normalize(items);
+        RejectPosition(items[2].Location, "Generated negative ammunition positions remain invalid");
     }
 
     private static NativeItem CopiedRounds(List<NativeItem> source) =>

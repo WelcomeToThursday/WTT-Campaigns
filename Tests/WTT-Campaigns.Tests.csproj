@@ -8,6 +8,7 @@
     <Compile Include="..\UI\Screens\EditorHomeComposition.cs" Link="UI\EditorHomeComposition.cs" />
     <EmbeddedResource Include="..\tools\unity\EditorToolkit\*.uxml" LogicalName="EditorToolkit.%(Filename).uxml" />
     <Compile Include="..\Client\Authoring\Scenes\SceneDoorState.cs" Link="Client\SceneDoorState.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneDoorRegistry.cs" Link="Client\SceneDoorRegistry.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePickGeometry.cs" Link="Client\ScenePickGeometry.cs" />
     <Compile Include="..\Client\Authoring\EditorStartupRecovery.cs" Link="Client\EditorStartupRecovery.cs" />
     <Compile Include="..\Client\Authoring\Preview\PreviewLoadGuard.cs" Link="Client\PreviewLoadGuard.cs" />
@@ -82,6 +83,7 @@
     <Compile Include="..\Server\Profiles\ProfileReadiness.cs" Link="Profiles\ProfileReadiness.cs" />
     <Compile Include="..\Server\Editor\EditorScratchInventory.cs" Link="Editor\EditorScratchInventory.cs" />
     <Compile Include="..\Server\Editor\EditorPreviewGearCopy.cs" Link="Editor\EditorPreviewGearCopy.cs" />
+    <Compile Include="..\Server\Editor\GeneratedCartridgePositions.cs" Link="Editor\GeneratedCartridgePositions.cs" />
     <Compile Include="..\Server\Editor\EditorSessionRegistry.cs" Link="Editor\EditorSessionRegistry.cs" />
     <Compile Include="..\Server\Profiles\RaidAbortGuard.cs" Link="Profiles\RaidAbortGuard.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />

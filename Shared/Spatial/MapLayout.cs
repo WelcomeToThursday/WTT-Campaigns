@@ -25,6 +25,46 @@ public sealed class MapLayout
     public List<SpatialCapture> SpawnPoints { get; set; } = new();
     public List<MapEncounter> Encounters { get; set; } = new();
     public List<MapPatrolRoute> PatrolRoutes { get; set; } = new();
+
+    [System.Runtime.Serialization.OnDeserialized]
+    private void RestoreLegacyDoorPlacements(System.Runtime.Serialization.StreamingContext context)
+    {
+        // The first door-placement build captured native doors with the default Prop kind.
+        // Only door captures populated NativeId on Prop targets; preserve all other edits.
+        if (Objects == null || Doors == null)
+            return;
+        foreach (var edit in Objects.ToArray())
+        {
+            if (
+                edit.Operation != "Copy"
+                || edit.Target?.Kind != "Prop"
+                || string.IsNullOrEmpty(edit.Target.NativeId)
+                || edit.Target.IsAsset
+                || !string.IsNullOrEmpty(edit.Target.Bundle)
+                || !string.IsNullOrEmpty(edit.Target.Template)
+            )
+                continue;
+            if (Doors.Exists(d => d.Id == edit.Id))
+                continue; // Keep conflicting data for normal validation to report.
+            edit.Target.Kind = "Door";
+            Doors.Add(
+                new MapDoorEdit
+                {
+                    Id = edit.Id,
+                    Name = edit.Name,
+                    Location = edit.Location,
+                    Scene = edit.Scene,
+                    ObjectPath = edit.ObjectPath,
+                    Position = edit.Position,
+                    Rotation = edit.Rotation,
+                    Target = edit.Target,
+                    PlaceNew = true,
+                    State = "Shut",
+                }
+            );
+            Objects.Remove(edit);
+        }
+    }
 }
 
 public sealed class MapTarget
