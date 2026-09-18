@@ -9,11 +9,7 @@
             </ui:VisualElement>
             <ui:VisualElement name="SceneFilters" class="editor-actions editor-action-row">
                 <ui:Button name="SceneSource" class="editor-action editor-choice" text="Source" />
-                <ui:Button name="SceneProps" class="editor-action" text="Props" />
-                <ui:Button name="SceneContainers" class="editor-action" text="Containers" />
-                <ui:Button name="SceneDoors" class="editor-action" text="Doors" />
-                <ui:Button name="SceneLoot" class="editor-action" text="Loot" />
-                <ui:Button name="ScenePresets" class="editor-action" text="Presets" />
+                <ui:Button name="SceneFilter" class="editor-action editor-choice" text="Filter" />
             </ui:VisualElement>
             <ui:VisualElement name="CatalogViews" class="editor-actions editor-action-row">
                 <ui:Button name="CatalogGrid" class="editor-action" text="Grid" />

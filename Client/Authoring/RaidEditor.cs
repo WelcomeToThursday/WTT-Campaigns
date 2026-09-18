@@ -308,7 +308,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 }
                 if (_placementLifetime != null)
                 {
-                    CancelPlacement();
+                    CancelPlacement(inspectLast: true);
                 }
                 else if (_drag != null)
                 {

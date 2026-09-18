@@ -140,7 +140,8 @@ internal sealed partial class EditorToolkitWindows
         var catalog = tab == "Catalog";
         var removed = kind == "Hide";
         Visible("SceneTabs", enabled);
-        Visible("SceneFilters", enabled && catalog);
+        Visible("SceneFilters", enabled);
+        Visible("SceneSource", enabled && catalog);
         Visible("SceneInspector", enabled);
         if (enabled)
             Visible("MapWalkGroup", false);

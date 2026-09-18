@@ -66,6 +66,8 @@ internal sealed partial class RaidEditorView
         set => Browser.Sync = value;
     }
     private Action<string>? _selectTree;
+    private Action<string>? _activateCatalog;
+    internal void BindCatalogActivation(Action<string> action) => _activateCatalog = action;
     internal int TreeRecordCount => _treeModel?.SelectableCount ?? 0;
     internal int TreeVisibleCount => _treeRows.Count;
 
@@ -88,6 +90,17 @@ internal sealed partial class RaidEditorView
             button.style.display = DisplayStyle.None;
             Register("Row" + i, control);
             _rows.Add(control);
+            var activationId = "";
+            button.RegisterCallback<PointerDownEvent>(evt =>
+            {
+                if (evt.button == 0)
+                    activationId = control.Identity;
+            }, TrickleDown.TrickleDown);
+            button.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (owner == "Scene" && evt.button == 0 && evt.clickCount == 2 && Activate(owner) && activationId.Length > 0)
+                    _activateCatalog?.Invoke(activationId);
+            });
             _paged.Add(button);
             Register("SceneIcon" + i, new EditorImage(button.Q<Image>("Icon")));
             Register("SceneIconStatus" + i, new EditorLabel(button.Q<Label>("Status")));
@@ -159,6 +172,17 @@ internal sealed partial class RaidEditorView
                 }
                 break;
             }
+        };
+        _tree.itemsChosen += selection =>
+        {
+            if (owner != "Scene" || !Activate(owner))
+                return;
+            foreach (var item in selection)
+                if (item is EditorTreeNode { Selectable: true } node)
+                {
+                    _activateCatalog?.Invoke(node.Id);
+                    break;
+                }
         };
     }
 

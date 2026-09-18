@@ -53,8 +53,9 @@ public sealed partial class RaidEditor
         }
         foreach (var tab in new[] { "Catalog", "Existing", "Changes" })
             view.Highlight("Scene" + tab, _sceneTab == tab);
-        foreach (var filter in new[] { "Props", "Containers", "Doors", "Loot", "Presets" })
-            view.Highlight("Scene" + filter, _sceneFilter == filter);
+        var filters = SceneBrowserState.Filters.AsValueEnumerable().Where(f => SceneBrowserState.Available(_sceneTab, f)).ToArray();
+        view.SetDropdown("SceneFilter", filters.AsValueEnumerable().Select(f => new EditorChoice.OptionData(f)).ToList(),
+            Array.IndexOf(filters, _sceneFilter));
         view.SetDropdown(
             "SceneSource",
             new List<EditorChoice.OptionData> { new("All game"), new("Current map") },
@@ -62,6 +63,9 @@ public sealed partial class RaidEditor
         );
         var point = ScenePoint;
         var catalog = _sceneTab == "Catalog";
+        view.Caption("SceneRepeat", _repeatPlacement ? "Repeat: on" : "Repeat: off");
+        view.Highlight("SceneRepeat", _repeatPlacement);
+        view.Get<Button>("SceneRepeat").interactable = CanSceneEdit;
         var removed = sceneKind == "Hide";
         var selected = catalog ? _catalogSelection.Length > 0 : point != null || MapDoor != null || _picked;
         view.Get<Button>("ScenePlace").interactable =
@@ -93,7 +97,9 @@ public sealed partial class RaidEditor
                     ? (
                         _selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0
                             ? CatalogError(_selectedCatalogEntry)
-                            : "Place on a surface, then refine with the transform handles. Escape cancels."
+                            : _placementLifetime != null
+                                ? (_repeatPlacement ? "Click surfaces to place copies · Escape finishes." : "Click a surface to place · Escape cancels.")
+                                : "Select an item to preview. Place or double-click to begin placement."
                     )
                 : sceneKind == "Door" ? "Use Door state to cycle the saved native state. Remove clears it from this layout."
                 : point == null ? "Choose Move or Rotate to edit this object. Remove hides it in this layout."

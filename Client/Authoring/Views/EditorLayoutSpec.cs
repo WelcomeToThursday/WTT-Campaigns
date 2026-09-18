@@ -89,11 +89,7 @@ internal static class EditorLayoutSpec
             R(
                 "SceneFilters",
                 new Node("choice", "SceneSource", "Source"),
-                B("SceneProps", "Props"),
-                B("SceneContainers", "Containers"),
-                B("SceneDoors", "Doors"),
-                B("SceneLoot", "Loot"),
-                B("ScenePresets", "Presets")
+                new Node("choice", "SceneFilter", "Filter")
             ),
             R("CatalogViews", B("CatalogGrid", "Grid"), B("CatalogList", "List")),
             new Node("browser", "LibraryScroll", ""),
@@ -187,7 +183,7 @@ internal static class EditorLayoutSpec
                     G("SceneHeadingGroup", T("SceneHeading", "Select an object")),
                     A("ScenePreviewRetryGroup", "ScenePreviewRetry", "Retry preview"),
                     R("SceneFocusGroup", B("SceneFrame", "Frame (F)"), B("SceneAnchor", "Anchor: Center")),
-                    A("ScenePlaceGroup", "ScenePlace", "Place"),
+                    R("ScenePlaceGroup", B("ScenePlace", "Place"), B("SceneRepeat", "Repeat: off")),
                     R(
                         "SceneEditGroup",
                         B("SceneMove", "Move (W)"),

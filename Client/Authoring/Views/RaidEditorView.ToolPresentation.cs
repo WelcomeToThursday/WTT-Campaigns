@@ -26,7 +26,7 @@ internal sealed partial class RaidEditorView
                 continue;
             if (pair.Value is EditorChoice choice)
             {
-                var compact = spec.Id is "SceneSource" or "ZoneCreateScope";
+                var compact = spec.Id is "SceneSource" or "SceneFilter" or "ZoneCreateScope";
                 choice.AddFieldLabel(spec.Id == "ZoneCreateScope" ? "Scope" : spec.Text, compact);
             }
             var help = EditorToolHelp.For(spec.Id, spec.Text);

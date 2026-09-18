@@ -141,7 +141,7 @@ public sealed partial class RaidEditor
         var view = _view!;
         view.ConfigureToolActions(_mode, EditorMode.Ready, SceneWorkspace);
         view.SetRowThumbnails(SceneWorkspace && _sceneTab == "Catalog");
-        view.Visible("SceneFilters", SceneWorkspace && _sceneTab == "Catalog");
+        view.Visible("SceneFilters", SceneWorkspace);
         view.Caption("AddBox", _mode == "Bindings" ? "+ Trigger" : "+ Box");
         view.Caption("AddSphere", _mode == "Bindings" ? "+ Interaction" : "+ Sphere");
         var editable = _session?.Definition != null && !_session.Retired && _session.Conflict == null;

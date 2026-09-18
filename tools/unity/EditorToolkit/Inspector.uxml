@@ -19,6 +19,7 @@
                 </ui:VisualElement>
                 <ui:VisualElement name="ScenePlaceGroup" class="editor-actions editor-action-row editor-divider">
                     <ui:Button name="ScenePlace" class="editor-action" text="Place" />
+                    <ui:Button name="SceneRepeat" class="editor-action" text="Repeat: off" />
                 </ui:VisualElement>
                 <ui:VisualElement name="SceneEditGroup" class="editor-actions editor-action-row editor-divider">
                     <ui:Button name="SceneMove" class="editor-action" text="Move (W)" />
