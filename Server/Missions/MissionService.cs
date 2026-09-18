@@ -39,7 +39,9 @@ public sealed class MissionService(
     private const string MissionStart = "MissionStart";
 
     private sealed record Active(string Id, string Root, string SeasonId, SptProfile Profile, SeasonRuntimeSnapshot Runtime);
+
     private sealed record RaidCheckpoint(MissionCheckpoint Mission, SptProfile Profile);
+
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, RaidCheckpoint> _checkpoints = new();
 
     public MissionResponse Read(string sessionId, MissionRequest request)
@@ -196,8 +198,19 @@ public sealed class MissionService(
                 return Response(active, state, "Checkpoint already reported.", Descriptor(active, run), committed: true);
             }
             changed = true;
-            if (mission.CheckpointRetries) captured = new(new MissionCheckpoint(run, request.CheckpointId), cloner.Clone(original)!);
-            MissionLogic.Apply(mission, layout, run.Logic, new MissionSignal { Kind = MissionSignals.Checkpoint, TargetId = request.CheckpointId, Time = run.Logic.Time });
+            if (mission.CheckpointRetries)
+                captured = new(new MissionCheckpoint(run, request.CheckpointId), cloner.Clone(original)!);
+            MissionLogic.Apply(
+                mission,
+                layout,
+                run.Logic,
+                new MissionSignal
+                {
+                    Kind = MissionSignals.Checkpoint,
+                    TargetId = request.CheckpointId,
+                    Time = run.Logic.Time,
+                }
+            );
         }
         else if (kind == "exit")
         {
@@ -221,10 +234,12 @@ public sealed class MissionService(
         state.Revision++;
         AddReceipt(state, request.OperationId, fingerprint, "progress", run, now);
         var staged = cloner.Clone(original)!;
-        if (rollback != null) staged.CharacterData!.PmcData = rollback.CharacterData!.PmcData;
+        if (rollback != null)
+            staged.CharacterData!.PmcData = rollback.CharacterData!.PmcData;
         MissionStore.Write(staged.CharacterData!.PmcData!, state);
         await commits.Commit(new MongoId(active.Id), original, staged);
-        if (captured != null) _checkpoints[run.RunId] = captured;
+        if (captured != null)
+            _checkpoints[run.RunId] = captured;
         return Response(active, state, "Mission progress recorded.", Descriptor(active, run), committed: true);
     }
 
@@ -342,8 +357,11 @@ public sealed class MissionService(
                 var profileId = (string?)profile["_id"] ?? throw new InvalidOperationException("Generated actor has no native identity.");
                 run.Logic.Actors[profileId] = new MissionActor
                 {
-                    ProfileId = profileId, EncounterId = authoredEncounter.Id, WaveId = authoredWave.Id,
-                    RosterId = authoredRoster.Id, SquadId = authoredRoster.SquadId,
+                    ProfileId = profileId,
+                    EncounterId = authoredEncounter.Id,
+                    WaveId = authoredWave.Id,
+                    RosterId = authoredRoster.Id,
+                    SquadId = authoredRoster.SquadId,
                 };
             }
             var staged = cloner.Clone(original)!;
@@ -552,7 +570,8 @@ public sealed class MissionService(
             request.Results?.ExitName,
             out var failureReason
         );
-        if (success && !MissionLogic.CanAdvance(mission, run.Logic, "", out failureReason)) success = false;
+        if (success && !MissionLogic.CanAdvance(mission, run.Logic, "", out failureReason))
+            success = false;
 
         run.FinishedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (success)

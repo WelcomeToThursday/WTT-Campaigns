@@ -105,7 +105,8 @@ internal static class EditorRestrictions
 
     private static bool PreviewKill(ActiveHealthController __instance, EDamageType damageType)
     {
-        if (Missions.MissionRetryGuard.TryDefer(__instance, damageType)) return false;
+        if (Missions.MissionRetryGuard.TryDefer(__instance, damageType))
+            return false;
         if (!EditorMode.Active)
             return true;
         if (__instance.Player != Plugin.Player)
@@ -124,7 +125,8 @@ internal static class EditorRestrictions
         // Health-rate effects may change a vital part without invoking native Kill.
         if (__instance.GetBodyPartHealth(EBodyPart.Head).AtMinimum || __instance.GetBodyPartHealth(EBodyPart.Chest).AtMinimum)
         {
-            if (Missions.MissionRetryGuard.TryDefer(__instance, EDamageType.Undefined)) return;
+            if (Missions.MissionRetryGuard.TryDefer(__instance, EDamageType.Undefined))
+                return;
             RaidEditor.Instance?.AiDefeated();
         }
     }

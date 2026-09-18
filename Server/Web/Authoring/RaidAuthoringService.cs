@@ -343,9 +343,14 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                     )
                         throw new InvalidOperationException("Update the client before editing layouts with game asset placements.");
                     proposed.MapLayouts = Copy(r.Definition.MapLayouts);
-                    if (r.Version < 7 && (baseline.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)
-                        || draft.Definition.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)
-                        || r.Definition.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)))
+                    if (
+                        r.Version < 7
+                        && (
+                            baseline.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)
+                            || draft.Definition.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)
+                            || r.Definition.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)
+                        )
+                    )
                         throw new InvalidOperationException("Update the client to preserve mission events and objectives.");
                     if (r.Version >= 7)
                     {
@@ -353,9 +358,11 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                         foreach (var mission in proposed.Missions)
                         {
                             var missionLayout = proposed.MapLayouts.FirstOrDefault(l => l.Id == mission.LayoutId);
-                            if (missionLayout == null) throw new InvalidOperationException("Mission layout is missing.");
+                            if (missionLayout == null)
+                                throw new InvalidOperationException("Mission layout is missing.");
                             var missionErrors = WTT.Campaigns.Shared.Missions.MissionLogicRules.DraftErrors(mission);
-                            if (missionErrors.Count > 0) throw new InvalidOperationException(string.Join("\n", missionErrors));
+                            if (missionErrors.Count > 0)
+                                throw new InvalidOperationException(string.Join("\n", missionErrors));
                         }
                         if (proposed.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic))
                             proposed.FormatVersion = Math.Max(proposed.FormatVersion, 10);

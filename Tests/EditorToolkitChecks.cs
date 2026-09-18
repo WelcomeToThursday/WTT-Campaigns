@@ -116,7 +116,9 @@ internal static class EditorToolkitChecks
             )
             {
                 if (type.Name == "MissionEditorPanel" && template == "ToolbarScroll")
-                    throw new InvalidOperationException("Mission fields must use the existing vertical tool scroll, not the horizontal toolbar template.");
+                    throw new InvalidOperationException(
+                        "Mission fields must use the existing vertical tool scroll, not the horizontal toolbar template."
+                    );
                 using var source =
                     typeof(EditorToolkitChecks).Assembly.GetManifestResourceStream("EditorToolkit." + template + ".uxml")
                     ?? throw new InvalidOperationException("Missing runtime template: " + template);
@@ -129,8 +131,11 @@ internal static class EditorToolkitChecks
             {
                 if (lookup.Name is "Element" or "Control" && instruction.Previous?.Operand is string id && id.StartsWith("Tool:"))
                     throw new InvalidOperationException("Tool window identity used as a control name: " + method.FullName + " / " + id);
-                if (lookup.Name == "ElementForTool" && instruction.Previous?.Operand is string control
-                    && instruction.Previous.Previous?.Operand is string tool)
+                if (
+                    lookup.Name == "ElementForTool"
+                    && instruction.Previous?.Operand is string control
+                    && instruction.Previous.Previous?.Operand is string tool
+                )
                 {
                     var library = EditorLayoutSpec.Sections.Single(n => n.Id == "Library");
                     bool Contains(EditorLayoutSpec.Node node) => node.Id == control || node.Children.Any(Contains);

@@ -10,18 +10,27 @@ internal sealed partial class MissionRaidRuntime
     private MissionRetryGuard? _retryGuard;
     private MissionRaidCheckpoint? _checkpoint;
     private EDamageType? _retryDeath;
-    private bool _retryBusy, _retryBroken, _retryShown;
+    private bool _retryBusy,
+        _retryBroken,
+        _retryShown;
     private string _retryFailure = "";
 
     private async Task CaptureStartCheckpoint(CancellationToken token)
     {
-        _retryGuard = new MissionRetryGuard(_player!, damage =>
-        {
-            _retryDeath = damage; _retryFailure = "Operator down"; _retryShown = false; _director?.Pause();
-        });
+        _retryGuard = new MissionRetryGuard(
+            _player!,
+            damage =>
+            {
+                _retryDeath = damage;
+                _retryFailure = "Operator down";
+                _retryShown = false;
+                _director?.Pause();
+            }
+        );
         _encounters!.RetryGuard = _retryGuard;
         _retryBusy = true;
-        _retryGuard.Freeze(); _director!.Pause();
+        _retryGuard.Freeze();
+        _director!.Pause();
         await _encounters.SettleAsync(token);
         await MissionInventorySnapshot.SettleHands(_player!, token);
         await MissionWorldSnapshot.SettleAsync(token);
@@ -35,7 +44,8 @@ internal sealed partial class MissionRaidRuntime
     private void AcceptTransition(MissionResponse response)
     {
         MissionAcknowledgement.Require(_run!, response.Run, response.Committed);
-        _run = response.Run!; _revision = response.Revision;
+        _run = response.Run!;
+        _revision = response.Revision;
     }
 
     // Called only while holding the progress semaphore (or before publishing the active start).
@@ -47,9 +57,16 @@ internal sealed partial class MissionRaidRuntime
             if (_unacknowledgedSignals == null)
             {
                 _unacknowledgedSignals = _director.Take();
-                _observationOperation = MissionClient.NewOperationId(); _observationRevision = _revision;
+                _observationOperation = MissionClient.NewOperationId();
+                _observationRevision = _revision;
             }
-            var response = await MissionClient.ObserveAsync(_run!, _unacknowledgedSignals, _observationRevision, _observationOperation, token);
+            var response = await MissionClient.ObserveAsync(
+                _run!,
+                _unacknowledgedSignals,
+                _observationRevision,
+                _observationOperation,
+                token
+            );
             AcceptTransition(response);
             _unacknowledgedSignals = null;
             _director.Accept(_run!.Logic);
@@ -58,29 +75,52 @@ internal sealed partial class MissionRaidRuntime
 
     private void CheckObjectiveFailure()
     {
-        if (_run == null || _run.Logic.Failure.Length == 0) return;
-        if (_retryGuard == null) { RequestNativeStartupFailure(_run.Logic.Failure); return; }
-        _retryFailure = _run.Logic.Failure; _retryShown = false;
-        _retryGuard.Freeze(); _director?.Pause();
+        if (_run == null || _run.Logic.Failure.Length == 0)
+            return;
+        if (_retryGuard == null)
+        {
+            RequestNativeStartupFailure(_run.Logic.Failure);
+            return;
+        }
+        _retryFailure = _run.Logic.Failure;
+        _retryShown = false;
+        _retryGuard.Freeze();
+        _director?.Pause();
     }
 
     private void ShowRetryFailure()
     {
-        if (_retryBusy || _retryShown || _retryFailure.Length == 0) return;
+        if (_retryBusy || _retryShown || _retryFailure.Length == 0)
+            return;
         _retryShown = true;
-        var name = _checkpoint?.Id is not { Length: > 0 } ? "Mission start"
+        var name = _checkpoint?.Id is not { Length: > 0 }
+            ? "Mission start"
             : _descriptor!.Layout.Checkpoints.Find(c => c.Id == _checkpoint.Id)?.Name ?? "Checkpoint";
-        _hud?.ShowFailure(_retryFailure, name, _retryBroken || _checkpoint == null ? null : () => { _ = RetryCheckpoint(); }, EndRetryAttempt);
+        _hud?.ShowFailure(
+            _retryFailure,
+            name,
+            _retryBroken || _checkpoint == null
+                ? null
+                : () =>
+                {
+                    _ = RetryCheckpoint();
+                },
+            EndRetryAttempt
+        );
     }
 
     private void ReleaseRetryHold()
     {
-        _retryGuard!.Release(); _director?.Resume(); _encounters?.Resume();
+        _retryGuard!.Release();
+        _director?.Resume();
+        _encounters?.Resume();
     }
 
     private void BrokenRestore(Exception exception)
     {
-        _retryBroken = true; _retryBusy = false; _retryShown = false;
+        _retryBroken = true;
+        _retryBusy = false;
+        _retryShown = false;
         _retryFailure = "Checkpoint restoration stopped: " + exception.Message;
         _retryGuard?.Freeze();
         Plugin.Error(exception);
@@ -88,13 +128,15 @@ internal sealed partial class MissionRaidRuntime
 
     private async Task RetryCheckpoint()
     {
-        if (_retryBusy || _retryBroken || _checkpoint == null || _lifetime == null) return;
+        if (_retryBusy || _retryBroken || _checkpoint == null || _lifetime == null)
+            return;
         _retryBusy = true;
         var token = _lifetime.Token;
         var acquired = false;
         try
         {
-            await _progressGate.WaitAsync(token); acquired = true;
+            await _progressGate.WaitAsync(token);
+            acquired = true;
             _hud?.SetStatus("Restoring checkpoint…");
             await DrainObservations(token);
             if (_retryDeath.HasValue)
@@ -102,19 +144,28 @@ internal sealed partial class MissionRaidRuntime
             var previous = _run!;
             var prepared = await MissionClient.TransitionAsync(previous, "retry-prepare", _revision, MissionClient.NewOperationId(), token);
             MissionAcknowledgement.RequireRestore(previous, prepared.Run, prepared.Committed, preparing: true);
-            if (prepared.Run!.CheckpointId != _checkpoint.Id) throw new InvalidDataException("The checkpoint identity changed.");
-            _run = prepared.Run; _revision = prepared.Revision;
+            if (prepared.Run!.CheckpointId != _checkpoint.Id)
+                throw new InvalidDataException("The checkpoint identity changed.");
+            _run = prepared.Run;
+            _revision = prepared.Revision;
             _runtimeGeneration++;
-            _director!.Dispose(); _director = null;
-            _encounters!.Reset(preserveWorld: true); _encounters = null;
+            _director!.Dispose();
+            _director = null;
+            _encounters!.Reset(preserveWorld: true);
+            _encounters = null;
             await _checkpoint.ClearAsync(_player!, token);
             var oldContext = _missionContext!;
             EncounterSpawnAdmissionGate.ClearMissionContext(oldContext);
             _missionContext = new EncounterRuntimeContext
             {
-                SessionId = oldContext.SessionId, RaidId = oldContext.RaidId, LayoutId = oldContext.LayoutId,
-                LayoutRevision = oldContext.LayoutRevision, Mode = oldContext.Mode, PreviewGeneration = oldContext.PreviewGeneration,
-                AttemptGeneration = _run.AttemptGeneration, PublishedLayoutConfirmed = true,
+                SessionId = oldContext.SessionId,
+                RaidId = oldContext.RaidId,
+                LayoutId = oldContext.LayoutId,
+                LayoutRevision = oldContext.LayoutRevision,
+                Mode = oldContext.Mode,
+                PreviewGeneration = oldContext.PreviewGeneration,
+                AttemptGeneration = _run.AttemptGeneration,
+                PublishedLayoutConfirmed = true,
             };
             EncounterSpawnAdmissionGate.SetMissionContext(_missionContext);
             _encounters = new EncounterPreviewRuntime { RetryGuard = _retryGuard };
@@ -129,24 +180,41 @@ internal sealed partial class MissionRaidRuntime
             _director.Restore(_run.Logic);
             var committed = await MissionClient.TransitionAsync(_run, "retry-commit", _revision, MissionClient.NewOperationId(), token);
             MissionAcknowledgement.RequireRestore(_run, committed.Run, committed.Committed, preparing: false);
-            _run = committed.Run; _revision = committed.Revision;
+            _run = committed.Run;
+            _revision = committed.Revision;
             _director.Accept(_run.Logic);
-            if (_checkpoint.Id.Length == 0) _encounters.MissionStart();
-            _progressOperations.Clear(); _unacknowledgedSignals = null;
-            _retryFailure = ""; _retryDeath = null; _retryShown = false; _retryBusy = false;
+            if (_checkpoint.Id.Length == 0)
+                _encounters.MissionStart();
+            _progressOperations.Clear();
+            _unacknowledgedSignals = null;
+            _retryFailure = "";
+            _retryDeath = null;
+            _retryShown = false;
+            _retryBusy = false;
             _hud?.SetRoute(_run.NextCheckpointIndex, _descriptor.Layout.Checkpoints.Count, false, "Checkpoint restored");
             ReleaseRetryHold();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception exception) { BrokenRestore(exception); }
-        finally { if (acquired) _progressGate.Release(); }
+        catch (Exception exception)
+        {
+            BrokenRestore(exception);
+        }
+        finally
+        {
+            if (acquired)
+                _progressGate.Release();
+        }
     }
 
     private void EndRetryAttempt()
     {
-        if (_retryBusy || _player == null) return;
-        _retryGuard?.Dispose(); _retryGuard = null;
-        if (_retryDeath.HasValue) _player.ActiveHealthController.Kill(_retryDeath.Value);
-        else RequestNativeStartupFailure("Mission attempt ended");
+        if (_retryBusy || _player == null)
+            return;
+        _retryGuard?.Dispose();
+        _retryGuard = null;
+        if (_retryDeath.HasValue)
+            _player.ActiveHealthController.Kill(_retryDeath.Value);
+        else
+            RequestNativeStartupFailure("Mission attempt ended");
     }
 }

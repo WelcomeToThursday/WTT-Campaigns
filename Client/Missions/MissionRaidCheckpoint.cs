@@ -34,6 +34,7 @@ internal sealed class MissionRaidCheckpoint
         _world.Clear();
         _inventory.Clear(player);
     }
+
     internal async Task RestoreWorldAsync(Player player, MissionRetryGuard guard, CancellationToken token)
     {
         _inventory.Restore(player);
@@ -42,6 +43,8 @@ internal sealed class MissionRaidCheckpoint
         await _world.RestoreAsync(token);
         await MissionInventorySnapshot.RestoreHands(player, _heldItem, token);
     }
+
     internal void RestoreAccounting(Player player) => _accounting.Restore(player);
+
     internal Task RestoreAudioAsync(CancellationToken token) => _audio.RestoreAsync(token);
 }

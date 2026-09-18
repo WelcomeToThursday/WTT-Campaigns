@@ -56,13 +56,16 @@ internal sealed class EncounterPatrolRuntime
     internal Dictionary<string, PatrolCheckpoint> Capture()
     {
         var result = new Dictionary<string, PatrolCheckpoint>();
-        foreach (var pair in _squads) result.Add(pair.Key, pair.Value.State.Capture(Time.time));
+        foreach (var pair in _squads)
+            result.Add(pair.Key, pair.Value.State.Capture(Time.time));
         return result;
     }
+
     internal void Restore(Dictionary<string, PatrolCheckpoint> saved)
     {
         foreach (var pair in saved)
-            if (_squads.TryGetValue(pair.Key, out var squad)) squad.State.Restore(pair.Value, Time.time);
+            if (_squads.TryGetValue(pair.Key, out var squad))
+                squad.State.Restore(pair.Value, Time.time);
     }
 
     internal EncounterPatrolRuntime(MapLayout layout)

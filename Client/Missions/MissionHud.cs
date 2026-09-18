@@ -74,32 +74,74 @@ internal sealed class MissionHud : IDisposable
         UiElements.Fill(panel, new Color(.025f, .03f, .027f, .97f), true);
         ui.Label(panel, "Failure", reason, 21, 550, 70, 0, 60).alignment = TextAnchor.MiddleCenter;
         ui.Label(panel, "Checkpoint", "Retry point: " + checkpoint, 17, 550, 35, 0, 0).alignment = TextAnchor.MiddleCenter;
-        ui.Button(panel, "Retry checkpoint", 245, -133, -70, () => { HideFailure(); retry?.Invoke(); }).interactable = retry != null;
-        ui.Button(panel, "End attempt", 245, 133, -70, () => { HideFailure(); end(); });
+        ui.Button(
+            panel,
+            "Retry checkpoint",
+            245,
+            -133,
+            -70,
+            () =>
+            {
+                HideFailure();
+                retry?.Invoke();
+            }
+        ).interactable = retry != null;
+        ui.Button(
+            panel,
+            "End attempt",
+            245,
+            133,
+            -70,
+            () =>
+            {
+                HideFailure();
+                end();
+            }
+        );
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
+
     internal void HideFailure()
     {
         _failureInput?.Release();
         _failureInput = null;
-        if (_failure) UnityEngine.Object.Destroy(_failure);
+        if (_failure)
+            UnityEngine.Object.Destroy(_failure);
         _failure = null;
     }
 
-    internal void SetObjectives(WTT.Campaigns.Shared.Missions.MissionDefinition mission, WTT.Campaigns.Shared.Spatial.MapLayout layout,
-        WTT.Campaigns.Shared.Missions.MissionLogicState state)
+    internal void SetObjectives(
+        WTT.Campaigns.Shared.Missions.MissionDefinition mission,
+        WTT.Campaigns.Shared.Spatial.MapLayout layout,
+        WTT.Campaigns.Shared.Missions.MissionLogicState state
+    )
     {
-        if (_disposed || mission.Objectives.Count == 0) return;
-        var current = mission.Objectives.AsValueEnumerable().FirstOrDefault(o => state.Objectives.TryGetValue(o.Id, out var p) && p.Status == "Failed")
-            ?? mission.Objectives.AsValueEnumerable().FirstOrDefault(o => state.Objectives.TryGetValue(o.Id, out var p) && p.Status == "Active")
-            ?? mission.Objectives.AsValueEnumerable().FirstOrDefault(o => !state.Objectives.TryGetValue(o.Id, out var p) || p.Status == "Pending");
-        if (current == null) return;
+        if (_disposed || mission.Objectives.Count == 0)
+            return;
+        var current =
+            mission
+                .Objectives.AsValueEnumerable()
+                .FirstOrDefault(o => state.Objectives.TryGetValue(o.Id, out var p) && p.Status == "Failed")
+            ?? mission
+                .Objectives.AsValueEnumerable()
+                .FirstOrDefault(o => state.Objectives.TryGetValue(o.Id, out var p) && p.Status == "Active")
+            ?? mission
+                .Objectives.AsValueEnumerable()
+                .FirstOrDefault(o => !state.Objectives.TryGetValue(o.Id, out var p) || p.Status == "Pending");
+        if (current == null)
+            return;
         var progress = WTT.Campaigns.Shared.Missions.MissionLogic.Progress(state, current.Id);
-        _objective.text = current.Name + (current.Type == WTT.Campaigns.Shared.Missions.MissionObjective.Defend
-            ? $" · {progress.Seconds:0}/{current.Seconds:0}s"
-            : current.Type is WTT.Campaigns.Shared.Missions.MissionObjective.Eliminate or WTT.Campaigns.Shared.Missions.MissionObjective.Target
-                ? $" · {progress.Count}/{WTT.Campaigns.Shared.Missions.MissionLogic.Expected(layout, current)}" : " · " + progress.Status);
+        _objective.text =
+            current.Name
+            + (
+                current.Type == WTT.Campaigns.Shared.Missions.MissionObjective.Defend ? $" · {progress.Seconds:0}/{current.Seconds:0}s"
+                : current.Type
+                    is WTT.Campaigns.Shared.Missions.MissionObjective.Eliminate
+                        or WTT.Campaigns.Shared.Missions.MissionObjective.Target
+                    ? $" · {progress.Count}/{WTT.Campaigns.Shared.Missions.MissionLogic.Expected(layout, current)}"
+                : " · " + progress.Status
+            );
         _status.text = progress.Status == "Pending" ? "Waiting for activation event" : progress.Detail;
     }
 

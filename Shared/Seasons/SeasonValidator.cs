@@ -478,12 +478,20 @@ public static class SeasonValidator
                     continue;
                 }
 
-                foreach (var error in Spatial.MapLayoutRules.Errors(layout, walkthrough: true).Concat(WTT.Campaigns.Shared.Missions.MissionLogicRules.Errors(mission, layout)))
+                foreach (
+                    var error in Spatial
+                        .MapLayoutRules.Errors(layout, walkthrough: true)
+                        .Concat(WTT.Campaigns.Shared.Missions.MissionLogicRules.Errors(mission, layout))
+                )
                 {
                     result.Add(path, error);
                 }
 
-                need(!WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic(mission) || s.FormatVersion >= 10, path, "Mission events, objectives and retries require campaign format 10.");
+                need(
+                    !WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic(mission) || s.FormatVersion >= 10,
+                    path,
+                    "Mission events, objectives and retries require campaign format 10."
+                );
                 if (!quests.TryGetValue(mission.QuestId, out var quest))
                 {
                     continue;

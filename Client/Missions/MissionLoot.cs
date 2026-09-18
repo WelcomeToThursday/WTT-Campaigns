@@ -31,8 +31,11 @@ internal sealed class MissionLoot : IDisposable
     {
         foreach (var entry in _containers)
         {
-            var placement = layout.Objects.AsValueEnumerable().FirstOrDefault(o => entry.Container.Id.EndsWith("-" + o.Id, StringComparison.Ordinal));
-            if (placement != null) yield return (placement.Id, entry.Container);
+            var placement = layout
+                .Objects.AsValueEnumerable()
+                .FirstOrDefault(o => entry.Container.Id.EndsWith("-" + o.Id, StringComparison.Ordinal));
+            if (placement != null)
+                yield return (placement.Id, entry.Container);
         }
     }
 
@@ -258,7 +261,8 @@ internal sealed class MissionLoot : IDisposable
             foreach (var (_, itemId) in _owned)
             {
                 var current = _world.LootList.AsValueEnumerable().OfType<LootItem>().FirstOrDefault(l => l && l.Item?.Id == itemId);
-                if (current) _world.DestroyLoot(current);
+                if (current)
+                    _world.DestroyLoot(current);
             }
         _owned.Clear();
         foreach (var (model, container, navigation) in _containers)

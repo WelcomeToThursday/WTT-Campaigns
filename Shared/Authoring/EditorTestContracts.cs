@@ -24,13 +24,14 @@ public static class EditorTestActions
 /// <summary>A disposable route rehearsal; never modifies or completes an authored mission.</summary>
 public static class EditorCheckpointTest
 {
-    public static MissionDefinition Definition(WTT.Campaigns.Shared.Spatial.MapLayout layout) => new()
-    {
-        Id = "checkpoint-test:" + layout.Id,
-        LayoutId = layout.Id,
-        Name = layout.Name + " · checkpoint test",
-        CheckpointRetries = true,
-    };
+    public static MissionDefinition Definition(WTT.Campaigns.Shared.Spatial.MapLayout layout) =>
+        new()
+        {
+            Id = "checkpoint-test:" + layout.Id,
+            LayoutId = layout.Id,
+            Name = layout.Name + " · checkpoint test",
+            CheckpointRetries = true,
+        };
 }
 
 /// <summary>Request for a quick, draft-backed editor mission rehearsal.</summary>

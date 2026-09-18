@@ -17,7 +17,8 @@ internal sealed class MissionRetryMenuInput : MonoBehaviour
         _previousVisible = Cursor.visible;
         foreach (var system in FindObjectsOfType<EventSystem>())
         {
-            if (!system.enabled) continue;
+            if (!system.enabled)
+                continue;
             _suspended.Add(system);
             system.enabled = false;
         }
@@ -27,19 +28,22 @@ internal sealed class MissionRetryMenuInput : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (!_input) return;
+        if (!_input)
+            return;
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 
     internal void Release()
     {
-        if (!_input) return;
+        if (!_input)
+            return;
         _input.SetActive(false);
         Destroy(_input);
         _input = null;
         foreach (var system in _suspended)
-            if (system) system.enabled = true;
+            if (system)
+                system.enabled = true;
         _suspended.Clear();
         Cursor.lockState = _previousLock;
         Cursor.visible = _previousVisible;

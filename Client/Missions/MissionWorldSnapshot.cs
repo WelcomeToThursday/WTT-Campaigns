@@ -27,7 +27,8 @@ internal sealed class MissionWorldSnapshot
         var until = Time.realtimeSinceStartup + 8;
         while (targets.AsValueEnumerable().Any(t => t && t.gameObject.scene.isLoaded && t.DoorState == EDoorState.Interacting))
         {
-            if (Time.realtimeSinceStartup >= until) throw new TimeoutException("A native door or container interaction did not finish before checkpoint capture.");
+            if (Time.realtimeSinceStartup >= until)
+                throw new TimeoutException("A native door or container interaction did not finish before checkpoint capture.");
             await UniTask.Delay(50, delayType: DelayType.Realtime, cancellationToken: token);
         }
     }
@@ -37,15 +38,20 @@ internal sealed class MissionWorldSnapshot
         _world = world;
         foreach (var loot in world.LootList.AsValueEnumerable().OfType<LootItem>())
         {
-            if (!loot || loot.Item == null) continue;
+            if (!loot || loot.Item == null)
+                continue;
             JsonLootItem record;
             if (loot is Corpse corpse)
                 record = new JsonCorpse
                 {
-                    Customization = corpse.Customization, Side = corpse.Side, ProfileID = corpse.PlayerProfileID,
-                    Bones = corpse.GetTransformSync(), IsZombieCorpse = corpse.IsZombieCorpse,
+                    Customization = corpse.Customization,
+                    Side = corpse.Side,
+                    ProfileID = corpse.PlayerProfileID,
+                    Bones = corpse.GetTransformSync(),
+                    IsZombieCorpse = corpse.IsZombieCorpse,
                 };
-            else record = new JsonLootItem();
+            else
+                record = new JsonLootItem();
             record.Id = loot.StaticId ?? loot.ItemId;
             record.Item = loot.Item;
             record.Position = loot.transform.position;
@@ -60,14 +66,26 @@ internal sealed class MissionWorldSnapshot
         }
         foreach (var container in Resources.FindObjectsOfTypeAll<LootableContainer>())
         {
-            if (!container || !container.gameObject.scene.IsValid() || !container.gameObject.scene.isLoaded) continue;
-            _containers.Add((container, container.ItemOwner?.RootItem == null ? null
-                : ItemBinarySerializer.SerializeItem(container.ItemOwner.RootItem, player.SearchController), container.DoorState, container.CurrentAngle));
+            if (!container || !container.gameObject.scene.IsValid() || !container.gameObject.scene.isLoaded)
+                continue;
+            _containers.Add(
+                (
+                    container,
+                    container.ItemOwner?.RootItem == null
+                        ? null
+                        : ItemBinarySerializer.SerializeItem(container.ItemOwner.RootItem, player.SearchController),
+                    container.DoorState,
+                    container.CurrentAngle
+                )
+            );
             _interactions.Add(new(container));
         }
         foreach (var door in Resources.FindObjectsOfTypeAll<Door>())
             if (door && door.gameObject.scene.IsValid() && door.gameObject.scene.isLoaded)
-            { _doors.Add(new(door)); _interactions.Add(new(door)); }
+            {
+                _doors.Add(new(door));
+                _interactions.Add(new(door));
+            }
     }
 
     internal void Clear()
@@ -78,7 +96,8 @@ internal sealed class MissionWorldSnapshot
         for (var index = _world.Grenades.Count - 1; index >= 0; index--)
         {
             var grenade = _world.Grenades.GetByIndex(index);
-            if (!grenade) continue;
+            if (!grenade)
+                continue;
             grenade.CancelInvoke();
             grenade.StopAllCoroutines();
             grenade.gameObject.SetActive(false);
@@ -86,36 +105,46 @@ internal sealed class MissionWorldSnapshot
             UnityEngine.Object.Destroy(grenade.gameObject);
         }
         foreach (var loot in _world.LootList.AsValueEnumerable().OfType<LootItem>().ToArray())
-            if (loot) _world.DestroyLoot(loot);
+            if (loot)
+                _world.DestroyLoot(loot);
         foreach (var saved in _containers)
         {
-            if (!saved.Container) throw new InvalidOperationException("A checkpoint container was destroyed.");
+            if (!saved.Container)
+                throw new InvalidOperationException("A checkpoint container was destroyed.");
             _world.LootList.Remove(saved.Container);
-            if (saved.Container.ItemOwner != null) _world.ItemOwners.Remove(saved.Container.ItemOwner);
+            if (saved.Container.ItemOwner != null)
+                _world.ItemOwners.Remove(saved.Container.ItemOwner);
         }
     }
 
     internal async Task RestoreAsync(CancellationToken token)
     {
         RequireWorld();
-        foreach (var interaction in _interactions) interaction.Restore();
+        foreach (var interaction in _interactions)
+            interaction.Restore();
         if (!_hooked)
         {
             new Harmony("com.wtt.campaigns.checkpoint-corpses").Patch(
                 AccessTools.Method(typeof(Corpse), nameof(Corpse.InitBody)),
-                postfix: new HarmonyMethod(typeof(MissionWorldSnapshot), nameof(TrackBody)));
+                postfix: new HarmonyMethod(typeof(MissionWorldSnapshot), nameof(TrackBody))
+            );
             _hooked = true;
         }
         foreach (var saved in _containers)
         {
-            if (!saved.Container) throw new InvalidOperationException("A checkpoint container is unavailable.");
+            if (!saved.Container)
+                throw new InvalidOperationException("A checkpoint container is unavailable.");
             if (saved.Items != null)
                 LootItem.CreateLootContainer(saved.Container, saved.Items.Deserialize(), saved.Container.name, _world, saved.Container.Id);
-            else saved.Container.ItemOwner = null!;
-            saved.Container.SetInitialSyncState(new WorldInteractiveObject.InteractiveObjectStatusInfo(saved.Container.Id, saved.State, saved.Angle));
+            else
+                saved.Container.ItemOwner = null!;
+            saved.Container.SetInitialSyncState(
+                new WorldInteractiveObject.InteractiveObjectStatusInfo(saved.Container.Id, saved.State, saved.Angle)
+            );
         }
         var bodies = new List<Task>();
-        if (_restoringBodies != null) throw new InvalidOperationException("Another checkpoint world restoration is already active.");
+        if (_restoringBodies != null)
+            throw new InvalidOperationException("Another checkpoint world restoration is already active.");
         _restoringBodies = bodies;
         try
         {
@@ -123,18 +152,24 @@ internal sealed class MissionWorldSnapshot
             {
                 token.ThrowIfCancellationRequested();
                 var item = ItemBinarySerializer.DeserializeJsonLootItem(saved);
-                if (item is JsonCorpse corpse) _world.SpawnLootCorpse(corpse);
-                else _world.SpawnLootItem(item, false);
+                if (item is JsonCorpse corpse)
+                    _world.SpawnLootCorpse(corpse);
+                else
+                    _world.SpawnLootItem(item, false);
             }
         }
-        finally { _restoringBodies = null; }
+        finally
+        {
+            _restoringBodies = null;
+        }
         var completion = Task.WhenAll(bodies);
         using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
         var timeout = UniTask.Delay(45000, delayType: DelayType.Realtime, cancellationToken: deadline.Token).AsTask();
         var finished = await Task.WhenAny(completion, timeout);
         deadline.Cancel();
         token.ThrowIfCancellationRequested();
-        if (finished != completion) throw new TimeoutException("Native checkpoint corpses did not finish loading.");
+        if (finished != completion)
+            throw new TimeoutException("Native checkpoint corpses did not finish loading.");
         await completion;
         RequireWorld();
         foreach (var door in _doors)
@@ -151,7 +186,10 @@ internal sealed class MissionWorldSnapshot
             MissionInventorySnapshot.RequireItems(saved.Item, ItemBinarySerializer.SerializeItem(restored.Item, player.SearchController));
         }
         foreach (var saved in _containers)
-            MissionInventorySnapshot.RequireItems(saved.Items, ItemBinarySerializer.SerializeItem(saved.Container.ItemOwner?.RootItem, player.SearchController));
+            MissionInventorySnapshot.RequireItems(
+                saved.Items,
+                ItemBinarySerializer.SerializeItem(saved.Container.ItemOwner?.RootItem, player.SearchController)
+            );
     }
 
     private static void TrackBody(Task __result) => _restoringBodies?.Add(__result);

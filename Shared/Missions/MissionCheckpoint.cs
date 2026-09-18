@@ -14,7 +14,13 @@ public sealed class MissionCheckpoint
 
     public MissionCheckpoint(MissionRun run, string checkpointId)
     {
-        if (run.Status != MissionRunStatuses.Active || run.Restoring || run.PlayerDefeated || run.ExitReached || run.Logic.Failure.Length > 0)
+        if (
+            run.Status != MissionRunStatuses.Active
+            || run.Restoring
+            || run.PlayerDefeated
+            || run.ExitReached
+            || run.Logic.Failure.Length > 0
+        )
             throw new InvalidOperationException("Only an active mission can accept a checkpoint.");
         if (checkpointId != run.CheckpointId || (checkpointId.Length > 0 && !run.CompletedCheckpointIds.Contains(checkpointId)))
             throw new InvalidOperationException("The checkpoint has not been accepted.");
@@ -42,8 +48,12 @@ public sealed class MissionCheckpoint
         return restored;
     }
 
-    public void CommitRestore(MissionDefinition mission, MapLayout layout, MissionRun restored,
-        IReadOnlyDictionary<string, string> replacementIds)
+    public void CommitRestore(
+        MissionDefinition mission,
+        MapLayout layout,
+        MissionRun restored,
+        IReadOnlyDictionary<string, string> replacementIds
+    )
     {
         RequireIdentity(restored);
         if (!restored.Restoring || restored.CheckpointId != Id)
@@ -56,8 +66,11 @@ public sealed class MissionCheckpoint
         // Validate the whole mapping before changing any state.
         foreach (var actor in living)
         {
-            if (!replacementIds.TryGetValue(actor.ProfileId, out var replacement) || string.IsNullOrWhiteSpace(replacement)
-                || actors.ContainsKey(replacement))
+            if (
+                !replacementIds.TryGetValue(actor.ProfileId, out var replacement)
+                || string.IsNullOrWhiteSpace(replacement)
+                || actors.ContainsKey(replacement)
+            )
                 throw new InvalidOperationException("A checkpoint actor replacement is missing or reuses an old runtime identity.");
         }
         foreach (var actor in living)
@@ -68,14 +81,21 @@ public sealed class MissionCheckpoint
         }
         // Unspawned generated profiles from the checkpoint are re-requested by the
         // restored wave and must never count as living or defeated actors.
-        foreach (var actor in actors.Values.Where(a => !a.Spawned).ToArray()) actors.Remove(actor.ProfileId);
+        foreach (var actor in actors.Values.Where(a => !a.Spawned).ToArray())
+            actors.Remove(actor.ProfileId);
         foreach (var zone in candidate.Zones.Values)
             zone.Occupants = zone.Occupants.Where(replacementIds.ContainsKey).Select(id => replacementIds[id]).ToList();
-        MissionLogic.Apply(mission, layout, candidate, new MissionSignal
-        {
-            Kind = Id.Length == 0 ? MissionSignals.Start : MissionSignals.Checkpoint,
-            TargetId = Id, Time = Time,
-        });
+        MissionLogic.Apply(
+            mission,
+            layout,
+            candidate,
+            new MissionSignal
+            {
+                Kind = Id.Length == 0 ? MissionSignals.Start : MissionSignals.Checkpoint,
+                TargetId = Id,
+                Time = Time,
+            }
+        );
         restored.Logic = candidate;
         restored.Restoring = false;
     }

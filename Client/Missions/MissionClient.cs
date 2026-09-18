@@ -127,16 +127,36 @@ internal static class MissionClient
 
     internal static string NewOperationId() => Guid.NewGuid().ToString("N");
 
-    internal static Task<MissionResponse> TransitionAsync(MissionRun run, string kind, long revision, string operationId,
-        CancellationToken token) => ProgressAsync(run.MissionId, run.RunId, run.RaidId, run.CheckpointId, kind, revision,
-            operationId, token, run.AttemptGeneration);
+    internal static Task<MissionResponse> TransitionAsync(
+        MissionRun run,
+        string kind,
+        long revision,
+        string operationId,
+        CancellationToken token
+    ) => ProgressAsync(run.MissionId, run.RunId, run.RaidId, run.CheckpointId, kind, revision, operationId, token, run.AttemptGeneration);
 
-    internal static Task<MissionResponse> ObserveAsync(MissionRun run, List<MissionSignal> signals, long revision, string operationId,
-        CancellationToken token) => PostMutationAsync("/wtt-campaigns/missions/progress", new MissionRequest
-        {
-            MissionId = run.MissionId, RunId = run.RunId, RaidId = run.RaidId, AttemptGeneration = run.AttemptGeneration,
-            Kind = "Observations", Signals = signals, ExpectedRevision = revision, OperationId = operationId,
-        }, token);
+    internal static Task<MissionResponse> ObserveAsync(
+        MissionRun run,
+        List<MissionSignal> signals,
+        long revision,
+        string operationId,
+        CancellationToken token
+    ) =>
+        PostMutationAsync(
+            "/wtt-campaigns/missions/progress",
+            new MissionRequest
+            {
+                MissionId = run.MissionId,
+                RunId = run.RunId,
+                RaidId = run.RaidId,
+                AttemptGeneration = run.AttemptGeneration,
+                Kind = "Observations",
+                Signals = signals,
+                ExpectedRevision = revision,
+                OperationId = operationId,
+            },
+            token
+        );
 
     private static async Task<MissionResponse> PostMutationAsync(string route, MissionRequest request, CancellationToken cancellationToken)
     {

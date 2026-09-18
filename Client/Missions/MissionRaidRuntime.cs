@@ -343,7 +343,8 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             _ending = false;
             _successfulExitRequested = false;
             _hud.SetRoute(run.NextCheckpointIndex, descriptor.Layout.Checkpoints.Count, run.ExitReached, "Mission active");
-            if (descriptor.Definition.CheckpointRetries) await CaptureStartCheckpoint(lifetime.Token);
+            if (descriptor.Definition.CheckpointRetries)
+                await CaptureStartCheckpoint(lifetime.Token);
             _encounters.MissionStart();
             _director?.Observe(new MissionSignal { Kind = MissionSignals.Start });
             _pending = null;
@@ -589,7 +590,11 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
         _reportingObservations = true;
         var director = _director;
         var lifetime = _lifetime;
-        if (director == null || lifetime == null) { _reportingObservations = false; return; }
+        if (director == null || lifetime == null)
+        {
+            _reportingObservations = false;
+            return;
+        }
         var acquired = false;
         try
         {
@@ -603,8 +608,15 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
                     _observationOperation = MissionClient.NewOperationId();
                     _observationRevision = _revision;
                 }
-                var response = await MissionClient.ObserveAsync(_run, _unacknowledgedSignals, _observationRevision, _observationOperation, lifetime.Token);
-                if (director != _director || lifetime.IsCancellationRequested || !_active) return;
+                var response = await MissionClient.ObserveAsync(
+                    _run,
+                    _unacknowledgedSignals,
+                    _observationRevision,
+                    _observationOperation,
+                    lifetime.Token
+                );
+                if (director != _director || lifetime.IsCancellationRequested || !_active)
+                    return;
                 MissionAcknowledgement.Require(_run, response.Run, response.Committed);
                 _unacknowledgedSignals = null;
                 _revision = response.Revision;
@@ -620,7 +632,12 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             Plugin.Error(exception);
             _hud?.SetStatus("Mission observations stopped: " + exception.Message);
         }
-        finally { if (acquired) _progressGate.Release(); _reportingObservations = false; }
+        finally
+        {
+            if (acquired)
+                _progressGate.Release();
+            _reportingObservations = false;
+        }
     }
 
     private async Task ReportProgressAsync(string id, string kind, int checkpointIndex, string operationId)
@@ -645,7 +662,8 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
                 return;
             if (kind == "Exit" && _run!.NextCheckpointIndex != _descriptor!.Layout.Checkpoints.Count)
                 return;
-            if (_director?.HasPending == true || _unacknowledgedSignals != null) return;
+            if (_director?.HasPending == true || _unacknowledgedSignals != null)
+                return;
             if (!MissionLogic.CanAdvance(descriptor.Definition, _run!.Logic, kind == "Exit" ? "" : id, out var objectiveError))
             {
                 _hud?.SetStatus(objectiveError);
@@ -655,14 +673,19 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             if (saveCheckpoint)
             {
                 _retryBusy = true;
-                _retryGuard!.Freeze(); _director!.Pause();
+                _retryGuard!.Freeze();
+                _director!.Pause();
                 _hud?.SetStatus("Saving checkpoint…");
                 await _encounters!.SettleAsync(lifetime.Token);
                 await MissionInventorySnapshot.SettleHands(player, lifetime.Token);
                 await MissionWorldSnapshot.SettleAsync(lifetime.Token);
                 await DrainObservations(lifetime.Token);
                 if (_run!.Logic.Failure.Length > 0)
-                { _retryBusy = false; CheckObjectiveFailure(); return; }
+                {
+                    _retryBusy = false;
+                    CheckObjectiveFailure();
+                    return;
+                }
             }
             var response = await MissionClient.ProgressAsync(
                 run.MissionId,
@@ -692,14 +715,16 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
                 _run = response.Run;
             if (_run == null)
                 return;
-            if (!response.Committed) throw new InvalidDataException("The mission transition was not committed.");
+            if (!response.Committed)
+                throw new InvalidDataException("The mission transition was not committed.");
             if (saveCheckpoint)
             {
                 _checkpoint = new MissionRaidCheckpoint(id, player, _encounters!);
                 _retryBusy = false;
             }
             _director?.Accept(_run.Logic);
-            if (saveCheckpoint) ReleaseRetryHold();
+            if (saveCheckpoint)
+                ReleaseRetryHold();
             if (kind == "Checkpoint")
             {
                 _hud?.SetRoute(_run.NextCheckpointIndex, descriptor.Layout.Checkpoints.Count, _run.ExitReached, "Checkpoint secured");
@@ -723,7 +748,8 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
                 return;
             Plugin.Error(exception);
             _hud?.SetStatus("Mission progress failed: " + exception.Message);
-            if (_retryGuard?.Frozen == true) BrokenRestore(exception);
+            if (_retryGuard?.Frozen == true)
+                BrokenRestore(exception);
         }
         finally
         {
@@ -824,8 +850,12 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
 
     private void EndRuntime()
     {
-        _retryGuard?.Dispose(); _retryGuard = null; _checkpoint = null;
-        _retryBusy = _retryBroken = _retryShown = false; _retryFailure = ""; _retryDeath = null;
+        _retryGuard?.Dispose();
+        _retryGuard = null;
+        _checkpoint = null;
+        _retryBusy = _retryBroken = _retryShown = false;
+        _retryFailure = "";
+        _retryDeath = null;
         _director?.Dispose();
         _director = null;
         _unacknowledgedSignals = null;

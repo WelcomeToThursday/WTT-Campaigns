@@ -15,12 +15,15 @@ internal sealed class EncounterPreviewObjects
     private readonly HashSet<string> _existingItemIds = new(StringComparer.Ordinal);
 
     internal HashSet<string> CaptureBaseline() => new(_existingItemIds, StringComparer.Ordinal);
+
     internal void RestoreBaseline(IEnumerable<string> ids)
     {
-        _existingItemIds.Clear(); _existingItemIds.UnionWith(ids);
+        _existingItemIds.Clear();
+        _existingItemIds.UnionWith(ids);
         _existingLoot.RemoveWhere(l => l is EFT.Interactive.LootItem);
         foreach (var loot in _world.LootList)
-            if (loot is not EFT.Interactive.LootItem item || _existingItemIds.Contains(item.ItemId)) _existingLoot.Add(loot);
+            if (loot is not EFT.Interactive.LootItem item || _existingItemIds.Contains(item.ItemId))
+                _existingLoot.Add(loot);
     }
 
     internal EncounterPreviewObjects()
@@ -31,7 +34,8 @@ internal sealed class EncounterPreviewObjects
         foreach (var loot in _world.LootList)
         {
             _existingLoot.Add(loot);
-            if (loot is EFT.Interactive.LootItem item) _existingItemIds.Add(item.ItemId);
+            if (loot is EFT.Interactive.LootItem item)
+                _existingItemIds.Add(item.ItemId);
         }
         for (var index = 0; index < _world.Grenades.Count; index++)
             _existingGrenades.Add(_world.Grenades.GetByIndex(index));

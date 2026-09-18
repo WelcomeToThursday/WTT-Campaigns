@@ -111,8 +111,11 @@ internal sealed class EncounterNative
     private bool _active;
     private bool _resetting;
     private EncounterPreviewObjects? _objects;
+
     internal HashSet<string> CaptureObjectBaseline() => _objects?.CaptureBaseline() ?? new();
+
     internal void RestoreObjectBaseline(IEnumerable<string> ids) => _objects?.RestoreBaseline(ids);
+
     private EncounterCorePoints? _corePoints;
     private BotCreatorClient? _rendererCreator;
     private readonly HashSet<Player> _existingRendererPlayers = new();
@@ -274,7 +277,9 @@ internal sealed class EncounterNative
         {
             if (!WTT.Campaigns.Client.Missions.MissionRetryGuard.RestoringActors || context.AttemptGeneration <= 1)
                 throw new InvalidOperationException("A checkpoint actor can only be recreated during a frozen retry.");
-            authoredSpawn = Newtonsoft.Json.JsonConvert.DeserializeObject<SpatialCapture>(Newtonsoft.Json.JsonConvert.SerializeObject(authoredSpawn))!;
+            authoredSpawn = Newtonsoft.Json.JsonConvert.DeserializeObject<SpatialCapture>(
+                Newtonsoft.Json.JsonConvert.SerializeObject(authoredSpawn)
+            )!;
             authoredSpawn.Position = checkpointPosition;
         }
         if (checkpointBrain.HasValue && checkpointPosition == null)
@@ -493,7 +498,8 @@ internal sealed class EncounterNative
         Exception? objectFailure = null;
         try
         {
-            if (!preserveWorld) _objects?.Reset();
+            if (!preserveWorld)
+                _objects?.Reset();
             _objects = null;
             if (_rendererCreator != null)
                 foreach (var cached in new List<Player>(_rendererCreator._botRenders.Keys))

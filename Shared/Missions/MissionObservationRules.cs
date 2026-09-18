@@ -23,19 +23,24 @@ public static class MissionObservationRules
                 MissionSignals.Start => signal.TargetId.Length == 0 && !run.Logic.Started,
                 MissionSignals.Spawn or MissionSignals.Death => run.Logic.Actors.ContainsKey(signal.ProfileId),
                 MissionSignals.Enter or MissionSignals.Leave => zone,
-                MissionSignals.Sample => zone && signal.Occupants != null && signal.Occupants.Count <= 4096
+                MissionSignals.Sample => zone
+                    && signal.Occupants != null
+                    && signal.Occupants.Count <= 4096
                     && signal.Occupants.Distinct().Count() == signal.Occupants.Count
                     && signal.Occupants.All(id => run.Logic.Actors.TryGetValue(id, out var actor) && actor.Spawned && !actor.Dead),
                 MissionSignals.Interaction => layout.Doors.Any(d => d.Id == signal.TargetId)
                     || layout.Objects.Any(o => o.Id == signal.TargetId && (o.Container != null || SceneAssetRules.IsContainer(o))),
                 MissionSignals.Tick => signal.TargetId.Length == 0,
-                MissionSignals.Wave => layout.Encounters.SelectMany(e => e.Waves).Any(w => w.Id == signal.TargetId
-                    && Complete(run, w.Roster.Sum(r => r.Count), a => a.WaveId == w.Id)),
-                MissionSignals.Encounter => layout.Encounters.Any(e => e.Id == signal.TargetId
-                    && Complete(run, e.Waves.Sum(w => w.Roster.Sum(r => r.Count)), a => a.EncounterId == e.Id)),
+                MissionSignals.Wave => layout
+                    .Encounters.SelectMany(e => e.Waves)
+                    .Any(w => w.Id == signal.TargetId && Complete(run, w.Roster.Sum(r => r.Count), a => a.WaveId == w.Id)),
+                MissionSignals.Encounter => layout.Encounters.Any(e =>
+                    e.Id == signal.TargetId && Complete(run, e.Waves.Sum(w => w.Roster.Sum(r => r.Count)), a => a.EncounterId == e.Id)
+                ),
                 _ => false,
             };
-            if (!valid) throw new InvalidOperationException("Unresolved or invalid mission observation: " + signal.Kind);
+            if (!valid)
+                throw new InvalidOperationException("Unresolved or invalid mission observation: " + signal.Kind);
             MissionLogic.Apply(mission, layout, run.Logic, signal);
         }
     }
