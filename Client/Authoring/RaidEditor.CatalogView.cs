@@ -128,7 +128,12 @@ public sealed partial class RaidEditor
             {
                 var reason = SceneDoorPlacement.Restriction(doorSource);
                 view.Get<Button>("ScenePlace").interactable = CanSceneEdit && _placementLifetime == null && reason.Length == 0;
-                view.Text("SceneInfo", reason.Length > 0 ? reason : "Place a new interactive door from this map. Configure its key and starting state after placement.");
+                view.Text(
+                    "SceneInfo",
+                    reason.Length > 0
+                        ? reason
+                        : "Place a new interactive door from this map. Configure its key and starting state after placement."
+                );
             }
         }
         PresentPickedProperties();
