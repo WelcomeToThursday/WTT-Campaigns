@@ -460,7 +460,7 @@ internal sealed class EncounterPreviewRuntime
                             ? JsonConvert.SerializeObject(
                                 new MissionEncounterProfilesRequest
                                 {
-                                    Version = 2,
+                                    Version = 3,
                                     SeasonId = MissionClient.SeasonId,
                                     CharacterId = MissionClient.CharacterId,
                                     RunId = _context.PreviewGeneration,

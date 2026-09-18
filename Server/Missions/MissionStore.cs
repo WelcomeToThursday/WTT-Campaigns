@@ -30,6 +30,8 @@ internal static class MissionStore
         state.Receipts ??= new();
         if (state.ActiveRun != null)
         {
+            if (state.ActiveRun.ContextVersion is not (0 or 3))
+                throw new InvalidDataException("The saved mission run requires a compatible runtime.");
             state.ActiveRun.CompletedCheckpointIds ??= new();
             state.ActiveRun.EncounterProfileChunks ??= new();
         }

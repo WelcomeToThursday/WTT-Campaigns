@@ -22,6 +22,10 @@ public static class MissionAcknowledgement
             );
         var identity = new MissionRun
         {
+            ContextVersion = expected.ContextVersion,
+            Scope = expected.Scope,
+            PackageId = expected.PackageId,
+            PackageRevision = expected.PackageRevision,
             RunId = expected.RunId,
             RaidId = expected.RaidId,
             CharacterId = expected.CharacterId,
@@ -41,6 +45,10 @@ public static class MissionAcknowledgement
         if (
             !committed
             || returned == null
+            || returned.ContextVersion != expected.ContextVersion
+            || returned.Scope != expected.Scope
+            || returned.PackageId != expected.PackageId
+            || returned.PackageRevision != expected.PackageRevision
             || returned.RunId != expected.RunId
             || returned.RaidId != expected.RaidId
             || returned.CharacterId != expected.CharacterId

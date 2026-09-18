@@ -7,7 +7,7 @@ public class MissionRequest
 {
     public long AttemptGeneration { get; set; } = 1;
     public List<MissionSignal> Signals { get; set; } = new();
-    public int Version { get; set; } = 2;
+    public int Version { get; set; } = 3;
     public string SeasonId { get; set; } = "";
     public string CharacterId { get; set; } = "";
     public string OperationId { get; set; } = "";
@@ -23,6 +23,7 @@ public sealed class MissionSummary
 {
     public MissionDefinition Definition { get; set; } = new();
     public string Status { get; set; } = "Locked";
+    public string LockReason { get; set; } = "";
     public bool Unlocked { get; set; }
     public bool Completed { get; set; }
     public bool Active { get; set; }
@@ -32,6 +33,9 @@ public sealed class MissionSummary
 /// <summary>Immutable content and server-issued identity required to enter a mission raid.</summary>
 public sealed class MissionDescriptor
 {
+    public string Scope { get; set; } = "";
+    public string PackageId { get; set; } = "";
+    public long PackageRevision { get; set; }
     public Dictionary<string, List<WTT.Campaigns.Shared.Native.NativeItem>> ContainerLoot { get; set; } = new();
     public MissionDefinition Definition { get; set; } = new();
     public MapLayout Layout { get; set; } = new();
@@ -48,7 +52,7 @@ public sealed class MissionDescriptor
 
 public sealed class MissionResponse
 {
-    public int Version { get; set; } = 2;
+    public int Version { get; set; } = 3;
     public string? Error { get; set; }
     public string SeasonId { get; set; } = "";
     public string CharacterId { get; set; } = "";

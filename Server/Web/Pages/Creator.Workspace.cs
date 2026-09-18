@@ -33,20 +33,31 @@ public partial class Creator
     public string? ContentQuery { get; set; }
 
     private string? _openedQuery;
+    private string? _openedSectionQuery;
     private string _focusChildId = "";
 
     protected override void OnParametersSet()
     {
         ApplyGuidanceQuery();
-        if (DraftQuery == null || _openedQuery == DraftQuery)
+        if (DraftQuery == null)
         {
             return;
         }
 
+        if (_openedQuery == DraftQuery && _draft?.Id == DraftQuery)
+        {
+            if (MissionEditor && _openedSectionQuery != SectionQuery)
+                _missionTab = SectionQuery == "Layouts" ? "Layouts" : "Missions";
+            _openedSectionQuery = SectionQuery;
+            return;
+        }
+
         _openedQuery = DraftQuery;
+        _openedSectionQuery = SectionQuery;
         Run(() =>
         {
             Open(Repository.Load(DraftQuery));
+            if (MissionEditor) _missionTab = SectionQuery == "Layouts" ? "Layouts" : "Missions";
             if (SectionQuery != null && Sections.Contains(SectionQuery))
             {
                 _section = SectionQuery;

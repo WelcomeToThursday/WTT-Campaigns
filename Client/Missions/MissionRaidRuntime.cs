@@ -153,7 +153,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
 
     private void Update()
     {
-        if (!Plugin.InRaid || !Plugin.SeasonalPlayer)
+        if (!Plugin.InRaid || Plugin.Player?.ProfileId != MissionClient.CharacterId)
         {
             if (_active || _starting)
                 EndRuntime();

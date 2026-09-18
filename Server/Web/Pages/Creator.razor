@@ -11,11 +11,11 @@
 <HeadContent><link rel="stylesheet" href="@WTT.Campaigns.Server.Web.CreatorStyles.Url" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
-<main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
+<main class="season-creator @(_draft == null ? "creator-library" : MissionEditor ? "mission-editor" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
     <header class="creator-header">
-        <div><h1><span class="app-mark" aria-hidden="true">@(MissionEditor ? "M" : "C")</span>@(MissionEditor ? "Mission editor" : "Campaign Creator") <span class="editor-beta">BETA</span></h1><p>@(MissionEditor ? "Author missions, objectives, events and container loot. Choose a campaign draft to begin." : "Create and publish campaigns. Each campaign character chooses its own campaign.")</p>
+        <div><h1><span class="app-mark" aria-hidden="true">@(MissionEditor ? "M" : "C")</span>@(MissionEditor ? "Mission editor" : "Campaign Creator") <span class="editor-beta">BETA</span></h1><p>@(MissionEditor ? "Create independent missions, publish revisions, and reuse them in campaigns." : "Create and publish campaigns. Each campaign character chooses its own campaign.")</p>
         @if (MissionEditor) { <a href="@CampaignEditorUrl">Back to Campaign Creator</a> }
-        else { <a href="/wtt-campaigns/creator/traders">Open standalone trader editor</a><button class="subtle" @onclick="OpenMissionEditor">Open mission editor</button> }</div>
+        else { <a href="/wtt-campaigns/creator/traders">Open standalone trader editor</a><a href="/wtt-campaigns/creator/missions">Open mission library</a> }</div>
         <div class="row"><a class="button subtle" href="/wtt-campaigns">Home</a><a class="button subtle" href="/wtt-campaigns/characters/recovery">Character recovery</a><a class="button subtle" href="/wtt-campaigns/docs">Documentation</a><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
     </header>
     @if (_showHelp) { <CreatorHelp HasDraft="@(_draft != null)" Navigate="OpenGuideSection" StartTutorial="StartTutorial" Close="@(() => _showHelp = false)" /> }
@@ -42,21 +42,25 @@
     }
     @if (_draft == null)
     {
-        var drafts = Repository.Drafts(null);
-        var packs = Repository.Packs();
+        var drafts = Repository.Drafts(null).Where(d => (d.Definition.MissionPackage != null) == MissionEditor).ToList();
+        var packs = Repository.Packs().Where(p => (p.Manifest.ContentKind == "Mission") == MissionEditor).ToList();
         var visibleDrafts = LibraryDrafts(drafts).ToArray();
         var visiblePacks = packs.Where(p => LibraryMatches(p.Manifest.Name)).ToArray();
         <div class="season-library">
             <section class="library-heading" aria-labelledby="library-title">
-                <div><span class="eyebrow">YOUR WORKSPACE</span><h2 id="library-title">Campaign library</h2><p>Build something new, or pick up where you left off.</p></div>
-                <button class="primary library-create" @onclick="@(() => Run(() => Open(Repository.Create(false))))"><span aria-hidden="true">＋</span> Create blank campaign</button>
+                <div><span class="eyebrow">YOUR WORKSPACE</span><h2 id="library-title">@(MissionEditor ? "Mission library" : "Campaign library")</h2><p>Build something new, or pick up where you left off.</p></div>
+                <button class="primary library-create" @onclick="@(() => Run(() => Open(MissionEditor ? Repository.CreateMission() : Repository.Create(false))))"><span aria-hidden="true">＋</span> @(MissionEditor ? "Create mission" : "Create blank campaign")</button>
             </section>
             <div class="library-layout">
                 <div class="library-content">
                     <div class="library-searchbar">
-                        <label for="season-library-search">Find a campaign</label>
+                        <label for="season-library-search">@(MissionEditor ? "Find a mission" : "Find a campaign")</label>
                         <div class="library-search-input"><input id="season-library-search" type="search" placeholder="Search drafts and published packs…" @bind="_librarySearch" @bind:event="oninput" />@if (_librarySearch.Length > 0) { <button class="subtle" @onclick="@(() => _librarySearch = "")">Clear</button> }</div>
                     </div>
+                    @if (MissionEditor)
+                    {
+                        <CampaignDraftMissions Drafts="Repository.Drafts(_draftView)" Search="@_librarySearch" />
+                    }
                     <section class="library-section" aria-labelledby="drafts-title">
                                                 <header class="library-section-heading"><div><h3 id="drafts-title">Draft management</h3><p>@(_draftView == DraftStatus.Archived ? "Set aside drafts you may return to. Restore a draft to edit it." : _draftView == DraftStatus.Trashed ? "Removed drafts stay here until you restore them. Nothing is automatically deleted." : "Rename, organize and edit your work. Published packs stay separate.")</p></div></header>
                         <div class="draft-management-toolbar">
@@ -116,7 +120,7 @@
                     <section class="library-section" aria-labelledby="packs-title">
                         <header class="library-section-heading"><div><h3 id="packs-title">Published packs <span class="library-count">@(packs.Count + 1)</span></h3><p>Saved releases you can share or use as a starting point.</p></div></header>
                         <div class="library-pack-list">
-                            @if (LibraryMatches("Built-in Campaign One"))
+                            @if (!MissionEditor && LibraryMatches("Built-in Campaign One"))
                             {
                                 <article class="library-pack">
                                     <div class="library-pack-info"><span class="library-status built-in">BUILT-IN</span><h4>Built-in Campaign One</h4><p>Duplicate the original campaign to make it your own.</p></div>
@@ -127,7 +131,7 @@
                             {
                                 <article class="library-pack" @key="pack.Key">
                                     <div class="library-pack-info"><span class="library-status published">PUBLISHED · REVISION @pack.Manifest.Revision</span><h4>@CampaignText.Display(pack.Manifest.Name)</h4><p>Version @pack.Manifest.Version</p></div>
-                                    <div class="row"><button @onclick="@(() => EditPublished(pack.Key))">Edit revision</button><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Pack(pack.Key)))))">Duplicate as new campaign</button><a class="button subtle" href="@($"/wtt-campaigns/creator/packs/{pack.Key}/download")" download>Export pack <span aria-hidden="true">↓</span></a></div>
+                                    <div class="row"><button @onclick="@(() => EditPublished(pack.Key))">Edit revision</button><button @onclick="@(() => Run(() => Open(Repository.Create(true, Repository.Pack(pack.Key)))))">@(MissionEditor ? "Duplicate as new mission" : "Duplicate as new campaign")</button><a class="button subtle" href="@($"/wtt-campaigns/creator/packs/{pack.Key}/download")" download>Export pack <span aria-hidden="true">↓</span></a></div>
                                 </article>
                             }
                         </div>
@@ -135,12 +139,12 @@
                         {
                             <div class="library-empty"><strong>No matching published packs</strong><p>Try another name or clear the search.</p></div>
                         }
-                        <p class="library-play-note">Each campaign character chooses its own campaign. Restart SPT to load newly published packs with their required dependencies, then choose one when creating a character.</p>
+                        <p class="library-play-note">@(MissionEditor ? "Publish a mission, then restart SPT to load it for play. Campaign authors can link a published revision from Campaign Creator." : "Each campaign character chooses its own campaign. Restart SPT to load newly published packs with their required dependencies, then choose one when creating a character.")</p>
                     </section>
                 </div>
                 <aside class="library-sidebar" aria-label="Import and learn">
                     <section class="library-side-panel">
-                        <span class="eyebrow">BRING YOUR CONTENT</span><h3>Import a campaign</h3><p>Open a shared campaign pack as an editable draft.</p>
+                        <span class="eyebrow">BRING YOUR CONTENT</span><h3>@(MissionEditor ? "Import a mission" : "Import a campaign")</h3><p>Open a shared pack as an editable draft.</p>
                         <label class="library-import"><span>Choose a .zip file <span aria-hidden="true">↑</span></span><InputFile OnChange="Import" accept=".zip" aria-label="Import campaign pack" /></label>
                         <small>Save, validate and publish the imported draft to make it a local pack.</small>
                     </section>
@@ -173,14 +177,27 @@
                     <button role="tab" aria-selected="@(_missionTab == "Missions")" @onclick='() => _missionTab = "Missions"'>Missions</button>
                     <button role="tab" aria-selected="@(_missionTab == "Layouts")" @onclick='() => _missionTab = "Layouts"'>Layouts</button>
                 </div>
+                @if (S.MissionPackage != null)
+                {
+                    <label>Package name<input @bind="S.Name" @bind:after="Dirty" /></label>
+                    <label><input type="checkbox" @bind="S.MissionPackage.AllowStandalonePlay" @bind:after="Dirty" /> Allow standalone play with normal characters</label>
+                    @if (S.MapLayouts.Count == 1)
+                    {
+                        <label>Map<select @bind="S.MapLayouts[0].Location" @bind:after="Dirty" disabled="@(S.MapLayouts[0].Start != null || S.MapLayouts[0].Objects.Count > 0 || S.MapLayouts[0].Checkpoints.Count > 0)"><option value="">Choose a map…</option>
+                            @foreach (var map in MapNames) { <option value="@map">@map</option> }
+                        </select></label>
+                    }
+                    <p>Campaigns choose their own availability and pinned revision when linking this mission.</p>
+                }
                 @if (_missionTab == "Layouts") { <MapLayoutWorkspace Season="S" Changed="Dirty" /> }
                 else { <MissionWorkspace Season="S" FocusId="@_focusId" Changed="Dirty" /> }
                 @if (_validation != null)
                 {
-                    <EditorSection Title="Campaign validation">
+                    <EditorSection Title="Mission validation">
                         @if (ValidationStale) { <p>Draft changed since validation. Validate again before publishing.</p> }
                         @foreach (var issue in _validation.Issues) { <p class="validation-warning">@issue.Path: @issue.Message</p> }
-                        <a href="@CampaignEditorUrl">Open Campaign Creator to edit quest links and other campaign content</a>
+                        @if (_published != null) { <a class="button" href="@($"/wtt-campaigns/creator/packs/{_published}/download")" download>Export mission pack</a> }
+                        @if (S.MissionPackage == null) { <a href="@CampaignEditorUrl">Open Campaign Creator to edit quest links</a> }
                     </EditorSection>
                 }
             </section>
@@ -326,8 +343,9 @@
                     <QuestWorkspace Season="S" ViewState="_questViews" FocusId="@_focusId" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
                     break;
                 case "Missions":
-                    <EditorSection Title="Mission editor" Description="Missions now have a dedicated page for objectives, events, layouts and container loot.">
-                        <button class="primary" @onclick="OpenMissionEditor">Save and open mission editor</button>
+                    <CampaignMissionLinks Season="S" Draft="_draft!" Changed="Dirty" />
+                    <EditorSection Title="Embedded missions" Description="Existing missions keep their original quest unlock behavior. Extract one to reuse it across campaigns.">
+                        <button class="primary" @onclick="OpenMissionEditor">Save and edit embedded missions</button>
                         <p>Continue with this campaign draft. Shared layout settings stay synchronized with the in-game editor.</p>
                     </EditorSection>
                     break;

@@ -142,6 +142,7 @@ internal static class TraderOfferUiChecks
                 .AddSingleton(new WTT.Campaigns.Server.Editor.SceneContainerLoot(JsonConvert.DeserializeObject<LocationTable>("{}")!, null!, null!, json, WTT.Campaigns.Tests.NativeItemHelperFixture.Create(table), null!, catalogue))
                 .BuildServiceProvider();
             await ContainerLootUiChecks.Run(services, weapon, scope, check);
+            await MissionLibraryUiChecks.Run(services, check);
             await using (var renderer = new EditorRenderer(services))
             {
                 await renderer.Dispatcher.InvokeAsync(async () =>

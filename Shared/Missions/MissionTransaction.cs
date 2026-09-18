@@ -24,7 +24,7 @@ public static class MissionTransaction
     /// <summary>Validates the request identity at the active-session boundary.</summary>
     public static void RequireRequestIdentity(MissionRequest request, string actualCharacterId, string seasonId)
     {
-        if (request.Version is not (1 or 2) || request.CharacterId != actualCharacterId || string.IsNullOrWhiteSpace(request.SeasonId))
+        if (request.Version is not (1 or 2 or 3) || request.CharacterId != actualCharacterId || string.IsNullOrWhiteSpace(request.SeasonId))
             throw new InvalidOperationException("Refresh the active Campaign character before using missions.");
         if (request.SeasonId != seasonId)
             throw new InvalidOperationException("This mission request belongs to another campaign.");

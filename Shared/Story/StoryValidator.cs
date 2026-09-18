@@ -114,6 +114,8 @@ public static class StoryValidator
                 path,
                 "Paid dialogue services have no beta adapter. Use SelectSubService to open native Services."
             );
+            if (a.Type == StoryActionType.UnlockMission)
+                Need(season.MissionLinks.Any(l => l.Id == a.Target && l.Availability == Missions.MissionAvailability.StoryAction), path, "Choose a mission link unlocked by story action.");
             if (a.Type == StoryActionType.SetVariable)
             {
                 var variable = story.Variables.FirstOrDefault(v => v.Id == a.Target);

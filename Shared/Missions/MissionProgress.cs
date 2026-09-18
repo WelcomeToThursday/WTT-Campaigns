@@ -26,6 +26,10 @@ public sealed class MissionProgress
 /// <summary>Server-owned identity and progress for one prepared or active raid.</summary>
 public sealed class MissionRun
 {
+    public int ContextVersion { get; set; }
+    public string Scope { get; set; } = "";
+    public string PackageId { get; set; } = "";
+    public long PackageRevision { get; set; }
     public long AttemptGeneration { get; set; } = 1;
     public string CheckpointId { get; set; } = "";
     public bool Restoring { get; set; }

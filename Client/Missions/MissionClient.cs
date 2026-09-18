@@ -11,7 +11,7 @@ namespace WTT.Campaigns.Client.Missions;
 internal static class MissionClient
 {
     internal static string CharacterId => Plugin.Current?.EffectiveProfileId ?? Plugin.App?.Session?.Profile?.Id ?? "";
-    internal static string SeasonId => Plugin.Current?.SeasonId ?? "";
+    internal static string SeasonId => Plugin.Current?.ActiveMode == "seasonal" ? Plugin.Current.SeasonId : MissionLibrary.StandaloneScope;
 
     internal static Task<MissionResponse> ListAsync(CancellationToken cancellationToken = default) =>
         PostAsync("/wtt-campaigns/missions/list", new MissionRequest(), cancellationToken);
@@ -183,11 +183,11 @@ internal static class MissionClient
     private static async Task<MissionResponse> PostAsync(string route, MissionRequest request, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        request.Version = 2;
+        request.Version = 3;
         request.SeasonId = SeasonId;
         request.CharacterId = CharacterId;
         if (request.SeasonId.Length == 0 || request.CharacterId.Length == 0)
-            throw new InvalidOperationException("A loaded campaign character is required for missions.");
+            throw new InvalidOperationException("A loaded character is required for missions.");
 
         var response = JsonConvert.DeserializeObject<MissionResponse>(
             await RequestHandler.PostJsonAsync(route, JsonConvert.SerializeObject(request))
@@ -197,7 +197,7 @@ internal static class MissionClient
             throw new InvalidDataException("The mission server returned an empty response.");
         if (!string.IsNullOrWhiteSpace(response.Error))
             throw new InvalidOperationException(response.Error);
-        if (response.Version != 2)
+        if (response.Version != 3)
             throw new InvalidDataException("The mission server returned an unsupported response version.");
         if (response.SeasonId.Length > 0 && !string.Equals(response.SeasonId, request.SeasonId, StringComparison.Ordinal))
             throw new InvalidDataException("The mission response belongs to another campaign season.");

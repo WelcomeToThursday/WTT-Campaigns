@@ -21,6 +21,7 @@ internal static class StoryStore
         {
             throw new InvalidOperationException("This story save requires a compatible runtime.");
         }
+        state.UnlockedMissionLinks ??= new();
         return state;
     }
 

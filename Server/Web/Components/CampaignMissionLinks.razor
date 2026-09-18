@@ -1,0 +1,87 @@
+@using WTT.Campaigns.Server.Web.Authoring
+@using WTT.Campaigns.Shared.Missions
+@using WTT.Campaigns.Shared.Native
+@inject SeasonRepository Repository
+
+<EditorSection Title="Linked missions" Description="Reuse a published mission and choose when this campaign makes it available.">
+    <label>Published mission revision<select @bind="_pack"><option value="">Choose a mission…</option>
+        @foreach (var pack in Packs) { <option value="@pack.Key">@pack.Definition.Name · revision @pack.Definition.Revision</option> }
+    </select></label>
+    <button disabled="@(_pack.Length == 0)" @onclick="Link">Link mission</button>
+    <a href="/wtt-campaigns/creator/missions">Open mission library</a>
+    @if (_message.Length > 0) { <p class="notice">@_message</p> }
+    @foreach (var link in Season.MissionLinks)
+    {
+        <EditorSection Title="@link.Package.Name">
+            <p>Pinned revision @link.Revision</p>
+            <label>Availability<select @bind="link.Availability" @bind:after="Notify">
+                <option value="@MissionAvailability.FromStart">Available from start</option>
+                <option value="@MissionAvailability.QuestAccepted">Quest accepted</option>
+                <option value="@MissionAvailability.QuestCompleted">Quest completed</option>
+                <option value="@MissionAvailability.ChapterReached">Chapter reached</option>
+                <option value="@MissionAvailability.StoryAction">Unlocked by story action</option>
+            </select></label>
+            @if (link.Availability is MissionAvailability.QuestAccepted or MissionAvailability.QuestCompleted)
+            {
+                <label>Unlock quest<select @bind="link.UnlockTargetId" @bind:after="Notify"><option value="">Choose a quest…</option>
+                    @foreach (var quest in Quests) { <option value="@quest.Id">@NativeQuestAuthoring.QuestName(quest)</option> }
+                </select></label>
+            }
+            @if (link.Availability == MissionAvailability.ChapterReached)
+            {
+                <label>Unlock chapter<select @bind="link.UnlockTargetId" @bind:after="Notify"><option value="">Choose a chapter…</option>
+                    @foreach (var chapter in Season.Story?.Chapters ?? []) { <option value="@chapter.Id">@chapter.Name</option> }
+                </select></label>
+            }
+            @if (link.Availability == MissionAvailability.StoryAction) { <p>Add an Unlock mission action to a conversation or raid story event and choose this link.</p> }
+            <label>Completion quest (optional)<select @bind="link.QuestId" @bind:after="Notify"><option value="">No quest binding</option>
+                @foreach (var quest in Quests) { <option value="@quest.Id">@NativeQuestAuthoring.QuestName(quest)</option> }
+            </select></label>
+            @if (link.QuestId.Length > 0)
+            {
+                <label>Completion objective<select @bind="link.CompletionConditionId" @bind:after="Notify"><option value="">Choose an objective…</option>
+                    @foreach (var condition in Season.Quests.FirstOrDefault(q => q.Id == link.QuestId)?.Conditions.AvailableForFinish.Where(c => c.ConditionType == "GlobalVariableValue") ?? [])
+                    { <option value="@condition.Id">@condition.Id</option> }
+                </select></label>
+                <p>Earlier completion by this campaign character counts when the quest is accepted.</p>
+            }
+            <label>Update pinned revision<select value="" @onchange="@(e => Update(link, e.Value?.ToString() ?? ""))"><option value="">Choose an explicit update…</option>
+                @foreach (var pack in Packs.Where(p => p.Definition.Missions.Single().Id == link.MissionId && p.Definition.Revision != link.Revision))
+                { <option value="@pack.Key">Revision @pack.Definition.Revision</option> }
+            </select></label>
+            <button @onclick="@(() => Remove(link))">Unlink mission</button>
+        </EditorSection>
+    }
+    @foreach (var mission in Season.Missions.ToArray())
+    {
+        <div class="row"><span>@mission.Name</span><button @onclick="@(() => Extract(mission.Id))">Extract to mission library</button>
+            <button disabled="@(_pack.Length == 0)" @onclick="@(() => Replace(mission.Id))">Replace with selected published revision</button></div>
+    }
+</EditorSection>
+
+@code {
+    [Parameter, EditorRequired] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter, EditorRequired] public DraftEnvelope Draft { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private string _pack = "";
+    private string _message = "";
+    private List<(string Key, SeasonDefinition Definition)> Packs => Repository.MissionPacks();
+    private IEnumerable<NativeQuest> Quests => Season.Quests.Where(q => Season.Story?.Quests.Any(s => s.QuestId == q.Id) == true);
+    private Task Notify()
+    {
+        foreach (var link in Season.MissionLinks)
+            if (link.QuestId.Length == 0 || !Season.Quests.Any(q => q.Id == link.QuestId && q.Conditions.AvailableForFinish.Any(c => c.Id == link.CompletionConditionId)))
+                link.CompletionConditionId = "";
+        return Changed.InvokeAsync();
+    }
+    private async Task Run(Action action) { try { action(); _message = "Draft updated. Save and validate before publishing."; await Notify(); } catch (Exception e) { _message = e.Message; } }
+    private Task Link() => Run(() => Repository.LinkMission(Season, _pack));
+    private Task Replace(string id) => Run(() => Repository.LinkMission(Season, _pack, id));
+    private Task Update(CampaignMissionLink link, string key) => key.Length == 0 ? Task.CompletedTask : Run(() => Repository.UpdateMissionLink(link, key));
+    private Task Remove(CampaignMissionLink link) => Run(() => Season.MissionLinks.Remove(link));
+    private void Extract(string id)
+    {
+        try { var draft = Repository.ExtractMission(Draft, id); _message = "Created mission draft: " + draft.Definition.Name + ". Open the mission library to edit and publish it, then select its revision here to replace the embedded mission."; }
+        catch (Exception e) { _message = e.Message; }
+    }
+}

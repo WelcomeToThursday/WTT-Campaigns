@@ -44,11 +44,19 @@ public sealed class MissionService(
 
     private readonly System.Collections.Concurrent.ConcurrentDictionary<string, RaidCheckpoint> _checkpoints = new();
 
-    public MissionResponse Read(string sessionId, MissionRequest request)
+    public async Task<MissionResponse> Read(string sessionId, MissionRequest request)
     {
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
         var active = Resolve(sessionId, request);
+        if (active.SeasonId != MissionLibrary.StandaloneScope && active.Runtime.Definition.MissionLinks.Count > 0)
+        {
+            var staged = cloner.Clone(active.Profile)!;
+            story.RefreshMissionLinksUnderLease(active.Id, staged, active.SeasonId);
+            if (JsonConvert.SerializeObject(staged.CharacterData!.PmcData!.ExtensionData) != JsonConvert.SerializeObject(active.Profile.CharacterData!.PmcData!.ExtensionData))
+                await commits.Commit(new MongoId(active.Id), active.Profile, staged);
+            active = active with { Profile = staged };
+        }
         var state = MissionStore.Read(active.Profile.CharacterData!.PmcData!, active.SeasonId);
         return Snapshot(active, state);
     }
@@ -72,7 +80,7 @@ public sealed class MissionService(
         // in an ordinary raid.
         seasons.EnsureNotInRaid(active.Id);
         var mission = FindMission(active.Runtime.Definition, request.MissionId);
-        EnsureUnlocked(state, mission, pmc);
+        EnsureUnlocked(active, state, mission, pmc);
         if (state.ActiveRun is { } current && !MissionRunStatuses.IsTerminal(current.Status))
         {
             throw new InvalidOperationException("Finish or cancel the current mission before preparing another.");
@@ -86,8 +94,12 @@ public sealed class MissionService(
             CharacterId = active.Id,
             MissionId = mission.Id,
             LayoutId = layout.Id,
-            ContentRevision = active.Runtime.Definition.Revision,
-            ContentHash = SeasonRepository.GameplayHash(active.Runtime.Definition),
+            ContextVersion = 3,
+            Scope = active.SeasonId,
+            PackageId = Link(active, mission.Id)?.Package.Id ?? "",
+            PackageRevision = Link(active, mission.Id)?.Revision ?? 0,
+            ContentRevision = ContentRevision(active, mission.Id),
+            ContentHash = ContentHash(active, mission.Id),
             EncounterToken = NewId(),
             Status = MissionRunStatuses.Prepared,
             PreparedAt = now,
@@ -408,8 +420,7 @@ public sealed class MissionService(
     /// </summary>
     public async Task CancelPreparedForOrdinaryStart(string sessionId)
     {
-        if (!seasons.IsSeasonal(sessionId))
-            return;
+        if (!HasMissionState(sessionId)) return;
 
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
@@ -441,7 +452,21 @@ public sealed class MissionService(
         var questStatus = pmc.Quests?.FirstOrDefault(q => q.QId.ToString() == questId)?.Status.ToString();
         if (questStatus is not ("Started" or "AvailableForFinish" or "Success"))
             return;
-        var missions = runtime.Definition.Missions.Where(m => m.QuestId == questId).ToArray();
+        var definition = runtime.Definition;
+        var missions = definition.Missions.Where(m => m.QuestId == questId).ToArray();
+        var saved = MissionStore.Read(pmc, seasonId);
+        foreach (var link in definition.MissionLinks)
+        {
+            if (link.UnlockTargetId == questId && (link.Availability == MissionAvailability.QuestAccepted
+                || link.Availability == MissionAvailability.QuestCompleted && questStatus == "Success") && saved.UnlockedMissionIds.Add(link.Id)) saved.Revision++;
+            if (link.QuestId == questId && saved.CompletedMissionIds.Contains(link.Id))
+                story.ApplyMissionCompletionUnderLease(pmc, seasonId, new MissionDefinition { QuestId = link.QuestId, CompletionConditionId = link.CompletionConditionId });
+        }
+        if (definition.MissionLinks.Count > 0)
+        {
+            MissionStore.Write(pmc, saved);
+            story.RefreshMissionLinksUnderLease(pmc.Id.ToString(), new SptProfile { CharacterData = new() { PmcData = pmc } }, seasonId);
+        }
         if (missions.Length == 0)
             return;
         var state = MissionStore.Read(pmc, seasonId);
@@ -458,7 +483,7 @@ public sealed class MissionService(
     /// <summary>Associates a prepared mission with SPT's server raid identity.</summary>
     public async Task StartRaid(string sessionId, StartLocalRaidRequestData request, StartLocalRaidResponseData response)
     {
-        if (!seasons.IsSeasonal(sessionId) || !string.Equals(request.PlayerSide, "pmc", StringComparison.OrdinalIgnoreCase))
+        if (!HasMissionState(sessionId) || !string.Equals(request.PlayerSide, "pmc", StringComparison.OrdinalIgnoreCase))
             return;
         if (response.ServerId == null)
             return;
@@ -502,7 +527,7 @@ public sealed class MissionService(
     /// <summary>Used by raid-end and recovery patches without acquiring a second character lease.</summary>
     public bool RaidFinished(string sessionId, string? raidId)
     {
-        if (string.IsNullOrWhiteSpace(raidId) || !seasons.IsSeasonal(sessionId))
+        if (string.IsNullOrWhiteSpace(raidId) || !HasMissionState(sessionId))
             return false;
         var active = ResolveSession(sessionId);
         var run = MissionStore.Read(active.Profile.CharacterData!.PmcData!, active.SeasonId).ActiveRun;
@@ -515,7 +540,7 @@ public sealed class MissionService(
     /// <summary>Finalizes a mission after native inventory and raid reconciliation have run.</summary>
     public async Task FinishRaid(string sessionId, EndLocalRaidRequestData request, bool leaseHeld = false)
     {
-        if (!seasons.IsSeasonal(sessionId) || string.IsNullOrWhiteSpace(request.ServerId))
+        if (!HasMissionState(sessionId) || string.IsNullOrWhiteSpace(request.ServerId))
             return;
         var root = seasons.ResolveRoot(sessionId);
         using var lease = leaseHeld ? null : seasons.Enter(root);
@@ -544,9 +569,7 @@ public sealed class MissionService(
 
         var staged = cloner.Clone(original)!;
         var stagedPmc = staged.CharacterData!.PmcData!;
-        var contentCurrent =
-            run.ContentRevision == active.Runtime.Definition.Revision
-            && run.ContentHash == SeasonRepository.GameplayHash(active.Runtime.Definition);
+        var contentCurrent = CurrentContent(active, run);
         if (!contentCurrent)
         {
             run.FinishedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -581,7 +604,8 @@ public sealed class MissionService(
             state.CompletedMissionIds.Add(mission.Id);
             // The story adapter mutates the staged PMC and story extension state. Both
             // records are saved together below so a crash cannot split the receipt.
-            story.ApplyMissionCompletionUnderLease(stagedPmc, active.SeasonId, mission);
+            if (mission.QuestId.Length > 0)
+                story.ApplyMissionCompletionUnderLease(stagedPmc, active.SeasonId, mission);
         }
         else
         {
@@ -598,8 +622,7 @@ public sealed class MissionService(
     /// <summary>Marks a prepared/active mission as failed when a client session is recovered.</summary>
     public async Task AbandonSession(string sessionId)
     {
-        if (!seasons.IsSeasonal(sessionId))
-            return;
+        if (!HasMissionState(sessionId)) return;
         var root = seasons.ResolveRoot(sessionId);
         using var lease = seasons.Enter(root);
         await AbandonSessionUnderLease(sessionId);
@@ -613,8 +636,7 @@ public sealed class MissionService(
     /// </summary>
     internal async Task AbandonSessionUnderLease(string sessionId, string? raidId = null)
     {
-        if (!seasons.IsSeasonal(sessionId))
-            return;
+        if (!HasMissionState(sessionId)) return;
         var active = ResolveSession(sessionId);
         var original = active.Profile;
         var state = MissionStore.Read(original.CharacterData!.PmcData!, active.SeasonId);
@@ -636,27 +658,37 @@ public sealed class MissionService(
     private Active Resolve(string sessionId, MissionRequest request)
     {
         var active = ResolveSession(sessionId);
-        if (request.Version is not (1 or 2) || request.CharacterId != active.Id || string.IsNullOrWhiteSpace(request.SeasonId))
-            throw new InvalidOperationException("Refresh the active Campaign character before using missions.");
-        if (request.SeasonId != active.SeasonId)
-            throw new InvalidOperationException("This mission request belongs to another campaign.");
+        MissionTransaction.RequireRequestIdentity(request, active.Id, active.SeasonId);
+        if (request.Version < 3 && (active.SeasonId == MissionLibrary.StandaloneScope || active.Runtime.Definition.MissionLinks.Count > 0))
+            throw new InvalidOperationException("Update both mission components for independent missions.");
         if (request.Version < 2 && active.Runtime.Definition.Missions.Any(MissionLogic.HasLogic))
             throw new InvalidOperationException("Update both mission components for events and objectives.");
         return active;
+    }
+
+    private bool HasMissionState(string sessionId)
+    {
+        var id = seasons.EffectiveId(seasons.ResolveRoot(sessionId));
+        return seasons.IsSeasonal(id) || saves.GetProfile(new MongoId(id)).CharacterData?.PmcData?.ExtensionData?.ContainsKey("wttCampaignsMissions:" + MissionLibrary.StandaloneScope) == true;
     }
 
     private Active ResolveSession(string sessionId)
     {
         var root = seasons.ResolveRoot(sessionId);
         var id = seasons.EffectiveId(root);
-        if (!seasons.IsSeasonal(id))
-            throw new InvalidOperationException("Open the Campaign character before using missions.");
+
         var profile = saves.GetProfile(new MongoId(id));
         var pmc = profile.CharacterData?.PmcData ?? throw new InvalidOperationException("The Campaign profile is incomplete.");
+        if (!seasons.IsSeasonal(id))
+        {
+            var previous = MissionStore.Read(pmc, MissionLibrary.StandaloneScope).ActiveRun;
+            var definition = MissionLibrary.Standalone(repository.PublishedMissions.Values.Select(p => p.Definition), previous);
+            return new Active(id, root, MissionLibrary.StandaloneScope, profile, new SeasonRuntimeSnapshot(definition));
+        }
         var seasonId = seasons.SeasonIdFor(pmc);
         if (!repository.Playable.TryGetValue(seasonId, out var runtime))
             throw new InvalidOperationException("This campaign is unavailable.");
-        return new Active(id, root, seasonId, profile, runtime);
+        return new Active(id, root, seasonId, profile, new SeasonRuntimeSnapshot(MissionLibrary.Resolve(runtime.Definition)));
     }
 
     private MissionResponse Snapshot(Active active, MissionProgress state)
@@ -670,7 +702,8 @@ public sealed class MissionService(
                     is "Started"
                         or "AvailableForFinish"
                         or "Success";
-                var unlocked = state.UnlockedMissionIds.Contains(mission.Id) || accepted;
+                var link = Link(active, mission.Id);
+                var unlocked = state.UnlockedMissionIds.Contains(mission.Id) || (link == null ? accepted : LinkEligible(active, link));
                 var completed = state.CompletedMissionIds.Contains(mission.Id);
                 var activeRun = state.ActiveRun is { } run && run.MissionId == mission.Id && !MissionRunStatuses.IsTerminal(run.Status);
                 return new MissionSummary
@@ -682,6 +715,7 @@ public sealed class MissionService(
                         : unlocked ? "Available"
                         : "Locked",
                     Unlocked = unlocked,
+                    LockReason = unlocked ? "" : link == null ? "Accept the linked quest to unlock this mission." : MissionLibrary.LockReason(link),
                     Completed = completed,
                     Active = activeRun,
                     FailureReason =
@@ -691,6 +725,9 @@ public sealed class MissionService(
                 };
             })
             .ToList();
+        if (state.ActiveRun is { } missing && !MissionRunStatuses.IsTerminal(missing.Status) && summaries.All(m => m.Definition.Id != missing.MissionId))
+            summaries.Add(new MissionSummary { Definition = new MissionDefinition { Id = missing.MissionId, Name = "Unavailable mission" },
+                Active = true, Status = "Unavailable", FailureReason = "The pinned mission package is unavailable. Cancel this run before preparing another." });
         return new MissionResponse
         {
             SeasonId = active.SeasonId,
@@ -727,6 +764,9 @@ public sealed class MissionService(
             .ToList();
         return new MissionDescriptor
         {
+            Scope = active.SeasonId,
+            PackageId = run.PackageId,
+            PackageRevision = run.PackageRevision,
             ContainerLoot = cloner.Clone(run.ContainerLoot)!,
             Definition = cloner.Clone(mission)!,
             Layout = cloner.Clone(layout)!,
@@ -765,12 +805,13 @@ public sealed class MissionService(
         return layout;
     }
 
-    private static void EnsureUnlocked(MissionProgress state, MissionDefinition mission, PmcData pmc)
+    private void EnsureUnlocked(Active active, MissionProgress state, MissionDefinition mission, PmcData pmc)
     {
         if (state.UnlockedMissionIds.Contains(mission.Id))
             return;
         var status = pmc.Quests?.FirstOrDefault(q => q.QId.ToString() == mission.QuestId)?.Status.ToString();
-        if (status is "Started" or "AvailableForFinish" or "Success")
+        var link = Link(active, mission.Id);
+        if (link != null ? LinkEligible(active, link) : status is "Started" or "AvailableForFinish" or "Success")
         {
             state.UnlockedMissionIds.Add(mission.Id);
             return;
@@ -843,8 +884,32 @@ public sealed class MissionService(
 
     private static void VerifyCurrentContent(Active active, MissionRun run)
     {
-        MissionTransaction.VerifyContent(run, active.Runtime.Definition.Revision, SeasonRepository.GameplayHash(active.Runtime.Definition));
+        if (!CurrentContent(active, run)) throw new InvalidOperationException("The mission content or context changed. Prepare it again.");
     }
+
+    private static CampaignMissionLink? Link(Active active, string id) => active.Runtime.Definition.MissionLinks.FirstOrDefault(l => l.Id == id);
+
+    private bool LinkEligible(Active active, CampaignMissionLink link) => active.SeasonId == MissionLibrary.StandaloneScope
+        ? link.Package.MissionPackage?.AllowStandalonePlay == true
+        : story.MissionLinkEligible(active.Id, active.Profile, active.SeasonId, link);
+
+    private static long ContentRevision(Active active, string id) => Link(active, id)?.Revision ?? active.Runtime.Definition.Revision;
+
+    private static string ContentHash(Active active, string id)
+    {
+        var definition = active.Runtime.Definition;
+        var link = Link(active, id);
+        if (link == null) return SeasonRepository.GameplayHash(definition);
+        return SeasonRepository.Hash(System.Text.Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(new
+        {
+            Scope = active.SeasonId, Link = link.Id, link.MissionId, link.Revision, link.ContentHash,
+            link.Availability, link.UnlockTargetId, link.QuestId, link.CompletionConditionId,
+        })));
+    }
+
+    private static bool CurrentContent(Active active, MissionRun run) => run.ContextVersion == 3
+        ? run.Scope == active.SeasonId && run.ContentRevision == ContentRevision(active, run.MissionId) && run.ContentHash == ContentHash(active, run.MissionId)
+        : run.ContentRevision == active.Runtime.Definition.Revision && run.ContentHash == SeasonRepository.GameplayHash(active.Runtime.Definition);
 
     private static void RequireOperation(MissionRequest request)
     {

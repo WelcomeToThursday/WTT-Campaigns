@@ -451,7 +451,7 @@ public sealed class CampaignTestSessions(
         MissionResponse? missionResponse = null;
         try
         {
-            missionResponse = missions.Read(
+            missionResponse = await missions.Read(
                 state.TestId,
                 new MissionRequest
                 {

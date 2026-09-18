@@ -14,7 +14,7 @@ public sealed class MissionRouter(JsonUtil json, MissionService missions) : Stat
         [
             new RouteAction<MissionRouteRequest>(
                 "/wtt-campaigns/missions/list",
-                (_, request, id, _, _) => Respond(() => Task.FromResult(missions.Read(id.ToString(), request)))
+                (_, request, id, _, _) => Respond(() => missions.Read(id.ToString(), request))
             ),
             new RouteAction<MissionRouteRequest>(
                 "/wtt-campaigns/missions/prepare",

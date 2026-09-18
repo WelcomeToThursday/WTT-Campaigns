@@ -4,6 +4,7 @@ public sealed class StoryProgress
 {
     public int Version { get; set; } = 1;
     public string SeasonId { get; set; } = "";
+    public HashSet<string> UnlockedMissionLinks { get; set; } = new();
     public long Revision { get; set; }
     public Dictionary<string, int> Variables { get; set; } = new();
     public Dictionary<string, long> Notes { get; set; } = new();

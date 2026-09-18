@@ -13,7 +13,7 @@
         <details @key="map.Id">
             <summary>@map.Name · @map.Location · @map.Checkpoints.Count checkpoints</summary>
             <label>Name <input @bind="map.Name" @bind:after="Notify" /></label>
-            <label><input type="checkbox" @bind="map.ApplyInNormalRaids" @bind:after="Notify" /> Apply in normal raids</label>
+            @if (Season.MissionPackage == null) { <label><input type="checkbox" @bind="map.ApplyInNormalRaids" @bind:after="Notify" /> Apply in normal raids</label> }
             <p>@map.Objects.Count scenery edits · @map.Doors.Count doors · @map.Barriers.Count barriers · @ZoneLayoutRules.OwnedByLayout(Season.Zones, map.Id).Count() zones</p>
             @foreach (var error in MapLayoutRules.Errors(map, map.Start != null || map.Checkpoints.Count > 0 || map.Exit != null)) { <p class="validation-warning">@error</p> }
             <p>Choose this layout in the client's Layouts tab, then use Scene, Routes, Zones or AI to edit its content.</p>

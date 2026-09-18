@@ -24,4 +24,5 @@ public enum StoryActionType
     StartCinematic,
     TraderStanding,
     FailQuest,
+    UnlockMission,
 }

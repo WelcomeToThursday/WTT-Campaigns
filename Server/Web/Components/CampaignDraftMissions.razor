@@ -1,0 +1,44 @@
+@using WTT.Campaigns.Server.Seasons
+@using WTT.Campaigns.Shared.Seasons
+
+<section class="library-section" aria-labelledby="campaign-missions-title">
+    <header class="library-section-heading"><div><h3 id="campaign-missions-title">Existing missions and layouts</h3><p>These are saved inside campaign drafts. Open them here to continue editing.</p></div></header>
+    <div class="library-pack-list">
+        @foreach (var draft in Drafts.Where(d => d.Definition.MissionPackage == null && (d.Definition.Missions.Count > 0 || d.Definition.MapLayouts.Count > 0) && Matches(d)))
+        {
+            <article class="library-pack" @key="draft.Id">
+                <div class="library-pack-info"><span class="library-status">CAMPAIGN DRAFT</span><h4>@draft.Definition.Name</h4>
+                    <p>Missions: @string.Join(", ", draft.Definition.Missions.Select(m => m.Name))</p>
+                    @foreach (var layout in draft.Definition.MapLayouts)
+                    {
+                        <h4>@(layout.Name) · @(layout.Location)</h4>
+                    }
+                </div>
+                <div class="row">
+                @if (draft.Status == DraftStatus.Active)
+                {
+                    <a class="button" href="@("/wtt-campaigns/creator/missions?draft=" + Uri.EscapeDataString(draft.Id))">Edit missions and layouts →</a>
+                    @if (draft.Definition.MapLayouts.Count > 0)
+                    {
+                        <a class="button" href="@("/wtt-campaigns/creator/missions?draft=" + Uri.EscapeDataString(draft.Id) + "&section=Layouts")">Open layouts →</a>
+                    }
+                }
+                else
+                {
+                    <a class="button" href="/wtt-campaigns/creator">Restore draft in Campaign Creator →</a>
+                }
+                </div>
+            </article>
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter] public List<DraftEnvelope> Drafts { get; set; } = [];
+    [Parameter] public string Search { get; set; } = "";
+    private bool Matches(DraftEnvelope draft) => new[] { draft.Definition.Name }
+        .Concat(draft.Definition.Missions.Select(m => m.Name))
+        .Concat(draft.Definition.MapLayouts.Select(l => l.Name))
+        .Concat(draft.Definition.MapLayouts.Select(l => l.Location))
+        .Any(name => name.Contains(Search.Trim(), StringComparison.OrdinalIgnoreCase));
+}

@@ -129,6 +129,15 @@ public sealed partial class SeasonContentService(
             try
             {
                 var definition = repository.Pack(key);
+                if (definition.MissionPackage != null)
+                {
+                    if (Validate(definition).CanActivate)
+                    {
+                        Register(definition, false);
+                        repository.PublishedMissions[definition.Id + ":" + definition.Revision] = new SeasonRuntimeSnapshot(definition);
+                    }
+                    continue;
+                }
                 if (repository.Playable.ContainsKey(definition.Id))
                 {
                     continue;
@@ -269,6 +278,8 @@ public sealed partial class SeasonContentService(
 
         try
         {
+            foreach (var link in definition.MissionLinks)
+                foreach (var issue in Validate(link.Package).Issues) result.Add("MissionLinks/" + link.Id + "/" + issue.Path, issue.Message, issue.Severity);
             foreach (var assort in definition.TraderAssorts)
             {
                 if (!offerCatalogue.HasTrader(assort.TraderId))
@@ -317,6 +328,7 @@ public sealed partial class SeasonContentService(
                 .Items.Keys.Select(i => i.ToString())
                 .Concat(definition.Items.Select(i => i.Id))
                 .Concat(definition.ImportedItems.Keys)
+                .Concat(definition.MissionLinks.SelectMany(l => l.Package.Items.Select(i => i.Id).Concat(l.Package.ImportedItems.Keys)))
                 .ToHashSet();
             void Item(string? id, string path)
             {
@@ -637,7 +649,7 @@ public sealed partial class SeasonContentService(
                 }
             }
 
-            foreach (var dependency in definition.Dependencies)
+            foreach (var dependency in SeasonCompiler.Dependencies(definition))
             {
                 var parts = dependency.Split(':', 2);
                 var present =
@@ -671,6 +683,7 @@ public sealed partial class SeasonContentService(
 
     private void Register(SeasonDefinition definition, bool crates)
     {
+        foreach (var link in definition.MissionLinks) Register(link.Package, false);
         // Stage every template first; never leave half a season in the shared database on validation failure.
         var staged = new Dictionary<MongoId, TemplateItem>();
         foreach (var pair in definition.ImportedItems)

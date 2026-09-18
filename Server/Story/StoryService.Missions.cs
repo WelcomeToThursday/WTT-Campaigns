@@ -7,6 +7,36 @@ namespace WTT.Campaigns.Server.Story;
 
 public sealed partial class StoryService
 {
+    internal bool MissionLinkEligible(string id, SPTarkov.Server.Core.Models.Eft.Profile.SptProfile profile, string seasonId, CampaignMissionLink link)
+    {
+        var definition = repository.Runtime(seasonId).Definition.Story;
+        var progress = StoryStore.Read(profile.CharacterData!.PmcData!, seasonId);
+        var facts = definition == null ? new StoryFacts() : Facts(id, profile, progress, definition);
+        return MissionLibrary.Eligible(link, definition, progress, facts);
+    }
+
+    internal void RefreshMissionLinksUnderLease(string id, SPTarkov.Server.Core.Models.Eft.Profile.SptProfile profile, string seasonId, StoryFacts? currentFacts = null)
+    {
+        var definition = repository.Runtime(seasonId).Definition;
+        if (definition.MissionLinks.Count == 0) return;
+        var pmc = profile.CharacterData!.PmcData!;
+        var missions = WTT.Campaigns.Server.Missions.MissionStore.Read(pmc, seasonId);
+        var changed = false;
+        var progress = StoryStore.Read(pmc, seasonId);
+        var facts = currentFacts ?? (definition.Story == null ? new StoryFacts() : Facts(id, profile, progress, definition.Story));
+        foreach (var link in definition.MissionLinks)
+        {
+            if (MissionLibrary.Eligible(link, definition.Story, progress, facts)) changed |= missions.UnlockedMissionIds.Add(link.Id);
+            if (missions.CompletedMissionIds.Contains(link.Id) && link.QuestId.Length > 0)
+                ApplyMissionCompletionUnderLease(pmc, seasonId, new MissionDefinition { QuestId = link.QuestId, CompletionConditionId = link.CompletionConditionId });
+        }
+        if (changed)
+        {
+            missions.Revision++;
+            WTT.Campaigns.Server.Missions.MissionStore.Write(pmc, missions);
+        }
+    }
+
     /// <summary>
     /// Applies a successful mission to the profile-scoped story variable and the
     /// linked native quest condition. The caller owns the character lease and saves
@@ -14,60 +44,6 @@ public sealed partial class StoryService
     /// </summary>
     internal void ApplyMissionCompletionUnderLease(PmcData pmc, string seasonId, MissionDefinition mission)
     {
-        var storyDefinition =
-            repository.Runtime(seasonId).Definition.Story
-            ?? throw new InvalidOperationException("Mission completion requires a story-backed quest.");
-        if (!storyDefinition.Quests.Any(q => q.QuestId == mission.QuestId))
-            throw new InvalidOperationException("The mission quest is not registered in the campaign story.");
-
-        var questTemplate =
-            repository.Runtime(seasonId).Definition.Quests.SingleOrDefault(q => (string?)q.Id == mission.QuestId)
-            ?? throw new InvalidOperationException("The mission quest definition is unavailable.");
-        var condition =
-            questTemplate.Conditions.AvailableForFinish.SingleOrDefault(c => (string?)c.Id == mission.CompletionConditionId)
-            ?? throw new InvalidOperationException("The mission completion objective is unavailable.");
-        if (condition.ConditionType != "GlobalVariableValue" || condition.Target?.Values is not { Count: 1 } targets)
-            throw new InvalidOperationException("The mission completion objective is not a profile variable objective.");
-
-        var variableId = targets[0];
-        var variable = storyDefinition.Variables.SingleOrDefault(v => v.Id == variableId);
-        if (variable == null || variable.Scope != StoryVariableScope.Profile || variable.InitialValue != 0)
-            throw new InvalidOperationException("The mission completion target must be a zero-initialized profile variable.");
-        if (!MongoId.IsValidMongoId(variableId))
-            throw new InvalidOperationException("The mission completion variable identity is invalid.");
-        var quest = pmc.Quests?.SingleOrDefault(q => q.QId.ToString() == mission.QuestId);
-        // Mission access is permanent after acceptance. A later failed or
-        // removed quest cannot prevent replay loot and mission finalization.
-        if (
-            quest == null
-            || quest.Status
-                is not (
-                    SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.Started
-                    or SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.AvailableForFinish
-                    or SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.Success
-                )
-        )
-            return;
-
-        var state = StoryStore.Read(pmc, seasonId);
-        state.Variables ??= new();
-        var required = Math.Clamp((int)Math.Ceiling(condition.Value ?? 1), 1, int.MaxValue);
-        var changed = !state.Variables.TryGetValue(variableId, out var current) || current < required;
-        if (changed)
-            state.Variables[variableId] = required;
-
-        if (quest.Status is not SPTarkov.Server.Core.Models.Enums.QuestStatusEnum.Success)
-        {
-            quest.CompletedConditions ??= [];
-            changed |= !quest.CompletedConditions.Contains(mission.CompletionConditionId);
-            if (!quest.CompletedConditions.Contains(mission.CompletionConditionId))
-                quest.CompletedConditions.Add(mission.CompletionConditionId);
-        }
-
-        if (changed)
-        {
-            state.Revision++;
-            StoryStore.Write(pmc, state);
-        }
+        WTT.Campaigns.Server.Missions.MissionCompletion.Apply(pmc, repository.Runtime(seasonId).Definition, mission);
     }
 }

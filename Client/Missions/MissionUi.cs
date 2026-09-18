@@ -37,7 +37,7 @@ internal sealed class MissionUi : MonoBehaviour
             return !Authoring.EditorMode.Active
                 && !Plugin.InRaid
                 && !Plugin.Busy
-                && Plugin.Current?.ActiveMode == "seasonal"
+                && Plugin.Current != null
                 && Plugin.Current.EffectiveProfileId.Length > 0
                 && app?.Session?.Profile?.Id == Plugin.Current.EffectiveProfileId;
         }
@@ -53,7 +53,6 @@ internal sealed class MissionUi : MonoBehaviour
         if (
             Authoring.EditorMode.Active
             || Plugin.InRaid
-            || Plugin.Current?.ActiveMode != "seasonal"
             || Plugin.App?.Session?.Profile?.Id != Plugin.Current?.EffectiveProfileId
         )
         {
@@ -165,7 +164,7 @@ internal sealed class MissionUi : MonoBehaviour
                     Briefing = definition.Briefing,
                     Location = definition.LayoutId,
                     Status = summary.Status,
-                    FailureReason = summary.FailureReason,
+                    FailureReason = summary.LockReason.Length > 0 ? summary.LockReason : summary.FailureReason,
                     Objectives = new[] { "Complete every authored checkpoint in order", "Extract from the authored exit" },
                     Unlocked = summary.Unlocked,
                     Completed = summary.Completed,
@@ -173,7 +172,7 @@ internal sealed class MissionUi : MonoBehaviour
                     CanDeploy = summary.Unlocked && !summary.Active,
                     CanReplay = summary.Completed,
                     CanResume =
-                        summary.Active && response.Run?.MissionId == definition.Id && response.Run?.Status == MissionRunStatuses.Prepared,
+                        summary.Active && summary.Status != "Unavailable" && response.Run?.MissionId == definition.Id && response.Run?.Status == MissionRunStatuses.Prepared,
                     CanCancel = summary.Active && response.Run?.MissionId == definition.Id,
                 };
             })
