@@ -75,6 +75,12 @@ public sealed partial class RaidEditor
 
     private void DiscoverSceneNode(Transform node)
     {
+        if (node.GetComponent<Door>() is { } nativeDoor && nativeDoor.GetType() == typeof(Door))
+        {
+            _sceneRoots[node.GetInstanceID().ToString()] = node;
+            _libraryKey = "";
+            return;
+        }
         if (
             !EditorMode.Ready
             || (!node.GetComponent<MeshRenderer>() && !node.GetComponent<LootItem>() && !node.GetComponent<LootableContainer>())
@@ -133,6 +139,7 @@ public sealed partial class RaidEditor
     private void BindSceneControls(RaidEditorView view)
     {
         BindContainerControls(view);
+        BindDoorControls(view);
         void Button(string name, Action action) =>
             view.Button(
                 name,
@@ -192,7 +199,7 @@ public sealed partial class RaidEditor
                 Refresh();
             }
         );
-        foreach (var filter in new[] { "Props", "Containers", "Loot", "Presets" })
+        foreach (var filter in new[] { "Props", "Containers", "Doors", "Loot", "Presets" })
         {
             var value = filter;
             Button(
@@ -243,7 +250,13 @@ public sealed partial class RaidEditor
 
     private void SceneRows(string search)
     {
-        if (_sceneTab == "Changes")
+        if (_sceneTab == "Changes" && _sceneFilter == "Doors")
+        {
+            if (Layout != null)
+                foreach (var door in Layout.Doors)
+                    _rows.Add((door.Id, (door.PlaceNew ? "Placed door · " : "Door · ") + door.Name + " · " + door.State));
+        }
+        else if (_sceneTab == "Changes")
         {
             if (Layout != null)
             {
@@ -256,6 +269,15 @@ public sealed partial class RaidEditor
                 foreach (var item in Layout.Doors)
                     _rows.Add((item.Id, "Door · " + item.Name + " · " + item.State));
             }
+        }
+        else if (_sceneFilter == "Doors")
+        {
+            foreach (var pair in _sceneRoots)
+                if (pair.Value && pair.Value.GetComponent<Door>() && _mapScene?.RecordAt(pair.Value) == null)
+                    _rows.Add((pair.Key, pair.Value.name + " · Door"));
+            if (_sceneTab != "Catalog" && Layout != null)
+                foreach (var door in Layout.Doors.AsValueEnumerable().Where(d => d.PlaceNew))
+                    _rows.Add((door.Id, door.Name + " · Placed door"));
         }
         else if (AssetCatalog)
         {
@@ -393,7 +415,8 @@ public sealed partial class RaidEditor
                     _rows.Add((item.Id, item.Name));
             }
         }
-        _rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
+        if (_sceneFilter != "Doors")
+            _rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
     }
 
     private async Task FetchCatalog(string key, string search, int page, int pageSize, int generation)
@@ -471,7 +494,10 @@ public sealed partial class RaidEditor
             _catalogSelection = id;
             _selectedCatalogEntry = _catalog?.Entries.AsValueEnumerable().FirstOrDefault(e => e.Id == id);
             _selected = "";
-            _ = BeginPlacement();
+            if (_sceneFilter != "Doors")
+                _ = BeginPlacement();
+            else
+                CancelPlacement();
         }
         else if (_sceneRoots.TryGetValue(id, out var target) && target)
             SelectSceneTarget(target);
@@ -505,6 +531,24 @@ public sealed partial class RaidEditor
                 _tool = "Move";
             Refresh();
             _view?.Windows.ShowPanel(ConfiguredContainer != null ? "LootConfiguration" : "Inspector", true);
+            return;
+        }
+        var nativeDoor = hit.GetComponentInParent<Door>();
+        if (nativeDoor && nativeDoor.GetType() == typeof(Door))
+        {
+            _picked = nativeDoor.transform;
+            _sceneSelectionPose = null;
+            _sceneSelectionError = "";
+            var doorBinding = MapSceneAdapter.Capture(_picked, true);
+            _selected =
+                Layout
+                    ?.Doors.AsValueEnumerable()
+                    .FirstOrDefault(d => !d.PlaceNew && d.Target.Path == doorBinding.Path && d.Target.Scene == doorBinding.Scene)
+                    ?.Id
+                ?? "";
+            _sceneTab = "Existing";
+            Refresh();
+            _view?.Windows.ShowPanel("Inspector", true);
             return;
         }
         var root = MapSceneAdapter.Root(hit) ?? WTT.Campaigns.UI.Controls.SceneSelectionGeometry.VisualRoot(hit);
@@ -587,6 +631,13 @@ public sealed partial class RaidEditor
 
     private void RemoveSceneObject()
     {
+        if (MapDoor != null)
+        {
+            DeleteMapRecord();
+            _picked = null;
+            _sceneSelectionPose = null;
+            return;
+        }
         if (!CanSceneEdit)
             return;
         if (MapPoint is MapLootPlacement or MapObjectEdit { Operation: "Copy" } or MapVolume)
@@ -623,9 +674,22 @@ public sealed partial class RaidEditor
                 if (model.GetComponentInChildren<LootableContainer>(true) is { } container)
                     container.enabled = false;
             }
-            else if (_sceneFilter == "Props" && _sceneRoots.TryGetValue(_catalogSelection, out var target) && target)
+            else if (
+                (_sceneFilter == "Props" || _sceneFilter == "Doors")
+                && _sceneRoots.TryGetValue(_catalogSelection, out var target)
+                && target
+            )
             {
-                _placementProp = (_mapScene ??= new()).CaptureOriginal(target);
+                if (_sceneFilter == "Doors")
+                {
+                    var restriction = SceneDoorPlacement.Restriction(target);
+                    if (restriction.Length > 0)
+                        throw new InvalidOperationException(restriction);
+                    _placementProp = MapSceneAdapter.Capture(target, true);
+                }
+                else
+                    _placementProp = (_mapScene ??= new()).CaptureOriginal(target);
+                _mapScene ??= new();
                 model = _mapScene.CopyForPlacement(target);
             }
             else
@@ -733,6 +797,21 @@ public sealed partial class RaidEditor
                                     Z = 1,
                                 }
                                 : scale,
+                        }
+                    );
+                else if (prop?.Kind == "Door")
+                    l.Doors.Add(
+                        new MapDoorEdit
+                        {
+                            Id = id,
+                            Name = _sceneRoots[_catalogSelection].name,
+                            Location = l.Location,
+                            Scene = prop.Scene,
+                            Target = prop,
+                            PlaceNew = true,
+                            State = "Shut",
+                            Position = ZoneRuntime.Vector(position),
+                            Rotation = rotation,
                         }
                     );
                 else if (prop != null)

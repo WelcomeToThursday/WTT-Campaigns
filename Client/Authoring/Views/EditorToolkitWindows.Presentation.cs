@@ -34,6 +34,7 @@ internal sealed partial class EditorToolkitWindows
             Visible("RecordInspector", !maps);
         }
 
+        Visible("DoorInspectorGroup", false);
         Visible("EditorMapToolbar", mapReady);
         Visible("EditorUnload", mapReady);
 

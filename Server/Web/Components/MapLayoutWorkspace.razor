@@ -19,10 +19,26 @@
             <p>Choose this layout in the client's Layouts tab, then use Scene, Routes, Zones or AI to edit its content.</p>
             @foreach (var placement in map.Objects.Where(o => o.Target.IsAsset || SceneAssetRules.IsContainer(o)))
             {
-                <p>@placement.Name · @(SceneAssetRules.IsContainer(placement) ? "Native random-loot container" : "Game asset")<br />
+                <p>@placement.Name Â· @(SceneAssetRules.IsContainer(placement) ? "Native random-loot container" : "Game asset")<br />
                     <small>@(placement.Target.IsAsset ? placement.Target.Bundle + " / " + placement.Target.Asset : placement.Target.Scene + " / " + placement.Target.Path)</small></p>
             }
             <EncounterInspection Layout="map" />
+            @foreach (var door in map.Doors)
+            {
+                <fieldset @key="door.Id">
+                    <legend>@(door.PlaceNew ? "Placed door" : "Existing door"): @door.Name</legend>
+                    <label>Name <input @bind="door.Name" @bind:after="Notify" /></label>
+                    <label>Starting state <select @bind="door.State" @bind:after="Notify">
+                        <option value="Unchanged">Original</option><option value="Shut">Closed</option>
+                        <option value="Open">Open</option><option value="Locked">Locked</option>
+                    </select></label>
+                    <label>Key template ID <input value="@door.KeyId" @onchange="async e => { door.KeyId = e.Value?.ToString()?.Trim() ?? string.Empty; await Notify(); }" /></label>
+                    <button @onclick="async () => { door.KeyId = null; await Notify(); }">Use original key</button>
+                    <label>Breaching <select @bind="door.CanBeBreached" @bind:after="Notify"><option value="">Original</option><option value="true">Allowed</option><option value="false">Disabled</option></select></label>
+                    <label>Interaction <select @bind="door.Operatable" @bind:after="Notify"><option value="">Original</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                    <p>Starting state is applied once. Configure placement and preview in the client's Doors catalog.</p>
+                </fieldset>
+            }
             <button disabled="@(Raid?.Connected != true)" @onclick="() => Focus(map)">Edit in connected editor</button>
             <button @onclick="() => Duplicate(map)">Duplicate layout</button>
             <button class="danger" @onclick="() => Delete(map)">Delete layout</button>

@@ -5,6 +5,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Authoring\Scenes\SceneDoorState.cs" Link="Client\SceneDoorState.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePickGeometry.cs" Link="Client\ScenePickGeometry.cs" />
     <Compile Include="..\Client\Authoring\EditorStartupRecovery.cs" Link="Client\EditorStartupRecovery.cs" />
     <Compile Include="..\Client\Authoring\Preview\PreviewLoadGuard.cs" Link="Client\PreviewLoadGuard.cs" />

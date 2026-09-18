@@ -34,11 +34,28 @@ internal sealed partial class MapSceneAdapter
         internal StaticDeferredDecal[] Decals = Array.Empty<StaticDeferredDecal>();
         internal StencilShadow[] Shadows = Array.Empty<StencilShadow>();
         internal WorldInteractiveObject[] Interactions = Array.Empty<WorldInteractiveObject>();
+        internal readonly List<SceneLightMovement> Lights = new();
+        internal WindowBreaker[] Windows = Array.Empty<WindowBreaker>();
+        internal TreeInteractive[] Trees = Array.Empty<TreeInteractive>();
+        internal VolumetricLight[] Volumes = Array.Empty<VolumetricLight>();
+        internal AreaLight[] AreaLights = Array.Empty<AreaLight>();
+        internal readonly List<SceneImpostorMovement> Impostors = new();
+        internal readonly List<SceneWindowMovement> WindowVisuals = new();
 
         internal void RefreshVisuals()
         {
             VisualsDirty = false;
             ScenePropMovement.Refresh(Interactions);
+            SceneAreaLightMovement.Refresh(AreaLights);
+            foreach (var impostor in Impostors)
+                impostor.Refresh();
+            foreach (var volume in Volumes)
+                if (volume && volume.Light && volume.VolumetricMaterial)
+                    volume.SetDynamicLightValues();
+            foreach (var light in Lights)
+                light.Refresh(!Applied);
+            foreach (var window in WindowVisuals)
+                window.Refresh(!Applied, Hidden);
             foreach (var heat in Heat)
                 if (heat)
                     heat.SyncPosition();
@@ -65,6 +82,7 @@ internal sealed partial class MapSceneAdapter
             Hidden = false;
             if (!Target)
                 return;
+            SceneTreeMovement.ReleaseContacts(Trees);
             // Restoring a world pose through a scaled/rotated parent performs
             // an inverse transform round-trip. Unity can quantize that result
             // by a few ULPs, which changes the exact prop fingerprint when a
@@ -116,7 +134,8 @@ internal sealed partial class MapSceneAdapter
 
     private readonly Dictionary<string, Original> _originals = new();
     private readonly Dictionary<string, Spawn> _spawns = new();
-    private readonly Dictionary<string, (Door Door, EDoorState State, float Angle)> _doors = new();
+    private readonly Dictionary<string, SceneDoorState> _doors = new();
+    private readonly Dictionary<string, SceneDoorPlacement> _placedDoors = new();
     private bool _disposed;
     internal bool Loading => _spawns.Values.AsValueEnumerable().Any(s => s.Pending);
 
@@ -236,6 +255,9 @@ internal sealed partial class MapSceneAdapter
 
     internal string? RecordAt(Transform t)
     {
+        foreach (var pair in _placedDoors)
+            if (pair.Value.Root && t.IsChildOf(pair.Value.Root.transform))
+                return pair.Key;
         foreach (var pair in _spawns)
             if (pair.Value.Model && (t == pair.Value.Model!.transform || t.IsChildOf(pair.Value.Model.transform)))
                 return pair.Key;
@@ -244,6 +266,10 @@ internal sealed partial class MapSceneAdapter
 
     internal IEnumerable<Renderer> SpawnRenderers()
     {
+        foreach (var placed in _placedDoors.Values)
+            if (placed.Root)
+                foreach (var renderer in placed.Root.GetComponentsInChildren<Renderer>())
+                    yield return renderer;
         foreach (var spawn in _spawns.Values)
             if (spawn.Model)
                 foreach (var renderer in spawn.Model!.GetComponentsInChildren<Renderer>())
@@ -269,10 +295,12 @@ internal sealed partial class MapSceneAdapter
                 original.RefreshVisuals();
     }
 
-    internal GameObject CopyForPlacement(Transform t) => CopyProp(t, false);
+    internal GameObject CopyForPlacement(Transform t) => CopyProp(t, false, t.GetComponent<Door>());
 
     internal Transform? TargetFor(string id, MapObjectEdit? edit)
     {
+        if (_placedDoors.TryGetValue(id, out var door) && door.Root)
+            return door.Root.transform;
         if (_spawns.TryGetValue(id, out var spawn) && spawn.Model)
             return spawn.Model!.transform;
         if (edit != null && _originals.TryGetValue(Key(edit.Target), out var original) && original.Target)
@@ -363,7 +391,17 @@ internal sealed partial class MapSceneAdapter
                             Decals = t.GetComponentsInChildren<StaticDeferredDecal>(true),
                             Shadows = t.GetComponentsInChildren<StencilShadow>(true),
                             Interactions = t.GetComponentsInChildren<WorldInteractiveObject>(true),
+                            Windows = t.GetComponentsInChildren<WindowBreaker>(true),
+                            Trees = t.GetComponentsInChildren<TreeInteractive>(true),
+                            Volumes = t.GetComponentsInChildren<VolumetricLight>(true),
+                            AreaLights = t.GetComponentsInChildren<AreaLight>(true),
                         };
+                        foreach (var light in t.GetComponentsInChildren<CullingLightObject>(true))
+                            original.Lights.Add(new SceneLightMovement(t, light));
+                        foreach (var window in original.Windows)
+                            original.WindowVisuals.Add(new SceneWindowMovement(window));
+                        foreach (var impostor in t.GetComponentsInChildren<EFT.Impostors.AmplifyImpostorsArrayElement>(true))
+                            original.Impostors.Add(new SceneImpostorMovement(impostor));
                         foreach (var body in t.GetComponentsInChildren<Rigidbody>(true))
                             original.Bodies.Add(new SceneBodyState(body));
                         _originals.Add(key, original);
@@ -398,6 +436,11 @@ internal sealed partial class MapSceneAdapter
                         if (!original.Applied && original.Target.GetComponent<LootItem>() is { } loot)
                             loot.UnregisterFromCullingObject();
                         original.Applied = true;
+                        if (original.Hidden != (edit.Operation == "Hide"))
+                        {
+                            SceneTreeMovement.ReleaseContacts(original.Trees);
+                            original.VisualsDirty = true;
+                        }
                         original.Hidden = edit.Operation == "Hide";
                         foreach (var body in original.Bodies)
                             body.Freeze();
@@ -412,6 +455,22 @@ internal sealed partial class MapSceneAdapter
                             var position = original.Target.position;
                             var rotation = original.Target.rotation;
                             var scale = original.Target.lossyScale;
+                            if (
+                                position != ZoneRuntime.Vector(edit.Position)
+                                || rotation != Quaternion.Euler(ZoneRuntime.Vector(edit.Rotation))
+                                || scale != ZoneRuntime.Vector(edit.Scale)
+                            )
+                                SceneTreeMovement.ReleaseContacts(original.Trees);
+                            // Reapplying an unchanged runtime layout must not reset a shot window.
+                            if (
+                                position != ZoneRuntime.Vector(edit.Position)
+                                || rotation != Quaternion.Euler(ZoneRuntime.Vector(edit.Rotation))
+                            )
+                                foreach (var window in original.Windows)
+                                    if (window && (window.IsDamaged || window.HasPieces))
+                                        throw new InvalidOperationException(
+                                            "This window broke after selection; its loose pieces cannot be relocated."
+                                        );
                             Pose(original.Target, edit, false);
                             if (edit.Target.Kind == "Prop" && ScaleRestriction(original.Target).Length == 0)
                                 WTT.Campaigns.UI.Controls.SceneSelectionGeometry.WorldScale(
@@ -466,17 +525,28 @@ internal sealed partial class MapSceneAdapter
             foreach (var edit in layout.Doors)
                 try
                 {
+                    if (edit.PlaceNew)
+                    {
+                        var signature = JsonConvert.SerializeObject(edit.Target);
+                        if (_placedDoors.TryGetValue(edit.Id, out var old) && old.Source != signature)
+                        {
+                            old.Dispose();
+                            _placedDoors.Remove(edit.Id);
+                        }
+                        if (!_placedDoors.TryGetValue(edit.Id, out var placed))
+                            _placedDoors.Add(edit.Id, placed = new SceneDoorPlacement(Resolve(edit.Target, true), edit));
+                        placed.Pose(edit);
+                        placed.State.Apply(edit);
+                        continue;
+                    }
                     var key = Key(edit.Target);
                     doorIds.Add(key);
                     if (!_doors.TryGetValue(key, out var state))
                     {
                         var door = Resolve(edit.Target, true).GetComponent<Door>();
-                        _doors.Add(key, state = (door, door.DoorState, door.CurrentAngle));
+                        _doors.Add(key, state = new SceneDoorState(door));
                     }
-                    var next = edit.State == "Unchanged" ? state.State : (EDoorState)Enum.Parse(typeof(EDoorState), edit.State);
-                    state.Door.SetInitialSyncState(
-                        new WorldInteractiveObject.InteractiveObjectStatusInfo(state.Door.Id, next, state.Door.GetAngle(next))
-                    );
+                    state.Apply(edit);
                 }
                 catch (Exception e)
                 {
@@ -493,10 +563,20 @@ internal sealed partial class MapSceneAdapter
         }
         foreach (var id in _doors.Keys.AsValueEnumerable().Where(id => !doorIds.Contains(id)).ToArray())
         {
-            RestoreDoor(_doors[id]);
+            _doors[id].Restore();
             _doors.Remove(id);
         }
         Physics.SyncTransforms();
+        foreach (
+            var id in _placedDoors
+                .Keys.AsValueEnumerable()
+                .Where(id => layout?.Doors.AsValueEnumerable().Any(d => d.PlaceNew && d.Id == id) != true)
+                .ToArray()
+        )
+        {
+            _placedDoors[id].Dispose();
+            _placedDoors.Remove(id);
+        }
     }
 
     private async Task LoadAsset(Spawn spawn, MapObjectEdit edit)
@@ -543,14 +623,6 @@ internal sealed partial class MapSceneAdapter
     private static void SetPose(Transform t, SpatialCapture point) =>
         t.SetPositionAndRotation(ZoneRuntime.Vector(point.Position), Quaternion.Euler(ZoneRuntime.Vector(point.Rotation)));
 
-    private static void RestoreDoor((Door Door, EDoorState State, float Angle) state)
-    {
-        if (!state.Door)
-            return;
-        state.Door.SetInitialSyncState(new WorldInteractiveObject.InteractiveObjectStatusInfo(state.Door.Id, state.State, state.Angle));
-        state.Door.CurrentAngle = state.Angle;
-    }
-
     private void DisposeEdits()
     {
         _disposed = true;
@@ -562,8 +634,11 @@ internal sealed partial class MapSceneAdapter
             cleanup.Apply(() => { }, original.Restore);
         _originals.Clear();
         foreach (var door in _doors.Values)
-            cleanup.Apply(() => { }, () => RestoreDoor(door));
+            cleanup.Apply(() => { }, door.Restore);
         _doors.Clear();
+        foreach (var door in _placedDoors.Values)
+            cleanup.Apply(() => { }, door.Dispose);
+        _placedDoors.Clear();
         cleanup.Dispose();
     }
 }

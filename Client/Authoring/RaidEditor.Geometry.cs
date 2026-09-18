@@ -234,6 +234,7 @@ public sealed partial class RaidEditor
             SeasonZone zone => RaidEditorSession.Copy(zone),
             MapVolume volume => RaidEditorSession.Copy(volume),
             MapObjectEdit edit => RaidEditorSession.Copy(edit),
+            MapDoorEdit door => RaidEditorSession.Copy(door),
             MapLootPlacement loot => RaidEditorSession.Copy(loot),
             _ => RaidEditorSession.Copy(point),
         };

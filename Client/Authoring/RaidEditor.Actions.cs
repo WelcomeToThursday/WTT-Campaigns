@@ -1058,7 +1058,8 @@ public sealed partial class RaidEditor
             _libraryKey = "";
         }
         var search = view.Get<InputField>("Search").text;
-        var treeMode = _mode == "AI" || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
+        var doorTree = SceneWorkspace && _sceneFilter == "Doors";
+        var treeMode = doorTree || _mode == "AI" || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
         var libraryKey =
             $"{_mode}|{_sceneTab}|{_sceneFilter}|{_catalogSource}|{_assetCatalog?.Revision}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
         if (_libraryKey != libraryKey)
@@ -1132,7 +1133,22 @@ public sealed partial class RaidEditor
                 _mode == "AI" ? "AI:" + _layoutId
                 : _mode == "Routes" ? "Routes:" + _session.Location
                 : "Zones:" + _layoutId;
-            if (_mode == "AI")
+            if (doorTree)
+            {
+                var doorContext = "Doors:" + _sceneTab + ":" + _layoutId;
+                var entries = _rows
+                    .AsValueEnumerable()
+                    .Select(r => (r.Id, r.Label, _sceneRoots.TryGetValue(r.Id, out var t) && t ? t.gameObject.scene.name : "Layout doors"))
+                    .ToArray();
+                view.RefreshTree(
+                    doorContext,
+                    _session.ContentVersion + _sceneRoots.Count,
+                    search,
+                    ToolkitSelection,
+                    expanded => EditorTreeModel.Create(doorContext, EditorLibraryTrees.Doors(entries), search, expanded)
+                );
+            }
+            else if (_mode == "AI")
             {
                 view.RefreshTree(
                     contextId,

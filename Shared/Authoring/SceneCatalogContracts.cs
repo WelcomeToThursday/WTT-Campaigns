@@ -19,6 +19,10 @@ public sealed class SceneCatalogEntry
     public WTT.Campaigns.Shared.Spatial.MapTarget? AssetTarget { get; set; }
     public string Id { get; set; } = "";
     public string Name { get; set; } = "";
+    public string? KeyId { get; set; }
+
+    public bool ShouldSerializeKeyId() => KeyId != null;
+
     public List<NativeItem> Items { get; set; } = new();
 }
 

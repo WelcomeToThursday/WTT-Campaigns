@@ -38,7 +38,29 @@ public sealed partial class RaidEditor
     {
         _sceneSelectionError = error;
         if (error.Length > 0 && _sceneRestrictionLog.Count < 128 && _sceneRestrictionLog.Add(target.GetInstanceID() + ":" + error))
+        {
             Plugin.LogInfo("Scene edit restriction: " + target.name + " | " + error + " | " + ScenePath(target));
+            // Bound traversal even when an aggregate map branch was selected.
+            var pending = new Stack<Transform>();
+            var components = new HashSet<string>();
+            pending.Push(target);
+            var visited = 0;
+            while (pending.Count > 0 && visited++ < 256)
+            {
+                var node = pending.Pop();
+                foreach (var component in node.GetComponents<Component>())
+                    components.Add(component ? component.GetType().FullName ?? component.GetType().Name : "<missing>");
+                for (var child = 0; child < node.childCount && pending.Count < 256; child++)
+                    pending.Push(node.GetChild(child));
+            }
+            Plugin.LogInfo(
+                "Scene component inventory: "
+                    + target.name
+                    + " | "
+                    + string.Join(", ", components)
+                    + (pending.Count > 0 ? " | truncated" : "")
+            );
+        }
         _sceneSelectionPose = new MapObjectEdit
         {
             Id = MapId(),

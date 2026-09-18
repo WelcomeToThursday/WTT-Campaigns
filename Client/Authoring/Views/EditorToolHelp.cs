@@ -50,6 +50,7 @@ internal static class EditorToolHelp
             "SceneSource" => "Filter the catalog by asset source.",
             "SceneProps" => "Show placeable props in the catalog.",
             "SceneContainers" => "Show lootable containers in the catalog.",
+            "SceneDoors" => "Browse and preview native doors by scene. Place an independent supported copy, or configure an existing door.",
             "SceneLoot" => "Show loose loot in the catalog.",
             "ScenePresets" => "Show saved item presets in the catalog.",
             "CatalogGrid" => "Browse catalog items as thumbnail tiles.",

@@ -91,6 +91,7 @@ internal static class EditorLayoutSpec
                 new Node("choice", "SceneSource", "Source"),
                 B("SceneProps", "Props"),
                 B("SceneContainers", "Containers"),
+                B("SceneDoors", "Doors"),
                 B("SceneLoot", "Loot"),
                 B("ScenePresets", "Presets")
             ),
@@ -257,6 +258,18 @@ internal static class EditorLayoutSpec
                     "MapInspector",
                     G("RouteGuideGroup", T("RouteGuide", "")),
                     F("MapName", "Name"),
+                    G(
+                        "DoorInspectorGroup",
+                        C("DoorStartState", "Starting state"),
+                        F("DoorKeyId", "Key ID"),
+                        F("DoorKeySearch", "Find key by name"),
+                        C("DoorKeyResults", "Matching keys"),
+                        B("DoorUseKey", "Use selected key"),
+                        B("DoorOriginalKey", "Use original key"),
+                        C("DoorBreach", "Breaching"),
+                        C("DoorOperatable", "Interaction"),
+                        T("DoorHelp", "")
+                    ),
                     A("MapNormalRaidGroup", "MapNormalRaid", "Apply in normal raids: off"),
                     G(
                         "MapLayerHelpGroup",

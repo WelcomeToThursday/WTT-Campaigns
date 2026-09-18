@@ -22,6 +22,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
     internal static string ScaleRestriction(Transform target)
     {
+        if (target.GetComponentInChildren<WindowBreaker>(true) || target.GetComponentInChildren<CullingLightObject>(true))
+            return "Native window fracture geometry and light culling volumes retain their original size.";
         if (target.GetComponentInChildren<WorldInteractiveObject>(true))
             return "Props with native interactions retain their original size so grips, hinges and drawers stay aligned.";
         // Include disabled colliders: hiding a prop must not bypass its collision requirements.
@@ -313,9 +315,9 @@ internal sealed partial class MapSceneAdapter : IDisposable
         }
     }
 
-    private static GameObject CopyProp(Transform source, bool collision)
+    private static GameObject CopyProp(Transform source, bool collision, bool doorPreview = false)
     {
-        var error = Supported(source, copy: true);
+        var error = doorPreview && !collision ? Supported(source, door: true) : Supported(source, copy: true);
         if (error.Length > 0)
             throw new InvalidOperationException(error);
         var root = new GameObject("CampaignEditor prop");

@@ -201,6 +201,7 @@ public sealed class TraderOfferCatalogue(
                     {
                         Id = t.Id.ToString(),
                         Name = locale.GetValueOrDefault(t.Id + " Name", t.Name ?? t.Id.ToString()),
+                        KeyId = request.Category == "Keys" ? t.Id.ToString() : null,
                     });
         entries = entries.Where(e =>
             e.Name.Contains(request.Search, StringComparison.OrdinalIgnoreCase)

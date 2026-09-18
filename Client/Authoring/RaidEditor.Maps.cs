@@ -210,6 +210,11 @@ public sealed partial class RaidEditor
             "MapName",
             text =>
             {
+                if (SceneWorkspace && (MapDoor != null || PickedDoor))
+                {
+                    EditDoor(d => d.Name = text.Trim());
+                    return;
+                }
                 if (SceneWorkspace && ScenePoint != null)
                 {
                     EditPoint(point => point.Name = text.Trim());
@@ -432,6 +437,14 @@ public sealed partial class RaidEditor
                     copy.Id = MapId();
                     copy.Items = FreshItems(copy.Items);
                     l.Loot.Add(copy);
+                    _selected = copy.Id;
+                }
+                else if (point is MapDoorEdit { PlaceNew: true } placedDoor)
+                {
+                    var copy = RaidEditorSession.Copy(placedDoor);
+                    copy.Id = MapId();
+                    copy.Name += " copy";
+                    l.Doors.Add(copy);
                     _selected = copy.Id;
                 }
                 else if (point is MapObjectEdit assetEdit && (assetEdit.Target.IsAsset || SceneAssetRules.IsContainer(assetEdit)))
