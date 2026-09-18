@@ -78,5 +78,46 @@ internal static class PreviewLoadGuardChecks
             failure = error.Message == "missing model";
         }
         check(failure, "Native equipment failures are preserved instead of being reported as generic timeouts");
+
+        var synchronousDeadlineCancelled = false;
+        var synchronousFailure = false;
+        var unusedDeadline = Pending();
+        try
+        {
+            await PreviewLoadGuard.Run(
+                _ => throw new InvalidOperationException("synchronous native failure"),
+                token =>
+                {
+                    token.Register(() => synchronousDeadlineCancelled = true);
+                    return unusedDeadline.Task;
+                },
+                CancellationToken.None,
+                () => "wrong error"
+            );
+        }
+        catch (InvalidOperationException error)
+        {
+            synchronousFailure = error.Message == "synchronous native failure";
+        }
+        check(synchronousFailure && synchronousDeadlineCancelled, "Synchronous native failures retire the already-running watchdog");
+        unusedDeadline.TrySetResult(true);
+
+        var waiting = Pending();
+        var diagnosticFailure = false;
+        try
+        {
+            await PreviewLoadGuard.Run(
+                _ => waiting.Task,
+                _ => Task.FromException(new InvalidOperationException("failed dependency.bundle")),
+                CancellationToken.None,
+                () => "wrong timeout"
+            );
+        }
+        catch (InvalidOperationException error)
+        {
+            diagnosticFailure = error.Message == "failed dependency.bundle";
+        }
+        check(diagnosticFailure, "The watchdog reports a failed bundle without replacing it with a generic timeout");
+        waiting.TrySetResult(true);
     }
 }

@@ -40,7 +40,7 @@ internal sealed class EditorPreviewPlayer
         void Stage(string text)
         {
             Plugin.LogInfo("Playtest equipment: " + text);
-            report?.Invoke(text);
+            report?.Invoke((useProfileKit ? "Main-profile kit · " : "Placeholder kit · ") + text);
         }
         Stage("Requesting " + (useProfileKit ? "current character gear" : "default gear"));
         var payload = JsonConvert.SerializeObject(
@@ -78,6 +78,7 @@ internal sealed class EditorPreviewPlayer
                 throw new InvalidOperationException("Playtest equipment bundle is not installed: " + resource.path);
         var poolStage = "Loading " + resources.Count + " equipment resources";
         Stage(poolStage);
+        using var equipmentLoading = new PreviewEquipmentLoad(factory, resources);
         var progress = new Progress<InitLevelProgress>(value =>
         {
             if (token.IsCancellationRequested || _restored)
@@ -89,21 +90,29 @@ internal sealed class EditorPreviewPlayer
             Stage(next);
         });
         await PreviewLoadGuard.Run(
-            loadToken =>
-                factory.LoadBundlesAndCreatePools(
+            async loadToken =>
+            {
+                // Native InitAndFillPools reads Source.Task.Result for existing pools.
+                // Await an earlier load before entering it, so a cancelled preview cannot block Unity's main thread.
+                var pools = factory.GetPools(ObjectsFactory.PoolsCategory.Raid);
+                foreach (var resource in resources)
+                {
+                    if (pools.PoolsDictionary.TryGetValue(resource, out var pool) && pool.Source != null)
+                        await pool.Source.Task;
+                    loadToken.ThrowIfCancellationRequested();
+                }
+                await factory.LoadBundlesAndCreatePools(
                     ObjectsFactory.PoolsCategory.Raid,
                     ObjectsFactory.AssemblyType.Local,
                     resources.AsValueEnumerable().ToArray(),
                     JobYieldPriority.Immediate,
                     progress,
                     loadToken
-                ),
-            timerToken => UniTask.Delay(45000, delayType: DelayType.Realtime, cancellationToken: timerToken).AsTask(),
+                );
+            },
+            equipmentLoading.Deadline,
             token,
-            () =>
-                "Playtest equipment timed out after 45 seconds at "
-                + poolStage
-                + ". Check the client asset-bundle log for a missing or failed item model."
+            () => "Playtest equipment timed out after 45 seconds at " + poolStage + ". " + equipmentLoading.DescribePending()
         );
         token.ThrowIfCancellationRequested();
         if (_restored || !_player || !Singleton<GameWorld>.Instantiated || Singleton<GameWorld>.Instance != _world)

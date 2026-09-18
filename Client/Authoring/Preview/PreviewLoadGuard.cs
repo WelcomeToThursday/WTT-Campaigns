@@ -15,10 +15,12 @@ internal static class PreviewLoadGuard
         using var timerLifetime = new CancellationTokenSource();
         var cancelled = new TaskCompletionSource<bool>();
         using var registration = token.Register(() => cancelled.TrySetResult(true));
-        var operation = load(operationLifetime.Token);
-        var timer = deadline(timerLifetime.Token);
+        Task? operation = null;
+        Task? timer = null;
         try
         {
+            timer = deadline(timerLifetime.Token);
+            operation = load(operationLifetime.Token);
             var completed = await Task.WhenAny(operation, timer, cancelled.Task);
             token.ThrowIfCancellationRequested();
             if (completed != operation)
@@ -34,8 +36,10 @@ internal static class PreviewLoadGuard
             operationLifetime.Cancel();
             timerLifetime.Cancel();
             // Native pools may finish after cancellation. Observe their result, but never resume equipment changes.
-            _ = Observe(operation);
-            _ = Observe(timer);
+            if (operation != null)
+                _ = Observe(operation);
+            if (timer != null)
+                _ = Observe(timer);
         }
     }
 
