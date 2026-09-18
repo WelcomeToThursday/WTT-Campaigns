@@ -76,7 +76,8 @@ internal static class EditorToolHelp
             "AiTriggerEventId" => "Event identifier that activates this encounter. Use manual for explicit preview triggering.",
             "AiTriggerZoneId" => "Identifier of the zone the player must enter to activate this encounter.",
             "AiWaveDelaySeconds" => "Delay before this wave begins, in seconds.",
-            "AiWaveWaitPrevious" => "Wait for the previous wave to be defeated before starting this wave's delay. The first wave uses activation timing.",
+            "AiWaveWaitPrevious" =>
+                "Wait for the previous wave to be defeated before starting this wave's delay. The first wave uses activation timing.",
             "AiRosterRole" => "Choose the bot role used by this roster.",
             "AiRosterDifficulty" => "Choose the difficulty used by this roster.",
             "AiRosterCount" => "Number of bots requested for this roster.",
