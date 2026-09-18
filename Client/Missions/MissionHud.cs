@@ -14,10 +14,12 @@ internal sealed class MissionHud : IDisposable
     private readonly Text _objective;
     private readonly Text _status;
     private bool _disposed;
+    private GameObject? _failure;
+    private MissionRetryMenuInput? _failureInput;
 
     internal MissionHud(string missionName)
     {
-        _canvas = new GameObject("MissionHud", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler));
+        _canvas = new GameObject("MissionHud", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         UnityEngine.Object.DontDestroyOnLoad(_canvas);
         var canvas = _canvas.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -49,9 +51,10 @@ internal sealed class MissionHud : IDisposable
         if (_disposed)
             return;
         _objective.text =
-            exitReached ? "Exit reached · completing mission"
-            : completed >= total ? "All checkpoints complete · reach the authored exit"
-            : "Checkpoint " + Math.Min(completed + 1, total) + " of " + total;
+            total <= 0 ? "Preparing route…"
+            : exitReached ? "Exit reached · completing mission"
+            : completed >= total ? "Route checkpoints: " + total + "/" + total + " · reach the exit"
+            : "Route checkpoints: " + Math.Max(0, completed) + "/" + total + " · next: " + (Math.Max(0, completed) + 1);
         _status.text = status ?? "";
     }
 
@@ -59,6 +62,45 @@ internal sealed class MissionHud : IDisposable
     {
         if (!_disposed)
             _status.text = status ?? "";
+    }
+
+    internal void ShowFailure(string reason, string checkpoint, Action? retry, Action end)
+    {
+        HideFailure();
+        var ui = new UiElements(ResolveFont());
+        var panel = UiElements.Rect("MissionRetry", _canvas.transform, 600, 240);
+        _failure = panel.gameObject;
+        _failureInput = _failure.AddComponent<MissionRetryMenuInput>();
+        UiElements.Fill(panel, new Color(.025f, .03f, .027f, .97f), true);
+        ui.Label(panel, "Failure", reason, 21, 550, 70, 0, 60).alignment = TextAnchor.MiddleCenter;
+        ui.Label(panel, "Checkpoint", "Retry point: " + checkpoint, 17, 550, 35, 0, 0).alignment = TextAnchor.MiddleCenter;
+        ui.Button(panel, "Retry checkpoint", 245, -133, -70, () => { HideFailure(); retry?.Invoke(); }).interactable = retry != null;
+        ui.Button(panel, "End attempt", 245, 133, -70, () => { HideFailure(); end(); });
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+    internal void HideFailure()
+    {
+        _failureInput?.Release();
+        _failureInput = null;
+        if (_failure) UnityEngine.Object.Destroy(_failure);
+        _failure = null;
+    }
+
+    internal void SetObjectives(WTT.Campaigns.Shared.Missions.MissionDefinition mission, WTT.Campaigns.Shared.Spatial.MapLayout layout,
+        WTT.Campaigns.Shared.Missions.MissionLogicState state)
+    {
+        if (_disposed || mission.Objectives.Count == 0) return;
+        var current = mission.Objectives.AsValueEnumerable().FirstOrDefault(o => state.Objectives.TryGetValue(o.Id, out var p) && p.Status == "Failed")
+            ?? mission.Objectives.AsValueEnumerable().FirstOrDefault(o => state.Objectives.TryGetValue(o.Id, out var p) && p.Status == "Active")
+            ?? mission.Objectives.AsValueEnumerable().FirstOrDefault(o => !state.Objectives.TryGetValue(o.Id, out var p) || p.Status == "Pending");
+        if (current == null) return;
+        var progress = WTT.Campaigns.Shared.Missions.MissionLogic.Progress(state, current.Id);
+        _objective.text = current.Name + (current.Type == WTT.Campaigns.Shared.Missions.MissionObjective.Defend
+            ? $" · {progress.Seconds:0}/{current.Seconds:0}s"
+            : current.Type is WTT.Campaigns.Shared.Missions.MissionObjective.Eliminate or WTT.Campaigns.Shared.Missions.MissionObjective.Target
+                ? $" · {progress.Count}/{WTT.Campaigns.Shared.Missions.MissionLogic.Expected(layout, current)}" : " · " + progress.Status);
+        _status.text = progress.Status == "Pending" ? "Waiting for activation event" : progress.Detail;
     }
 
     private static Font ResolveFont()
@@ -85,6 +127,7 @@ internal sealed class MissionHud : IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        HideFailure();
         if (_canvas)
             UnityEngine.Object.Destroy(_canvas);
     }

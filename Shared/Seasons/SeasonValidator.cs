@@ -55,7 +55,7 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9, "Overview", "Unsupported campaign format version.");
+        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10, "Overview", "Unsupported campaign format version.");
         foreach (var zone in s.Zones)
         {
             if (!string.IsNullOrEmpty(zone.LayoutId) && Spatial.SpatialRules.Uses(s, zone.Id).Any() && !MissionOwnsZoneReferences(s, zone))
@@ -478,11 +478,12 @@ public static class SeasonValidator
                     continue;
                 }
 
-                foreach (var error in Spatial.MapLayoutRules.Errors(layout, walkthrough: true))
+                foreach (var error in Spatial.MapLayoutRules.Errors(layout, walkthrough: true).Concat(WTT.Campaigns.Shared.Missions.MissionLogicRules.Errors(mission, layout)))
                 {
                     result.Add(path, error);
                 }
 
+                need(!WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic(mission) || s.FormatVersion >= 10, path, "Mission events, objectives and retries require campaign format 10.");
                 if (!quests.TryGetValue(mission.QuestId, out var quest))
                 {
                     continue;

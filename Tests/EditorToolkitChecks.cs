@@ -115,6 +115,8 @@ internal static class EditorToolkitChecks
                 && instruction.Previous?.Operand is string template
             )
             {
+                if (type.Name == "MissionEditorPanel" && template == "ToolbarScroll")
+                    throw new InvalidOperationException("Mission fields must use the existing vertical tool scroll, not the horizontal toolbar template.");
                 using var source =
                     typeof(EditorToolkitChecks).Assembly.GetManifestResourceStream("EditorToolkit." + template + ".uxml")
                     ?? throw new InvalidOperationException("Missing runtime template: " + template);
@@ -122,6 +124,19 @@ internal static class EditorToolkitChecks
                 var expected = clone.GenericArguments[0].Name;
                 if (expected != "VisualElement" && root.Name.LocalName != expected)
                     throw new InvalidOperationException("Wrong runtime template type: " + template);
+            }
+            if (instruction.Operand is MethodReference lookup && lookup.DeclaringType.Name == "RaidEditorView")
+            {
+                if (lookup.Name is "Element" or "Control" && instruction.Previous?.Operand is string id && id.StartsWith("Tool:"))
+                    throw new InvalidOperationException("Tool window identity used as a control name: " + method.FullName + " / " + id);
+                if (lookup.Name == "ElementForTool" && instruction.Previous?.Operand is string control
+                    && instruction.Previous.Previous?.Operand is string tool)
+                {
+                    var library = EditorLayoutSpec.Sections.Single(n => n.Id == "Library");
+                    bool Contains(EditorLayoutSpec.Node node) => node.Id == control || node.Children.Any(Contains);
+                    if (!Nodes().Any(n => n.Id == tool) || !Contains(library))
+                        throw new InvalidOperationException("Unresolved tool-specific control: " + tool + " / " + control);
+                }
             }
             if (
                 type.Namespace == "WTT.Campaigns.Client.Authoring.Views"

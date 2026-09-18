@@ -85,6 +85,7 @@ public sealed partial class RaidEditor
 
     private void BindAiControls(RaidEditorView view)
     {
+        _ = new MissionEditorPanel(view, view.ElementForTool("AI", "AiTools"), () => _session);
         RaidEditorAiContracts.LayoutProvider = () => Layout;
         view.Button("AiEncounter", AddAiEncounter);
         view.Button("AiWave", AddAiWave);
@@ -104,6 +105,7 @@ public sealed partial class RaidEditor
             }
         );
         view.Button("AiPlaytest", () => BeginAiPreview(true));
+        view.Button("TestCheckpoints", TestEditorCheckpoints);
         view.Button("AiReset", EndAiPreview);
         view.Button("AiSimulate", SimulateSelectedAiEvent);
         view.Button(

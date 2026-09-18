@@ -26,6 +26,12 @@ public sealed class MissionProgress
 /// <summary>Server-owned identity and progress for one prepared or active raid.</summary>
 public sealed class MissionRun
 {
+    public long AttemptGeneration { get; set; } = 1;
+    public string CheckpointId { get; set; } = "";
+    public bool Restoring { get; set; }
+    public bool PlayerDefeated { get; set; }
+    public Dictionary<string, string> RestoredActorIds { get; set; } = new();
+    public MissionLogicState Logic { get; set; } = new();
     public Dictionary<string, List<WTT.Campaigns.Shared.Native.NativeItem>> ContainerLoot { get; set; } = new();
     public string RunId { get; set; } = "";
     public string CharacterId { get; set; } = "";
@@ -56,6 +62,7 @@ public sealed class MissionRun
 
 public sealed class MissionReceipt
 {
+    public long AttemptGeneration { get; set; } = 1;
     public string RequestHash { get; set; } = "";
     public long Revision { get; set; }
     public long Timestamp { get; set; }

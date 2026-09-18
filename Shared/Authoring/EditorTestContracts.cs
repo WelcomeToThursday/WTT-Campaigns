@@ -15,15 +15,31 @@ public static class EditorTestRoutes
 public static class EditorTestActions
 {
     public const string Prepare = "prepare";
+    public const string PrepareCheckpoints = "prepare-checkpoints";
     public const string Progress = "progress";
     public const string Reset = "reset";
     public const string End = "end";
 }
 
+/// <summary>A disposable route rehearsal; never modifies or completes an authored mission.</summary>
+public static class EditorCheckpointTest
+{
+    public static MissionDefinition Definition(WTT.Campaigns.Shared.Spatial.MapLayout layout) => new()
+    {
+        Id = "checkpoint-test:" + layout.Id,
+        LayoutId = layout.Id,
+        Name = layout.Name + " · checkpoint test",
+        CheckpointRetries = true,
+    };
+}
+
 /// <summary>Request for a quick, draft-backed editor mission rehearsal.</summary>
 public class EditorTestMissionRequest
 {
-    public int Version { get; set; } = 1;
+    public List<MissionSignal> Signals { get; set; } = new();
+    public List<MissionActor> Actors { get; set; } = new();
+    public long AttemptGeneration { get; set; } = 1;
+    public int Version { get; set; } = 2;
     public string SessionId { get; set; } = "";
     public string DraftId { get; set; } = "";
     public string LayoutId { get; set; } = "";
@@ -45,7 +61,7 @@ public class EditorTestMissionRequest
 /// <summary>Disposable response for a quick draft rehearsal.</summary>
 public sealed class EditorTestMissionResponse
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
     public string? Error { get; set; }
     public string SessionId { get; set; } = "";
     public string ProfileId { get; set; } = "";

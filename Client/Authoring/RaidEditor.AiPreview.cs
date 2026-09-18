@@ -24,7 +24,7 @@ public sealed partial class RaidEditor
         _aiDefeatPending,
         _aiCleanupFailed;
     private bool? _aiRequested;
-    internal bool AiPreviewBusy => _aiPreparing || _aiPreview || _aiCleanupFailed || _aiReset is { IsCompleted: false };
+    internal bool AiPreviewBusy => _checkpointTestPreparing || _aiPreparing || _aiPreview || _aiCleanupFailed || _aiReset is { IsCompleted: false };
     internal static bool AiPreviewActive => Instance && Instance!._aiPreview;
     internal static bool AiPlaytestActive => Instance && Instance!._aiPreview && Instance._aiPlaytest && !Instance._aiDefeatPending;
 
@@ -165,7 +165,9 @@ public sealed partial class RaidEditor
                         : FilterZonesForLayout(layout.Id),
                     lifetime.Token
                 );
+            await CaptureTestStart(lifetime.Token);
             _aiRuntime.MissionStart();
+            _editorDirector?.Observe(new WTT.Campaigns.Shared.Missions.MissionSignal { Kind = WTT.Campaigns.Shared.Missions.MissionSignals.Start });
             _notice = "";
         }
         catch (OperationCanceledException)
@@ -313,6 +315,7 @@ public sealed partial class RaidEditor
     {
         if (!AiPreviewBusy)
             return false;
+        if (HoldTestFailure()) return true;
         if (_editorMissionCompleted && Input.GetKeyDown(KeyCode.R))
         {
             _ = RetryEditorMissionTest();
@@ -336,6 +339,9 @@ public sealed partial class RaidEditor
             if (_aiPreview)
             {
                 _aiRuntime?.Tick();
+                _editorDirector?.Tick();
+                if ((_editorDirector?.HasPending == true || _editorSignals != null) && !_editorMissionProgressPending)
+                    _ = ReportEditorObservations();
                 var failure = _aiRuntime?.Failure;
                 if (!string.IsNullOrEmpty(failure))
                     throw new InvalidOperationException(failure);

@@ -66,6 +66,10 @@
                         <p class="validation-warning">The selected quest needs a completion objective backed by a profile story variable. Add that objective in the quest editor first.</p>
                     }
                 </EditorSection>
+                @if (Layout(mission) is { } logicLayout)
+                {
+                    <MissionLogicFields Mission="mission" Layout="logicLayout" Changed="NotifyChanged" />
+                }
                 <EditorSection Title="Route and mission zones" Description="Route checkpoints are completed in authored order. Layout-owned zones are available to this mission's quest context.">
                     @if (Layout(mission) is { } routeLayout)
                     {
@@ -210,6 +214,7 @@
         {
             Id = SeasonRepository.NewId(),
             Name = "New mission",
+            CheckpointRetries = true,
             Briefing = "Complete the route and extract.",
             LayoutId = Season.MapLayouts[0].Id,
             QuestId = StoryQuests.First().Id,
@@ -231,6 +236,8 @@
         var copy = SeasonCompiler.Copy(selected);
         copy.Id = SeasonRepository.NewId();
         copy.Name += " copy";
+        MissionAuthoring.Remap(copy, copy.Events.Select(e => e.Id).Concat(copy.Objectives.Select(o => o.Id))
+            .ToDictionary(id => id, _ => MissionAuthoring.NewId()));
         Season.Missions.Insert(Season.Missions.IndexOf(selected) + 1, copy);
         _selectedId = copy.Id;
         await NotifyChanged();
@@ -272,6 +279,7 @@
 
     private Task NotifyChanged()
     {
+        if (Season.Missions.Any(MissionLogic.HasLogic)) Season.FormatVersion = Math.Max(Season.FormatVersion, 10);
         return Changed.InvokeAsync();
     }
 }

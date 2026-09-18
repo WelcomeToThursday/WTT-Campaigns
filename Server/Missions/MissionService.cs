@@ -39,6 +39,8 @@ public sealed class MissionService(
     private const string MissionStart = "MissionStart";
 
     private sealed record Active(string Id, string Root, string SeasonId, SptProfile Profile, SeasonRuntimeSnapshot Runtime);
+    private sealed record RaidCheckpoint(MissionCheckpoint Mission, SptProfile Profile);
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, RaidCheckpoint> _checkpoints = new();
 
     public MissionResponse Read(string sessionId, MissionRequest request)
     {
@@ -136,10 +138,57 @@ public sealed class MissionService(
         RequireRaidIdentity(active, run, request);
 
         var kind = request.Kind.Trim().ToLowerInvariant();
+        if (request.AttemptGeneration != run.AttemptGeneration)
+            throw new InvalidOperationException("This mission request belongs to a retired checkpoint attempt.");
         var changed = false;
-        if (kind == "checkpoint")
+        RaidCheckpoint? captured = null;
+        SptProfile? rollback = null;
+        if (kind == "start-checkpoint")
+        {
+            if (!mission.CheckpointRetries || run.Logic.Started || run.NextCheckpointIndex != 0 || _checkpoints.ContainsKey(run.RunId))
+                throw new InvalidOperationException("The mission-start checkpoint cannot be captured now.");
+            captured = new(new MissionCheckpoint(run, ""), cloner.Clone(original)!);
+            changed = true;
+        }
+        else if (kind == "retry-prepare")
+        {
+            if (!run.PlayerDefeated && run.Logic.Failure.Length == 0)
+                throw new InvalidOperationException("Only a failed mission attempt can retry its checkpoint.");
+            if (!mission.CheckpointRetries || !_checkpoints.TryGetValue(run.RunId, out var saved))
+                throw new InvalidOperationException("The raid-local checkpoint is unavailable.");
+            run = saved.Mission.BeginRestore(run);
+            run.RestoredActorIds = run.Logic.Actors.Values.Where(a => a.Spawned && !a.Dead).ToDictionary(a => a.ProfileId, _ => NewId());
+            state.ActiveRun = run;
+            rollback = cloner.Clone(saved.Profile)!;
+            var checkpointProgress = MissionStore.Read(rollback.CharacterData!.PmcData!, active.SeasonId);
+            state.CompletedMissionIds = checkpointProgress.CompletedMissionIds;
+            state.UnlockedMissionIds = checkpointProgress.UnlockedMissionIds;
+            changed = true;
+        }
+        else if (kind == "retry-commit")
+        {
+            if (!mission.CheckpointRetries || !_checkpoints.TryGetValue(run.RunId, out var saved))
+                throw new InvalidOperationException("The raid-local checkpoint is unavailable.");
+            saved.Mission.CommitRestore(mission, layout, run, run.RestoredActorIds);
+            changed = true;
+        }
+        else if (kind == "defeat")
+        {
+            if (!mission.CheckpointRetries || run.Restoring || run.ExitReached)
+                throw new InvalidOperationException("This mission cannot defer player defeat.");
+            run.PlayerDefeated = true;
+            changed = true;
+        }
+        else if (kind == "observations")
+        {
+            MissionObservationRules.Apply(mission, layout, run, request, DateTimeOffset.UtcNow.ToUnixTimeSeconds() - run.StartedAt);
+            changed = true;
+        }
+        else if (kind == "checkpoint")
         {
             var wasCompleted = run.CompletedCheckpointIds.Contains(request.CheckpointId);
+            if (!MissionLogic.CanAdvance(mission, run.Logic, request.CheckpointId, out var objectiveError))
+                throw new InvalidOperationException(objectiveError);
             if (!MissionRunRules.TryCheckpoint(run, layout.Checkpoints, request.CheckpointId, out var checkpointError))
                 throw new InvalidOperationException(checkpointError);
             if (wasCompleted)
@@ -147,13 +196,18 @@ public sealed class MissionService(
                 return Response(active, state, "Checkpoint already reported.", Descriptor(active, run), committed: true);
             }
             changed = true;
+            if (mission.CheckpointRetries) captured = new(new MissionCheckpoint(run, request.CheckpointId), cloner.Clone(original)!);
+            MissionLogic.Apply(mission, layout, run.Logic, new MissionSignal { Kind = MissionSignals.Checkpoint, TargetId = request.CheckpointId, Time = run.Logic.Time });
         }
         else if (kind == "exit")
         {
+            if (!MissionLogic.CanAdvance(mission, run.Logic, "", out var objectiveError))
+                throw new InvalidOperationException(objectiveError);
             var wasReached = run.ExitReached;
             if (!MissionRunRules.TryExit(run, layout.Checkpoints, layout.Exit, request.CheckpointId, out var exitError))
                 throw new InvalidOperationException(exitError);
             changed = !wasReached;
+            MissionLogic.Apply(mission, layout, run.Logic, new MissionSignal { Kind = MissionSignals.Exit, Time = run.Logic.Time });
         }
         else
         {
@@ -167,8 +221,10 @@ public sealed class MissionService(
         state.Revision++;
         AddReceipt(state, request.OperationId, fingerprint, "progress", run, now);
         var staged = cloner.Clone(original)!;
+        if (rollback != null) staged.CharacterData!.PmcData = rollback.CharacterData!.PmcData;
         MissionStore.Write(staged.CharacterData!.PmcData!, state);
         await commits.Commit(new MongoId(active.Id), original, staged);
+        if (captured != null) _checkpoints[run.RunId] = captured;
         return Response(active, state, "Mission progress recorded.", Descriptor(active, run), committed: true);
     }
 
@@ -186,6 +242,8 @@ public sealed class MissionService(
         RequireOperation(request);
         RequireRevision(state, request.ExpectedRevision);
         var run = RequireRun(state, request);
+        if (request.AttemptGeneration != run.AttemptGeneration)
+            throw new InvalidOperationException("This cancellation belongs to a retired mission attempt.");
         RequireMutationRun(run, request);
         if (run.Status == MissionRunStatuses.Active)
             RequireRaidIdentity(active, run, request);
@@ -278,6 +336,16 @@ public sealed class MissionService(
             if (run.EncounterProfileChunks.TryGetValue(cacheKey, out var cached))
                 return new EditorEncounterProfilesResponse { ProfilesJson = cached };
             run.EncounterProfileChunks[cacheKey] = profilesJson;
+            var authoredRoster = FindRoster(active, run, request, out var authoredEncounter, out var authoredWave);
+            foreach (var profile in Newtonsoft.Json.Linq.JArray.Parse(profilesJson))
+            {
+                var profileId = (string?)profile["_id"] ?? throw new InvalidOperationException("Generated actor has no native identity.");
+                run.Logic.Actors[profileId] = new MissionActor
+                {
+                    ProfileId = profileId, EncounterId = authoredEncounter.Id, WaveId = authoredWave.Id,
+                    RosterId = authoredRoster.Id, SquadId = authoredRoster.SquadId,
+                };
+            }
             var staged = cloner.Clone(original)!;
             MissionStore.Write(staged.CharacterData!.PmcData!, state);
             await commits.Commit(new MongoId(active.Id), original, staged);
@@ -484,6 +552,7 @@ public sealed class MissionService(
             request.Results?.ExitName,
             out var failureReason
         );
+        if (success && !MissionLogic.CanAdvance(mission, run.Logic, "", out failureReason)) success = false;
 
         run.FinishedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         if (success)
@@ -548,10 +617,12 @@ public sealed class MissionService(
     private Active Resolve(string sessionId, MissionRequest request)
     {
         var active = ResolveSession(sessionId);
-        if (request.Version != 1 || request.CharacterId != active.Id || string.IsNullOrWhiteSpace(request.SeasonId))
+        if (request.Version is not (1 or 2) || request.CharacterId != active.Id || string.IsNullOrWhiteSpace(request.SeasonId))
             throw new InvalidOperationException("Refresh the active Campaign character before using missions.");
         if (request.SeasonId != active.SeasonId)
             throw new InvalidOperationException("This mission request belongs to another campaign.");
+        if (request.Version < 2 && active.Runtime.Definition.Missions.Any(MissionLogic.HasLogic))
+            throw new InvalidOperationException("Update both mission components for events and objectives.");
         return active;
     }
 
@@ -667,6 +738,7 @@ public sealed class MissionService(
         if (layout.Start == null || layout.Exit == null || layout.Checkpoints is not { Count: > 0 })
             throw new InvalidOperationException("The mission layout requires a start, checkpoint sequence and exit.");
         var errors = MapLayoutRules.Errors(layout, walkthrough: true);
+        errors.AddRange(MissionLogicRules.Errors(mission, layout));
         if (errors.Count > 0)
             throw new InvalidOperationException("The mission layout is invalid: " + errors[0]);
         if (layout.Encounters.Any(e => e.Trigger?.Type == MissionStart && e.Trigger.Volume != null))
@@ -691,6 +763,9 @@ public sealed class MissionService(
     {
         if (
             run.Status != MissionRunStatuses.Active
+            || run.Restoring
+            || run.PlayerDefeated
+            || request.AttemptGeneration != run.AttemptGeneration
             || !MissionRunRules.MatchesIdentity(run, active.Id, request.RunId, request.RaidId, request.EncounterToken)
         )
             throw new InvalidOperationException("The encounter request is not authorized for this mission raid.");
@@ -741,8 +816,9 @@ public sealed class MissionService(
             throw new InvalidOperationException("This mission request belongs to another raid or character.");
     }
 
-    private static void ClearTransientRunState(MissionRun run)
+    private void ClearTransientRunState(MissionRun run)
     {
+        _checkpoints.TryRemove(run.RunId, out _);
         run.EncounterProfileChunks?.Clear();
     }
 
@@ -804,6 +880,8 @@ public sealed class MissionService(
                 request.RaidId,
                 request.CheckpointId,
                 request.Kind,
+                request.AttemptGeneration,
+                request.Signals,
             }
         )!;
     }

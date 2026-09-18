@@ -1,0 +1,98 @@
+@using WTT.Campaigns.Shared.Missions
+@using WTT.Campaigns.Shared.Spatial
+<EditorSection Title="Mission events and objectives" Description="Required objectives gate extraction. Events activate encounters, objectives and timers.">
+    <label><input type="checkbox" @bind="Mission.CheckpointRetries" @bind:after="Notify" /> Allow checkpoint retries</label>
+    @foreach (var error in MissionLogicRules.Errors(Mission, Layout)) { <p class="validation-warning">@error</p> }
+    <div class="editor-actions"><button @onclick="AddObjective">Add objective</button><button @onclick="AddEvent">Add event</button></div>
+    @foreach (var o in Mission.Objectives)
+    {
+        <fieldset @key="o.Id"><legend>@o.Name</legend>
+            <label>Name<input maxlength="120" @bind="o.Name" @bind:after="Notify" /></label>
+            <MissionChoice Label="Goal" Value="@o.Type" Choices="Names(MissionAuthoring.ObjectiveTypes)" ValueChanged="v => Change(() => o.Type = v)" />
+            <label><input type="checkbox" @bind="o.OnStart" @bind:after="Notify" /> Active at mission start</label>
+            <label><input type="checkbox" @bind="o.Required" @bind:after="Notify" /> Required for extraction</label>
+            <MissionChoice Label="Target group" Value="@o.TargetKind" Choices="Names(TargetKinds)" ValueChanged="v => Change(() => { o.TargetKind = v; o.TargetIds.Clear(); })" />
+            @foreach (var target in MissionAuthoring.Targets(Layout, o.TargetKind))
+            {
+                <label><input type="checkbox" checked="@o.TargetIds.Contains(target.Id)" @onchange="e => Change(() => Toggle(o.TargetIds, target.Id, e.Value is true))" /> @target.Name</label>
+            }
+            @if (o.Type == MissionObjective.Defend)
+            {
+                <MissionChoice Label="Area" Value="@o.ZoneId" Choices="MissionAuthoring.SourceTargets(Mission, Layout, MissionSignals.Sample)" ValueChanged="v => Change(() => o.ZoneId = v)" />
+                <label>Uncontested seconds<input type="number" min="1" max="3600" @bind="o.Seconds" @bind:after="Notify" /></label>
+            }
+            @if (o.Type == MissionObjective.Protect)
+            {
+                <MissionChoice Label="Protect until" Value="@o.UntilEventId" Empty="Mission exit" Choices="Mission.Events.Select(e => (e.Id, e.Name))" ValueChanged="v => Change(() => o.UntilEventId = v)" />
+            }
+            @if (o.Required)
+            {
+                <p>Also require before checkpoint:</p>
+                @foreach (var checkpoint in Layout.Checkpoints)
+                {
+                    <label><input type="checkbox" checked="@Mission.Requirements.Any(r => r.CheckpointId == checkpoint.Id && r.ObjectiveIds.Contains(o.Id))"
+                        @onchange="e => Change(() => Gate(o.Id, checkpoint.Id, e.Value is true))" /> @checkpoint.Name</label>
+                }
+            }
+            <button @onclick="() => Duplicate(o)">Duplicate</button>
+            <button @onclick="() => Change(() => Mission.Objectives.Remove(o))">Remove objective</button>
+        </fieldset>
+    }
+    @foreach (var rule in Mission.Events)
+    {
+        <fieldset @key="rule.Id"><legend>@rule.Name</legend>
+            <label>Name<input maxlength="120" @bind="rule.Name" @bind:after="Notify" /></label>
+            <MissionChoice Label="When" Value="@rule.Source" Choices="Names(MissionAuthoring.Sources)" ValueChanged="v => Change(() => { rule.Source = v; rule.SourceId = string.Empty; })" />
+            @if (rule.Source != MissionSignals.Start)
+            {
+                <MissionChoice Label="Source" Value="@rule.SourceId" Choices="MissionAuthoring.SourceTargets(Mission, Layout, rule.Source)" ValueChanged="v => Change(() => rule.SourceId = v)" />
+            }
+            @foreach (var action in rule.Actions)
+            {
+                <MissionChoice Label="Then" Value="@action.Type" Choices="Names(ActionTypes)" ValueChanged="v => Change(() => { action.Type = v; action.TargetId = string.Empty; })" />
+                @if (action.Type == MissionAction.Timer)
+                {
+                    <label>Timer name<input maxlength="120" @bind="action.TargetId" @bind:after="Notify" /></label>
+                    <label>Seconds<input type="number" min="1" max="3600" @bind="action.Seconds" @bind:after="Notify" /></label>
+                }
+                else
+                {
+                    <MissionChoice Label="Target" Value="@action.TargetId" Choices="MissionAuthoring.ActionTargets(Mission, Layout, action.Type)" ValueChanged="v => Change(() => action.TargetId = v)" />
+                }
+                <button @onclick="() => Change(() => rule.Actions.Remove(action))">Remove action</button>
+            }
+            <button @onclick="() => Change(() => rule.Actions.Add(new()))">Add action</button>
+            <button @onclick="() => Duplicate(rule)">Duplicate event</button>
+            <button @onclick="() => Change(() => Mission.Events.Remove(rule))">Remove event</button>
+        </fieldset>
+    }
+</EditorSection>
+@code {
+    [Parameter, EditorRequired] public MissionDefinition Mission { get; set; } = null!;
+    [Parameter, EditorRequired] public MapLayout Layout { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private static readonly string[] TargetKinds = ["Encounter", "Roster", "Squad"];
+    private static readonly string[] ActionTypes = [MissionAction.Encounter, MissionAction.Objective, MissionAction.Timer];
+    private static IEnumerable<(string Id, string Name)> Names(IEnumerable<string> names) => names.Select(n => (n, MissionAuthoring.Label(n)));
+    private Task Notify() => Changed.InvokeAsync();
+    private Task Duplicate(MissionObjective objective) => Change(() =>
+    {
+        var copy = WTT.Campaigns.Shared.Seasons.SeasonCompiler.Copy(objective);
+        copy.Id = MissionAuthoring.NewId(); copy.Name += " copy"; Mission.Objectives.Add(copy);
+    });
+    private Task Duplicate(MissionEventRule rule) => Change(() =>
+    {
+        var copy = WTT.Campaigns.Shared.Seasons.SeasonCompiler.Copy(rule);
+        copy.Id = MissionAuthoring.NewId(); copy.Name += " copy"; Mission.Events.Add(copy);
+    });
+    private async Task Change(Action action) { action(); await Notify(); }
+    private Task AddObjective() => Change(() => Mission.Objectives.Add(new() { Id = MissionAuthoring.NewId() }));
+    private Task AddEvent() => Change(() => Mission.Events.Add(new() { Id = MissionAuthoring.NewId(), Source = MissionSignals.Start, Actions = [new()] }));
+    private static void Toggle(List<string> ids, string id, bool enabled) { ids.Remove(id); if (enabled) ids.Add(id); }
+    private void Gate(string objective, string checkpoint, bool enabled)
+    {
+        var gate = Mission.Requirements.FirstOrDefault(r => r.CheckpointId == checkpoint);
+        if (gate == null) { gate = new() { CheckpointId = checkpoint }; Mission.Requirements.Add(gate); }
+        Toggle(gate.ObjectiveIds, objective, enabled);
+    }
+}

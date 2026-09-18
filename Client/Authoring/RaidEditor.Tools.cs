@@ -181,6 +181,7 @@ public sealed partial class RaidEditor
         view.Get<EditorChoice>("AiPlaytestGear").interactable = !AiPreviewBusy;
         view.Get<EditorButton>("AiObserve").interactable = editable && EditorMode.Ready && !_walking && !AiPreviewBusy && Layout != null;
         view.Get<EditorButton>("AiPlaytest").interactable = editable && EditorMode.Ready && !_walking && !AiPreviewBusy && Layout != null;
+        view.Get<EditorButton>("TestCheckpoints").interactable = editable && EditorMode.Ready && !_walking && !AiPreviewBusy && Layout != null;
         if (_mode != "AI")
             return;
         var selected = AiSelected(out _);

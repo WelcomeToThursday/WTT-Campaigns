@@ -5,7 +5,9 @@ namespace WTT.Campaigns.Shared.Missions;
 /// <summary>Payload used by the missions list, prepare, descriptor, progress and cancel routes.</summary>
 public class MissionRequest
 {
-    public int Version { get; set; } = 1;
+    public long AttemptGeneration { get; set; } = 1;
+    public List<MissionSignal> Signals { get; set; } = new();
+    public int Version { get; set; } = 2;
     public string SeasonId { get; set; } = "";
     public string CharacterId { get; set; } = "";
     public string OperationId { get; set; } = "";
@@ -46,7 +48,7 @@ public sealed class MissionDescriptor
 
 public sealed class MissionResponse
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
     public string? Error { get; set; }
     public string SeasonId { get; set; } = "";
     public string CharacterId { get; set; } = "";

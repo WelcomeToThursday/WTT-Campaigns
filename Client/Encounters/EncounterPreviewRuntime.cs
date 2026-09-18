@@ -24,6 +24,8 @@ internal sealed class EncounterPreviewRuntime
         internal int Wave;
         internal bool Finished;
         internal bool DeathConfirmed;
+        internal string RosterId = "", Squad = "", Route = "";
+        internal SpatialCapture Spawn = null!;
 
         internal void OnDeath(EDamageType _) => DeathConfirmed = true;
     }
@@ -45,10 +47,134 @@ internal sealed class EncounterPreviewRuntime
         _ended;
     private float _nextUpdate;
     private float _nextBotTrace;
+    private bool _paused;
+    private float _clockOffset, _pausedAt;
+    private float Clock => _paused ? _pausedAt : Time.time - _clockOffset;
+    private Dictionary<string, PatrolCheckpoint>? _pausedPatrols;
+    internal MissionRetryGuard? RetryGuard { get; set; }
+
+    internal sealed class SavedBot
+    {
+        internal string ProfileId = "", ProfileJson = "", EncounterId = "", RosterId = "", Squad = "", Route = "";
+        internal int Wave;
+        internal SpatialCapture Spawn = null!;
+        internal BotOwner OriginalBot = null!;
+        internal MissionActorSnapshot Health = null!;
+        internal bool PlayerWasEnemy;
+        internal WildSpawnType Brain;
+    }
+    internal sealed class Checkpoint
+    {
+        internal List<SavedBot> Bots = new();
+        internal List<EncounterCheckpoint> Encounters = new();
+        internal Dictionary<string, PatrolCheckpoint> Patrols = new();
+        internal HashSet<string> BaselineItems = new();
+    }
+
+    internal async Task SettleAsync(CancellationToken token)
+    {
+        if (!_paused) { _pausedAt = Clock; _pausedPatrols = _ai?.CapturePatrols(); }
+        _paused = true;
+        await Task.WhenAll(_work.AsValueEnumerable().ToArray());
+        token.ThrowIfCancellationRequested();
+        Tick(true);
+        if (Failure != null) throw new InvalidOperationException(Failure);
+    }
+    internal void Resume()
+    {
+        if (!_paused) return;
+        _clockOffset = Time.time - _pausedAt;
+        if (_pausedPatrols != null) _ai!.RestorePatrols(_pausedPatrols);
+        _pausedPatrols = null; _paused = false;
+    }
+    internal Checkpoint Capture()
+    {
+        if (!_paused || _work.AsValueEnumerable().Any(t => !t.IsCompleted))
+            throw new InvalidOperationException("Encounter work must settle before checkpoint capture.");
+        var result = new Checkpoint { Patrols = _pausedPatrols ?? _ai!.CapturePatrols(), BaselineItems = _native.CaptureObjectBaseline() };
+        foreach (var encounter in _encounters) result.Encounters.Add(encounter.Capture(Clock));
+        foreach (var record in _bots)
+        {
+            if (record.DeathConfirmed || record.Finished) continue;
+            result.Bots.Add(new SavedBot
+            {
+                ProfileId = record.ProfileId, EncounterId = record.Encounter.Encounter.Id, RosterId = record.RosterId,
+                Wave = record.Wave, Squad = record.Squad, Route = record.Route, Spawn = record.Spawn, OriginalBot = record.Bot,
+                Health = new MissionActorSnapshot(record.Player),
+                PlayerWasEnemy = record.Bot.BotsGroup.IsEnemy(_player),
+                Brain = EncounterBrainChoice.Capture(record.Bot),
+                ProfileJson = JsonConvert.SerializeObject(new ProfileDescriptor(record.Player.Profile, record.Player.SearchController), EftJsonConverters.Converters),
+            });
+        }
+        return result;
+    }
+
+    internal async Task RestoreAsync(Checkpoint saved, IReadOnlyDictionary<string, string> identities, CancellationToken token)
+    {
+        _pausedAt = Clock;
+        _paused = true;
+        _pausedPatrols = saved.Patrols;
+        _native.RestoreObjectBaseline(saved.BaselineItems);
+        foreach (var actor in saved.Bots)
+        {
+            if (!identities.TryGetValue(actor.ProfileId, out var fresh)) throw new InvalidOperationException("Missing server-authorized checkpoint actor.");
+            var descriptor = JsonConvert.DeserializeObject<ProfileDescriptor>(actor.ProfileJson, EftJsonConverters.Converters)!;
+            descriptor.Id = fresh;
+            var profile = new Profile(descriptor);
+            var point = actor.Spawn;
+            var location = actor.Health.Position;
+            var target = new SpatialVector { X = location.x, Y = location.y, Z = location.z };
+            var bot = await _native.SpawnAsync(profile, point, actor.EncounterId, actor.Squad, token, target, actor.Brain);
+            token.ThrowIfCancellationRequested();
+            RetryGuard?.Track(bot.GetPlayer);
+            if (!_navigation.IsOnNavMesh(target)) throw new InvalidOperationException("Checkpoint bot position is no longer navigable.");
+            actor.Health.Restore(bot.GetPlayer, actor.OriginalBot, bot);
+            if (actor.PlayerWasEnemy)
+            {
+                bot.BotsGroup.AddEnemy(_player, EBotEnemyCause.initial);
+                if (!bot.BotsGroup.IsEnemy(_player))
+                    throw new InvalidOperationException("Checkpoint bot hostility to the player could not be restored.");
+            }
+            var encounter = _encounters.AsValueEnumerable().First(e => e.Encounter.Id == actor.EncounterId);
+            var record = new BotRecord
+            {
+                Bot = bot, Player = bot.GetPlayer, Health = bot.GetPlayer.ActiveHealthController,
+                ProfileId = fresh, Encounter = encounter, Wave = actor.Wave, RosterId = actor.RosterId,
+                Squad = actor.Squad, Route = actor.Route, Spawn = actor.Spawn,
+            };
+            record.Health.DiedEvent += record.OnDeath;
+            _bots.Add(record);
+            _ai!.Add(bot, actor.Squad, actor.Route, actor.Spawn);
+        }
+        foreach (var checkpoint in saved.Encounters)
+        {
+            var encounter = _encounters.AsValueEnumerable().First(e => e.Encounter.Id == checkpoint.EncounterId);
+            encounter.Restore(checkpoint, Clock, identities);
+            foreach (var wave in encounter.Waves)
+                if (wave.Status == EncounterWaveStatus.Completed) _notifiedWaves.Add(wave.WaveId);
+            if (encounter.Waves.AsValueEnumerable().All(w => w.Status == EncounterWaveStatus.Completed)) _notifiedEncounters.Add(checkpoint.EncounterId);
+        }
+        _ai!.RestorePatrols(saved.Patrols);
+    }
 
     internal static string CompatibilityError => EncounterNative.CompatibilityError;
     internal string Status { get; private set; } = "Preparing AI preview";
     internal string? Failure { get; private set; }
+    internal event Action<MissionSignal>? Signal;
+    internal event Action<MissionActor>? ActorRegistered;
+    private readonly HashSet<string> _notifiedWaves = new();
+    private readonly HashSet<string> _notifiedEncounters = new();
+
+    internal List<string> Occupants(MapVolume volume) => _bots.AsValueEnumerable()
+        .Where(r => !r.Finished && !r.DeathConfirmed && r.Player && r.Health.IsAlive
+            && EncounterNavigation.Contains(volume, r.Player.Transform.position)).Select(r => r.ProfileId).ToList();
+
+    internal void ActivateEncounter(string id)
+    {
+        var encounter = _encounters.AsValueEnumerable().FirstOrDefault(e => e.Encounter.Id == id);
+        if (encounter?.Encounter.Trigger.Type == MapEncounterTrigger.Event)
+            encounter.TryActivate("event:" + encounter.Encounter.Trigger.EventId, Clock);
+    }
 
     internal async Task BeginAsync(
         EncounterRuntimeContext context,
@@ -92,7 +218,7 @@ internal sealed class EncounterPreviewRuntime
             return;
         foreach (var state in _encounters)
             if (state.Encounter.Trigger.Type == MapEncounterTrigger.MissionStart)
-                state.TryActivate("start", Time.time);
+                state.TryActivate("start", Clock);
         RefreshStatus();
     }
 
@@ -104,7 +230,7 @@ internal sealed class EncounterPreviewRuntime
         {
             var trigger = state.Encounter.Trigger;
             if (trigger.Type == MapEncounterTrigger.Event && trigger.EventId == eventId)
-                state.TryActivate("event:" + eventId, Time.time);
+                state.TryActivate("event:" + eventId, Clock);
         }
         RefreshStatus();
     }
@@ -115,29 +241,29 @@ internal sealed class EncounterPreviewRuntime
             return;
         foreach (var state in _encounters)
             if (state.Encounter.Id == encounterId && state.Encounter.Trigger.Type == MapEncounterTrigger.PlayerEntry)
-                state.TryActivate("entry", Time.time);
+                state.TryActivate("entry", Clock);
         RefreshStatus();
     }
 
-    internal void Tick()
+    internal void Tick(bool settling = false)
     {
-        if (!_ready || _ended)
+        if (!_ready || _ended || (_paused && !settling))
             return;
         _lifetime!.Token.ThrowIfCancellationRequested();
         if (!_player)
             throw new InvalidOperationException("The preview player is no longer available.");
-        _ai?.Tick();
-        if (Time.time >= _nextBotTrace)
+        if (!_paused) _ai?.Tick();
+        if (Clock >= _nextBotTrace)
         {
-            _nextBotTrace = Time.time + 5;
+            _nextBotTrace = Clock + 5;
             foreach (var record in _bots)
                 if (!record.Finished && !record.DeathConfirmed && record.Bot)
                     Plugin.LogInfo("AI movement: bot=" + record.ProfileId + "; " + _ai!.Describe(record.Bot));
         }
-        if (Time.time < _nextUpdate)
+        if (!settling && Clock < _nextUpdate)
             return;
-        _nextUpdate = Time.time + .1f;
-        var now = Time.time;
+        _nextUpdate = Clock + .1f;
+        var now = Clock;
         foreach (var record in _bots)
         {
             if (record.Finished || record.Encounter.Waves[record.Wave].Status != EncounterWaveStatus.Active)
@@ -146,6 +272,7 @@ internal sealed class EncounterPreviewRuntime
             {
                 record.Encounter.MarkBotDefeated(record.Wave, record.ProfileId, now);
                 record.Finished = true;
+                Signal?.Invoke(new MissionSignal { Kind = MissionSignals.Death, ProfileId = record.ProfileId });
             }
             else if (!record.Player || !record.Bot)
             {
@@ -155,6 +282,12 @@ internal sealed class EncounterPreviewRuntime
         }
         foreach (var state in _encounters)
         {
+            foreach (var wave in state.Waves)
+                if (wave.Status == EncounterWaveStatus.Completed && _notifiedWaves.Add(wave.WaveId))
+                    Signal?.Invoke(new MissionSignal { Kind = MissionSignals.Wave, TargetId = wave.WaveId });
+            if (state.Waves.Count > 0 && state.Waves.AsValueEnumerable().All(w => w.Status == EncounterWaveStatus.Completed)
+                && _notifiedEncounters.Add(state.Encounter.Id))
+                Signal?.Invoke(new MissionSignal { Kind = MissionSignals.Encounter, TargetId = state.Encounter.Id });
             var trigger = state.Encounter.Trigger;
             if (!state.IsActivated && trigger.Type == MapEncounterTrigger.PlayerEntry)
             {
@@ -165,8 +298,8 @@ internal sealed class EncounterPreviewRuntime
                 if (volume != null && EncounterNavigation.Contains(volume, _player.Transform.position))
                     state.TryActivate("entry", now);
             }
-            foreach (var wave in state.ReadyWaves(now))
-                _work.Add(SpawnWave(state, wave));
+            if (!_paused)
+                foreach (var wave in state.ReadyWaves(now)) _work.Add(SpawnWave(state, wave));
         }
         _work.RemoveAll(t => t.IsCompleted);
         var failed = _encounters.AsValueEnumerable().FirstOrDefault(e => e.IsFailed);
@@ -265,10 +398,11 @@ internal sealed class EncounterPreviewRuntime
                             ? JsonConvert.SerializeObject(
                                 new MissionEncounterProfilesRequest
                                 {
-                                    Version = 1,
+                                    Version = 2,
                                     SeasonId = MissionClient.SeasonId,
                                     CharacterId = MissionClient.CharacterId,
                                     RunId = _context.PreviewGeneration,
+                                    AttemptGeneration = _context.AttemptGeneration,
                                     RaidId = _context.RaidId,
                                     EncounterToken = _encounterToken,
                                     EncounterId = state.Encounter.Id,
@@ -340,6 +474,7 @@ internal sealed class EncounterPreviewRuntime
                         ProfileId = profile.Id,
                         Encounter = state,
                         Wave = waveIndex,
+                        RosterId = roster.Id, Squad = squad, Route = roster.PatrolRouteId, Spawn = point,
                         Health =
                             bot.GetPlayer.ActiveHealthController
                             ?? throw new InvalidOperationException("Native bot health was not initialized."),
@@ -347,10 +482,14 @@ internal sealed class EncounterPreviewRuntime
                     record.DeathConfirmed = !record.Health.IsAlive;
                     record.Health.DiedEvent += record.OnDeath;
                     _bots.Add(record);
+                    RetryGuard?.Track(record.Player);
+                    ActorRegistered?.Invoke(new MissionActor { ProfileId = profile.Id, EncounterId = state.Encounter.Id,
+                        WaveId = wave.Id, RosterId = roster.Id, SquadId = roster.SquadId });
+                    Signal?.Invoke(new MissionSignal { Kind = MissionSignals.Spawn, ProfileId = profile.Id });
                     _ai!.Add(bot, squad, roster.PatrolRouteId, point);
                 }
             }
-            if (!state.TryCommitGeneration(waveIndex, generation, Time.time, out var failure))
+            if (!state.TryCommitGeneration(waveIndex, generation, Clock, out var failure))
                 throw new InvalidOperationException(failure);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
@@ -376,7 +515,7 @@ internal sealed class EncounterPreviewRuntime
             throw new InvalidOperationException("Spawn point is blocked or off the NavMesh: " + point.Name);
     }
 
-    internal void Reset()
+    internal void Reset(bool preserveWorld = false)
     {
         _ended = true;
         _ready = false;
@@ -385,7 +524,7 @@ internal sealed class EncounterPreviewRuntime
             encounter.Cancel();
         try
         {
-            _native.Reset();
+            _native.Reset(preserveWorld);
         }
         finally
         {

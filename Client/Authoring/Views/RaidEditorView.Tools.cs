@@ -114,7 +114,7 @@ internal sealed partial class RaidEditorView
         ConfigureToolActions(tool, false, false);
     }
 
-    private VisualElement ElementForTool(string tool, string id) => _toolControls[tool][id].Element;
+    internal VisualElement ElementForTool(string tool, string id) => _toolControls[tool][id].Element;
 
     internal void ConfigureToolActions(string tool, bool mapReady, bool sceneWorkspace)
     {

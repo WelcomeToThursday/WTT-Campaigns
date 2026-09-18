@@ -35,6 +35,11 @@ public static class MissionRunRules
             error = "The mission run is unavailable.";
             return false;
         }
+        if (run.Restoring || run.PlayerDefeated)
+        {
+            error = "Checkpoint restoration must finish before mission progress can continue.";
+            return false;
+        }
         if (string.IsNullOrWhiteSpace(checkpointId))
         {
             error = "A checkpoint identity is required.";
@@ -62,6 +67,7 @@ public static class MissionRunRules
 
         run.CompletedCheckpointIds.Add(expected.Id);
         run.NextCheckpointIndex++;
+        run.CheckpointId = expected.Id;
         return true;
     }
 
@@ -76,6 +82,12 @@ public static class MissionRunRules
         if (run.NextCheckpointIndex != checkpoints.Count)
         {
             error = "Complete every mission checkpoint before extracting.";
+            return false;
+        }
+
+        if (run.Restoring || run.PlayerDefeated)
+        {
+            error = "Checkpoint restoration must finish before extraction.";
             return false;
         }
 
@@ -100,6 +112,11 @@ public static class MissionRunRules
         if (!AliveExtractionResults.Contains(result ?? ""))
         {
             failureReason = "The mission raid did not end with a successful extraction.";
+            return false;
+        }
+        if (run.Restoring || run.PlayerDefeated)
+        {
+            failureReason = "Checkpoint restoration did not finish.";
             return false;
         }
         if (!run.ExitReached)

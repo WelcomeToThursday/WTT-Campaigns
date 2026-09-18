@@ -24,7 +24,7 @@ public static class MissionTransaction
     /// <summary>Validates the request identity at the active-session boundary.</summary>
     public static void RequireRequestIdentity(MissionRequest request, string actualCharacterId, string seasonId)
     {
-        if (request.Version != 1 || request.CharacterId != actualCharacterId || string.IsNullOrWhiteSpace(request.SeasonId))
+        if (request.Version is not (1 or 2) || request.CharacterId != actualCharacterId || string.IsNullOrWhiteSpace(request.SeasonId))
             throw new InvalidOperationException("Refresh the active Campaign character before using missions.");
         if (request.SeasonId != seasonId)
             throw new InvalidOperationException("This mission request belongs to another campaign.");
@@ -50,6 +50,8 @@ public static class MissionTransaction
             throw new InvalidOperationException("Mission operation identifier was reused for different inputs.");
         if (state.ActiveRun == null || string.IsNullOrWhiteSpace(existing.RunId) || state.ActiveRun.RunId != existing.RunId)
             throw new InvalidOperationException("This mission operation belongs to an older run. Refresh the mission list.");
+        if (existing.AttemptGeneration != state.ActiveRun.AttemptGeneration)
+            throw new InvalidOperationException("This mission operation belongs to a retired checkpoint attempt.");
         receipt = existing;
         return true;
     }
@@ -86,6 +88,7 @@ public static class MissionTransaction
             Timestamp = timestamp,
             Operation = operation,
             RunId = run.RunId,
+            AttemptGeneration = run.AttemptGeneration,
             Status = run.Status,
         };
 

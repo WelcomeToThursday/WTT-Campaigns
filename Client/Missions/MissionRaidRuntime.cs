@@ -19,7 +19,7 @@ namespace WTT.Campaigns.Client.Missions;
 /// Owns one normal mission raid.  The server descriptor is the only source of
 /// layout content; ordinary raids never enter this runtime.
 /// </summary>
-internal sealed class MissionRaidRuntime : MonoBehaviour
+internal sealed partial class MissionRaidRuntime : MonoBehaviour
 {
     private sealed class Pending
     {
@@ -67,6 +67,11 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
     private MissionLoot? _loot;
     private MapSceneAdapter? _scene;
     private EncounterPreviewRuntime? _encounters;
+    private MissionDirector? _director;
+    private bool _reportingObservations;
+    private List<MissionSignal>? _unacknowledgedSignals;
+    private string _observationOperation = "";
+    private long _observationRevision;
     private EncounterRuntimeContext? _missionContext;
     private CancellationTokenSource? _lifetime;
     private Player? _player;
@@ -193,9 +198,18 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
 
         if (!_ending && player.HealthController?.IsAlive == false)
             _hud?.SetStatus("Operator down · the mission attempt has failed");
+        if (_retryGuard?.Frozen == true)
+        {
+            _retryGuard.Hold();
+            ShowRetryFailure();
+            return;
+        }
         try
         {
             _encounters?.Tick();
+            _director?.Tick();
+            if ((_director?.HasPending == true || _unacknowledgedSignals != null) && !_reportingObservations && !_ending)
+                _ = ReportObservationsAsync();
             if (!_ending && !string.IsNullOrWhiteSpace(_encounters?.Failure))
             {
                 _hud?.SetStatus("Encounter failed · mission attempt ended");
@@ -281,6 +295,7 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
                 LayoutRevision = descriptor.ContentRevision,
                 Mode = EncounterRuntimeModes.Mission,
                 PreviewGeneration = run.RunId,
+                AttemptGeneration = run.AttemptGeneration,
                 PublishedLayoutConfirmed = descriptor.EncounterToken.Length > 0,
             };
             // Native raid setup runs outside an encounter reservation. Register the
@@ -304,6 +319,12 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
                 throw new InvalidOperationException("The authored mission start does not have clear standing space and a floor.");
 
             _encounters = new EncounterPreviewRuntime();
+            if (descriptor.Definition.CheckpointRetries || MissionLogic.HasLogic(descriptor.Definition))
+            {
+                _director = new MissionDirector(descriptor.Layout, _player, _encounters);
+                _director.BindInteractions(_scene.MissionInteractions(descriptor.Layout));
+                _director.BindInteractions(_loot.MissionInteractions(descriptor.Layout));
+            }
             await _encounters.BeginAsync(
                 _missionContext!,
                 descriptor.Layout,
@@ -322,7 +343,9 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
             _ending = false;
             _successfulExitRequested = false;
             _hud.SetRoute(run.NextCheckpointIndex, descriptor.Layout.Checkpoints.Count, run.ExitReached, "Mission active");
+            if (descriptor.Definition.CheckpointRetries) await CaptureStartCheckpoint(lifetime.Token);
             _encounters.MissionStart();
+            _director?.Observe(new MissionSignal { Kind = MissionSignals.Start });
             _pending = null;
             MissionStartupGuard.End(_player);
         }
@@ -384,7 +407,8 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
                     pending.Run.MissionId,
                     pending.Run.RunId,
                     pending.Run.RaidId,
-                    _revision == 0 ? pending.Revision : _revision
+                    _revision == 0 ? pending.Revision : _revision,
+                    attemptGeneration: pending.Run.AttemptGeneration
                 );
                 if (!string.IsNullOrWhiteSpace(response.Error))
                     Plugin.LogInfo("Mission launch cancellation was rejected: " + response.Error);
@@ -560,6 +584,45 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
         return operation;
     }
 
+    private async Task ReportObservationsAsync()
+    {
+        _reportingObservations = true;
+        var director = _director;
+        var lifetime = _lifetime;
+        if (director == null || lifetime == null) { _reportingObservations = false; return; }
+        var acquired = false;
+        try
+        {
+            await _progressGate.WaitAsync(lifetime.Token);
+            acquired = true;
+            if (director == _director && (director.HasPending || _unacknowledgedSignals != null) && !_ending && _run != null)
+            {
+                if (_unacknowledgedSignals == null)
+                {
+                    _unacknowledgedSignals = director.Take();
+                    _observationOperation = MissionClient.NewOperationId();
+                    _observationRevision = _revision;
+                }
+                var response = await MissionClient.ObserveAsync(_run, _unacknowledgedSignals, _observationRevision, _observationOperation, lifetime.Token);
+                if (director != _director || lifetime.IsCancellationRequested || !_active) return;
+                MissionAcknowledgement.Require(_run, response.Run, response.Committed);
+                _unacknowledgedSignals = null;
+                _revision = response.Revision;
+                _run = response.Run ?? throw new InvalidDataException("Mission observations returned no run state.");
+                director.Accept(_run.Logic);
+                _hud?.SetObjectives(_descriptor!.Definition, _descriptor.Layout, _run.Logic);
+                CheckObjectiveFailure();
+            }
+        }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+        catch (Exception exception)
+        {
+            Plugin.Error(exception);
+            _hud?.SetStatus("Mission observations stopped: " + exception.Message);
+        }
+        finally { if (acquired) _progressGate.Release(); _reportingObservations = false; }
+    }
+
     private async Task ReportProgressAsync(string id, string kind, int checkpointIndex, string operationId)
     {
         var lifetime = _lifetime;
@@ -582,6 +645,25 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
                 return;
             if (kind == "Exit" && _run!.NextCheckpointIndex != _descriptor!.Layout.Checkpoints.Count)
                 return;
+            if (_director?.HasPending == true || _unacknowledgedSignals != null) return;
+            if (!MissionLogic.CanAdvance(descriptor.Definition, _run!.Logic, kind == "Exit" ? "" : id, out var objectiveError))
+            {
+                _hud?.SetStatus(objectiveError);
+                return;
+            }
+            var saveCheckpoint = kind == "Checkpoint" && descriptor.Definition.CheckpointRetries;
+            if (saveCheckpoint)
+            {
+                _retryBusy = true;
+                _retryGuard!.Freeze(); _director!.Pause();
+                _hud?.SetStatus("Saving checkpoint…");
+                await _encounters!.SettleAsync(lifetime.Token);
+                await MissionInventorySnapshot.SettleHands(player, lifetime.Token);
+                await MissionWorldSnapshot.SettleAsync(lifetime.Token);
+                await DrainObservations(lifetime.Token);
+                if (_run!.Logic.Failure.Length > 0)
+                { _retryBusy = false; CheckObjectiveFailure(); return; }
+            }
             var response = await MissionClient.ProgressAsync(
                 run.MissionId,
                 run.RunId,
@@ -590,10 +672,12 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
                 kind,
                 _revision,
                 operationId: operationId,
-                cancellationToken: lifetime.Token
+                cancellationToken: lifetime.Token,
+                attemptGeneration: run.AttemptGeneration
             );
             if (!IsProgressCurrent(lifetime, player, world, run, descriptor, generation))
                 return;
+            MissionAcknowledgement.Require(run, response.Run, response.Committed);
             if (
                 response.Run != null
                 && (
@@ -608,9 +692,16 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
                 _run = response.Run;
             if (_run == null)
                 return;
+            if (!response.Committed) throw new InvalidDataException("The mission transition was not committed.");
+            if (saveCheckpoint)
+            {
+                _checkpoint = new MissionRaidCheckpoint(id, player, _encounters!);
+                _retryBusy = false;
+            }
+            _director?.Accept(_run.Logic);
+            if (saveCheckpoint) ReleaseRetryHold();
             if (kind == "Checkpoint")
             {
-                _run.NextCheckpointIndex = Math.Max(_run.NextCheckpointIndex, checkpointIndex + 1);
                 _hud?.SetRoute(_run.NextCheckpointIndex, descriptor.Layout.Checkpoints.Count, _run.ExitReached, "Checkpoint secured");
             }
             else
@@ -632,6 +723,7 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
                 return;
             Plugin.Error(exception);
             _hud?.SetStatus("Mission progress failed: " + exception.Message);
+            if (_retryGuard?.Frozen == true) BrokenRestore(exception);
         }
         finally
         {
@@ -732,6 +824,11 @@ internal sealed class MissionRaidRuntime : MonoBehaviour
 
     private void EndRuntime()
     {
+        _retryGuard?.Dispose(); _retryGuard = null; _checkpoint = null;
+        _retryBusy = _retryBroken = _retryShown = false; _retryFailure = ""; _retryDeath = null;
+        _director?.Dispose();
+        _director = null;
+        _unacknowledgedSignals = null;
         _active = false;
         _ending = true;
         _lifetime?.Cancel();

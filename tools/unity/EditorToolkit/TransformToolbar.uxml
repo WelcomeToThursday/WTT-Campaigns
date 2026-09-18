@@ -15,6 +15,7 @@
             <ui:Button name="EditorWalk" text="Walkthrough" class="editor-action" />
             <ui:Button name="AiObserve" text="Observe" class="editor-action" />
             <ui:Button name="AiPlaytest" text="Playtest" class="editor-action" />
+            <ui:Button name="TestCheckpoints" text="Test checkpoints" class="editor-action" tooltip="Test the selected layout's route and encounters with checkpoint retries enabled. Reach a checkpoint, then die and choose Retry checkpoint. Before the first checkpoint, retry restores the start." />
             <ui:Button name="AiPlaytestGear" text="Playtest kit" class="editor-action editor-choice" />
             <ui:Button name="EditorReset" text="Reset preview" class="editor-action" />
         </ui:VisualElement>

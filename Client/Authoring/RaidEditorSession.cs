@@ -82,6 +82,7 @@ internal sealed class RaidEditorSession
             Definition = before;
             throw;
         }
+        if (Definition.Missions.AsValueEnumerable().Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)) Definition.FormatVersion = Math.Max(Definition.FormatVersion, 10);
         if (Definition.MapLayouts.Count > 0)
             Definition.FormatVersion = Math.Max(
                 Definition.FormatVersion,
@@ -160,7 +161,7 @@ internal sealed class RaidEditorSession
     {
         return new()
         {
-            Version = EditorMode.Ready ? 6 : 1,
+            Version = EditorMode.Ready ? 7 : 1,
             EditorSessionId = EditorMode.SessionId,
             ClientId = ClientId,
             RaidId = RaidId,
@@ -287,8 +288,8 @@ internal sealed class RaidEditorSession
             {
                 _pending = null;
             }
-            Status = "Connection needs attention: " + e.Message;
-            Plugin.LogInfo(Status);
+            Status = (Contacted ? "Draft sync needs attention: " : "Connection needs attention: ") + e.Message;
+            if (Status != previousStatus) Plugin.LogInfo(Status);
         }
         finally
         {

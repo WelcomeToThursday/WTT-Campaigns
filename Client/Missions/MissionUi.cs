@@ -214,7 +214,7 @@ internal sealed class MissionUi : MonoBehaviour
                         prepared.Run.RunId,
                         prepared.Run.RaidId,
                         prepared.Revision,
-                        operationId: MissionClient.NewOperationId()
+                        operationId: MissionClient.NewOperationId(), attemptGeneration: prepared.Run.AttemptGeneration
                     );
                     _prepareMissionId = "";
                     _prepareOperationId = "";
@@ -344,7 +344,7 @@ internal sealed class MissionUi : MonoBehaviour
                         prepared.Run.RunId,
                         prepared.Run.RaidId,
                         prepared.Revision,
-                        operationId: MissionClient.NewOperationId()
+                        operationId: MissionClient.NewOperationId(), attemptGeneration: prepared.Run.AttemptGeneration
                     );
                     if (cancelled.Run == null || MissionRunStatuses.IsTerminal(cancelled.Run.Status))
                     {
@@ -389,7 +389,7 @@ internal sealed class MissionUi : MonoBehaviour
                 response.Run.RunId,
                 response.Run.RaidId,
                 response.Revision,
-                operationId: MissionClient.NewOperationId()
+                operationId: MissionClient.NewOperationId(), attemptGeneration: response.Run.AttemptGeneration
             );
             _lastResponse = cancelled;
             _revision = cancelled.Revision;

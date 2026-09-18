@@ -66,6 +66,7 @@ internal static class EditorLayoutSpec
                 B("EditorWalk", "Walkthrough"),
                 B("AiObserve", "Observe"),
                 B("AiPlaytest", "Playtest"),
+                B("TestCheckpoints", "Test checkpoints"),
                 new Node("choice", "AiPlaytestGear", "Playtest kit"),
                 B("EditorReset", "Reset preview")
             )

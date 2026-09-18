@@ -15,6 +15,7 @@ public sealed class EncounterRuntimeContext
     public long LayoutRevision { get; set; }
     public string Mode { get; set; } = EncounterRuntimeModes.Preview;
     public string PreviewGeneration { get; set; } = "";
+    public long AttemptGeneration { get; set; } = 1;
     public bool PublishedLayoutConfirmed { get; set; }
 
     public bool IsPreview => string.Equals(Mode, EncounterRuntimeModes.Preview, StringComparison.Ordinal);
@@ -34,6 +35,7 @@ public sealed class EncounterRuntimeContext
             && LayoutRevision == other.LayoutRevision
             && string.Equals(Mode, other.Mode, StringComparison.Ordinal)
             && string.Equals(PreviewGeneration, other.PreviewGeneration, StringComparison.Ordinal)
+            && AttemptGeneration == other.AttemptGeneration
             && PublishedLayoutConfirmed == other.PublishedLayoutConfirmed;
     }
 }
@@ -56,6 +58,7 @@ public sealed class EncounterSpawnReservation
         LayoutRevision = context.LayoutRevision;
         Mode = context.Mode;
         PreviewGeneration = context.PreviewGeneration;
+        AttemptGeneration = context.AttemptGeneration;
         PublishedLayoutConfirmed = context.PublishedLayoutConfirmed;
         EncounterId = encounterId;
         ProfileId = profileId;
@@ -69,6 +72,7 @@ public sealed class EncounterSpawnReservation
     public long LayoutRevision { get; }
     public string Mode { get; }
     public string PreviewGeneration { get; }
+    public long AttemptGeneration { get; }
     public bool PublishedLayoutConfirmed { get; }
     public string EncounterId { get; }
     public string ProfileId { get; }
@@ -291,6 +295,7 @@ public sealed class EncounterSpawnAdmission
             && context.LayoutRevision == reservation.LayoutRevision
             && context.Mode == reservation.Mode
             && context.PreviewGeneration == reservation.PreviewGeneration
+            && context.AttemptGeneration == reservation.AttemptGeneration
             && context.PublishedLayoutConfirmed == reservation.PublishedLayoutConfirmed;
     }
 
@@ -304,6 +309,7 @@ public sealed class EncounterSpawnAdmission
             context.LayoutRevision,
             context.Mode,
             context.PreviewGeneration,
+            context.AttemptGeneration,
             context.PublishedLayoutConfirmed ? "1" : "0"
         );
     }
@@ -405,6 +411,63 @@ public sealed class EncounterWaveStateMachine
     public bool IsActivated => _activated;
     public bool IsFailed => _halted;
     public IReadOnlyList<EncounterWaveRuntimeState> Waves => _states;
+
+    /// <summary>Capture only settled waves; callers hold scheduling and await native generation first.</summary>
+    public EncounterCheckpoint Capture(double now)
+    {
+        if (!double.IsFinite(now) || _halted || _states.Any(s => s.Status == EncounterWaveStatus.Generating))
+            throw new InvalidOperationException("Encounter generation must settle before capturing a checkpoint.");
+        return new EncounterCheckpoint
+        {
+            EncounterId = _encounter.Id, Activated = _activated, ActivationKey = _activationKey,
+            ActivationOffset = _activationTime - now,
+            Waves = _states.Select(s => new EncounterWaveCheckpoint
+            {
+                WaveId = s.WaveId, Status = s.Status == EncounterWaveStatus.Ready ? EncounterWaveStatus.Pending : s.Status,
+                ActivatedOffset = s.ActivatedAt - now, CompletedOffset = s.CompletedAt - now,
+                LivingProfileIds = s.ActiveProfileIds.ToList(),
+            }).ToList(),
+        };
+    }
+
+    /// <summary>Rebase mission delays without changing the native raid deadline. Old generation callbacks cannot commit.</summary>
+    public void Restore(EncounterCheckpoint checkpoint, double now, IReadOnlyDictionary<string, string> replacementIds)
+    {
+        if (!double.IsFinite(now) || checkpoint.EncounterId != _encounter.Id || checkpoint.Waves.Count != _states.Count
+            || !double.IsFinite(checkpoint.ActivationOffset))
+            throw new InvalidOperationException("The encounter checkpoint does not match this encounter.");
+        var identities = new HashSet<string>(StringComparer.Ordinal);
+        for (var i = 0; i < _states.Count; i++)
+        {
+            var saved = checkpoint.Waves[i];
+            if (saved.WaveId != _states[i].WaveId
+                || saved.Status is not (EncounterWaveStatus.Pending or EncounterWaveStatus.Active or EncounterWaveStatus.Completed)
+                || (saved.ActivatedOffset.HasValue && !double.IsFinite(saved.ActivatedOffset.Value))
+                || (saved.CompletedOffset.HasValue && !double.IsFinite(saved.CompletedOffset.Value))
+                || saved.LivingProfileIds.Count > _states[i].ExpectedBots
+                || (saved.Status != EncounterWaveStatus.Active && saved.LivingProfileIds.Count != 0)
+                || (saved.Status == EncounterWaveStatus.Active && (saved.LivingProfileIds.Count == 0 || !saved.ActivatedOffset.HasValue))
+                || (saved.Status == EncounterWaveStatus.Completed && !saved.CompletedOffset.HasValue))
+                throw new InvalidOperationException("The encounter wave checkpoint is invalid.");
+            foreach (var oldId in saved.LivingProfileIds)
+                if (!replacementIds.TryGetValue(oldId, out var newId) || string.IsNullOrWhiteSpace(newId)
+                    || newId == oldId || !identities.Add(newId))
+                    throw new InvalidOperationException("A checkpoint bot requires a fresh, unique runtime identity.");
+        }
+        Reset();
+        _activated = checkpoint.Activated;
+        _activationKey = checkpoint.ActivationKey;
+        _activationTime = now + checkpoint.ActivationOffset;
+        for (var i = 0; i < _states.Count; i++)
+        {
+            var saved = checkpoint.Waves[i];
+            var state = _states[i];
+            state.Status = saved.Status;
+            state.ActivatedAt = saved.ActivatedOffset + now;
+            state.CompletedAt = saved.CompletedOffset + now;
+            foreach (var oldId in saved.LivingProfileIds) state.AddActive(replacementIds[oldId]);
+        }
+    }
 
     public bool TryActivate(string activationKey, double now, out string error)
     {
@@ -799,6 +862,28 @@ public sealed class EncounterPatrolStateMachine
     public PatrolSuspensionReason SuspensionReason => _reason;
     public string LeaderId => _leaderId;
     public int TargetWaypointIndex => _targetWaypoint;
+
+    public PatrolCheckpoint Capture(double now) => new()
+    {
+        RouteId = _route.Id, Waypoint = _targetWaypoint, Direction = _direction,
+        WaitRemaining = _waitUntil.HasValue ? Math.Max(0, _waitUntil.Value - now) : null,
+        Completed = _status == PatrolRuntimeStatus.Completed,
+    };
+
+    public void Restore(PatrolCheckpoint checkpoint, double now)
+    {
+        if (checkpoint.RouteId != _route.Id || checkpoint.Waypoint < -1 || checkpoint.Waypoint >= _route.Waypoints.Count
+            || checkpoint.Direction is not (1 or -1) || !double.IsFinite(now)
+            || (checkpoint.WaitRemaining.HasValue && (!double.IsFinite(checkpoint.WaitRemaining.Value) || checkpoint.WaitRemaining < 0)))
+            throw new InvalidOperationException("The checkpoint patrol assignment is invalid.");
+        _targetWaypoint = checkpoint.Waypoint;
+        _direction = checkpoint.Direction;
+        _waitUntil = checkpoint.WaitRemaining.HasValue ? now + checkpoint.WaitRemaining.Value : null;
+        _status = checkpoint.Completed ? PatrolRuntimeStatus.Completed : _waitUntil.HasValue ? PatrolRuntimeStatus.Waiting
+            : _targetWaypoint < 0 ? PatrolRuntimeStatus.Inactive : PatrolRuntimeStatus.Moving;
+        _reason = PatrolSuspensionReason.None;
+        _leaderId = "";
+    }
 
     public bool Start(IEnumerable<string> orderedBotIds, out string error)
     {

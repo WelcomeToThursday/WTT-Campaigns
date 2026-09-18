@@ -500,6 +500,7 @@ public sealed class SeasonRepository
                 .Concat(source.AllRewards.Select(r => r.Id))
                 .Concat(source.Quests.Select(q => q.Id))
                 .Concat(source.Missions.Select(m => m.Id))
+                .Concat(source.Missions.SelectMany(m => m.Events.Select(e => e.Id).Concat(m.Objectives.Select(o => o.Id))))
         )
         {
             source.Id,
@@ -525,6 +526,9 @@ public sealed class SeasonRepository
             {
                 return replacement;
             }
+            var colon = text.IndexOf(':');
+            if (colon == 24 && replacements.TryGetValue(text.Substring(0, colon), out var encounterReplacement))
+                return encounterReplacement + text.Substring(colon);
             // Locale keys are identity + suffix, not arbitrary prose substitutions.
             var space = text.IndexOf(' ');
             return space == 24 && replacements.TryGetValue(text.Substring(0, 24), out replacement)
@@ -725,7 +729,7 @@ public sealed class SeasonRepository
         var folder = Path.Combine(_root, "packs", CheckId(key));
         var manifest = Read<SeasonManifest>(Path.Combine(folder, "manifest.json"));
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
         )
@@ -1011,7 +1015,7 @@ public sealed class SeasonRepository
         }
         var manifest = JsonConvert.DeserializeObject<SeasonManifest>(Encoding.UTF8.GetString(Entry("manifest.json")))!;
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
             || manifest.Files.Count != zip.Entries.Count - 1

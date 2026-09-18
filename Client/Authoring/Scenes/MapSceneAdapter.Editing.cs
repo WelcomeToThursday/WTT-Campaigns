@@ -308,6 +308,21 @@ internal sealed partial class MapSceneAdapter
         return null;
     }
 
+    internal IEnumerable<(string Id, WorldInteractiveObject Object)> MissionInteractions(MapLayout layout)
+    {
+        foreach (var edit in layout.Doors)
+        {
+            if (_placedDoors.TryGetValue(edit.Id, out var placed)) yield return (edit.Id, placed.State.Door);
+            else if (_doors.TryGetValue(Key(edit.Target), out var state)) yield return (edit.Id, state.Door);
+        }
+        foreach (var edit in layout.Objects)
+        {
+            var target = TargetFor(edit.Id, edit);
+            var container = target ? target!.GetComponentInChildren<LootableContainer>(true) : null;
+            if (container) yield return (edit.Id, container);
+        }
+    }
+
     internal void Reconcile(MapLayout? layout, MapObjectEdit? preview = null, bool runtime = false)
     {
         if (_disposed || (!EditorMode.Ready && !runtime))
