@@ -7,13 +7,15 @@
 @inject SeasonRepository Repository
 @inject SeasonContentService Content
 
-<PageTitle>Campaign Creator · Beta</PageTitle>
-<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=080-editor-beta" /></HeadContent>
+<PageTitle>@(MissionEditor ? "Mission editor" : "Campaign Creator") · Beta</PageTitle>
+<HeadContent><link rel="stylesheet" href="@WTT.Campaigns.Server.Web.CreatorStyles.Url" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@DirtyState" OnBeforeInternalNavigation="BeforeNavigate" />
 <CascadingValue Value="RaidContext">
 <main class="season-creator @(_draft == null ? "creator-library" : "")" @onchange="InputCommitted" @oninput="InputPending" @onfocusout="InputCommitted">
     <header class="creator-header">
-        <div><h1><span class="app-mark" aria-hidden="true">C</span>Campaign Creator <span class="editor-beta">BETA</span></h1><p>Create and publish campaigns. Each campaign character chooses its own campaign.</p><a href="/wtt-campaigns/creator/traders">Open standalone trader editor →</a></div>
+        <div><h1><span class="app-mark" aria-hidden="true">@(MissionEditor ? "M" : "C")</span>@(MissionEditor ? "Mission editor" : "Campaign Creator") <span class="editor-beta">BETA</span></h1><p>@(MissionEditor ? "Author missions, objectives, events and container loot. Choose a campaign draft to begin." : "Create and publish campaigns. Each campaign character chooses its own campaign.")</p>
+        @if (MissionEditor) { <a href="@CampaignEditorUrl">Back to Campaign Creator</a> }
+        else { <a href="/wtt-campaigns/creator/traders">Open standalone trader editor</a><button class="subtle" @onclick="OpenMissionEditor">Open mission editor</button> }</div>
         <div class="row"><a class="button subtle" href="/wtt-campaigns">Home</a><a class="button subtle" href="/wtt-campaigns/characters/recovery">Character recovery</a><a class="button subtle" href="/wtt-campaigns/docs">Documentation</a><button class="subtle" aria-expanded="@_showHelp" @onclick="@(() => _showHelp = !_showHelp)">Help and tutorials</button>@if (_tutorialTrack.Length > 0 && _tutorialPaused) { <button @onclick="@(() => _tutorialPaused = false)">Resume tutorial</button> }</div>
     </header>
     @if (_showHelp) { <CreatorHelp HasDraft="@(_draft != null)" Navigate="OpenGuideSection" StartTutorial="StartTutorial" Close="@(() => _showHelp = false)" /> }
@@ -164,6 +166,27 @@
                 <MudTooltip Text="Save this draft without changing published packs or characters." ShowOnFocus="true"><button class="primary" @onclick="Save">Save changes</button></MudTooltip>
             </div>
         </div>
+        @if (MissionEditor)
+        {
+            <section class="editor-body standalone-mission-body">
+                <div class="workspace-tabs" role="tablist" aria-label="Mission workspace">
+                    <button role="tab" aria-selected="@(_missionTab == "Missions")" @onclick='() => _missionTab = "Missions"'>Missions</button>
+                    <button role="tab" aria-selected="@(_missionTab == "Layouts")" @onclick='() => _missionTab = "Layouts"'>Layouts</button>
+                </div>
+                @if (_missionTab == "Layouts") { <MapLayoutWorkspace Season="S" Changed="Dirty" /> }
+                else { <MissionWorkspace Season="S" FocusId="@_focusId" Changed="Dirty" /> }
+                @if (_validation != null)
+                {
+                    <EditorSection Title="Campaign validation">
+                        @if (ValidationStale) { <p>Draft changed since validation. Validate again before publishing.</p> }
+                        @foreach (var issue in _validation.Issues) { <p class="validation-warning">@issue.Path: @issue.Message</p> }
+                        <a href="@CampaignEditorUrl">Open Campaign Creator to edit quest links and other campaign content</a>
+                    </EditorSection>
+                }
+            </section>
+        }
+        else
+        {
         <div class="editor-shell">
             <nav class="editor-nav" aria-label="Editor sections">
                 @foreach (var group in NavigationGroups)
@@ -303,7 +326,10 @@
                     <QuestWorkspace Season="S" ViewState="_questViews" FocusId="@_focusId" Changed="Dirty" SelectionChanged="@(v => _focusId = v)" Navigate="NavigateWorkspace" />
                     break;
                 case "Missions":
-                    <MissionWorkspace Season="S" FocusId="@_focusId" Changed="Dirty" />
+                    <EditorSection Title="Mission editor" Description="Missions now have a dedicated page for objectives, events, layouts and container loot.">
+                        <button class="primary" @onclick="OpenMissionEditor">Save and open mission editor</button>
+                        <p>Continue with this campaign draft. Shared layout settings stay synchronized with the in-game editor.</p>
+                    </EditorSection>
                     break;
                 case "Chapters":
                 case "Journal notes":
@@ -364,6 +390,7 @@
                 <section class="inspector-panel"><h3>Publication</h3><p>@(_validation == null ? "Validate to check this draft before publishing." : ValidationStale ? "Draft changed. Validation needs to run again." : _validation.CanActivate ? "Validation passed. Save and publish when ready." : $"{_validation.Issues.Count} issues to review.")</p><p class="muted">Save → Validate → Publish → Restart SPT → Create a character</p><HelpTip Text="After a character has used a campaign, only text and artwork can change. Duplicate it to change gameplay without altering existing progress." /></section>
             </aside></details>
         </div>
+        }
     }
 </main>
 </CascadingValue>

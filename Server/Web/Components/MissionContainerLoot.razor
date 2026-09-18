@@ -1,0 +1,153 @@
+@using WTT.Campaigns.Shared.Spatial
+@using WTT.Campaigns.Shared.Native
+@using WTT.Campaigns.Shared.Authoring
+@using WTT.Campaigns.Server.Web.Authoring
+@implements IDisposable
+@inject TraderOfferCatalogue Catalogue
+@inject SeasonContentService Content
+@inject ItemPreviewService Previews
+@inject WTT.Campaigns.Server.Editor.SceneContainerLoot Loot
+
+<EditorSection Title="Container loot" Description="Configure containers placed in the mission layout. These settings are shared by every mission using this layout and by its enabled normal-raid layer.">
+    @if (!Containers.Any())
+    {
+        <p>No placed containers in this layout. Place a container using the in-game Scene editor, save the layout, then configure its loot here.</p>
+    }
+    else
+    {
+        <label>Container<select value="@Selected?.Id" @onchange="Select">
+            @foreach (var entry in Containers) { <option value="@entry.Id">@entry.Name</option> }
+        </select></label>
+        @if (Selected is { } placement)
+        {
+            var settings = placement.Container ?? new ContainerSettings();
+            <div class="mission-logic-card">
+                <h4>@placement.Name</h4>
+                <p>@Content.Name("items", placement.Target.Template)</p>
+                <div class="mission-logic-fields">
+                    <MissionChoice Label="Loot mode" AllowEmpty="false" Value="@settings.Mode" Choices="Modes" ValueChanged="SetMode" />
+                    <label>Container spawn chance (%)<input type="number" min="0" max="100" value="@settings.SpawnChance" @onchange="SetChance" /></label>
+                </div>
+                @if (settings.Mode == "Native")
+                {
+                    <MissionChoice Label="Native loot pool" Value="@settings.LootPool" Empty="Container's native pool" Choices="Pools" ValueChanged="SetPool" />
+                    <p>Uses the game's random loot generation for each run. Retries keep the same generated contents.</p>
+                }
+                else if (settings.Mode == "Empty") { <p>The container spawns without loot. Saved fixed contents are retained if you switch back.</p> }
+                <div class="mission-logic-block">
+                    <h5>Key access</h5>
+                    <ContentPicker Label="Required key" Value="@settings.KeyTemplate" SearchProvider="Keys" ValueChanged="SetKey" HelpText="Choose a key or keycard, then enable locking. Clearing the key also unlocks the container." />
+                    <label class="check"><input type="checkbox" checked="@settings.Locked" disabled="@(settings.KeyTemplate.Length == 0)" @onchange="SetLocked" /> Start locked</label>
+                </div>
+                @if (settings.Mode == "Fixed")
+                {
+                    <div class="mission-logic-block">
+                        <h5>Fixed contents (@settings.Contents.Count / 100)</h5>
+                        <label>Image provider<select value="@_client" @onchange="e => _client = e.Value?.ToString() ?? string.Empty">
+                            <option value="">Use cached images</option>
+                            @foreach (var client in Previews.Clients()) { <option value="@client.Id">@client.Character - @(client.Ready ? "Main menu" : "Paused")</option> }
+                        </select></label>
+                        <p>Uses the same client-rendered images as Assorts. Keep the selected client at the main menu for new images; cached images remain available without it.</p>
+                        @foreach (var item in settings.Contents)
+                        {
+                            <div class="container-loot-row" @key="item">
+                                <ItemPreviewImage Items="Thumbnail(item.Template)" Name="@Content.Name("items", item.Template)" Client="@_client" Campaign="@Season.Id" />
+                                <strong>@Content.Name("items", item.Template)</strong>
+                                <label>Quantity<input type="number" min="1" max="10000" value="@item.Count" @onchange="e => SetQuantity(item, e)" /></label>
+                                <button @onclick="() => RemoveItem(item)">Remove item</button>
+                            </div>
+                        }
+                        @if (settings.Contents.Count == 0) { <p>No fixed items yet. Search below to add loot.</p> }
+                        <p>Quantities are total item counts. Native stack limits and container capacity are checked when preparing the mission.</p>
+                        <label>Search loot items<input type="search" maxlength="120" value="@_search" @oninput="Search" placeholder="Item name or ID" /></label>
+                        <div class="container-loot-catalogue">
+                            @foreach (var item in _results.Entries)
+                            {
+                                <article @key="item.Id">
+                                    <ItemPreviewImage Items="Thumbnail(item.Id)" Name="@item.Name" Client="@_client" Campaign="@Season.Id" />
+                                    <strong>@item.Name</strong>
+                                    <button disabled="@(settings.Contents.Count >= 100)" @onclick="() => AddItem(item.Id)">Add item</button>
+                                </article>
+                            }
+                        </div>
+                        @if (_results.Total == 0) { <p>No matching loot items.</p> }
+                        <div class="mission-logic-actions">
+                            <button disabled="@(_page == 0)" @onclick="() => Page(-1)">Previous items</button>
+                            <span>Page @(_page + 1) of @Math.Max(1, (_results.Total + 9) / 10) - @_results.Total items</span>
+                            <button disabled="@((_page + 1) * 10 >= _results.Total)" @onclick="() => Page(1)">Next items</button>
+                        </div>
+                    </div>
+                }
+                @if (_error.Length > 0) { <p class="validation-warning" role="alert">@_error</p> }
+            </div>
+        }
+    }
+</EditorSection>
+
+@code {
+    [Parameter, EditorRequired] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter, EditorRequired] public MapLayout Layout { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private string _selected = "", _client = "", _search = "", _error = "";
+    private int _page;
+    private MapLayout? _previous;
+    private SceneCatalogResponse _results = new();
+    private readonly CancellationTokenSource _stop = new();
+    private IEnumerable<MapObjectEdit> Containers => Layout.Objects.Where(SceneAssetRules.IsContainer);
+    private MapObjectEdit? Selected => Containers.FirstOrDefault(o => o.Id == _selected) ?? Containers.FirstOrDefault();
+    private static readonly (string Id, string Name)[] Modes = [("Native", "Native random loot"), ("Fixed", "Fixed contents"), ("Empty", "Empty")];
+    private IEnumerable<(string Id, string Name)> Pools => Loot.Templates(Layout.Location).Select(id => (id, Content.Name("items", id)));
+    private IEnumerable<ContentChoice> Keys(string search) => Catalogue.SceneCatalog(new() { Category = "Keys", Search = search }).Entries.Select(i => new ContentChoice(i.Id, i.Name));
+    private static List<NativeItem> Thumbnail(string id) => [new() { Id = "000000000000000000000001", Template = id }];
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(_previous, Layout)) return;
+        _previous = Layout; _selected = _search = _error = ""; _page = 0;
+        LoadItems();
+    }
+    protected override void OnInitialized() => _ = RefreshImages();
+    private async Task RefreshImages()
+    {
+        try
+        {
+            while (!_stop.IsCancellationRequested)
+            {
+                await Task.Delay(2000, _stop.Token);
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+    public void Dispose() { _stop.Cancel(); _stop.Dispose(); }
+    private void LoadItems() => _results = Catalogue.SceneCatalog(new() { Category = "Items", Search = _search, Page = _page });
+    private void Search(ChangeEventArgs e) { _search = (e.Value?.ToString() ?? "")[..Math.Min(120, (e.Value?.ToString() ?? "").Length)]; _page = 0; LoadItems(); }
+    private void Page(int direction) { _page = Math.Clamp(_page + direction, 0, Math.Max(0, (_results.Total - 1) / 10)); LoadItems(); }
+    private void Select(ChangeEventArgs e) { _selected = e.Value?.ToString() ?? ""; _error = ""; }
+    private async Task Edit(Action<ContainerSettings> change)
+    {
+        if (Selected is not { } selected) return;
+        var settings = SeasonCompiler.Copy(selected.Container ?? new ContainerSettings());
+        try { change(settings); }
+        catch (InvalidOperationException e) { _error = e.Message; return; }
+        selected.Container = settings;
+        Season.FormatVersion = Math.Max(Season.FormatVersion, MapLayoutRules.Format(Season.MapLayouts));
+        _error = "";
+        await Changed.InvokeAsync();
+    }
+    private Task SetMode(string mode) => Edit(s => { if (!Modes.Any(m => m.Id == mode)) throw new InvalidOperationException("Choose a loot mode."); s.Mode = mode; });
+    private Task SetChance(ChangeEventArgs e) => Edit(s => { if (!int.TryParse(e.Value?.ToString(), out var n) || n is < 0 or > 100) throw new InvalidOperationException("Spawn chance must be between 0 and 100."); s.SpawnChance = n; });
+    private Task SetPool(string id) => Edit(s => { if (id.Length > 0 && !Pools.Any(p => p.Id == id)) throw new InvalidOperationException("Choose an available native loot pool."); s.LootPool = id; });
+    private Task SetKey(string id) => Edit(s => { if (id.Length > 0 && Catalogue.SceneCatalog(new() { Category = "Keys", Id = id }).Total != 1) throw new InvalidOperationException("Choose a key or keycard."); s.KeyTemplate = id; if (id.Length == 0) s.Locked = false; });
+    private Task SetLocked(ChangeEventArgs e) => Edit(s => { if (e.Value is true && s.KeyTemplate.Length == 0) throw new InvalidOperationException("Choose a key before locking the container."); s.Locked = e.Value is true; });
+    private Task AddItem(string id) => Edit(s => { if (s.Mode != "Fixed" || !Catalogue.IsSceneItem(id)) throw new InvalidOperationException("Choose a valid fixed-loot item."); if (s.Contents.Count >= 100) throw new InvalidOperationException("A container supports 100 fixed entries."); s.Contents.Add(new() { Template = id, Count = 1 }); });
+    private Task RemoveItem(ContainerContent item)
+    {
+        var index = Selected?.Container?.Contents.IndexOf(item) ?? -1;
+        return Edit(s => { if (index >= 0 && index < s.Contents.Count) s.Contents.RemoveAt(index); });
+    }
+    private Task SetQuantity(ContainerContent item, ChangeEventArgs e)
+    {
+        var index = Selected?.Container?.Contents.IndexOf(item) ?? -1;
+        return Edit(s => { if (!int.TryParse(e.Value?.ToString(), out var count) || count is < 1 or > 10000) throw new InvalidOperationException("Quantity must be between 1 and 10000."); if (index >= 0 && index < s.Contents.Count) s.Contents[index].Count = count; });
+    }
+}

@@ -55,3 +55,13 @@ After installing matching components, manually restart the server and client. No
 Offline contracts and native assembly checks validate integration assumptions. Successful build and file installation do not establish in-game behavior; the above checks require a live session controlled by the user.
 
 On the main toolbar, choose **Placeholder kit** (default) or **Copy main-profile kit** before starting a playtest. Both use disposable item copies; the main profile is unchanged. The selection lasts for the current editor session. Reconnect the editor after installing this update to prepare its placeholder kit.
+
+## Standalone mission editor and container loot
+
+Open **Mission editor** from Campaign Creator, or visit `/wtt-campaigns/creator/missions` and choose a campaign draft. The Missions section in Creator saves and opens that same draft on the dedicated page. Use the **Missions** and **Layouts** tabs to author mission logic and inspect its linked layouts. Saving, validation, publication and connected-editor conflict resolution use the existing campaign workflow.
+
+Under a mission's **Container loot** section, select a container placed in its layout. Choose native random loot (with an optional pool), fixed contents, or empty contents. Configure container spawn chance and optionally select a key/keycard before enabling **Start locked**. Switching modes retains the fixed item list.
+
+For fixed contents, search the paged item catalogue, add items, edit quantities, and remove entries. Select an **Image provider** to use the same client-rendered thumbnails as Assorts. The selected client must have authoring enabled and be at the main menu for new images. Cached thumbnails work without a connected client; some items may not have a supported preview. Images do not verify whether the whole loot list fits the container. Native stack limits and capacity are checked when preparing the mission.
+
+Container settings belong to the layout. Every mission referencing that layout, and its enabled normal-raid layer, shares these changes. Place containers with the in-game Scene editor first; this page edits their loot and access settings. Save before returning to Campaign Creator to edit the linked story quest.

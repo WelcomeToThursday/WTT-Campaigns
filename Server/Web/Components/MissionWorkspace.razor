@@ -69,6 +69,7 @@
                 @if (Layout(mission) is { } logicLayout)
                 {
                     <MissionLogicFields Mission="mission" Layout="logicLayout" Changed="NotifyChanged" />
+                    <MissionContainerLoot @key="logicLayout.Id" Season="Season" Layout="logicLayout" Changed="NotifyChanged" />
                 }
                 <EditorSection Title="Route and mission zones" Description="Route checkpoints are completed in authored order. Layout-owned zones are available to this mission's quest context.">
                     @if (Layout(mission) is { } routeLayout)

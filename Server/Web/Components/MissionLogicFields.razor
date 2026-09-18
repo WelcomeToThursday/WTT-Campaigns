@@ -1,21 +1,45 @@
 @using WTT.Campaigns.Shared.Missions
 @using WTT.Campaigns.Shared.Spatial
 <EditorSection Title="Mission events and objectives" Description="Required objectives gate extraction. Events activate encounters, objectives and timers.">
-    <label><input type="checkbox" @bind="Mission.CheckpointRetries" @bind:after="Notify" /> Allow checkpoint retries</label>
+    <label class="check"><input type="checkbox" @bind="Mission.CheckpointRetries" @bind:after="Notify" /> Allow checkpoint retries</label>
     @foreach (var error in MissionLogicRules.Errors(Mission, Layout)) { <p class="validation-warning">@error</p> }
-    <div class="editor-actions"><button @onclick="AddObjective">Add objective</button><button @onclick="AddEvent">Add event</button></div>
+    <section class="mission-logic-group" aria-label="Objectives">
+    <header class="mission-logic-heading"><div><h4>Objectives <span>(@Mission.Objectives.Count)</span></h4><p>Define what the player needs to accomplish.</p></div><button @onclick="AddObjective">Add objective</button></header>
+    @if (Mission.Objectives.Count == 0) { <p class="mission-logic-empty">No objectives yet. Add an objective to define a mission goal.</p> }
     @foreach (var o in Mission.Objectives)
     {
-        <fieldset @key="o.Id"><legend>@o.Name</legend>
+        <fieldset class="mission-logic-card" @key="o.Id"><legend>@o.Name</legend>
+            <div class="mission-logic-fields">
             <label>Name<input maxlength="120" @bind="o.Name" @bind:after="Notify" /></label>
-            <MissionChoice Label="Goal" Value="@o.Type" Choices="Names(MissionAuthoring.ObjectiveTypes)" ValueChanged="v => Change(() => o.Type = v)" />
-            <label><input type="checkbox" @bind="o.OnStart" @bind:after="Notify" /> Active at mission start</label>
-            <label><input type="checkbox" @bind="o.Required" @bind:after="Notify" /> Required for extraction</label>
-            <MissionChoice Label="Target group" Value="@o.TargetKind" Choices="Names(TargetKinds)" ValueChanged="v => Change(() => { o.TargetKind = v; o.TargetIds.Clear(); })" />
-            @foreach (var target in MissionAuthoring.Targets(Layout, o.TargetKind))
+            <MissionChoice Label="Goal" AllowEmpty="false" Value="@o.Type" Choices="Names(MissionAuthoring.ObjectiveTypes)" ValueChanged="v => ChangeGoal(o, v)" />
+            </div>
+            <div class="mission-logic-options">
+            <label class="check"><input type="checkbox" @bind="o.OnStart" @bind:after="Notify" /> Active at mission start</label>
+            <label class="check"><input type="checkbox" @bind="o.Required" @bind:after="Notify" /> Required for extraction</label>
+            </div>
+            <div class="mission-logic-block">
+            <h5>Targets</h5>
+            <MissionChoice Label="Target group" AllowEmpty="false" Value="@o.TargetKind" Choices="Names(GoalTargetKinds(o.Type))" ValueChanged="v => ChangeTargetKind(o, v)" />
+            @if (Individual(o))
             {
-                <label><input type="checkbox" checked="@o.TargetIds.Contains(target.Id)" @onchange="e => Change(() => Toggle(o.TargetIds, target.Id, e.Value is true))" /> @target.Name</label>
+                <p>Choose one actor from a roster containing exactly one bot.</p>
+                <MissionChoice Label="Actor" Value="@(o.TargetIds.Count == 1 ? o.TargetIds[0] : string.Empty)" Choices="ObjectiveTargets(o)" ValueChanged="v => SelectActor(o, v)" />
             }
+            else
+            {
+                <p>@(o.Type == MissionObjective.Survive ? "Survive the selected encounters. Select one or more." : "Select one or more targets.")</p>
+                <div class="mission-logic-checks">
+                @foreach (var target in ObjectiveTargets(o))
+                {
+                    <label class="check"><input type="checkbox" checked="@o.TargetIds.Contains(target.Id)" @onchange="e => Change(() => Toggle(o.TargetIds, target.Id, e.Value is true))" /> @target.Name</label>
+                }
+                </div>
+            }
+            @if (!ObjectiveTargets(o).Any())
+            {
+                <p class="validation-warning">@(Individual(o) ? "No single-bot rosters are available. Add a roster with a bot count of 1 in Encounters." : "No targets are available in this group. Add them in Encounters.")</p>
+            }
+            </div>
             @if (o.Type == MissionObjective.Defend)
             {
                 <MissionChoice Label="Area" Value="@o.ZoneId" Choices="MissionAuthoring.SourceTargets(Mission, Layout, MissionSignals.Sample)" ValueChanged="v => Change(() => o.ZoneId = v)" />
@@ -27,29 +51,50 @@
             }
             @if (o.Required)
             {
-                <p>Also require before checkpoint:</p>
+                <div class="mission-logic-block">
+                <h5>Checkpoint requirements</h5>
+                <p>Also complete this objective before the selected checkpoints.</p>
+                <div class="mission-logic-checks">
+                @if (Layout.Checkpoints.Count == 0) { <p>No checkpoints in this layout.</p> }
                 @foreach (var checkpoint in Layout.Checkpoints)
                 {
-                    <label><input type="checkbox" checked="@Mission.Requirements.Any(r => r.CheckpointId == checkpoint.Id && r.ObjectiveIds.Contains(o.Id))"
+                    <label class="check"><input type="checkbox" checked="@Mission.Requirements.Any(r => r.CheckpointId == checkpoint.Id && r.ObjectiveIds.Contains(o.Id))"
                         @onchange="e => Change(() => Gate(o.Id, checkpoint.Id, e.Value is true))" /> @checkpoint.Name</label>
                 }
+                </div>
+                </div>
             }
-            <button @onclick="() => Duplicate(o)">Duplicate</button>
+            <div class="mission-logic-actions">
+            <button @onclick="() => Duplicate(o)">Duplicate objective</button>
             <button @onclick="() => Change(() => Mission.Objectives.Remove(o))">Remove objective</button>
+            </div>
         </fieldset>
     }
+    </section>
+    <section class="mission-logic-group" aria-label="Events">
+    <header class="mission-logic-heading"><div><h4>Events <span>(@Mission.Events.Count)</span></h4><p>Choose when something happens and the actions it triggers.</p></div><button @onclick="AddEvent">Add event</button></header>
+    @if (Mission.Events.Count == 0) { <p class="mission-logic-empty">No events yet. Add an event to activate encounters, objectives or timers.</p> }
     @foreach (var rule in Mission.Events)
     {
-        <fieldset @key="rule.Id"><legend>@rule.Name</legend>
+        <fieldset class="mission-logic-card" @key="rule.Id"><legend>@rule.Name</legend>
             <label>Name<input maxlength="120" @bind="rule.Name" @bind:after="Notify" /></label>
-            <MissionChoice Label="When" Value="@rule.Source" Choices="Names(MissionAuthoring.Sources)" ValueChanged="v => Change(() => { rule.Source = v; rule.SourceId = string.Empty; })" />
+            <div class="mission-logic-block">
+            <h5>When — trigger</h5>
+            <div class="mission-logic-fields">
+            <MissionChoice Label="When" AllowEmpty="false" Value="@rule.Source" Choices="Names(MissionAuthoring.Sources)" ValueChanged="v => Change(() => { rule.Source = v; rule.SourceId = string.Empty; })" />
             @if (rule.Source != MissionSignals.Start)
             {
                 <MissionChoice Label="Source" Value="@rule.SourceId" Choices="MissionAuthoring.SourceTargets(Mission, Layout, rule.Source)" ValueChanged="v => Change(() => rule.SourceId = v)" />
             }
+            </div>
+            </div>
+            <div class="mission-logic-block">
+            <h5>Then — actions</h5>
             @foreach (var action in rule.Actions)
             {
-                <MissionChoice Label="Then" Value="@action.Type" Choices="Names(ActionTypes)" ValueChanged="v => Change(() => { action.Type = v; action.TargetId = string.Empty; })" />
+                <div class="mission-logic-action" @key="action">
+                <div class="mission-logic-fields">
+                <MissionChoice Label="Action" AllowEmpty="false" Value="@action.Type" Choices="Names(ActionTypes)" ValueChanged="v => Change(() => { action.Type = v; action.TargetId = string.Empty; })" />
                 @if (action.Type == MissionAction.Timer)
                 {
                     <label>Timer name<input maxlength="120" @bind="action.TargetId" @bind:after="Notify" /></label>
@@ -59,19 +104,65 @@
                 {
                     <MissionChoice Label="Target" Value="@action.TargetId" Choices="MissionAuthoring.ActionTargets(Mission, Layout, action.Type)" ValueChanged="v => Change(() => action.TargetId = v)" />
                 }
+                </div>
                 <button @onclick="() => Change(() => rule.Actions.Remove(action))">Remove action</button>
+                </div>
             }
             <button @onclick="() => Change(() => rule.Actions.Add(new()))">Add action</button>
+            </div>
+            <div class="mission-logic-actions">
             <button @onclick="() => Duplicate(rule)">Duplicate event</button>
             <button @onclick="() => Change(() => Mission.Events.Remove(rule))">Remove event</button>
+            </div>
         </fieldset>
     }
+    </section>
 </EditorSection>
 @code {
     [Parameter, EditorRequired] public MissionDefinition Mission { get; set; } = null!;
     [Parameter, EditorRequired] public MapLayout Layout { get; set; } = null!;
     [Parameter] public EventCallback Changed { get; set; }
-    private static readonly string[] TargetKinds = ["Encounter", "Roster", "Squad"];
+    private static bool Individual(MissionObjective o) => o.Type is MissionObjective.Target or MissionObjective.Protect;
+    private static string[] GoalTargetKinds(string goal) => goal switch
+    {
+        MissionObjective.Target or MissionObjective.Protect => ["Roster"],
+        MissionObjective.Survive => ["Encounter"],
+        _ => ["Encounter", "Roster", "Squad"],
+    };
+    private IEnumerable<(string Id, string Name)> ObjectiveTargets(MissionObjective o)
+    {
+        if (!GoalTargetKinds(o.Type).Contains(o.TargetKind)) return [];
+        var targets = MissionAuthoring.Targets(Layout, o.TargetKind);
+        if (!Individual(o)) return targets;
+        var singles = Layout.Encounters.SelectMany(e => e.Waves).SelectMany(w => w.Roster).Where(r => r.Count == 1).Select(r => r.Id).ToHashSet();
+        return targets.Where(t => singles.Contains(t.Id));
+    }
+    private Task ChangeGoal(MissionObjective o, string goal) => Change(() =>
+    {
+        if (!MissionAuthoring.ObjectiveTypes.Contains(goal)) return;
+        o.Type = goal;
+        if (!GoalTargetKinds(goal).Contains(o.TargetKind))
+        {
+            o.TargetKind = GoalTargetKinds(goal)[0];
+            o.TargetIds.Clear();
+        }
+        var valid = ObjectiveTargets(o).Select(t => t.Id).ToHashSet();
+        o.TargetIds.RemoveAll(id => !valid.Contains(id));
+        if (Individual(o) && o.TargetIds.Count > 1) o.TargetIds.Clear();
+        if (goal != MissionObjective.Protect) o.UntilEventId = string.Empty;
+        if (goal != MissionObjective.Defend) o.ZoneId = string.Empty;
+    });
+    private Task ChangeTargetKind(MissionObjective o, string kind) => Change(() =>
+    {
+        if (!GoalTargetKinds(o.Type).Contains(kind)) return;
+        if (o.TargetKind != kind) { o.TargetKind = kind; o.TargetIds.Clear(); }
+    });
+    private Task SelectActor(MissionObjective o, string id) => Change(() =>
+    {
+        if (id.Length > 0 && !ObjectiveTargets(o).Any(t => t.Id == id)) return;
+        o.TargetIds.Clear();
+        if (id.Length > 0) o.TargetIds.Add(id);
+    });
     private static readonly string[] ActionTypes = [MissionAction.Encounter, MissionAction.Objective, MissionAction.Timer];
     private static IEnumerable<(string Id, string Name)> Names(IEnumerable<string> names) => names.Select(n => (n, MissionAuthoring.Label(n)));
     private Task Notify() => Changed.InvokeAsync();

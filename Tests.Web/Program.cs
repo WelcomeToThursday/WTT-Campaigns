@@ -273,6 +273,11 @@ await using (var renderer = new EditorRenderer(services))
         Check(host.Changes == 1 && host.SelectedId == "", "Deletion marks the draft changed and clears the parent selection");
     });
 }
+var creatorCss = Path.Combine(WTT.Campaigns.Server.Metadata.DirectoryPath, "wwwroot", "creator.css");
+var creatorCssHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(creatorCss)));
+Check(WTT.Campaigns.Server.Web.CreatorStyles.Url == "/wtt-campaigns-creator-assets/creator.css?v=" + creatorCssHash,
+    "Creator stylesheet URL fingerprints the deployed content rather than a fixed release label");
+await MissionLogicUiChecks.Run(services, Check);
 await MapLayoutUiChecks.Run(services, Check);
 await TraderOfferUiChecks.Run(Check);
 WTT.Campaigns.Web.Tests.EncounterChecks.Run(Check);

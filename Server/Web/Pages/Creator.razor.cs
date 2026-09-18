@@ -13,6 +13,20 @@ namespace WTT.Campaigns.Server.Web.Pages;
 
 public partial class Creator
 {
+    [Parameter] public bool MissionEditor { get; set; }
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+    private string _missionTab = "Missions";
+    private string CampaignEditorUrl => "/wtt-campaigns/creator" + (_draft == null ? "" : "?draft=" + Uri.EscapeDataString(_draft.Id));
+    private void OpenMissionEditor()
+    {
+        if (_draft == null) { Navigation.NavigateTo("/wtt-campaigns/creator/missions"); return; }
+        Run(() =>
+        {
+            SyncDraft();
+            if (_raidConflict != null || DirtyState) return;
+            Navigation.NavigateTo("/wtt-campaigns/creator/missions?draft=" + Uri.EscapeDataString(_draft.Id));
+        });
+    }
     private string _selectedTraderOffer = "";
 
     private void OpenTraderOffer(string id)
