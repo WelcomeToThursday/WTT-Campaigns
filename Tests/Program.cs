@@ -174,6 +174,7 @@ WTT.Campaigns.Tests.SceneObjectIndexChecks.Run(Check);
 WTT.Campaigns.Tests.ScenePreviewChecks.Run(Check);
 await WTT.Campaigns.Tests.EditorSessionChecks.Run(Check);
 WTT.Campaigns.Tests.SceneSelectionChecks.Run(Check);
+WTT.Campaigns.Tests.ScenePickingChecks.Run(Check);
 WTT.Campaigns.Tests.EditorRenderChecks.Sizes(Check);
 WTT.Campaigns.Tests.EditorEnvironmentChecks.Values(Check);
 WTT.Campaigns.Tests.EditorDiagnosticChecks.Run(Check);

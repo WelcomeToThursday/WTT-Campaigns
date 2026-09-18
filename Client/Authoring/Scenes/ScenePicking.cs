@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using WTT.Campaigns.UI.Controls;
 
 namespace WTT.Campaigns.Client.Authoring.Scenes;
 
@@ -52,8 +51,8 @@ internal static class ScenePicking
             distance = hit.distance;
             break;
         }
-        // Renderer-only scenery has no physics hit. Bounds offer inspection without adding
-        // colliders or changing the original map; an existing nearer solid hit still wins.
+        // Bounds only reject candidates; empty space in a rotated object's world AABB
+        // must never replace a real hit on the object under the cursor.
         foreach (var renderer in renderers)
         {
             if (
@@ -61,7 +60,6 @@ internal static class ScenePicking
                 || !(renderer is MeshRenderer || renderer is SkinnedMeshRenderer)
                 || !renderer.enabled
                 || !renderer.gameObject.activeInHierarchy
-                || renderer.bounds.Contains(ray.origin)
                 || !renderer.bounds.IntersectRay(ray, out var entry)
                 || entry >= distance
                 || !Inspectable(renderer.transform, authored)
@@ -69,9 +67,61 @@ internal static class ScenePicking
                 continue;
             if (selected && (renderer.transform == selected || renderer.transform.IsChildOf(selected)))
                 continue;
-            selected = renderer.transform;
-            distance = entry;
+            if (MeshHit(renderer, ray, ref distance))
+                selected = renderer.transform;
         }
         return selected;
     }
+
+    private static bool MeshHit(Renderer renderer, Ray ray, ref float distance)
+    {
+        Mesh? baked = null;
+        try
+        {
+            Mesh? mesh;
+            if (renderer is SkinnedMeshRenderer skin)
+            {
+                if (!skin.sharedMesh)
+                    return false;
+                baked = new Mesh();
+                skin.BakeMesh(baked);
+                mesh = baked;
+            }
+            else
+            {
+                // Batched vertices no longer use this renderer's local coordinate frame.
+                // Unreadable native meshes retain their physics hit, never an AABB hit.
+                if (renderer.isPartOfStaticBatch)
+                    return false;
+                mesh = renderer.GetComponent<MeshFilter>()?.sharedMesh;
+            }
+            if (!mesh || !mesh!.isReadable)
+                return false;
+            var inverse = renderer.transform.worldToLocalMatrix;
+            var origin = Numeric(inverse.MultiplyPoint3x4(ray.origin));
+            var direction = Numeric(inverse.MultiplyVector(ray.direction));
+            var vertices = mesh.vertices;
+            var hit = false;
+            for (var submesh = 0; submesh < mesh.subMeshCount; submesh++)
+            {
+                if (mesh.GetTopology(submesh) != MeshTopology.Triangles)
+                    continue;
+                var indices = mesh.GetTriangles(submesh);
+                for (var i = 0; i + 2 < indices.Length; i += 3)
+                    hit |= ScenePickGeometry.Triangle(
+                        origin, direction,
+                        Numeric(vertices[indices[i]]), Numeric(vertices[indices[i + 1]]), Numeric(vertices[indices[i + 2]]),
+                        ref distance
+                    );
+            }
+            return hit;
+        }
+        finally
+        {
+            if (baked)
+                UnityEngine.Object.Destroy(baked);
+        }
+    }
+
+    private static System.Numerics.Vector3 Numeric(Vector3 value) => new(value.x, value.y, value.z);
 }
