@@ -279,7 +279,8 @@ public sealed partial class SeasonContentService(
         try
         {
             foreach (var link in definition.MissionLinks)
-                foreach (var issue in Validate(link.Package).Issues) result.Add("MissionLinks/" + link.Id + "/" + issue.Path, issue.Message, issue.Severity);
+            foreach (var issue in Validate(link.Package).Issues)
+                result.Add("MissionLinks/" + link.Id + "/" + issue.Path, issue.Message, issue.Severity);
             foreach (var assort in definition.TraderAssorts)
             {
                 if (!offerCatalogue.HasTrader(assort.TraderId))
@@ -683,7 +684,8 @@ public sealed partial class SeasonContentService(
 
     private void Register(SeasonDefinition definition, bool crates)
     {
-        foreach (var link in definition.MissionLinks) Register(link.Package, false);
+        foreach (var link in definition.MissionLinks)
+            Register(link.Package, false);
         // Stage every template first; never leave half a season in the shared database on validation failure.
         var staged = new Dictionary<MongoId, TemplateItem>();
         foreach (var pair in definition.ImportedItems)

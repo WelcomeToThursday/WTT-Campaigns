@@ -50,11 +50,7 @@ internal sealed class MissionUi : MonoBehaviour
 
     private void Update()
     {
-        if (
-            Authoring.EditorMode.Active
-            || Plugin.InRaid
-            || Plugin.App?.Session?.Profile?.Id != Plugin.Current?.EffectiveProfileId
-        )
+        if (Authoring.EditorMode.Active || Plugin.InRaid || Plugin.App?.Session?.Profile?.Id != Plugin.Current?.EffectiveProfileId)
         {
             if (IsOpen)
                 Close();
@@ -172,7 +168,10 @@ internal sealed class MissionUi : MonoBehaviour
                     CanDeploy = summary.Unlocked && !summary.Active,
                     CanReplay = summary.Completed,
                     CanResume =
-                        summary.Active && summary.Status != "Unavailable" && response.Run?.MissionId == definition.Id && response.Run?.Status == MissionRunStatuses.Prepared,
+                        summary.Active
+                        && summary.Status != "Unavailable"
+                        && response.Run?.MissionId == definition.Id
+                        && response.Run?.Status == MissionRunStatuses.Prepared,
                     CanCancel = summary.Active && response.Run?.MissionId == definition.Id,
                 };
             })

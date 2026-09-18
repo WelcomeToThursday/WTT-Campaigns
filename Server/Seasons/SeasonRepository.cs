@@ -540,9 +540,11 @@ public sealed partial class SeasonRepository
         }
         var copy = SeasonCompiler.Copy(source);
         var linkedPackages = copy.MissionLinks.Select(l => l.Package).ToList();
-        foreach (var link in copy.MissionLinks) link.Package = new();
+        foreach (var link in copy.MissionLinks)
+            link.Package = new();
         ModelGraph.Rewrite(copy, Replace);
-        for (var i = 0; i < copy.MissionLinks.Count; i++) copy.MissionLinks[i].Package = linkedPackages[i];
+        for (var i = 0; i < copy.MissionLinks.Count; i++)
+            copy.MissionLinks[i].Package = linkedPackages[i];
         copy.Name = source.Name + " copy";
         copy.Revision = 0;
         copy.Version = "1.0.0";
@@ -776,7 +778,8 @@ public sealed partial class SeasonRepository
     {
         lock (_gate)
         {
-            if (Pack(key).MissionPackage != null) throw new InvalidOperationException("Mission packages cannot be selected as campaigns.");
+            if (Pack(key).MissionPackage != null)
+                throw new InvalidOperationException("Mission packages cannot be selected as campaigns.");
             CheckGameplay(Pack(key));
             var next = SeasonCompiler.Copy(Selection);
             next.Pending = key;
@@ -790,7 +793,8 @@ public sealed partial class SeasonRepository
     {
         lock (_gate)
         {
-            if (Pack(key).MissionPackage != null) throw new InvalidOperationException("Mission packages cannot be selected as campaigns.");
+            if (Pack(key).MissionPackage != null)
+                throw new InvalidOperationException("Mission packages cannot be selected as campaigns.");
             var snapshot = new SeasonRuntimeSnapshot(Pack(key));
             var next = new SeasonSelection { Active = key };
             Atomic(SelectionPath, JsonConvert.SerializeObject(next, Formatting.Indented));

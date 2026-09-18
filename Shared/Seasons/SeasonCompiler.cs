@@ -107,7 +107,8 @@ public static class SeasonCompiler
                     .Select(i => i.Template)
             );
         return season
-            .Dependencies.Concat(season.MissionLinks.SelectMany(l => Dependencies(l.Package))).Concat(items.Where(i => !owned.Contains(i)).Select(i => "item:" + i))
+            .Dependencies.Concat(season.MissionLinks.SelectMany(l => Dependencies(l.Package)))
+            .Concat(items.Where(i => !owned.Contains(i)).Select(i => "item:" + i))
             .Distinct()
             .OrderBy(i => i, StringComparer.Ordinal);
     }

@@ -57,7 +57,8 @@ public partial class Creator
         Run(() =>
         {
             Open(Repository.Load(DraftQuery));
-            if (MissionEditor) _missionTab = SectionQuery == "Layouts" ? "Layouts" : "Missions";
+            if (MissionEditor)
+                _missionTab = SectionQuery == "Layouts" ? "Layouts" : "Missions";
             if (SectionQuery != null && Sections.Contains(SectionQuery))
             {
                 _section = SectionQuery;
