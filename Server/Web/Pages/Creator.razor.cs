@@ -13,20 +13,33 @@ namespace WTT.Campaigns.Server.Web.Pages;
 
 public partial class Creator
 {
-    [Parameter] public bool MissionEditor { get; set; }
-    [Inject] private NavigationManager Navigation { get; set; } = null!;
+    [Parameter]
+    public bool MissionEditor { get; set; }
+
+    [Inject]
+    private NavigationManager Navigation { get; set; } = null!;
     private string _missionTab = "Missions";
-    private string CampaignEditorUrl => "/wtt-campaigns/creator" + (_draft == null || _draft.Definition.MissionPackage != null ? "" : "?draft=" + Uri.EscapeDataString(_draft.Id));
+    private string CampaignEditorUrl => "/wtt-campaigns/creator" + (_draft == null ? "" : "?draft=" + Uri.EscapeDataString(_draft.Id));
+
     private void OpenMissionEditor()
     {
-        if (_draft == null) { Navigation.NavigateTo("/wtt-campaigns/creator/missions"); return; }
+        if (_draft == null)
+        {
+            Navigation.NavigateTo("/wtt-campaigns/creator/missions");
+            return;
+        }
         Run(() =>
         {
             SyncDraft();
-            if (_raidConflict != null || DirtyState) return;
+            if (_raidConflict != null || DirtyState)
+                return;
             Navigation.NavigateTo("/wtt-campaigns/creator/missions?draft=" + Uri.EscapeDataString(_draft.Id));
         });
     }
+
+    private string CampaignEditorUrl =>
+        "/wtt-campaigns/creator"
+        + (_draft == null || _draft.Definition.MissionPackage != null ? "" : "?draft=" + Uri.EscapeDataString(_draft.Id));
     private string _selectedTraderOffer = "";
 
     private void OpenTraderOffer(string id)
@@ -369,7 +382,10 @@ public partial class Creator
             }
 
             _published = Repository.Publish(_draft!, _validation);
-            _message = S.MissionPackage != null ? "Mission published. Export it below to share, or link its revision from Campaign Creator. Restart SPT to load it for play." : "Pack published. Export it to share, or restart SPT and choose the campaign when creating a campaign character.";
+            _message =
+                S.MissionPackage != null
+                    ? "Mission published. Export it below to share, or link its revision from Campaign Creator. Restart SPT to load it for play."
+                    : "Pack published. Export it to share, or restart SPT and choose the campaign when creating a campaign character.";
         });
     }
 
