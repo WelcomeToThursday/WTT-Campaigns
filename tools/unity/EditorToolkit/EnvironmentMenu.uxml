@@ -24,11 +24,26 @@
                 <ui:Button name="WeatherPresetRain" class="editor-action" text="Rain" />
                 <ui:Button name="WeatherPresetStorm" class="editor-action" text="Storm" />
             </ui:VisualElement>
-            <ui:TextField name="WeatherClouds" class="editor-field" label="Clouds %" />
-            <ui:TextField name="WeatherRain" class="editor-field" label="Rain %" />
-            <ui:TextField name="WeatherFog" class="editor-field" label="Fog %" />
-            <ui:TextField name="WeatherWind" class="editor-field" label="Wind %" />
-            <ui:TextField name="WeatherThunder" class="editor-field" label="Thunder %" />
+            <ui:VisualElement class="editor-range">
+                <ui:TextField name="WeatherClouds" class="editor-field" label="Clouds %" />
+                <ui:Slider low-value="0" high-value="100" class="editor-range-slider" />
+            </ui:VisualElement>
+            <ui:VisualElement class="editor-range">
+                <ui:TextField name="WeatherRain" class="editor-field" label="Rain %" />
+                <ui:Slider low-value="0" high-value="100" class="editor-range-slider" />
+            </ui:VisualElement>
+            <ui:VisualElement class="editor-range">
+                <ui:TextField name="WeatherFog" class="editor-field" label="Fog %" />
+                <ui:Slider low-value="0" high-value="100" class="editor-range-slider" />
+            </ui:VisualElement>
+            <ui:VisualElement class="editor-range">
+                <ui:TextField name="WeatherWind" class="editor-field" label="Wind %" />
+                <ui:Slider low-value="0" high-value="100" class="editor-range-slider" />
+            </ui:VisualElement>
+            <ui:VisualElement class="editor-range">
+                <ui:TextField name="WeatherThunder" class="editor-field" label="Thunder %" />
+                <ui:Slider low-value="0" high-value="100" class="editor-range-slider" />
+            </ui:VisualElement>
             <ui:Button name="WeatherDirection" class="editor-action" text="Wind: raid" />
             <ui:VisualElement name="WeatherActions" class="editor-actions editor-action-row">
                 <ui:Button name="WeatherApply" class="editor-action" text="Apply weather" />

@@ -30,6 +30,9 @@ internal sealed class EditorNumericDrag
     private EditorNumericDrag(TextField field, double step, double min, double max, bool integer)
     {
         _field = field;
+        field.AddToClassList("editor-numeric");
+        if (field.label is "X" or "Y" or "Z")
+            field.AddToClassList("editor-axis-" + field.label.ToLowerInvariant());
         _step = step;
         _min = min;
         _max = max;

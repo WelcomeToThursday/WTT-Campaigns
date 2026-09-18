@@ -42,6 +42,7 @@ internal static class EditorToolkitChecks
                 var tag = node.Kind switch
                 {
                     "button" or "choice" => "Button",
+                    "toggle" => "Toggle",
                     "input" => "TextField",
                     "text" => "Label",
                     "image" => "Image",
@@ -258,7 +259,7 @@ internal static class EditorToolkitChecks
                     "EditorChoice" => "choice",
                     _ => "",
                 };
-                if (!inventory.TryGetValue(id, out var actual) || actual != expected)
+                if (!inventory.TryGetValue(id, out var actual) || actual != expected && !(actual == "toggle" && expected == "button"))
                     throw new InvalidOperationException("Missing or wrong Toolkit control: " + id + " in " + method.FullName);
             }
         foreach (var id in new[] { "KeepLocal", "KeepRemote", "Cancel", "Complete", "CloseEditor" })
@@ -281,11 +282,17 @@ internal static class EditorToolkitChecks
                 {
                     "Text" => "text",
                     "Caption" or "Button" => "button",
+                    "Checked" => "toggle",
                     "Input" or "Value" => "input",
                     "Dropdown" or "SetDropdown" => "choice",
                     _ => null,
                 };
-                if (control != null && expected != null && inventory[control] != expected)
+                if (
+                    control != null
+                    && expected != null
+                    && inventory[control] != expected
+                    && !(call.Name == "Button" && inventory[control] == "toggle")
+                )
                     throw new InvalidOperationException(
                         $"Wrong container control: {control} is {inventory[control]}, but {name} calls {call.Name}."
                     );

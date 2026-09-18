@@ -149,6 +149,27 @@ public static class CampaignsEditorToolkitBuilder
             }
             if (name == "Inspector")
             {
+                foreach (
+                    var id in new[]
+                    {
+                        "SceneRepeat",
+                        "MapWalkStart",
+                        "MapNormalRaid",
+                        "AiWaveWaitPrevious",
+                        "SniperPlaySound",
+                        "SniperSuppressed",
+                    }
+                )
+                {
+                    var setting = first.Q<Toggle>(id);
+                    if (setting == null)
+                        throw new InvalidOperationException("Missing checkbox setting: " + id);
+                    var changes = 0;
+                    setting.RegisterValueChangedCallback(_ => changes++);
+                    setting.SetValueWithoutNotify(true);
+                    if (!setting.value || changes != 0 || second.Q<Toggle>(id).value)
+                        throw new InvalidOperationException("Refreshing a setting must be silent and isolated: " + id);
+                }
                 var section = (Foldout)load("InspectorSection").CloneTree()[0];
                 section.RemoveFromHierarchy();
                 var position = first.Q("PositionGroup");
@@ -178,12 +199,25 @@ public static class CampaignsEditorToolkitBuilder
                     || first.Q<Image>("ScenePreview") == null
                     || first.Q<TextField>("PositionX") == null
                     || first.Q<TextField>("AiRosterCount") == null
-                    || first.Q<Button>("MapNormalRaid") == null
+                    || first.Q<Toggle>("MapNormalRaid") == null
                 )
             )
                 throw new InvalidOperationException("Properties template is missing typed runtime slots.");
             if (name == "EnvironmentMenu")
             {
+                foreach (var channel in new[] { "Clouds", "Rain", "Fog", "Wind", "Thunder" })
+                {
+                    var field = first.Q<TextField>("Weather" + channel);
+                    var slider = field?.parent.Q<Slider>();
+                    if (slider == null || slider.lowValue != 0 || slider.highValue != 100)
+                        throw new InvalidOperationException("Weather percentage needs a bounded slider: " + channel);
+                    slider.value = -10;
+                    if (slider.value != 0)
+                        throw new InvalidOperationException("Weather slider failed its lower bound.");
+                    slider.value = 110;
+                    if (slider.value != 100)
+                        throw new InvalidOperationException("Weather slider failed its upper bound.");
+                }
                 var scroll = first.Q<ScrollView>("EnvironmentScroll");
                 if (
                     scroll == null

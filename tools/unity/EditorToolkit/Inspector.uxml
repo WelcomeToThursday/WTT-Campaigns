@@ -19,7 +19,7 @@
                 </ui:VisualElement>
                 <ui:VisualElement name="ScenePlaceGroup" class="editor-actions editor-action-row editor-divider">
                     <ui:Button name="ScenePlace" class="editor-action" text="Place" />
-                    <ui:Button name="SceneRepeat" class="editor-action" text="Repeat: off" />
+                    <ui:Toggle name="SceneRepeat" class="editor-setting" label="Repeat placement" />
                 </ui:VisualElement>
                 <ui:VisualElement name="SceneEditGroup" class="editor-actions editor-action-row editor-divider">
                     <ui:Button name="SceneMove" class="editor-action" text="Move (W)" />
@@ -87,10 +87,10 @@
                 </ui:VisualElement>
                 <ui:VisualElement name="SniperSoundGroup" class="editor-group">
                     <ui:VisualElement name="SniperPlaySoundGroup" class="editor-group">
-                        <ui:Button name="SniperPlaySound" class="editor-action editor-choice" text="Play shot sound" />
+                        <ui:Toggle name="SniperPlaySound" class="editor-setting" label="Play shot sound" />
                     </ui:VisualElement>
                     <ui:VisualElement name="SniperSuppressedGroup" class="editor-group">
-                        <ui:Button name="SniperSuppressed" class="editor-action editor-choice" text="Suppressed shots" />
+                        <ui:Toggle name="SniperSuppressed" class="editor-setting" label="Suppressed shots" />
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="SceneActionsGroup" class="editor-actions editor-action-row editor-separated-group">
@@ -118,18 +118,18 @@
                     </ui:VisualElement>
                     <ui:VisualElement name="AiWaveWaitPreviousGroup" class="editor-actions editor-action-row">
                         <ui:Label text="Wave sequencing" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
-                        <ui:Button name="AiWaveWaitPrevious" class="editor-action" text="Wave wait mode" />
+                        <ui:Toggle name="AiWaveWaitPrevious" class="editor-setting" label="Wait for previous wave defeat" />
                     </ui:VisualElement>
                 </ui:VisualElement>
                 <ui:VisualElement name="AiRosterSection" class="editor-group">
                     <ui:Label name="AiRosterHeading" class="editor-label" text="BOT ROSTER" picking-mode="Ignore" />
                     <ui:VisualElement name="AiRosterRoleGroup" class="editor-actions editor-action-row">
                         <ui:Label text="Bot role" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
-                        <ui:Button name="AiRosterRole" class="editor-action" text="Roster role" />
+                        <ui:Button name="AiRosterRole" class="editor-choice" text="Roster role" />
                     </ui:VisualElement>
                     <ui:VisualElement name="AiRosterDifficultyGroup" class="editor-actions editor-action-row">
                         <ui:Label text="Roster difficulty" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
-                        <ui:Button name="AiRosterDifficulty" class="editor-action" text="Roster difficulty" />
+                        <ui:Button name="AiRosterDifficulty" class="editor-choice" text="Roster difficulty" />
                     </ui:VisualElement>
                     <ui:VisualElement name="AiRosterCountGroup" class="editor-group">
                         <ui:TextField name="AiRosterCount" class="editor-field" label="Bot count" />
@@ -158,11 +158,11 @@
                     <ui:Label name="AiPatrolHeading" class="editor-label" text="PATROL MOVEMENT" picking-mode="Ignore" />
                     <ui:VisualElement name="AiPaceGroup" class="editor-actions editor-action-row">
                         <ui:Label text="Movement pace" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
-                        <ui:Button name="AiPace" class="editor-action" text="Patrol pace" />
+                        <ui:Button name="AiPace" class="editor-choice" text="Patrol pace" />
                     </ui:VisualElement>
                     <ui:VisualElement name="AiCompletionGroup" class="editor-actions editor-action-row">
                         <ui:Label text="At route end" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
-                        <ui:Button name="AiCompletion" class="editor-action" text="Patrol completion" />
+                        <ui:Button name="AiCompletion" class="editor-choice" text="Patrol completion" />
                     </ui:VisualElement>
                     <ui:VisualElement name="AiWaypointWaitSecondsGroup" class="editor-group">
                         <ui:TextField name="AiWaypointWaitSeconds" class="editor-field" label="Wait (seconds)" />
@@ -214,7 +214,7 @@
                     <ui:Label name="DoorHelp" class="editor-label" picking-mode="Ignore" />
                 </ui:VisualElement>
                 <ui:VisualElement name="MapNormalRaidGroup" class="editor-actions editor-action-row">
-                    <ui:Button name="MapNormalRaid" class="editor-action" text="Apply in normal raids: off" />
+                    <ui:Toggle name="MapNormalRaid" class="editor-setting" label="Apply in normal raids" />
                 </ui:VisualElement>
                 <ui:VisualElement name="MapLayerHelpGroup" class="editor-group">
                     <ui:Label name="MapLayerHelp" class="editor-label" text="After publication: regular characters combine enabled layers from all published campaigns; campaign characters use their own campaign. Scenery, doors, barriers and loot apply; routes, zones and AI remain separate." picking-mode="Ignore" />
@@ -257,7 +257,7 @@
                     <ui:Button name="MapLater" class="editor-action" text="Later checkpoint" />
                 </ui:VisualElement>
                 <ui:VisualElement name="MapWalkGroup" class="editor-actions editor-action-row">
-                    <ui:Button name="MapWalkStart" class="editor-action" text="Walk from marker: off" />
+                    <ui:Toggle name="MapWalkStart" class="editor-setting" label="Start walkthrough at marker" />
                 </ui:VisualElement>
                 <ui:VisualElement name="MapRecordActions" class="editor-actions editor-action-row">
                     <ui:Label text="SELECTION" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />

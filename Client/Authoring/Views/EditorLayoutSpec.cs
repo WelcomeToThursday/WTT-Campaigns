@@ -21,6 +21,8 @@ internal static class EditorLayoutSpec
 
     private static Node B(string id, string text) => new("button", id, text);
 
+    private static Node Check(string id, string text) => new("toggle", id, text);
+
     private static Node T(string id, string text) => new("text", id, text);
 
     private static Node I(string id, string text) => new("input", id, text);
@@ -159,7 +161,7 @@ internal static class EditorLayoutSpec
                     G(
                         "ContainerAccessSection",
                         T("ContainerAccessHeading", "ACCESS"),
-                        A("ContainerLockGroup", "ContainerLock", "Unlocked"),
+                        G("ContainerLockGroup", Check("ContainerLock", "Locked")),
                         T("ContainerKey", "No key selected"),
                         F("ContainerKeySearch", "Find a key"),
                         C("ContainerKeyItem", "Keys"),
@@ -180,7 +182,7 @@ internal static class EditorLayoutSpec
                     G("SceneHeadingGroup", T("SceneHeading", "Select an object")),
                     A("ScenePreviewRetryGroup", "ScenePreviewRetry", "Retry preview"),
                     R("SceneFocusGroup", B("SceneFrame", "Frame (F)"), B("SceneAnchor", "Anchor: Center")),
-                    R("ScenePlaceGroup", B("ScenePlace", "Place"), B("SceneRepeat", "Repeat: off")),
+                    R("ScenePlaceGroup", B("ScenePlace", "Place"), Check("SceneRepeat", "Repeat placement")),
                     R(
                         "SceneEditGroup",
                         B("SceneMove", "Move (W)"),
@@ -204,7 +206,11 @@ internal static class EditorLayoutSpec
                     G("ZoneUsesGroup", T("ZoneUsesCaption", "ZONE TYPE"), new Node("choice", "ZoneUses", "Select zone types")),
                     C("ZoneScope", "ZONE SCOPE"),
                     G("HazardInfoGroup", T("HazardInfo", "")),
-                    G("SniperSoundGroup", C("SniperPlaySound", "Play shot sound"), C("SniperSuppressed", "Suppressed shots")),
+                    G(
+                        "SniperSoundGroup",
+                        G("SniperPlaySoundGroup", Check("SniperPlaySound", "Play shot sound")),
+                        G("SniperSuppressedGroup", Check("SniperSuppressed", "Suppressed shots"))
+                    ),
                     R("SceneActionsGroup", B("Parent", "Select parent"), B("UseObject", "Use scene target")),
                     R("RecordActionsGroup", B("Duplicate", "Duplicate"), B("Delete", "Delete")),
                     G("DetailsGroup", T("Details", "")),
@@ -220,13 +226,13 @@ internal static class EditorLayoutSpec
                         "AiWaveSection",
                         T("AiWaveHeading", "WAVE TIMING"),
                         F("AiWaveDelaySeconds", "Delay (seconds)"),
-                        A("AiWaveWaitPreviousGroup", "AiWaveWaitPrevious", "Wave wait mode")
+                        G("AiWaveWaitPreviousGroup", Check("AiWaveWaitPrevious", "Wait for previous wave defeat"))
                     ),
                     G(
                         "AiRosterSection",
                         T("AiRosterHeading", "BOT ROSTER"),
-                        A("AiRosterRoleGroup", "AiRosterRole", "Roster role"),
-                        A("AiRosterDifficultyGroup", "AiRosterDifficulty", "Roster difficulty"),
+                        C("AiRosterRole", "Role"),
+                        C("AiRosterDifficulty", "Difficulty"),
                         F("AiRosterCount", "Bot count"),
                         F("AiRosterSquadId", "Squad name")
                     ),
@@ -242,8 +248,8 @@ internal static class EditorLayoutSpec
                     G(
                         "AiPatrolSection",
                         T("AiPatrolHeading", "PATROL MOVEMENT"),
-                        A("AiPaceGroup", "AiPace", "Patrol pace"),
-                        A("AiCompletionGroup", "AiCompletion", "Patrol completion"),
+                        C("AiPace", "Pace"),
+                        C("AiCompletion", "Route end"),
                         F("AiWaypointWaitSeconds", "Wait (seconds)")
                     )
                 ),
@@ -263,7 +269,7 @@ internal static class EditorLayoutSpec
                         C("DoorOperatable", "Interaction"),
                         T("DoorHelp", "")
                     ),
-                    A("MapNormalRaidGroup", "MapNormalRaid", "Apply in normal raids: off"),
+                    G("MapNormalRaidGroup", Check("MapNormalRaid", "Apply in normal raids")),
                     G(
                         "MapLayerHelpGroup",
                         T(
@@ -277,7 +283,7 @@ internal static class EditorLayoutSpec
                     A("MapShapeGroup", "MapShape", "Shape: box"),
                     R("MapPlacementGroup", B("MapRebind", "Rebind to picked"), B("MapAtPlayer", "At player")),
                     R("MapOrderGroup", B("MapEarlier", "Earlier checkpoint"), B("MapLater", "Later checkpoint")),
-                    A("MapWalkGroup", "MapWalkStart", "Walk from marker: off"),
+                    G("MapWalkGroup", Check("MapWalkStart", "Start walkthrough at marker")),
                     R("MapRecordActions", B("MapCopy", "Duplicate"), B("MapDelete", "Delete")),
                     G("MapDetailsGroup", T("MapDetails", "")),
                     A("MapDetailsToggleGroup", "MapDetailsToggle", "Details +"),

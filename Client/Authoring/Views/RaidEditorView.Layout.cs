@@ -42,7 +42,7 @@ internal sealed partial class RaidEditorView
                 throw new InvalidOperationException("Editor template binding is missing: " + node.Id);
             EditorControl control = node.Kind switch
             {
-                "button" => new EditorButton((Button)element),
+                "button" or "toggle" => new EditorButton(element),
                 "choice" => new EditorChoice((Button)element, OpenChoice),
                 "text" => new EditorLabel((Label)element),
                 "input" => new EditorInput((TextField)element, node.Id == "Search"),

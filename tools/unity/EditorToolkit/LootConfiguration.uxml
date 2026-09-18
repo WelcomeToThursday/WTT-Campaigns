@@ -41,7 +41,7 @@
                 <ui:VisualElement name="ContainerAccessSection" class="editor-group">
                     <ui:Label name="ContainerAccessHeading" class="editor-label" text="ACCESS" picking-mode="Ignore" />
                     <ui:VisualElement name="ContainerLockGroup" class="editor-actions editor-action-row">
-                        <ui:Button name="ContainerLock" class="editor-action" text="Unlocked" />
+                        <ui:Toggle name="ContainerLock" class="editor-setting" label="Locked" />
                     </ui:VisualElement>
                     <ui:Label name="ContainerKey" class="editor-label" text="No key selected" picking-mode="Ignore" />
                     <ui:VisualElement name="ContainerKeySearchGroup" class="editor-group">

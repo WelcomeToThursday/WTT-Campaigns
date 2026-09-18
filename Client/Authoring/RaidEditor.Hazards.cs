@@ -50,8 +50,8 @@ public sealed partial class RaidEditor
 
     private void BindHazards(RaidEditorView view)
     {
-        view.Dropdown("SniperPlaySound", index => SetSniperSound(play: index == 0));
-        view.Dropdown("SniperSuppressed", index => SetSniperSound(suppressed: index == 1));
+        view.Button("SniperPlaySound", () => SetSniperSound(play: view.IsChecked("SniperPlaySound")));
+        view.Button("SniperSuppressed", () => SetSniperSound(suppressed: view.IsChecked("SniperSuppressed")));
         foreach (var kind in HazardRules.Kinds)
         {
             var captured = kind;

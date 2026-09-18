@@ -215,7 +215,7 @@ internal sealed class EditorToolkitDocument : IDisposable
             var element = Root.panel?.focusController.focusedElement as VisualElement;
             while (element != null)
             {
-                if (element is TextField)
+                if (element is TextField or Slider)
                     return true;
                 element = element.parent;
             }

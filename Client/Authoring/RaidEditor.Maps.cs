@@ -574,7 +574,7 @@ public sealed partial class RaidEditor
         if (!maps)
             return;
         view.Value("MapName", MapPoint?.Name ?? MapDoor?.Name ?? Layout?.Name ?? "");
-        view.Caption("MapNormalRaid", "Apply in normal raids: " + (Layout?.ApplyInNormalRaids == true ? "on" : "off"));
+        view.Checked("MapNormalRaid", Layout?.ApplyInNormalRaids == true);
         view.Get<Button>("MapNormalRaid").interactable = Layout != null && !_walking && !AiPreviewBusy;
         if (!SceneWorkspace)
         {
@@ -609,7 +609,7 @@ public sealed partial class RaidEditor
         view.Caption("MapDoor", "Door: " + (MapDoor?.State == "Shut" ? "Closed" : MapDoor?.State ?? "capture"));
         view.Caption("MapShape", "Shape: " + (MapPoint as MapVolume)?.Shape);
         view.Caption("MapAtPlayer", "Under camera");
-        view.Caption("MapWalkStart", "Walk from marker: " + (_walkFromStart ? "on" : "off"));
+        view.Checked("MapWalkStart", _walkFromStart);
         if (_mode == "Routes")
         {
             var index = Layout?.Checkpoints.FindIndex(p => p.Id == _selected) ?? -1;

@@ -44,6 +44,8 @@ internal sealed partial class RaidEditorView
             }
             else if (pair.Value is EditorButton button)
             {
+                if (spec.Id is "ScenePlace" or "EnvironmentApply" or "WeatherApply" or "ContainerAdd")
+                    element.AddToClassList("editor-primary");
                 button.Help = help;
                 element.tooltip = help;
                 if (spec.Id is "Delete" or "MapDelete" or "SceneRemove" or "ContainerRemove")

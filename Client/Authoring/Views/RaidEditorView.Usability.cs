@@ -26,7 +26,7 @@ internal sealed partial class RaidEditorView
             var (owner, ids) in new[]
             {
                 ("SceneInspector", new[] { "SceneHeadingGroup", "SceneFocusGroup", "ScenePlaceGroup", "SceneEditGroup" }),
-                ("RecordInspector", new[] { "NameGroup", "IdentityGroup", "RecordActionsGroup" }),
+                ("RecordInspector", new[] { "NameGroup", "RecordActionsGroup" }),
                 ("MapInspector", new[] { "MapNameGroup", "MapRecordActions" }),
             }
         )
@@ -38,6 +38,11 @@ internal sealed partial class RaidEditorView
                 header.Add(Element(id));
             _pinned.Add((header, Element(owner)));
         }
+        Element("DetailsGroup").Insert(0, Element("IdentityGroup"));
+        Element("Inspector")
+            .RegisterCallback<GeometryChangedEvent>(evt =>
+                Element("Inspector").EnableInClassList("editor-narrow", evt.newRect.width < 320)
+            );
         Section("Preview", false, "ScenePreviewGroup", "ScenePreviewRetryGroup");
         Section("Scene details", false, "SceneRestoreGroup", "SceneInfoGroup");
         Section("Transform", true, "PositionGroup", "RotationGroup", "SizeGroup", "RadiusGroup", "PlacementGroup");

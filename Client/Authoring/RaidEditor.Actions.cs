@@ -1005,16 +1005,8 @@ public sealed partial class RaidEditor
             view.Text("HazardInfo", HazardDescription(hazardZone.Hazard.Kind));
         var sniperSettings = (point as SeasonZone)?.Hazard;
         view.Visible("SniperSoundGroup", _mode == "Hazards" && sniperSettings?.Kind == "Sniper");
-        view.SetDropdown(
-            "SniperPlaySound",
-            new() { new Dropdown.OptionData("On"), new Dropdown.OptionData("Off (silent)") },
-            sniperSettings?.PlayShotSound == false ? 1 : 0
-        );
-        view.SetDropdown(
-            "SniperSuppressed",
-            new() { new Dropdown.OptionData("Off (normal)"), new Dropdown.OptionData("On") },
-            sniperSettings?.SuppressedShots == true ? 1 : 0
-        );
+        view.Checked("SniperPlaySound", sniperSettings?.PlayShotSound != false);
+        view.Checked("SniperSuppressed", sniperSettings?.SuppressedShots == true);
 
         var details = point is SeasonZone z
             ? "Ownership: "

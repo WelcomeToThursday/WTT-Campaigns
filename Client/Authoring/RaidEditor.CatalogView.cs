@@ -66,8 +66,7 @@ public sealed partial class RaidEditor
         );
         var point = ScenePoint;
         var catalog = _sceneTab == "Catalog";
-        view.Caption("SceneRepeat", _repeatPlacement ? "Repeat: on" : "Repeat: off");
-        view.Highlight("SceneRepeat", _repeatPlacement);
+        view.Checked("SceneRepeat", _repeatPlacement);
         view.Get<Button>("SceneRepeat").interactable = CanSceneEdit;
         var removed = sceneKind == "Hide";
         var selected = catalog ? _catalogSelection.Length > 0 : point != null || MapDoor != null || _picked;

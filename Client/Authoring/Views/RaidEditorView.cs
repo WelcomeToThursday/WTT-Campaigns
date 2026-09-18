@@ -140,6 +140,10 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal void Highlight(string name, bool selected) => Element(name).EnableInClassList("editor-selected", selected);
 
+    internal bool IsChecked(string name) => ((Toggle)Element(name)).value;
+
+    internal void Checked(string name, bool value) => ((Toggle)Element(name)).SetValueWithoutNotify(value);
+
     internal void Button(string name, Action action)
     {
         foreach (var (tool, control) in Matching(name))
