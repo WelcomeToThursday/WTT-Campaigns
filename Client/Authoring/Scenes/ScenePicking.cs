@@ -109,8 +109,11 @@ internal static class ScenePicking
                 var indices = mesh.GetTriangles(submesh);
                 for (var i = 0; i + 2 < indices.Length; i += 3)
                     hit |= ScenePickGeometry.Triangle(
-                        origin, direction,
-                        Numeric(vertices[indices[i]]), Numeric(vertices[indices[i + 1]]), Numeric(vertices[indices[i + 2]]),
+                        origin,
+                        direction,
+                        Numeric(vertices[indices[i]]),
+                        Numeric(vertices[indices[i + 1]]),
+                        Numeric(vertices[indices[i + 2]]),
                         ref distance
                     );
             }

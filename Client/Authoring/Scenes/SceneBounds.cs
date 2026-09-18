@@ -4,8 +4,7 @@ namespace WTT.Campaigns.Client.Authoring.Scenes;
 
 internal static class SceneBounds
 {
-    internal static bool TryGet(Transform? target, out Bounds bounds)
-        => TryGet(target, out bounds, out _);
+    internal static bool TryGet(Transform? target, out Bounds bounds) => TryGet(target, out bounds, out _);
 
     internal static bool TryGet(Transform? target, out Bounds bounds, out Bounds localBounds)
     {
@@ -48,9 +47,19 @@ internal static class SceneBounds
                 else
                     bounds = collider.bounds;
                 if (collider is BoxCollider box)
-                    Encapsulate(ref localBounds, new Bounds(box.center, box.size), target.worldToLocalMatrix * box.transform.localToWorldMatrix, found);
+                    Encapsulate(
+                        ref localBounds,
+                        new Bounds(box.center, box.size),
+                        target.worldToLocalMatrix * box.transform.localToWorldMatrix,
+                        found
+                    );
                 else if (collider is MeshCollider mesh && mesh.sharedMesh)
-                    Encapsulate(ref localBounds, mesh.sharedMesh.bounds, target.worldToLocalMatrix * mesh.transform.localToWorldMatrix, found);
+                    Encapsulate(
+                        ref localBounds,
+                        mesh.sharedMesh.bounds,
+                        target.worldToLocalMatrix * mesh.transform.localToWorldMatrix,
+                        found
+                    );
                 else
                     Encapsulate(ref localBounds, collider.bounds, target.worldToLocalMatrix, found);
                 found = true;
@@ -59,7 +68,8 @@ internal static class SceneBounds
     }
 
     internal static Vector3 Corner(Bounds bounds, int index) =>
-        bounds.center + Vector3.Scale(bounds.extents, new Vector3((index & 1) == 0 ? -1 : 1, (index & 2) == 0 ? -1 : 1, (index & 4) == 0 ? -1 : 1));
+        bounds.center
+        + Vector3.Scale(bounds.extents, new Vector3((index & 1) == 0 ? -1 : 1, (index & 2) == 0 ? -1 : 1, (index & 4) == 0 ? -1 : 1));
 
     private static void Encapsulate(ref Bounds result, Bounds source, Matrix4x4 matrix, bool found)
     {
