@@ -9,12 +9,16 @@ internal static class SceneBrowserChecks
         var state = new SceneBrowserState();
         state.Filter = "Doors";
         state.Tab = "Existing";
-        check(state.Filter == "All" && state.Matches("Props") && state.Matches("Doors"),
-            "Catalog doors do not hide other existing scene objects");
+        check(
+            state.Filter == "All" && state.Matches("Props") && state.Matches("Doors"),
+            "Catalog doors do not hide other existing scene objects"
+        );
         state.Filter = "Containers";
         state.Tab = "Changes";
-        check(state.Filter == "All" && state.Matches("Barriers") && state.Matches("Loot"),
-            "Changes initially includes every object category independently of other tabs");
+        check(
+            state.Filter == "All" && state.Matches("Barriers") && state.Matches("Loot"),
+            "Changes initially includes every object category independently of other tabs"
+        );
         state.Filter = "Barriers";
         check(state.Matches("Barriers") && !state.Matches("Props"), "Changes filter narrows results explicitly");
         state.Tab = "Catalog";
@@ -28,8 +32,10 @@ internal static class SceneBrowserChecks
         foreach (var tab in new[] { "Catalog", "Existing", "Changes" })
         {
             state.Tab = tab;
-            check(SceneBrowserState.Filters.Any(f => f == state.Filter && SceneBrowserState.Available(tab, f)),
-                "The active filter always has a visible dropdown option in " + tab);
+            check(
+                SceneBrowserState.Filters.Any(f => f == state.Filter && SceneBrowserState.Available(tab, f)),
+                "The active filter always has a visible dropdown option in " + tab
+            );
         }
         state.Reset();
         check(state.Tab == "Catalog" && state.Filter == "Props", "A new scene session resets catalog filters");

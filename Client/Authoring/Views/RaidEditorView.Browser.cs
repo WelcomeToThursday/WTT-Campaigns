@@ -67,7 +67,9 @@ internal sealed partial class RaidEditorView
     }
     private Action<string>? _selectTree;
     private Action<string>? _activateCatalog;
+
     internal void BindCatalogActivation(Action<string> action) => _activateCatalog = action;
+
     internal int TreeRecordCount => _treeModel?.SelectableCount ?? 0;
     internal int TreeVisibleCount => _treeRows.Count;
 
@@ -91,11 +93,14 @@ internal sealed partial class RaidEditorView
             Register("Row" + i, control);
             _rows.Add(control);
             var activationId = "";
-            button.RegisterCallback<PointerDownEvent>(evt =>
-            {
-                if (evt.button == 0)
-                    activationId = control.Identity;
-            }, TrickleDown.TrickleDown);
+            button.RegisterCallback<PointerDownEvent>(
+                evt =>
+                {
+                    if (evt.button == 0)
+                        activationId = control.Identity;
+                },
+                TrickleDown.TrickleDown
+            );
             button.RegisterCallback<ClickEvent>(evt =>
             {
                 if (owner == "Scene" && evt.button == 0 && evt.clickCount == 2 && Activate(owner) && activationId.Length > 0)

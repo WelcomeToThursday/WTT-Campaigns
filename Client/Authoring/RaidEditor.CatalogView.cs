@@ -54,8 +54,11 @@ public sealed partial class RaidEditor
         foreach (var tab in new[] { "Catalog", "Existing", "Changes" })
             view.Highlight("Scene" + tab, _sceneTab == tab);
         var filters = SceneBrowserState.Filters.AsValueEnumerable().Where(f => SceneBrowserState.Available(_sceneTab, f)).ToArray();
-        view.SetDropdown("SceneFilter", filters.AsValueEnumerable().Select(f => new EditorChoice.OptionData(f)).ToList(),
-            Array.IndexOf(filters, _sceneFilter));
+        view.SetDropdown(
+            "SceneFilter",
+            filters.AsValueEnumerable().Select(f => new EditorChoice.OptionData(f)).ToList(),
+            Array.IndexOf(filters, _sceneFilter)
+        );
         view.SetDropdown(
             "SceneSource",
             new List<EditorChoice.OptionData> { new("All game"), new("Current map") },
@@ -97,9 +100,13 @@ public sealed partial class RaidEditor
                     ? (
                         _selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0
                             ? CatalogError(_selectedCatalogEntry)
-                            : _placementLifetime != null
-                                ? (_repeatPlacement ? "Click surfaces to place copies · Escape finishes." : "Click a surface to place · Escape cancels.")
-                                : "Select an item to preview. Place or double-click to begin placement."
+                        : _placementLifetime != null
+                            ? (
+                                _repeatPlacement
+                                    ? "Click surfaces to place copies · Escape finishes."
+                                    : "Click a surface to place · Escape cancels."
+                            )
+                        : "Select an item to preview. Place or double-click to begin placement."
                     )
                 : sceneKind == "Door" ? "Use Door state to cycle the saved native state. Remove clears it from this layout."
                 : point == null ? "Choose Move or Rotate to edit this object. Remove hides it in this layout."

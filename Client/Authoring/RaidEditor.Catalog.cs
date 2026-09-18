@@ -210,26 +210,29 @@ public sealed partial class RaidEditor
                 Refresh();
             }
         );
-        view.Dropdown("SceneFilter", index =>
-        {
-            var filters = SceneBrowserState.Filters.AsValueEnumerable().Where(f => SceneBrowserState.Available(_sceneTab, f)).ToArray();
-            if (index < 0 || index >= filters.Length)
-                return;
-            CancelDrag();
-            CancelPlacement();
-            if (_sceneTab == "Catalog")
-                _filterSelections[_catalogSource + ":" + _sceneFilter] = (_catalogSelection, _selectedCatalogEntry);
-            _sceneFilter = filters[index];
-            if (_sceneTab == "Catalog")
+        view.Dropdown(
+            "SceneFilter",
+            index =>
             {
-                var saved = _filterSelections.GetValueOrDefault(_catalogSource + ":" + _sceneFilter);
-                _catalogSelection = saved.Id ?? "";
-                _selectedCatalogEntry = saved.Entry;
+                var filters = SceneBrowserState.Filters.AsValueEnumerable().Where(f => SceneBrowserState.Available(_sceneTab, f)).ToArray();
+                if (index < 0 || index >= filters.Length)
+                    return;
+                CancelDrag();
+                CancelPlacement();
+                if (_sceneTab == "Catalog")
+                    _filterSelections[_catalogSource + ":" + _sceneFilter] = (_catalogSelection, _selectedCatalogEntry);
+                _sceneFilter = filters[index];
+                if (_sceneTab == "Catalog")
+                {
+                    var saved = _filterSelections.GetValueOrDefault(_catalogSource + ":" + _sceneFilter);
+                    _catalogSelection = saved.Id ?? "";
+                    _selectedCatalogEntry = saved.Entry;
+                }
+                _page = 0;
+                _libraryKey = "";
+                Refresh();
             }
-            _page = 0;
-            _libraryKey = "";
-            Refresh();
-        });
+        );
         Button(
             "ScenePlace",
             () =>
@@ -285,18 +288,24 @@ public sealed partial class RaidEditor
                     var target = pair.Value;
                     if (!target || !target.gameObject.activeInHierarchy || _mapScene?.RecordAt(target) != null)
                         continue;
-                    var kind = target.GetComponent<Door>() ? "Doors"
+                    var kind =
+                        target.GetComponent<Door>() ? "Doors"
                         : target.GetComponent<LootableContainer>() ? "Containers"
-                        : target.GetComponent<LootItem>() ? "Loot" : "Props";
+                        : target.GetComponent<LootItem>() ? "Loot"
+                        : "Props";
                     Add(pair.Key, target.name, kind);
                 }
             if (Layout != null)
             {
                 foreach (var item in Layout.Objects)
                     if (_sceneTab == "Changes" || item.Operation == "Copy")
-                        Add(item.Id, (item.Operation == "Hide" ? "Removed" : item.Operation) + " · " + item.Name,
+                        Add(
+                            item.Id,
+                            (item.Operation == "Hide" ? "Removed" : item.Operation) + " · " + item.Name,
                             item.Target.Kind is "Container" or "AssetContainer" ? "Containers"
-                            : item.Target.Kind == "Loot" ? "Loot" : "Props");
+                                : item.Target.Kind == "Loot" ? "Loot"
+                                : "Props"
+                        );
                 foreach (var item in Layout.Loot)
                     Add(item.Id, "Placed loot · " + item.Name, "Loot");
                 foreach (var item in Layout.Barriers)
