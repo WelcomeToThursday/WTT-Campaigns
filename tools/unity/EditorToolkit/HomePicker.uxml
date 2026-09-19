@@ -1,0 +1,13 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement class="editor-modal-shield">
+        <ui:VisualElement class="editor-modal editor-picker-panel">
+            <ui:VisualElement class="editor-picker-header">
+                <ui:Label name="Heading" class="editor-picker-heading" picking-mode="Ignore" enable-rich-text="false" />
+                <ui:Button name="Close" text="×" tooltip="Close selection (Escape)" class="editor-picker-close" />
+            </ui:VisualElement>
+            <ui:ListView name="Choices" class="editor-picker-list" />
+            <ui:Label name="Empty" text="No choices available." class="editor-picker-empty" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

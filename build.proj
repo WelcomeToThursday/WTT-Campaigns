@@ -6,7 +6,7 @@
     <AssetValidationPowerShell Condition="'$(AssetValidationPowerShell)' == '' and '$(OS)' == 'Windows_NT'">$(SystemRoot)\System32\WindowsPowerShell\v1.0\powershell.exe</AssetValidationPowerShell>
     <AssetValidationPowerShell Condition="'$(AssetValidationPowerShell)' == ''">pwsh</AssetValidationPowerShell>
     <_BuildProperties>Configuration=$(Configuration)</_BuildProperties>
-    <_NativeAssembly>$(TarkovDir)BepInEx\DumpedAssemblies\EscapeFromTarkov\Assembly-CSharp.dll</_NativeAssembly>
+    <_NativeAssembly>$(ManagedDir)Assembly-CSharp.dll</_NativeAssembly>
     <CampaignsPython Condition="'$(CampaignsPython)' == '' and Exists('$(MSBuildProjectDirectory)\.tools\Scripts\python.exe')">$(MSBuildProjectDirectory)\.tools\Scripts\python.exe</CampaignsPython>
     <CampaignsPython Condition="'$(CampaignsPython)' == ''">python</CampaignsPython>
   </PropertyGroup>
@@ -19,6 +19,15 @@
     <_WebTestProject Include="Tests.Web\WTT-Campaigns.Web.Tests.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" />
   </ItemGroup>
   <Import Project="tools\Deployment.targets" />
+  <Target Name="BuildEditorToolkitAssets" BeforeTargets="Build" Condition="'$(RebuildEditorToolkit)' == 'true'">
+    <Error Condition="!Exists('$(UnityEditorExe)')" Text="Set UnityEditorExe to the Unity 2022.3.43f1 editor executable." />
+    <PropertyGroup>
+      <_ToolkitSdk>$([System.IO.Path]::GetFullPath('$(CampaignsAssetsDir)..\..\..\'))</_ToolkitSdk>
+    </PropertyGroup>
+    <Copy SourceFiles="tools\unity\CampaignsEditorToolkitBuilder.cs" DestinationFolder="$(CampaignsAssetsDir)Editor\" />
+    <MakeDir Directories="artifacts" />
+    <Exec Command="&quot;$(UnityEditorExe)&quot; -batchmode -nographics -quit -projectPath &quot;$(_ToolkitSdk).&quot; -executeMethod CampaignsEditorToolkitBuilder.Build -logFile &quot;$(MSBuildProjectDirectory)\artifacts\editor-toolkit-unity.log&quot;" />
+  </Target>
   <Target Name="Build">
     <Error Condition="'@(_DeployProject)' == ''" Text="DeploymentScope must be All, Client, Server or UI." />
     <MSBuild Projects="@(_DeployProject);@(_TestProject);@(_WebTestProject)" Targets="Restore" Properties="$(_BuildProperties)" />
@@ -41,6 +50,7 @@
     <CallTarget Targets="ValidateCapturedQuests" Condition="('$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server') and Exists('$(MSBuildProjectDirectory)\..\1.0 Dump\gw-pve.escapefromtarkov.com\client\quest\list\response')" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --progression-data &quot;$(ServerDir)SPT_Data\database&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --appearance-data &quot;$(ServerDir)SPT_Data\database&quot;" />
+    <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="dotnet &quot;@(_TestAssembly)&quot; --preview-gear-data &quot;$(ServerDir)SPT_Data\database&quot;" />
     <ItemGroup>
       <_ClientAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Client.dll'" />
       <_ServerAssembly Include="@(CampaignsDeployFile)" Condition="'%(Filename)%(Extension)' == 'WTT-Campaigns.Server.dll'" />
@@ -52,6 +62,7 @@
     <Exec Condition="'@(_ClientAssembly)' != '' and '@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --mod-identity &quot;@(_ClientAssembly)&quot; &quot;@(_ServerAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != '' and '@(_ServerAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --authoring-socket &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot; &quot;@(_ServerAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --ui &quot;$(_NativeAssembly)&quot; &quot;@(_ClientAssembly)&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --hazards &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --resource-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --bush-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --experience-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
@@ -61,6 +72,7 @@
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --encounter-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --recovery-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_container_library.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\bin\$(Configuration)\netstandard2.1\ContainerLibrary&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_hazard_library.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\bin\$(Configuration)\netstandard2.1\HazardLibrary&quot;" />
     <Exec Condition="'@(_UiAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-artwork &quot;@(_UiAssembly)&quot;" />
     <GetFileHash Files="@(_SharedAssembly)" Condition="'$(DeploymentScope)' == 'Client' or '$(DeploymentScope)' == 'Server'">
       <Output TaskParameter="Hash" PropertyName="_SharedHash" />

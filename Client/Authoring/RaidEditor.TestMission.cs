@@ -5,7 +5,9 @@ using UnityEngine.SceneManagement;
 using WTT.Campaigns.Client.Missions;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Authoring;
+using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Spatial;
+using ZLinq;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -50,9 +52,161 @@ public sealed partial class RaidEditor
     private bool _editorMissionCompleted;
     private bool _editorMissionProgressPending;
     private bool _editorMissionRetrying;
+    private MissionDirector? _editorDirector;
+    private List<MissionSignal>? _editorSignals;
+    private string _editorObservationOperation = "";
+    private List<MissionActor> _editorObservationActors = new();
+
+    private async Task ReportEditorObservations()
+    {
+        var director = _editorDirector;
+        var test = _editorMissionTest;
+        var lifetime = _editorMissionLifetime;
+        if (director == null || test == null || lifetime == null || _editorMissionProgressPending)
+            return;
+        _editorMissionProgressPending = true;
+        try
+        {
+            if (_editorSignals == null)
+            {
+                _editorSignals = director.Take();
+                _editorObservationActors = new(director.Actors);
+                _editorObservationOperation = Guid.NewGuid().ToString("N");
+            }
+            var response = await EditorMissionTestClient.ObserveAsync(
+                test,
+                _editorSignals,
+                _editorObservationActors,
+                _editorObservationOperation,
+                lifetime.Token
+            );
+            if (director != _editorDirector || lifetime.IsCancellationRequested)
+                return;
+            MissionAcknowledgement.Require(test.Run!, response.Run, response.Committed);
+            _editorSignals = null;
+            _editorMissionTest = response;
+            if (response.Run != null)
+            {
+                director.Accept(response.Run.Logic);
+                CheckTestFailure();
+                var progress = response.Run.Logic;
+                _aiPreviewStatus =
+                    progress.Failure.Length > 0
+                        ? progress.Failure
+                        : "Mission test · "
+                            + string.Join(
+                                " · ",
+                                test.Descriptor!.Definition.Objectives.AsValueEnumerable()
+                                    .Select(o => o.Name + ": " + MissionLogic.Progress(progress, o.Id).Status)
+                                    .ToArray()
+                            );
+            }
+        }
+        catch (OperationCanceledException) when (lifetime.IsCancellationRequested) { }
+        catch (Exception error)
+        {
+            _aiPreviewStatus = "Mission observations: " + error.Message;
+            Plugin.Error(error);
+        }
+        finally
+        {
+            if (director == _editorDirector)
+                _editorMissionProgressPending = false;
+        }
+    }
 
     internal bool EditorMissionTestActive => _editorMissionRequested || _editorMissionPending != null;
     internal static bool MissionTestActive => Instance && Instance!.EditorMissionTestActive;
+
+    private bool _checkpointTestPreparing;
+    private string _checkpointTestLayout = "",
+        _checkpointTestDraft = "";
+    private float _checkpointTestDeadline;
+
+    private void CheckpointTestMessage(string message)
+    {
+        _notice = message;
+        Plugin.LogInfo(message);
+        EFT.UI.ItemUiContext.Instance.ShowMessageWindow(message, null, null, "OK", 0f, forceShow: true);
+    }
+
+    private void TestEditorCheckpoints()
+    {
+        if (_session == null || Layout == null)
+        {
+            CheckpointTestMessage("Select a layout before testing checkpoints.");
+            return;
+        }
+        _checkpointTestLayout = Layout.Id;
+        _checkpointTestDraft = _session.DraftId;
+        _checkpointTestDeadline = Time.realtimeSinceStartup + 30f;
+        _notice = "Preparing checkpoint test · waiting for the draft to synchronize…";
+        Plugin.LogInfo(_notice);
+        StartPendingEditorMissionTest();
+    }
+
+    private async void PrepareLayoutCheckpointTest()
+    {
+        if (_checkpointTestPreparing || EditorMissionTestActive || AiPreviewBusy || _walking || !MissionContent || !EditorMode.Ready)
+        {
+            CheckpointTestMessage("Finish the current preview or walkthrough before testing checkpoints.");
+            return;
+        }
+        var session = _session;
+        if (session == null || session.Retired || session.Conflict != null)
+        {
+            CheckpointTestMessage("Connect the editor and resolve draft conflicts before testing checkpoints.");
+            return;
+        }
+        var layout = Layout;
+        if (layout == null)
+        {
+            CheckpointTestMessage("Select a layout before testing checkpoints.");
+            return;
+        }
+        var errors = MapLayoutRules.Errors(layout, walkthrough: true);
+        if (errors.Count > 0)
+        {
+            CheckpointTestMessage("Cannot test checkpoints: " + errors[0]);
+            return;
+        }
+        _checkpointTestPreparing = true;
+        var version = session.ContentVersion;
+        var draftId = session.DraftId;
+        session.Hold = true;
+        try
+        {
+            var response = await EditorMissionTestClient.PrepareCheckpointsAsync(session.DraftId, layout.Id);
+            if (_session != session || session.Retired || !this)
+                return;
+            if (
+                session.ContentVersion != version
+                || session.DraftId != draftId
+                || Layout?.Id != layout.Id
+                || session.Dirty
+                || session.Conflict != null
+            )
+                throw new InvalidOperationException("The draft changed while preparing the test. Save it and try again.");
+            _checkpointTestPreparing = false;
+            session.Hold = false;
+            StartEditorMissionTest(response);
+        }
+        catch (InvalidOperationException error)
+        {
+            CheckpointTestMessage("Checkpoint test: " + error.Message);
+        }
+        catch (Exception error)
+        {
+            CheckpointTestMessage("Checkpoint test: " + error.Message);
+            Plugin.Error(error);
+        }
+        finally
+        {
+            if (!session.Previewing)
+                session.Hold = false;
+            _checkpointTestPreparing = false;
+        }
+    }
 
     internal void StartEditorMissionTest(EditorTestMissionResponse response)
     {
@@ -65,7 +219,7 @@ public sealed partial class RaidEditor
             || string.IsNullOrWhiteSpace(response.RunId)
         )
             throw new InvalidDataException("The editor mission test returned no route descriptor.");
-        if (!EditorMode.Ready)
+        if (EditorMode.SelectedContentMode != WTT.Campaigns.Shared.Authoring.EditorContentMode.Mission || !EditorMode.Ready)
             throw new InvalidOperationException("The editor session is not ready for a mission test.");
         if (EditorMissionTestActive || AiPreviewBusy)
             throw new InvalidOperationException("Finish or reset the current editor test before starting another one.");
@@ -84,7 +238,37 @@ public sealed partial class RaidEditor
 
     private void StartPendingEditorMissionTest()
     {
-        if (_editorMissionPending == null || _session == null || !_open || Layout == null || _walking || !EditorMode.Ready || AiPreviewBusy)
+        if (_checkpointTestLayout.Length > 0)
+        {
+            if (
+                _session == null
+                || _session.Retired
+                || _session.DraftId != _checkpointTestDraft
+                || Layout?.Id != _checkpointTestLayout
+                || !_open
+            )
+                _checkpointTestLayout = "";
+            else if (_session.Conflict != null || Time.realtimeSinceStartup > _checkpointTestDeadline)
+            {
+                _checkpointTestLayout = "";
+                CheckpointTestMessage("Checkpoint test could not start: " + _session.Status);
+            }
+            else if (!_session.Busy && !_session.Dirty)
+            {
+                _checkpointTestLayout = "";
+                PrepareLayoutCheckpointTest();
+            }
+        }
+        if (
+            _editorMissionPending == null
+            || _session == null
+            || !_open
+            || Layout == null
+            || _walking
+            || !MissionContent
+            || !EditorMode.Ready
+            || AiPreviewBusy
+        )
             return;
         if (_session.Busy || _session.Dirty || _session.Conflict != null)
             return;
@@ -142,6 +326,19 @@ public sealed partial class RaidEditor
             loot?.Dispose();
         }
         _aiPreviewStatus = "Mission test · reach checkpoint 1 of " + route.Checkpoints.Count;
+        if (
+            _aiRuntime != null
+            && _player != null
+            && (
+                _editorMissionTest.Descriptor!.Definition.CheckpointRetries
+                || MissionLogic.HasLogic(_editorMissionTest.Descriptor.Definition)
+            )
+        )
+        {
+            _editorDirector = new MissionDirector(route, _player, _aiRuntime);
+            _editorDirector.BindInteractions(_mapScene!.MissionInteractions(route));
+            _editorDirector.BindInteractions(_editorMissionLoot!.MissionInteractions(route));
+        }
         if (_view?.Valid == true)
             _view.Text("EditorWalkStatus", _aiPreviewStatus + " · Esc to return to editing");
     }
@@ -184,12 +381,15 @@ public sealed partial class RaidEditor
             !_editorMissionRequested
             || _editorMissionCompleted
             || _editorMissionProgressPending
+            || _testRetryGuard?.Frozen == true
             || _editorMissionLayout == null
             || !Singleton<GameWorld>.Instantiated
         )
             return;
         var player = Singleton<GameWorld>.Instance.GetPlayerByCollider(other);
         if (!player || player != _player)
+            return;
+        if (_editorDirector?.HasPending == true || _editorSignals != null)
             return;
         if (kind == "Checkpoint")
         {
@@ -216,6 +416,34 @@ public sealed partial class RaidEditor
         _editorMissionProgressPending = true;
         try
         {
+            var save = kind == "Checkpoint" && _testRetryGuard != null;
+            if (
+                !MissionLogic.CanAdvance(
+                    _editorMissionTest.Descriptor!.Definition,
+                    _editorMissionTest.Run!.Logic,
+                    kind == "Checkpoint" ? id : "",
+                    out var objectiveError
+                )
+            )
+            {
+                _aiPreviewStatus = objectiveError;
+                return;
+            }
+            if (save)
+            {
+                _aiPreviewStatus = "Saving checkpoint…";
+                _testRetryGuard!.Freeze();
+                _editorDirector!.Pause();
+                await _aiRuntime!.SettleAsync(lifetime!.Token);
+                await MissionInventorySnapshot.SettleHands(_player!, lifetime.Token);
+                await MissionWorldSnapshot.SettleAsync(lifetime.Token);
+                await DrainTestObservations(lifetime.Token);
+                if (_editorMissionTest.Run!.Logic.Failure.Length > 0)
+                {
+                    CheckTestFailure();
+                    return;
+                }
+            }
             var response = await EditorMissionTestClient.ProgressAsync(
                 _editorMissionTest,
                 id,
@@ -224,7 +452,14 @@ public sealed partial class RaidEditor
             );
             if (!IsCurrentEditorMission(generation, runId, lifetime))
                 return;
+            MissionAcknowledgement.Require(_editorMissionTest.Run!, response.Run, response.Committed);
             _editorMissionTest = response;
+            if (save)
+                _testCheckpoint = new MissionRaidCheckpoint(id, _player!, _aiRuntime!);
+            if (response.Run != null)
+                _editorDirector?.Accept(response.Run.Logic);
+            if (save)
+                ReleaseTestHold();
             var nextCheckpoint = response.Run?.NextCheckpointIndex ?? -1;
             if (nextCheckpoint < 0 || nextCheckpoint > _editorMissionLayout.Checkpoints.Count)
                 throw new InvalidDataException("The mission test returned an invalid checkpoint index.");
@@ -245,6 +480,7 @@ public sealed partial class RaidEditor
                 if (!IsCurrentEditorMission(generation, runId, lifetime))
                     return;
                 _editorMissionCompleted = true;
+                EndTestRetry();
                 _aiPreviewStatus = "Mission test complete · R to retry · Esc to return to editing";
             }
             if (_view?.Valid == true)
@@ -257,6 +493,8 @@ public sealed partial class RaidEditor
         catch (Exception error)
         {
             _notice = "Mission test progress failed: " + error.Message;
+            if (_testRetryGuard?.Frozen == true)
+                BreakTestRestore(error);
             _aiPreviewStatus = _notice;
             Plugin.Error(error);
             if (_view?.Valid == true)
@@ -314,6 +552,10 @@ public sealed partial class RaidEditor
 
     private void EndEditorMissionRoute(bool keepRequest = false)
     {
+        EndTestRetry();
+        _editorDirector?.Dispose();
+        _editorDirector = null;
+        _editorSignals = null;
         var run = _editorMissionTest;
         var resetServer = run != null && !keepRequest && !_editorMissionCompleted;
         _editorMissionGeneration++;

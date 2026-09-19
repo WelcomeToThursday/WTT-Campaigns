@@ -22,6 +22,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
     internal static string ScaleRestriction(Transform target)
     {
+        if (target.GetComponentInChildren<WindowBreaker>(true) || target.GetComponentInChildren<CullingLightObject>(true))
+            return "Native window fracture geometry and light culling volumes retain their original size.";
         if (target.GetComponentInChildren<WorldInteractiveObject>(true))
             return "Props with native interactions retain their original size so grips, hinges and drawers stay aligned.";
         // Include disabled colliders: hiding a prop must not bypass its collision requirements.
@@ -136,6 +138,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
         using var hash = SHA256.Create();
         return new MapTarget
         {
+            Kind = door ? "Door" : "Prop",
             Scene = target.gameObject.scene.name,
             Path = PathOf(target),
             Fingerprint = BitConverter.ToString(hash.ComputeHash(Encoding.UTF8.GetBytes(shape))).Replace("-", ""),
@@ -145,7 +148,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
     private static Transform Resolve(MapTarget target, bool door)
     {
-        if (target.Kind != "Prop")
+        if (target.Kind != "Prop" && target.Kind != "Door")
             return ResolveNative(target);
         var matches = FindTargetPath(target);
         if (matches.Count != 1)
@@ -313,9 +316,9 @@ internal sealed partial class MapSceneAdapter : IDisposable
         }
     }
 
-    private static GameObject CopyProp(Transform source, bool collision)
+    private static GameObject CopyProp(Transform source, bool collision, bool doorPreview = false)
     {
-        var error = Supported(source, copy: true);
+        var error = doorPreview && !collision ? Supported(source, door: true) : Supported(source, copy: true);
         if (error.Length > 0)
             throw new InvalidOperationException(error);
         var root = new GameObject("CampaignEditor prop");
@@ -539,7 +542,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
         }
     }
 
-    internal void Ghosts(MapLayout? layout)
+    internal void Ghosts(MapLayout? layout, bool mission = true)
     {
         ClearGhosts();
 
@@ -547,7 +550,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
             return;
         foreach (var volume in layout.Barriers)
             _ghosts.Add(Volume(volume, true));
-        foreach (var volume in layout.Checkpoints)
+        foreach (var volume in mission ? layout.Checkpoints : new List<MapVolume>())
             _ghosts.Add(Volume(volume, true, RouteGhostMaterial(false)));
         if (layout.Exit != null)
             _ghosts.Add(Volume(layout.Exit, true, RouteGhostMaterial(true)));

@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement class="editor-picker-row">
+        <ui:Label name="selected" class="editor-picker-marker" picking-mode="Ignore" />
+        <ui:Label name="name" class="editor-picker-name" picking-mode="Ignore" enable-rich-text="false" />
+    </ui:VisualElement>
+</ui:UXML>

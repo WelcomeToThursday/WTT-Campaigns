@@ -5,7 +5,14 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Profiles\ProfileSaveGate.cs" Link="Client\ProfileSaveGate.cs" />
+    <Compile Include="..\UI\Screens\EditorHomeComposition.cs" Link="UI\EditorHomeComposition.cs" />
+    <EmbeddedResource Include="..\tools\unity\EditorToolkit\*.uxml" LogicalName="EditorToolkit.%(Filename).uxml" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneDoorState.cs" Link="Client\SceneDoorState.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneDoorRegistry.cs" Link="Client\SceneDoorRegistry.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\ScenePickGeometry.cs" Link="Client\ScenePickGeometry.cs" />
     <Compile Include="..\Client\Authoring\EditorStartupRecovery.cs" Link="Client\EditorStartupRecovery.cs" />
+    <Compile Include="..\Client\Authoring\Preview\PreviewLoadGuard.cs" Link="Client\PreviewLoadGuard.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorLayoutSpec.cs" Link="Client\EditorLayoutSpec.cs" />
     <Compile Include="..\Client\Encounters\EncounterCorePlan.cs" Link="Client\EncounterCorePlan.cs" />
     <Compile Include="..\Client\Encounters\EncounterMovementPolicy.cs" Link="Client\EncounterMovementPolicy.cs" />
@@ -29,8 +36,11 @@
     <Compile Include="..\Server\Progression\QuestBackportCompatibility.cs" Link="Progression\QuestBackportCompatibility.cs" />
     <Compile Include="..\Server\Progression\ReputationMigration.cs" Link="Progression\ReputationMigration.cs" />
     <Compile Include="..\Server\Profiles\ProfileStateSerialization.cs" Link="Profiles\ProfileStateSerialization.cs" />
+    <Compile Include="..\Server\Missions\MissionCompletion.cs" Link="Missions\MissionCompletion.cs" />
+    <Compile Include="..\Server\Story\StoryStore.cs" Link="Story\StoryStore.cs" />
     <Compile Include="..\Server\Missions\MissionStore.cs" Link="Missions\MissionStore.cs" />
     <Compile Include="..\Server\Profiles\RaidFinalization.cs" Link="Profiles\RaidFinalization.cs" />
+    <Compile Include="..\Server\Seasons\SeasonRepository.Missions.cs" Link="Storage\SeasonRepository.Missions.cs" />
     <Compile Include="..\Server\Seasons\SeasonRepository.cs" Link="Storage\SeasonRepository.cs" />
     <Compile Include="..\Server\Seasons\BuiltInCampaignCopy.cs" Link="Storage\BuiltInCampaignCopy.cs" />
     <EmbeddedResource Include="..\data\kord-copy.json" LogicalName="WTT.Campaigns.KordCopy.json" />
@@ -49,9 +59,11 @@
     <Compile Include="..\Client\Authoring\Scenes\RouteVisuals.cs" Link="Client\RouteVisuals.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePropSupport.cs" Link="Client\ScenePropSupport.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneSelectionEdit.cs" Link="Client\SceneSelectionEdit.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneBrowserState.cs" Link="Client\SceneBrowserState.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />
     <Compile Include="..\Client\Authoring\Scenes\PreviewMaterialPolicy.cs" Link="Client\PreviewMaterialPolicy.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorTooltipPlacement.cs" Link="Client\EditorTooltipPlacement.cs" />
+    <Compile Include="..\Client\Authoring\Views\EditorInteractionPolicy.cs" Link="Client\EditorInteractionPolicy.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorUiScale.cs" Link="Client\EditorUiScale.cs" />
     <Compile Include="..\Client\Authoring\Views\CatalogGridLayout.cs" Link="Client\CatalogGridLayout.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneObjectIndex.cs" Link="Client\SceneObjectIndex.cs" />
@@ -75,6 +87,7 @@
     <Compile Include="..\Server\Profiles\ProfileReadiness.cs" Link="Profiles\ProfileReadiness.cs" />
     <Compile Include="..\Server\Editor\EditorScratchInventory.cs" Link="Editor\EditorScratchInventory.cs" />
     <Compile Include="..\Server\Editor\EditorPreviewGearCopy.cs" Link="Editor\EditorPreviewGearCopy.cs" />
+    <Compile Include="..\Server\Editor\GeneratedCartridgePositions.cs" Link="Editor\GeneratedCartridgePositions.cs" />
     <Compile Include="..\Server\Editor\EditorSessionRegistry.cs" Link="Editor\EditorSessionRegistry.cs" />
     <Compile Include="..\Server\Profiles\RaidAbortGuard.cs" Link="Profiles\RaidAbortGuard.cs" />
     <Compile Include="..\Server\Web\Authoring\*.cs" Link="Authoring\%(Filename)%(Extension)" />

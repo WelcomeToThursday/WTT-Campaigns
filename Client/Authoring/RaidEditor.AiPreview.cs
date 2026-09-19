@@ -15,6 +15,7 @@ public sealed partial class RaidEditor
     private CancellationTokenSource? _aiLifetime;
     private EditorPreviewPlayer? _aiPlayer;
     private MissionLoot? _aiLoot;
+    private readonly List<GameObject> _playtestHazards = new();
     private Task? _aiReset;
     private bool _aiPreview,
         _aiPlaytest;
@@ -23,7 +24,8 @@ public sealed partial class RaidEditor
         _aiDefeatPending,
         _aiCleanupFailed;
     private bool? _aiRequested;
-    internal bool AiPreviewBusy => _aiPreparing || _aiPreview || _aiCleanupFailed || _aiReset is { IsCompleted: false };
+    internal bool AiPreviewBusy =>
+        _checkpointTestPreparing || _aiPreparing || _aiPreview || _aiCleanupFailed || _aiReset is { IsCompleted: false };
     internal static bool AiPreviewActive => Instance && Instance!._aiPreview;
     internal static bool AiPlaytestActive => Instance && Instance!._aiPreview && Instance._aiPlaytest && !Instance._aiDefeatPending;
 
@@ -33,7 +35,7 @@ public sealed partial class RaidEditor
 
     private async void BeginAiPreview(bool playtest)
     {
-        if (AiPreviewBusy || _walking || !EditorMode.Ready || !_open || Layout == null || _session?.Conflict != null)
+        if (AiPreviewBusy || _walking || !MissionContent || !EditorMode.Ready || !_open || Layout == null || _session?.Conflict != null)
             return;
         if (_session!.Busy || _session.Dirty)
         {
@@ -79,7 +81,7 @@ public sealed partial class RaidEditor
             transitionTimer.Restart();
             transitionStage = "validation and equipment";
             lifetime.Token.ThrowIfCancellationRequested();
-            if (_session != session || !EditorMode.Ready || !player)
+            if (_session != session || !MissionContent || !EditorMode.Ready || !player)
                 throw new OperationCanceledException();
             Physics.SyncTransforms();
             var errors = MapEncounterRules.Errors(layout, new EncounterNavigation(), true, true);
@@ -95,10 +97,21 @@ public sealed partial class RaidEditor
             if (playtest)
             {
                 _aiPlayer = new EditorPreviewPlayer(player);
-                await _aiPlayer.Equip(lifetime.Token, _aiUseProfileKit);
+                await _aiPlayer.Equip(
+                    lifetime.Token,
+                    _aiUseProfileKit,
+                    stage =>
+                    {
+                        if (_aiLifetime != lifetime || lifetime.IsCancellationRequested || _session != session)
+                            return;
+                        _notice = _aiPreviewStatus = "Preparing playtest · " + stage;
+                        if (_view?.Valid == true)
+                            Refresh(false);
+                    }
+                );
             }
             lifetime.Token.ThrowIfCancellationRequested();
-            if (_session != session || !EditorMode.Ready || !player)
+            if (_session != session || !MissionContent || !EditorMode.Ready || !player)
                 throw new OperationCanceledException();
             _aiRuntime = new EncounterPreviewRuntime();
             Plugin.LogInfo($"Preview transition: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
@@ -146,7 +159,18 @@ public sealed partial class RaidEditor
                 lifetime.Token.ThrowIfCancellationRequested();
             }
             await BeginEditorMissionRoute(layout, lifetime.Token);
+            if (playtest)
+                await BeginPlaytestHazards(
+                    _editorMissionRequested && _editorMissionTest != null
+                        ? _editorMissionTest.Descriptor.Zones
+                        : FilterZonesForLayout(layout.Id),
+                    lifetime.Token
+                );
+            await CaptureTestStart(lifetime.Token);
             _aiRuntime.MissionStart();
+            _editorDirector?.Observe(
+                new WTT.Campaigns.Shared.Missions.MissionSignal { Kind = WTT.Campaigns.Shared.Missions.MissionSignals.Start }
+            );
             _notice = "";
         }
         catch (OperationCanceledException)
@@ -179,6 +203,7 @@ public sealed partial class RaidEditor
         // replacing equipment that an inventory/loot screen may still observe.
         if (_player && _player!.IsInventoryOpened)
             EftScreenManager.Instance.ToggleScreen(EEftScreenType.Inventory);
+        EndPlaytestHazards();
         EndEditorMissionRoute(_editorMissionRetrying);
         if (!AiPreviewBusy && _aiRuntime == null && _aiPlayer == null)
             return;
@@ -293,6 +318,8 @@ public sealed partial class RaidEditor
     {
         if (!AiPreviewBusy)
             return false;
+        if (HoldTestFailure())
+            return true;
         if (_editorMissionCompleted && Input.GetKeyDown(KeyCode.R))
         {
             _ = RetryEditorMissionTest();
@@ -300,6 +327,7 @@ public sealed partial class RaidEditor
         }
         if (
             _aiDefeatPending
+            || !MissionContent
             || !EditorMode.Ready
             || _session?.Conflict != null
             || Time.realtimeSinceStartup - _lastContact > 20
@@ -316,6 +344,9 @@ public sealed partial class RaidEditor
             if (_aiPreview)
             {
                 _aiRuntime?.Tick();
+                _editorDirector?.Tick();
+                if ((_editorDirector?.HasPending == true || _editorSignals != null) && !_editorMissionProgressPending)
+                    _ = ReportEditorObservations();
                 var failure = _aiRuntime?.Failure;
                 if (!string.IsNullOrEmpty(failure))
                     throw new InvalidOperationException(failure);

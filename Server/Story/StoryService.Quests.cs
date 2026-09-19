@@ -29,6 +29,25 @@ public sealed partial class StoryService
         IReadOnlyCollection<string>? selectedItems = null
     )
     {
+        if (action.Type == StoryActionType.TraderStanding)
+        {
+            if (!double.IsFinite(action.StandingChange) || !WTT.Campaigns.Shared.Seasons.SeasonValidator.IsId(action.Target))
+                throw new InvalidOperationException("Choose a valid trader and finite reputation change.");
+            var traderId = new MongoId(action.Target);
+            if (pmc.TradersInfo?.ContainsKey(traderId) != true)
+                throw new InvalidOperationException("The selected trader is not available for this character.");
+            traderHelper.AddStandingToTrader(new MongoId(id), traderId, action.StandingChange);
+            var trader = pmc.TradersInfo[traderId];
+            StoryNativeScope.Current!.Output.ProfileChanges![new MongoId(id)].TraderRelations![traderId] = new()
+            {
+                Standing = trader.Standing,
+                Loyalty = trader.LoyaltyLevel,
+                SalesSum = trader.SalesSum,
+                Unlocked = trader.Unlocked,
+                Disabled = trader.Disabled,
+            };
+            return;
+        }
         var questId = action.QuestId.Length > 0 ? action.QuestId : state.Conversation?.SelectedQuestId ?? "";
         var template = QuestTemplate(state, definition, questId);
         var quest = pmc.Quests?.FirstOrDefault(q => q.QId.ToString() == questId);
@@ -41,6 +60,18 @@ public sealed partial class StoryService
         }
         switch (action.Type)
         {
+            case StoryActionType.FailQuest:
+                if (quest?.Status is QuestStatusEnum.Fail or QuestStatusEnum.MarkedAsFailed)
+                    return;
+                if (quest?.Status is not (QuestStatusEnum.Started or QuestStatusEnum.AvailableForFinish))
+                    throw new InvalidOperationException("Only an active story quest can be failed.");
+                quests.FailQuest(
+                    pmc,
+                    new FailQuestRequestData { QuestId = new MongoId(questId), RemoveExcessItems = false },
+                    new MongoId(id),
+                    StoryNativeScope.Current!.Output
+                );
+                break;
             case StoryActionType.AcceptQuest:
                 if (quest?.Status is QuestStatusEnum.Started or QuestStatusEnum.AvailableForFinish or QuestStatusEnum.Success)
                 {

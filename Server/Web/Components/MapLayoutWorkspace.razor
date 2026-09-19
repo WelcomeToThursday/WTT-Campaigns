@@ -1,28 +1,47 @@
+@using WTT.Campaigns.Shared.Authoring
 @using WTT.Campaigns.Shared.Seasons
 @using WTT.Campaigns.Shared.Spatial
 @using WTT.Campaigns.Server.Seasons
 
 <section class="editor-section">
-    <h3>Mission map layouts</h3>
-    <p>Open Campaign Editor from the game's main menu, select this draft, then open a map. Layouts are previewed only in Editor mode; they do not change ordinary raids.</p>
+    <h3>@(Mode == EditorContentMode.Level ? "Level layout" : "Mission layouts")</h3>
+    <p>@(Mode == EditorContentMode.Level ? "Edit ordinary PMC scenery, loot, doors, zones, hazards and additional extracts. Native AI and spawns remain unchanged." : "Edit mission-owned layouts with authored AI, player starts and checkpoints.")</p>
+    @foreach (var error in MapLayerRules.Errors(Layouts)) { <p class="validation-warning">@error</p> }
     @if (_error.Length > 0) { <p class="validation-warning">@_error</p> }
-    @foreach (var map in Season.MapLayouts)
+    @foreach (var map in Layouts)
     {
         <details @key="map.Id">
-            <summary>@map.Name · @map.Location · @map.Checkpoints.Count checkpoints</summary>
+            <summary>@map.Name · @map.Location @(EditorContentRules.Mode(Season, map.Id) == EditorContentMode.Mission ? $" · {map.Checkpoints.Count} checkpoints" : "")</summary>
             <label>Name <input @bind="map.Name" @bind:after="Notify" /></label>
+            @if (EditorContentRules.Mode(Season, map.Id) == EditorContentMode.Level) { <label><input type="checkbox" @bind="map.ApplyInNormalRaids" @bind:after="Notify" /> Apply in normal raids</label> }
             <p>@map.Objects.Count scenery edits · @map.Doors.Count doors · @map.Barriers.Count barriers · @ZoneLayoutRules.OwnedByLayout(Season.Zones, map.Id).Count() zones</p>
-            @foreach (var error in MapLayoutRules.Errors(map, true)) { <p class="validation-warning">@error</p> }
-            <p>Choose this layout in the client's Layouts tab, then use Scene, Routes, Zones or AI to edit its content.</p>
+            @foreach (var error in MapLayoutRules.Errors(map, EditorContentRules.Mode(Season, map.Id) == EditorContentMode.Mission && (map.Start != null || map.Checkpoints.Count > 0 || map.Exit != null))) { <p class="validation-warning">@error</p> }
+            <p>@(EditorContentRules.Mode(Season, map.Id) == EditorContentMode.Level ? "Open this level from the in-game Level library for scene, zone, hazard and extract editing." : "Open this mission in-game for route, checkpoint and AI editing.")</p>
             @foreach (var placement in map.Objects.Where(o => o.Target.IsAsset || SceneAssetRules.IsContainer(o)))
             {
-                <p>@placement.Name � @(SceneAssetRules.IsContainer(placement) ? "Native random-loot container" : "Game asset")<br />
+                <p>@placement.Name · @(SceneAssetRules.IsContainer(placement) ? "Native random-loot container" : "Game asset")<br />
                     <small>@(placement.Target.IsAsset ? placement.Target.Bundle + " / " + placement.Target.Asset : placement.Target.Scene + " / " + placement.Target.Path)</small></p>
             }
-            <EncounterInspection Layout="map" />
+            @if (EditorContentRules.Mode(Season, map.Id) == EditorContentMode.Mission) { <EncounterInspection Layout="map" /> }
+            @foreach (var door in map.Doors)
+            {
+                <fieldset @key="door.Id">
+                    <legend>@(door.PlaceNew ? "Placed door" : "Existing door"): @door.Name</legend>
+                    <label>Name <input @bind="door.Name" @bind:after="Notify" /></label>
+                    <label>Starting state <select @bind="door.State" @bind:after="Notify">
+                        <option value="Unchanged">Original</option><option value="Shut">Closed</option>
+                        <option value="Open">Open</option><option value="Locked">Locked</option>
+                    </select></label>
+                    <label>Key template ID <input value="@door.KeyId" @onchange="async e => { door.KeyId = e.Value?.ToString()?.Trim() ?? string.Empty; await Notify(); }" /></label>
+                    <button @onclick="async () => { door.KeyId = null; await Notify(); }">Use original key</button>
+                    <label>Breaching <select @bind="door.CanBeBreached" @bind:after="Notify"><option value="">Original</option><option value="true">Allowed</option><option value="false">Disabled</option></select></label>
+                    <label>Interaction <select @bind="door.Operatable" @bind:after="Notify"><option value="">Original</option><option value="true">Enabled</option><option value="false">Disabled</option></select></label>
+                    <p>Starting state is applied once. Configure placement and preview in the client's Doors catalog.</p>
+                </fieldset>
+            }
             <button disabled="@(Raid?.Connected != true)" @onclick="() => Focus(map)">Edit in connected editor</button>
             <button @onclick="() => Duplicate(map)">Duplicate layout</button>
-            <button class="danger" @onclick="() => Delete(map)">Delete layout</button>
+            @if (LayoutId.Length == 0) { <button class="danger" @onclick="() => Delete(map)">Delete layout</button> }
         </details>
     }
 </section>
@@ -30,6 +49,9 @@
 @code {
     [CascadingParameter] public WTT.Campaigns.Server.Web.Authoring.RaidEditorContext? Raid { get; set; }
     [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public EditorContentMode? Mode { get; set; }
+    [Parameter] public string LayoutId { get; set; } = "";
+    private IEnumerable<MapLayout> Layouts => Season.MapLayouts.Where(l => (Mode == null || EditorContentRules.Mode(Season, l.Id) == Mode) && (LayoutId.Length == 0 || l.Id == LayoutId));
     [Parameter] public EventCallback Changed { get; set; }
     private Task Focus(MapLayout map) => Raid?.Request(new WTT.Campaigns.Shared.Authoring.CaptureTask { Tool = "MapLayout", TargetKind = "MapLayout", TargetId = map.Id, RecordId = map.Id }) ?? Task.CompletedTask;
     private string _error = "";

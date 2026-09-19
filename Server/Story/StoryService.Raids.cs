@@ -107,6 +107,7 @@ public sealed partial class StoryService
         }
         state.Revision++;
         StoryStore.Write(staged.CharacterData!.PmcData!, state);
+        RefreshMissionLinksUnderLease(id.ToString(), staged, seasonId);
         await commits.Commit(id, original, staged);
     }
 
@@ -142,6 +143,7 @@ public sealed partial class StoryService
         }
         state.Revision++;
         StoryStore.Write(staged.CharacterData.PmcData!, state);
+        RefreshMissionLinksUnderLease(id.ToString(), staged, seasonId);
         await commits.Commit(id, original, staged);
     }
 
@@ -310,6 +312,7 @@ public sealed partial class StoryService
         }
         state.Revision++;
         StoryStore.Write(pmc, state);
+        RefreshMissionLinksUnderLease(id.ToString(), staged, seasonId);
         await commits.Commit(id, original, staged);
         foreach (var notification in notifications)
         {

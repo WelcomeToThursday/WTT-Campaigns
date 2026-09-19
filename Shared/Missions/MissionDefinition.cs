@@ -14,4 +14,8 @@ public sealed class MissionDefinition : ExtensibleJsonModel
     public string LayoutId { get; set; } = "";
     public string QuestId { get; set; } = "";
     public string CompletionConditionId { get; set; } = "";
+    public bool CheckpointRetries { get; set; }
+    public List<MissionEventRule> Events { get; set; } = new();
+    public List<MissionObjective> Objectives { get; set; } = new();
+    public List<MissionRequirement> Requirements { get; set; } = new();
 }

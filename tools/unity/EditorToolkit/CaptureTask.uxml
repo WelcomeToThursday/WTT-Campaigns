@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="CaptureTask" class="editor-toolbar editor-actions editor-action-row">
+        <ui:Label name="CaptureRequest" text="" class="editor-label" picking-mode="Ignore" />
+        <ui:Button name="Complete" text="Complete capture" class="editor-action" />
+        <ui:Button name="Cancel" text="Cancel" class="editor-action" />
+    </ui:VisualElement>
+</ui:UXML>

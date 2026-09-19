@@ -37,20 +37,19 @@ internal sealed class CampaignRecoveryPatch : ModulePatch
     {
         if (
             !Plugin.InRaid
-            || !Plugin.SeasonalPlayer
             || Plugin.Busy
             || __args[0] is not GamePlayerOwner owner
             || owner.Player != Plugin.Player
             || __args[1] is not SalvageItemTrigger trigger
         )
             return;
-        var zone = Plugin.Current?.Zones.AsValueEnumerable().FirstOrDefault(z => z.Id == trigger.Id && z.Salvage.Recovery);
-        if (zone == null || ZoneRuntime.Instance?.Find(zone.Id) != trigger.transform.parent?.gameObject)
+        var zone = trigger.GetComponentInParent<NativeZoneBridge>()?.Definition;
+        if (zone == null || !zone.Salvage.Recovery || zone.Id != trigger.Id)
             return;
         __result = null;
         if (
             zone.RequiredQuestId.Length == 0
-            || StoryClient.Current?.Facts?.QuestStatuses.GetValueOrDefault(zone.RequiredQuestId) is not ("Started" or "AvailableForFinish")
+            || !NativeZoneBridge.QuestActive(zone.RequiredQuestId)
             || owner.Player.InventoryController == null
         )
             return;

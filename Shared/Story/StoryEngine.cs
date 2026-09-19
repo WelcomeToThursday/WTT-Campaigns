@@ -62,6 +62,9 @@ public sealed class StoryEngine(
         {
             switch (action.Type)
             {
+                case StoryActionType.UnlockMission:
+                    state.UnlockedMissionLinks.Add(action.Target);
+                    break;
                 case StoryActionType.SetVariable:
                     SetVariable(action.Target, action.Value, action.Scope);
                     break;

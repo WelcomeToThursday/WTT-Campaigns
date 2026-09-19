@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:Label name="EditorWalkStatus" class="editor-label" text="Esc to return to editing" picking-mode="Ignore" />
+</ui:UXML>

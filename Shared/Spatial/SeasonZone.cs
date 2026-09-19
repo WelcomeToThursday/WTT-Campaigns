@@ -35,6 +35,10 @@ public class SpatialCapture
 
 public sealed class SeasonZone : SpatialCapture
 {
+    public HazardSettings? Hazard { get; set; }
+
+    public bool ShouldSerializeHazard() => Hazard != null;
+
     public string RequiredQuestId { get; set; } = "";
 
     public bool ShouldSerializeRequiredQuestId() => RequiredQuestId.Length > 0;
@@ -148,6 +152,7 @@ public static class SpatialRules
 
             if (point is SeasonZone zone)
             {
+                errors.AddRange(HazardRules.Errors(zone));
                 if (zone.Shape is not ("Box" or "Sphere"))
                 {
                     errors.Add("Unknown zone shape: " + zone.Id);
@@ -238,7 +243,10 @@ public static class SpatialRules
 
         errors.AddRange(ZoneLayoutRules.Errors(season));
 
-        if ((season.Zones.Count > 0 || season.Captures.Count > 0) && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7 or 8 or 9))
+        if (
+            (season.Zones.Count > 0 || season.Captures.Count > 0)
+            && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11)
+        )
         {
             errors.Add("Spatial content requires campaign format 2 or later.");
         }

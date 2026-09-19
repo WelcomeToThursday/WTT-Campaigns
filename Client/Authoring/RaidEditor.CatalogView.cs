@@ -29,7 +29,8 @@ public sealed partial class RaidEditor
             ScenePoint is MapObjectEdit objectEdit ? objectEdit.Operation
             : ScenePoint is MapVolume volume && Layout?.Barriers.AsValueEnumerable().Any(b => b.Id == volume.Id) == true ? "Barrier"
             : ScenePoint is MapVolume ? "Volume"
-            : MapDoor != null ? "Door"
+            : MapDoor?.PlaceNew == true ? "PlacedDoor"
+            : MapDoor != null || PickedDoor ? "Door"
             : "Loot";
         view.Windows.PresentScene(
             scene,
@@ -52,8 +53,12 @@ public sealed partial class RaidEditor
         }
         foreach (var tab in new[] { "Catalog", "Existing", "Changes" })
             view.Highlight("Scene" + tab, _sceneTab == tab);
-        foreach (var filter in new[] { "Props", "Containers", "Loot", "Presets" })
-            view.Highlight("Scene" + filter, _sceneFilter == filter);
+        var filters = SceneBrowserState.Filters.AsValueEnumerable().Where(f => SceneBrowserState.Available(_sceneTab, f)).ToArray();
+        view.SetDropdown(
+            "SceneFilter",
+            filters.AsValueEnumerable().Select(f => new EditorChoice.OptionData(f)).ToList(),
+            Array.IndexOf(filters, _sceneFilter)
+        );
         view.SetDropdown(
             "SceneSource",
             new List<EditorChoice.OptionData> { new("All game"), new("Current map") },
@@ -61,6 +66,8 @@ public sealed partial class RaidEditor
         );
         var point = ScenePoint;
         var catalog = _sceneTab == "Catalog";
+        view.Checked("SceneRepeat", _repeatPlacement);
+        view.Get<Button>("SceneRepeat").interactable = CanSceneEdit;
         var removed = sceneKind == "Hide";
         var selected = catalog ? _catalogSelection.Length > 0 : point != null || MapDoor != null || _picked;
         view.Get<Button>("ScenePlace").interactable =
@@ -78,7 +85,7 @@ public sealed partial class RaidEditor
             view.Get<Button>(tool).interactable = CanTransformScene(tool);
         var name = catalog
             ? (
-                _sceneFilter == "Props" && _sceneRoots.TryGetValue(_catalogSelection, out var source) && source
+                (_sceneFilter == "Props" || _sceneFilter == "Doors") && _sceneRoots.TryGetValue(_catalogSelection, out var source) && source
                     ? source.name
                     : _selectedCatalogEntry?.Name
             ) ?? "Select an item"
@@ -92,7 +99,13 @@ public sealed partial class RaidEditor
                     ? (
                         _selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0
                             ? CatalogError(_selectedCatalogEntry)
-                            : "Place on a surface, then refine with the transform handles. Escape cancels."
+                        : _placementLifetime != null
+                            ? (
+                                _repeatPlacement
+                                    ? "Click surfaces to place copies · Escape finishes."
+                                    : "Click a surface to place · Escape cancels."
+                            )
+                        : "Select an item to preview. Place or double-click to begin placement."
                     )
                 : sceneKind == "Door" ? "Use Door state to cycle the saved native state. Remove clears it from this layout."
                 : point == null ? "Choose Move or Rotate to edit this object. Remove hides it in this layout."
@@ -119,7 +132,24 @@ public sealed partial class RaidEditor
         view.Get<Button>("SceneAnchor").interactable = _drag == null && _placementLifetime == null && !_walking;
         view.Caption("SceneAnchor", _centerAnchor ? "Anchor: Center" : "Anchor: Pivot");
         PresentSceneThumbnails();
+        if (_sceneFilter == "Doors")
+        {
+            view.Visible("CatalogViews", false);
+            view.Text("LibraryCount", _rows.Count + " doors · grouped by scene");
+            if (catalog && _sceneRoots.TryGetValue(_catalogSelection, out var doorSource) && doorSource)
+            {
+                var reason = SceneDoorPlacement.Restriction(doorSource);
+                view.Get<Button>("ScenePlace").interactable = CanSceneEdit && _placementLifetime == null && reason.Length == 0;
+                view.Text(
+                    "SceneInfo",
+                    reason.Length > 0
+                        ? reason
+                        : "Place a new interactive door from this map. Configure its key and starting state after placement."
+                );
+            }
+        }
         PresentPickedProperties();
+        PresentDoorControls();
         if (_mapScene?.Loading == true)
             view.Text("SceneInfo", "Loading placed item models…");
         if (_sceneSelectionError.Length == 0 && _mapScene?.TargetErrors.Count > 0)
@@ -150,7 +180,7 @@ public sealed partial class RaidEditor
         var catalog = _sceneTab == "Catalog";
         var wanted = new HashSet<string> { _sceneFilter + ":" + _catalogSelection };
         view.SetRowThumbnails(catalog);
-        if (catalog)
+        if (catalog && _sceneFilter != "Doors")
             for (var i = LibraryOffset; i < Math.Min(_rows.Count, LibraryOffset + LibraryPageSize); i++)
                 wanted.Add(_sceneFilter + ":" + _rows[i].Id);
         for (var i = _thumbnailQueue.Count - 1; i >= 0; i--)
@@ -165,7 +195,7 @@ public sealed partial class RaidEditor
         for (var i = 0; i < view.RowCapacity; i++)
         {
             var index = LibraryOffset + i;
-            var visible = catalog && i < LibraryPageSize && index < _rows.Count;
+            var visible = catalog && _sceneFilter != "Doors" && i < LibraryPageSize && index < _rows.Count;
             view.Visible("SceneIcon" + i, visible);
             if (!visible)
             {
@@ -221,7 +251,7 @@ public sealed partial class RaidEditor
         if (!_previews.Request(key))
             return;
         var job = new ThumbnailJob { Id = id, Key = key };
-        if (_sceneFilter == "Props" && !AssetCatalog)
+        if ((_sceneFilter == "Props" || _sceneFilter == "Doors") && !AssetCatalog)
             _sceneRoots.TryGetValue(id, out job.Source);
         else
         {

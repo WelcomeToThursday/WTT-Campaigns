@@ -1,0 +1,17 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="ConflictShield" class="editor-modal-shield">
+        <ui:VisualElement name="Conflict" class="editor-modal">
+            <ui:Label name="ConflictHeading" class="editor-label" text="Resolve draft conflict" picking-mode="Ignore" />
+            <ui:Label name="ConflictPath" class="editor-label" picking-mode="Ignore" />
+            <ui:TextField name="LocalConflict" class="editor-field editor-conflict-text editor-hidden" label="Local version" multiline="true" readonly="true" />
+            <ui:TextField name="RemoteConflict" class="editor-field editor-conflict-text editor-hidden" label="Remote version" multiline="true" readonly="true" />
+            <ui:ScrollView name="ConflictRows" class="editor-conflict-rows" />
+            <ui:Label name="ConflictExplanation" class="editor-label" text="Keep local uses your local candidate for all conflicts. Keep remote uses the remote candidate for all conflicts. Neither button resolves only the highlighted field." />
+            <ui:VisualElement name="ConflictActions" class="editor-actions editor-action-row">
+                <ui:Button name="KeepLocal" class="editor-action" text="Keep all local" />
+                <ui:Button name="KeepRemote" class="editor-action" text="Keep all remote" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

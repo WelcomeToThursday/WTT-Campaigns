@@ -26,6 +26,7 @@ public sealed partial class StoryService(
     ICloner cloner,
     HubGameplay commits,
     QuestController quests,
+    SPTarkov.Server.Core.Helpers.Traders.TraderHelper traderHelper,
     JsonUtil json,
     TemplateTable templates
 )
@@ -256,6 +257,7 @@ public sealed partial class StoryService(
             }
         );
         StoryStore.Write(staged.CharacterData!.PmcData!, state);
+        RefreshMissionLinksUnderLease(active.Id, staged, request.SeasonId, facts);
         await commits.Commit(new MongoId(active.Id), active.Profile, staged);
         if (preparation != null)
         {

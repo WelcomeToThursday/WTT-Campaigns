@@ -89,7 +89,7 @@ public sealed class DraftEnvelope
 }
 
 [Injectable(InjectionType.Singleton)]
-public sealed class SeasonRepository
+public sealed partial class SeasonRepository
 {
     private readonly object _gate = new();
     private readonly string _root;
@@ -438,7 +438,15 @@ public sealed class SeasonRepository
         }
     }
 
-    public DraftEnvelope Create(bool duplicate, SeasonDefinition? source = null)
+    public DraftEnvelope CreateLevel(string name, string location)
+    {
+        name = name.Trim();
+        if (name.Length is < 1 or > 120 || string.IsNullOrWhiteSpace(location) || location.Length > 120 || location == "hideout")
+            throw new InvalidOperationException("Enter a level name (up to 120 characters) and choose a raid location.");
+        return Create(false, levelName: name, levelLocation: location);
+    }
+
+    public DraftEnvelope Create(bool duplicate, SeasonDefinition? source = null, string? levelName = null, string? levelLocation = null)
     {
         source ??= duplicate ? Current.Definition : Legacy;
         var definition = Duplicate(source);
@@ -461,6 +469,8 @@ public sealed class SeasonRepository
             definition.MapLayouts.Clear();
             definition.Dependencies.Clear();
             definition.Missions = new();
+            definition.MissionLinks = new();
+            definition.MissionPackage = null;
             definition.Story = null;
             definition.Offers = new();
             definition.TraderOffers = new();
@@ -485,6 +495,21 @@ public sealed class SeasonRepository
             };
             definition.Locales = new() { ["en"] = new() };
         }
+        if (levelName != null)
+        {
+            // Reuse the existing storage/publishing envelope without a user-selected campaign.
+            definition.Name = levelName;
+            definition.FormatVersion = Math.Max(definition.FormatVersion, 4);
+            definition.MapLayouts.Add(
+                new()
+                {
+                    Id = NewId(),
+                    Name = levelName,
+                    Location = levelLocation!,
+                    ApplyInNormalRaids = false,
+                }
+            );
+        }
         return Save(new DraftEnvelope { Id = NewId(), Definition = definition });
     }
 
@@ -500,6 +525,7 @@ public sealed class SeasonRepository
                 .Concat(source.AllRewards.Select(r => r.Id))
                 .Concat(source.Quests.Select(q => q.Id))
                 .Concat(source.Missions.Select(m => m.Id))
+                .Concat(source.Missions.SelectMany(m => m.Events.Select(e => e.Id).Concat(m.Objectives.Select(o => o.Id))))
         )
         {
             source.Id,
@@ -514,6 +540,7 @@ public sealed class SeasonRepository
         );
         owned.UnionWith(WTT.Campaigns.Shared.Story.StoryContent.OwnedIds(source.Story));
         owned.UnionWith(source.TraderOffers.SelectMany(o => o.Items).Select(i => i.Id));
+        owned.UnionWith(source.MissionLinks.Select(l => l.Id));
         owned.UnionWith(source.Zones.Select(z => z.Id));
         owned.UnionWith(source.Crafts.Select(c => c.Id));
         owned.UnionWith(source.Captures.Select(c => c.Id));
@@ -525,6 +552,9 @@ public sealed class SeasonRepository
             {
                 return replacement;
             }
+            var colon = text.IndexOf(':');
+            if (colon == 24 && replacements.TryGetValue(text.Substring(0, colon), out var encounterReplacement))
+                return encounterReplacement + text.Substring(colon);
             // Locale keys are identity + suffix, not arbitrary prose substitutions.
             var space = text.IndexOf(' ');
             return space == 24 && replacements.TryGetValue(text.Substring(0, 24), out replacement)
@@ -532,7 +562,12 @@ public sealed class SeasonRepository
                 : text;
         }
         var copy = SeasonCompiler.Copy(source);
+        var linkedPackages = copy.MissionLinks.Select(l => l.Package).ToList();
+        foreach (var link in copy.MissionLinks)
+            link.Package = new();
         ModelGraph.Rewrite(copy, Replace);
+        for (var i = 0; i < copy.MissionLinks.Count; i++)
+            copy.MissionLinks[i].Package = linkedPackages[i];
         copy.Name = source.Name + " copy";
         copy.Revision = 0;
         copy.Version = "1.0.0";
@@ -690,6 +725,7 @@ public sealed class SeasonRepository
             var bytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(definition, Formatting.Indented));
             var manifest = new SeasonManifest
             {
+                ContentKind = definition.MissionPackage == null ? "Campaign" : "Mission",
                 FormatVersion = definition.FormatVersion,
                 SeasonId = definition.Id,
                 BattlePassId = definition.BattlePassId,
@@ -725,7 +761,7 @@ public sealed class SeasonRepository
         var folder = Path.Combine(_root, "packs", CheckId(key));
         var manifest = Read<SeasonManifest>(Path.Combine(folder, "manifest.json"));
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
         )
@@ -747,7 +783,8 @@ public sealed class SeasonRepository
         }
         var definition = Read<SeasonDefinition>(Path.Combine(folder, "definition.json"));
         if (
-            definition.FormatVersion != manifest.FormatVersion
+            manifest.ContentKind != (definition.MissionPackage == null ? "Campaign" : "Mission")
+            || definition.FormatVersion != manifest.FormatVersion
             || definition.Id != manifest.SeasonId
             || definition.BattlePassId != manifest.BattlePassId
             || definition.Revision != manifest.Revision
@@ -764,6 +801,8 @@ public sealed class SeasonRepository
     {
         lock (_gate)
         {
+            if (Pack(key).MissionPackage != null)
+                throw new InvalidOperationException("Mission packages cannot be selected as campaigns.");
             CheckGameplay(Pack(key));
             var next = SeasonCompiler.Copy(Selection);
             next.Pending = key;
@@ -777,6 +816,8 @@ public sealed class SeasonRepository
     {
         lock (_gate)
         {
+            if (Pack(key).MissionPackage != null)
+                throw new InvalidOperationException("Mission packages cannot be selected as campaigns.");
             var snapshot = new SeasonRuntimeSnapshot(Pack(key));
             var next = new SeasonSelection { Active = key };
             Atomic(SelectionPath, JsonConvert.SerializeObject(next, Formatting.Indented));
@@ -1011,7 +1052,7 @@ public sealed class SeasonRepository
         }
         var manifest = JsonConvert.DeserializeObject<SeasonManifest>(Encoding.UTF8.GetString(Entry("manifest.json")))!;
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
             || manifest.Files.Count != zip.Entries.Count - 1
@@ -1030,7 +1071,8 @@ public sealed class SeasonRepository
 
         var definition = JsonConvert.DeserializeObject<SeasonDefinition>(Encoding.UTF8.GetString(Entry("definition.json")))!;
         if (
-            definition.FormatVersion != manifest.FormatVersion
+            manifest.ContentKind != (definition.MissionPackage == null ? "Campaign" : "Mission")
+            || definition.FormatVersion != manifest.FormatVersion
             || definition.Id != manifest.SeasonId
             || definition.BattlePassId != manifest.BattlePassId
             || definition.Revision != manifest.Revision

@@ -21,6 +21,8 @@ internal static class EditorLayoutSpec
 
     private static Node B(string id, string text) => new("button", id, text);
 
+    private static Node Check(string id, string text) => new("toggle", id, text);
+
     private static Node T(string id, string text) => new("text", id, text);
 
     private static Node I(string id, string text) => new("input", id, text);
@@ -42,7 +44,7 @@ internal static class EditorLayoutSpec
     {
         R(
             "WorkspaceTitleBar",
-            T("WorkspaceTitle", "CAMPAIGN EDITOR · BETA"),
+            T("WorkspaceTitle", "EDITOR · BETA"),
             T("Connection", "Connecting…"),
             B("ContextToggle", "Session"),
             B("WindowsToggle", "Windows"),
@@ -66,6 +68,7 @@ internal static class EditorLayoutSpec
                 B("EditorWalk", "Walkthrough"),
                 B("AiObserve", "Observe"),
                 B("AiPlaytest", "Playtest"),
+                B("TestCheckpoints", "Test checkpoints"),
                 new Node("choice", "AiPlaytestGear", "Playtest kit"),
                 B("EditorReset", "Reset preview")
             )
@@ -75,6 +78,7 @@ internal static class EditorLayoutSpec
             B("Layouts", "Layouts"),
             B("Routes", "Routes"),
             B("Zones", "Zones"),
+            B("Hazards", "Hazards"),
             B("Bindings", "Events"),
             B("Captures", "Captures"),
             B("Scene", "Scene"),
@@ -85,14 +89,7 @@ internal static class EditorLayoutSpec
             "Library",
             I("Search", "Search"),
             R("SceneTabs", B("SceneCatalog", "Catalog"), B("SceneExisting", "In scene"), B("SceneChanges", "Changes")),
-            R(
-                "SceneFilters",
-                new Node("choice", "SceneSource", "Source"),
-                B("SceneProps", "Props"),
-                B("SceneContainers", "Containers"),
-                B("SceneLoot", "Loot"),
-                B("ScenePresets", "Presets")
-            ),
+            R("SceneFilters", new Node("choice", "SceneSource", "Source"), new Node("choice", "SceneFilter", "Filter")),
             R("CatalogViews", B("CatalogGrid", "Grid"), B("CatalogList", "List")),
             new Node("browser", "LibraryScroll", ""),
             T("LibraryCount", "No records"),
@@ -100,6 +97,10 @@ internal static class EditorLayoutSpec
             R(
                 "CreationTools",
                 B("AddBox", "+ Box"),
+                B("AddMinefield", "+ Minefield"),
+                B("AddClaymore", "+ Claymore"),
+                B("AddSniper", "+ Sniper zone"),
+                B("AddBarbedWire", "+ Barbed wire"),
                 B("AddSphere", "+ Sphere"),
                 B("Capture", "Capture"),
                 B("Pick", "Pick scenery"),
@@ -160,7 +161,7 @@ internal static class EditorLayoutSpec
                     G(
                         "ContainerAccessSection",
                         T("ContainerAccessHeading", "ACCESS"),
-                        A("ContainerLockGroup", "ContainerLock", "Unlocked"),
+                        G("ContainerLockGroup", Check("ContainerLock", "Locked")),
                         T("ContainerKey", "No key selected"),
                         F("ContainerKeySearch", "Find a key"),
                         C("ContainerKeyItem", "Keys"),
@@ -181,7 +182,7 @@ internal static class EditorLayoutSpec
                     G("SceneHeadingGroup", T("SceneHeading", "Select an object")),
                     A("ScenePreviewRetryGroup", "ScenePreviewRetry", "Retry preview"),
                     R("SceneFocusGroup", B("SceneFrame", "Frame (F)"), B("SceneAnchor", "Anchor: Center")),
-                    A("ScenePlaceGroup", "ScenePlace", "Place"),
+                    R("ScenePlaceGroup", B("ScenePlace", "Place"), Check("SceneRepeat", "Repeat placement")),
                     R(
                         "SceneEditGroup",
                         B("SceneMove", "Move (W)"),
@@ -201,9 +202,15 @@ internal static class EditorLayoutSpec
                     V("Rotation", "ROTATION · degrees"),
                     V("Size", "BOX DIMENSIONS · metres"),
                     F("Radius", "SPHERE RADIUS · metres"),
-                    R("PlacementGroup", B("AtFeet", "At player"), B("AtAim", "At aim point")),
-                    R("ZoneUsesGroup", B("InZone", "In zone"), B("VisitPlace", "Visit"), B("LeaveItemAtLocation", "Place item")),
+                    R("PlacementGroup", B("AtAim", "At aim point")),
+                    G("ZoneUsesGroup", T("ZoneUsesCaption", "ZONE TYPE"), new Node("choice", "ZoneUses", "Select zone types")),
                     C("ZoneScope", "ZONE SCOPE"),
+                    G("HazardInfoGroup", T("HazardInfo", "")),
+                    G(
+                        "SniperSoundGroup",
+                        G("SniperPlaySoundGroup", Check("SniperPlaySound", "Play shot sound")),
+                        G("SniperSuppressedGroup", Check("SniperSuppressed", "Suppressed shots"))
+                    ),
                     R("SceneActionsGroup", B("Parent", "Select parent"), B("UseObject", "Use scene target")),
                     R("RecordActionsGroup", B("Duplicate", "Duplicate"), B("Delete", "Delete")),
                     G("DetailsGroup", T("Details", "")),
@@ -219,13 +226,13 @@ internal static class EditorLayoutSpec
                         "AiWaveSection",
                         T("AiWaveHeading", "WAVE TIMING"),
                         F("AiWaveDelaySeconds", "Delay (seconds)"),
-                        A("AiWaveWaitPreviousGroup", "AiWaveWaitPrevious", "Wave wait mode")
+                        G("AiWaveWaitPreviousGroup", Check("AiWaveWaitPrevious", "Wait for previous wave defeat"))
                     ),
                     G(
                         "AiRosterSection",
                         T("AiRosterHeading", "BOT ROSTER"),
-                        A("AiRosterRoleGroup", "AiRosterRole", "Roster role"),
-                        A("AiRosterDifficultyGroup", "AiRosterDifficulty", "Roster difficulty"),
+                        C("AiRosterRole", "Role"),
+                        C("AiRosterDifficulty", "Difficulty"),
                         F("AiRosterCount", "Bot count"),
                         F("AiRosterSquadId", "Squad name")
                     ),
@@ -241,8 +248,8 @@ internal static class EditorLayoutSpec
                     G(
                         "AiPatrolSection",
                         T("AiPatrolHeading", "PATROL MOVEMENT"),
-                        A("AiPaceGroup", "AiPace", "Patrol pace"),
-                        A("AiCompletionGroup", "AiCompletion", "Patrol completion"),
+                        C("AiPace", "Pace"),
+                        C("AiCompletion", "Route end"),
                         F("AiWaypointWaitSeconds", "Wait (seconds)")
                     )
                 ),
@@ -250,13 +257,33 @@ internal static class EditorLayoutSpec
                     "MapInspector",
                     G("RouteGuideGroup", T("RouteGuide", "")),
                     F("MapName", "Name"),
+                    G(
+                        "DoorInspectorGroup",
+                        C("DoorStartState", "Starting state"),
+                        F("DoorKeyId", "Key ID"),
+                        F("DoorKeySearch", "Find key by name"),
+                        C("DoorKeyResults", "Matching keys"),
+                        B("DoorUseKey", "Use selected key"),
+                        B("DoorOriginalKey", "Use original key"),
+                        C("DoorBreach", "Breaching"),
+                        C("DoorOperatable", "Interaction"),
+                        T("DoorHelp", "")
+                    ),
+                    G("MapNormalRaidGroup", Check("MapNormalRaid", "Apply in normal raids")),
+                    G(
+                        "MapLayerHelpGroup",
+                        T(
+                            "MapLayerHelp",
+                            "After publication: regular characters combine enabled layers from all published campaigns; campaign characters use their own campaign. Scenery, doors, barriers, loot, layout zones, hazards and additional extracts apply. Native PMC spawning and AI remain unchanged."
+                        )
+                    ),
                     V("MapPosition", "POSITION · metres"),
                     V("MapRotation", "ROTATION · degrees"),
                     V("MapSize", "SIZE / SCALE"),
                     A("MapShapeGroup", "MapShape", "Shape: box"),
                     R("MapPlacementGroup", B("MapRebind", "Rebind to picked"), B("MapAtPlayer", "At player")),
                     R("MapOrderGroup", B("MapEarlier", "Earlier checkpoint"), B("MapLater", "Later checkpoint")),
-                    A("MapWalkGroup", "MapWalkStart", "Walk from marker: off"),
+                    G("MapWalkGroup", Check("MapWalkStart", "Start walkthrough at marker")),
                     R("MapRecordActions", B("MapCopy", "Duplicate"), B("MapDelete", "Delete")),
                     G("MapDetailsGroup", T("MapDetails", "")),
                     A("MapDetailsToggleGroup", "MapDetailsToggle", "Details +"),
@@ -331,7 +358,14 @@ internal static class EditorLayoutSpec
         ),
         G("ContextMenu", B("EditorUnload", "Unload map / return home"), B("EnvironmentToggle", "Environment / time and weather")),
         R("CaptureTask", T("CaptureRequest", ""), B("Complete", "Complete capture"), B("Cancel", "Cancel")),
-        R("StatusBar", T("Status", ""), T("Request", "")),
+        R(
+            "StatusBar",
+            T("Status", ""),
+            T("PreviewStatus", ""),
+            B("NoticeToggle", "Notice..."),
+            G("NoticePanel", new Node("scroll", "NoticeScroll", "", T("NoticeText", "")), B("NoticeDismiss", "Dismiss notice")),
+            T("Request", "")
+        ),
         T("EditorWalkStatus", "Esc to return to editing"),
         G(
             "ConflictShield",
@@ -341,7 +375,9 @@ internal static class EditorLayoutSpec
                 T("ConflictPath", ""),
                 I("LocalConflict", "Local version"),
                 I("RemoteConflict", "Remote version"),
-                R("ConflictActions", B("KeepLocal", "Keep local"), B("KeepRemote", "Keep remote"))
+                new Node("scroll", "ConflictRows", ""),
+                T("ConflictExplanation", ""),
+                R("ConflictActions", B("KeepLocal", "Keep all local"), B("KeepRemote", "Keep all remote"))
             )
         ),
     };

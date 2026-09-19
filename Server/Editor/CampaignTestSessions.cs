@@ -23,7 +23,7 @@ using WTT.Campaigns.Shared.Seasons;
 namespace WTT.Campaigns.Server.Editor;
 
 /// <summary>
-/// Owns full campaign rehearsals started by Campaign Editor. Each rehearsal
+/// Owns full campaign rehearsals started by Editor. Each rehearsal
 /// receives a duplicated, isolated campaign snapshot and a normal native PMC;
 /// only the control endpoints are editor-authenticated. The profile and its
 /// account link are process-local and are tombstoned when retired so late
@@ -451,7 +451,7 @@ public sealed class CampaignTestSessions(
         MissionResponse? missionResponse = null;
         try
         {
-            missionResponse = missions.Read(
+            missionResponse = await missions.Read(
                 state.TestId,
                 new MissionRequest
                 {

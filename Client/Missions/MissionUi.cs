@@ -1,5 +1,4 @@
 using EFT;
-using EFT.Bots;
 using EFT.UI;
 using UnityEngine;
 using UnityEngine.UI;
@@ -38,7 +37,7 @@ internal sealed class MissionUi : MonoBehaviour
             return !Authoring.EditorMode.Active
                 && !Plugin.InRaid
                 && !Plugin.Busy
-                && Plugin.Current?.ActiveMode == "seasonal"
+                && Plugin.Current != null
                 && Plugin.Current.EffectiveProfileId.Length > 0
                 && app?.Session?.Profile?.Id == Plugin.Current.EffectiveProfileId;
         }
@@ -51,12 +50,7 @@ internal sealed class MissionUi : MonoBehaviour
 
     private void Update()
     {
-        if (
-            Authoring.EditorMode.Active
-            || Plugin.InRaid
-            || Plugin.Current?.ActiveMode != "seasonal"
-            || Plugin.App?.Session?.Profile?.Id != Plugin.Current?.EffectiveProfileId
-        )
+        if (Authoring.EditorMode.Active || Plugin.InRaid || Plugin.App?.Session?.Profile?.Id != Plugin.Current?.EffectiveProfileId)
         {
             if (IsOpen)
                 Close();
@@ -166,7 +160,7 @@ internal sealed class MissionUi : MonoBehaviour
                     Briefing = definition.Briefing,
                     Location = definition.LayoutId,
                     Status = summary.Status,
-                    FailureReason = summary.FailureReason,
+                    FailureReason = summary.LockReason.Length > 0 ? summary.LockReason : summary.FailureReason,
                     Objectives = new[] { "Complete every authored checkpoint in order", "Extract from the authored exit" },
                     Unlocked = summary.Unlocked,
                     Completed = summary.Completed,
@@ -174,7 +168,10 @@ internal sealed class MissionUi : MonoBehaviour
                     CanDeploy = summary.Unlocked && !summary.Active,
                     CanReplay = summary.Completed,
                     CanResume =
-                        summary.Active && response.Run?.MissionId == definition.Id && response.Run?.Status == MissionRunStatuses.Prepared,
+                        summary.Active
+                        && summary.Status != "Unavailable"
+                        && response.Run?.MissionId == definition.Id
+                        && response.Run?.Status == MissionRunStatuses.Prepared,
                     CanCancel = summary.Active && response.Run?.MissionId == definition.Id,
                 };
             })
@@ -215,7 +212,8 @@ internal sealed class MissionUi : MonoBehaviour
                         prepared.Run.RunId,
                         prepared.Run.RaidId,
                         prepared.Revision,
-                        operationId: MissionClient.NewOperationId()
+                        operationId: MissionClient.NewOperationId(),
+                        attemptGeneration: prepared.Run.AttemptGeneration
                     );
                     _prepareMissionId = "";
                     _prepareOperationId = "";
@@ -255,16 +253,12 @@ internal sealed class MissionUi : MonoBehaviour
             .SingleOrDefault(l => l.Id == descriptor.Layout.Location);
         if (location == null)
             throw new InvalidOperationException("The mission map is not installed: " + descriptor.Layout.Location);
-        app.CurrentRaidSettings.SelectedLocation = location;
-        app.CurrentRaidSettings.RaidMode = ERaidMode.Local;
-        app.CurrentRaidSettings.BotSettings = new BotControllerSettings(false, EBotAmount.NoBots);
-        app.CurrentRaidSettings.Side = ESideType.Pmc;
-        app.CurrentRaidSettings.IsPveOffline = false;
+        app._raidSettings = LocalRaidLaunch.CreateSettings(app.Session.LocationSettings, location);
         app.Matchmaker.MatchingStartTime = DateTimeExtensions.Now;
         _screen?.Close();
         _blockedThrough = Time.frameCount + 1;
         using (UI.NativeLoadingStatus.Begin("Deploying campaign mission…"))
-            await app.LocalGameMatching(new TimeAndWeatherSettings(false, false, 0, 0, 0, 0, (int)ETimeFlowType.x0, 12));
+            await app.LocalGameMatching(app.CurrentRaidSettings.TimeAndWeatherSettings);
         if (!Plugin.InRaid)
             throw new InvalidOperationException("Mission loading did not create a local raid.");
     }
@@ -349,7 +343,8 @@ internal sealed class MissionUi : MonoBehaviour
                         prepared.Run.RunId,
                         prepared.Run.RaidId,
                         prepared.Revision,
-                        operationId: MissionClient.NewOperationId()
+                        operationId: MissionClient.NewOperationId(),
+                        attemptGeneration: prepared.Run.AttemptGeneration
                     );
                     if (cancelled.Run == null || MissionRunStatuses.IsTerminal(cancelled.Run.Status))
                     {
@@ -394,7 +389,8 @@ internal sealed class MissionUi : MonoBehaviour
                 response.Run.RunId,
                 response.Run.RaidId,
                 response.Revision,
-                operationId: MissionClient.NewOperationId()
+                operationId: MissionClient.NewOperationId(),
+                attemptGeneration: response.Run.AttemptGeneration
             );
             _lastResponse = cancelled;
             _revision = cancelled.Revision;

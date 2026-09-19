@@ -21,7 +21,12 @@ internal sealed partial class RaidEditorView : IDisposable
     internal bool Valid => !_disposed && Root;
     internal bool PointerOver => Document.PointerOver;
     internal bool Typing =>
-        Document.Typing || NumericDragging || Windows.Interacting || Windows.MenuDismissedThisFrame || _choicePopup != null;
+        Document.Typing
+        || _dropdownDismissFrame == Time.frameCount
+        || NumericDragging
+        || Windows.Interacting
+        || Windows.MenuDismissedThisFrame
+        || _choicePopup != null;
     private bool NumericDragging
     {
         get
@@ -54,16 +59,18 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal RaidEditorView()
     {
-        Document = new EditorToolkitDocument("Campaign Editor", 32100);
+        Document = new EditorToolkitDocument("Editor", 32100);
         try
         {
             Build();
             Windows = new EditorToolkitWindows(this);
             EditorLayoutPreferences.Attach(Windows);
+            BuildUsability();
             Document.Tick = () =>
             {
                 Windows.Tick();
                 PollCatalogCapacity();
+                RefreshUsability();
             };
             Document.Escape = () =>
             {
@@ -79,6 +86,14 @@ internal sealed partial class RaidEditorView : IDisposable
                 }
                 else if (DismissDropdowns() || Windows.DismissMenus())
                     Document.EscapeFrame = Time.frameCount;
+            };
+            Document.CancelTyping = () =>
+            {
+                if (DismissDropdowns())
+                    return;
+                foreach (var input in _inputs)
+                    if (input.isFocused)
+                        input.CancelEdit();
             };
         }
         catch
@@ -118,19 +133,23 @@ internal sealed partial class RaidEditorView : IDisposable
     internal void Caption(string name, string value)
     {
         var button = Get<EditorButton>(name);
-        button.Element.tooltip = value;
+        button.Element.tooltip = button.Help.Length == 0 ? value : button.Help + "\nCurrent: " + value;
         if (!button.Element.ClassListContains("editor-icon-button"))
             button.text = value;
     }
 
     internal void Highlight(string name, bool selected) => Element(name).EnableInClassList("editor-selected", selected);
 
+    internal bool IsChecked(string name) => ((Toggle)Element(name)).value;
+
+    internal void Checked(string name, bool value) => ((Toggle)Element(name)).SetValueWithoutNotify(value);
+
     internal void Button(string name, Action action)
     {
         foreach (var (tool, control) in Matching(name))
             ((EditorButton)control).onClick.AddListener(() =>
             {
-                if (Activate(tool))
+                if (AllowsAction(name) && Activate(tool))
                     action();
             });
     }
@@ -158,7 +177,7 @@ internal sealed partial class RaidEditorView : IDisposable
     internal void Value(string name, string value)
     {
         var input = Get<EditorInput>(name);
-        if (!input.isFocused && input.text != value)
+        if (!input.isFocused && !input.Invalid && input.text != value)
             input.SetTextWithoutNotify(value);
     }
 
@@ -167,55 +186,6 @@ internal sealed partial class RaidEditorView : IDisposable
         var choice = Get<EditorChoice>(name);
         choice.options = options;
         choice.SetValueWithoutNotify(Mathf.Clamp(value, 0, Math.Max(0, options.Count - 1)));
-    }
-
-    internal bool DismissDropdowns()
-    {
-        if (_choicePopup == null)
-            return false;
-        _choicePopup.RemoveFromHierarchy();
-        _choicePopup = null;
-        return true;
-    }
-
-    private void OpenChoice(EditorChoice choice)
-    {
-        if (!choice.interactable)
-            return;
-        DismissDropdowns();
-        var shield = new VisualElement();
-        shield.AddToClassList("editor-popup-shield");
-        _choicePopup = shield;
-        Document.Content.Add(shield);
-        shield.RegisterCallback<PointerDownEvent>(evt =>
-        {
-            if (evt.target == shield)
-                DismissDropdowns();
-        });
-        var list = new ScrollView();
-        EditorScrollStyle.Apply(list);
-        list.AddToClassList("editor-choice-menu");
-        var rect = choice.Element.worldBound;
-        list.style.left = Mathf.Clamp(rect.x, 8, Document.Width - 308);
-        list.style.top = Mathf.Clamp(rect.yMax, 8, Document.Height - 248);
-        list.style.width = Mathf.Max(250, Mathf.Min(rect.width, Document.Width - 16));
-        list.style.maxHeight = 240;
-        shield.Add(list);
-        for (var i = 0; i < choice.options.Count; i++)
-        {
-            var index = i;
-            var button = new Button(() =>
-            {
-                DismissDropdowns();
-                choice.SetValueWithoutNotify(index);
-                choice.onValueChanged.Invoke(index);
-            })
-            {
-                text = choice.options[i].text,
-            };
-            button.EnableInClassList("editor-selected", i == choice.value);
-            list.Add(button);
-        }
     }
 
     internal void SetToolkitContext(string context)
@@ -235,10 +205,10 @@ internal sealed partial class RaidEditorView : IDisposable
         Windows.KeepModalOnTop();
         if (conflict == null)
             return;
-        Text("ConflictPath", conflict.Conflicts.AsValueEnumerable().Select(c => c.Path).JoinToString("\n"));
-        Value("LocalConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Local).JoinToString("\n\n"));
-        Value("RemoteConflict", conflict.Conflicts.AsValueEnumerable().Select(c => c.Remote).JoinToString("\n\n"));
+        PresentConflicts(conflict);
     }
+
+    private readonly WTT.Campaigns.Shared.Spatial.MapLayout _levelRoute = new();
 
     internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected, long layoutRevision = 0)
     {
@@ -248,6 +218,13 @@ internal sealed partial class RaidEditorView : IDisposable
             return;
         }
         _routeOverlay.style.display = DisplayStyle.Flex;
+        if (ContentMode != WTT.Campaigns.Shared.Authoring.EditorContentMode.Mission)
+        {
+            _levelRoute.Id = layout.Id;
+            _levelRoute.Location = layout.Location;
+            _levelRoute.Exit = layout.Exit;
+            layout = _levelRoute;
+        }
         _routeOverlay.Refresh(layout, camera!, selected, layoutRevision);
     }
 

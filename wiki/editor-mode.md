@@ -1,18 +1,22 @@
-# Campaign Editor and mission map layouts
+# Mission Editor and Level Editor
 
 Campaign Editor provides a restricted workspace for authoring the spatial part of a mission. Detailed story, quest and item forms remain in the web Creator. AI encounter authoring and previews are covered in [AI encounters and patrols](ai-encounters.md). See [Missions](missions.md) for playable mission raids, quest unlocks, replays, and disposable testing.
 
 ## Enter the workspace
 
-From the normal main menu, choose **Campaign Editor**. Pending character operations finish before the client reconnects to a disposable editor character. Entry is unavailable during a raid.
+From the normal main menu, choose **Editor**. The name and tools automatically change to **Mission Editor** for independent or legacy mission-owned layouts, and **Level Editor** for ordinary-raid layouts. The enablement checkbox does not determine the editor mode. Pending character operations finish before the client reconnects to a disposable editor character. Entry is unavailable during a raid.
 
 For future launches, set **Campaign editor → Startup mode** to **Editor** in the client configuration, or use the startup button on editor home. Continue launching through the usual SPT launcher. The default is **Normal**. **Return to game** restores the character selected before entry and does not change this preference.
 
-Editor startup opens directly into the full-screen **Campaign Editor** after authentication, using the native EFT menu environment and controls. It also returns here after unloading a map. Select a draft, layout or location from its scrollable choice list. Existing layouts keep their assigned location; choose **New layout in a map** to select another location, then **Open map**. **Refresh drafts** reloads draft choices. If there are no drafts, **Open Creator** to create one first. A failed connection leaves **Retry connection** and **Return to game** available. **Esc** closes a choice list first, or returns to your game character from home. The startup preference remains unchanged when you return.
+Editor home has separate **Missions** and **Levels** tabs. Missions selects mission content and layouts; campaign missions remain mission-only. Levels lists individual ordinary-raid layouts directly, without choosing a campaign. Existing ordinary layouts retain their source identities and enablement settings. Use **New Level**, enter its name, choose a map, then **Create & Open Level**. This creates a separate backing draft using existing storage; it does not publish or enable the level. Mission and campaign tests appear only on Missions, with campaign testing requiring story context. **Refresh levels** reloads the level library. **Esc** closes a choice list first, or returns to your game character from home.
+
+## Web editors
+
+Use the **Campaigns**, **Missions**, and **Levels** navigation in Creator. The Level library lists individual ordinary layouts and creates new levels from a name and map. Its editor shows only the selected layout and its owned zones, without mission AI or checkpoint controls. Mission layouts cannot be opened by a Level editor link. The in-game **Open Creator** button links directly to the selected level. Legacy shared drafts retain all other content; publishing a shared draft still publishes that entire saved draft.
 
 ## Build a route
 
-The workspace includes **Layouts**, **Routes**, **Scene**, **AI**, **Zones**, **Events** and **Captures**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.
+The workspace includes **Layouts**, **Routes**, **Scene**, **AI**, **Zones**, **Hazards**, **Events** and **Captures**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.
 
 Hierarchical browsers share an expandable tree: **Routes** groups ordered markers under their layouts, **AI** groups encounters, waves, rosters, and patrol waypoints, and **Zones** separates Shared zones from the selected layout's zones. Use a branch arrow to expand or collapse it and select a record's name to open its properties. Search retains the parent context of matching records; clearing it restores your branch state. Trees scroll continuously without pages. Selecting a route marker also selects its owning layout.
 
@@ -27,7 +31,7 @@ Hierarchical browsers share an expandable tree: **Routes** groups ordered marker
 
 Zones can be **Shared** or belong to a specific layout. Existing zones remain Shared. Choose Shared to author a zone independently of layouts, or the current layout to keep it with that layout. The Zones library shows shared zones alongside zones for the selected layout; switching layouts hides zones belonging to other layouts. You can change a zone's scope later, including returning it to Shared. Creator exposes the same choice in the zone properties.
 
-Duplicating a layout copies its zones with new identities. Deleting a layout removes its owned zones only when they are no longer referenced; reassign quest or story references first. Shared zones are unaffected. Layout zones are editor content and do not activate in ordinary raids; Shared zones retain their existing gameplay behavior. Drafts can reference layout zones, but publishing quests or story content that depends on them requires Shared zones until layout raids are supported.
+Duplicating a layout copies its zones with new identities. Deleting a layout removes its owned zones only when they are no longer referenced; reassign quest or story references first. Shared zones are unaffected. Enabled ordinary-raid levels activate their own zones and hazards. Publishing quest/story references to level zones requires an enabled level; Shared zones retain their existing campaign behavior. Level Editor creates new zones on the selected layout.
 
 ## Dress the scene
 
@@ -41,7 +45,7 @@ Select a catalog entry and press **Place**. Point at a surface and click once to
 
 For an existing object, choose **Move** or **Rotate** to create its layout override. Changes appear immediately. **Remove** hides an original object, but deletes an authored placement. **Restore original** removes an override and returns the original position and visibility. Undo/redo covers placement, completed drags, removal and restoration.
 
-Searchable map containers retain their native identity and contents. Loot placements use actual installed item models held at the authored position; editor gameplay, looting, and profile progression remain disabled. These layouts do not modify regular gameplay raids.
+Searchable map containers retain their native identity and contents. Loot placements use actual installed item models held at the authored position; editor gameplay, looting, and profile progression remain disabled. Published, enabled level layouts apply in ordinary raids; mission-owned layouts stay exclusive to missions. See [Map layers](map-layers.md).
 
 Changes use the existing draft synchronization, local recovery and conflict workflow. Save/reopen and pack import/export preserve placements. Container IDs and loose-loot spawn identities are checked when reopening; randomized loot that is absent or changed is reported rather than replaced with a similar item. Select the unresolved change, choose **Rebind to picked**, then click a replacement of the same type. Resolve or remove invalid records before walkthrough.
 
@@ -120,3 +124,16 @@ Editor mode bypasses native Bloom, BloomAndFlares and Prism effects when a frame
 Click an object in the Scene workspace to select it, highlight its bounds, and open its properties. Trigger volumes do not block clicks; collision-only children resolve to their visible parent, and scenery without colliders can be selected by its bounds. Selection does not create a draft edit. The first changed property or completed drag creates the edit; Escape restores a cancelled drag. Rotate uses colored rings, and Resize uses the object’s colored axes. Objects with unsupported gameplay components or combined static meshes remain selectable for inspection, with the restriction shown above read-only properties.
 
 Live acceptance: click an original prop without capturing it first, rotate/resize it, cancel a second drag, and undo/redo the first edit. Check a collider-free placed item, a prop behind a trigger, an LOD prop, and a restricted object. Each click should expose the matching properties without changing the draft.
+
+## Hazard areas
+
+Use the **warning-triangle icon** in the left tool rail to open **Hazards**. Choose **+ Minefield**, **+ Claymore**, **+ Sniper zone**, or **+ Barbed wire** to place an area at the aim point. Select its record to name, move, rotate, resize, duplicate or delete it. The red box shows coverage; a claymore also shows a forward direction line. **New: Shared** makes a hazard available in ordinary campaign raids on that map; **New: Layout** limits it to the selected mission layout.
+
+Hazards stay inert during authoring, Observe and Walkthrough. **Playtest** arms the selected layout's hazards and its Shared hazards. Active mission raids also use these hazards. Reset removes the runtime instances, cancels pending sniper shots, clears authored wire slowdown and restores unspent claymores for the next test.
+
+- **Minefield:** native landmine damage on entry, followed by further explosions as the player moves through the area.
+- **Claymore:** one directional explosion per run. The box is its activation area, and the mine sits at its rear edge facing the direction line. Its blast can extend beyond the activation box.
+- **Sniper zone:** native border fire, beginning with a warning shot and becoming lethal after sustained exposure. Leaving the box cancels pending shots and their sounds. **Play shot sound: On** uses a native rifle report; **Suppressed shots: On** uses the native suppressed rifle report. Turn **Play shot sound: Off (silent)** to keep completely silent zone fire. Existing zones default to normal shots.
+- **Barbed wire:** native limb contact damage and movement slowdown with BSG�s native razor-wire coils, material and contact sounds, available across maps. Overlapping authored wire areas retain slowdown until the last area is left.
+
+The initial tool uses fixed native damage settings, a simple claymore marker and generated wire geometry. Wire contact audio reuses a loaded native wire sound bank when the map supplies one. All four use box volumes and remain separate from quest trigger types.

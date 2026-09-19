@@ -13,13 +13,19 @@ using WTT.Campaigns.Server.Profiles;
 namespace WTT.Campaigns.Server.Patches.Session;
 
 [Injectable]
-public class RaidEndPatch(SeasonService seasons, HubGameplay hub, WTT.Campaigns.Server.Story.StoryService story, MissionService missions)
-    : AbstractPatch
+public class RaidEndPatch(
+    SeasonService seasons,
+    HubGameplay hub,
+    WTT.Campaigns.Server.Story.StoryService story,
+    MissionService missions,
+    WTT.Campaigns.Server.Spatial.MapLayerService layers
+) : AbstractPatch
 {
     private static SeasonService _seasons = null!;
     private static HubGameplay _hub = null!;
     private static WTT.Campaigns.Server.Story.StoryService _story = null!;
     private static MissionService _missions = null!;
+    private static WTT.Campaigns.Server.Spatial.MapLayerService _layers = null!;
 
     protected override MethodBase GetTargetMethod()
     {
@@ -27,6 +33,7 @@ public class RaidEndPatch(SeasonService seasons, HubGameplay hub, WTT.Campaigns.
         _hub = hub;
         _story = story;
         _missions = missions;
+        _layers = layers;
         return AccessTools.Method(typeof(MatchController), nameof(MatchController.EndLocalRaidAsync));
     }
 
@@ -81,6 +88,10 @@ public class RaidEndPatch(SeasonService seasons, HubGameplay hub, WTT.Campaigns.
             () => _hub.FinishRaid(id, request, true),
             () => _story.FinishRaid(id, request),
             () => _missions.FinishRaid(id, request, true),
-            () => _seasons.MarkRaid(id, false)
+            async () =>
+            {
+                await _seasons.MarkRaid(id, false);
+                _layers.End(id);
+            }
         );
 }

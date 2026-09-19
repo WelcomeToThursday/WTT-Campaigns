@@ -68,7 +68,7 @@ internal static class ClientHookChecks
             {
                 object? operand = instruction.Operand switch
                 {
-                    // The dump publicizer unseals EFT delegate types, which CoreCLR
+                    // Publicized EFT assemblies can contain unsealed delegate types, which CoreCLR
                     // refuses to resolve. This transpiler only matches the bonus field;
                     // preserve other metadata operands without loading their owners.
                     MemberReference m when experience && m.Name != "ExperienceBonusMult" => m,

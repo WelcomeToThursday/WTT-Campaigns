@@ -84,6 +84,7 @@ public sealed partial class RaidEditor
             }
         );
         Button("MapCopy", DuplicateMapRecord);
+        Button("MapNormalRaid", () => MapEdit(l => l.ApplyInNormalRaids = !l.ApplyInNormalRaids));
         Button("MapDelete", DeleteMapRecord);
         Button(
             "MapStart",
@@ -109,7 +110,7 @@ public sealed partial class RaidEditor
             () =>
                 MapEdit(l =>
                 {
-                    l.Exit = CaptureVolume("Exit");
+                    l.Exit = CaptureVolume(MissionContent ? "Exit" : "Extract");
                     _selected = l.Exit.Id;
                 })
         );
@@ -209,6 +210,11 @@ public sealed partial class RaidEditor
             "MapName",
             text =>
             {
+                if (SceneWorkspace && (MapDoor != null || PickedDoor))
+                {
+                    EditDoor(d => d.Name = text.Trim());
+                    return;
+                }
                 if (SceneWorkspace && ScenePoint != null)
                 {
                     EditPoint(point => point.Name = text.Trim());
@@ -433,6 +439,14 @@ public sealed partial class RaidEditor
                     l.Loot.Add(copy);
                     _selected = copy.Id;
                 }
+                else if (point is MapDoorEdit { PlaceNew: true } placedDoor)
+                {
+                    var copy = RaidEditorSession.Copy(placedDoor);
+                    copy.Id = MapId();
+                    copy.Name += " copy";
+                    l.Doors.Add(copy);
+                    _selected = copy.Id;
+                }
                 else if (point is MapObjectEdit assetEdit && (assetEdit.Target.IsAsset || SceneAssetRules.IsContainer(assetEdit)))
                 {
                     var copy = RaidEditorSession.Copy(assetEdit);
@@ -501,14 +515,14 @@ public sealed partial class RaidEditor
     {
         foreach (var layout in _session!.Definition!.MapLayouts.AsValueEnumerable().Where(l => l.Location == _session.Location))
         {
-            _rows.Add((layout.Id, "LAYOUT · " + layout.Name));
+            _rows.Add((layout.Id, "LAYOUT · " + layout.Name + (layout.ApplyInNormalRaids ? " · NORMAL RAIDS" : "")));
             if (layout.Id != _layoutId)
                 continue;
             if (_mode != "Routes")
                 continue;
-            if (layout.Start != null)
+            if (MissionContent && layout.Start != null)
                 _rows.Add((layout.Start.Id, "START · " + layout.Start.Name));
-            for (var i = 0; i < layout.Checkpoints.Count; i++)
+            for (var i = 0; MissionContent && i < layout.Checkpoints.Count; i++)
                 _rows.Add((layout.Checkpoints[i].Id, $"{i + 1}. {layout.Checkpoints[i].Name}"));
             if (layout.Exit != null)
                 _rows.Add((layout.Exit.Id, "EXIT · " + layout.Exit.Name));
@@ -560,6 +574,8 @@ public sealed partial class RaidEditor
         if (!maps)
             return;
         view.Value("MapName", MapPoint?.Name ?? MapDoor?.Name ?? Layout?.Name ?? "");
+        view.Checked("MapNormalRaid", Layout?.ApplyInNormalRaids == true);
+        view.Get<Button>("MapNormalRaid").interactable = Layout != null && !_walking && !AiPreviewBusy;
         if (!SceneWorkspace)
         {
             view.Get<InputField>("MapName").interactable = true;
@@ -593,7 +609,7 @@ public sealed partial class RaidEditor
         view.Caption("MapDoor", "Door: " + (MapDoor?.State == "Shut" ? "Closed" : MapDoor?.State ?? "capture"));
         view.Caption("MapShape", "Shape: " + (MapPoint as MapVolume)?.Shape);
         view.Caption("MapAtPlayer", "Under camera");
-        view.Caption("MapWalkStart", "Walk from marker: " + (_walkFromStart ? "on" : "off"));
+        view.Checked("MapWalkStart", _walkFromStart);
         if (_mode == "Routes")
         {
             var index = Layout?.Checkpoints.FindIndex(p => p.Id == _selected) ?? -1;
@@ -621,19 +637,21 @@ public sealed partial class RaidEditor
                         ? "Create a layout in Layouts, then select it here."
                         : "Create or select a layout. Use Routes for player waypoints.",
                 }
-                : MapLayoutRules.Errors(Layout, _mode == "Routes");
+                : MapLayoutRules.Errors(Layout, MissionContent && _mode == "Routes");
         if (geometry && !_walking)
         {
             var revision = Newtonsoft.Json.JsonConvert.SerializeObject(Layout);
             if (revision != _ghostRevision)
             {
                 _mapScene ??= new();
-                _mapScene.Ghosts(Layout);
+                _mapScene.Ghosts(Layout, MissionContent);
                 _ghostRevision = revision;
             }
         }
         if (_mapScene != null)
             errors.AddRange(_mapScene.TargetErrors);
+        if (_mode == "Layouts")
+            errors.AddRange(MapLayerRules.Errors(_session!.Definition!.MapLayouts));
         view.Text("MapDetails", (_picked ? "Picked: " + _picked!.name + "\n" : "") + errors.AsValueEnumerable().Take(3).JoinToString("\n"));
     }
 
@@ -686,13 +704,21 @@ public sealed partial class RaidEditor
         try
         {
             _walkLayout = RaidEditorSession.Copy(Layout);
-            await _mapScene.ApplyAsync(_walkLayout, true, walkLifetime.Token, runtime: true);
+            if (!MissionContent)
+            {
+                _walkLayout.Start = null;
+                _walkLayout.Checkpoints.Clear();
+                _walkLayout.Encounters.Clear();
+                _walkLayout.SpawnPoints.Clear();
+                _walkLayout.PatrolRoutes.Clear();
+            }
+            await _mapScene.ApplyAsync(_walkLayout, MissionContent, walkLifetime.Token, runtime: true);
             _walkAssetLoot = new WTT.Campaigns.Client.Missions.MissionLoot();
             await _walkAssetLoot.ApplyAsync(_walkLayout, Guid.NewGuid().ToString("N"), walkLifetime.Token);
             walkLifetime.Token.ThrowIfCancellationRequested();
             Physics.SyncTransforms();
             Vector3? destination = null;
-            if (_walkFromStart)
+            if (MissionContent && _walkFromStart)
             {
                 destination = ZoneRuntime.Vector(_walkLayout.Start!.Position);
                 if (!ClearPosition(destination.Value, _player!))

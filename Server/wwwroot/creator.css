@@ -683,3 +683,47 @@
 
 .season-creator .content-detail { container-type:inline-size; }
 @container (max-width: 720px) { .season-creator .conversation-writer { grid-template-columns:minmax(0,1fr); } .season-creator .conversation-outline { max-height:320px; overflow-y:auto; border-right:0; border-bottom:1px solid var(--line); padding:0 0 16px; } }
+
+/* Mission logic: separate goals, triggers and actions without changing their controls. */
+.season-creator .mission-logic-group { margin-top: 26px; }
+.season-creator .mission-logic-group + .mission-logic-group { padding-top: 26px; border-top: 1px solid var(--line); }
+.season-creator .mission-logic-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 20px; }
+.season-creator .mission-logic-heading h4 { margin: 0 0 6px; font-size: 17px; color: var(--ink); }
+.season-creator .mission-logic-heading h4 span { color: var(--muted); font-weight: 400; }
+.season-creator .mission-logic-heading p, .season-creator .mission-logic-block p { margin: 0 0 10px; }
+.season-creator .mission-logic-card { min-width: 0; margin: 0 0 32px; padding: 22px; border: 1px solid #535b68; border-left: 4px solid var(--accent); border-radius: 8px; background: #15181d; }
+.season-creator .mission-logic-card > legend { float: none; width: auto; max-width: 100%; padding: 6px 10px; border: 1px solid #535b68; border-radius: 4px; background: #20252d; color: var(--accent); font-size: 15px; font-weight: 700; overflow-wrap: anywhere; }
+.season-creator .mission-logic-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 12px 18px; }
+.season-creator .mission-logic-options { display: flex; flex-wrap: wrap; gap: 8px 24px; margin: 6px 0 16px; }
+.season-creator .mission-logic-options label, .season-creator .mission-logic-checks label { margin: 0; }
+.season-creator .mission-logic-block { margin: 20px 0; padding: 16px; border: 1px solid #363d48; border-radius: 6px; background: #101216; }
+.season-creator .mission-logic-block h5 { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: var(--ink); }
+.season-creator .mission-logic-checks { display: grid; gap: 8px; padding: 8px 12px; border-left: 2px solid var(--line); }
+.season-creator .mission-logic-action { margin: 0 0 12px; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.season-creator .mission-logic-actions { display: flex; flex-wrap: wrap; gap: 10px; padding-top: 18px; margin-top: 22px; border-top: 1px solid #535b68; }
+.season-creator .mission-logic-empty { padding: 16px; border: 1px dashed var(--line); border-radius: 6px; }
+
+.season-creator .container-loot-row { display:flex; flex-wrap:wrap; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--line); }
+.season-creator .container-loot-row > strong { flex:1 1 180px; }
+.season-creator .container-loot-row > label { margin:0; flex:0 1 100px; }
+.season-creator .container-loot-catalogue { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+.season-creator .container-loot-catalogue article { display:flex; flex-direction:column; align-items:flex-start; gap:10px; padding:14px; background:var(--surface); border:1px solid var(--line); border-radius:6px; }
+.season-creator .container-loot-catalogue article strong { flex:1; overflow-wrap:anywhere; }
+
+.season-creator.mission-editor > :is(.creator-header, .editor-toolbar, .standalone-mission-body) { width:100%; max-width:1280px; margin-inline:auto; }
+.season-creator .standalone-mission-body { margin-top:20px; min-width:0; }
+.season-creator .container-loot-row > .item-preview-image { flex:0 0 80px; width:80px; }
+
+/* Shared navigation between the three authoring workflows. */
+.season-creator nav[aria-label="Content editors"] { display: flex; gap: .5rem; flex-wrap: wrap; margin: .75rem 0; }
+.season-creator nav[aria-label="Content editors"] a { padding: .5rem .9rem; border: 1px solid currentColor; border-radius: .3rem; text-decoration: none; }
+.season-creator nav[aria-label="Content editors"] a[aria-current="page"] { font-weight: 700; border-bottom-width: 3px; }
+
+/* The level workspace has no campaign sidebar; align it with its toolbar. */
+.season-creator > .editor-body.level-editor {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1720px;
+    margin-inline: auto;
+    min-height: 0;
+}

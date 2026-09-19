@@ -13,6 +13,10 @@ internal sealed class EncounterAiRuntime(MapLayout layout) : IEncounterAiRuntime
 
     public void Tick() => _patrol.Tick();
 
+    public Dictionary<string, PatrolCheckpoint> CapturePatrols() => _patrol.Capture();
+
+    public void RestorePatrols(Dictionary<string, PatrolCheckpoint> patrols) => _patrol.Restore(patrols);
+
     public void Add(BotOwner bot, string squad, string route, SpatialCapture spawn)
     {
         _cover.Add(bot);

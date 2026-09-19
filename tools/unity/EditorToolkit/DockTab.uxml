@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:Label class="editor-dock-tab" tooltip="Drag to reorder, dock or float" />
+</ui:UXML>

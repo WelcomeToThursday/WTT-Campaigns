@@ -86,7 +86,7 @@ public class EditorSessionRegistry
             Ready && Owner == owner && Id == token && now - Contact <= TimeSpan.FromMinutes(1);
 
         public bool AcceptsMapRequest(string owner, WTT.Campaigns.Shared.Authoring.AuthoringRequest request, DateTimeOffset now) =>
-            request.Version is 2 or 3 or 4 or 5 or 6
+            request.Version is 2 or 3 or 4 or 5 or 6 or 7
             && Accepts(owner, request.EditorSessionId, now)
             && Location.Length > 0
             && request.Location == Location;

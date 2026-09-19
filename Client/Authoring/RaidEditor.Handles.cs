@@ -12,6 +12,7 @@ public sealed partial class RaidEditor
     private int _selectionBoundsFrame = -1;
     private Transform? _selectionBoundsTarget;
     private Bounds _selectionBounds;
+    private Bounds _selectionLocalBounds;
     private bool _hasSelectionBounds;
     private Transform? SceneSelectionTarget =>
         _picked ? _picked
@@ -25,7 +26,7 @@ public sealed partial class RaidEditor
         {
             _selectionBoundsFrame = Time.frameCount;
             _selectionBoundsTarget = target;
-            _hasSelectionBounds = SceneBounds.TryGet(target, out _selectionBounds);
+            _hasSelectionBounds = SceneBounds.TryGet(target, out _selectionBounds, out _selectionLocalBounds);
         }
         bounds = _selectionBounds;
         return _hasSelectionBounds;
@@ -149,9 +150,7 @@ public sealed partial class RaidEditor
             return;
         var corners = new Vector3[8];
         for (var i = 0; i < 8; i++)
-            corners[i] =
-                bounds.center
-                + Vector3.Scale(bounds.extents, new Vector3((i & 1) == 0 ? -1 : 1, (i & 2) == 0 ? -1 : 1, (i & 4) == 0 ? -1 : 1));
+            corners[i] = _selectionBoundsTarget!.TransformPoint(SceneBounds.Corner(_selectionLocalBounds, i));
         var width = _camera ? SceneHandleMath.MetresPerPixel(_camera!, bounds.center) * 1.5f : .02f;
         for (var i = 0; i < 8; i++)
         for (var axis = 0; axis < 3; axis++)

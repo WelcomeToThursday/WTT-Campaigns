@@ -13,7 +13,7 @@ public sealed class EditorRouteRequest : EditorSessionRequest, SPTarkov.Server.C
 public sealed class EditorRouter(JsonUtil json, EditorSessions editor, SeasonService seasons) : StaticRouter(json, Routes(editor, seasons))
 {
     private static List<RouteAction> Routes(EditorSessions editor, SeasonService seasons) =>
-        new[] { "begin", "status", "select", "map", "unload", "end" }
+        new[] { "begin", "status", "select", "create-level", "map", "unload", "end" }
             .Select(operation =>
                 (RouteAction)
                     new RouteAction<EditorRouteRequest>(
@@ -30,6 +30,7 @@ public sealed class EditorRouter(JsonUtil json, EditorSessions editor, SeasonSer
                                 {
                                     "begin" => await editor.Begin(owner),
                                     "select" => editor.Select(owner, request),
+                                    "create-level" => editor.CreateLevel(owner, request),
                                     "map" => editor.Map(owner, request),
                                     "unload" => editor.Unload(owner, request),
                                     "end" => editor.End(owner, request),

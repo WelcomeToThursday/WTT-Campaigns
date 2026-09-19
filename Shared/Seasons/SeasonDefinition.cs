@@ -63,6 +63,12 @@ public sealed class SeasonDefinition : ExtensibleJsonModel
 
     // Mission definitions are optional so format 1-6 campaigns remain byte-for-byte
     // compatible until an author adds the v7 mission surface.
+    [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+    public MissionPackage? MissionPackage { get; set; }
+    public List<CampaignMissionLink> MissionLinks { get; set; } = new();
+
+    public bool ShouldSerializeMissionLinks() => MissionLinks.Count > 0;
+
     public List<MissionDefinition> Missions { get; set; } = new();
 
     public bool ShouldSerializeMissions() => Missions.Count > 0;
@@ -181,6 +187,10 @@ public sealed class StartingItem : ExtensibleJsonModel
 
 public sealed class SeasonManifest : ExtensibleJsonModel
 {
+    public string ContentKind { get; set; } = "Campaign";
+
+    public bool ShouldSerializeContentKind() => ContentKind != "Campaign";
+
     public int FormatVersion { get; set; } = 1;
     public string SeasonId { get; set; } = "";
     public string BattlePassId { get; set; } = "";

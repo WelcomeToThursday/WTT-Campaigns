@@ -10,7 +10,7 @@ internal sealed partial class EditorToolkitWindows
 {
     private readonly RaidEditorView _view;
     private readonly Dictionary<string, EditorWindowPlacement> _panels = new();
-    private readonly Label _tooltip = new() { pickingMode = PickingMode.Ignore, enableRichText = false };
+    private readonly Label _tooltip;
     private VisualElement? _tooltipAnchor;
     private string _selection = "",
         _category = "";
@@ -20,11 +20,23 @@ internal sealed partial class EditorToolkitWindows
         _mapDetails,
         _recordAvailable,
         _identityAvailable;
+    private string _detailContext = "";
+
+    internal void DetailContext(string context)
+    {
+        if (_detailContext == context)
+            return;
+        _detailContext = context;
+        _recordDetails = EditorLayoutPreferences.Expanded(context, "Record details", false);
+        _mapDetails = EditorLayoutPreferences.Expanded(context, "Map details", false);
+        UpdateDetails();
+    }
+
     private Vector2 _size;
     private int _scalePercent;
     private EditorDockNode _dock = EditorDockNode.Default();
-    private readonly VisualElement _chrome = new() { pickingMode = PickingMode.Ignore };
-    private readonly VisualElement _dropPreview = new() { pickingMode = PickingMode.Ignore };
+    private readonly VisualElement _chrome;
+    private readonly VisualElement _dropPreview;
     private readonly Dictionary<string, VisualElement> _bars = new(),
         _dividers = new();
     private readonly Dictionary<string, Rect> _windowBounds = new();
@@ -50,6 +62,9 @@ internal sealed partial class EditorToolkitWindows
     internal EditorToolkitWindows(RaidEditorView view)
     {
         _view = view;
+        _tooltip = view.Document.Clone<Label>("Tooltip");
+        _chrome = view.Document.Clone<VisualElement>("Workspace");
+        _dropPreview = view.Document.Clone<VisualElement>("DropPreview");
         foreach (
             var id in RaidEditorView
                 .ToolIds.AsValueEnumerable()
@@ -65,8 +80,7 @@ internal sealed partial class EditorToolkitWindows
             window.RegisterCallback<GeometryChangedEvent>(evt =>
             {
                 var narrow = evt.newRect.width < 340;
-                foreach (var row in window.Query<VisualElement>(className: "editor-actions").ToList())
-                    row.style.flexWrap = Wrap.Wrap;
+                // Rows own their wrapping policy. Resizing must preserve compact pairs such as paging.
                 foreach (var field in window.Query<TextField>().ToList())
                     EditorControlLayout.Field(field, narrow);
             });
@@ -95,6 +109,7 @@ internal sealed partial class EditorToolkitWindows
             () =>
             {
                 _recordDetails = !_recordDetails;
+                EditorLayoutPreferences.SetExpanded(_detailContext, "Record details", _recordDetails);
                 UpdateDetails();
             }
         );
@@ -103,14 +118,11 @@ internal sealed partial class EditorToolkitWindows
             () =>
             {
                 _mapDetails = !_mapDetails;
+                EditorLayoutPreferences.SetExpanded(_detailContext, "Map details", _mapDetails);
                 UpdateDetails();
             }
         );
-        _chrome.style.position = Position.Absolute;
-        _chrome.style.left = _chrome.style.top = _chrome.style.right = _chrome.style.bottom = 0;
         _view.Element("Workspace").Add(_chrome);
-        _dropPreview.style.position = Position.Absolute;
-        _dropPreview.style.backgroundColor = new Color(.65f, .60f, .40f, .28f);
         _dropPreview.style.display = DisplayStyle.None;
         _view.Element("Workspace").Add(_dropPreview);
         _tooltip.AddToClassList("editor-tooltip");
@@ -129,7 +141,10 @@ internal sealed partial class EditorToolkitWindows
 
     internal bool IsOpen(string id) => _panels.TryGetValue(Resolve(id), out var p) && p.Visible;
 
-    private HashSet<string> OpenIds() => _panels.AsValueEnumerable().Where(p => p.Value.Visible).Select(p => p.Key).ToHashSet();
+    private bool AllowedPanel(string id) => !id.StartsWith("Tool:") || _view.AllowsTool(id.Substring(5));
+
+    private HashSet<string> OpenIds() =>
+        _panels.AsValueEnumerable().Where(p => p.Value.Visible && AllowedPanel(p.Key)).Select(p => p.Key).ToHashSet();
 
     private EditorDockRect Area =>
         new(56, 84, Math.Max(1, _view.Document.Width - 64), Math.Max(1, _view.Document.Height - 84 - (_capture ? 88 : 40)));
@@ -154,6 +169,8 @@ internal sealed partial class EditorToolkitWindows
     internal void ShowPanel(string id, bool visible)
     {
         id = Resolve(id);
+        if (visible && !AllowedPanel(id))
+            return;
         _panels[id].Visible = visible;
         if (visible)
         {
@@ -276,7 +293,7 @@ internal sealed partial class EditorToolkitWindows
             var id = pair.Key;
             var p = pair.Value;
             var group = EditorDockLayout.Nodes(_dock).AsValueEnumerable().FirstOrDefault(n => n.Tabs.AsValueEnumerable().Contains(id));
-            var visible = p.Visible && !_walkthrough;
+            var visible = p.Visible && !_walkthrough && AllowedPanel(id);
             Rect rect;
             if (group != null)
             {
@@ -326,8 +343,7 @@ internal sealed partial class EditorToolkitWindows
         foreach (var tool in RaidEditorView.ToolIds)
         {
             var button = _view.Element(tool);
-            button.style.borderLeftWidth = IsOpen("Tool:" + tool) ? 3 : 1;
-            button.style.borderLeftColor = IsOpen("Tool:" + tool) ? new Color(.65f, .6f, .4f) : new Color(.38f, .39f, .36f);
+            button.EnableInClassList("editor-open-tool", IsOpen("Tool:" + tool));
             _view.Highlight(tool, ActiveTool == tool);
         }
     }

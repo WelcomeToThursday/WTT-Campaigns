@@ -13,4 +13,6 @@ internal interface IEncounterAiRuntime
     void Add(BotOwner bot, string squad, string route, SpatialCapture spawn);
     string Describe(BotOwner bot);
     void Reset();
+    Dictionary<string, PatrolCheckpoint> CapturePatrols();
+    void RestorePatrols(Dictionary<string, PatrolCheckpoint> patrols);
 }

@@ -19,7 +19,12 @@ internal class EditorControl
     internal bool interactable
     {
         get => Element.enabledSelf;
-        set => Element.SetEnabled(value);
+        set
+        {
+            Element.SetEnabled(value);
+            if (Element.parent?.ClassListContains("editor-range") == true)
+                Element.parent.Q<Slider>()?.SetEnabled(value);
+        }
     }
 }
 
@@ -44,15 +49,19 @@ internal sealed class EditorLabel : EditorControl
 
 internal sealed class EditorButton : EditorControl
 {
+    internal string Help = "";
     internal readonly UnityEvent onClick = new();
     internal string Identity = "";
     private string? _pressedIdentity;
     internal bool Pressed;
 
-    internal EditorButton(Button button)
+    internal EditorButton(VisualElement button)
         : base(button)
     {
-        button.clicked += () => onClick.Invoke();
+        if (button is Toggle toggle)
+            toggle.RegisterValueChangedCallback(_ => onClick.Invoke());
+        else
+            ((Button)button).clicked += () => onClick.Invoke();
         button.RegisterCallback<PointerDownEvent>(
             evt =>
             {
@@ -75,11 +84,14 @@ internal sealed class EditorButton : EditorControl
 
     internal string text
     {
-        get => ((Button)Element).text;
+        get => Element is Toggle toggle ? toggle.label : ((Button)Element).text;
         set
         {
             if (text != value)
-                ((Button)Element).text = value;
+                if (Element is Toggle toggle)
+                    toggle.label = value;
+                else
+                    ((Button)Element).text = value;
         }
     }
 
@@ -93,9 +105,13 @@ internal sealed class EditorButton : EditorControl
 
 internal sealed class EditorInput : EditorControl
 {
+    private readonly Slider? _range;
     internal EditorNumericDrag? NumericDrag;
     private bool _suppress;
-    private string _committed = "";
+    private readonly EditorEditState _edit = new();
+    private Label? _error;
+    internal bool Invalid => _edit.Invalid;
+    internal string ValidationMessage => _edit.Error;
     internal readonly UnityEvent<string> onEndEdit = new(),
         onValueChanged = new();
 
@@ -103,11 +119,25 @@ internal sealed class EditorInput : EditorControl
         : base(field)
     {
         field.isDelayed = !immediate;
+        _range = field.parent?.ClassListContains("editor-range") == true ? field.parent.Q<Slider>() : null;
+        if (_range != null)
+        {
+            _range.RegisterValueChangedCallback(evt =>
+                field.value = evt.newValue.ToString("0", System.Globalization.CultureInfo.InvariantCulture)
+            );
+            _range.tooltip = "Adjust preview percentage. Type a value for precision.";
+        }
         field.RegisterValueChangedCallback(evt =>
         {
             if (_suppress)
                 return;
-            _committed = evt.newValue;
+            if (!_edit.Accept(field.name, evt.newValue))
+            {
+                ShowValidation();
+                return;
+            }
+            ShowValidation();
+            SyncRange(evt.newValue);
             if (immediate)
                 onValueChanged.Invoke(evt.newValue);
             else
@@ -132,25 +162,64 @@ internal sealed class EditorInput : EditorControl
             if (NumericDrag?.Active == true)
                 return true;
             var focus = Element.panel?.focusController.focusedElement as VisualElement;
-            return focus != null && (focus == Element || Element.Contains(focus));
+            return focus != null
+                && (focus == Element || Element.Contains(focus) || _range != null && (focus == _range || _range.Contains(focus)));
         }
     }
 
     internal void SetTextWithoutNotify(string text)
     {
-        _committed = text;
+        _edit.Reset(text);
+        ShowValidation();
         ((TextField)Element).SetValueWithoutNotify(text);
+        SyncRange(text);
+    }
+
+    private void SyncRange(string text)
+    {
+        if (
+            _range != null
+            && float.TryParse(
+                text,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture,
+                out var value
+            )
+            && float.IsFinite(value)
+        )
+            _range.SetValueWithoutNotify(Math.Clamp(value, 0, 100));
     }
 
     internal void CancelEdit()
     {
         NumericDrag?.Cancel();
-        if (!isFocused)
-            return;
         _suppress = true;
-        ((TextField)Element).SetValueWithoutNotify(_committed);
-        (Element.panel?.focusController.focusedElement as VisualElement)?.Blur();
+        ((TextField)Element).SetValueWithoutNotify(_edit.Committed);
+        _edit.Reset(_edit.Committed);
+        SyncRange(_edit.Committed);
+        ShowValidation();
+        if (isFocused)
+            (Element.panel?.focusController.focusedElement as VisualElement)?.Blur();
         _suppress = false;
+    }
+
+    private void ShowValidation()
+    {
+        Element.EnableInClassList("editor-invalid", Invalid);
+        // The toolbar's scroll viewport clips children below the speed input.
+        // Its inline message is anchored beside that input by the owning view.
+        if (Element.name == "CameraSpeed")
+            return;
+        if (Invalid && _error == null)
+        {
+            _error = EditorToolkitDocument.CloneTemplate<Label>("FieldMessage");
+            Element.Add(_error);
+        }
+        if (_error != null)
+        {
+            _error.text = _edit.Error;
+            _error.style.display = Invalid ? DisplayStyle.Flex : DisplayStyle.None;
+        }
     }
 }
 
@@ -195,6 +264,22 @@ internal sealed class EditorImage : EditorControl
 
 internal sealed class EditorChoice : EditorControl
 {
+    private Label? _valueLabel;
+
+    internal void AddFieldLabel(string caption, bool compact = false)
+    {
+        var button = (Button)Element;
+        var content = EditorToolkitDocument.CloneTemplate<VisualElement>("ChoiceField");
+        _valueLabel = content.Q<Label>("Value");
+        _valueLabel.text = button.text;
+        content.Q<Label>("Caption").text = caption;
+        button.text = "";
+        button.AddToClassList("editor-choice-field");
+        button.EnableInClassList("editor-choice-compact", compact);
+        while (content.childCount > 0)
+            button.Add(content[0]);
+    }
+
     internal sealed class OptionData
     {
         internal string text;
@@ -215,5 +300,12 @@ internal sealed class EditorChoice : EditorControl
         RefreshShownValue();
     }
 
-    internal void RefreshShownValue() => ((Button)Element).text = value >= 0 && value < options.Count ? options[value].text : "";
+    internal void RefreshShownValue()
+    {
+        var text = value >= 0 && value < options.Count ? options[value].text : "Select…";
+        if (_valueLabel != null)
+            _valueLabel.text = text;
+        else
+            ((Button)Element).text = text;
+    }
 }

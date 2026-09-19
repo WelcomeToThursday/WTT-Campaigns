@@ -1,0 +1,58 @@
+@using WTT.Campaigns.Shared.Authoring
+@using WTT.Campaigns.Server.Seasons
+@inject SeasonRepository Repository
+
+<section class="season-library">
+    <h2>Level library</h2><p>Open an ordinary PMC level directly. Campaign missions are listed only in Missions.</p>
+    @if (_error.Length > 0) { <p class="notice error" role="alert">@_error</p> }
+    <section class="library-side-panel">
+        <h3>New level</h3>
+        <label>Level name<input maxlength="120" @bind="_name" /></label>
+        <label>Map<select @bind="_map"><option value="">Choose a map…</option>@foreach (var map in Maps) { <option value="@map">@map</option> }</select></label>
+        <button class="primary" disabled="@(string.IsNullOrWhiteSpace(_name) || _map.Length == 0)" @onclick="Create">Create level</button>
+        <p>New levels are saved separately. Creating one does not publish it or enable it in raids.</p>
+    </section>
+    <label>Find a level<input type="search" @bind="_search" @bind:event="oninput" /></label>
+    <h3>Saved levels</h3>
+    <div class="library-grid">
+        @foreach (var level in EditorContentRules.Levels(Repository.Drafts().Select(d => (d.Id, d.Definition))).Where(Matches))
+        {
+            <article class="library-card" @key="@(level.DraftId + "/" + level.Id)"><h4>@level.Name</h4><p>@level.Location</p><small>Level @level.Id</small><button @onclick="() => Open.InvokeAsync(level)">Edit level</button></article>
+        }
+    </div>
+    <h3>Published levels</h3><p>Editing a published revision creates a draft and preserves the published release.</p>
+    @foreach (var pack in Repository.Packs().Where(p => p.Manifest.ContentKind != "Mission"))
+    {
+        @foreach (var level in EditorContentRules.Levels(new[] { (pack.Key, Repository.Pack(pack.Key)) }).Where(Matches))
+        {
+            <article class="library-card"><h4>@level.Name</h4><p>@level.Location · Revision @pack.Manifest.Revision</p><button @onclick="() => EditPublished(pack.Key, level.Id)">Edit revision</button></article>
+        }
+    }
+</section>
+@code {
+    [Parameter] public IReadOnlyList<string> Maps { get; set; } = Array.Empty<string>();
+    [Parameter] public EventCallback<EditorLayoutChoice> Open { get; set; }
+    private string _name = "New level", _map = "", _search = "", _error = "";
+    private bool Matches(EditorLayoutChoice level) => (level.Name + " " + level.Location).Contains(_search.Trim(), StringComparison.OrdinalIgnoreCase);
+    private async Task Create()
+    {
+        try
+        {
+            if (!Maps.Contains(_map)) throw new InvalidOperationException("Choose a supported map.");
+            var draft = Repository.CreateLevel(_name, _map);
+            await Open.InvokeAsync(EditorContentRules.Levels(new[] { (draft.Id, draft.Definition) }).Single());
+        }
+        catch (Exception e) { _error = e.Message; }
+    }
+    private async Task EditPublished(string key, string layout)
+    {
+        try
+        {
+            var definition = Repository.Pack(key);
+            if (!EditorContentRules.Levels(new[] { (key, definition) }).Any(l => l.Id == layout)) throw new InvalidOperationException("This is not a level.");
+            var draft = Repository.Save(new DraftEnvelope { Id = SeasonRepository.NewId(), Definition = definition });
+            await Open.InvokeAsync(new EditorLayoutChoice { DraftId = draft.Id, Id = layout });
+        }
+        catch (Exception e) { _error = e.Message; }
+    }
+}

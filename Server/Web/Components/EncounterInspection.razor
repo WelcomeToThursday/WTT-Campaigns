@@ -5,7 +5,7 @@
     <section class="editor-card">
         <h4>AI encounters</h4>
         <p>@Layout.Encounters.Count encounters · @Layout.SpawnPoints.Count spawn points · @Layout.PatrolRoutes.Count patrol routes</p>
-        <small>Place and edit AI in the loaded Campaign Editor, where navigation and standing clearance can be checked. These encounters run only in explicit previews.</small>
+        <small>Place and edit AI in the loaded Mission Editor, where navigation and standing clearance can be checked. These encounters run only in explicit previews.</small>
         @foreach (var encounter in Layout.Encounters)
         {
             <details @key="encounter.Id">

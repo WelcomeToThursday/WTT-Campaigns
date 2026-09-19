@@ -251,23 +251,14 @@ internal sealed class CampaignTestMode : MonoBehaviour
         if (!Restricted)
             return;
         _menuDocument = new EditorToolkitDocument("Campaign Test", 32100);
-        var controls = new VisualElement();
-        controls.style.position = Position.Absolute;
-        controls.style.right = 45;
-        controls.style.top = 225;
-        controls.style.width = 280;
+        var controls = _menuDocument.Clone<VisualElement>("CampaignTest");
         _menuDocument.Content.Add(controls);
-        _reset = new Button(Reset) { text = "RESET TEST" };
-        _return = new Button(Return) { text = "RETURN TO EDITOR" };
-        controls.Add(_reset);
-        controls.Add(_return);
-        _label = new Label(_status) { enableRichText = false, pickingMode = PickingMode.Ignore };
-        _label.style.position = Position.Absolute;
-        _label.style.left = 45;
-        _label.style.bottom = 70;
-        _label.style.width = 650;
-        _label.style.whiteSpace = WhiteSpace.Normal;
-        _menuDocument.Content.Add(_label);
+        _reset = controls.Q<Button>("Reset");
+        _return = controls.Q<Button>("Return");
+        _reset.clicked += Reset;
+        _return.clicked += Return;
+        _label = controls.Q<Label>("Status");
+        _label.text = _status;
         _menuDocument.SetVisible(true);
     }
 

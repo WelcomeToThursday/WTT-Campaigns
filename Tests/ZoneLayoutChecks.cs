@@ -139,6 +139,13 @@ internal static class ZoneLayoutChecks
             publication.Issues.Any(issue => issue.Path == "Zones/" + conditionZone.Id && issue.Severity == "error"),
             "Publication validation rejects live quest references to layout zones"
         );
+        second.ApplyInNormalRaids = true;
+        var levelPublication = SeasonValidator.Validate(season);
+        check(
+            !levelPublication.Issues.Any(issue => issue.Path == "Zones/" + conditionZone.Id && issue.Severity == "error"),
+            "Enabled ordinary-raid levels provide their native quest zones during publication"
+        );
+        second.ApplyInNormalRaids = false;
         conditionZone.LayoutId = "";
         var sharedPublication = SeasonValidator.Validate(season);
         check(

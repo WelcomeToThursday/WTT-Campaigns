@@ -64,6 +64,7 @@ public static class StoryAuthoring
             "chapters" => story.Chapters.Select(v => (v.Id, Label(v))),
             "notes" => story.Notes.Select(v => (v.Id, Label(v))),
             "dialogs" => story.Dialogs.Select(v => (v.Id, Label(v))),
+            "missionLinks" => season.MissionLinks.Select(l => (l.Id, l.Package.Name)),
             "variables" => story.Variables.Select(v => (v.Id, ReferenceNames.Label(season, v, (_, id) => id))),
             "entries" => story.EntryPoints.Select(v => (v.Id, ReferenceNames.Label(season, v, (_, id) => id))),
             "bindings" => story.RaidBindings.Select(v => (v.Id, Label(v))),
@@ -109,7 +110,9 @@ public static class StoryAuthoring
             {
                 StoryAction a => a.Type switch
                 {
+                    StoryActionType.UnlockMission => "missionLinks",
                     StoryActionType.SetVariable => "variables",
+                    StoryActionType.TraderStanding => "traders",
                     StoryActionType.DiaryNote => "notes",
                     StoryActionType.SwitchDialog or StoryActionType.EmbedQuestDialog => "dialogs",
                     StoryActionType.StartCinematic => "cinematic",
@@ -199,11 +202,15 @@ public static class StoryAuthoring
                         or StoryActionType.AcceptQuest
                         or StoryActionType.HandoverItem
                         or StoryActionType.FinishQuest
+                        or StoryActionType.FailQuest
                         or StoryActionType.PlayerReward,
                 "ConditionId" => a.Type == StoryActionType.HandoverItem,
                 "Value" or "Scope" => a.Type == StoryActionType.SetVariable,
+                "StandingChange" => a.Type == StoryActionType.TraderStanding,
                 "Target" => a.Type
-                    is StoryActionType.SetVariable
+                    is StoryActionType.UnlockMission
+                        or StoryActionType.SetVariable
+                        or StoryActionType.TraderStanding
                         or StoryActionType.DiaryNote
                         or StoryActionType.SwitchDialog
                         or StoryActionType.EmbedQuestDialog

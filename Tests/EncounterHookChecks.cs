@@ -9,7 +9,7 @@ namespace WTT.Campaigns.Tests;
 ///
 /// These checks intentionally read the installed assemblies with Cecil.  Loading EFT or
 /// invoking any of its types would make the check dependent on a live Unity process and would
-/// miss the most useful failure mode: a dumped method was renamed or an override was left
+/// miss the most useful failure mode: a native method was renamed or an override was left
 /// outside the admission boundary.
 /// </summary>
 internal static class EncounterHookChecks
@@ -23,8 +23,8 @@ internal static class EncounterHookChecks
     {
         gameRoot = Path.GetFullPath(gameRoot);
         clientPath = Path.GetFullPath(clientPath);
-        var nativePath = Path.Combine(gameRoot, "BepInEx", "DumpedAssemblies", "EscapeFromTarkov", "Assembly-CSharp.dll");
-        Require(File.Exists(nativePath), "The installed Assembly-CSharp dump is required for encounter hook checks.");
+        var nativePath = Path.Combine(gameRoot, "EscapeFromTarkov_Data", "Managed", "Assembly-CSharp.dll");
+        Require(File.Exists(nativePath), "The installed Managed Assembly-CSharp assembly is required for encounter hook checks.");
         Require(File.Exists(clientPath), "The compiled client assembly is required for encounter hook checks.");
 
         var bigBrainPath = PluginPath(gameRoot, "DrakiaXYZ-BigBrain.dll");
@@ -60,6 +60,7 @@ internal static class EncounterHookChecks
         CheckPatrolFacing(native, client);
         CheckPatrolPathDispatch(native, client);
         CheckHealthInterceptionCoverage(client);
+        CheckCheckpointSurface(native, client);
         CheckSceneNavigation(gameRoot, client);
         CheckNativeSpawnPreflight(native, client);
         CheckOwnedCores(native, client);
@@ -945,10 +946,118 @@ internal static class EncounterHookChecks
         Require(ContainsString(enable, "PreviewHealthChanged"), "EditorRestrictions.Enable names the health postfix");
         Require(Calls(enable, "Patch"), "EditorRestrictions.Enable installs the health postfix through Harmony");
 
-        var killHook = RequireMethod(restrictions, "PreviewKill", "System.Boolean", "EFT.HealthSystem.ActiveHealthController");
+        var killHook = RequireMethod(
+            restrictions,
+            "PreviewKill",
+            "System.Boolean",
+            "EFT.HealthSystem.ActiveHealthController",
+            "EFT.EDamageType"
+        );
         Require(
             CallsAny(killHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.RaidEditor"),
             "PreviewKill reports direct lethal transitions through RaidEditor.AiDefeated"
+        );
+    }
+
+    private static void CheckCheckpointSurface(AssemblyDefinition native, AssemblyDefinition client)
+    {
+        var health = RequireType(native, "EFT.HealthSystem.ActiveHealthController");
+        foreach (var method in new[] { "Kill", "ManualUpdate", "ApplyDamage", "ChangeHealth", "SerializeState" })
+            RequireMethod(health, method);
+        RequireMethod(RequireType(native, "EFT.BotOwner"), "UpdateManual");
+        RequireMethod(RequireType(native, "EFT.BotOwner"), "FixedUpdate");
+        RequireMethod(RequireType(native, "EFT.Quests.ConditionalController`1"), "OnConditionValueChanged");
+        RequireMethod(RequireType(native, "EFT.Interactive.Corpse"), "InitBody");
+        var world = RequireType(native, "EFT.GameWorld");
+        foreach (var method in new[] { "SpawnLootCorpse", "SpawnLootItem", "DestroyLoot", "UnregisterGrenade" })
+            RequireMethod(world, method);
+        var guard = RequireType(client, "WTT.Campaigns.Client.Missions.MissionRetryGuard");
+        var kill = RequireMethod(guard, "Kill", "System.Boolean", "EFT.HealthSystem.ActiveHealthController", "EFT.EDamageType");
+        Require(
+            kill.Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "_player")
+                && kill.Body.Instructions.Any(i => i.OpCode == OpCodes.Beq_S || i.OpCode == OpCodes.Bne_Un_S || i.OpCode == OpCodes.Ceq)
+                && Calls(kill, "Freeze"),
+            "Checkpoint terminal defeat interception is scoped to the attached player"
+        );
+        Require(
+            kill.CustomAttributes.Any(a => a.AttributeType.FullName == "HarmonyLib.HarmonyPriority"),
+            "Checkpoint defeat interception has explicit priority"
+        );
+        var install = RequireMethod(guard, "Install");
+        foreach (
+            var method in new[]
+            {
+                "Kill",
+                "ManualUpdate",
+                "ApplyDamage",
+                "ChangeHealth",
+                "UpdateManual",
+                "FixedUpdate",
+                "OnConditionValueChanged",
+            }
+        )
+            Require(ContainsString(install, method), "Checkpoint installs native hook: " + method);
+        var actor = RequireType(client, "WTT.Campaigns.Client.Missions.MissionActorSnapshot");
+        var brainChoice = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterBrainChoice");
+        var brainPrefix = RequireMethod(brainChoice, "Prefix");
+        Require(
+            Calls(brainPrefix, "TryGetValue") && Calls(brainPrefix, "get_HasValue"),
+            "Saved brain override requires both an active profile scope and a checkpoint assignment"
+        );
+        Require(Calls(RequireMethod(brainChoice, "Dispose"), "Remove"), "Brain override scope is removed after activation");
+        var hands = RequireType(client, "WTT.Campaigns.Client.Missions.MissionInventorySnapshot");
+        Require(
+            hands.Methods.Any(m => m.Name == "SettleHands") && hands.Methods.Any(m => m.Name == "RestoreHands"),
+            "Checkpoint hands settle without holstering and restore through native equipment activation"
+        );
+        var startSave = RequireType(client, "WTT.Campaigns.Client.Authoring.RaidEditor")
+            .NestedTypes.Single(t => t.Name.StartsWith("<CaptureTestStart>"));
+        Require(
+            !Calls(RequireMethod(startSave, "MoveNext"), "EmptyHands") && Calls(RequireMethod(startSave, "MoveNext"), "SettleHands"),
+            "Editor checkpoint capture no longer empties the player's hands"
+        );
+        foreach (
+            var field in new[]
+            {
+                "EffectAddedEvent",
+                "EffectStartedEvent",
+                "EffectResidualEvent",
+                "HealthChangedEvent",
+                "EnergyChangedEvent",
+                "HydrationChangedEvent",
+            }
+        )
+            Require(
+                health.Fields.Any(f => f.Name == field),
+                "Checkpoint observer callback exists in installed health controller: " + field
+            );
+        Require(
+            Calls(RequireMethod(actor, "Restore"), "ForceRemove") && Calls(RequireMethod(actor, "Restore"), "RefreshObservers"),
+            "Checkpoint removes abandoned effects and refreshes native observers after restoring health"
+        );
+        var audio = RequireType(native, "BetterAudio");
+        foreach (var field in new[] { "float_1", "float_2" })
+            Require(
+                audio.Fields.Any(f => f.Name == field && f.FieldType.FullName == "System.Single"),
+                "Native tinnitus clock contract: " + field
+            );
+        var tinnitus = RequireMethod(audio, "StartTinnitusEffect");
+        Require(
+            tinnitus.Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "float_2"),
+            "Native tinnitus start updates the checked deadline"
+        );
+        RequireMethod(RequireType(native, "BotsGroup"), "IsEnemy");
+        RequireMethod(RequireType(native, "BotsGroup"), "AddEnemy");
+        Require(
+            Calls(RequireMethod(actor, "Restore"), "SerializeState"),
+            "Checkpoint compares restored native health/effect state before release"
+        );
+        Require(
+            Calls(RequireMethod(RequireType(client, "WTT.Campaigns.Client.Missions.MissionAccountingSnapshot"), "Restore"), "Describe"),
+            "Checkpoint verifies restored progression accounting before release"
+        );
+        Console.WriteLine(
+            "Checkpoint native contracts: scoped defeat, health/effects, quest freeze, native corpse/item restoration and verification checked offline."
         );
     }
 

@@ -85,6 +85,7 @@ public sealed partial class RaidEditor
 
     private void BindAiControls(RaidEditorView view)
     {
+        _ = new MissionEditorPanel(view, view.ElementForTool("AI", "AiTools"), () => _session);
         RaidEditorAiContracts.LayoutProvider = () => Layout;
         view.Button("AiEncounter", AddAiEncounter);
         view.Button("AiWave", AddAiWave);
@@ -104,6 +105,7 @@ public sealed partial class RaidEditor
             }
         );
         view.Button("AiPlaytest", () => BeginAiPreview(true));
+        view.Button("TestCheckpoints", TestEditorCheckpoints);
         view.Button("AiReset", EndAiPreview);
         view.Button("AiSimulate", SimulateSelectedAiEvent);
         view.Button(
@@ -115,8 +117,8 @@ public sealed partial class RaidEditor
             }
         );
         view.Button("AiWaveWaitPrevious", ToggleAiWaveWait);
-        view.Button("AiRosterRole", CycleAiRole);
-        view.Button("AiRosterDifficulty", CycleAiDifficulty);
+        view.Dropdown("AiRosterRole", SetAiRole);
+        view.Dropdown("AiRosterDifficulty", SetAiDifficulty);
         view.Dropdown(
             "AiRosterSpawnNext",
             index =>
@@ -139,8 +141,8 @@ public sealed partial class RaidEditor
                     EditAiRosterText("PatrolRouteId", _aiPatrolChoices[index]);
             }
         );
-        view.Button("AiPace", CycleAiPace);
-        view.Button("AiCompletion", CycleAiCompletion);
+        view.Dropdown("AiPace", SetAiPace);
+        view.Dropdown("AiCompletion", SetAiCompletion);
         view.Input("AiTriggerEventId", value => EditAiTriggerText("EventId", value));
         view.Input("AiTriggerZoneId", value => EditAiTriggerText("ZoneId", value));
         view.Input("AiWaveDelaySeconds", value => EditAiWaveDelay(value));
@@ -884,12 +886,12 @@ public sealed partial class RaidEditor
         if (isWave)
         {
             _view.Value("AiWaveDelaySeconds", wave!.DelaySeconds.ToString("0.###", CultureInfo.InvariantCulture));
-            _view.Caption("AiWaveWaitPrevious", wave.WaitForPreviousWave ? "Wait: defeated + delay" : "Wait: activation + delay");
+            _view.Checked("AiWaveWaitPrevious", wave.WaitForPreviousWave);
         }
         if (isRoster)
         {
-            _view.Caption("AiRosterRole", "Role: " + AiRoleDisplay(roster!.Role));
-            _view.Caption("AiRosterDifficulty", "Difficulty: " + Display(roster.Difficulty, "normal"));
+            SetAiChoice("AiRosterRole", AiRoleValues, roster!.Role);
+            SetAiChoice("AiRosterDifficulty", AiDifficultyValues, roster.Difficulty);
             _view.Value("AiRosterCount", roster.Count.ToString(CultureInfo.InvariantCulture));
             _view.Value("AiRosterSquadId", roster.SquadId ?? "");
             _view.Value("AiRosterSpawnPoints", string.Join(", ", roster.SpawnPointIds ?? new()));
@@ -898,8 +900,8 @@ public sealed partial class RaidEditor
         }
         if (isRoute)
         {
-            _view.Caption("AiPace", "Pace: " + Display(route!.Pace, MapPatrolRoute.Walk));
-            _view.Caption("AiCompletion", "End: " + Display(route.Completion, MapPatrolRoute.Loop));
+            SetAiChoice("AiPace", AiPaceValues, route!.Pace);
+            SetAiChoice("AiCompletion", AiCompletionValues, route.Completion);
         }
         if (isWaypoint)
         {
@@ -928,13 +930,11 @@ public sealed partial class RaidEditor
                 "AiTrigger",
                 "Delete",
                 "AiWaveWaitPrevious",
-                "AiRosterRole",
-                "AiRosterDifficulty",
-                "AiPace",
-                "AiCompletion",
             }
         )
             _view.Get<Button>(name).interactable = editable;
+        foreach (var id in new[] { "AiRosterRole", "AiRosterDifficulty", "AiPace", "AiCompletion" })
+            _view.Get<EditorChoice>(id).interactable = editable;
         _view.Get<EditorChoice>("AiRosterSpawnNext").interactable = editable;
         _view.Get<EditorChoice>("AiRosterPatrolNext").interactable = editable;
         _view.Get<Button>("AiWave").interactable = editable && selected.Encounter != null;
@@ -957,11 +957,7 @@ public sealed partial class RaidEditor
             }
         )
             _view.Get<InputField>(name).interactable = editable;
-        var previewStatus = _aiPreviewStatus.Length == 0 ? _session!.Status : _aiPreviewStatus;
-        if (_notice.Length > 0 && _notice != _aiPreviewStatus)
-            previewStatus += "\n" + _notice;
-        _view.Text("Status", previewStatus);
-        _view.Windows.SetTooltip("Status", previewStatus);
+        _view.Feedback(_session!.Status, _aiPreviewStatus, _notice);
         RefreshAiRoutes();
     }
 
@@ -1189,8 +1185,29 @@ public sealed partial class RaidEditor
         });
     }
 
-    private void CycleAiRole()
+    private static readonly string[] AiRoleValues = { "assault", "pmcUSEC", "pmcBEAR" };
+    private static readonly string[] AiDifficultyValues = { "easy", "normal", "hard" };
+    private static readonly string[] AiPaceValues = { MapPatrolRoute.Walk, MapPatrolRoute.Run };
+    private static readonly string[] AiCompletionValues = { MapPatrolRoute.Loop, MapPatrolRoute.PingPong, MapPatrolRoute.Stop };
+
+    private void SetAiChoice(string id, string[] values, string value)
     {
+        var options = new List<EditorChoice.OptionData>();
+        foreach (var option in values)
+            options.Add(new EditorChoice.OptionData(id == "AiRosterRole" ? AiRoleDisplay(option) : option));
+        var index = Array.IndexOf(values, value);
+        if (index < 0)
+        {
+            index = options.Count;
+            options.Add(new EditorChoice.OptionData(value + " (current)"));
+        }
+        _view!.SetDropdown(id, options, index);
+    }
+
+    private void SetAiRole(int index)
+    {
+        if (index < 0 || index >= AiRoleValues.Length)
+            return;
         var selected = AiSelected(out var kind);
         if (kind != "roster" || selected.Roster == null || selected.Encounter == null || selected.Wave == null)
             return;
@@ -1207,17 +1224,14 @@ public sealed partial class RaidEditor
                 .FirstOrDefault(r => r.Id == ids.Item3);
             if (roster == null)
                 return;
-            roster.Role = roster.Role switch
-            {
-                "assault" => "pmcUSEC",
-                "pmcUSEC" => "pmcBEAR",
-                _ => "assault",
-            };
+            roster.Role = AiRoleValues[index];
         });
     }
 
-    private void CycleAiDifficulty()
+    private void SetAiDifficulty(int index)
     {
+        if (index < 0 || index >= AiDifficultyValues.Length)
+            return;
         var selected = AiSelected(out var kind);
         if (kind != "roster" || selected.Roster == null || selected.Encounter == null || selected.Wave == null)
             return;
@@ -1234,12 +1248,7 @@ public sealed partial class RaidEditor
                 .FirstOrDefault(r => r.Id == ids.Item3);
             if (roster == null)
                 return;
-            roster.Difficulty = roster.Difficulty switch
-            {
-                "easy" => "normal",
-                "normal" => "hard",
-                _ => "easy",
-            };
+            roster.Difficulty = AiDifficultyValues[index];
         });
     }
 
@@ -1403,8 +1412,10 @@ public sealed partial class RaidEditor
         });
     }
 
-    private void CycleAiPace()
+    private void SetAiPace(int index)
     {
+        if (index < 0 || index >= AiPaceValues.Length)
+            return;
         var selected = AiSelected(out var kind);
         if (kind != "route" || selected.Route == null)
             return;
@@ -1413,20 +1424,19 @@ public sealed partial class RaidEditor
         {
             var route = layout.PatrolRoutes.AsValueEnumerable().FirstOrDefault(r => r.Id == id);
             if (route != null)
-                route.Pace = route.Pace == MapPatrolRoute.Walk ? MapPatrolRoute.Run : MapPatrolRoute.Walk;
+                route.Pace = AiPaceValues[index];
         });
     }
 
-    private void CycleAiCompletion()
+    private void SetAiCompletion(int index)
     {
+        if (index < 0 || index >= AiCompletionValues.Length)
+            return;
         var selected = AiSelected(out var kind);
         if (kind != "route" || selected.Route == null)
             return;
         var id = selected.Route.Id;
-        var next =
-            selected.Route.Completion == MapPatrolRoute.Loop ? MapPatrolRoute.PingPong
-            : selected.Route.Completion == MapPatrolRoute.PingPong ? MapPatrolRoute.Stop
-            : MapPatrolRoute.Loop;
+        var next = AiCompletionValues[index];
         if (!TryValidateAiRoute(selected.Route, route => route.Completion = next))
             return;
         EditAi(layout =>

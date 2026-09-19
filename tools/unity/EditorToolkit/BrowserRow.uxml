@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:Button class="editor-browser-row editor-record-row">
+        <ui:Image name="Icon" class="editor-browser-icon" />
+        <ui:Label name="Status" class="editor-browser-status" />
+    </ui:Button>
+</ui:UXML>

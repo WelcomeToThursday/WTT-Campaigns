@@ -13,13 +13,19 @@ using WTT.Campaigns.Server.Profiles;
 namespace WTT.Campaigns.Server.Patches.Session;
 
 [Injectable]
-public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaigns.Server.Story.StoryService story, MissionService missions)
-    : AbstractPatch
+public class RaidStartPatch(
+    SeasonService seasons,
+    HubGameplay hub,
+    WTT.Campaigns.Server.Story.StoryService story,
+    MissionService missions,
+    WTT.Campaigns.Server.Spatial.MapLayerService layers
+) : AbstractPatch
 {
     private static SeasonService _seasons = null!;
     private static HubGameplay _hub = null!;
     private static WTT.Campaigns.Server.Story.StoryService _story = null!;
     private static MissionService _missions = null!;
+    private static WTT.Campaigns.Server.Spatial.MapLayerService _layers = null!;
 
     protected override MethodBase GetTargetMethod()
     {
@@ -27,6 +33,7 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaign
         _hub = hub;
         _story = story;
         _missions = missions;
+        _layers = layers;
         return AccessTools.Method(typeof(MatchController), nameof(MatchController.StartLocalRaidAsync));
     }
 
@@ -65,6 +72,7 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaign
         else
         {
             _missions.CancelPreparedForOrdinaryStart(id).GetAwaiter().GetResult();
+            _layers.Validate(id, request.Location);
         }
 
         _seasons.MarkRaid(id, true).GetAwaiter().GetResult();
@@ -74,13 +82,14 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaign
     [UsedImplicitly]
     private static void Postfix(MongoId sessionId, StartLocalRaidRequestData request, ref Task<StartLocalRaidResponseData> __result)
     {
-        __result = Complete(__result, sessionId.ToString(), request);
+        __result = Complete(__result, sessionId.ToString(), request, MissionLaunchContext.Current?.HeaderPresent == true);
     }
 
     private static async Task<StartLocalRaidResponseData> Complete(
         Task<StartLocalRaidResponseData> original,
         string id,
-        StartLocalRaidRequestData request
+        StartLocalRaidRequestData request,
+        bool mission
     )
     {
         try
@@ -91,11 +100,13 @@ public class RaidStartPatch(SeasonService seasons, HubGameplay hub, WTT.Campaign
             await _hub.StartRaid(id, request, result);
             await _story.StartRaid(id, request, result);
             await _missions.StartRaid(id, request, result);
+            _layers.Prepare(id, request.Location, result.ServerId, mission);
             await _seasons.MarkRaid(id, true, result.ServerId);
             return result;
         }
         catch
         {
+            _layers.End(id);
             if (!Editor.EditorSessions.IsScratch(id))
                 await _seasons.MarkRaid(id, false);
             throw;

@@ -95,7 +95,7 @@ internal static class EditorSceneVisibilityChecks
         );
 
         var context = new ClientAssemblyContext(
-            Path.GetFullPath(Path.Combine(Path.GetDirectoryName(native.MainModule.FileName)!, "../../..")),
+            Path.GetFullPath(Path.Combine(Path.GetDirectoryName(native.MainModule.FileName)!, "../..")),
             client.MainModule.FileName
         );
         var compiled = context.LoadFromAssemblyPath(client.MainModule.FileName);

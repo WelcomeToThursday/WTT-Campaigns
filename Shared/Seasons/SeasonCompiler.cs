@@ -81,6 +81,7 @@ public static class SeasonCompiler
         var owned = season.Items.Select(i => i.Id).Concat(season.ImportedItems.Keys).ToHashSet();
         var items = season
             .Items.Select(i => i.CloneFrom)
+            .Concat(Missions.MissionLibrary.ReferencedItems(season))
             .Concat(season.Documents.Select(d => d.ItemId))
             .Concat(season.Crates.SelectMany(c => c.Pool.Keys))
             .Concat(season.QuestLoot.Select(l => l.ItemTemplate))
@@ -106,7 +107,8 @@ public static class SeasonCompiler
                     .Select(i => i.Template)
             );
         return season
-            .Dependencies.Concat(items.Where(i => !owned.Contains(i)).Select(i => "item:" + i))
+            .Dependencies.Concat(season.MissionLinks.SelectMany(l => Dependencies(l.Package)))
+            .Concat(items.Where(i => !owned.Contains(i)).Select(i => "item:" + i))
             .Distinct()
             .OrderBy(i => i, StringComparer.Ordinal);
     }
@@ -180,6 +182,7 @@ public static class SeasonCompiler
             .Concat(new[] { season.UniversalImage, season.UniversalUnavailableImage, season.Branding.Badge, season.Branding.Banner })
             .Concat(season.Slides.Select(s => s.Image))
             .Concat(season.Story?.Chapters.SelectMany(c => new[] { c.Image, c.Icon }) ?? Enumerable.Empty<string>())
+            .Concat(season.MissionLinks.SelectMany(l => Assets(l.Package)))
             .Where(s => !string.IsNullOrEmpty(s))
             .Distinct();
     }

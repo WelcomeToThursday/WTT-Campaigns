@@ -43,7 +43,8 @@
     "tune-rounded",
     "undo-rounded",
     "view-sidebar-outline-rounded",
-    "visibility-off-outline-rounded"
+    "visibility-off-outline-rounded",
+    "warning-outline-rounded"
   ],
   "changes": "White fill; rasterized to transparent 72px PNGs. Original SVG geometry retained."
 }

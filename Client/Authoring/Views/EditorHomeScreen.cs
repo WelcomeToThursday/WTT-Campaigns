@@ -44,7 +44,7 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
             screen.Build();
             var manager = EftScreenManager.Instance;
             if (manager.TryGetScreen(ScreenType, out var existing) && existing)
-                throw new InvalidOperationException("The Campaign editor screen is already registered.");
+                throw new InvalidOperationException("The editor screen is already registered.");
             manager.RegisterScreen(ScreenType, screen);
             return screen;
         }
@@ -98,8 +98,8 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
 
     private void Build()
     {
-        _document = new EditorToolkitDocument("Campaign Editor Home", 32100);
-        _document.Content.style.backgroundColor = new Color(0, 0, 0, .48f);
+        _document = new EditorToolkitDocument("Editor Home", 32100);
+        _document.Content.AddToClassList("editor-home-background");
         _document.Content.pickingMode = PickingMode.Position;
         _document.Tick = Fit;
         _document.Escape = () =>
@@ -107,46 +107,26 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
             if (DismissPicker())
                 _dismissFrame = Time.frameCount;
         };
-        _stage = new VisualElement();
-        _stage.AddToClassList("editor-home-stage");
+        _stage = _document.Clone<VisualElement>("Home");
         _document.Content.Add(_stage);
-        foreach (var item in WTT.Campaigns.UI.Screens.EditorHomeComposition.Elements)
-        {
-            VisualElement element;
-            if (item.Kind == "Button")
-            {
-                var button = new Button { text = item.Text };
-                _buttons.Add(item.Id, button);
-                element = button;
-            }
-            else if (item.Kind == "Panel")
-            {
-                element = new VisualElement();
-                element.AddToClassList("editor-home-panel");
-            }
-            else
-            {
-                var label = new Label(item.Text) { enableRichText = false, pickingMode = PickingMode.Ignore };
-                label.style.fontSize = item.Size;
-                label.style.whiteSpace = WhiteSpace.Normal;
-                _labels.Add(item.Id, label);
-                element = label;
-            }
-            element.name = item.Id;
-            element.style.position = Position.Absolute;
-            element.style.left = item.X;
-            element.style.top = item.Y;
-            element.style.width = item.Width;
-            element.style.height = item.Height;
-            _stage.Add(element);
-        }
+        foreach (var button in _stage.Query<Button>().ToList())
+            _buttons.Add(button.name, button);
+        foreach (var label in _stage.Query<Label>().ToList())
+            if (!string.IsNullOrEmpty(label.name))
+                _labels.Add(label.name, label);
     }
 
     internal void Button(string name, Action action) => _buttons[name].clicked += action;
 
     internal void Interactable(string name, bool value) => _buttons[name].SetEnabled(value);
 
-    internal void Visible(string name, bool value) => _buttons[name].style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+    internal void SelectedTab(string name, bool value) => _buttons[name].EnableInClassList("editor-active-tab", value);
+
+    internal void Visible(string name, bool value) => _stage.Q(name).style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+
+    internal string LevelName => _stage.Q<TextField>("EditorLevelName").value;
+
+    internal void ResetLevelName() => _stage.Q<TextField>("EditorLevelName").SetValueWithoutNotify("New level");
 
     internal void Text(string name, string value)
     {
@@ -172,8 +152,7 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
     internal void Choose(string title, IReadOnlyList<(string Id, string Name)> choices, string selected, Action<string> choose)
     {
         DismissPicker();
-        var shield = new VisualElement();
-        shield.AddToClassList("editor-modal-shield");
+        var shield = _document.Clone<VisualElement>("HomePicker");
         _picker = shield;
         _document.Content.Add(shield);
         shield.RegisterCallback<PointerDownEvent>(evt =>
@@ -181,90 +160,28 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
             if (evt.target == shield)
                 DismissPicker();
         });
-        var panel = new VisualElement();
-        panel.AddToClassList("editor-modal");
-        panel.style.width = 500;
-        panel.style.maxWidth = Length.Percent(92);
-        panel.style.maxHeight = Length.Percent(85);
-        shield.Add(panel);
-        var header = new VisualElement();
-        header.style.flexDirection = FlexDirection.Row;
-        header.style.alignItems = Align.Center;
-        header.style.flexShrink = 0;
-        header.style.marginBottom = 12;
-        var heading = new Label(title) { enableRichText = false, pickingMode = PickingMode.Ignore };
-        heading.style.fontSize = 18;
-        heading.style.flexGrow = 1;
-        heading.style.flexShrink = 1;
-        heading.style.minWidth = 0;
-        heading.style.whiteSpace = WhiteSpace.Normal;
-        header.Add(heading);
-        var close = new Button(() => DismissPicker()) { text = "×", tooltip = "Close selection (Escape)" };
-        close.style.width = 32;
-        close.style.height = 32;
-        close.style.flexShrink = 0;
-        close.style.marginTop = close.style.marginBottom = close.style.marginRight = 0;
-        header.Add(close);
-        panel.Add(header);
+        shield.Q<Label>("Heading").text = title;
+        shield.Q<Button>("Close").clicked += () => DismissPicker();
         var rows = new List<(string Id, string Name)>();
         foreach (var choice in choices)
             rows.Add(choice);
-        var list = new ListView
+        var list = shield.Q<ListView>("Choices");
+        list.fixedItemHeight = 44;
+        list.virtualizationMethod = CollectionVirtualizationMethod.FixedHeight;
+        list.selectionType = SelectionType.Single;
+        list.makeItem = () => _document.Clone<VisualElement>("PickerRow");
+        list.bindItem = (element, index) =>
         {
-            itemsSource = rows,
-            fixedItemHeight = 44,
-            virtualizationMethod = CollectionVirtualizationMethod.FixedHeight,
-            selectionType = SelectionType.Single,
-            makeItem = () =>
-            {
-                var row = new VisualElement();
-                row.style.flexDirection = FlexDirection.Row;
-                row.style.alignItems = Align.Center;
-                row.style.height = 40;
-                row.style.marginTop = row.style.marginBottom = 2;
-                row.style.paddingLeft = row.style.paddingRight = 10;
-                var marker = new Label { name = "selected", pickingMode = PickingMode.Ignore };
-                marker.style.width = 24;
-                marker.style.flexShrink = 0;
-                var name = new Label
-                {
-                    name = "name",
-                    enableRichText = false,
-                    pickingMode = PickingMode.Ignore,
-                };
-                name.style.flexGrow = 1;
-                name.style.minWidth = 0;
-                name.style.whiteSpace = WhiteSpace.NoWrap;
-                name.style.overflow = Overflow.Hidden;
-                name.style.textOverflow = TextOverflow.Ellipsis;
-                // Override the modal's generic list label padding so both
-                // labels share a centered baseline inside the fixed row.
-                foreach (var label in new[] { marker, name })
-                    label.style.paddingTop = label.style.paddingBottom = label.style.paddingLeft = label.style.paddingRight = 0;
-                row.Add(marker);
-                row.Add(name);
-                return row;
-            },
-            bindItem = (element, index) =>
-            {
-                var current = rows[index].Id == selected;
-                element.Q<Label>("name").text = rows[index].Name;
-                element.Q<Label>("selected").text = current ? "›" : "";
-                element.tooltip = rows[index].Name;
-                element.EnableInClassList("editor-selected", current);
-            },
+            var current = rows[index].Id == selected;
+            element.Q<Label>("name").text = rows[index].Name;
+            element.Q<Label>("selected").text = current ? "›" : "";
+            element.tooltip = rows[index].Name;
+            element.EnableInClassList("editor-selected", current);
         };
+        list.itemsSource = rows;
         list.style.height = Math.Min(8, rows.Count) * 44;
-        list.style.flexShrink = 1;
-        list.style.minHeight = 0;
         EditorScrollStyle.Apply(list.Q<ScrollView>());
-        panel.Add(list);
-        if (rows.Count == 0)
-        {
-            var empty = new Label("No choices available.");
-            empty.style.paddingTop = empty.style.paddingBottom = 12;
-            panel.Add(empty);
-        }
+        shield.Q<Label>("Empty").style.display = rows.Count == 0 ? DisplayStyle.Flex : DisplayStyle.None;
         var selectedIndex = rows.FindIndex(row => row.Id == selected);
         if (selectedIndex >= 0)
         {

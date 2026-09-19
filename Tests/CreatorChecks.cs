@@ -23,6 +23,8 @@ internal static class CreatorChecks
                 File.Copy(file, target);
             }
             var store = new SeasonRepository(directory);
+            LevelLibraryChecks.Run(store, check);
+            MissionLibraryChecks.Run(store, check);
             TraderOfferChecks.Run(store, check);
             StoryImageRouteChecks.Run(store, directory, check);
             RaidAuthoringChecks.Run(store, check);

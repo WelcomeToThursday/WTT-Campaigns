@@ -208,7 +208,7 @@ public sealed partial class RaidEditor
                 return;
             }
         }
-        if (_mode != "Zones" && ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
+        if (_mode is not ("Zones" or "Hazards") && ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
             return;
         var closest = FilterZonesForLayout(_layoutId)
             .AsValueEnumerable()
@@ -219,7 +219,7 @@ public sealed partial class RaidEditor
         if (closest.Zone != null && Vector2.Distance(mouse, closest.Screen) < 24)
         {
             _selected = closest.Zone.Id;
-            _mode = "Zones";
+            _mode = closest.Zone.Hazard == null ? "Zones" : "Hazards";
             _picked = null;
             Refresh();
             return;
@@ -234,6 +234,7 @@ public sealed partial class RaidEditor
             SeasonZone zone => RaidEditorSession.Copy(zone),
             MapVolume volume => RaidEditorSession.Copy(volume),
             MapObjectEdit edit => RaidEditorSession.Copy(edit),
+            MapDoorEdit door => RaidEditorSession.Copy(door),
             MapLootPlacement loot => RaidEditorSession.Copy(loot),
             _ => RaidEditorSession.Copy(point),
         };
@@ -316,9 +317,14 @@ public sealed partial class RaidEditor
                 .Take(100)
         )
         {
-            var color = zone.Id == _selected ? new Color(.85f, .78f, .45f) : new Color(.4f, .7f, .6f, .7f);
+            var color =
+                zone.Id == _selected ? new Color(.85f, .78f, .45f)
+                : zone.Hazard != null ? new Color(1f, .3f, .15f, .85f)
+                : new Color(.4f, .7f, .6f, .7f);
             var center = ZoneRuntime.Vector(zone.Position);
             var rotation = Quaternion.Euler(ZoneRuntime.Vector(zone.Rotation));
+            if (zone.Hazard?.Kind == "Claymore")
+                Line(new[] { center, center + rotation * Vector3.forward * zone.Size.Z }, color);
             if (zone.Shape == "Sphere")
             {
                 for (var axis = 0; axis < 3; axis++)

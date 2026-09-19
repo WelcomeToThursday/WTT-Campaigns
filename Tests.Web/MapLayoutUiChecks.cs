@@ -57,26 +57,39 @@ internal static class MapLayoutUiChecks
             await renderer.Mount(host);
             var component = renderer.Components<MapLayoutWorkspace>().Single();
             check(
-                renderer.Text(component.Id).Contains("Building route") && renderer.Text(component.Id).Contains("Walkthrough requires"),
-                "Creator shows incomplete saved layouts and route readiness"
+                renderer.Text(component.Id).Contains("Building route") && !renderer.Text(component.Id).Contains("Walkthrough requires"),
+                "Ordinary levels do not require mission routes even when legacy checkpoints are preserved"
             );
             check(
                 renderer.Text(component.Id).Contains("assets/crate.bundle")
                     && renderer.Text(component.Id).Contains("Native random-loot container"),
                 "Creator displays independent asset references and container behavior"
             );
+            check(renderer.Text(component.Id).Contains("Apply in normal raids"), "Creator exposes the ordinary-raid layer default");
+            await renderer.DispatchEventAsync(
+                renderer.Event(component.Id, "input", "", "onchange", "checkbox"),
+                null,
+                new ChangeEventArgs { Value = true }
+            );
+            check(map.ApplyInNormalRaids && host.Changes == 1, "Enabling a normal-raid layer persists through the real Creator control");
+            await renderer.DispatchEventAsync(
+                renderer.Event(component.Id, "input", "", "onchange", "checkbox"),
+                null,
+                new ChangeEventArgs { Value = false }
+            );
+            check(!map.ApplyInNormalRaids && host.Changes == 2, "Disabling a layer reaches the draft change handler");
             await renderer.DispatchEventAsync(
                 renderer.Event(component.Id, "input", "", "onchange"),
                 null,
                 new ChangeEventArgs { Value = "Hallway escape" }
             );
-            check(map.Name == "Hallway escape" && host.Changes == 1, "Layout rename reaches the draft change handler");
+            check(map.Name == "Hallway escape" && host.Changes == 3, "Layout rename reaches the draft change handler");
             await renderer.DispatchEventAsync(
                 renderer.Event(component.Id, "button", "Duplicate layout", "onclick"),
                 null,
                 new MouseEventArgs()
             );
-            check(season.MapLayouts.Count == 2 && host.Changes == 2, "Creator duplicates layouts through the production component");
+            check(season.MapLayouts.Count == 2 && host.Changes == 4, "Creator duplicates layouts through the production component");
             check(
                 !MapLayoutRules.OwnedIds(map).Intersect(MapLayoutRules.OwnedIds(season.MapLayouts[1])).Any(),
                 "Creator duplication gives route records independent identities"
@@ -93,7 +106,7 @@ internal static class MapLayoutUiChecks
                 new MouseEventArgs()
             );
             check(
-                season.MapLayouts.Count == 1 && season.MapLayouts[0].Name == "Hallway escape copy" && host.Changes == 3,
+                season.MapLayouts.Count == 1 && season.MapLayouts[0].Name == "Hallway escape copy" && host.Changes == 5,
                 "Deleting a layout keeps the independent copy and signals persistence"
             );
         });

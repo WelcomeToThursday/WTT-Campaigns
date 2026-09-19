@@ -1,3 +1,4 @@
+using System.Xml.Linq;
 using Mono.Cecil;
 using WTT.Campaigns.Client.Authoring.Views;
 
@@ -27,10 +28,134 @@ internal static class EditorToolkitChecks
 
     internal static void Run(string game, string clientPath)
     {
+        // Bind the runtime inventory to the actual UXML shipped through the asset
+        // builder. A missing/renamed/wrong-type control would otherwise fail on open.
+        foreach (var name in EditorLayoutSpec.Sections.Select(n => n.Id))
+        {
+            using var source =
+                typeof(EditorToolkitChecks).Assembly.GetManifestResourceStream("EditorToolkit." + name + ".uxml")
+                ?? throw new InvalidOperationException("Missing editor template source: " + name);
+            var tree = XDocument.Load(source);
+            var elements = tree.Descendants().Where(e => e.Attribute("name") != null).ToDictionary(e => (string)e.Attribute("name")!);
+            void Check(EditorLayoutSpec.Node node)
+            {
+                var tag = node.Kind switch
+                {
+                    "button" or "choice" => "Button",
+                    "toggle" => "Toggle",
+                    "input" => "TextField",
+                    "text" => "Label",
+                    "image" => "Image",
+                    "scroll" => "ScrollView",
+                    _ => "VisualElement",
+                };
+                if (!elements.Remove(node.Id, out var element) || element.Name.LocalName != tag)
+                    throw new InvalidOperationException("Missing or wrong authored editor control: " + node.Id);
+                foreach (var child in node.Children)
+                    Check(child);
+            }
+            Check(EditorLayoutSpec.Sections.Single(n => n.Id == name));
+            if (name == "Library")
+            {
+                foreach (
+                    var (id, tag) in new[]
+                    {
+                        ("BrowserFilters", "VisualElement"),
+                        ("BrowserFooter", "VisualElement"),
+                        ("ToolActionsScroll", "ScrollView"),
+                        ("AiToolsScroll", "ScrollView"),
+                        ("BrowserPages", "ScrollView"),
+                        ("BrowserTree", "ListView"),
+                    }
+                )
+                    if (!elements.Remove(id, out var slot) || slot.Name.LocalName != tag)
+                        throw new InvalidOperationException("Missing or wrong browser slot: " + id);
+                var paging = tree.Descendants().Single(e => (string?)e.Attribute("name") == "Paging");
+                if (
+                    (string?)paging.Parent?.Attribute("name") != "BrowserFooter"
+                    || paging.Ancestors().Any(e => e.Name.LocalName == "ScrollView")
+                )
+                    throw new InvalidOperationException("Browser paging must remain outside the scrolling content.");
+            }
+            if (name == "CategoryRail" && (!elements.Remove("RailScroll", out var rail) || rail.Name.LocalName != "ScrollView"))
+                throw new InvalidOperationException("The tool rail needs its authored scroll container.");
+            if (elements.Count != 0)
+                throw new InvalidOperationException("Unbound editor controls: " + string.Join(", ", elements.Keys));
+        }
+        using (var homeSource = typeof(EditorToolkitChecks).Assembly.GetManifestResourceStream("EditorToolkit.Home.uxml")!)
+        {
+            var home = XDocument
+                .Load(homeSource)
+                .Descendants()
+                .Where(e => e.Attribute("name") != null)
+                .ToDictionary(e => (string)e.Attribute("name")!);
+            foreach (var item in WTT.Campaigns.UI.Screens.EditorHomeComposition.Elements)
+            {
+                var tag =
+                    item.Kind == "Field" ? "TextField"
+                    : item.Kind == "Button" ? "Button"
+                    : item.Kind == "Panel" ? "VisualElement"
+                    : "Label";
+                if (!home.Remove(item.Id, out var element) || element.Name.LocalName != tag)
+                    throw new InvalidOperationException("Missing home screen binding: " + item.Id);
+            }
+            if (home.Count != 0)
+                throw new InvalidOperationException("Unbound home screen controls.");
+        }
         using var resolver = new DefaultAssemblyResolver();
         resolver.AddSearchDirectory(Path.Combine(game, "EscapeFromTarkov_Data", "Managed"));
         resolver.AddSearchDirectory(Path.GetDirectoryName(clientPath)!);
         using var client = AssemblyDefinition.ReadAssembly(clientPath, new ReaderParameters { AssemblyResolver = resolver });
+        foreach (var type in client.MainModule.GetTypes().Where(t => IsAuthoring(t)))
+        foreach (var method in type.Methods.Where(m => m.HasBody))
+        foreach (var instruction in method.Body.Instructions)
+        {
+            if (
+                instruction.Operand is GenericInstanceMethod clone
+                && clone.DeclaringType.Name == "EditorToolkitDocument"
+                && (clone.Name == "Clone" || clone.Name == "CloneTemplate")
+                && instruction.Previous?.Operand is string template
+            )
+            {
+                if (type.Name == "MissionEditorPanel" && template == "ToolbarScroll")
+                    throw new InvalidOperationException(
+                        "Mission fields must use the existing vertical tool scroll, not the horizontal toolbar template."
+                    );
+                using var source =
+                    typeof(EditorToolkitChecks).Assembly.GetManifestResourceStream("EditorToolkit." + template + ".uxml")
+                    ?? throw new InvalidOperationException("Missing runtime template: " + template);
+                var root = XDocument.Load(source).Root!.Elements().Single(e => e.Name.LocalName != "Style");
+                var expected = clone.GenericArguments[0].Name;
+                if (expected != "VisualElement" && root.Name.LocalName != expected)
+                    throw new InvalidOperationException("Wrong runtime template type: " + template);
+            }
+            if (instruction.Operand is MethodReference lookup && lookup.DeclaringType.Name == "RaidEditorView")
+            {
+                if (lookup.Name is "Element" or "Control" && instruction.Previous?.Operand is string id && id.StartsWith("Tool:"))
+                    throw new InvalidOperationException("Tool window identity used as a control name: " + method.FullName + " / " + id);
+                if (
+                    lookup.Name == "ElementForTool"
+                    && instruction.Previous?.Operand is string control
+                    && instruction.Previous.Previous?.Operand is string tool
+                )
+                {
+                    var library = EditorLayoutSpec.Sections.Single(n => n.Id == "Library");
+                    bool Contains(EditorLayoutSpec.Node node) => node.Id == control || node.Children.Any(Contains);
+                    if (!Nodes().Any(n => n.Id == tool) || !Contains(library))
+                        throw new InvalidOperationException("Unresolved tool-specific control: " + tool + " / " + control);
+                }
+            }
+            if (
+                type.Namespace == "WTT.Campaigns.Client.Authoring.Views"
+                && instruction.OpCode.Code == Mono.Cecil.Cil.Code.Newobj
+                && instruction.Operand is MethodReference ctor
+                && ctor.DeclaringType.Namespace == "UnityEngine.UIElements"
+                && new[] { "Button", "Label", "VisualElement", "TextField", "ScrollView", "ListView", "Foldout", "Image" }.Contains(
+                    ctor.DeclaringType.Name
+                )
+            )
+                throw new InvalidOperationException("Editor presentation must use authored templates: " + method.FullName);
+        }
         var references = client
             .MainModule.GetMemberReferences()
             .OfType<MethodReference>()
@@ -135,7 +260,7 @@ internal static class EditorToolkitChecks
                     "EditorChoice" => "choice",
                     _ => "",
                 };
-                if (!inventory.TryGetValue(id, out var actual) || actual != expected)
+                if (!inventory.TryGetValue(id, out var actual) || actual != expected && !(actual == "toggle" && expected == "button"))
                     throw new InvalidOperationException("Missing or wrong Toolkit control: " + id + " in " + method.FullName);
             }
         foreach (var id in new[] { "KeepLocal", "KeepRemote", "Cancel", "Complete", "CloseEditor" })
@@ -158,11 +283,17 @@ internal static class EditorToolkitChecks
                 {
                     "Text" => "text",
                     "Caption" or "Button" => "button",
+                    "Checked" => "toggle",
                     "Input" or "Value" => "input",
                     "Dropdown" or "SetDropdown" => "choice",
                     _ => null,
                 };
-                if (control != null && expected != null && inventory[control] != expected)
+                if (
+                    control != null
+                    && expected != null
+                    && inventory[control] != expected
+                    && !(call.Name == "Button" && inventory[control] == "toggle")
+                )
                     throw new InvalidOperationException(
                         $"Wrong container control: {control} is {inventory[control]}, but {name} calls {call.Name}."
                     );

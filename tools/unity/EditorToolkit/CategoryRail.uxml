@@ -1,0 +1,16 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="CategoryRail" class="editor-actions editor-action-row">
+        <ui:ScrollView name="RailScroll" class="editor-rail-scroll">
+            <ui:Button name="Layouts" class="editor-action" text="Layouts" />
+            <ui:Button name="Routes" class="editor-action" text="Routes" />
+            <ui:Button name="Zones" class="editor-action" text="Zones" />
+            <ui:Button name="Hazards" class="editor-action" text="Hazards" />
+            <ui:Button name="Bindings" class="editor-action" text="Events" />
+            <ui:Button name="Captures" class="editor-action" text="Captures" />
+            <ui:Button name="Scene" class="editor-action" text="Scene" />
+            <ui:Button name="LootTool" class="editor-action" text="Loot" />
+            <ui:Button name="AI" class="editor-action" text="AI" />
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

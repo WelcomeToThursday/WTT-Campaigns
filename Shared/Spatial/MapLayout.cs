@@ -9,6 +9,10 @@ public sealed class MapLayout
     public string Id { get; set; } = "";
     public string Name { get; set; } = "New map layout";
     public string Location { get; set; } = "";
+    public bool ApplyInNormalRaids { get; set; }
+
+    public bool ShouldSerializeApplyInNormalRaids() => ApplyInNormalRaids;
+
     public List<MapObjectEdit> Objects { get; set; } = new();
     public List<MapLootPlacement> Loot { get; set; } = new();
     public List<MapDoorEdit> Doors { get; set; } = new();
@@ -21,6 +25,46 @@ public sealed class MapLayout
     public List<SpatialCapture> SpawnPoints { get; set; } = new();
     public List<MapEncounter> Encounters { get; set; } = new();
     public List<MapPatrolRoute> PatrolRoutes { get; set; } = new();
+
+    [System.Runtime.Serialization.OnDeserialized]
+    private void RestoreLegacyDoorPlacements(System.Runtime.Serialization.StreamingContext context)
+    {
+        // The first door-placement build captured native doors with the default Prop kind.
+        // Only door captures populated NativeId on Prop targets; preserve all other edits.
+        if (Objects == null || Doors == null)
+            return;
+        foreach (var edit in Objects.ToArray())
+        {
+            if (
+                edit.Operation != "Copy"
+                || edit.Target?.Kind != "Prop"
+                || string.IsNullOrEmpty(edit.Target.NativeId)
+                || edit.Target.IsAsset
+                || !string.IsNullOrEmpty(edit.Target.Bundle)
+                || !string.IsNullOrEmpty(edit.Target.Template)
+            )
+                continue;
+            if (Doors.Exists(d => d.Id == edit.Id))
+                continue; // Keep conflicting data for normal validation to report.
+            edit.Target.Kind = "Door";
+            Doors.Add(
+                new MapDoorEdit
+                {
+                    Id = edit.Id,
+                    Name = edit.Name,
+                    Location = edit.Location,
+                    Scene = edit.Scene,
+                    ObjectPath = edit.ObjectPath,
+                    Position = edit.Position,
+                    Rotation = edit.Rotation,
+                    Target = edit.Target,
+                    PlaceNew = true,
+                    State = "Shut",
+                }
+            );
+            Objects.Remove(edit);
+        }
+    }
 }
 
 public sealed class MapTarget
@@ -103,12 +147,26 @@ public sealed class ContainerContent
     public int Count { get; set; } = 1;
 }
 
-public sealed class MapDoorEdit
+public sealed class MapDoorEdit : SpatialCapture
 {
-    public string Id { get; set; } = "";
-    public string Name { get; set; } = "Door";
+    public MapDoorEdit() => Name = "Door";
+
     public MapTarget Target { get; set; } = new();
     public string State { get; set; } = "Unchanged";
+    public bool PlaceNew { get; set; }
+
+    // Null preserves the map's key; empty explicitly removes its key requirement.
+    public string? KeyId { get; set; }
+    public bool? CanBeBreached { get; set; }
+    public bool? Operatable { get; set; }
+
+    public bool ShouldSerializePlaceNew() => PlaceNew;
+
+    public bool ShouldSerializeKeyId() => KeyId != null;
+
+    public bool ShouldSerializeCanBeBreached() => CanBeBreached.HasValue;
+
+    public bool ShouldSerializeOperatable() => Operatable.HasValue;
 }
 
 public sealed class MapVolume : SpatialCapture
@@ -146,6 +204,7 @@ public static class MapLayoutRules
 
     public static IEnumerable<SpatialCapture> Points(MapLayout layout) =>
         (layout.Objects?.Cast<SpatialCapture>() ?? Enumerable.Empty<SpatialCapture>())
+            .Concat((layout.Doors ?? new()).Where(d => d != null && d.PlaceNew))
             .Concat(layout.Loot ?? new())
             .Concat(layout.Barriers ?? new())
             .Concat(layout.Checkpoints ?? new())
@@ -163,7 +222,7 @@ public static class MapLayoutRules
     public static IEnumerable<string> OwnedIds(MapLayout layout) =>
         new[] { layout.Id }
             .Concat(Points(layout).Select(p => p.Id))
-            .Concat((layout.Doors ?? new()).Where(d => d != null).Select(d => d.Id))
+            .Concat((layout.Doors ?? new()).Where(d => d != null && !d.PlaceNew).Select(d => d.Id))
             .Concat((layout.Loot ?? new()).Where(l => l != null).SelectMany(l => l.Items ?? new()).Select(i => i.Id))
             .Concat((layout.PatrolRoutes ?? new()).Where(r => r != null).Select(r => r.Id))
             .Concat(
@@ -281,7 +340,14 @@ public static class MapLayoutRules
                 errors.Add(issue.Message);
         }
         foreach (var door in layout.Doors)
+        {
             Need(door.State is "Unchanged" or "Open" or "Shut" or "Locked", "Unknown door state: " + door.Name);
+            Need(
+                door.KeyId == null || door.KeyId.Length <= 128 && door.KeyId.Trim() == door.KeyId,
+                "Invalid door key identifier: " + door.Name
+            );
+            Need(!door.PlaceNew || door.Target?.Kind == "Door", "New doors require a native door source: " + door.Name);
+        }
 
         foreach (var error in MapEncounterRules.Errors(layout))
             errors.Add(error);
@@ -309,7 +375,7 @@ public static class MapLayoutRules
         var targets = layout
             .Objects.Where(o => o.Operation != "Copy" && o.Target != null)
             .Select(o => o.Target.Scene + "/" + o.Target.Path)
-            .Concat(layout.Doors.Where(d => d.Target != null).Select(d => d.Target.Scene + "/" + d.Target.Path))
+            .Concat(layout.Doors.Where(d => d.Target != null && !d.PlaceNew).Select(d => d.Target.Scene + "/" + d.Target.Path))
             .ToArray();
         Need(targets.Distinct().Count() == targets.Length, "A scene object has conflicting overrides.");
         Need(

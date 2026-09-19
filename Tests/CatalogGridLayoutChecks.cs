@@ -6,8 +6,12 @@ internal static class CatalogGridLayoutChecks
 {
     internal static void Run(Action<bool, string> check)
     {
-        check(CatalogGridLayout.Capacity(1800, 640) == 48, "Wide catalog fills four rows instead of stopping after ten tiles");
+        check(CatalogGridLayout.Capacity(1800, 640) == 60, "Wide catalog fills five compact rows within the thumbnail budget");
         check(CatalogGridLayout.Capacity(450, 426) == 9, "Narrow catalog page fits three columns and rows");
+        check(CatalogGridLayout.Capacity(1800, 360) == 36, "Half-screen catalog viewport fits three rows of twelve tiles");
+        check(CatalogGridLayout.Capacity(900, 360) == 18, "Narrower half-screen viewport retains three rows");
+        check(CatalogGridLayout.Capacity(450, 235) == 3, "Capacity excludes a second row when its margins do not fit");
+        check(CatalogGridLayout.Capacity(450, 236) == 6, "Capacity includes the second row at its exact outer height");
         check(CatalogGridLayout.Capacity(100, 100) == 1, "Small catalog keeps a usable single tile");
         check(CatalogGridLayout.Capacity(4000, 2000) == 60, "Grid remains within the thumbnail cache and row pool budget");
         check(CatalogGridLayout.Capacity(float.NaN, 400) == 10, "Unresolved layout has a stable fallback");

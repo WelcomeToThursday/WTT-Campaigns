@@ -68,7 +68,7 @@ internal static class MissionServiceChecks
             "Wrong character identity is rejected"
         );
         request.CharacterId = "character";
-        request.Version = 2;
+        request.Version = 4;
         check(
             Throws(() => MissionTransaction.RequireRequestIdentity(request, "character", "season"), IdentityError),
             "Unsupported mission protocol is rejected"

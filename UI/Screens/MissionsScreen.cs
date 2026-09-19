@@ -147,7 +147,7 @@ public sealed class MissionsScreen : IDisposable
         list.content.GetComponent<VerticalLayoutGroup>()!.spacing = 12;
         if (_missions.Length == 0)
         {
-            var empty = _ui.Label(list.content, "MissionEmpty", "No authored missions are available for this campaign.", 22, 1300, 80);
+            var empty = _ui.Label(list.content, "MissionEmpty", "No published missions are available for this character.", 22, 1300, 80);
             empty.alignment = TextAnchor.MiddleCenter;
             empty.color = UiElements.Muted;
             return;
@@ -170,7 +170,7 @@ public sealed class MissionsScreen : IDisposable
         var subtitle = _ui.Label(
             Box(parent, "MissionSubtitle", 105, 104, 1040, 38),
             "Text",
-            "Complete authored routes and extract to advance your campaign.",
+            "Complete mission objectives and extract from the authored exit.",
             18,
             1040,
             38

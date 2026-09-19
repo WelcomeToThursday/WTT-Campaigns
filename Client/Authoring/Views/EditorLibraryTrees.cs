@@ -7,6 +7,22 @@ namespace WTT.Campaigns.Client.Authoring.Views;
 // filtering and expansion without needing to know any of these record types.
 internal static class EditorLibraryTrees
 {
+    internal static IReadOnlyList<EditorTreeNode> Doors(IEnumerable<(string Id, string Name, string Scene)> doors)
+    {
+        var roots = new List<EditorTreeNode>();
+        var scenes = new Dictionary<string, EditorTreeNode>(StringComparer.Ordinal);
+        foreach (var door in doors)
+        {
+            if (!scenes.TryGetValue(door.Scene, out var scene))
+            {
+                scenes.Add(door.Scene, scene = new EditorTreeNode("doors:scene:" + door.Scene, door.Scene));
+                roots.Add(scene);
+            }
+            scene.Children.Add(new EditorTreeNode("door:" + door.Id, door.Name, door.Id, true, 1, door.Scene + " / " + door.Name));
+        }
+        return roots;
+    }
+
     internal static IReadOnlyList<EditorTreeNode> Routes(IEnumerable<MapLayout> layouts, string location)
     {
         var roots = new List<EditorTreeNode>();

@@ -41,7 +41,7 @@ internal static class AiControlsChecks
         );
         var generated = (
             Groups: nodes.Where(n => n.Id.EndsWith("Group")).Select(n => n.Id).ToHashSet(),
-            Buttons: nodes.Where(n => n.Kind == "button").Select(n => n.Id).ToHashSet(),
+            Buttons: nodes.Where(n => n.Kind is "button" or "toggle").Select(n => n.Id).ToHashSet(),
             Fields: nodes.Where(n => n.Kind == "input").Select(n => n.Id).ToHashSet()
         );
         var generatedGroups = generated.Groups;
@@ -62,6 +62,10 @@ internal static class AiControlsChecks
             .Where(name => name.StartsWith("Ai", StringComparison.Ordinal))
             .ToHashSet(StringComparer.Ordinal);
         check(generatedButtons.SetEquals(boundButtons), "Every AI button declared in Toolkit is bound by BindAiControls");
+
+        var generatedChoices = nodes.Where(n => n.Kind == "choice").Select(n => n.Id).ToHashSet();
+        var boundChoices = CallArguments(bind, "Dropdown").Where(name => name.StartsWith("Ai", StringComparison.Ordinal)).ToHashSet();
+        check(generatedChoices.SetEquals(boundChoices), "Every AI choice uses explicit selection and has a bound handler");
 
         var boundFields = CallArguments(bind, "Input")
             .Where(name => name.StartsWith("Ai", StringComparison.Ordinal))

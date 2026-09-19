@@ -35,7 +35,7 @@ public sealed partial class RaidEditor
 
         if (!EditorMode.Ready && layoutId.Length > 0)
         {
-            error = "Layout-owned zones can only be edited in Campaign Editor mode.";
+            error = "Layout-owned zones can only be edited in Editor mode.";
             return false;
         }
 
@@ -83,7 +83,7 @@ public sealed partial class RaidEditor
 
         if (!EditorMode.Ready)
         {
-            error = "Layout-owned zones can only be copied in Campaign Editor mode.";
+            error = "Layout-owned zones can only be copied in Editor mode.";
             return false;
         }
 
@@ -111,7 +111,7 @@ public sealed partial class RaidEditor
 
         if (!EditorMode.Ready)
         {
-            error = "Layouts can only be deleted in Campaign Editor mode.";
+            error = "Layouts can only be deleted in Editor mode.";
             return false;
         }
 

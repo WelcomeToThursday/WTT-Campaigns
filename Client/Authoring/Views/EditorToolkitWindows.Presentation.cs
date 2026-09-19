@@ -13,6 +13,8 @@ internal sealed partial class EditorToolkitWindows
         bool sceneWorkspace = false
     )
     {
+        if (!sceneWorkspace)
+            _view.InspectorContext(mode, kind);
         var routes = mode == "Routes" && mapReady;
         var layouts = (mode == "Layouts" || mode == "Maps") && mapReady;
         var maps = layouts || routes;
@@ -20,8 +22,10 @@ internal sealed partial class EditorToolkitWindows
         Visible("RouteGuideGroup", routes);
         Visible("RouteFrameGroup", routes && hasSelection && kind != "Layout");
         Visible("MapWalkGroup", routes);
+        Visible("MapNormalRaidGroup", layouts && hasSelection && kind == "Layout");
+        Visible("MapLayerHelpGroup", layouts && hasSelection && kind == "Layout");
 
-        var zone = mode == "Zones" && hasSelection;
+        var zone = (mode is "Zones" or "Hazards") && hasSelection;
 
         var aiPoint = ai && (kind == "spawn" || kind == "waypoint" || kind == "trigger");
         var point = hasSelection && kind != "Scene" && (zone || mode == "Captures" || aiPoint);
@@ -32,6 +36,7 @@ internal sealed partial class EditorToolkitWindows
             Visible("RecordInspector", !maps);
         }
 
+        Visible("DoorInspectorGroup", false);
         Visible("EditorMapToolbar", mapReady);
         Visible("EditorUnload", mapReady);
 
@@ -48,7 +53,8 @@ internal sealed partial class EditorToolkitWindows
         Visible("RadiusGroup", zone && kind == "Sphere" || ai && kind == "trigger");
 
         Visible("PlacementGroup", point && !ai);
-        Visible("ZoneUsesGroup", zone);
+        Visible("ZoneUsesGroup", zone && mode != "Hazards");
+        Visible("HazardInfoGroup", zone && mode == "Hazards");
         Visible("ZoneScopeGroup", zone && mapReady);
 
         Visible("SceneActionsGroup", picked || bindZone);
@@ -103,7 +109,7 @@ internal sealed partial class EditorToolkitWindows
                 name,
                 name == "MapNew" ? layouts && !routes
                     : name == "MapStart" || name == "MapCheckpoint" || name == "MapExit" ? routes
-                    : name == "ZoneCreateScope" ? mode == "Zones"
+                    : name == "ZoneCreateScope" ? mode is "Zones" or "Hazards"
                     : sceneWorkspace
             );
 
@@ -129,10 +135,13 @@ internal sealed partial class EditorToolkitWindows
         bool hasSavedPoint = true
     )
     {
+        if (enabled)
+            _view.InspectorContext("Scene", tab + "/" + kind);
         var catalog = tab == "Catalog";
         var removed = kind == "Hide";
         Visible("SceneTabs", enabled);
-        Visible("SceneFilters", enabled && catalog);
+        Visible("SceneFilters", enabled);
+        Visible("SceneSource", enabled && catalog);
         Visible("SceneInspector", enabled);
         if (enabled)
             Visible("MapWalkGroup", false);
@@ -160,7 +169,7 @@ internal sealed partial class EditorToolkitWindows
 
     private void UpdateDetails()
     {
-        Visible("IdentityGroup", _identityAvailable && _recordDetails);
+        Visible("IdentityGroup", _identityAvailable);
         Visible("DetailsGroup", _recordAvailable && _recordDetails);
         Visible("MapDetailsGroup", _mapDetails);
         _view.Get<EditorButton>("RecordDetailsToggle").text = _recordDetails ? "Details −" : "Details +";

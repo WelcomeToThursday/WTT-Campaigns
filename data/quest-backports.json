@@ -2,16 +2,16 @@
   "Version": 1,
   "Sources": [
     {
-      "File": "F:/SPT 4.1.x/BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll",
-      "Sha256": "fcd2779fa30e9f93fe96b17d8e9236d244fab0cb11dce99ab377a652a0f5d485"
-    },
-    {
       "File": "F:/SPT 4.1.x/Development/1.0 Dump/gw-pve.escapefromtarkov.com/client/quest/list/response/resp.client.quest.list_1788671784.json",
       "Sha256": "6392212d48d8ba4c47fda4c77ba4f4cff4ffad267d32e90275bfab1844bbf0fe"
     },
     {
       "File": "F:/SPT 4.1.x/Development/1.0 Dump/gw-pvp-season.escapefromtarkov.com/client/quest/list/response/resp.client.quest.list_1788671684.json",
       "Sha256": "32ab61a583c3c265fc24b9bd84cb368ef96a1be1ada483a11c90ecf3d891cc52"
+    },
+    {
+      "File": "F:/SPT 4.1.x/EscapeFromTarkov_Data/Managed/Assembly-CSharp.dll",
+      "Sha256": "ee25cee1259777b38ed8b3e7841fdc2db3c98540b1469fa539b1ff183476e436"
     },
     {
       "File": "F:/SPT 4.1.x/EscapeFromTarkov_Data/Managed/UnityEngine.CoreModule.dll",

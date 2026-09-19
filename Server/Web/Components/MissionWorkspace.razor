@@ -4,14 +4,14 @@
 @using WTT.Campaigns.Server.Web.Authoring
 
 <section class="editor-section mission-workspace">
-    <p>Each mission joins an authored walkthrough layout to a story quest. Accept the quest in the lobby, then deploy from the Missions list.</p>
+    <p>Author the route, objectives, encounters and loot here. Campaign links control story availability separately.</p>
     <div class="content-workspace">
         <aside class="content-list" aria-label="Missions">
             <label>Search missions<input type="search" @bind="_search" @bind:event="oninput" placeholder="Name or ID…" /></label>
             <button class="primary" disabled="@(!CanAdd)" @onclick="Add">Add mission</button>
             @if (!CanAdd)
             {
-                <p class="navigator-empty">Add a walkthrough layout and a story-backed quest before creating a mission.</p>
+                <p class="navigator-empty">Each independent package has one mission and one layout. Embedded campaign missions also require a story quest.</p>
             }
             @foreach (var entry in Records)
             {
@@ -31,7 +31,7 @@
                 <div class="record-heading">
                     <h3>@DisplayName(mission)</h3>
                     <details class="reference-details"><summary>Reference ID</summary><code>@mission.Id</code></details>
-                    <div class="row"><button @onclick="Duplicate">Duplicate mission</button><button class="danger" @onclick="Delete">Delete mission</button></div>
+                    <div class="row">@if (Season.MissionPackage == null) { <button @onclick="Duplicate">Duplicate mission</button> }<button class="danger" @onclick="Delete">Delete mission</button></div>
                 </div>
                 <EditorSection Title="Mission briefing" Description="This text is shown before deployment. Keep route instructions clear for the player.">
                     <div class="form-grid">
@@ -39,7 +39,7 @@
                     </div>
                     <label>Briefing<textarea maxlength="4000" rows="5" @bind="mission.Briefing" @bind:event="oninput" @bind:after="NotifyChanged"></textarea></label>
                 </EditorSection>
-                <EditorSection Title="Mission links" Description="Choose existing authored records. A mission requires a story-backed quest and a completion objective from that quest.">
+                <EditorSection Title="Mission links" Description="Choose the authored layout. Embedded legacy missions also bind a story quest; independent missions receive quest bindings through campaign links.">
                     <label>Mission layout<select value="@mission.LayoutId" @onchange="@(e => SetLayout(mission, e.Value?.ToString() ?? ""))">
                         <option value="">Choose a layout…</option>
                         @foreach (var candidate in Season.MapLayouts.OrderBy(l => l.Name))
@@ -47,6 +47,8 @@
                             <option value="@candidate.Id">@candidate.Name · @candidate.Location</option>
                         }
                     </select></label>
+                    @if (Season.MissionPackage == null)
+                    {
                     <label>Story quest<select value="@mission.QuestId" @onchange="@(e => SetQuest(mission, e.Value?.ToString() ?? ""))">
                         <option value="">Choose a story quest…</option>
                         @foreach (var quest in StoryQuests.OrderBy(QuestName))
@@ -65,7 +67,13 @@
                     {
                         <p class="validation-warning">The selected quest needs a completion objective backed by a profile story variable. Add that objective in the quest editor first.</p>
                     }
+                    }
                 </EditorSection>
+                @if (Layout(mission) is { } logicLayout)
+                {
+                    <MissionLogicFields Mission="mission" Layout="logicLayout" Changed="NotifyChanged" />
+                    <MissionContainerLoot @key="logicLayout.Id" Season="Season" Layout="logicLayout" Changed="NotifyChanged" />
+                }
                 <EditorSection Title="Route and mission zones" Description="Route checkpoints are completed in authored order. Layout-owned zones are available to this mission's quest context.">
                     @if (Layout(mission) is { } routeLayout)
                     {
@@ -147,7 +155,7 @@
         }
     }
 
-    private bool CanAdd => Season.MapLayouts.Count > 0 && StoryQuests.Any();
+    private bool CanAdd => Season.MapLayouts.Count > 0 && (Season.MissionPackage != null ? Season.Missions.Count == 0 : StoryQuests.Any());
 
     private static string DisplayName(MissionDefinition mission) => string.IsNullOrWhiteSpace(mission.Name) ? "Unnamed mission" : mission.Name;
 
@@ -210,9 +218,10 @@
         {
             Id = SeasonRepository.NewId(),
             Name = "New mission",
+            CheckpointRetries = true,
             Briefing = "Complete the route and extract.",
             LayoutId = Season.MapLayouts[0].Id,
-            QuestId = StoryQuests.First().Id,
+            QuestId = Season.MissionPackage == null ? StoryQuests.First().Id : "",
         };
         mission.CompletionConditionId = FinishConditions(mission).FirstOrDefault()?.Id ?? "";
         Season.Missions.Add(mission);
@@ -231,6 +240,8 @@
         var copy = SeasonCompiler.Copy(selected);
         copy.Id = SeasonRepository.NewId();
         copy.Name += " copy";
+        MissionAuthoring.Remap(copy, copy.Events.Select(e => e.Id).Concat(copy.Objectives.Select(o => o.Id))
+            .ToDictionary(id => id, _ => MissionAuthoring.NewId()));
         Season.Missions.Insert(Season.Missions.IndexOf(selected) + 1, copy);
         _selectedId = copy.Id;
         await NotifyChanged();
@@ -272,6 +283,7 @@
 
     private Task NotifyChanged()
     {
+        if (Season.Missions.Any(MissionLogic.HasLogic)) Season.FormatVersion = Math.Max(Season.FormatVersion, 10);
         return Changed.InvokeAsync();
     }
 }

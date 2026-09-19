@@ -120,7 +120,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             }
 
             if (task.Tool == "MapLayout" && Editor.EditorSessionRegistry.Find(c.Client.CharacterId)?.Ready != true)
-                throw new InvalidOperationException("Open this map in Campaign Editor first.");
+                throw new InvalidOperationException("Open this map in Editor first.");
             c.Client.Tasks.RemoveAll(t => t.Status is "Completed" or "Cancelled");
             task.Id = Guid.NewGuid().ToString("N");
             task.Status = "Pending";
@@ -134,7 +134,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         {
             Expire();
             if (
-                r.Version is not (1 or 2 or 3 or 4 or 5 or 6)
+                r.Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7)
                 || !Guid.TryParseExact(r.ClientId, "N", out _)
                 || !Guid.TryParseExact(r.RaidId, "N", out _)
                 || r.Location.Length is 0 or > 120
@@ -226,7 +226,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
         {
             Expire();
             if (
-                r.Version is not (1 or 2 or 3 or 4 or 5 or 6)
+                r.Version is not (1 or 2 or 3 or 4 or 5 or 6 or 7)
                 || !_clients.TryGetValue(r.ClientId, out var c)
                 || c.Owner != owner
                 || c.Client.CharacterId != character
@@ -343,6 +343,31 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                     )
                         throw new InvalidOperationException("Update the client before editing layouts with game asset placements.");
                     proposed.MapLayouts = Copy(r.Definition.MapLayouts);
+                    if (
+                        r.Version < 7
+                        && (
+                            baseline.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)
+                            || draft.Definition.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)
+                            || r.Definition.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic)
+                        )
+                    )
+                        throw new InvalidOperationException("Update the client to preserve mission events and objectives.");
+                    if (r.Version >= 7)
+                    {
+                        proposed.Missions = Copy(r.Definition.Missions);
+                        foreach (var mission in proposed.Missions)
+                        {
+                            var missionLayout = proposed.MapLayouts.FirstOrDefault(l => l.Id == mission.LayoutId);
+                            if (missionLayout == null)
+                                throw new InvalidOperationException("Mission layout is missing.");
+                            var missionErrors = WTT.Campaigns.Shared.Missions.MissionLogicRules.DraftErrors(mission);
+                            if (missionErrors.Count > 0)
+                                throw new InvalidOperationException(string.Join("\n", missionErrors));
+                        }
+                        if (proposed.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic))
+                            proposed.FormatVersion = Math.Max(proposed.FormatVersion, 10);
+                    }
+                    WTT.Campaigns.Shared.Authoring.EditorContentRules.ValidateEdit(baseline, proposed);
                     foreach (
                         var layout in proposed.MapLayouts.Where(l =>
                             !baseline.MapLayouts.Any(b => b.Id == l.Id && JToken.DeepEquals(JObject.FromObject(b), JObject.FromObject(l)))

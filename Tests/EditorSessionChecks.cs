@@ -21,24 +21,24 @@ internal static class EditorSessionChecks
             Contact = now,
         };
         var request = new AuthoringRequest { EditorSessionId = serverSession.Id, Location = "Interchange" };
-        foreach (var version in new[] { 2, 3, 4, 5, 6 })
+        foreach (var version in new[] { 2, 3, 4, 5, 6, 7 })
         {
             request.Version = version;
             check(serverSession.AcceptsMapRequest("owner", request, now), "Editor map connection accepts protocol " + version);
         }
-        foreach (var version in new[] { 0, 1, 7 })
+        foreach (var version in new[] { 0, 1, 8 })
         {
             request.Version = version;
             check(!serverSession.AcceptsMapRequest("owner", request, now), "Editor map connection rejects protocol " + version);
         }
-        request.Version = 6;
-        check(!serverSession.AcceptsMapRequest("other", request, now), "Protocol 6 retains the owner check");
-        check(!serverSession.AcceptsMapRequest("owner", request, now.AddMinutes(2)), "Protocol 6 retains session expiry");
+        request.Version = 7;
+        check(!serverSession.AcceptsMapRequest("other", request, now), "Protocol 7 retains the owner check");
+        check(!serverSession.AcceptsMapRequest("owner", request, now.AddMinutes(2)), "Protocol 7 retains session expiry");
         request.EditorSessionId = "wrong";
-        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 6 retains the session token check");
+        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 7 retains the session token check");
         request.EditorSessionId = serverSession.Id;
         request.Location = "woods";
-        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 6 retains the exact map check");
+        check(!serverSession.AcceptsMapRequest("owner", request, now), "Protocol 7 retains the exact map check");
         serverSession.UnloadMap();
         request.Location = "";
         check(!serverSession.AcceptsMapRequest("owner", request, now), "A matching empty map cannot authorize an editor connection");

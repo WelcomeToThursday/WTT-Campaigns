@@ -27,6 +27,18 @@ internal sealed class MissionLoot : IDisposable
     private bool _disposed;
     private readonly List<(SceneAssetCatalog.Model Model, LootableContainer Container, SceneNavigation Navigation)> _containers = new();
 
+    internal IEnumerable<(string Id, WorldInteractiveObject Object)> MissionInteractions(MapLayout layout)
+    {
+        foreach (var entry in _containers)
+        {
+            var placement = layout
+                .Objects.AsValueEnumerable()
+                .FirstOrDefault(o => entry.Container.Id.EndsWith("-" + o.Id, StringComparison.Ordinal));
+            if (placement != null)
+                yield return (placement.Id, entry.Container);
+        }
+    }
+
     internal async Task ApplyAsync(
         MapLayout layout,
         string runId,
@@ -160,9 +172,9 @@ internal sealed class MissionLoot : IDisposable
                 {
                     if (!itemFactory.ItemTemplates.TryGetValue(record.Template, out var template))
                         throw new InvalidOperationException("Placed loot template is unavailable: " + record.Template);
-                    if (template.Prefab != null)
+                    if (template.Prefab != null && !string.IsNullOrWhiteSpace(template.Prefab.path))
                         resources.Add(template.Prefab);
-                    if (template.UsePrefab != null)
+                    if (template.UsePrefab != null && !string.IsNullOrWhiteSpace(template.UsePrefab.path))
                         resources.Add(template.UsePrefab);
                 }
                 await factory.LoadBundlesAndCreatePools(
@@ -246,9 +258,12 @@ internal sealed class MissionLoot : IDisposable
         // A taken item has already left LootList. Checking both membership and
         // item identity also avoids destroying an object reused by EFT's pool.
         if (_world && Singleton<GameWorld>.Instantiated && Singleton<GameWorld>.Instance == _world)
-            foreach (var (loot, itemId) in _owned)
-                if (loot && loot.Item?.Id == itemId && _world.LootList.Contains(loot))
-                    _world.DestroyLoot(loot);
+            foreach (var (_, itemId) in _owned)
+            {
+                var current = _world.LootList.AsValueEnumerable().OfType<LootItem>().FirstOrDefault(l => l && l.Item?.Id == itemId);
+                if (current)
+                    _world.DestroyLoot(current);
+            }
         _owned.Clear();
         foreach (var (model, container, navigation) in _containers)
         {

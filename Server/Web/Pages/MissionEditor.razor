@@ -1,0 +1,5 @@
+@page "/wtt-campaigns/creator/missions"
+@attribute [Authorize(Policy = "Administrator")]
+@rendermode InteractiveServer
+@layout SPTarkov.Server.Web.Layout.BaseMudBlazorLayout
+<Creator MissionEditor="true" />

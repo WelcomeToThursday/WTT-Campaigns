@@ -1,0 +1,23 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="TransformToolbar" class="editor-toolbar editor-actions editor-action-row">
+        <ui:Button name="Undo" text="Undo" class="editor-action" />
+        <ui:Button name="Redo" text="Redo" class="editor-action" />
+        <ui:Button name="Move" text="Move" class="editor-action" />
+        <ui:Button name="Rotate" text="Rotate" class="editor-action" />
+        <ui:Button name="Scale" text="Scale" class="editor-action" />
+        <ui:Button name="Snap" text="Snap" class="editor-action" />
+        <ui:Label name="CameraSpeedLabel" text="Fly m/s" class="editor-label" picking-mode="Ignore" />
+        <ui:Button name="CameraSlower" text="-" class="editor-action" />
+        <ui:TextField name="CameraSpeed" label="" class="editor-field" />
+        <ui:Button name="CameraFaster" text="+" class="editor-action" />
+        <ui:VisualElement name="EditorMapToolbar" class="editor-actions editor-action-row">
+            <ui:Button name="EditorWalk" text="Walkthrough" class="editor-action" />
+            <ui:Button name="AiObserve" text="Observe" class="editor-action" />
+            <ui:Button name="AiPlaytest" text="Playtest" class="editor-action" />
+            <ui:Button name="TestCheckpoints" text="Test checkpoints" class="editor-action" tooltip="Test the selected layout's route and encounters with checkpoint retries enabled. Reach a checkpoint, then die and choose Retry checkpoint. Before the first checkpoint, retry restores the start." />
+            <ui:Button name="AiPlaytestGear" text="Playtest kit" class="editor-action editor-choice" />
+            <ui:Button name="EditorReset" text="Reset preview" class="editor-action" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

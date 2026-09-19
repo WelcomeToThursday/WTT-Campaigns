@@ -66,6 +66,10 @@ internal sealed partial class RaidEditorView
         set => Browser.Sync = value;
     }
     private Action<string>? _selectTree;
+    private Action<string>? _activateCatalog;
+
+    internal void BindCatalogActivation(Action<string> action) => _activateCatalog = action;
+
     internal int TreeRecordCount => _treeModel?.SelectableCount ?? 0;
     internal int TreeVisibleCount => _treeRows.Count;
 
@@ -74,103 +78,90 @@ internal sealed partial class RaidEditorView
         var owner = ToolContext;
         var state = Browser;
         var parent = Element("LibraryScroll");
-        Browser.Paged = new ScrollView();
+        Browser.Paged = parent.Q<ScrollView>("BrowserPages");
         EditorScrollStyle.Apply(_paged);
-        _paged.style.flexGrow = 1;
-        _paged.style.minHeight = 0;
-        _paged.style.flexBasis = 0;
         _paged.contentViewport.RegisterCallback<GeometryChangedEvent>(evt =>
         {
             if (state.Presentation == 2)
                 state.Paged.contentContainer.style.width = evt.newRect.width;
         });
-        parent.Add(_paged);
         for (var i = 0; i < (owner == "Scene" ? CatalogGridLayout.MaximumItems : 10); i++)
         {
-            var button = new Button();
-            button.AddToClassList("editor-browser-row");
-            EditorControlLayout.ListRow(button);
-            button.style.minHeight = 28;
-            button.style.marginTop = button.style.marginBottom = 1;
+            var button = Document.Clone<Button>("BrowserRow");
             var control = new EditorButton(button);
             button.style.display = DisplayStyle.None;
             Register("Row" + i, control);
             _rows.Add(control);
+            var activationId = "";
+            button.RegisterCallback<PointerDownEvent>(
+                evt =>
+                {
+                    if (evt.button == 0)
+                        activationId = control.Identity;
+                },
+                TrickleDown.TrickleDown
+            );
+            button.RegisterCallback<ClickEvent>(evt =>
+            {
+                if (owner == "Scene" && evt.button == 0 && evt.clickCount == 2 && Activate(owner) && activationId.Length > 0)
+                    _activateCatalog?.Invoke(activationId);
+            });
             _paged.Add(button);
-            var image = new Image();
-            image.AddToClassList("editor-browser-icon");
-            Register("SceneIcon" + i, new EditorImage(image));
-            button.Add(image);
-            var status = new Label();
-            status.AddToClassList("editor-browser-status");
-            Register("SceneIconStatus" + i, new EditorLabel(status));
-            button.Add(status);
+            Register("SceneIcon" + i, new EditorImage(button.Q<Image>("Icon")));
+            Register("SceneIconStatus" + i, new EditorLabel(button.Q<Label>("Status")));
             Visible("SceneIcon" + i, false);
             Visible("SceneIconStatus" + i, false);
         }
-        Browser.Tree = new ListView
+        Browser.Tree = parent.Q<ListView>("BrowserTree");
+        _tree.fixedItemHeight = EditorControlLayout.TreeRowHeight;
+        _tree.virtualizationMethod = CollectionVirtualizationMethod.FixedHeight;
+        _tree.selectionType = SelectionType.Single;
+        _tree.itemsSource = _treeRows;
+        _tree.makeItem = () =>
         {
-            fixedItemHeight = EditorControlLayout.TreeRowHeight,
-            virtualizationMethod = CollectionVirtualizationMethod.FixedHeight,
-            selectionType = SelectionType.Single,
-            itemsSource = _treeRows,
-            makeItem = () =>
+            var row = Document.Clone<VisualElement>("TreeRow");
+            var fold = row.Q<Foldout>("Fold");
+            EditorControlLayout.TreeRow(row, fold, row.Q<Label>("tree-label"));
+            fold.RegisterValueChangedCallback(evt =>
             {
-                var row = new VisualElement();
-                row.AddToClassList("editor-tree-row");
-                // Use the native theme arrow: the recovered EFT font has no triangle glyphs.
-                var fold = new Foldout { text = "", focusable = false };
-                row.Add(fold);
-                var label = new Label { name = "tree-label", enableRichText = false };
-                EditorControlLayout.TreeRow(row, fold, label);
-                row.Add(label);
-                fold.RegisterValueChangedCallback(evt =>
+                if (row.userData is EditorTreeNode node && node.HasChildren)
                 {
-                    if (row.userData is EditorTreeNode node && node.HasChildren)
+                    if (!Activate(owner))
+                        return;
+                    var expanded = state.Expanded[state.Context];
+                    if (evt.newValue)
+                        expanded.Add(node.Key);
+                    else
+                        expanded.Remove(node.Key);
+                    // Finish the toggle event before rebinding recycled list rows.
+                    state.Tree.schedule.Execute(() =>
                     {
-                        if (!Activate(owner))
-                            return;
-                        var expanded = state.Expanded[state.Context];
-                        if (evt.newValue)
-                            expanded.Add(node.Key);
-                        else
-                            expanded.Remove(node.Key);
-                        // Finish the toggle event before rebinding recycled list rows.
-                        state.Tree.schedule.Execute(() =>
-                        {
-                            if (Activate(owner))
-                                RebuildTree(false);
-                        });
-                    }
-                });
-                row.RegisterCallback<PointerEnterEvent>(_ =>
-                {
-                    if (row.userData is EditorTreeNode node)
-                        Windows.ShowTooltip("", node.Path, row);
-                });
-                row.RegisterCallback<PointerLeaveEvent>(_ => Windows.HideTooltip());
-                return row;
-            },
-            bindItem = (row, index) =>
+                        if (Activate(owner))
+                            RebuildTree(false);
+                    });
+                }
+            });
+            row.RegisterCallback<PointerEnterEvent>(_ =>
             {
-                var node = state.TreeRows[index];
-                row.userData = node;
-                row.style.paddingLeft = 4 + node.Depth * 14;
-                row.Q<Label>("tree-label").text = node.Label;
-                var fold = row.Q<Foldout>();
-                fold.SetValueWithoutNotify(
-                    node.HasChildren && (state.Search.Length > 0 || state.Expanded[state.Context].Contains(node.Key))
-                );
-                fold.contentContainer.style.display = DisplayStyle.None;
-                fold.SetEnabled(node.HasChildren);
-                fold.style.visibility = node.HasChildren ? Visibility.Visible : Visibility.Hidden;
-            },
+                if (row.userData is EditorTreeNode node)
+                    Windows.ShowTooltip("", node.Path, row);
+            });
+            row.RegisterCallback<PointerLeaveEvent>(_ => Windows.HideTooltip());
+            return row;
         };
-        _tree.style.flexGrow = 1;
-        _tree.style.minHeight = 0;
-        _tree.style.flexBasis = 0;
+        _tree.bindItem = (row, index) =>
+        {
+            var node = state.TreeRows[index];
+            row.userData = node;
+            row.style.paddingLeft = 4 + node.Depth * 14;
+            row.Q<Label>("tree-label").text = node.Label;
+            var fold = row.Q<Foldout>();
+            fold.SetValueWithoutNotify(node.HasChildren && (state.Search.Length > 0 || state.Expanded[state.Context].Contains(node.Key)));
+            fold.contentContainer.style.display = DisplayStyle.None;
+            fold.SetEnabled(node.HasChildren);
+            fold.style.visibility = node.HasChildren ? Visibility.Visible : Visibility.Hidden;
+        };
         EditorScrollStyle.Apply(_tree.Q<ScrollView>());
-        parent.Add(_tree);
         _tree.style.display = DisplayStyle.None;
         _tree.selectionChanged += selection =>
         {
@@ -186,6 +177,17 @@ internal sealed partial class RaidEditorView
                 }
                 break;
             }
+        };
+        _tree.itemsChosen += selection =>
+        {
+            if (owner != "Scene" || !Activate(owner))
+                return;
+            foreach (var item in selection)
+                if (item is EditorTreeNode { Selectable: true } node)
+                {
+                    _activateCatalog?.Invoke(node.Id);
+                    break;
+                }
         };
     }
 

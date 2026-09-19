@@ -1,0 +1,36 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement class="editor-home-stage">
+        <ui:VisualElement name="HomeFrame" style="position: absolute; left: 100px; top: 60px; width: 1080px; height: 600px;" class="editor-home-panel" />
+        <ui:VisualElement name="HomeTitleBar" style="position: absolute; left: 100px; top: 60px; width: 1080px; height: 40px;" class="editor-home-panel" />
+        <ui:Label name="EditorTitle" style="position: absolute; left: 114px; top: 64px; width: 790px; height: 32px; font-size: 21px; white-space: normal;" text="WTT / EDITOR" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorStartup" style="position: absolute; left: 916px; top: 66px; width: 250px; height: 28px;" text="STARTUP: NORMAL" />
+        <ui:Button name="EditorMissionsTab" class="editor-home-tab" style="position: absolute; left: 124px; top: 114px; width: 210px; height: 36px;" text="MISSIONS" />
+        <ui:Button name="EditorLevelsTab" class="editor-home-tab" style="position: absolute; left: 346px; top: 114px; width: 210px; height: 36px;" text="LEVELS" />
+        <ui:Label name="TabHelp" style="position: absolute; left: 578px; top: 112px; width: 574px; height: 44px; font-size: 16px; white-space: normal;" text="Choose mission or level content." picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Label name="DraftHeading" style="position: absolute; left: 124px; top: 174px; width: 292px; height: 28px; font-size: 20px; white-space: normal;" text="CONTENT DRAFT" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorDraft" style="position: absolute; left: 124px; top: 210px; width: 292px; height: 38px;" text="SELECT DRAFT" />
+        <ui:Label name="DraftHelp" style="position: absolute; left: 124px; top: 260px; width: 292px; height: 44px; font-size: 17px; white-space: normal;" text="Choose the campaign you want to edit." picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorRefresh" style="position: absolute; left: 124px; top: 322px; width: 292px; height: 32px;" text="REFRESH DRAFTS" />
+        <ui:Button name="EditorNewLevel" style="position: absolute; left: 124px; top: 364px; width: 292px; height: 34px;" text="NEW LEVEL" />
+        <ui:TextField name="EditorLevelName" class="editor-field" max-length="120" style="position: absolute; left: 460px; top: 302px; width: 692px; height: 38px;" value="New level" />
+        <ui:Label name="CreatorHeading" style="position: absolute; left: 124px; top: 364px; width: 292px; height: 28px; font-size: 20px; white-space: normal;" text="WEB CREATOR" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Label name="CreatorHelp" style="position: absolute; left: 124px; top: 406px; width: 292px; height: 60px; font-size: 17px; white-space: normal;" text="Create drafts and edit quests, dialogue, traders and rewards." picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorWeb" style="position: absolute; left: 124px; top: 480px; width: 292px; height: 34px;" text="OPEN CREATOR" />
+        <ui:Label name="MapHeading" style="position: absolute; left: 460px; top: 174px; width: 692px; height: 28px; font-size: 20px; white-space: normal;" text="MAP WORKSPACE" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Label name="EditorSelection" style="position: absolute; left: 460px; top: 208px; width: 692px; height: 54px; font-size: 23px; white-space: normal;" text="Select a content draft to begin" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Label name="LayoutHeading" style="position: absolute; left: 460px; top: 274px; width: 692px; height: 24px; font-size: 17px; white-space: normal;" text="MISSION LAYOUT" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorLayout" style="position: absolute; left: 460px; top: 302px; width: 692px; height: 38px;" text="NEW LAYOUT" />
+        <ui:Label name="LocationHeading" style="position: absolute; left: 460px; top: 354px; width: 692px; height: 24px; font-size: 17px; white-space: normal;" text="LOCATION" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorMap" style="position: absolute; left: 460px; top: 382px; width: 692px; height: 38px;" text="SELECT LOCATION" />
+        <ui:Label name="EditorMapHelp" style="position: absolute; left: 460px; top: 430px; width: 692px; height: 48px; font-size: 17px; white-space: normal;" text="Choose a location for a new layout." picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorMissionTest" style="position: absolute; left: 460px; top: 478px; width: 330px; height: 36px;" text="TEST MISSION" />
+        <ui:Button name="EditorCampaignTest" style="position: absolute; left: 806px; top: 478px; width: 346px; height: 36px;" text="TEST CAMPAIGN FLOW" />
+        <ui:Label name="WorkspaceHelp" style="position: absolute; left: 460px; top: 517px; width: 692px; height: 26px; font-size: 15px; white-space: normal;" text="Both tests use disposable state. Your real character is preserved." picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Label name="WorkspaceMode" style="position: absolute; left: 124px; top: 546px; width: 1028px; height: 26px; font-size: 16px; white-space: normal;" text="EDITOR SESSION  /  Gameplay and progression disabled" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorReturn" style="position: absolute; left: 124px; top: 608px; width: 210px; height: 34px;" text="RETURN TO GAME" />
+        <ui:Label name="EditorHomeStatus" style="position: absolute; left: 352px; top: 592px; width: 532px; height: 58px; font-size: 16px; white-space: normal;" text="Connecting to editor…" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorRetry" style="position: absolute; left: 916px; top: 608px; width: 236px; height: 34px;" text="RETRY CONNECTION" />
+        <ui:Button name="EditorOpen" style="position: absolute; left: 916px; top: 608px; width: 236px; height: 34px;" text="OPEN MAP" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -33,11 +33,13 @@ internal sealed class CampaignUiInputPatch : ModulePatch
             (Story.StoryVisitRuntime.Instance && Story.StoryVisitRuntime.Instance.InputBlocked)
             || (Story.StoryCinematicRuntime.Instance && Story.StoryCinematicRuntime.Instance.InputBlocked);
         var missionBlocked = MissionUi.Instance && MissionUi.Instance.InputBlocked;
+        var layersBlocked = Spatial.MapLayerUi.Instance && Spatial.MapLayerUi.Instance.InputBlocked;
         if (
             !editorHome
             && !editorBlocked
             && !storyBlocked
             && !missionBlocked
+            && !layersBlocked
             && (__instance is not UIInputRoot || !SeasonUi.Instance || !SeasonUi.Instance.InputBlocked)
         )
         {
@@ -55,7 +57,7 @@ internal sealed class CampaignUiInputPatch : ModulePatch
         // Unity's input fields and buttons continue receiving their own EventSystem input.
         commands.Clear();
         shouldLockCursor =
-            editorBlocked && !storyBlocked && !missionBlocked && Authoring.RaidEditor.Instance!.CameraLooking
+            editorBlocked && !storyBlocked && !missionBlocked && !layersBlocked && Authoring.RaidEditor.Instance!.CameraLooking
                 ? ECursorResult.LockCursor
                 : ECursorResult.ShowCursor;
         if (axes != null)

@@ -50,7 +50,7 @@ public sealed class EditorRequestGate(EditorSessions editor) : AbstractPatch
             return true;
         _output.SetValue(
             wrapper,
-            "{\"err\":228,\"errmsg\":\"This action is unavailable in Campaign Editor.\",\"data\":null,\"Error\":\"Return to game before using gameplay features.\"}"
+            "{\"err\":228,\"errmsg\":\"This action is unavailable in Editor.\",\"data\":null,\"Error\":\"Return to game before using gameplay features.\"}"
         );
         // Mark the request handled so neither static nor dynamic gameplay routes run.
         __result = ValueTask.FromResult(true);

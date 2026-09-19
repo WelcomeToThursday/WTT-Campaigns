@@ -60,7 +60,9 @@ class Stream:
 
 class Library:
 
-    def __init__(self, game):
+    def __init__(self, game, name="wtt-native-containers"):
+        self.name = name
+        self.cab = "CAB-" + name
         self.game = game
         self.data = game / 'EscapeFromTarkov_Data'
         self.files = {}
@@ -70,7 +72,7 @@ class Library:
         self.stream = bytearray()
         self.gen = Generator('2022.3.43f1')
         for p in (self.data / 'Managed').glob('*.dll'):
-            self.gen.load_dll((game / 'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll' if p.name == 'Assembly-CSharp.dll' else p).read_bytes())
+            self.gen.load_dll(p.read_bytes())
         env = UnityPy.load(str(self.data / 'StreamingAssets/Windows/assets/content/location_objects/lootable/prefab/scontainer_crate.bundle'))
         self.bundle = next(iter(env.files.values()))
         self.asset = next((f for f in self.bundle.files.values() if hasattr(f, 'objects')))
@@ -84,8 +86,8 @@ class Library:
         self.asset.externals = []
         self.asset.script_types = []
         self.asset._enable_type_tree = True
-        self.bundle.files = {'CAB-wtt-native-containers': self.asset}
-        self.asset.name = 'CAB-wtt-native-containers'
+        self.bundle.files = {self.cab: self.asset}
+        self.asset.name = self.cab
         self.types = {}
         self.roots = set()
         self.allowed = set()
@@ -235,7 +237,7 @@ class Library:
             if len(data) != v[sizekey]:
                 raise ValueError('Truncated resource ' + str(path))
             v[offsetkey] = len(self.stream)
-            v[pathkey] = 'archive:/CAB-wtt-native-containers/CAB-wtt-native-containers.resS'
+            v[pathkey] = f'archive:/{self.cab}/{self.cab}.resS'
             self.stream.extend(data)
 
     def build(self):
@@ -307,7 +309,7 @@ class Library:
             clone.save_typetree(t, node)
             self.asset.objects[clone.path_id] = clone
         tree = self.abtree
-        tree['m_Name'] = tree['m_AssetBundleName'] = 'wtt-native-containers'
+        tree['m_Name'] = tree['m_AssetBundleName'] = self.name
         tree['m_Dependencies'] = []
         tree['m_SceneHashes'] = []
         tree['m_IsStreamedSceneAssetBundle'] = False
@@ -330,7 +332,7 @@ class Library:
                 'asset': {'m_FileID': 0, 'm_PathID': root}}))
         tree['m_MainAsset'] = {'preloadIndex': 0, 'preloadSize': 0, 'asset': {'m_FileID': 0, 'm_PathID': 0}}
         self.asset.objects[1].save_typetree(tree)
-        self.bundle.files['CAB-wtt-native-containers.resS'] = Stream(bytes(self.stream))
+        self.bundle.files[self.cab + '.resS'] = Stream(bytes(self.stream))
         return self.bundle.save(packer='lz4')
 
 def main():
@@ -360,7 +362,7 @@ def main():
     raw = lib.build()
     a.output.mkdir(parents=True, exist_ok=True)
     (a.output / 'native-containers.bundle').write_bytes(raw)
-    manifest = {'Schema': 1, 'NativeAssemblySha256': hashlib.sha256((a.game / 'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll').read_bytes()).hexdigest().upper(), 'Sha256': hashlib.sha256(raw).hexdigest().upper(), 'Entries': lib.entries}
+    manifest = {'Schema': 1, 'NativeAssemblySha256': hashlib.sha256((a.game / 'EscapeFromTarkov_Data/Managed/Assembly-CSharp.dll').read_bytes()).hexdigest().upper(), 'Sha256': hashlib.sha256(raw).hexdigest().upper(), 'Entries': lib.entries}
     (a.output / 'catalog.json').write_text(json.dumps(manifest, indent=2))
     print('Exported', len(lib.entries), 'containers,', len(raw), 'bytes')
 
@@ -370,7 +372,7 @@ def scan_inventory(game):
     script_ids = {pid for pid, obj in scripts.items() if obj.type.name == 'MonoScript' and obj.read().m_Namespace == 'EFT.Interactive' and (obj.read().m_ClassName == 'LootableContainer')}
     generator = Generator('2022.3.43f1')
     for path in (data / 'Managed').glob('*.dll'):
-        generator.load_dll((game / 'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll' if path.name == 'Assembly-CSharp.dll' else path).read_bytes())
+        generator.load_dll(path.read_bytes())
     node = generator.get_nodes_up('Assembly-CSharp.dll', 'EFT.Interactive.LootableContainer')
     inventory = []
     for path in sorted(data.glob('level*')):
@@ -396,7 +398,7 @@ def verify_library(directory, game):
     bundle_path = directory / 'native-containers.bundle'
     assert manifest['Schema'] == 1
     assert hashlib.sha256(bundle_path.read_bytes()).hexdigest().upper() == manifest['Sha256'], 'Library hash mismatch'
-    native = game / 'BepInEx/DumpedAssemblies/EscapeFromTarkov/Assembly-CSharp.dll'
+    native = game / 'EscapeFromTarkov_Data/Managed/Assembly-CSharp.dll'
     assert hashlib.sha256(native.read_bytes()).hexdigest().upper() == manifest['NativeAssemblySha256'], 'Native assembly changed; rebuild the library'
     env = UnityPy.load(str(bundle_path))
     objects = {o.path_id: o for o in env.objects}

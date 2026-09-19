@@ -1,4 +1,5 @@
 using BepInEx;
+using Cysharp.Threading.Tasks;
 using EFT;
 using Newtonsoft.Json;
 using SPT.Common.Http;
@@ -13,7 +14,7 @@ using WTT.Campaigns.Shared.Profiles;
 
 namespace WTT.Campaigns.Client;
 
-[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.9.0")]
+[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.10.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 [BepInDependency("com.wtt.commonlib", "3.0.6")]
@@ -74,6 +75,8 @@ public sealed class Plugin : BaseUnityPlugin
         gameObject.AddComponent<Spatial.ZoneRuntime>();
         gameObject.AddComponent<Missions.MissionUi>();
         gameObject.AddComponent<Missions.MissionRaidRuntime>();
+        gameObject.AddComponent<Spatial.MapLayerRuntime>();
+        gameObject.AddComponent<Spatial.MapLayerUi>();
         gameObject.AddComponent<Authoring.RaidEditor>();
         gameObject.AddComponent<ItemPreviewClient>();
         gameObject.AddComponent<Story.StoryRaidRuntime>();
@@ -129,15 +132,44 @@ public sealed class Plugin : BaseUnityPlugin
         return snapshot;
     }
 
+    private static readonly ProfileSaveGate SaveGate = new();
+
     internal static async Task FlushPendingOperations()
     {
         var app = App ?? throw new InvalidOperationException("The game menu is not ready.");
-        LogInfo("WTT-Campaigns switch/save: flushing pending operations.");
-        var result = await app.Session.FlushOperationQueue();
-        if (!result.Succeed)
-        {
-            throw new InvalidOperationException("Pending profile operations could not be saved: " + result.Error);
-        }
+        var session = app.Session;
+        await SaveGate.Run(
+            session,
+            () =>
+            {
+                if (session is not ClientBackendSession native)
+                    return false;
+                LogInfo(
+                    $"WTT-Campaigns switch/save: queue={native.QueueStatus}, flushing={native.IsFlushing}, incoming={native._incomingOperations.Count}, unsent={native._unsentCommands.Count}, waiting={native._waitingOperation != null}."
+                );
+                // Idle alone is not sufficient: unsent inventory operations can
+                // remain queued until EFT's periodic send. Do not discard them.
+                return ProfileSaveGate.IsEmpty(
+                    native.QueueStatus == EOperationQueueStatus.Idle,
+                    native.IsFlushing,
+                    native._incomingOperations.Count,
+                    native._unsentCommands.Count,
+                    native._waitingOperation != null
+                );
+            },
+            async () =>
+            {
+                LogInfo("WTT-Campaigns switch/save: invoking native save.");
+                var pending = session.FlushOperationQueue();
+                LogInfo("WTT-Campaigns switch/save: native save returned; awaiting acknowledgement.");
+                var result = await pending;
+                if (!result.Succeed)
+                    throw new InvalidOperationException("Pending profile operations could not be saved: " + result.Error);
+            },
+            token => UniTask.Delay(30000, delayType: DelayType.Realtime, cancellationToken: token).AsTask()
+        );
+        if (!ReferenceEquals(app.Session, session))
+            throw new InvalidOperationException("The active character changed while saving. Try again from the menu.");
         LogInfo("WTT-Campaigns switch/save: pending operations saved.");
     }
 

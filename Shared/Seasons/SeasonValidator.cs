@@ -29,6 +29,12 @@ public static class SeasonValidator
         var result = new SeasonValidationResult();
         try
         {
+            if (season.MissionPackage != null)
+            {
+                Missions.MissionLibrary.ValidatePackage(season, result);
+                return result;
+            }
+            Missions.MissionLibrary.ValidateLinks(season, result);
             ValidateCore(season, result);
             foreach (var error in Spatial.SpatialRules.Errors(season))
             {
@@ -55,12 +61,21 @@ public static class SeasonValidator
                 r.Add(path, message);
             }
         }
-        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9, "Overview", "Unsupported campaign format version.");
+        Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11, "Overview", "Unsupported campaign format version.");
         foreach (var zone in s.Zones)
         {
-            if (!string.IsNullOrEmpty(zone.LayoutId) && Spatial.SpatialRules.Uses(s, zone.Id).Any() && !MissionOwnsZoneReferences(s, zone))
+            if (
+                !string.IsNullOrEmpty(zone.LayoutId)
+                && Spatial.SpatialRules.Uses(s, zone.Id).Any()
+                && !MissionOwnsZoneReferences(s, zone)
+                && !s.MapLayouts.Any(l =>
+                    l.Id == zone.LayoutId
+                    && l.ApplyInNormalRaids
+                    && Authoring.EditorContentRules.Mode(s, l.Id) == Authoring.EditorContentMode.Level
+                )
+            )
             {
-                r.Add("Zones/" + zone.Id, "Layout-owned zones cannot be used by published quest/story content: " + zone.Id);
+                r.Add("Zones/" + zone.Id, "Quest/story zones require an enabled ordinary-raid level or their owning mission: " + zone.Id);
             }
         }
         TraderOfferRules.Validate(s, r);
@@ -76,6 +91,8 @@ public static class SeasonValidator
         foreach (var layout in s.MapLayouts)
         foreach (var error in Spatial.MapLayoutRules.Errors(layout))
             r.Add("Maps/" + layout.Name, error);
+        foreach (var error in Spatial.MapLayerRules.Errors(s.MapLayouts))
+            r.Add("Maps", error);
         Need(IsId(s.Id) && IsId(s.BattlePassId), "Overview", "Campaign and battle pass require valid identities.");
         Need(!string.IsNullOrWhiteSpace(s.Name) && s.Name.Length <= 120, "Overview", "Name is required (up to 120 characters).");
         Need(s.Rules.StartingPoints is >= 0 and <= 100000, "Perks", "Starting budget must be 0–100000.");
@@ -476,11 +493,20 @@ public static class SeasonValidator
                     continue;
                 }
 
-                foreach (var error in Spatial.MapLayoutRules.Errors(layout, walkthrough: true))
+                foreach (
+                    var error in Spatial
+                        .MapLayoutRules.Errors(layout, walkthrough: true)
+                        .Concat(WTT.Campaigns.Shared.Missions.MissionLogicRules.Errors(mission, layout))
+                )
                 {
                     result.Add(path, error);
                 }
 
+                need(
+                    !WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic(mission) || s.FormatVersion >= 10,
+                    path,
+                    "Mission events, objectives and retries require campaign format 10."
+                );
                 if (!quests.TryGetValue(mission.QuestId, out var quest))
                 {
                     continue;

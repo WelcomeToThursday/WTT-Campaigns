@@ -277,7 +277,7 @@ public sealed partial class RaidEditor
         );
         view.Visible("ContainerPoolGroup", mode == 0);
         view.Value("ContainerChance", settings.SpawnChance.ToString());
-        view.Caption("ContainerLock", settings.Locked ? "Locked" : "Unlocked");
+        view.Checked("ContainerLock", settings.Locked);
         view.Text("ContainerKey", settings.KeyTemplate.Length == 0 ? "No key selected" : "Key: " + ContainerItemName(settings.KeyTemplate));
         view.SetDropdown(
             "ContainerItem",

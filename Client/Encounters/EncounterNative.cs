@@ -111,6 +111,11 @@ internal sealed class EncounterNative
     private bool _active;
     private bool _resetting;
     private EncounterPreviewObjects? _objects;
+
+    internal HashSet<string> CaptureObjectBaseline() => _objects?.CaptureBaseline() ?? new();
+
+    internal void RestoreObjectBaseline(IEnumerable<string> ids) => _objects?.RestoreBaseline(ids);
+
     private EncounterCorePoints? _corePoints;
     private BotCreatorClient? _rendererCreator;
     private readonly HashSet<Player> _existingRendererPlayers = new();
@@ -237,7 +242,9 @@ internal sealed class EncounterNative
         SpatialCapture spawn,
         string encounterId,
         string squadId,
-        CancellationToken cancellationToken
+        CancellationToken cancellationToken,
+        SpatialVector? checkpointPosition = null,
+        WildSpawnType? checkpointBrain = null
     )
     {
         if (profile == null)
@@ -266,6 +273,17 @@ internal sealed class EncounterNative
             throw new InvalidOperationException(admissionError);
         if (!TryGetAuthoredSpawn(layout, spawn, out var authoredSpawn))
             throw new InvalidOperationException("The spawn point is not part of the applied layout.");
+        if (checkpointPosition != null)
+        {
+            if (!WTT.Campaigns.Client.Missions.MissionRetryGuard.RestoringActors || context.AttemptGeneration <= 1)
+                throw new InvalidOperationException("A checkpoint actor can only be recreated during a frozen retry.");
+            authoredSpawn = Newtonsoft.Json.JsonConvert.DeserializeObject<SpatialCapture>(
+                Newtonsoft.Json.JsonConvert.SerializeObject(authoredSpawn)
+            )!;
+            authoredSpawn.Position = checkpointPosition;
+        }
+        if (checkpointBrain.HasValue && checkpointPosition == null)
+            throw new InvalidOperationException("A saved brain requires a validated checkpoint restore.");
         if (!EncounterNavigation.TryToVector(authoredSpawn.Position, out var worldPosition))
             throw new InvalidOperationException("The authored spawn point has no finite position.");
 
@@ -353,6 +371,7 @@ internal sealed class EncounterNative
             var stopwatch = Stopwatch.StartNew();
             spawner._inSpawnProcess++;
             activation.CounterEntered = true;
+            using var brainChoice = new EncounterBrainChoice(profile.Id, checkpointBrain);
             var nativeTask = creator.ActivateBot(
                 data,
                 zone,
@@ -415,7 +434,7 @@ internal sealed class EncounterNative
     }
 
     /// <summary>Invalidates admission before stopping native work, then idempotently disposes preview bots.</summary>
-    internal void Reset()
+    internal void Reset(bool preserveWorld = false)
     {
         EncounterRuntimeContext? context;
         List<Activation> pending;
@@ -479,7 +498,8 @@ internal sealed class EncounterNative
         Exception? objectFailure = null;
         try
         {
-            _objects?.Reset();
+            if (!preserveWorld)
+                _objects?.Reset();
             _objects = null;
             if (_rendererCreator != null)
                 foreach (var cached in new List<Player>(_rendererCreator._botRenders.Keys))
@@ -636,6 +656,7 @@ internal sealed class EncounterNative
             // in-spawn counter exactly as the native spawner does, and invoke OnBotCreated,
             // AfterCreation and SetDieCallback through the installed method.
             activation.Owner = bot;
+            WTT.Campaigns.Client.Missions.MissionRetryGuard.TrackMissionBot(bot.GetPlayer);
             var owned = new OwnedBot(activation, bot);
             lock (_gate)
             {

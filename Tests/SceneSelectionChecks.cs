@@ -11,6 +11,14 @@ internal static class SceneSelectionChecks
             var name in new[]
             {
                 "TreeInteractivePart",
+                "VolumetricLight",
+                "AreaLight",
+                "EFT.Impostors.AmplifyImpostorsArrayElement",
+                "EFT.Interactive.TreeInteractive",
+                "EFT.Interactive.LampController",
+                "AmplifyImpostors.AmplifyImpostor",
+                "CullingLightObject",
+                "EFT.Interactive.WindowBreaker",
                 "EFT.Interactive.Trunk",
                 "EFT.Interactive.LootableContainer",
                 "EFT.Interactive.LootPointViewer",
@@ -52,6 +60,7 @@ internal static class SceneSelectionChecks
                 "HotObject",
                 "StaticDeferredDecal",
                 "StencilShadow",
+                "EFT.SpeedTree.TreeWind",
             }
         )
             check(ScenePropSupport.PreservedComponent(component), "Original movement preserves supported component: " + component);

@@ -417,11 +417,30 @@ public sealed class StoryRehearsal
 
     private void Native(StoryAction action)
     {
+        if (action.Type == StoryActionType.TraderStanding)
+        {
+            if (!SeasonValidator.IsId(action.Target) || !double.IsFinite(action.StandingChange))
+                throw new InvalidOperationException("Choose a valid trader and finite reputation change.");
+            Facts.TraderReputation[action.Target] =
+                Math.Round((Facts.TraderReputation.GetValueOrDefault(action.Target) + action.StandingChange) * 100, 2) / 100;
+            return;
+        }
         var id = action.QuestId.Length > 0 ? action.QuestId : State.Conversation?.SelectedQuestId ?? "";
         var quest = Quest(id);
         var status = Facts.QuestStatuses.GetValueOrDefault(id) ?? "Locked";
         switch (action.Type)
         {
+            case StoryActionType.FailQuest:
+                if (status is "Fail" or "MarkedAsFailed")
+                    return;
+                if (status is not ("Started" or "AvailableForFinish"))
+                    throw new InvalidOperationException("Only an active story quest can be failed.");
+                Facts.QuestStatuses[id] = "Fail";
+                Log.Add(
+                    "Native failure rewards recorded, not granted: "
+                        + JsonConvert.SerializeObject(quest.Rewards.GetValueOrDefault("Fail") ?? new())
+                );
+                break;
             case StoryActionType.AcceptQuest:
                 if (status is "Started" or "AvailableForFinish" or "Success")
                 {

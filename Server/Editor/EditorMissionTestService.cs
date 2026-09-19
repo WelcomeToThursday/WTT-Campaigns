@@ -28,12 +28,14 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         internal required string LayoutId { get; init; }
         internal required MissionDefinition Mission { get; init; }
         internal required MapLayout Layout { get; init; }
-        internal required MissionRun Run { get; init; }
+        internal required MissionRun Run { get; set; }
+        internal MissionCheckpoint? Checkpoint;
         internal required long DraftRevision { get; init; }
         internal required string ContentHash { get; init; }
         internal object Gate { get; } = new();
-        internal Dictionary<string, string> ProgressOperations { get; } = new(StringComparer.Ordinal);
+        internal Dictionary<string, (string Value, long Generation)> ProgressOperations { get; } = new(StringComparer.Ordinal);
         internal bool UseEncounters;
+        internal bool LayoutCheckpointTest;
         internal DateTimeOffset LastTouched = DateTimeOffset.UtcNow;
         internal bool Completed;
     }
@@ -43,13 +45,14 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
     public EditorTestMissionResponse Handle(string transportIdentity, EditorTestMissionRequest request)
     {
         PruneExpiredRuns(DateTimeOffset.UtcNow);
-        if (request.Version != 1)
+        if (request.Version is not (1 or 2))
             throw new InvalidOperationException("Update both editor components together.");
 
         var session = RequireSession(transportIdentity, request, "running a mission test");
         return request.Action switch
         {
             EditorTestActions.Prepare => Prepare(session, request),
+            EditorTestActions.PrepareCheckpoints => Prepare(session, request),
             EditorTestActions.Progress => Progress(session, request),
             EditorTestActions.End => End(session, request),
             EditorTestActions.Reset => Reset(session, request),
@@ -65,9 +68,22 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         // editor session.  The route state itself is independent disposable data.
         if (!string.IsNullOrWhiteSpace(request.DraftId) && request.DraftId != session.Draft)
             throw new InvalidOperationException("The test request belongs to another draft.");
-        if (!string.IsNullOrWhiteSpace(request.LayoutId) && request.LayoutId != session.Layout)
+        var checkpointTest =
+            request.Action == EditorTestActions.PrepareCheckpoints
+            || (
+                _runs.TryGetValue(session.Id, out var rehearsal)
+                && rehearsal.LayoutCheckpointTest
+                && rehearsal.Run.RunId == request.RunId
+                && rehearsal.LayoutId == request.LayoutId
+            );
+        if (checkpointTest)
+        {
+            if (!repository.Load(session.Draft).Definition.MapLayouts.Any(l => l.Id == request.LayoutId && l.Location == session.Location))
+                throw new InvalidOperationException("The checkpoint layout does not belong to this draft and open map.");
+        }
+        else if (!string.IsNullOrWhiteSpace(request.LayoutId) && request.LayoutId != session.Layout)
             throw new InvalidOperationException("The test request belongs to another layout.");
-        if (string.IsNullOrWhiteSpace(session.Draft) || string.IsNullOrWhiteSpace(session.Layout))
+        if (string.IsNullOrWhiteSpace(session.Draft) || (!checkpointTest && string.IsNullOrWhiteSpace(session.Layout)))
             throw new InvalidOperationException("Select a saved draft and mission layout before testing it.");
         session.Contact = DateTimeOffset.UtcNow;
         return session;
@@ -79,8 +95,21 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         if (draft.Status != DraftStatus.Active)
             throw new InvalidOperationException("Restore this draft before testing it.");
 
-        var mission = SelectMission(draft.Definition, session.Layout, request.MissionId);
-        if (!string.Equals(mission.LayoutId, session.Layout, StringComparison.Ordinal))
+        if (
+            EditorContentRules.Mode(draft.Definition, request.LayoutId.Length > 0 ? request.LayoutId : session.Layout)
+            != EditorContentMode.Mission
+        )
+            throw new InvalidOperationException("Mission tests and checkpoints require Mission Editor.");
+        var checkpointTest = request.Action == EditorTestActions.PrepareCheckpoints;
+        var mission = checkpointTest
+            ? EditorCheckpointTest.Definition(
+                draft.Definition.MapLayouts.SingleOrDefault(l => l.Id == request.LayoutId)
+                    ?? throw new InvalidOperationException("The selected layout is unavailable in this draft.")
+            )
+            : SelectMission(draft.Definition, session.Layout, request.MissionId);
+        if (request.Version < 2 && MissionLogic.HasLogic(mission))
+            throw new InvalidOperationException("Update both editor components for mission events and objectives.");
+        if (!checkpointTest && !string.Equals(mission.LayoutId, session.Layout, StringComparison.Ordinal))
             throw new InvalidOperationException("Select the mission's linked layout before testing it.");
         var layout =
             draft.Definition.MapLayouts.SingleOrDefault(l => l.Id == mission.LayoutId)
@@ -88,6 +117,7 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         if (!string.Equals(layout.Location, session.Location, StringComparison.Ordinal))
             throw new InvalidOperationException("Open the mission layout's map before testing it.");
         var errors = MapLayoutRules.Errors(layout, walkthrough: true);
+        errors.AddRange(MissionLogicRules.Errors(mission, layout));
         if (errors.Count > 0)
             throw new InvalidOperationException(errors[0]);
 
@@ -117,6 +147,7 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
             DraftRevision = draft.Revision,
             ContentHash = hash,
             UseEncounters = request.UseEncounters,
+            LayoutCheckpointTest = checkpointTest,
         };
         var replayed = _runs.TryGetValue(session.Id, out var previous) && previous.Completed;
         _runs[session.Id] = state;
@@ -130,43 +161,149 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         {
             EnsureCurrentContent(state);
             if (state.Run.Status != MissionRunStatuses.Active)
-                return Response(state, "This mission attempt has already ended.", state.Completed, state.Completed);
+                throw new InvalidOperationException(
+                    "This mission test has already ended ("
+                        + state.Run.Status
+                        + "). Start a new test; an ended test cannot accept checkpoint progress or retries."
+                );
             if (string.IsNullOrWhiteSpace(request.Kind))
                 throw new InvalidOperationException("A mission progress kind is required.");
             if (string.IsNullOrWhiteSpace(request.OperationId))
                 throw new InvalidOperationException("A stable mission progress operation identity is required.");
 
-            var operationValue = request.Kind.Trim().ToLowerInvariant() + ":" + request.CheckpointId;
+            var operationValue = Newtonsoft.Json.JsonConvert.SerializeObject(
+                new
+                {
+                    request.Kind,
+                    request.CheckpointId,
+                    request.AttemptGeneration,
+                    request.Signals,
+                    request.Actors,
+                }
+            );
             if (state.ProgressOperations.TryGetValue(request.OperationId, out var previousValue))
             {
-                if (!string.Equals(previousValue, operationValue, StringComparison.Ordinal))
+                if (
+                    previousValue.Generation != state.Run.AttemptGeneration
+                    || !string.Equals(previousValue.Value, operationValue, StringComparison.Ordinal)
+                )
                     throw new InvalidOperationException("The mission progress operation identity was reused for another transition.");
-                return Response(state, "Mission progress already recorded.", state.Completed, state.Completed);
+                return Response(state, "Mission progress already recorded.", state.Completed, committed: true);
             }
 
-            if (request.Kind.Equals("Checkpoint", StringComparison.OrdinalIgnoreCase))
+            RequireAttempt(state.Run, request);
+            if (request.Kind is "start-checkpoint" or "retry-prepare" or "retry-commit" or "defeat")
             {
+                if (!state.Mission.CheckpointRetries)
+                    throw new InvalidOperationException("Checkpoint retries are disabled.");
+                switch (request.Kind)
+                {
+                    case "start-checkpoint":
+                        if (state.Checkpoint != null || state.Run.Logic.Started || state.Run.NextCheckpointIndex != 0)
+                            throw new InvalidOperationException("The mission start checkpoint is already sealed.");
+                        state.Checkpoint = new MissionCheckpoint(state.Run, "");
+                        break;
+                    case "defeat":
+                        if (state.Run.ExitReached)
+                            throw new InvalidOperationException("The mission has already exited.");
+                        state.Run.PlayerDefeated = true;
+                        break;
+                    case "retry-prepare":
+                        if (!state.Run.PlayerDefeated && state.Run.Logic.Failure.Length == 0)
+                            throw new InvalidOperationException("This mission attempt has not failed.");
+                        state.Run = (
+                            state.Checkpoint ?? throw new InvalidOperationException("No raid checkpoint is available.")
+                        ).BeginRestore(state.Run);
+                        state.Run.RestoredActorIds = state
+                            .Run.Logic.Actors.Values.Where(a => a.Spawned && !a.Dead)
+                            .ToDictionary(a => a.ProfileId, _ => SeasonRepository.NewId());
+                        break;
+                    case "retry-commit":
+                        (state.Checkpoint ?? throw new InvalidOperationException("No raid checkpoint is available.")).CommitRestore(
+                            state.Mission,
+                            state.Layout,
+                            state.Run,
+                            state.Run.RestoredActorIds
+                        );
+                        break;
+                }
+            }
+            else if (request.Kind.Equals("Observations", StringComparison.OrdinalIgnoreCase))
+            {
+                var candidate = SeasonCompiler.Copy(state.Run);
+                foreach (var actor in request.Actors)
+                {
+                    if (candidate.Logic.Actors.ContainsKey(actor.ProfileId))
+                        continue;
+                    var encounter = state.Layout.Encounters.FirstOrDefault(e => e.Id == actor.EncounterId);
+                    var wave = encounter?.Waves.FirstOrDefault(w => w.Id == actor.WaveId);
+                    var roster = wave?.Roster.FirstOrDefault(r => r.Id == actor.RosterId && r.SquadId == actor.SquadId);
+                    if (
+                        roster == null
+                        || string.IsNullOrWhiteSpace(actor.ProfileId)
+                        || actor.Spawned
+                        || actor.Dead
+                        || candidate.Logic.Actors.Values.Count(a => a.RosterId == roster.Id) >= roster.Count
+                    )
+                        throw new InvalidOperationException("Invalid rehearsal actor registration.");
+                    candidate.Logic.Actors.Add(actor.ProfileId, SeasonCompiler.Copy(actor));
+                }
+                MissionObservationRules.Apply(
+                    state.Mission,
+                    state.Layout,
+                    candidate,
+                    new MissionRequest { AttemptGeneration = request.AttemptGeneration, Signals = request.Signals },
+                    DateTimeOffset.UtcNow.ToUnixTimeSeconds() - state.Run.StartedAt
+                );
+                state.Run.Logic = candidate.Logic;
+            }
+            else if (request.Kind.Equals("Checkpoint", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!MissionLogic.CanAdvance(state.Mission, state.Run.Logic, request.CheckpointId, out var objectiveError))
+                    throw new InvalidOperationException(objectiveError);
                 if (!MissionRunRules.TryCheckpoint(state.Run, state.Layout.Checkpoints, request.CheckpointId, out var error))
                     throw new InvalidOperationException(error);
+                if (state.Mission.CheckpointRetries)
+                    state.Checkpoint = new MissionCheckpoint(state.Run, request.CheckpointId);
+                MissionLogic.Apply(
+                    state.Mission,
+                    state.Layout,
+                    state.Run.Logic,
+                    new()
+                    {
+                        Kind = MissionSignals.Checkpoint,
+                        TargetId = request.CheckpointId,
+                        Time = state.Run.Logic.Time,
+                    }
+                );
             }
             else if (request.Kind.Equals("Exit", StringComparison.OrdinalIgnoreCase))
             {
+                if (!MissionLogic.CanAdvance(state.Mission, state.Run.Logic, "", out var objectiveError))
+                    throw new InvalidOperationException(objectiveError);
                 if (!MissionRunRules.TryExit(state.Run, state.Layout.Checkpoints, state.Layout.Exit, request.CheckpointId, out var error))
                     throw new InvalidOperationException(error);
+                MissionLogic.Apply(
+                    state.Mission,
+                    state.Layout,
+                    state.Run.Logic,
+                    new() { Kind = MissionSignals.Exit, Time = state.Run.Logic.Time }
+                );
             }
             else
             {
                 throw new InvalidOperationException("Unsupported mission test progress kind.");
             }
 
-            state.ProgressOperations[request.OperationId] = operationValue;
+            state.ProgressOperations[request.OperationId] = (operationValue, state.Run.AttemptGeneration);
 
             return Response(
                 state,
                 request.Kind.Equals("Exit", StringComparison.OrdinalIgnoreCase)
                     ? "Authored exit reached. Finalizing the mission test."
                     : "Checkpoint secured.",
-                state.Completed
+                state.Completed,
+                committed: true
             );
         }
     }
@@ -177,10 +314,13 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         lock (state.Gate)
         {
             EnsureCurrentContent(state);
+            RequireAttempt(state.Run, request);
             if (state.Run.Status == MissionRunStatuses.Succeeded)
                 return Response(state, "Mission test complete.", state.Completed, committed: true);
             if (state.Run.Status != MissionRunStatuses.Active)
                 return Response(state, "Mission test failed.", state.Completed);
+            if (!MissionLogic.CanAdvance(state.Mission, state.Run.Logic, "", out var objectiveError))
+                throw new InvalidOperationException(objectiveError);
             if (
                 !MissionRunRules.IsSuccessfulExtraction(
                     state.Run,
@@ -231,10 +371,24 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
             throw new InvalidOperationException("A mission test run is required.");
         if (!_runs.TryGetValue(session.Id, out var state) || state.Run.RunId != request.RunId)
             throw new InvalidOperationException("The mission test run is unavailable or stale.");
-        if (state.ProfileId != session.Profile || state.DraftId != session.Draft || state.LayoutId != session.Layout)
+        if (
+            state.ProfileId != session.Profile
+            || state.DraftId != session.Draft
+            || (
+                state.LayoutCheckpointTest
+                    ? state.LayoutId != request.LayoutId || state.Layout.Location != session.Location
+                    : state.LayoutId != session.Layout
+            )
+        )
             throw new InvalidOperationException("The editor mission test session changed.");
         state.LastTouched = DateTimeOffset.UtcNow;
         return state;
+    }
+
+    private static void RequireAttempt(MissionRun run, EditorTestMissionRequest request)
+    {
+        if ((run.Restoring && request.Kind != "retry-commit") || run.AttemptGeneration != request.AttemptGeneration)
+            throw new InvalidOperationException("The mission test attempt is restoring or has been retired.");
     }
 
     private void EnsureCurrentContent(RunState state)

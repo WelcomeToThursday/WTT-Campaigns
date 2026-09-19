@@ -6,7 +6,7 @@
 @inject StandaloneAssortRepository Assorts
 
 <PageTitle>Standalone trader editor · Beta</PageTitle>
-<HeadContent><link rel="stylesheet" href="/wtt-campaigns-creator-assets/creator.css?v=080-editor-beta" /></HeadContent>
+<HeadContent><link rel="stylesheet" href="@WTT.Campaigns.Server.Web.CreatorStyles.Url" /></HeadContent>
 <NavigationLock ConfirmExternalNavigation="@_dirty" OnBeforeInternalNavigation="BeforeNavigate" />
 <main class="season-creator standalone-assorts">
     <header class="creator-header"><div><h1>Standalone trader editor <span class="editor-beta">BETA</span></h1><p>Edit installed trader assortments and export native assort.json files independently of any campaign.</p></div><a class="button subtle" href="/wtt-campaigns">Home</a><a class="button subtle" href="/wtt-campaigns/creator">Campaign Creator</a></header>

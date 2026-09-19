@@ -89,7 +89,7 @@ public sealed partial class RaidEditor
                 + (EditorMode.Ready ? " · EDITOR / Gameplay disabled" : " · RAID CONTINUES")
         );
         // Keep the compact status readable; hovering reveals the full operation message.
-        view.Text("Status", _session!.Status.Replace("\n", " · ") + (_notice.Length > 0 ? " · " + _notice.Replace("\n", " · ") : ""));
+        view.Feedback(_session!.Status, _aiPreviewStatus, _notice);
         if (_mode == "Scene" && _picked)
             view.Text("Identity", _picked!.name);
         view.Windows.SetTooltip("Connection", view.Get<Text>("Connection").text);
@@ -103,13 +103,9 @@ public sealed partial class RaidEditor
                 "Capture",
                 "Duplicate",
                 "Delete",
-                "AtFeet",
                 "AtAim",
                 "UseObject",
                 "EventKind",
-                "InZone",
-                "VisitPlace",
-                "LeaveItemAtLocation",
                 "MapNew",
                 "MapCopy",
                 "MapDelete",
@@ -153,8 +149,10 @@ public sealed partial class RaidEditor
                         ? _mode == "Routes"
                         : _mode == "Scene" && (name == "MapBarrier" || name == "MapDoor" || _picked)
                 );
-        view.Get<EditorChoice>("ZoneCreateScope").interactable = canEdit && _mode == "Zones";
-        view.Get<EditorChoice>("ZoneScope").interactable = canEdit && _mode == "Zones" && EditorMode.Ready && point is SeasonZone;
+        view.Get<EditorChoice>("ZoneCreateScope").interactable = canEdit && (_mode is "Zones" or "Hazards");
+        view.Get<EditorChoice>("ZoneUses").interactable = canEdit && _mode == "Zones" && point is SeasonZone;
+        view.Get<EditorChoice>("ZoneScope").interactable =
+            canEdit && (_mode is "Zones" or "Hazards") && EditorMode.Ready && point is SeasonZone;
         view.Get<Button>("UseObject").interactable =
             canEdit && (point is SeasonZone && Binding != null || _picked && _sceneIndex.Complete && !_sceneIndex.Limited);
         var routeIndex = Layout?.Checkpoints.FindIndex(p => p.Id == _selected) ?? -1;
@@ -163,13 +161,13 @@ public sealed partial class RaidEditor
         if (_mode == "Routes")
             view.Get<Button>("MapCopy").interactable = canEdit && routeIndex >= 0;
         view.Get<Button>("EditorWalk").interactable =
-            canEdit && Layout != null && !_walkRequested && MapLayoutRules.Errors(Layout, true).Count == 0;
+            canEdit && Layout != null && !_walkRequested && MapLayoutRules.Errors(Layout, MissionContent).Count == 0;
     }
 
     private void RefreshToolBrowserSummary()
     {
         var view = _view!;
-        var treeMode = _mode == "AI" || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
+        var treeMode = _mode == "AI" || EditorMode.Ready && (_mode == "Routes" && MissionContent || _mode == "Zones");
         view.Text(
             "LibraryCount",
             treeMode

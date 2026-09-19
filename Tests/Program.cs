@@ -9,6 +9,18 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 2 && args[0] == "--preview-gear-data")
+{
+    WTT.Campaigns.Tests.EditorPreviewGearChecks.RunDatabase(args[1]);
+    return;
+}
+
+if (args.Length == 3 && args[0] == "--hazards")
+{
+    WTT.Campaigns.Tests.HazardNativeChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--appearance-data")
 {
     await WTT.Campaigns.Tests.AppearanceChecks.Run(args[1]);
@@ -72,6 +84,7 @@ if (args.Length == 3 && args[0] == "--unity-toolkit")
 if (args.Length == 3 && args[0] == "--editor-toolkit")
 {
     WTT.Campaigns.Tests.EditorToolkitChecks.Run(args[1], args[2]);
+    WTT.Campaigns.Tests.LevelRuntimeChecks.Run(args[2]);
     return;
 }
 
@@ -133,6 +146,7 @@ WTT.Campaigns.Tests.RequestIdentityChecks.Run(Check);
 WTT.Campaigns.Tests.RaidStartupChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.ProfileReconnectChecks.Run(Check).GetAwaiter().GetResult();
+await WTT.Campaigns.Tests.ProfileSaveChecks.Run(Check);
 WTT.Campaigns.Tests.NativeModelChecks.Run(Check);
 WTT.Campaigns.Tests.SeasonItemBundleChecks.Run(Check);
 WTT.Campaigns.Tests.StoryChecks.Run(Check);
@@ -143,10 +157,12 @@ WTT.Campaigns.Tests.StoryV2Checks.Run(Check);
 WTT.Campaigns.Tests.AuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.MapEditorChecks.Run(Check);
 WTT.Campaigns.Tests.ZoneLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.HazardChecks.Run(Check);
 WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorDockChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);
 WTT.Campaigns.Tests.EditorUiScaleChecks.Run(Check);
+WTT.Campaigns.Tests.EditorInteractionChecks.Run(Check);
 WTT.Campaigns.Tests.CatalogGridLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
 WTT.Campaigns.Tests.EditorCameraBookmarkChecks.Run(Check);
@@ -161,6 +177,9 @@ WTT.Campaigns.Tests.SceneObjectIndexChecks.Run(Check);
 WTT.Campaigns.Tests.ScenePreviewChecks.Run(Check);
 await WTT.Campaigns.Tests.EditorSessionChecks.Run(Check);
 WTT.Campaigns.Tests.SceneSelectionChecks.Run(Check);
+WTT.Campaigns.Tests.SceneBrowserChecks.Run(Check);
+WTT.Campaigns.Tests.DoorAuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.ScenePickingChecks.Run(Check);
 WTT.Campaigns.Tests.EditorRenderChecks.Sizes(Check);
 WTT.Campaigns.Tests.EditorEnvironmentChecks.Values(Check);
 WTT.Campaigns.Tests.EditorDiagnosticChecks.Run(Check);
@@ -189,7 +208,13 @@ if (args.Length > 0 && File.Exists(args[0]))
 WTT.Campaigns.Tests.CreatorChecks.Run(Check);
 WTT.Campaigns.Tests.MissionTestCampaign.Run(Check);
 WTT.Campaigns.Tests.MissionAuthoringChecks.Run(Check);
+WTT.Campaigns.Tests.MapLayerChecks.Run(Check);
+WTT.Campaigns.Tests.EditorContentChecks.Run(Check);
+await WTT.Campaigns.Tests.PreviewLoadGuardChecks.Run(Check);
 WTT.Campaigns.Tests.MissionRuntimeChecks.Run(Check);
+WTT.Campaigns.Tests.MissionLogicChecks.Run(Check);
+WTT.Campaigns.Tests.MissionCheckpointChecks.Run(Check);
+WTT.Campaigns.Tests.CheckpointObjectStateChecks.Run(Check);
 WTT.Campaigns.Tests.RaidFinalizationChecks.Run(Check);
 WTT.Campaigns.Tests.MissionServiceChecks.Run(Check);
 WTT.Campaigns.Tests.IsolatedLocaleChecks.Run(Check);

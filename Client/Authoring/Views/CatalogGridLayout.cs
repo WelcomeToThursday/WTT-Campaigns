@@ -4,7 +4,9 @@ internal static class CatalogGridLayout
 {
     internal const int MaximumItems = 60;
     internal const int TileWidth = 150;
-    internal const int TileHeight = 142;
+    internal const int TileHeight = 118;
+    internal const int TileMargin = 3;
+    internal const int ThumbnailHeight = 64;
 
     internal static int Capacity(float width, float height)
     {

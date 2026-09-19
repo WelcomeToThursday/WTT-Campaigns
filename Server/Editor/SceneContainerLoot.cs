@@ -46,9 +46,26 @@ public sealed class SceneContainerLoot(
     private IEnumerable<KeyValuePair<string, Location>> Sources(string map) =>
         locations
             .GetDictionary()
+            .Select(p => new KeyValuePair<string, Location>(NativeLocationId(p.Key), p.Value))
             .Where(p => p.Value != null && p.Value.StaticContainers != null && p.Value.StaticLoot != null && p.Value.StaticAmmo != null)
             .OrderBy(p => p.Key == map ? 0 : 1)
             .ThenBy(p => p.Key, StringComparer.Ordinal);
+
+    internal static string NativeLocationId(string key) =>
+        typeof(LocationTable).GetProperty(key)?.GetCustomAttribute<System.Text.Json.Serialization.JsonPropertyNameAttribute>()?.Name
+        ?? key.ToLowerInvariant();
+
+    private T InvokeNative<T>(MethodInfo method, object?[] arguments, string context)
+    {
+        try
+        {
+            return (T)method.Invoke(generator, arguments)!;
+        }
+        catch (TargetInvocationException error) when (error.InnerException != null)
+        {
+            throw new InvalidOperationException(context + ": " + error.InnerException.Message, error.InnerException);
+        }
+    }
 
     public Dictionary<string, List<NativeItem>> Create(MapLayout layout)
     {
@@ -81,6 +98,7 @@ public sealed class SceneContainerLoot(
                     if (settings.Mode == "Fixed")
                         FillFixed(layout.Location, tree, settings.Contents);
                 }
+                GeneratedCartridgePositions.Normalize(tree);
                 var validation = new Shared.Seasons.SeasonValidationResult();
                 Shared.Seasons.SeasonValidator.ItemTree(tree, "Generated container", validation);
                 if (!validation.CanPublish)
@@ -109,8 +127,11 @@ public sealed class SceneContainerLoot(
         {
             [new MongoId(template)] = source.Value.StaticLoot.Value[new MongoId(pool)],
         };
-        var generated = (StaticContainerData)
-            Generate.Invoke(generator, [native, Array.Empty<StaticForced>(), distributions, source.Value.StaticAmmo, source.Key])!;
+        var generated = InvokeNative<StaticContainerData>(
+            Generate,
+            [native, Array.Empty<StaticForced>(), distributions, source.Value.StaticAmmo, source.Key],
+            "Generating loot for " + placement.Name + " on " + source.Key
+        );
         return JsonConvert.DeserializeObject<List<NativeItem>>(json.Serialize(generated.Template.Items)!)!;
     }
 
@@ -126,8 +147,11 @@ public sealed class SceneContainerLoot(
             for (var remaining = content.Count; remaining > 0; )
             {
                 var item =
-                    (ContainerItem?)CreateItem.Invoke(generator, [new MongoId(content.Template), ammo, tree[0].Id])
-                    ?? throw new InvalidOperationException("Unable to create fixed loot item.");
+                    InvokeNative<ContainerItem?>(
+                        CreateItem,
+                        [new MongoId(content.Template), ammo, tree[0].Id],
+                        "Creating fixed container item " + content.Template
+                    ) ?? throw new InvalidOperationException("Unable to create fixed loot item.");
                 var slot = mapping.FindSlotForItem(item.Width, item.Height);
                 if (slot.Success != true)
                     throw new InvalidOperationException("Fixed contents do not fit in this container. Reduce the quantities.");

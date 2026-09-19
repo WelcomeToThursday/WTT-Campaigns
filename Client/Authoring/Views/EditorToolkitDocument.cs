@@ -12,6 +12,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     // from a screen's OnDestroy while Unity is changing scenes.
     private static PanelSettings? _template;
     private static VisualTreeAsset? _tree;
+    private static readonly Dictionary<string, VisualTreeAsset> Templates = new();
     private static Font? _font;
     private static Shader? _previewShader;
     private bool _disposed;
@@ -22,6 +23,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     internal bool Visible { get; private set; }
     internal Action? Tick;
     internal Action? Escape;
+    internal Action? CancelTyping;
     internal int EscapeFrame = -1;
     internal int ScalePercent = 100;
     internal float Scale => Settings.scale;
@@ -61,8 +63,12 @@ internal sealed class EditorToolkitDocument : IDisposable
                     if (Typing)
                     {
                         EscapeFrame = Time.frameCount;
-                        ReleaseFocus();
+                        if (CancelTyping != null)
+                            CancelTyping();
+                        else
+                            ReleaseFocus();
                         evt.StopPropagation();
+                        evt.PreventDefault();
                     }
                     else
                         Escape?.Invoke();
@@ -83,9 +89,25 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     internal Shader PreviewShader => _previewShader!;
 
+    // Detach the authored root: a TemplateContainer would change the existing
+    // docking and direct-child layout contracts.
+    internal T Clone<T>(string template)
+        where T : VisualElement => CloneTemplate<T>(template);
+
+    internal static T CloneTemplate<T>(string template)
+        where T : VisualElement
+    {
+        EnsureAssets();
+        var container = Templates[template].CloneTree();
+        if (container.childCount != 1 || container[0] is not T root)
+            throw new InvalidOperationException("Invalid Editor Toolkit template: " + template);
+        root.RemoveFromHierarchy();
+        return root;
+    }
+
     private static void EnsureAssets()
     {
-        if (_template && _tree && _font && _previewShader)
+        if (_template && _tree && _font && _previewShader && Templates.Count == 45)
             return;
         Plugin.LogInfo("Editor Toolkit: loading shared assets");
         const string path = "assets/mods/wtt-campaigns.assets/editortoolkit/";
@@ -105,6 +127,63 @@ internal sealed class EditorToolkitDocument : IDisposable
         _previewShader = _bundle.LoadAsset<Shader>("assets/mods/wtt-campaigns.assets/raideditor/campaignscenepreview.shader");
         if (!_template || !_tree || !_font || !_previewShader)
             throw new InvalidOperationException("Editor Toolkit assets are incomplete.");
+        Templates.Clear();
+        foreach (
+            var name in new[]
+            {
+                "Action",
+                "BrowserRow",
+                "CampaignTest",
+                "CaptureTask",
+                "CategoryRail",
+                "ChoiceField",
+                "ChoiceOption",
+                "ChoicePopup",
+                "FieldMessage",
+                "InspectorSection",
+                "InspectorHeader",
+                "ConflictRow",
+                "ConflictShield",
+                "ContextMenu",
+                "Controls",
+                "DockDivider",
+                "DockTab",
+                "DockTabs",
+                "DropPreview",
+                "EditorWalkStatus",
+                "EnvironmentMenu",
+                "Field",
+                "Home",
+                "HomePicker",
+                "Inspector",
+                "Library",
+                "LootConfiguration",
+                "MenuShield",
+                "PickerRow",
+                "RouteCaption",
+                "RouteLegend",
+                "Row",
+                "SceneActionGroup",
+                "ScopedActions",
+                "StatusBar",
+                "ToolbarIcon",
+                "ToolbarScroll",
+                "ToolbarSeparator",
+                "Tooltip",
+                "TransformToolbar",
+                "TreeRow",
+                "Window",
+                "WindowsMenu",
+                "Workspace",
+                "WorkspaceTitleBar",
+            }
+        )
+        {
+            var tree = _bundle.LoadAsset<VisualTreeAsset>(path + name.ToLowerInvariant() + ".uxml");
+            if (!tree)
+                throw new InvalidOperationException("Install the matching Editor Toolkit templates: " + name);
+            Templates.Add(name, tree);
+        }
         Plugin.LogInfo("Editor Toolkit: shared assets ready");
     }
 
@@ -136,7 +215,7 @@ internal sealed class EditorToolkitDocument : IDisposable
             var element = Root.panel?.focusController.focusedElement as VisualElement;
             while (element != null)
             {
-                if (element is TextField)
+                if (element is TextField or Slider)
                     return true;
                 element = element.parent;
             }
@@ -166,6 +245,7 @@ internal sealed class EditorToolkitDocument : IDisposable
         _disposed = true;
         Tick = null;
         Escape = null;
+        CancelTyping = null;
         ReleaseFocus();
         if (Host)
         {

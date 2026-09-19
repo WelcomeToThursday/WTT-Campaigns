@@ -27,6 +27,7 @@ await using var services = new ServiceCollection()
     .AddSingleton((SeasonRepository)System.Runtime.CompilerServices.RuntimeHelpers.GetUninitializedObject(typeof(SeasonRepository)))
     .BuildServiceProvider();
 var count = 0;
+WTT.Campaigns.Web.Tests.ContainerLocationChecks.Run(Check);
 void Check(bool passed, string message)
 {
     if (!passed)
@@ -92,6 +93,48 @@ foreach (var operation in new[] { "remove", "switch", "clear quest", "reassign q
         else if (operation == "switch")
         {
             var field = renderer
+                .Components<StoryValue>()
+                .Single(c => ReferenceEquals(c.Component.Owner, action) && c.Component.Field == "Type");
+            Check(
+                renderer.Text(field.Id).Contains("Trader Standing") && renderer.Text(field.Id).Contains("Fail Quest"),
+                "Dialogue effects menu offers trader standing and quest failure"
+            );
+            await renderer.DispatchEventAsync(
+                renderer.Event(field.Id, "select", "", "onchange"),
+                null,
+                new ChangeEventArgs { Value = "TraderStanding" }
+            );
+            var traderPicker = renderer
+                .Components<ContentPicker>()
+                .Single(c => c.Component.Kind == "traders" && c.Component.Label == "Trader");
+            await traderPicker.Component.ValueChanged.InvokeAsync("54cb50c76803fa8b248b4571");
+            var amount = renderer
+                .Components<StoryValue>()
+                .Single(c => ReferenceEquals(c.Component.Owner, action) && c.Component.Field == "StandingChange");
+            await renderer.DispatchEventAsync(
+                renderer.Event(amount.Id, "input", "", "onchange"),
+                null,
+                new ChangeEventArgs { Value = "-0.02" }
+            );
+            Check(
+                action.Target == "54cb50c76803fa8b248b4571" && action.StandingChange == -0.02,
+                "Dialogue standing editor accepts a trader and negative decimal change"
+            );
+            field = renderer
+                .Components<StoryValue>()
+                .Single(c => ReferenceEquals(c.Component.Owner, action) && c.Component.Field == "Type");
+            await renderer.DispatchEventAsync(
+                renderer.Event(field.Id, "select", "", "onchange"),
+                null,
+                new ChangeEventArgs { Value = "FailQuest" }
+            );
+            var failurePicker = renderer.Components<ContentPicker>().Single(c => c.Component.Kind == "ownedquests");
+            await failurePicker.Component.ValueChanged.InvokeAsync(membership.QuestId);
+            Check(
+                action.Type == StoryActionType.FailQuest && action.QuestId == membership.QuestId && action.Target == "",
+                "Quest failure editor selects an owned quest and clears the trader target"
+            );
+            field = renderer
                 .Components<StoryValue>()
                 .Single(c => ReferenceEquals(c.Component.Owner, action) && c.Component.Field == "Type");
             await renderer.DispatchEventAsync(
@@ -230,6 +273,13 @@ await using (var renderer = new EditorRenderer(services))
         Check(host.Changes == 1 && host.SelectedId == "", "Deletion marks the draft changed and clears the parent selection");
     });
 }
+var creatorCss = Path.Combine(WTT.Campaigns.Server.Metadata.DirectoryPath, "wwwroot", "creator.css");
+var creatorCssHash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(creatorCss)));
+Check(
+    WTT.Campaigns.Server.Web.CreatorStyles.Url == "/wtt-campaigns-creator-assets/creator.css?v=" + creatorCssHash,
+    "Creator stylesheet URL fingerprints the deployed content rather than a fixed release label"
+);
+await MissionLogicUiChecks.Run(services, Check);
 await MapLayoutUiChecks.Run(services, Check);
 await TraderOfferUiChecks.Run(Check);
 WTT.Campaigns.Web.Tests.EncounterChecks.Run(Check);
@@ -375,7 +425,7 @@ sealed class EditorRenderer(IServiceProvider services) : Renderer(services, Null
         }
     }
 
-    public ulong Event(int id, string element, string text, string eventName)
+    public ulong Event(int id, string element, string text, string eventName, string? inputType = null)
     {
         var frames = GetCurrentRenderTreeFrames(id);
         for (var i = 0; i < frames.Count; i++)
@@ -386,6 +436,13 @@ sealed class EditorRenderer(IServiceProvider services) : Renderer(services, Null
                 continue;
             }
             var subtree = frames.Array.Skip(i + 1).Take(frame.ElementSubtreeLength - 1).ToArray();
+            if (
+                inputType != null
+                && !subtree.Any(f =>
+                    f.FrameType == RenderTreeFrameType.Attribute && f.AttributeName == "type" && f.AttributeValue?.ToString() == inputType
+                )
+            )
+                continue;
             var label = string.Concat(
                 subtree.Select(f =>
                     f.FrameType == RenderTreeFrameType.Text ? f.TextContent

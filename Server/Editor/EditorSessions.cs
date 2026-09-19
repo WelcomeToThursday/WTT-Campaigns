@@ -125,7 +125,10 @@ public sealed class EditorSessions(
             throw new InvalidOperationException("Restore this draft first.");
         if (request.LayoutId.Length > 0 && !repository.Load(request.DraftId).Definition.MapLayouts.Any(l => l.Id == request.LayoutId))
             throw new InvalidOperationException("Layout no longer exists in this draft.");
-        session.Select(request.DraftId, request.LayoutId);
+        var definition = repository.Load(request.DraftId).Definition;
+        var layoutId =
+            request.LayoutId.Length == 0 && definition.MissionPackage != null ? definition.MapLayouts.Single().Id : request.LayoutId;
+        session.Select(request.DraftId, layoutId);
         return Response(session);
     }
 
@@ -142,6 +145,16 @@ public sealed class EditorSessions(
         )
             throw new InvalidOperationException("Choose the layout's map.");
         session.OpenMap(request.Location);
+        return Response(session);
+    }
+
+    public EditorSessionResponse CreateLevel(string owner, EditorSessionRequest request)
+    {
+        var session = Require(owner, request.SessionId);
+        if (session.Location.Length > 0)
+            throw new InvalidOperationException("Unload the map before creating a level.");
+        var draft = repository.CreateLevel(request.Name, request.Location);
+        session.Select(draft.Id, draft.Definition.MapLayouts.Single().Id);
         return Response(session);
     }
 
@@ -182,23 +195,36 @@ public sealed class EditorSessions(
     private EditorSessionResponse Response(Session s) =>
         new()
         {
+            Mode = EditorContentRules.Mode(s.Draft.Length == 0 ? null : repository.Load(s.Draft).Definition, s.Layout),
+            HasStory = s.Draft.Length > 0 && repository.Load(s.Draft).Definition.Story != null,
             SessionId = s.Id,
             ProfileId = s.Profile,
             ReturnProfileId = s.ReturnProfile,
             DraftId = s.Draft,
             LayoutId = s.Layout,
             Location = s.Location,
+            Levels = EditorContentRules.Levels(repository.Drafts().Select(d => (d.Id, d.Definition))),
             Layouts =
                 s.Draft.Length == 0
                     ? new()
                     : (repository.Drafts().FirstOrDefault(d => d.Id == s.Draft)?.Definition.MapLayouts ?? new())
                         .Select(l => new EditorLayoutChoice
                         {
+                            Mode = EditorContentRules.Mode(repository.Load(s.Draft).Definition, l.Id),
                             Id = l.Id,
                             Name = l.Name,
                             Location = l.Location,
                         })
                         .ToList(),
-            Drafts = repository.Drafts().Select(d => new EditorDraftChoice { Id = d.Id, Name = d.Definition.Name }).ToList(),
+            Drafts = repository
+                .Drafts()
+                .Select(d => new EditorDraftChoice
+                {
+                    Id = d.Id,
+                    Name = d.Definition.Name,
+                    Mode = EditorContentRules.Mode(d.Definition),
+                    Modes = EditorContentRules.AvailableModes(d.Definition),
+                })
+                .ToList(),
         };
 }

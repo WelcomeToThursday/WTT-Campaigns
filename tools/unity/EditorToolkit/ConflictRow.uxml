@@ -1,0 +1,20 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+<ui:VisualElement class="editor-conflict-row">
+  <ui:Label name="Path" class="editor-heading" />
+  <ui:VisualElement class="editor-conflict-values">
+    <ui:VisualElement class="editor-conflict-value">
+      <ui:Label text="LOCAL" class="editor-heading" />
+      <ui:Label name="LocalBefore" class="editor-conflict-context" />
+      <ui:Label name="LocalChanged" class="editor-conflict-changed" />
+      <ui:Label name="LocalAfter" class="editor-conflict-context" />
+    </ui:VisualElement>
+    <ui:VisualElement class="editor-conflict-value">
+      <ui:Label text="REMOTE" class="editor-heading" />
+      <ui:Label name="RemoteBefore" class="editor-conflict-context" />
+      <ui:Label name="RemoteChanged" class="editor-conflict-changed" />
+      <ui:Label name="RemoteAfter" class="editor-conflict-context" />
+    </ui:VisualElement>
+  </ui:VisualElement>
+</ui:VisualElement>
+</ui:UXML>
