@@ -57,6 +57,7 @@ internal static class EncounterHookChecks
         CheckAdmissionPolicy();
         CheckCoordinatorCoverage(client);
         CheckRecoveryCoverage(client);
+        CheckBudgetCoverage(client);
         CheckPatrolCoverage(client);
         CheckPatrolFacing(native, client);
         CheckPatrolPathDispatch(native, client);
@@ -70,6 +71,37 @@ internal static class EncounterHookChecks
 
         Console.WriteLine(
             "Encounter hooks: installed native activation, preactivation, world registration, SAIN and BigBrain surfaces verified offline."
+        );
+    }
+
+    private static void CheckBudgetCoverage(AssemblyDefinition client)
+    {
+        var coordinator = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPreviewRuntime");
+        Require(
+            Calls(RequireMethod(coordinator, "StartQueuedWaves"), "TryReserve"),
+            "Wave queue reserves active-bot capacity before generation"
+        );
+        var budgeted = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<SpawnBudgetedWave>"));
+        Require(
+            CallsAny(budgeted, "Release", m => m.DeclaringType.Name == "EncounterSpawnBudget"),
+            "Wave completion and failure release generation capacity"
+        );
+        var spawn = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<SpawnWave>"));
+        var restore = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<RestoreAsync>"));
+        Require(
+            CallsAny(spawn, "PaceActivation", _ => true) && CallsAny(restore, "PaceActivation", _ => true),
+            "Normal and restored actors share activation pacing"
+        );
+        var patrol = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
+        Require(
+            Calls(RequireMethod(patrol, "Tick"), "TryUpdateBudgeted"),
+            "Patrol planner distinguishes deferred navigation from unreachable paths"
+        );
+        var hold = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterHoldRuntime");
+        Require(
+            CallsAny(RequireMethod(patrol, "Move"), "Move", m => m.DeclaringType.Name == "EncounterNavigationBudget")
+                && CallsAny(RequireMethod(hold, "Move"), "Move", m => m.DeclaringType.Name == "EncounterNavigationBudget"),
+            "Patrol and hold movement share the authored navigation quota"
         );
     }
 

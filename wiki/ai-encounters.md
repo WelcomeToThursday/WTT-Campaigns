@@ -40,6 +40,12 @@ Layout editing is frozen while preparing or running a preview. Each new preview 
 
 ## Encounter failure recovery
 
+The **Campaign AI** configuration section controls the live authored workload. Defaults are **64 maximum active bots**, **one concurrently spawning wave**, and **eight navigation checks per frame**, split between patrol planning and patrol/hold movement. Changes apply to the next preview or mission runtime. These limits do not alter ordinary raid spawning, SAIN combat, or mandatory spawn/navigation preflight validation.
+
+Ready waves wait in arrival order until their whole roster fits the available capacity. Generation reserves that capacity before requesting profiles; living bots continue occupying it until death. Native actor activation starts at most once per frame, including checkpoint restoration. A single wave larger than the configured limit is rejected before spawning with its required count; raise the limit or reduce that wave. The preview status shows queued waves and the active-bot cap.
+
+Patrol route searches spread across frames and rotate between squads. A deferred search is not an unreachable route, and previously owned paths remain intact while checks wait. Results are cached only within one planning pass, then checked again on the next pass. Combat and recovery still override authored movement immediately.
+
 Profile requests retry recognized network/timeout failures up to three total attempts, with short delays. Invalid profiles, rejected identities and native activation failures are not automatically replayed. A native bot profile remains single-use within its attempt.
 
 If a wave only spawns partly, its registered bots and AI bindings are removed. Spawn observations are published only after the whole wave is active. A cleanup error remains visible and requires a checkpoint retry or preview reset.
@@ -57,6 +63,7 @@ Offline checks and installed-file hashes do not establish live compatibility. Re
 - Defeat, Escape, reset, and repeated previews restore the editor and leave the source profile unchanged.
 - Ordinary raids retain their existing behavior.
 - Repeated previews do not accumulate bots or equipment, grow memory continuously, or introduce periodic frame stalls.
+- Trigger multiple encounters near the active-bot cap: queued waves should start in order as capacity becomes free, and a checkpoint retry should restore queued waves once. Check long patrols and combat interruptions under a low navigation budget; budget deferral must not appear as an unreachable route.
 - Exercise an interrupted profile request and a partial-wave activation failure: retries remain bounded, no duplicate bots appear, and incomplete waves produce no spawn/completion observations.
 - For a mission with checkpoint retries, verify an AI interruption offers the saved checkpoint, restores surviving actors once, and permits normal progress afterward. Ending the interrupted attempt must not record a player death or unlock mission rewards. Repeat with checkpoint retries disabled to verify the end-only path.
 

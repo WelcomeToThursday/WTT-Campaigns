@@ -55,6 +55,8 @@ internal sealed class EncounterHoldRuntime
             bot.Steering.LookToMovingDirection();
         if (Time.time < hold.NextMove)
             return;
+        if (!EncounterNavigationBudget.Move())
+            return;
         hold.NextMove = Time.time + .5f;
         var distance = (bot.GetPlayer.Transform.position - hold.Anchor).sqrMagnitude;
         hold.Returning = EncounterMovementPolicy.ReturnToAnchor(hold.Returning, distance);

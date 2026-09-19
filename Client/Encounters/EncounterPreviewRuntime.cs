@@ -40,6 +40,10 @@ internal sealed class EncounterPreviewRuntime
     private readonly Dictionary<string, SpatialCapture> _anchors = new(StringComparer.Ordinal);
     private readonly List<SpatialCapture> _pendingAnchors = new();
     private readonly List<Task> _work = new();
+    private readonly Queue<(EncounterWaveStateMachine State, int Wave)> _spawnQueue = new();
+    private readonly EncounterFrameBudget _activationStarts = new(1);
+    private EncounterSpawnBudget _spawnBudget = null!;
+    private int _activeBotLimit;
     private EncounterRuntimeContext _context = null!;
     private MapLayout _layout = null!;
     private Player _player = null!;
@@ -144,6 +148,10 @@ internal sealed class EncounterPreviewRuntime
 
     internal async Task RestoreAsync(Checkpoint saved, IReadOnlyDictionary<string, string> identities, CancellationToken token)
     {
+        if (saved.Bots.Count > _activeBotLimit)
+            throw new InvalidOperationException(
+                $"Checkpoint requires {saved.Bots.Count} actors but the active-bot budget is {_activeBotLimit}. Restore the previous Campaign AI limit before starting another attempt."
+            );
         _pausedAt = Clock;
         _paused = true;
         _pausedPatrols = saved.Patrols;
@@ -163,6 +171,7 @@ internal sealed class EncounterPreviewRuntime
                 Y = location.y,
                 Z = location.z,
             };
+            await PaceActivation(token);
             var bot = await _native.SpawnAsync(profile, point, actor.EncounterId, actor.Squad, token, target, actor.Brain);
             token.ThrowIfCancellationRequested();
             RetryGuard?.Track(bot.GetPlayer);
@@ -264,6 +273,15 @@ internal sealed class EncounterPreviewRuntime
             _anchors.Add(point.Id, point);
         foreach (var encounter in layout.Encounters)
             _encounters.Add(new(encounter));
+        _activeBotLimit = EncounterBudgetSettings.ActiveBots;
+        _spawnBudget = new(_activeBotLimit, EncounterBudgetSettings.ConcurrentWaves);
+        foreach (var state in _encounters)
+        foreach (var wave in state.Waves)
+            if (wave.ExpectedBots > _activeBotLimit)
+                throw new InvalidOperationException(
+                    $"Encounter '{state.Encounter.Name}', wave '{wave.WaveId}' requires {wave.ExpectedBots} bots. Increase Campaign AI / Maximum active bots (currently {_activeBotLimit}) or reduce this wave."
+                );
+        EncounterNavigationBudget.Begin(EncounterBudgetSettings.NavigationChecks);
         await _native.BeginAsync(context, layout, player, observe, lifetime.Token);
         lifetime.Token.ThrowIfCancellationRequested();
         _ai = EncounterCompatibility.Create(layout);
@@ -364,7 +382,7 @@ internal sealed class EncounterPreviewRuntime
             if (!_paused)
                 foreach (var wave in state.ReadyWaves(now))
                     if (Failure == null)
-                        _work.Add(SpawnWave(state, wave));
+                        _spawnQueue.Enqueue((state, wave));
         }
         _work.RemoveAll(t => t.IsCompleted);
         var failed = _encounters.AsValueEnumerable().FirstOrDefault(e => e.IsFailed);
@@ -374,6 +392,8 @@ internal sealed class EncounterPreviewRuntime
                 : failed.Encounter.Name
                     + ": failed · "
                     + failed.Waves.AsValueEnumerable().First(w => w.Status == EncounterWaveStatus.Failed).FailureReason;
+        if (!_paused && Failure == null)
+            StartQueuedWaves();
         RefreshStatus();
     }
 
@@ -418,8 +438,56 @@ internal sealed class EncounterPreviewRuntime
             "AI preview · "
             + _bots.AsValueEnumerable().Count(b => !b.Finished)
             + " bots · "
+            + _spawnQueue.Count
+            + " queued waves · cap "
+            + _activeBotLimit
+            + " · "
             + (_ai?.Status ?? "No patrols")
             + (details.Count == 0 ? "" : "\n" + string.Join("\n", details));
+    }
+
+    private void StartQueuedWaves()
+    {
+        while (_spawnQueue.Count > 0 && Failure == null)
+        {
+            var next = _spawnQueue.Peek();
+            var wave = next.State.Waves[next.Wave];
+            if (next.State.IsFailed || wave.Status != EncounterWaveStatus.Ready)
+            {
+                _spawnQueue.Dequeue();
+                continue;
+            }
+            var living = _bots
+                .AsValueEnumerable()
+                .Count(b =>
+                    !b.Finished && !b.DeathConfirmed && b.Health.IsAlive && b.Encounter.Waves[b.Wave].Status == EncounterWaveStatus.Active
+                );
+            var key = next.State.Encounter.Id + ":" + wave.WaveId;
+            if (!_spawnBudget.TryReserve(key, wave.ExpectedBots, living))
+                break;
+            _spawnQueue.Dequeue();
+            _work.Add(SpawnBudgetedWave(next.State, next.Wave, key));
+        }
+    }
+
+    private async Task SpawnBudgetedWave(EncounterWaveStateMachine state, int wave, string key)
+    {
+        try
+        {
+            await SpawnWave(state, wave);
+        }
+        finally
+        {
+            _spawnBudget.Release(key);
+        }
+    }
+
+    private async Task PaceActivation(CancellationToken token)
+    {
+        token.ThrowIfCancellationRequested();
+        while (!_activationStarts.TryTake(Time.frameCount))
+            await UniTask.NextFrame(cancellationToken: token);
+        token.ThrowIfCancellationRequested();
     }
 
     private async Task SpawnWave(EncounterWaveStateMachine state, int waveIndex)
@@ -538,6 +606,7 @@ internal sealed class EncounterPreviewRuntime
                     if (!state.TryReserveBot(waveIndex, generation, roster.Id, profile.Id, point.Id, out var error))
                         throw new InvalidOperationException(error);
                     cleanup.Track(() => _native.RemoveProfile(profile.Id));
+                    await PaceActivation(token);
                     var bot = await _native.SpawnAsync(profile, point, state.Encounter.Id, squad, token);
                     token.ThrowIfCancellationRequested();
                     if (!bot || !bot.GetPlayer)
@@ -625,6 +694,7 @@ internal sealed class EncounterPreviewRuntime
 
     internal void StopWork()
     {
+        _spawnQueue.Clear();
         _paused = true;
         foreach (var record in _bots)
             RetryGuard?.Track(record.Player);
@@ -635,6 +705,7 @@ internal sealed class EncounterPreviewRuntime
 
     internal void Reset(bool preserveWorld = false)
     {
+        _spawnQueue.Clear();
         _ended = true;
         _ready = false;
         _lifetime?.Cancel();

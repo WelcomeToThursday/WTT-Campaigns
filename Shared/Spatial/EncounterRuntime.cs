@@ -826,6 +826,11 @@ public interface IPatrolNavigation
     bool CanReach(SpatialVector from, SpatialVector to);
 }
 
+public interface IPatrolNavigationBudget : IPatrolNavigation
+{
+    bool Deferred { get; }
+}
+
 public enum PatrolRuntimeStatus
 {
     Inactive,
@@ -963,6 +968,30 @@ public sealed class EncounterPatrolStateMachine
     public bool Start(IEnumerable<string> orderedBotIds)
     {
         return Start(orderedBotIds, out _);
+    }
+
+    public bool TryUpdateBudgeted(
+        IEnumerable<PatrolBotSnapshot> snapshots,
+        double now,
+        IPatrolNavigation navigation,
+        out PatrolUpdate update
+    )
+    {
+        var saved = (_targetWaypoint, _direction, _waitUntil, _leaderId, _status, _reason);
+        update = Update(snapshots, now, navigation);
+        if (navigation is IPatrolNavigationBudget { Deferred: true })
+        {
+            (_targetWaypoint, _direction, _waitUntil, _leaderId, _status, _reason) = saved;
+            update = new PatrolUpdate
+            {
+                Status = _status,
+                SuspensionReason = _reason,
+                LeaderId = _leaderId,
+                TargetWaypointIndex = _targetWaypoint,
+            };
+            return false;
+        }
+        return true;
     }
 
     public PatrolUpdate Update(IEnumerable<PatrolBotSnapshot> snapshots, double now, IPatrolNavigation navigation)
