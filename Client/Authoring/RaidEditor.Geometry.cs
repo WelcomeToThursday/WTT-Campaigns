@@ -379,12 +379,7 @@ public sealed partial class RaidEditor
             Line(new[] { center - Vector3.right * .15f, center + Vector3.right * .15f }, color);
             Line(new[] { center - Vector3.up * .15f, center + Vector3.up * .15f }, color);
         }
-        _view?.DrawRoute(
-            !_walking ? Layout : null,
-            _camera,
-            _selected,
-            _session?.ContentVersion ?? 0
-        );
+        _view?.DrawRoute(!_walking ? Layout : null, _camera, _selected, _session?.ContentVersion ?? 0);
         if (overlays.Shows(EditorOverlays.Bounds))
             DrawSelectionBounds();
         if (
