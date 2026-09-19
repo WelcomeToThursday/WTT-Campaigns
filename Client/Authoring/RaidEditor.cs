@@ -43,18 +43,8 @@ public sealed partial class RaidEditor : MonoBehaviour
     private bool _savedCursor;
     private bool _looking;
 
-    // Latch before native input locks/centers the pointer, so crossing a panel
-    // while flying cannot release capture. Release on RMB up or blocked input.
-    internal bool CameraLooking =>
-        _looking =
-            _open
-            && Application.isFocused
-            && Input.GetMouseButton(1)
-            && _view?.Typing != true
-            && _drag == null
-            && _session?.Conflict == null
-            && _view?.Windows.HasMenu != true
-            && (_looking || EventSystem.current?.IsPointerOverGameObject() != true && _view?.PointerOver != true);
+    // Native input queries this before locking the pointer.
+    internal bool CameraLooking => CaptureCameraGesture();
     private CursorLockMode _savedLock;
     private GameObject? _events;
     private readonly List<EventSystem> _disabledEvents = new();
@@ -319,6 +309,8 @@ public sealed partial class RaidEditor : MonoBehaviour
                     _picking = false;
                     Catalog.RebindId = "";
                 }
+                else if (_view.Windows.ViewportMaximized)
+                    _view.Windows.SetViewportMaximized(false);
                 else
                 {
                     Close();
@@ -339,10 +331,17 @@ public sealed partial class RaidEditor : MonoBehaviour
                     _session.Undo(true);
                 }
 
-                if (Input.GetKeyDown(KeyCode.F))
+                if (_drag == null && !CameraLooking && !_view.PointerOver)
+                {
+                    if (Input.GetKeyDown(KeyCode.Space) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
+                        _view.Windows.SetViewportMaximized(!_view.Windows.ViewportMaximized);
+                    if (Input.GetKeyDown(KeyCode.G) && !Catalog.Placing)
+                        _view.ToggleCleanView();
+                }
+                if (!CameraLooking && Input.GetKeyDown(KeyCode.F))
                     FrameSceneSelection();
                 if (
-                    !Input.GetMouseButton(1)
+                    !CameraLooking
                     && _drag == null
                     && !Catalog.Placing
                     && !Input.GetKey(KeyCode.LeftControl)
@@ -367,7 +366,8 @@ public sealed partial class RaidEditor : MonoBehaviour
                         Refresh();
                     }
                 }
-                if (!Catalog.PlacementInput())
+                var navigating = CameraLooking;
+                if (!Catalog.PlacementInput(navigating) && !navigating)
                     GeometryInput();
             }
             if (Time.realtimeSinceStartup >= _nextRefresh)
@@ -455,6 +455,7 @@ public sealed partial class RaidEditor : MonoBehaviour
         _flyPosition = _player!.CameraPosition.position;
         _flyRotation = Quaternion.LookRotation(_player.LookDirection);
         _looking = false;
+        _cameraGesture = EditorCameraGesture.None;
         RestoreCameraBookmark();
         RestoreWalkCamera();
         _camera.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
@@ -514,30 +515,11 @@ public sealed partial class RaidEditor : MonoBehaviour
             _viewport?.Resize(_view!.ViewportPixels);
             _looking = CameraLooking;
             Cursor.lockState = _looking ? CursorLockMode.Locked : CursorLockMode.None;
-            Cursor.visible = !_looking;
             if (_looking)
-            {
-                var angles = _flyRotation.eulerAngles;
-                angles.x -= Input.GetAxis("Mouse Y") * 2;
-                angles.y += Input.GetAxis("Mouse X") * 2;
-                _flyRotation = Quaternion.Euler(angles);
-                var direction = new Vector3(
-                    (Input.GetKey(KeyCode.D) ? 1 : 0) - (Input.GetKey(KeyCode.A) ? 1 : 0),
-                    0,
-                    (Input.GetKey(KeyCode.W) ? 1 : 0) - (Input.GetKey(KeyCode.S) ? 1 : 0)
-                );
-                direction = _flyRotation * direction;
-                direction.y += (Input.GetKey(KeyCode.E) ? 1 : 0) - (Input.GetKey(KeyCode.Q) ? 1 : 0);
-                _flyPosition +=
-                    Vector3.ClampMagnitude(direction, 1)
-                    * Time.unscaledDeltaTime
-                    * CameraSpeed
-                    * (
-                        Input.GetKey(KeyCode.LeftShift) ? 4
-                        : Input.GetKey(KeyCode.LeftControl) ? .25f
-                        : 1
-                    );
-            }
+                NavigateCamera();
+            else
+                _pointerCapture.Release();
+            Cursor.visible = !_looking;
             _camera!.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
             _environment?.Pose(_flyPosition, _flyRotation);
             // Refresh native rendering once at the final pose, after center-anchor corrections.
@@ -575,6 +557,7 @@ public sealed partial class RaidEditor : MonoBehaviour
         {
             _open = false;
             _looking = false;
+            _cameraGesture = EditorCameraGesture.None;
             Camera.onPreCull -= CameraPose;
             if (_viewport)
             {
@@ -615,6 +598,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             _disabledEvents.Clear();
             Cursor.visible = _savedCursor;
             Cursor.lockState = _savedLock;
+            _pointerCapture.Release(_savedLock != CursorLockMode.Locked);
             if (_view?.Valid == true)
                 _view.SetVisible(false);
             ClearLines();

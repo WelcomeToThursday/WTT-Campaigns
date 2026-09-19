@@ -7,10 +7,6 @@
         <ui:Button name="Rotate" text="Rotate" class="editor-action" />
         <ui:Button name="Scale" text="Scale" class="editor-action" />
         <ui:Button name="Snap" text="Snap" class="editor-action" />
-        <ui:Label name="CameraSpeedLabel" text="Fly m/s" class="editor-label" picking-mode="Ignore" />
-        <ui:Button name="CameraSlower" text="-" class="editor-action" />
-        <ui:TextField name="CameraSpeed" label="" class="editor-field" />
-        <ui:Button name="CameraFaster" text="+" class="editor-action" />
         <ui:VisualElement name="EditorMapToolbar" class="editor-actions editor-action-row">
             <ui:Button name="EditorWalk" text="Walkthrough" class="editor-action" />
             <ui:Button name="AiObserve" text="Observe" class="editor-action" />

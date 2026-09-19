@@ -106,7 +106,7 @@ internal sealed partial class EditorCatalogController
         }
     }
 
-    internal bool PlacementInput()
+    internal bool PlacementInput(bool navigating = false)
     {
         if (!_placementRequests.Active)
             return false;
@@ -117,7 +117,7 @@ internal sealed partial class EditorCatalogController
         }
         if (!_placement || !_context.Camera)
             return true;
-        var overUi = EventSystem.current?.IsPointerOverGameObject() == true || _context.View?.PointerOver == true;
+        var overUi = navigating || EventSystem.current?.IsPointerOverGameObject() == true || _context.View?.PointerOver == true;
         var hitSurface =
             !overUi
             && Physics.Raycast(

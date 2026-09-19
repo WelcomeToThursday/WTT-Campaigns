@@ -31,8 +31,8 @@ public sealed partial class RaidEditor
         var view = _view!;
         view.Text("LibraryHeading", "BROWSER / " + (_mode == "Bindings" ? "EVENTS" : _mode.ToUpperInvariant()));
         view.Value("CameraSpeed", CameraSpeed.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
-        view.Get<Button>("CameraSlower").interactable = CameraSpeed > .25f;
-        view.Get<Button>("CameraFaster").interactable = CameraSpeed < 96f;
+        view.Get<Button>("ViewportSlower").interactable = CameraSpeed > .25f;
+        view.Get<Button>("ViewportFaster").interactable = CameraSpeed < 96f;
         var maps = MapWorkspace && EditorMode.Ready;
         var point = _mode == "Scene" ? null : Selected;
         var aiKind = "";

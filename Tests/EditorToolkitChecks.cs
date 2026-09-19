@@ -231,6 +231,20 @@ internal static class EditorToolkitChecks
         if (ContainsContainer(inspector))
             throw new InvalidOperationException("Container controls must not crowd the Properties inspector.");
         var inventory = nodes.ToDictionary(n => n.Id, n => n.Kind);
+        using (var viewportSource = typeof(EditorToolkitChecks).Assembly.GetManifestResourceStream("EditorToolkit.ViewportToolbar.uxml")!)
+        {
+            foreach (var element in XDocument.Load(viewportSource).Descendants().Where(e => e.Attribute("name") != null))
+            {
+                var kind = element.Name.LocalName switch
+                {
+                    "Button" => "button",
+                    "TextField" => "input",
+                    _ => "",
+                };
+                if (kind.Length > 0)
+                    inventory.Add((string)element.Attribute("name")!, kind);
+            }
+        }
         foreach (var id in new[] { "Library", "Inspector", "EnvironmentMenu", "Controls" })
             inventory[id + "Heading"] = "text";
         foreach (var id in new[] { "LibraryCollapse", "InspectorCollapse", "HelpClose", "EnvironmentClose" })

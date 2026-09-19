@@ -56,6 +56,7 @@ public static class CampaignsEditorToolkitBuilder
         "Workspace",
         "WorkspaceTitleBar",
         "GameViewport",
+        "ViewportToolbar",
     };
 
     [Serializable]
@@ -93,7 +94,22 @@ public static class CampaignsEditorToolkitBuilder
             // Exercise imported and reloaded UXML factories, including controls
             // whose fields are bound dynamically rather than by EditorLayoutSpec.
             string[] slots =
-                name == "HomePicker" ? new[] { "Heading:Label", "Close:Button", "Choices:ListView", "Empty:Label" }
+                name == "ViewportToolbar"
+                    ? new[]
+                    {
+                        "ViewportTitle:Label",
+                        "ViewportTools:ScrollView",
+                        "CameraSpeed:TextField",
+                        "ViewportMaximize:Button",
+                        "ViewportSnap:Button",
+                        "ViewportOverlayMenu:VisualElement",
+                        "OverlayZones:Toggle",
+                        "OverlayRoutes:Toggle",
+                        "OverlayAi:Toggle",
+                        "OverlayBounds:Toggle",
+                        "OverlayHandles:Toggle",
+                    }
+                : name == "HomePicker" ? new[] { "Heading:Label", "Close:Button", "Choices:ListView", "Empty:Label" }
                 : name == "PickerRow" ? new[] { "selected:Label", "name:Label" }
                 : name == "ChoicePopup"
                     ? new[] { "ChoicePanel:VisualElement", "ChoiceSearch:TextField", "Choices:ListView", "ChoiceEmpty:Label" }

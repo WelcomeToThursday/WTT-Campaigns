@@ -24,6 +24,9 @@
     <Compile Include="..\UI\Controls\EditorToolSession.cs" Link="UI\EditorToolSession.cs" />
     <Compile Include="..\UI\Controls\EditorDockLayout.cs" Link="UI\EditorDockLayout.cs" />
     <Compile Include="..\UI\Controls\EditorViewportCoordinates.cs" Link="UI\EditorViewportCoordinates.cs" />
+    <Compile Include="..\UI\Controls\EditorViewportState.cs" Link="UI\EditorViewportState.cs" />
+    <Compile Include="..\Client\Authoring\EditorCameraGesture.cs" Link="Client\EditorCameraGesture.cs" />
+    <Compile Include="..\Client\Authoring\EditorPointerRestore.cs" Link="Client\EditorPointerRestore.cs" />
     <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
     <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
     <Compile Include="..\Client\Authoring\EditorOpenState.cs" Link="Client\EditorOpenState.cs" />

@@ -222,7 +222,7 @@ public sealed partial class RaidEditor
         var closest = FilterZonesForLayout(_layoutId)
             .AsValueEnumerable()
             .Select(z => (Zone: z, Screen: _camera!.EditorWorldToScreenPoint(ZoneRuntime.Vector(z.Position))))
-            .Where(z => z.Screen.z > 0)
+            .Where(z => z.Screen.z > 0 && _view!.ViewportState.Shows(EditorOverlays.Zones))
             .OrderBy(z => Vector2.Distance(mouse, z.Screen))
             .FirstOrDefault();
         if (closest.Zone != null && Vector2.Distance(mouse, closest.Screen) < 24)
@@ -318,9 +318,11 @@ public sealed partial class RaidEditor
         }
 
         _lineIndex = 0;
+        var overlays = _view!.ViewportState;
         foreach (
             var zone in FilterZonesForLayout(_layoutId)
                 .AsValueEnumerable()
+                .Where(_ => overlays.Shows(EditorOverlays.Zones))
                 .OrderBy(z => z.Id == _selected ? 0 : 1)
                 .ThenBy(z => Vector3.Distance(_flyPosition, ZoneRuntime.Vector(z.Position)))
                 .Take(100)
@@ -378,12 +380,13 @@ public sealed partial class RaidEditor
             Line(new[] { center - Vector3.up * .15f, center + Vector3.up * .15f }, color);
         }
         _view?.DrawRoute(
-            (_mode == "Routes" || _mode == "AI") && !_walking ? Layout : null,
+            !_walking ? Layout : null,
             _camera,
             _selected,
             _session?.ContentVersion ?? 0
         );
-        DrawSelectionBounds();
+        if (overlays.Shows(EditorOverlays.Bounds))
+            DrawSelectionBounds();
         if (
             Selected is { } selected
             && CanUseHandle(selected)

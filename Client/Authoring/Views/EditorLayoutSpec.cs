@@ -59,10 +59,6 @@ internal static class EditorLayoutSpec
             B("Rotate", "Rotate"),
             B("Scale", "Scale"),
             B("Snap", "Snap"),
-            T("CameraSpeedLabel", "Fly m/s"),
-            B("CameraSlower", "-"),
-            I("CameraSpeed", ""),
-            B("CameraFaster", "+"),
             R(
                 "EditorMapToolbar",
                 B("EditorWalk", "Walkthrough"),

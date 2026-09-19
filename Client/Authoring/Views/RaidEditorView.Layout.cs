@@ -101,6 +101,7 @@ internal sealed partial class RaidEditorView
         Document.Content.Add(workspace);
         GameViewport.scaleMode = ScaleMode.StretchToFill;
         workspace.Add(GameViewport);
+        BuildViewportToolbar(workspace);
         Register("Workspace", new EditorControl(workspace));
         _routeOverlay = new RouteOverlay();
         workspace.Add(_routeOverlay);
@@ -175,7 +176,7 @@ internal sealed partial class RaidEditorView
         var toolbar = Element("TransformToolbar");
         var preview = Element("EditorMapToolbar");
         // Keep dividers with their controls so map-only groups hide together.
-        foreach (var id in new[] { "Move", "CameraSpeedLabel", "EditorWalk", "AiObserve", "EditorReset" })
+        foreach (var id in new[] { "Move", "EditorWalk", "AiObserve", "EditorReset" })
         {
             var first = Element(id);
             var separator = Document.Clone<VisualElement>("ToolbarSeparator");

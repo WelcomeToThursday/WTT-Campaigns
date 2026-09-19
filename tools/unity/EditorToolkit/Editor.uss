@@ -128,11 +128,10 @@
 .editor-toolbar.editor-action-row, #EditorMapToolbar { flex-wrap: nowrap; align-items: center; }
 #EditorMapToolbar { max-width: none; flex-shrink: 0; height: var(--editor-strip-height); }
 .editor-root #TransformToolbar .unity-button { align-self: center; height: var(--editor-strip-height); min-height: var(--editor-strip-height); max-height: var(--editor-strip-height); margin-top: 0; margin-bottom: 0; white-space: nowrap; max-width: none; }
-.editor-root #CameraSlower, .editor-root #CameraSpeed, .editor-root #CameraFaster { align-self: center; height: var(--editor-strip-height); min-height: var(--editor-strip-height); max-height: var(--editor-strip-height); margin: 0 2px; padding-top: 0; padding-bottom: 0; }
-#CameraSpeed { width: 66px; flex-grow: 0; }
+.editor-root #CameraSpeed { align-self: center; height: 24px; min-height: 24px; max-height: 24px; margin: 0 2px; padding-top: 0; padding-bottom: 0; }
+#CameraSpeed { width: 66px; min-width: 66px; max-width: 66px; flex-grow: 0; flex-shrink: 0; }
 #CameraSpeed > .unity-base-field__label { display: none; }
-#CameraSpeed .unity-base-text-field__input { -unity-text-align: middle-left; }
-.editor-root #CameraSlower, .editor-root #CameraFaster { width: 26px; min-width: 26px; padding-left: 0; padding-right: 0; -unity-text-align: middle-center; }
+.editor-root #CameraSpeed .unity-base-text-field__input { padding: 0 5px; margin: 0; -unity-text-align: middle-center; }
 .editor-toolbar-separator { width: 1px; min-width: 1px; max-width: 1px; height: 20px; flex-shrink: 0; align-self: center; margin-left: 6px; margin-right: 6px; background-color: rgb(75, 78, 71); }
 .editor-toolbar-scroll { flex-grow: 1; flex-shrink: 1; min-width: 0; height: 38px; }
 .editor-toolbar-scroll > .unity-scroll-view__content-and-vertical-scroll-container > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container { flex-direction: row; flex-wrap: nowrap; align-items: center; height: 38px; }
@@ -309,3 +308,16 @@
 /* The final native camera frame sits below the editor tools and route overlay. */
 .editor-scene-workspace { background-color: var(--editor-workspace); }
 .editor-game-viewport { position: absolute; background-color: rgb(0, 0, 0); }
+
+.editor-viewport-toolbar { position: absolute; height: 30px; flex-direction: row; align-items: center; background-color: var(--editor-panel); border-bottom-width: 1px; border-bottom-color: var(--editor-border); padding: 0 3px; }
+.editor-viewport-title { flex-shrink: 0; padding: 0 8px; -unity-font-style: bold; }
+.editor-viewport-tools { flex-grow: 1; flex-shrink: 1; min-width: 0; height: 29px; }
+.editor-viewport-tools .unity-scroll-view__content-container { flex-direction: row; align-items: center; height: 29px; }
+.editor-root .editor-viewport-tools .unity-button, .editor-root #ViewportMaximize { flex-shrink: 0; height: 24px; min-height: 24px; max-height: 24px; min-width: 24px; padding: 0 5px; margin: 0 2px; -unity-text-align: middle-center; }
+.editor-viewport-speed-group { flex-direction: row; align-items: center; flex-shrink: 0; height: 24px; margin-right: 6px; }
+.editor-viewport-speed-label { flex-shrink: 0; height: 24px; margin: 0 4px; padding: 0; white-space: nowrap; -unity-text-align: middle-center; }
+.editor-viewport-overlay-menu { display: none; position: absolute; top: 30px; right: 0; width: 230px; padding: 8px; background-color: var(--editor-panel); border-width: 1px; border-color: var(--editor-border); }
+.editor-root .editor-viewport-overlay-menu .editor-setting { width: 100%; margin: 2px 0; padding: 3px 0; min-height: 28px; flex-direction: row; align-items: center; }
+.editor-root .editor-viewport-overlay-menu .editor-setting > .unity-base-field__label { min-width: 0; max-width: none; width: auto; flex-grow: 1; flex-shrink: 1; white-space: normal; color: var(--editor-text); }
+.editor-root .editor-viewport-overlay-menu .editor-setting > .unity-toggle__input { width: 18px; min-width: 18px; max-width: 18px; flex-grow: 0; flex-shrink: 0; margin: 0; padding: 0; }
+.editor-root .editor-viewport-overlay-menu .unity-toggle__checkmark { -unity-background-image-tint-color: var(--editor-text-bright); }

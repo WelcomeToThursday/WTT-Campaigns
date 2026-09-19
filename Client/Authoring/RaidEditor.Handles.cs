@@ -68,7 +68,8 @@ public sealed partial class RaidEditor
         return ZoneRuntime.Vector(point.Position);
     }
 
-    private bool CanUseHandle(SpatialCapture point) => !Catalog.SceneWorkspace || CanTransformScene(_tool);
+    private bool CanUseHandle(SpatialCapture point) =>
+        _view?.ViewportState.Shows(EditorOverlays.Handles) == true && (!Catalog.SceneWorkspace || CanTransformScene(_tool));
 
     private void KeepDragAnchor(SpatialCapture point, Drag drag)
     {

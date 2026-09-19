@@ -90,8 +90,16 @@ public sealed partial class RaidEditor
             view.Get<EditorInput>("CameraSpeed").SetTextWithoutNotify(CameraSpeed.ToString("0.##", CultureInfo.InvariantCulture));
             Refresh(false);
         }
-        view.Button("CameraSlower", () => Set(CameraSpeed / 2));
-        view.Button("CameraFaster", () => Set(CameraSpeed * 2));
+        view.Button("ViewportSlower", () => Set(CameraSpeed / 2));
+        view.Button("ViewportFaster", () => Set(CameraSpeed * 2));
+        view.Button(
+            "ViewportSnap",
+            () =>
+            {
+                _snap = !_snap;
+                Refresh();
+            }
+        );
         view.Input(
             "CameraSpeed",
             value =>

@@ -1,0 +1,27 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement class="editor-viewport-toolbar">
+        <ui:Label name="ViewportTitle" text="Scene" class="editor-viewport-title" tooltip="Double-click to maximize or restore. Shift+Space over the viewport." />
+        <ui:ScrollView name="ViewportTools" mode="Horizontal" class="editor-viewport-tools">
+            <ui:VisualElement class="editor-viewport-speed-group">
+                <ui:Label text="Fly" class="editor-viewport-speed-label" picking-mode="Ignore" />
+                <ui:Button name="ViewportSlower" text="-" tooltip="Halve fly speed" />
+                <ui:TextField name="CameraSpeed" label="" class="editor-field" tooltip="Fly speed in metres per second (0.25–96)" />
+                <ui:Label text="m/s" class="editor-viewport-speed-label" picking-mode="Ignore" />
+                <ui:Button name="ViewportFaster" text="+" tooltip="Double fly speed" />
+            </ui:VisualElement>
+            <ui:Button name="ViewportSnap" text="Snap: on" tooltip="Toggle snapping. Alt during a handle drag bypasses snap." />
+            <ui:Button name="ViewportOverlays" text="Overlays" tooltip="Choose visible editor overlays" />
+            <ui:Button name="ViewportClean" text="Clean" tooltip="Temporarily hide editor overlays; click again to restore your choices. Shortcut: G over the viewport." />
+        </ui:ScrollView>
+        <ui:Button name="ViewportMaximize" text="Maximize" tooltip="Maximize or restore the viewport (Shift+Space)" />
+        <ui:VisualElement name="ViewportOverlayMenu" class="editor-viewport-overlay-menu">
+            <ui:Toggle name="OverlayZones" label="Zones and hazards" value="true" class="editor-setting" />
+            <ui:Toggle name="OverlayRoutes" label="Player routes" value="true" class="editor-setting" />
+            <ui:Toggle name="OverlayAi" label="AI markers and navigation" value="true" class="editor-setting" />
+            <ui:Toggle name="OverlayBounds" label="Selection bounds" value="true" class="editor-setting" />
+            <ui:Toggle name="OverlayHandles" label="Transform handles" value="true" class="editor-setting" />
+            <ui:Button name="ViewportOverlayClose" text="Close" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

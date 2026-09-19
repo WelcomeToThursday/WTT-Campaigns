@@ -41,7 +41,11 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal void SetViewport(EditorDockRect dock)
     {
-        var pixels = EditorViewportCoordinates.Pixels(dock, Document.Scale, Screen.width, Screen.height);
+        _viewportToolbar.style.left = dock.X;
+        _viewportToolbar.style.top = dock.Y;
+        _viewportToolbar.style.width = dock.Width;
+        _viewportMenu.style.width = Math.Min(230, dock.Width);
+        var pixels = EditorViewportCoordinates.Pixels(EditorViewportState.Content(dock), Document.Scale, Screen.width, Screen.height);
         ViewportPixels = new Rect(pixels.X, pixels.Y, pixels.Width, pixels.Height);
         // Use the same rounded pixel bounds for presentation, projection, and input.
         foreach (var element in new VisualElement[] { GameViewport, _routeOverlay })
@@ -55,6 +59,7 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal bool Typing =>
         Document.Typing
+        || ViewportMenuOpen
         || _dropdownDismissFrame == Time.frameCount
         || NumericDragging
         || Windows.Interacting
@@ -103,6 +108,13 @@ internal sealed partial class RaidEditorView : IDisposable
             {
                 ApplyPendingLayout();
                 Windows.Tick();
+                if (
+                    ViewportMenuOpen
+                    && UnityEngine.Input.GetMouseButtonDown(0)
+                    && !_viewportMenu.worldBound.Contains(Document.Pointer)
+                    && !Element("ViewportOverlays").worldBound.Contains(Document.Pointer)
+                )
+                    DismissViewportMenu();
                 PollCatalogCapacity();
                 RefreshUsability();
             };
@@ -246,7 +258,7 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected, long layoutRevision = 0)
     {
-        if (layout == null || !camera)
+        if (layout == null || !camera || !ViewportState.Shows(EditorOverlays.Routes | EditorOverlays.Ai))
         {
             HideRoute();
             return;
@@ -257,9 +269,19 @@ internal sealed partial class RaidEditorView : IDisposable
             _levelRoute.Id = layout.Id;
             _levelRoute.Location = layout.Location;
             _levelRoute.Exit = layout.Exit;
+            _levelRoute.SpawnPoints = layout.SpawnPoints;
+            _levelRoute.PatrolRoutes = layout.PatrolRoutes;
+            _levelRoute.Encounters = layout.Encounters;
             layout = _levelRoute;
         }
-        _routeOverlay.Refresh(layout, camera!, selected, layoutRevision);
+        _routeOverlay.Refresh(
+            layout,
+            camera!,
+            selected,
+            layoutRevision,
+            ViewportState.Shows(EditorOverlays.Routes),
+            ViewportState.Shows(EditorOverlays.Ai)
+        );
     }
 
     internal void HideRoute() => _routeOverlay.style.display = DisplayStyle.None;

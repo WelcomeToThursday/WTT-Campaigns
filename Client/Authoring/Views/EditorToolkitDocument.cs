@@ -109,7 +109,7 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     private static void EnsureAssets()
     {
-        if (_template && _tree && _font && _previewShader && _viewportShader && Templates.Count == 46)
+        if (_template && _tree && _font && _previewShader && _viewportShader && Templates.Count == 47)
             return;
         Plugin.LogInfo("Editor Toolkit: loading shared assets");
         const string path = "assets/mods/wtt-campaigns.assets/editortoolkit/";
@@ -180,6 +180,7 @@ internal sealed class EditorToolkitDocument : IDisposable
                 "Workspace",
                 "WorkspaceTitleBar",
                 "GameViewport",
+                "ViewportToolbar",
             }
         )
         {

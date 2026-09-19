@@ -169,6 +169,8 @@ internal sealed partial class EditorToolkitWindows
 
     internal void ShowPanel(string id, bool visible)
     {
+        if (visible && ViewportMaximized)
+            SetViewportMaximized(false);
         id = Resolve(id);
         if (visible && !AllowedPanel(id))
             return;
@@ -255,7 +257,7 @@ internal sealed partial class EditorToolkitWindows
             return;
         _category = category;
         _selection = selection;
-        if (selection.Length > 0 && !IsOpen("Inspector"))
+        if (selection.Length > 0 && !IsOpen("Inspector") && !ViewportMaximized)
             ShowPanel("Inspector", true);
         ((ScrollView)_view.Element("PropertyScroll")).scrollOffset = Vector2.zero;
     }
@@ -284,6 +286,19 @@ internal sealed partial class EditorToolkitWindows
         FitPanels();
     }
 
+    internal bool ViewportMaximized { get; private set; }
+
+    internal void SetViewportMaximized(bool maximized)
+    {
+        CancelInteraction();
+        DismissMenus();
+        _view.DismissDropdowns();
+        ViewportMaximized = maximized;
+        _view.Caption("ViewportMaximize", maximized ? "Restore" : "Maximize");
+        _chrome.style.display = maximized ? DisplayStyle.None : DisplayStyle.Flex;
+        FitPanels();
+    }
+
     private void FitPanels()
     {
         var area = Area;
@@ -294,7 +309,7 @@ internal sealed partial class EditorToolkitWindows
             var id = pair.Key;
             var p = pair.Value;
             var group = EditorDockLayout.Nodes(_dock).AsValueEnumerable().FirstOrDefault(n => n.Tabs.AsValueEnumerable().Contains(id));
-            var visible = p.Visible && !_walkthrough && AllowedPanel(id);
+            var visible = p.Visible && !_walkthrough && !ViewportMaximized && AllowedPanel(id);
             Rect rect;
             if (group != null)
             {
@@ -331,7 +346,7 @@ internal sealed partial class EditorToolkitWindows
             if (!_dockRects.TryGetValue(node.Id, out var r))
                 continue;
             if (node.Kind == "viewport")
-                _view.SetViewport(r);
+                _view.SetViewport(ViewportMaximized ? area : r);
             if (_bars.TryGetValue(node.Id, out var bar))
                 Place(bar, new(r.X, r.Y, r.Width, EditorDockLayout.TabHeight));
             if (
@@ -385,6 +400,9 @@ internal sealed partial class EditorToolkitWindows
 
     internal void ResetLayout()
     {
+        ViewportMaximized = false;
+        _chrome.style.display = DisplayStyle.Flex;
+        _view.Caption("ViewportMaximize", "Maximize");
         CancelInteraction();
         _dock = EditorDockNode.Default();
         _sized.Clear();

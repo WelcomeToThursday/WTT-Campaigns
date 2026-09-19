@@ -47,11 +47,13 @@ internal sealed class RouteOverlay : VisualElement
         return new Color(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f);
     }
 
-    internal void Refresh(MapLayout layout, Camera camera, string selected, long layoutRevision = 0)
+    internal void Refresh(MapLayout layout, Camera camera, string selected, long layoutRevision = 0, bool routes = true, bool ai = true)
     {
         _segments.Clear();
         _markers.Clear();
-        RouteVisuals.Points(layout, _points);
+        _points.Clear();
+        if (routes)
+            RouteVisuals.Points(layout, _points);
         var near = camera.nearClipPlane + .001f;
         for (var i = 1; i < _points.Count; i++)
         {
@@ -74,8 +76,9 @@ internal sealed class RouteOverlay : VisualElement
         // checkpoints. Cache authored descriptors when the layout changes;
         // only their camera projection and clipping are performed per frame.
         RefreshAiDescriptors(layout, layoutRevision);
-        foreach (var segment in _aiSegments)
-            AddSegment(segment.From, segment.To, camera, near, segment.Color);
+        if (ai)
+            foreach (var segment in _aiSegments)
+                AddSegment(segment.From, segment.To, camera, near, segment.Color);
 
         var labelIndex = 0;
         foreach (var point in _points)
@@ -88,10 +91,11 @@ internal sealed class RouteOverlay : VisualElement
                 near,
                 ref labelIndex
             );
-        foreach (var point in _aiPoints)
-            AddMarker(point.Point, point.Role, point.Selection == selected, point.Caption, camera, near, ref labelIndex);
-        _navigationLegend.style.display = InspectNavigation ? DisplayStyle.Flex : DisplayStyle.None;
-        if (InspectNavigation)
+        if (ai)
+            foreach (var point in _aiPoints)
+                AddMarker(point.Point, point.Role, point.Selection == selected, point.Caption, camera, near, ref labelIndex);
+        _navigationLegend.style.display = InspectNavigation && ai ? DisplayStyle.Flex : DisplayStyle.None;
+        if (InspectNavigation && ai)
         {
             _navigation.Refresh(layout, selected);
             _navigationLegend.text = _navigation.Summary;

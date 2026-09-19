@@ -959,6 +959,8 @@ public sealed partial class RaidEditor
             view.Highlight(mode, _mode == mode);
         RefreshToolBrowser();
         view.Caption("Snap", _snap ? "Snap: on" : "Snap: off");
+        view.Caption("ViewportSnap", _snap ? "Snap: on" : "Snap: off");
+        view.Highlight("ViewportSnap", _snap);
         var point = Selected;
         view.Caption("AddBox", _mode == "Bindings" ? "+ Trigger" : "+ Box");
         view.Caption("AddSphere", _mode == "Bindings" ? "+ Interaction" : "+ Sphere");

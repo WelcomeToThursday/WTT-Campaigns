@@ -12,8 +12,9 @@ internal sealed partial class RaidEditorView
 
     internal bool DismissDropdowns()
     {
+        var viewportMenu = DismissViewportMenu();
         if (_choicePopup == null)
-            return false;
+            return viewportMenu;
         _choicePopup.RemoveFromHierarchy();
         _choicePopup = null;
         _positionChoice = null;
