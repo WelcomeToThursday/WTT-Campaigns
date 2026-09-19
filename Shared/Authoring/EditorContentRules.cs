@@ -15,8 +15,10 @@ public static class EditorContentRules
 {
     public static List<EditorLayoutChoice> Levels(IEnumerable<(string Id, SeasonDefinition Definition)> drafts) =>
         drafts
+            .AsValueEnumerable()
             .SelectMany(d =>
-                d.Definition.MapLayouts.Where(l => Mode(d.Definition, l.Id) == EditorContentMode.Level)
+                d.Definition.MapLayouts.AsValueEnumerable()
+                    .Where(l => Mode(d.Definition, l.Id) == EditorContentMode.Level)
                     .Select(l => new EditorLayoutChoice
                     {
                         DraftId = d.Id,
@@ -32,7 +34,7 @@ public static class EditorContentRules
             .ToList();
 
     public static List<EditorContentMode> AvailableModes(SeasonDefinition definition) =>
-        definition.MapLayouts.Select(l => Mode(definition, l.Id)).Append(Mode(definition)).Distinct().ToList();
+        definition.MapLayouts.AsValueEnumerable().Select(l => Mode(definition, l.Id)).Append(Mode(definition)).Distinct().ToList();
 
     public static bool Includes(EditorDraftChoice draft, EditorContentMode mode) =>
         draft.Modes.Count > 0 ? draft.Modes.Contains(mode) : draft.Mode == mode;
@@ -43,8 +45,13 @@ public static class EditorContentRules
             return EditorContentMode.None;
         if (
             definition.MissionPackage != null
-            || definition.Missions.Any(m => m.LayoutId == layoutId)
-            || (layoutId.Length > 0 && definition.MissionLinks.Any(link => link.Package.MapLayouts.Any(l => l.Id == layoutId)))
+            || definition.Missions.AsValueEnumerable().Any(m => m.LayoutId == layoutId)
+            || (
+                layoutId.Length > 0
+                && definition
+                    .MissionLinks.AsValueEnumerable()
+                    .Any(link => link.Package.MapLayouts.AsValueEnumerable().Any(l => l.Id == layoutId))
+            )
         )
             return EditorContentMode.Mission;
         return EditorContentMode.Level;
@@ -73,7 +80,7 @@ public static class EditorContentRules
     {
         foreach (var layout in after.MapLayouts)
         {
-            var prior = before.MapLayouts.FirstOrDefault(l => l.Id == layout.Id);
+            var prior = before.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == layout.Id);
             if (Mode(before, layout.Id) == EditorContentMode.Mission)
             {
                 if (layout.ApplyInNormalRaids && prior?.ApplyInNormalRaids != true)
@@ -87,8 +94,8 @@ public static class EditorContentRules
         // A layout edit cannot grant itself mission capabilities by changing ownership.
         if (
             !JToken.DeepEquals(
-                JArray.FromObject(before.Missions.Select(m => new { m.Id, m.LayoutId })),
-                JArray.FromObject(after.Missions.Select(m => new { m.Id, m.LayoutId }))
+                JArray.FromObject(before.Missions.AsValueEnumerable().Select(m => new { m.Id, m.LayoutId }).ToArray()),
+                JArray.FromObject(after.Missions.AsValueEnumerable().Select(m => new { m.Id, m.LayoutId }).ToArray())
             )
         )
             throw new InvalidOperationException("Change mission ownership in Creator before opening the map.");

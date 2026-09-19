@@ -14,6 +14,84 @@ internal sealed partial class MissionRaidRuntime
         _retryBroken,
         _retryShown;
     private string _retryFailure = "";
+    private bool _technicalFailure,
+        _technicalFailureAcknowledged;
+    private string _technicalFailureOperation = "";
+    private long _technicalFailureRevision;
+
+    private void EncounterFailed(string reason)
+    {
+        if (_technicalFailure || _ending || _player == null)
+            return;
+        _technicalFailure = true;
+        _retryShown = false;
+        _retryFailure = "AI encounter interrupted: " + reason;
+        _retryGuard ??= new MissionRetryGuard(_player, _ => { });
+        _retryGuard.Freeze();
+        _director?.Pause();
+        if (_encounters != null)
+        {
+            _encounters.RetryGuard = _retryGuard;
+            _encounters.StopWork();
+        }
+        _ = RecordEncounterFailure();
+    }
+
+    // Caller holds the same semaphore used by observations and checkpoint transitions.
+    private async Task AcknowledgeEncounterFailure(CancellationToken token)
+    {
+        if (_technicalFailureAcknowledged)
+            return;
+        if (_technicalFailureOperation.Length == 0)
+        {
+            // An earlier observation/checkpoint may have committed despite losing its response.
+            // Refresh only this exact attempt before choosing the interruption's expected revision.
+            var current = await MissionClient.DescriptorAsync(_run!.MissionId, _run.RunId, _run.RaidId, token);
+            MissionAcknowledgement.RequireCurrent(_run, current.Run);
+            _run = current.Run!;
+            _revision = current.Revision;
+            _technicalFailureOperation = MissionClient.NewOperationId();
+            _technicalFailureRevision = _revision;
+        }
+        var response = await MissionClient.TransitionAsync(
+            _run!,
+            "technical-failure",
+            _technicalFailureRevision,
+            _technicalFailureOperation,
+            token
+        );
+        AcceptTransition(response);
+        if (!_run!.TechnicalFailure)
+            throw new InvalidDataException("The server did not acknowledge the technical encounter failure.");
+        _technicalFailureAcknowledged = true;
+    }
+
+    private async Task RecordEncounterFailure()
+    {
+        _retryBusy = true;
+        var token = _lifetime!.Token;
+        var acquired = false;
+        try
+        {
+            await _progressGate.WaitAsync(token);
+            acquired = true;
+            await AcknowledgeEncounterFailure(token);
+            if (_encounters != null)
+                await _encounters.WaitForWorkAsync();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception exception)
+        {
+            Plugin.Error(exception);
+            _retryFailure = "AI encounter interrupted. The server could not record the interruption: " + exception.Message;
+        }
+        finally
+        {
+            if (acquired)
+                _progressGate.Release();
+            _retryBusy = false;
+        }
+    }
 
     private async Task CaptureStartCheckpoint(CancellationToken token)
     {
@@ -75,7 +153,7 @@ internal sealed partial class MissionRaidRuntime
 
     private void CheckObjectiveFailure()
     {
-        if (_run == null || _run.Logic.Failure.Length == 0)
+        if (_technicalFailure || _run == null || _run.Logic.Failure.Length == 0)
             return;
         if (_retryGuard == null)
         {
@@ -138,7 +216,14 @@ internal sealed partial class MissionRaidRuntime
             await _progressGate.WaitAsync(token);
             acquired = true;
             _hud?.SetStatus("Restoring checkpoint…");
-            await DrainObservations(token);
+            if (_technicalFailure)
+            {
+                await AcknowledgeEncounterFailure(token);
+                if (_encounters != null)
+                    await _encounters.WaitForWorkAsync();
+            }
+            else
+                await DrainObservations(token);
             if (_retryDeath.HasValue)
                 AcceptTransition(await MissionClient.TransitionAsync(_run!, "defeat", _revision, MissionClient.NewOperationId(), token));
             var previous = _run!;
@@ -189,6 +274,8 @@ internal sealed partial class MissionRaidRuntime
             _unacknowledgedSignals = null;
             _retryFailure = "";
             _retryDeath = null;
+            _technicalFailure = _technicalFailureAcknowledged = false;
+            _technicalFailureOperation = "";
             _retryShown = false;
             _retryBusy = false;
             _hud?.SetRoute(_run.NextCheckpointIndex, _descriptor.Layout.Checkpoints.Count, false, "Checkpoint restored");
@@ -210,11 +297,45 @@ internal sealed partial class MissionRaidRuntime
     {
         if (_retryBusy || _player == null)
             return;
+        if (_technicalFailure)
+        {
+            _ = EndInterruptedAttempt();
+            return;
+        }
         _retryGuard?.Dispose();
         _retryGuard = null;
         if (_retryDeath.HasValue)
             _player.ActiveHealthController.Kill(_retryDeath.Value);
         else
             RequestNativeStartupFailure("Mission attempt ended");
+    }
+
+    private async Task EndInterruptedAttempt()
+    {
+        _retryBusy = true;
+        var token = _lifetime!.Token;
+        var acquired = false;
+        try
+        {
+            await _progressGate.WaitAsync(token);
+            acquired = true;
+            await AcknowledgeEncounterFailure(token);
+            if (_encounters != null)
+                await _encounters.WaitForWorkAsync();
+            _retryGuard?.Dispose();
+            _retryGuard = null;
+            RequestNativeStartupFailure("Mission interrupted by a technical AI failure");
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception exception)
+        {
+            BrokenRestore(exception);
+        }
+        finally
+        {
+            if (acquired)
+                _progressGate.Release();
+            _retryBusy = false;
+        }
     }
 }

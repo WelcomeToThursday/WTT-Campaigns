@@ -9,6 +9,12 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 4 && args[0] == "--shared-zlinq")
+{
+    WTT.Campaigns.Tests.SharedZLinqChecks.Run(args[1], args[2], args[3]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--preview-gear-data")
 {
     WTT.Campaigns.Tests.EditorPreviewGearChecks.RunDatabase(args[1]);
@@ -160,10 +166,14 @@ WTT.Campaigns.Tests.ZoneLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.HazardChecks.Run(Check);
 WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorDockChecks.Run(Check);
+WTT.Campaigns.Tests.EditorConsoleChecks.Run(Check);
+WTT.Campaigns.Tests.EditorViewportChecks.Run(Check);
+WTT.Campaigns.Tests.EditorViewportInteractionChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);
 WTT.Campaigns.Tests.EditorUiScaleChecks.Run(Check);
 WTT.Campaigns.Tests.EditorInteractionChecks.Run(Check);
 WTT.Campaigns.Tests.CatalogGridLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.EditorControllerChecks.Run(Check);
 WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
 WTT.Campaigns.Tests.EditorCameraBookmarkChecks.Run(Check);
 WTT.Campaigns.Tests.PlayerRouteChecks.Run(Check);
@@ -187,6 +197,8 @@ WTT.Campaigns.Tests.EditorMemoryChecks.Run(Check);
 WTT.Campaigns.Tests.EditorPreviewGearChecks.Run();
 WTT.Campaigns.Tests.EncounterContractsChecks.Run(Check);
 WTT.Campaigns.Tests.EncounterRuntimeChecks.Run(Check);
+WTT.Campaigns.Tests.EncounterRecoveryChecks.Run(Check).GetAwaiter().GetResult();
+WTT.Campaigns.Tests.EncounterBudgetChecks.Run(Check);
 WTT.Campaigns.Tests.PreviewFreezeChecks.Run(Check);
 WTT.Campaigns.Tests.PatrolDispatchChecks.Run(Check);
 WTT.Campaigns.Tests.PatrolDirectionChecks.Run(Check);

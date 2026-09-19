@@ -21,9 +21,10 @@ internal static class AiControlsChecks
     {
         var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.RaidEditorAiView");
         var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var controller = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Controllers.EditorAiController");
 
-        var refresh = Method(editor, "RefreshAiWorkspace");
-        var bind = Method(editor, "BindAiControls");
+        var refresh = Method(controller, "RefreshAiWorkspace");
+        var bind = Method(controller, "Bind");
 
         var nodes = EditorToolkitChecks.Nodes().Where(n => n.Id.StartsWith("Ai")).ToArray();
         check(

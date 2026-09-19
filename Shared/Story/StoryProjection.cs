@@ -5,7 +5,8 @@ public static class StoryProjection
     public static Dictionary<string, int> Variables(StoryDefinition definition, StoryProgress state)
     {
         var values = definition
-            .Variables.Where(v => v.Scope == StoryVariableScope.Profile)
+            .Variables.AsValueEnumerable()
+            .Where(v => v.Scope == StoryVariableScope.Profile)
             .ToDictionary(v => v.Id, v => state.Variables.GetValueOrDefault(v.Id, v.InitialValue));
         foreach (var binding in definition.RaidBindings)
         {
@@ -13,17 +14,20 @@ public static class StoryProjection
         }
 
         var targets = definition
-            .RaidBindings.Where(b => b.Kind == "Collectible")
+            .RaidBindings.AsValueEnumerable()
+            .Where(b => b.Kind == "Collectible")
             .Select(b => b.ItemId)
             .Concat(
                 definition
-                    .Dialogs.SelectMany(d => d.Lines)
+                    .Dialogs.AsValueEnumerable()
+                    .SelectMany(d => d.Lines)
                     .SelectMany(l => l.Actions)
-                    .Concat(definition.RaidBindings.SelectMany(b => b.Actions))
+                    .Concat(definition.RaidBindings.AsValueEnumerable().SelectMany(b => b.Actions))
                     .Where(a => a.Type == StoryActionType.CompleteItem)
                     .Select(a => a.Target)
-            );
-        foreach (var target in targets.Where(t => t.Length > 0).Distinct())
+            )
+            .ToArray();
+        foreach (var target in targets.AsValueEnumerable().Where(t => t.Length > 0).Distinct())
         {
             values[target] = state.CompletedItems.Contains(target) ? 1 : 0;
         }

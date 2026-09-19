@@ -55,7 +55,7 @@ Opening an editor map keeps the native loading progress and starts its elapsed t
 
 ## Camera speed and player routes
 
-The top toolbar's **Fly m/s** field sets camera speed from **0.25 to 96 metres per second**. Use **− / +** to halve or double it. The default is 6 m/s and your choice is remembered. Hold RMB to fly; **Shift** gives a 4x boost and **Ctrl** gives quarter-speed precision. Diagonal movement keeps the same speed.
+The viewport toolbar's **Fly m/s** field sets camera speed from **0.25 to 96 metres per second**. Use **− / +** to halve or double it. The default is 6 m/s and your choice is remembered. Hold RMB to fly; **Shift** gives a 4x boost and **Ctrl** gives quarter-speed precision. Diagonal movement keeps the same speed.
 
 **Routes** is the walking-figure tool. Select a layout to work on its player start, ordered checkpoints and exit. Create and manage layouts in **Layouts**; barriers and scenery tools are in **Scene**.
 
@@ -90,13 +90,15 @@ Live check: fly from the spawn area through distant buildings and above the map;
 
 ## Editor windows
 
-The native editor home groups draft selection and map settings in a compact framed workspace. In a loaded map, Browser and Properties are movable, resizable Tarkov-style windows; Environment and Help open separately. Actions sit beside their relevant records, and secondary technical information is under Details. Positions and sizes are remembered between launches. See [Arrange the workspace](raid-authoring.md#arrange-the-workspace) for controls and layout reset.
+The native editor home groups draft selection and map settings in a compact framed workspace. In a loaded map, each authoring tool and Properties has a movable, resizable window. Windows can dock as tabs or split groups around the scene viewport; Environment, Help and Console open from **Windows**. Actions sit beside their relevant records, and secondary technical information is under Details. Positions and sizes are remembered between launches. See [Arrange the workspace](raid-authoring.md#arrange-the-workspace) for controls and layout reset.
+
+Editor action messages, warnings and errors are retained in **Windows → Console**, replacing the former Notice panel. The console supports search, severity filters, adjustable text and editor commands. See the [console guide](editor-toolkit.md#console). For viewport maximize, overlays, orbit and pan controls, see [Arrange the workspace](raid-authoring.md#arrange-the-workspace).
 
 ## Drafts and isolation
 
 The server creates the editor character from a clean native template, with inventory roots and the native empty pockets container for traversal, and no carried gameplay items. It is not linked as an account or campaign character and is excluded from launcher profile lists. Native scratch saves are discarded; a separate editor storage path also prevents scratch files entering gameplay profile storage. Ending a session removes its scratch profile. Sessions expire after one minute without a heartbeat; normal requests then retire abandoned editor state. After a client crash, wait for this lease to expire before retrying a Normal startup. Expired sessions are replaced on editor retry, and abandoned scratch files are cleaned on server startup. Drafts are retained separately.
 
-Map layouts use campaign format **4**; loot placements and native loot/container overrides use format **5**; AI encounters, spawn points and patrol routes use format **6**; playable mission definitions use format **7**. Formats 1–6 remain supported. Matching client and server components are required for map editing. The authoring service preserves layouts when older authoring clients submit other spatial edits, and rejects older map-editor submissions that could discard newer records. Existing draft conflict handling, local recovery, campaign duplication and pack import/export include layouts and missions. Incoming changes wait until walkthrough or testing finishes.
+Map layouts use campaign format **4**; loot placements and native loot/container overrides use format **5**; AI encounters, spawn points and patrol routes use format **6**; playable mission definitions use format **7**. Later formats add further authoring features, including independent missions and campaign links in format **11**. Earlier formats remain supported; see [Missions](missions.md#existing-embedded-missions). Version 0.10.1 does not introduce a new content format or authoring protocol. Matching client and server components are required for map editing. The authoring service preserves layouts when older authoring clients submit other spatial edits, and rejects older map-editor submissions that could discard newer records. Existing draft conflict handling, local recovery, campaign duplication and pack import/export include layouts and missions. Incoming changes wait until walkthrough or testing finishes.
 
 Source map bundles are never rewritten. Targets use map, scene, hierarchy and structural fingerprint; native door IDs are included. Missing, ambiguous or changed targets require explicit rebinding. AI placement and patrols are validated against the existing navigation mesh; this milestone does not rebuild it.
 
@@ -134,6 +136,6 @@ Hazards stay inert during authoring, Observe and Walkthrough. **Playtest** arms 
 - **Minefield:** native landmine damage on entry, followed by further explosions as the player moves through the area.
 - **Claymore:** one directional explosion per run. The box is its activation area, and the mine sits at its rear edge facing the direction line. Its blast can extend beyond the activation box.
 - **Sniper zone:** native border fire, beginning with a warning shot and becoming lethal after sustained exposure. Leaving the box cancels pending shots and their sounds. **Play shot sound: On** uses a native rifle report; **Suppressed shots: On** uses the native suppressed rifle report. Turn **Play shot sound: Off (silent)** to keep completely silent zone fire. Existing zones default to normal shots.
-- **Barbed wire:** native limb contact damage and movement slowdown with BSG�s native razor-wire coils, material and contact sounds, available across maps. Overlapping authored wire areas retain slowdown until the last area is left.
+- **Barbed wire:** native limb contact damage and movement slowdown with BSG's native razor-wire coils, material and contact sounds, available across maps. Overlapping authored wire areas retain slowdown until the last area is left.
 
 The initial tool uses fixed native damage settings, a simple claymore marker and generated wire geometry. Wire contact audio reuses a loaded native wire sound bank when the map supplies one. All four use box volumes and remain separate from quest trigger types.

@@ -2,7 +2,7 @@
 
 Welcome to the WTT-Campaigns wiki: guides for playing campaigns, understanding perks and rewards, and creating your own stories in SPT.
 
-These guides cover **0.10.0 beta**, targeting **SPT 4.1.x / EFT 0.16.9.40743**. They describe the bundled campaign and supported features; custom campaigns can change perks, rewards and progression.
+These guides cover **0.10.1 beta**, targeting **SPT 4.1.x / EFT 0.16.9.40743**. They describe the bundled campaign and supported features; custom campaigns can change perks, rewards and progression.
 
 ## Start here
 
@@ -51,7 +51,8 @@ These guides cover **0.10.0 beta**, targeting **SPT 4.1.x / EFT 0.16.9.40743**. 
 - [Custom story media bundles](story-media-bundles.md): add Visit rooms to custom traders and package images, audio, video and cinematics.
 - [Editor mode and map layouts](editor-mode.md): open maps with a disposable character, reshape scenery and preview routes.
 - [AI encounters and patrol previews](ai-encounters.md): author finite waves, spawn positions and patrols, then observe or playtest them.
-- [Editor UI Toolkit](editor-toolkit.md): the full Editor interface and in-game acceptance checks.
+- [Editor console and UI Toolkit](editor-toolkit.md): logs, commands, text-size controls and in-game acceptance checks.
+- [Map layers](map-layers.md): enable authored scenery and level content in ordinary raids.
 - [Connected raid authoring](raid-authoring.md): capture scene targets and place quest zones.
 - [Story Sandbox](story-sandbox.md): a small example campaign.
 

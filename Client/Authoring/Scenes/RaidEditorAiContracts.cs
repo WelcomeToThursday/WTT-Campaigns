@@ -4,7 +4,7 @@ using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Scenes;
 
 // The editor writes the shared records directly. Keep Unity-specific checks
 // here so the authoring partial does not need a JSON-shaped compatibility layer.

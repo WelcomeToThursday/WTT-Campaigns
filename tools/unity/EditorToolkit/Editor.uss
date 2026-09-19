@@ -128,11 +128,10 @@
 .editor-toolbar.editor-action-row, #EditorMapToolbar { flex-wrap: nowrap; align-items: center; }
 #EditorMapToolbar { max-width: none; flex-shrink: 0; height: var(--editor-strip-height); }
 .editor-root #TransformToolbar .unity-button { align-self: center; height: var(--editor-strip-height); min-height: var(--editor-strip-height); max-height: var(--editor-strip-height); margin-top: 0; margin-bottom: 0; white-space: nowrap; max-width: none; }
-.editor-root #CameraSlower, .editor-root #CameraSpeed, .editor-root #CameraFaster { align-self: center; height: var(--editor-strip-height); min-height: var(--editor-strip-height); max-height: var(--editor-strip-height); margin: 0 2px; padding-top: 0; padding-bottom: 0; }
-#CameraSpeed { width: 66px; flex-grow: 0; }
+.editor-root #CameraSpeed { align-self: center; height: 24px; min-height: 24px; max-height: 24px; margin: 0 2px; padding-top: 0; padding-bottom: 0; }
+#CameraSpeed { width: 66px; min-width: 66px; max-width: 66px; flex-grow: 0; flex-shrink: 0; }
 #CameraSpeed > .unity-base-field__label { display: none; }
-#CameraSpeed .unity-base-text-field__input { -unity-text-align: middle-left; }
-.editor-root #CameraSlower, .editor-root #CameraFaster { width: 26px; min-width: 26px; padding-left: 0; padding-right: 0; -unity-text-align: middle-center; }
+.editor-root #CameraSpeed .unity-base-text-field__input { padding: 0 5px; margin: 0; -unity-text-align: middle-center; }
 .editor-toolbar-separator { width: 1px; min-width: 1px; max-width: 1px; height: 20px; flex-shrink: 0; align-self: center; margin-left: 6px; margin-right: 6px; background-color: rgb(75, 78, 71); }
 .editor-toolbar-scroll { flex-grow: 1; flex-shrink: 1; min-width: 0; height: 38px; }
 .editor-toolbar-scroll > .unity-scroll-view__content-and-vertical-scroll-container > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container { flex-direction: row; flex-wrap: nowrap; align-items: center; height: 38px; }
@@ -256,9 +255,6 @@
 .editor-root .editor-choice-search > .unity-base-field__label { width: 40px; min-width: 40px; }
 #StatusBar #Status { flex-grow: 1; flex-basis: 0; }
 #StatusBar #PreviewStatus { flex-grow: 1; flex-basis: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-#StatusBar #NoticeToggle { flex-shrink: 0; }
-.editor-notice-panel { position: absolute; right: 8px; bottom: 40px; width: 480px; max-width: 95%; max-height: 260px; background-color: rgb(26, 27, 25); padding: 8px; border-width: 1px; border-color: rgb(184, 176, 138); }
-.editor-root .editor-notice-text { white-space: normal; margin: 0; padding: 0; }
 .editor-conflict-rows { flex-shrink: 1; min-height: 50px; max-height: 420px; }
 .editor-conflict-row { flex-shrink: 0; border-bottom-width: 1px; border-bottom-color: var(--editor-border); padding-bottom: 8px; margin-bottom: 8px; }
 .editor-conflict-values { flex-direction: row; }
@@ -305,3 +301,73 @@
 
 .editor-root .editor-home-tab { font-size: 19px; border-bottom-width: 3px; }
 .editor-root .editor-home-tab.editor-active-tab { background-color: var(--editor-selection); color: var(--editor-text-bright); border-bottom-color: var(--editor-accent); }
+
+/* The final native camera frame sits below the editor tools and route overlay. */
+.editor-scene-workspace { background-color: var(--editor-workspace); }
+.editor-game-viewport { position: absolute; background-color: rgb(0, 0, 0); }
+
+.editor-viewport-toolbar { position: absolute; height: 30px; flex-direction: row; align-items: center; background-color: var(--editor-panel); border-bottom-width: 1px; border-bottom-color: var(--editor-border); padding: 0 3px; }
+.editor-viewport-title { flex-shrink: 0; padding: 0 8px; -unity-font-style: bold; }
+.editor-viewport-tools { flex-grow: 1; flex-shrink: 1; min-width: 0; height: 29px; }
+.editor-viewport-tools .unity-scroll-view__content-container { flex-direction: row; align-items: center; height: 29px; }
+.editor-root .editor-viewport-tools .unity-button, .editor-root #ViewportMaximize { flex-shrink: 0; height: 24px; min-height: 24px; max-height: 24px; min-width: 24px; padding: 0 5px; margin: 0 2px; -unity-text-align: middle-center; }
+.editor-viewport-speed-group { flex-direction: row; align-items: center; flex-shrink: 0; height: 24px; margin-right: 6px; }
+.editor-viewport-speed-label { flex-shrink: 0; height: 24px; margin: 0 4px; padding: 0; white-space: nowrap; -unity-text-align: middle-center; }
+.editor-viewport-overlay-menu { display: none; position: absolute; top: 30px; right: 0; width: 230px; padding: 8px; background-color: var(--editor-panel); border-width: 1px; border-color: var(--editor-border); }
+.editor-root .editor-viewport-overlay-menu .editor-setting { width: 100%; margin: 2px 0; padding: 3px 0; min-height: 28px; flex-direction: row; align-items: center; }
+.editor-root .editor-viewport-overlay-menu .editor-setting > .unity-base-field__label { min-width: 0; max-width: none; width: auto; flex-grow: 1; flex-shrink: 1; white-space: normal; color: var(--editor-text); }
+.editor-root .editor-viewport-overlay-menu .editor-setting > .unity-toggle__input { width: 18px; min-width: 18px; max-width: 18px; flex-grow: 0; flex-shrink: 0; margin: 0; padding: 0; }
+.editor-root .editor-viewport-overlay-menu .unity-toggle__checkmark { -unity-background-image-tint-color: var(--editor-text-bright); }
+
+/* Console controls stay fixed while wrapped messages scroll independently. */
+/* Keep window chrome fixed; only the explicit content selectors below use the text-size preference. */
+.editor-console { flex-direction: column; min-width: 0; min-height: 0; --console-font-size: 16px; --console-time-width: 80px; font-size: 14px; }
+.editor-console-toolbar-scroll { height: 42px; min-height: 42px; max-height: 42px; flex-shrink: 0; }
+.editor-console-toolbar { flex-direction: row; flex-wrap: nowrap; flex-shrink: 0; align-items: center; }
+.editor-console-toolbar > * { flex-shrink: 0; }
+.editor-root .editor-console-toolbar .unity-toggle { flex-direction: row; margin: 1px 10px 1px 0; min-height: 26px; align-items: center; }
+.editor-root .editor-console-toolbar .unity-base-field__label { min-width: 0; max-width: none; width: auto; margin-right: 5px; font-size: 14px; white-space: nowrap; }
+.editor-root .editor-console-toolbar .unity-toggle__input { flex-grow: 0; flex-shrink: 0; min-width: 18px; width: 18px; margin: 0; padding: 0; }
+.editor-root .editor-console-toggle .unity-toggle__checkmark { width: 16px; height: 16px; border-width: 1px; border-radius: 3px; border-color: var(--editor-border); background-color: var(--editor-input); -unity-background-image-tint-color: var(--editor-text-bright); }
+.editor-root .editor-console-toggle .unity-toggle__input:checked .unity-toggle__checkmark { background-color: var(--editor-selection); border-color: var(--editor-accent); }
+.editor-root .editor-console-toolbar .unity-button { min-height: 26px; margin: 1px 6px 1px 0; padding: 2px 8px; font-size: 14px; align-self: center; }
+.editor-console-font-label { font-size: 14px; min-width: 54px; margin: 0 6px 0 0; -unity-text-align: middle-left; }
+.editor-root .editor-console .editor-field { max-width: none; flex-shrink: 0; }
+.editor-root .editor-console .editor-field > .unity-base-field__label { width: 88px; min-width: 88px; max-width: 88px; font-size: 14px; }
+.editor-root .editor-console .unity-base-text-field__input { font-size: var(--console-font-size); }
+.editor-console-messages { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-height: 32px; min-width: 0; margin: 3px 0; background-color: var(--editor-workspace); border-width: 1px; border-color: var(--editor-border); }
+/* A separate timestamp column keeps proportional digits and wrapped messages aligned. */
+.editor-console-row { flex-direction: row; flex-shrink: 0; min-height: 24px; min-width: 0; max-width: 100%; margin: 1px 0; padding: 3px 6px; border-left-width: 3px; border-left-color: var(--editor-border); }
+.editor-console-timestamp { width: var(--console-time-width); min-width: var(--console-time-width); flex-shrink: 0; margin: 0 8px 0 0; padding: 0; font-size: var(--console-font-size); white-space: nowrap; color: var(--editor-muted); -unity-text-align: upper-right; }
+.editor-console-message { flex-grow: 1; flex-shrink: 1; flex-basis: 0; min-width: 0; margin: 0; padding: 0; white-space: normal; font-size: var(--console-font-size); -unity-text-align: upper-left; }
+.editor-console-info { color: rgb(169, 209, 239); border-left-color: rgb(110, 169, 216); }
+.editor-console-debug { color: rgb(181, 174, 202); border-left-color: rgb(142, 129, 178); }
+.editor-console-warning { color: rgb(245, 208, 112); border-left-color: rgb(229, 180, 61); }
+.editor-console-error { color: rgb(255, 157, 145); border-left-color: rgb(231, 98, 83); }
+.editor-console-command .editor-console-message { -unity-font-style: bold; }
+.editor-console-messages .editor-scrollbar { width: 14px; min-width: 14px; margin-left: 4px; }
+.editor-console-messages .editor-scroll-slider #unity-dragger { min-height: 24px; background-color: var(--editor-muted); border-radius: 3px; }
+.editor-console-messages .editor-scroll-slider #unity-dragger:hover { background-color: var(--editor-accent); }
+.editor-console-details { flex-shrink: 1; min-height: 26px; margin: 0; }
+.editor-console-details > .unity-toggle { font-size: 14px; min-height: 26px; color: var(--editor-text); }
+.editor-console-details-scroll { max-height: 120px; min-height: 24px; flex-shrink: 1; }
+.editor-root .editor-console .editor-console-detail-text { min-height: 24px; margin: 0; }
+.editor-console-detail-text .unity-text-field__input { white-space: normal; }
+.editor-console-counts { flex-shrink: 0; font-size: 12px; color: var(--editor-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+.editor-console-hint { flex-shrink: 1; min-height: 0; max-height: 40px; font-size: 14px; color: var(--editor-muted); white-space: normal; overflow: hidden; margin: 2px 0; }
+.editor-root .editor-console .editor-console-input { flex-shrink: 0; margin-bottom: 4px; }
+.editor-console-size-10 { --console-font-size: 10px; --console-time-width: 50px; }
+.editor-console-size-11 { --console-font-size: 11px; --console-time-width: 55px; }
+.editor-console-size-12 { --console-font-size: 12px; --console-time-width: 60px; }
+.editor-console-size-13 { --console-font-size: 13px; --console-time-width: 65px; }
+.editor-console-size-14 { --console-font-size: 14px; --console-time-width: 70px; }
+.editor-console-size-15 { --console-font-size: 15px; --console-time-width: 75px; }
+.editor-console-size-16 { --console-font-size: 16px; --console-time-width: 80px; }
+.editor-console-size-17 { --console-font-size: 17px; --console-time-width: 85px; }
+.editor-console-size-18 { --console-font-size: 18px; --console-time-width: 90px; }
+.editor-console-size-19 { --console-font-size: 19px; --console-time-width: 95px; }
+.editor-console-size-20 { --console-font-size: 20px; --console-time-width: 100px; }
+.editor-console-size-21 { --console-font-size: 21px; --console-time-width: 105px; }
+.editor-console-size-22 { --console-font-size: 22px; --console-time-width: 110px; }
+.editor-console-size-23 { --console-font-size: 23px; --console-time-width: 115px; }
+.editor-console-size-24 { --console-font-size: 24px; --console-time-width: 120px; }

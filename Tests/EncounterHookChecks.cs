@@ -56,6 +56,8 @@ internal static class EncounterHookChecks
         CheckAdmissionCoverage(native, gate, install);
         CheckAdmissionPolicy();
         CheckCoordinatorCoverage(client);
+        CheckRecoveryCoverage(client);
+        CheckBudgetCoverage(client);
         CheckPatrolCoverage(client);
         CheckPatrolFacing(native, client);
         CheckPatrolPathDispatch(native, client);
@@ -69,6 +71,79 @@ internal static class EncounterHookChecks
 
         Console.WriteLine(
             "Encounter hooks: installed native activation, preactivation, world registration, SAIN and BigBrain surfaces verified offline."
+        );
+    }
+
+    private static void CheckBudgetCoverage(AssemblyDefinition client)
+    {
+        var coordinator = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPreviewRuntime");
+        Require(
+            Calls(RequireMethod(coordinator, "StartQueuedWaves"), "TryReserve"),
+            "Wave queue reserves active-bot capacity before generation"
+        );
+        var budgeted = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<SpawnBudgetedWave>"));
+        Require(
+            CallsAny(budgeted, "Release", m => m.DeclaringType.Name == "EncounterSpawnBudget"),
+            "Wave completion and failure release generation capacity"
+        );
+        var spawn = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<SpawnWave>"));
+        var restore = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<RestoreAsync>"));
+        Require(
+            CallsAny(spawn, "PaceActivation", _ => true) && CallsAny(restore, "PaceActivation", _ => true),
+            "Normal and restored actors share activation pacing"
+        );
+        var patrol = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
+        Require(
+            Calls(RequireMethod(patrol, "Tick"), "TryUpdateBudgeted"),
+            "Patrol planner distinguishes deferred navigation from unreachable paths"
+        );
+        var hold = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterHoldRuntime");
+        Require(
+            CallsAny(RequireMethod(patrol, "Move"), "Move", m => m.DeclaringType.Name == "EncounterNavigationBudget")
+                && CallsAny(RequireMethod(hold, "Move"), "Move", m => m.DeclaringType.Name == "EncounterNavigationBudget"),
+            "Patrol and hold movement share the authored navigation quota"
+        );
+    }
+
+    private static void CheckRecoveryCoverage(AssemblyDefinition client)
+    {
+        var coordinator = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPreviewRuntime");
+        Require(
+            CallsAny(coordinator, "RequestAsync", m => m.DeclaringType.Name == "EncounterRecovery"),
+            "Native coordinator uses the tested bounded transport recovery"
+        );
+        Require(
+            CallsAny(coordinator, "Rollback", m => m.DeclaringType.Name == "EncounterWaveCleanup"),
+            "Native coordinator rolls back incomplete waves"
+        );
+        Require(
+            CallsAny(coordinator, "RemoveProfile", m => m.DeclaringType.Name == "EncounterNative"),
+            "Wave rollback removes native profile registrations"
+        );
+        Require(
+            CallsAny(coordinator, "Remove", m => m.DeclaringType.Name == "IEncounterAiRuntime"),
+            "Wave rollback releases optional AI bindings"
+        );
+        var spawn = coordinator.NestedTypes.Single(t => t.Name.StartsWith("<SpawnWave>"));
+        var body = spawn.Methods.Single(m => m.Name == "MoveNext").Body.Instructions;
+        var commit = body.First(i => i.Operand is MethodReference m && m.Name == "TryCommitGeneration");
+        var publish = body.First(i => i.Operand is FieldReference f && f.Name == "ActorRegistered");
+        Require(body.IndexOf(commit) < body.IndexOf(publish), "Actor observations are published only after native wave commit");
+        var mission = RequireType(client, "WTT.Campaigns.Client.Missions.MissionRaidRuntime");
+        var update = RequireMethod(mission, "Update");
+        Require(
+            Calls(update, "EncounterFailed") && !Calls(update, "RequestNativeFailure"),
+            "Encounter failures enter recovery instead of native player death"
+        );
+        var failure = RequireMethod(mission, "EncounterFailed");
+        Require(
+            Calls(failure, "Freeze") && Calls(failure, "StopWork"),
+            "Technical failure freezes the player and cancels pending encounter work"
+        );
+        var ending = mission.NestedTypes.Single(t => t.Name.StartsWith("<EndInterruptedAttempt>"));
+        Require(
+            CallsAny(ending, "RequestNativeStartupFailure", _ => true) && !CallsAny(ending, "Kill", _ => true),
+            "Technical end uses alive reconciliation without killing the player"
         );
     }
 

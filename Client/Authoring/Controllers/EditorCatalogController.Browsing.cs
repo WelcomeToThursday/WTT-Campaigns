@@ -1,63 +1,64 @@
-using System.Threading;
 using Cysharp.Threading.Tasks;
 using EFT.Interactive;
-using EFT.UI.DragAndDrop;
 using Newtonsoft.Json;
 using SPT.Common.Http;
 using UnityEngine;
-using UnityEngine.EventSystems;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Authoring.Views;
-using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
-using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
-using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Controllers;
 
-public sealed partial class RaidEditor
+internal sealed partial class EditorCatalogController
 {
     private string _sceneRebindId = "";
+
     private readonly SceneBrowserState _sceneBrowser = new();
+
     private string _sceneTab
     {
         get => _sceneBrowser.Tab;
         set => _sceneBrowser.Tab = value;
     }
+
     private string _sceneFilter
     {
         get => _sceneBrowser.Filter;
         set => _sceneBrowser.Filter = value;
     }
-    private bool _repeatPlacement;
-    private string _placementLastId = "";
-    private string _catalogKey = "",
-        _catalogSelection = "";
+
+    private string _catalogSelection = "";
+    private readonly SceneCatalogRequestState _catalogRequests = new();
+
     private readonly Dictionary<string, Transform> _sceneRoots = new();
+
     private readonly HashSet<string> _unsupportedSceneIds = new();
+
     private readonly Dictionary<string, SceneCatalogEntry> _localCatalogEntries = new();
+
     private readonly HashSet<Transform> _discoveredRoots = new();
+
     private readonly Dictionary<string, string> _propShapes = new();
+
     private string _catalogSource = "All game";
+
     private SceneAssetCatalog? _assetCatalog;
-    private SceneAssetCatalog.Model? _placementAsset;
+
     private HashSet<string>? _containerTemplates;
+
     private bool AssetCatalog =>
         SceneWorkspace
         && _sceneTab == "Catalog"
         && (_sceneFilter == "Containers" || (_sceneFilter == "Props" && _catalogSource == "All game"));
+
     private SceneCatalogResponse? _catalog;
+
     private SceneCatalogEntry? _selectedCatalogEntry;
+
     private readonly Dictionary<string, (string Id, SceneCatalogEntry? Entry)> _filterSelections = new();
-    private bool _catalogLoading;
-    private int _catalogGeneration;
-    private GameObject? _placement;
-    private MapTarget? _placementProp;
-    private SceneCatalogEntry? _placementLoot;
-    private CancellationTokenSource? _placementLifetime;
-    private bool _placementPooled;
 
     private sealed class ThumbnailImage
     {
@@ -71,25 +72,34 @@ public sealed partial class RaidEditor
         image =>
         {
             if (image.Owned && image.Texture)
-                Destroy(image.Texture);
+                UnityEngine.Object.Destroy(image.Texture);
         }
     );
-    private readonly List<ThumbnailJob> _thumbnailQueue = new();
-    private bool _thumbnailWorker;
-    private CancellationTokenSource _thumbnailLifetime = new();
-    private bool SceneWorkspace => _mode == "Scene" && EditorMode.Ready;
-    private bool RemoteCatalog => SceneWorkspace && _sceneTab == "Catalog" && _sceneFilter is "Loot" or "Presets";
-    private int _catalogPageSize = 10;
-    private int LibraryPageSize => SceneWorkspace && _sceneTab == "Catalog" ? _catalogPageSize : 10;
-    private int LibraryOffset => RemoteCatalog ? 0 : _page * LibraryPageSize;
-    private int LibraryTotal => RemoteCatalog ? _catalog?.Total ?? 0 : _rows.Count;
 
-    private void DiscoverSceneNode(Transform node)
+    private readonly List<ThumbnailJob> _thumbnailQueue = new();
+
+    private bool _thumbnailWorker;
+
+    private CancellationTokenSource _thumbnailLifetime = new();
+
+    internal bool SceneWorkspace => _context.ToolId == "Scene" && EditorMode.Ready;
+
+    internal bool RemoteCatalog => SceneWorkspace && _sceneTab == "Catalog" && _sceneFilter is "Loot" or "Presets";
+
+    private int _catalogPageSize = 10;
+
+    internal int LibraryPageSize => SceneWorkspace && _sceneTab == "Catalog" ? _catalogPageSize : 10;
+
+    internal int LibraryOffset => RemoteCatalog ? 0 : _context.Page * LibraryPageSize;
+
+    internal int LibraryTotal => RemoteCatalog ? _catalog?.Total ?? 0 : _context.Rows.Count;
+
+    internal void DiscoverSceneNode(Transform node)
     {
         if (node.GetComponent<Door>() is { } nativeDoor && nativeDoor.GetType() == typeof(Door))
         {
             _sceneRoots[node.GetInstanceID().ToString()] = node;
-            _libraryKey = "";
+            _context.LibraryKey = "";
             return;
         }
         if (
@@ -108,7 +118,7 @@ public sealed partial class RaidEditor
         if (!root || _sceneRoots.ContainsKey(root!.GetInstanceID().ToString()))
             return;
         _sceneRoots[root!.GetInstanceID().ToString()] = root;
-        _libraryKey = "";
+        _context.LibraryKey = "";
         if (MapSceneAdapter.Supported(root).Length > 0)
         {
             _unsupportedSceneIds.Add(root.GetInstanceID().ToString());
@@ -147,10 +157,10 @@ public sealed partial class RaidEditor
             _propShapes.Add(key, root.GetInstanceID().ToString());
     }
 
-    private void BindSceneControls(RaidEditorView view)
+    internal void Bind(RaidEditorView view)
     {
         BindContainerControls(view);
-        BindDoorControls(view);
+        _context.BindDoorControls(view);
         void Button(string name, Action action) =>
             view.Button(
                 name,
@@ -158,13 +168,13 @@ public sealed partial class RaidEditor
                 {
                     try
                     {
-                        CancelDrag();
+                        _context.CancelDrag();
                         action();
-                        Refresh();
+                        _context.Refresh();
                     }
                     catch (Exception e)
                     {
-                        _notice = e.Message;
+                        _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
                         Plugin.Error(e);
                     }
                 }
@@ -178,21 +188,21 @@ public sealed partial class RaidEditor
                 {
                     CancelPlacement();
                     _sceneTab = value;
-                    _page = 0;
+                    _context.Page = 0;
                 }
             );
         }
         Button("ScenePreviewRetry", RetryThumbnail);
         // These actions must not cancel an active transform or placement.
-        view.Button("SceneFrame", FrameSceneSelection);
+        view.Button("SceneFrame", _context.FrameSceneSelection);
         view.Button(
             "SceneAnchor",
             () =>
             {
-                if (_drag != null || _placementLifetime != null || _walking)
+                if (_context.IsDragging || _placementRequests.Active || _context.Walking)
                     return;
-                _centerAnchor = !_centerAnchor;
-                Refresh();
+                _context.CenterAnchor = !_context.CenterAnchor;
+                _context.Refresh();
             }
         );
         view.Dropdown(
@@ -205,9 +215,10 @@ public sealed partial class RaidEditor
                 var saved = _filterSelections.GetValueOrDefault(_catalogSource + ":" + _sceneFilter);
                 _catalogSelection = saved.Id ?? "";
                 _selectedCatalogEntry = saved.Entry;
-                _page = 0;
-                _catalogKey = _libraryKey = "";
-                Refresh();
+                _context.Page = 0;
+                _catalogRequests.Reset();
+                _context.LibraryKey = "";
+                _context.Refresh();
             }
         );
         view.Dropdown(
@@ -217,7 +228,7 @@ public sealed partial class RaidEditor
                 var filters = SceneBrowserState.Filters.AsValueEnumerable().Where(f => SceneBrowserState.Available(_sceneTab, f)).ToArray();
                 if (index < 0 || index >= filters.Length)
                     return;
-                CancelDrag();
+                _context.CancelDrag();
                 CancelPlacement();
                 if (_sceneTab == "Catalog")
                     _filterSelections[_catalogSource + ":" + _sceneFilter] = (_catalogSelection, _selectedCatalogEntry);
@@ -228,9 +239,9 @@ public sealed partial class RaidEditor
                     _catalogSelection = saved.Id ?? "";
                     _selectedCatalogEntry = saved.Entry;
                 }
-                _page = 0;
-                _libraryKey = "";
-                Refresh();
+                _context.Page = 0;
+                _context.LibraryKey = "";
+                _context.Refresh();
             }
         );
         Button(
@@ -245,7 +256,7 @@ public sealed partial class RaidEditor
         {
             if (!SceneWorkspace || _sceneTab != "Catalog")
                 return;
-            SelectRow(id);
+            _context.SelectRow(id);
             _ = BeginPlacement();
         });
         Button("SceneMove", () => SceneTransform("Move"));
@@ -256,37 +267,37 @@ public sealed partial class RaidEditor
             "SceneRestore",
             () =>
             {
-                DeleteMapRecord();
-                _selected = "";
+                _context.DeleteMapRecord();
+                _context.SelectionId = "";
             }
         );
         Button(
             "SceneRebind",
             () =>
             {
-                if (!CanSceneEdit || MapPoint is not MapObjectEdit)
+                if (!CanSceneEdit || _context.MapPoint is not MapObjectEdit)
                     return;
-                _sceneRebindId = _selected;
-                _picking = true;
-                _notice = "Click the replacement object · Esc cancels";
+                _sceneRebindId = _context.SelectionId;
+                _context.Picking = true;
+                _context.ReportFeedback("Click the replacement object · Esc cancels");
             }
         );
     }
 
-    private void SceneRows(string search)
+    internal void SceneRows(string search)
     {
         if (_sceneTab != "Catalog")
         {
             void Add(string id, string label, string kind)
             {
                 if (_sceneBrowser.Matches(kind))
-                    _rows.Add((id, label));
+                    _context.Rows.Add((id, label));
             }
             if (_sceneTab == "Existing")
                 foreach (var pair in _sceneRoots)
                 {
                     var target = pair.Value;
-                    if (!target || !target.gameObject.activeInHierarchy || _mapScene?.RecordAt(target) != null)
+                    if (!target || !target.gameObject.activeInHierarchy || _context.MapScene?.RecordAt(target) != null)
                         continue;
                     var kind =
                         target.GetComponent<Door>() ? "Doors"
@@ -295,9 +306,9 @@ public sealed partial class RaidEditor
                         : "Props";
                     Add(pair.Key, target.name, kind);
                 }
-            if (Layout != null)
+            if (_context.Layout != null)
             {
-                foreach (var item in Layout.Objects)
+                foreach (var item in _context.Layout.Objects)
                     if (_sceneTab == "Changes" || item.Operation == "Copy")
                         Add(
                             item.Id,
@@ -306,11 +317,11 @@ public sealed partial class RaidEditor
                                 : item.Target.Kind == "Loot" ? "Loot"
                                 : "Props"
                         );
-                foreach (var item in Layout.Loot)
+                foreach (var item in _context.Layout.Loot)
                     Add(item.Id, "Placed loot · " + item.Name, "Loot");
-                foreach (var item in Layout.Barriers)
+                foreach (var item in _context.Layout.Barriers)
                     Add(item.Id, "Barrier · " + item.Name, "Barriers");
-                foreach (var item in Layout.Doors)
+                foreach (var item in _context.Layout.Doors)
                     if (_sceneTab == "Changes" || item.PlaceNew)
                         Add(item.Id, "Door · " + item.Name + " · " + item.State, "Doors");
             }
@@ -318,8 +329,8 @@ public sealed partial class RaidEditor
         else if (_sceneFilter == "Doors")
         {
             foreach (var pair in _sceneRoots)
-                if (pair.Value && pair.Value.GetComponent<Door>() && _mapScene?.RecordAt(pair.Value) == null)
-                    _rows.Add((pair.Key, pair.Value.name + " · Door"));
+                if (pair.Value && pair.Value.GetComponent<Door>() && _context.MapScene?.RecordAt(pair.Value) == null)
+                    _context.Rows.Add((pair.Key, pair.Value.name + " · Door"));
         }
         else if (AssetCatalog)
         {
@@ -330,9 +341,9 @@ public sealed partial class RaidEditor
                 _assetCatalog.Start(
                     () =>
                     {
-                        _libraryKey = "";
+                        _context.LibraryKey = "";
                     },
-                    () => AssetCatalog && _open
+                    () => AssetCatalog && _context.IsOpen
                 );
             }
             var entries = new List<SceneCatalogEntry>();
@@ -378,7 +389,7 @@ public sealed partial class RaidEditor
                 }
                 try
                 {
-                    var binding = (_mapScene ??= new()).CaptureOriginal(source);
+                    var binding = (_context.MapScene ??= new()).CaptureOriginal(source);
                     entries.Add(
                         new SceneCatalogEntry
                         {
@@ -415,21 +426,20 @@ public sealed partial class RaidEditor
             if (_catalogSelection.Length > 0)
                 _selectedCatalogEntry = entries.AsValueEnumerable().FirstOrDefault(e => e.Id == _catalogSelection) ?? _selectedCatalogEntry;
             foreach (var entry in entries)
-                _rows.Add((entry.Id, entry.Name + (CatalogError(entry).Length > 0 ? " � Unavailable" : "")));
+                _context.Rows.Add((entry.Id, entry.Name + (CatalogError(entry).Length > 0 ? " � Unavailable" : "")));
             return;
         }
         else if (RemoteCatalog)
         {
-            var key = _catalogSource + ":" + _sceneFilter + ":" + search + ":" + _page + ":" + LibraryPageSize;
-            if (_catalogKey != key)
+            var key = _catalogSource + ":" + _sceneFilter + ":" + search + ":" + _context.Page + ":" + LibraryPageSize;
+            if (_catalogRequests.Key != key)
             {
-                _catalogKey = key;
                 _catalog = null;
-                _ = FetchCatalog(key, search, _page, LibraryPageSize, ++_catalogGeneration);
+                _ = FetchCatalog(key, search, _context.Page, LibraryPageSize, _catalogRequests.Begin(key));
             }
             if (_catalog != null)
                 foreach (var entry in _catalog.Entries)
-                    _rows.Add((entry.Id, entry.Name));
+                    _context.Rows.Add((entry.Id, entry.Name));
             return;
         }
         else
@@ -437,7 +447,7 @@ public sealed partial class RaidEditor
             var ids = _propShapes.Values.AsValueEnumerable().ToArray();
             foreach (var id in ids)
                 if (_sceneRoots.TryGetValue(id, out var t) && t)
-                    _rows.Add(
+                    _context.Rows.Add(
                         (
                             id,
                             t.name
@@ -450,12 +460,11 @@ public sealed partial class RaidEditor
                     );
         }
         if (_sceneFilter != "Doors")
-            _rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
+            _context.Rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
     }
 
     private async Task FetchCatalog(string key, string search, int page, int pageSize, int generation)
     {
-        _catalogLoading = true;
         try
         {
             var result = new SceneCatalogResponse();
@@ -489,7 +498,7 @@ public sealed partial class RaidEditor
                         )
                     )
                 );
-                if (generation != _catalogGeneration || _catalogKey != key)
+                if (!_catalogRequests.IsCurrent(generation, key))
                     return;
                 if (batch == null || batch.Error != null)
                     throw new InvalidOperationException(batch?.Error ?? "The catalog did not respond.");
@@ -501,104 +510,104 @@ public sealed partial class RaidEditor
             }
             _catalog = result;
             if (_catalog.Error != null)
-                _notice = _catalog.Error;
+                _context.ReportFeedback(_catalog.Error, ConsoleSeverity.Error);
         }
         catch (Exception e)
         {
-            if (generation == _catalogGeneration)
+            if (_catalogRequests.IsCurrent(generation, key))
             {
-                _notice = e.Message;
+                _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
                 _catalog = new SceneCatalogResponse { Error = e.Message };
             }
         }
         finally
         {
-            if (generation == _catalogGeneration)
+            if (_catalogRequests.IsCurrent(generation, key))
             {
-                _catalogLoading = false;
-                Refresh(false);
+                _catalogRequests.Finish(generation, key);
+                _context.Refresh(false);
             }
         }
     }
 
-    private void SelectSceneRow(string id)
+    internal void SelectSceneRow(string id)
     {
         if (_sceneTab == "Catalog")
         {
             _catalogSelection = id;
             _selectedCatalogEntry = _catalog?.Entries.AsValueEnumerable().FirstOrDefault(e => e.Id == id);
-            _selected = "";
+            _context.SelectionId = "";
             CancelPlacement();
         }
         else if (_sceneRoots.TryGetValue(id, out var target) && target)
             SelectSceneTarget(target);
         else
         {
-            _selected = id;
-            _picked = null;
-            _sceneSelectionPose = null;
-            _sceneSelectionError = "";
-            if (_tool == "Scale" && !CanTransformScene("Scale"))
-                _tool = "Move";
+            _context.SelectionId = id;
+            _context.Picked = null;
+            _context.SceneSelectionPose = null;
+            _context.SceneSelectionError = "";
+            if (_context.TransformTool == "Scale" && !_context.CanTransformScene("Scale"))
+                _context.TransformTool = "Move";
         }
     }
 
-    private void SelectSceneTarget(Transform hit)
+    internal void SelectSceneTarget(Transform hit)
     {
-        var authored = _mapScene?.RecordAt(hit);
+        var authored = _context.MapScene?.RecordAt(hit);
         if (_sceneRebindId.Length > 0 && authored != null)
         {
-            _notice = "Choose an original map object as the replacement.";
+            _context.ReportFeedback("Choose an original map object as the replacement.", ConsoleSeverity.Warning);
             return;
         }
         if (authored != null)
         {
-            _sceneSelectionPose = null;
-            _sceneSelectionError = "";
-            _selected = authored;
-            _picked = null;
+            _context.SceneSelectionPose = null;
+            _context.SceneSelectionError = "";
+            _context.SelectionId = authored;
+            _context.Picked = null;
             _sceneTab = "Existing";
-            if (_tool == "Scale" && !CanTransformScene("Scale"))
-                _tool = "Move";
-            Refresh();
-            _view?.Windows.ShowPanel(ConfiguredContainer != null ? "LootConfiguration" : "Inspector", true);
+            if (_context.TransformTool == "Scale" && !_context.CanTransformScene("Scale"))
+                _context.TransformTool = "Move";
+            _context.Refresh();
+            _context.View?.Windows.ShowPanel(ConfiguredContainer != null ? "LootConfiguration" : "Inspector", true);
             return;
         }
         var nativeDoor = hit.GetComponentInParent<Door>();
         if (nativeDoor && nativeDoor.GetType() == typeof(Door))
         {
-            _picked = nativeDoor.transform;
-            _sceneSelectionPose = null;
-            _sceneSelectionError = "";
-            var doorBinding = MapSceneAdapter.Capture(_picked, true);
-            _selected =
-                Layout
-                    ?.Doors.AsValueEnumerable()
+            _context.Picked = nativeDoor.transform;
+            _context.SceneSelectionPose = null;
+            _context.SceneSelectionError = "";
+            var doorBinding = MapSceneAdapter.Capture(_context.Picked, true);
+            _context.SelectionId =
+                _context
+                    .Layout?.Doors.AsValueEnumerable()
                     .FirstOrDefault(d => !d.PlaceNew && d.Target.Path == doorBinding.Path && d.Target.Scene == doorBinding.Scene)
                     ?.Id
                 ?? "";
             _sceneTab = "Existing";
-            Refresh();
-            _view?.Windows.ShowPanel("Inspector", true);
+            _context.Refresh();
+            _context.View?.Windows.ShowPanel("Inspector", true);
             return;
         }
         var root = MapSceneAdapter.Root(hit) ?? WTT.Campaigns.UI.Controls.SceneSelectionGeometry.VisualRoot(hit);
         if (!root)
         {
-            _notice = MapSceneAdapter.Supported(hit);
+            _context.ReportFeedback(MapSceneAdapter.Supported(hit), ConsoleSeverity.Warning);
             return;
         }
         var error = MapSceneAdapter.Supported(root);
         if (_sceneRebindId.Length > 0 && error.Length > 0)
         {
-            _notice = error;
+            _context.ReportFeedback(error, ConsoleSeverity.Warning);
             return;
         }
         if (_sceneRebindId.Length > 0)
         {
             var id = _sceneRebindId;
-            var target = (_mapScene ??= new()).CaptureOriginal(root!);
-            var rebound = Layout?.Objects.AsValueEnumerable().FirstOrDefault(o => o.Id == id);
+            var target = (_context.MapScene ??= new()).CaptureOriginal(root!);
+            var rebound = _context.Layout?.Objects.AsValueEnumerable().FirstOrDefault(o => o.Id == id);
             if (rebound == null)
             {
                 _sceneRebindId = "";
@@ -606,24 +615,24 @@ public sealed partial class RaidEditor
             }
             if (rebound.Target.Kind != target.Kind)
             {
-                _notice = "Select the same object type as the original target.";
+                _context.ReportFeedback("Select the same object type as the original target.", ConsoleSeverity.Warning);
                 return;
             }
-            MapEdit(l => l.Objects.AsValueEnumerable().Single(o => o.Id == id).Target = target);
+            _context.MapEdit(l => l.Objects.AsValueEnumerable().Single(o => o.Id == id).Target = target);
             _sceneRebindId = "";
-            _sceneSelectionError = "";
-            _sceneSelectionPose = null;
-            _selected = id;
-            _picked = root;
+            _context.SceneSelectionError = "";
+            _context.SceneSelectionPose = null;
+            _context.SelectionId = id;
+            _context.Picked = root;
             _sceneTab = "Changes";
-            Refresh();
+            _context.Refresh();
             return;
         }
-        _picked = root;
-        _selected = "";
-        var binding = error.Length == 0 ? (_mapScene ??= new()).CaptureOriginal(root!) : null;
-        var record = Layout
-            ?.Objects.AsValueEnumerable()
+        _context.Picked = root;
+        _context.SelectionId = "";
+        var binding = error.Length == 0 ? (_context.MapScene ??= new()).CaptureOriginal(root!) : null;
+        var record = _context
+            .Layout?.Objects.AsValueEnumerable()
             .FirstOrDefault(o =>
                 binding != null
                 && o.Operation != "Copy"
@@ -632,322 +641,55 @@ public sealed partial class RaidEditor
                 && o.Target.Scene == binding.Scene
             );
         if (record != null)
-            _selected = record.Id;
+            _context.SelectionId = record.Id;
         _sceneTab = "Existing";
-        SetSceneSelectionPose(root!, binding, error);
-        _notice = error.Length > 0 ? "Selected for inspection. " + error : "Selected " + root!.name;
-        Refresh();
-        _view?.Windows.ShowPanel(ConfiguredContainer != null ? "LootConfiguration" : "Inspector", true);
+        _context.SetSceneSelectionPose(root!, binding, error);
+        _context.ReportFeedback(
+            error.Length > 0 ? "Selected for inspection. " + error : "Selected " + root!.name,
+            error.Length > 0 ? ConsoleSeverity.Warning : ConsoleSeverity.Info
+        );
+        _context.Refresh();
+        _context.View?.Windows.ShowPanel(ConfiguredContainer != null ? "LootConfiguration" : "Inspector", true);
     }
 
-    private void SceneTransform(string tool)
+    internal void SceneTransform(string tool)
     {
         if (!CanSceneEdit)
             return;
-        if (!CanTransformScene(tool))
+        if (!_context.CanTransformScene(tool))
             return;
-        if (MapPoint is MapObjectEdit { Operation: "Hide" })
+        if (_context.MapPoint is MapObjectEdit { Operation: "Hide" })
             return;
-        _tool = tool;
+        _context.TransformTool = tool;
     }
 
-    private bool CanSceneEdit =>
+    internal bool CanSceneEdit =>
         EditorMode.Ready
-        && !_walking
-        && _walkAssetLifetime == null
-        && Layout != null
-        && _session?.Definition != null
-        && _session.Conflict == null
-        && !_session.Retired;
+        && !_context.Walking
+        && !_context.WalkAssetsLoading
+        && _context.Layout != null
+        && _context.Session?.Definition != null
+        && _context.Session.Conflict == null
+        && !_context.Session.Retired;
 
     private void RemoveSceneObject()
     {
-        if (MapDoor != null)
+        if (_context.MapDoor != null)
         {
-            DeleteMapRecord();
-            _picked = null;
-            _sceneSelectionPose = null;
+            _context.DeleteMapRecord();
+            _context.Picked = null;
+            _context.SceneSelectionPose = null;
             return;
         }
         if (!CanSceneEdit)
             return;
-        if (MapPoint is MapLootPlacement or MapObjectEdit { Operation: "Copy" } or MapVolume)
-            DeleteMapRecord();
-        else if (MapPoint is MapObjectEdit edit)
-            MapEdit(_ => edit.Operation = "Hide");
-        else if (_picked)
-            CaptureMapObject("Hide");
+        if (_context.MapPoint is MapLootPlacement or MapObjectEdit { Operation: "Copy" } or MapVolume)
+            _context.DeleteMapRecord();
+        else if (_context.MapPoint is MapObjectEdit edit)
+            _context.MapEdit(_ => edit.Operation = "Hide");
+        else if (_context.Picked)
+            _context.CaptureMapObject("Hide");
     }
-
-    private async Task BeginPlacement()
-    {
-        if (!SceneWorkspace || _sceneTab != "Catalog" || !CanSceneEdit || _catalogSelection.Length == 0)
-            return;
-        CancelPlacement();
-        var lifetime = _placementLifetime = new CancellationTokenSource();
-        var token = lifetime.Token;
-        try
-        {
-            GameObject model;
-            if (_selectedCatalogEntry?.AssetTarget != null && AssetCatalog)
-            {
-                var error = CatalogError(_selectedCatalogEntry);
-                if (error.Length > 0)
-                    throw new InvalidOperationException(error);
-                var loaded = await SceneAssetCatalog.Load(_selectedCatalogEntry.AssetTarget, token);
-                if (token.IsCancellationRequested)
-                {
-                    loaded.Dispose();
-                    return;
-                }
-                _placementAsset = loaded;
-                model = loaded.Object;
-                if (model.GetComponentInChildren<LootableContainer>(true) is { } container)
-                    container.enabled = false;
-            }
-            else if (
-                (_sceneFilter == "Props" || _sceneFilter == "Doors")
-                && _sceneRoots.TryGetValue(_catalogSelection, out var target)
-                && target
-            )
-            {
-                if (_sceneFilter == "Doors")
-                {
-                    var restriction = SceneDoorPlacement.Restriction(target);
-                    if (restriction.Length > 0)
-                        throw new InvalidOperationException(restriction);
-                    _placementProp = MapSceneAdapter.Capture(target, true);
-                }
-                else
-                    _placementProp = (_mapScene ??= new()).CaptureOriginal(target);
-                _mapScene ??= new();
-                model = _mapScene.CopyForPlacement(target);
-            }
-            else
-            {
-                _placementLoot = _selectedCatalogEntry;
-                if (_placementLoot == null || _placementLoot.Error.Length > 0)
-                    throw new InvalidOperationException(_placementLoot?.Error ?? "Select an available catalog item.");
-                _notice = "Loading item model…";
-                model = await SceneLootModel.Create(_placementLoot.Items, token);
-                if (token.IsCancellationRequested)
-                {
-                    SceneLootModel.Release(model);
-                    return;
-                }
-                _placementPooled = true;
-            }
-            if (token.IsCancellationRequested)
-            {
-                Destroy(model);
-                return;
-            }
-            _placement = model;
-            foreach (var collider in model.GetComponentsInChildren<Collider>(true))
-                collider.enabled = false;
-            model.SetActive(false);
-            _notice = "Point at a surface and click to place · Esc cancels";
-        }
-        catch (OperationCanceledException) { }
-        catch (Exception e)
-        {
-            if (ReferenceEquals(lifetime, _placementLifetime))
-            {
-                _notice = e.Message;
-                CancelPlacement();
-            }
-        }
-    }
-
-    private bool PlacementInput()
-    {
-        if (_placementLifetime == null)
-            return false;
-        if (!CanSceneEdit || !SceneWorkspace)
-        {
-            CancelPlacement();
-            return false;
-        }
-        if (!_placement || !_camera)
-            return true;
-        var overUi = EventSystem.current?.IsPointerOverGameObject() == true || _view?.PointerOver == true;
-        var hitSurface =
-            !overUi && Physics.Raycast(_camera!.ScreenPointToRay(Input.mousePosition), out _, 1000, ~0, QueryTriggerInteraction.Ignore);
-        _placement!.SetActive(hitSurface);
-        if (!hitSurface || Input.GetMouseButton(1))
-            return true;
-        Physics.Raycast(_camera!.ScreenPointToRay(Input.mousePosition), out var hit, 1000, ~0, QueryTriggerInteraction.Ignore);
-        var position = hit.point;
-        if (_snap && !Input.GetKey(KeyCode.LeftAlt))
-            position = new Vector3(Mathf.Round(position.x * 20) / 20, Mathf.Round(position.y * 20) / 20, Mathf.Round(position.z * 20) / 20);
-        _placement.transform.position = position;
-        var renderers = _placement.GetComponentsInChildren<Renderer>();
-        if (renderers.Length > 0)
-        {
-            var bounds = renderers[0].bounds;
-            foreach (var renderer in renderers)
-                bounds.Encapsulate(renderer.bounds);
-            var normal = hit.normal;
-            var support = Vector3.Dot(new Vector3(Mathf.Abs(normal.x), Mathf.Abs(normal.y), Mathf.Abs(normal.z)), bounds.extents);
-            position -= normal * (Vector3.Dot(bounds.center - hit.point, normal) - support);
-            _placement.transform.position = position;
-        }
-        if (Input.GetMouseButtonDown(0))
-        {
-            var id = MapId();
-            var rotation = ZoneRuntime.Vector(_placement.transform.eulerAngles);
-            var scale = ZoneRuntime.Vector(_placement.transform.localScale);
-            var prop = _placementProp;
-            var loot = _placementLoot;
-            var asset = _placementAsset != null ? _selectedCatalogEntry : null;
-            MapEdit(l =>
-            {
-                if (asset?.AssetTarget != null)
-                    l.Objects.Add(
-                        new MapObjectEdit
-                        {
-                            Id = id,
-                            Name = asset.Name,
-                            Location = l.Location,
-                            Scene = hit.transform.gameObject.scene.name,
-                            Target = RaidEditorSession.Copy(asset.AssetTarget),
-                            Operation = "Copy",
-                            Position = ZoneRuntime.Vector(position),
-                            Rotation = rotation,
-                            Container = asset.AssetTarget.Kind is "AssetContainer" or "Container"
-                                ? new ContainerSettings
-                                {
-                                    Mode = _containerTemplates?.Contains(asset.AssetTarget.Template) == true ? "Native" : "Empty",
-                                }
-                                : null,
-                            Scale = asset.AssetTarget.Kind is "AssetContainer" or "Container"
-                                ? new SpatialVector
-                                {
-                                    X = 1,
-                                    Y = 1,
-                                    Z = 1,
-                                }
-                                : scale,
-                        }
-                    );
-                else if (prop?.Kind == "Door")
-                    l.Doors.Add(
-                        new MapDoorEdit
-                        {
-                            Id = id,
-                            Name = _sceneRoots[_catalogSelection].name,
-                            Location = l.Location,
-                            Scene = prop.Scene,
-                            Target = prop,
-                            PlaceNew = true,
-                            State = "Shut",
-                            Position = ZoneRuntime.Vector(position),
-                            Rotation = rotation,
-                        }
-                    );
-                else if (prop != null)
-                    l.Objects.Add(
-                        new MapObjectEdit
-                        {
-                            Id = id,
-                            Name = _sceneRoots[_catalogSelection].name,
-                            Location = l.Location,
-                            Scene = prop.Scene,
-                            Target = prop,
-                            Operation = "Copy",
-                            Position = ZoneRuntime.Vector(position),
-                            Rotation = rotation,
-                            Scale = scale,
-                        }
-                    );
-                else if (loot != null)
-                    l.Loot.Add(
-                        new MapLootPlacement
-                        {
-                            Id = id,
-                            Name = loot.Name,
-                            Location = l.Location,
-                            Scene = hit.transform.gameObject.scene.name,
-                            Position = ZoneRuntime.Vector(position),
-                            Rotation = rotation,
-                            Items = FreshItems(loot.Items),
-                        }
-                    );
-                _selected = id;
-            });
-            _placementLastId = id;
-            _picked = null;
-            _sceneSelectionPose = null;
-            _sceneSelectionError = "";
-            _tool = "Move";
-            if (!_repeatPlacement)
-                CancelPlacement(inspectLast: true);
-            Refresh();
-        }
-        return true;
-    }
-
-    private static List<WTT.Campaigns.Shared.Native.NativeItem> FreshItems(List<WTT.Campaigns.Shared.Native.NativeItem> source)
-    {
-        var copy = RaidEditorSession.Copy(source);
-        var ids = copy.AsValueEnumerable().ToDictionary(i => i.Id, _ => MapId());
-        foreach (var item in copy)
-        {
-            var old = item.Id;
-            item.Id = ids[old];
-            if (item.ParentId != null && ids.TryGetValue(item.ParentId, out var parent))
-                item.ParentId = parent;
-        }
-        return copy;
-    }
-
-    private void CancelPlacement(bool inspectLast = false)
-    {
-        var lastId = _placementLastId;
-        _placementLastId = "";
-        _placementLifetime?.Cancel();
-        _placementLifetime?.Dispose();
-        _placementLifetime = null;
-        if (_placementAsset != null)
-        {
-            _placementAsset.Dispose();
-            _placementAsset = null;
-        }
-        else if (_placementPooled)
-            SceneLootModel.Release(_placement);
-        else if (_placement)
-        {
-            _placement!.SetActive(false);
-            Destroy(_placement);
-        }
-        _placement = null;
-        _placementProp = null;
-        _placementLoot = null;
-        _placementPooled = false;
-        if (inspectLast && lastId.Length > 0)
-        {
-            _sceneTab = "Existing";
-            _sceneFilter = "All";
-            _selected = lastId;
-            _page = 0;
-            _libraryKey = "";
-            _view?.Value("Search", "");
-            Refresh();
-            _view?.Windows.ShowPanel("Inspector", true);
-        }
-    }
-
-    private string CatalogError(SceneCatalogEntry entry) =>
-        entry.Error.Length > 0 ? entry.Error
-        : entry.AssetTarget?.Bundle != NativeContainerLibrary.BundleKey
-        && (entry.AssetTarget?.Kind is "AssetContainer" or "Container")
-        && (_containerTemplates == null || !_containerTemplates.Contains(entry.AssetTarget.Template))
-            ? (
-                _containerTemplates == null
-                    ? "Checking native container loot mapping�"
-                    : "No native loot mapping is available for this container."
-            )
-        : "";
 
     private async Task LoadContainerTemplates()
     {
@@ -965,29 +707,27 @@ public sealed partial class RaidEditor
             if (response == null || response.Error != null)
                 throw new InvalidOperationException(response?.Error ?? "No container response.");
             _containerTemplates = new HashSet<string>(response.Templates);
-            _libraryKey = "";
+            _context.LibraryKey = "";
         }
         catch (Exception e)
         {
-            _notice = e.Message;
+            _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
         }
     }
 
-    private void ClearSceneCatalog()
+    internal void Reset()
     {
+        if (_disposed)
+            return;
         ClearContainerControls();
         _assetCatalog?.Dispose();
         _assetCatalog = null;
         _containerTemplates = null;
-        _sceneRestrictionLog.Clear();
-        _libraryKey = "";
-        _sceneSelectionPose = null;
-        _sceneSelectionError = "";
-        _sceneRenderers.Clear();
+        _context.ClearSceneSelection();
+        _context.LibraryKey = "";
         CancelPlacement();
         _sceneRebindId = "";
-        _catalogGeneration++;
-        _catalogKey = "";
+        _catalogRequests.Reset();
         _catalog = null;
         _catalogSelection = "";
         _selectedCatalogEntry = null;

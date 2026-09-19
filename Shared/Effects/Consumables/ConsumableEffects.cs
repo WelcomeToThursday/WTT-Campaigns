@@ -14,7 +14,7 @@ public static class ConsumableEffects
             || effect.ItemFilter is not { } filter
             || filter.Include is not { } include
             || include.Count == 0
-            || include.Any(r => r.Field != "_tpl" || string.IsNullOrEmpty(r.Value))
+            || include.AsValueEnumerable().Any(r => r.Field != "_tpl" || string.IsNullOrEmpty(r.Value))
             || filter.Exclude is not { } exclude
             || exclude.Count != 0
             || effect.SubEffects is not { } subEffects
@@ -24,13 +24,13 @@ public static class ConsumableEffects
         }
 
         // Every included template ID passed the nonempty check above.
-        var targets = include.Select(r => r.Value!).Distinct().ToArray();
+        var targets = include.AsValueEnumerable().Select(r => r.Value!).Distinct().ToArray();
         if (effect.RandomSlotCount != targets.Length)
         {
             return null;
         }
 
-        var enabled = subEffects.Where(p => p.Value.Enabled == true).ToArray();
+        var enabled = subEffects.AsValueEnumerable().Where(p => p.Value.Enabled == true).ToArray();
         if (enabled.Length != 1)
         {
             return null;
@@ -49,7 +49,12 @@ public static class ConsumableEffects
 
     public static IEnumerable<ConsumableEffect> ForItem(RuntimeEffects effects, string templateId)
     {
-        return effects.Matching("allergy").Select(Describe).Where(e => e != null && e.Targets.Contains(templateId)).Select(e => e!);
+        foreach (var effect in effects.Matching("allergy"))
+        {
+            var descriptor = Describe(effect);
+            if (descriptor != null && descriptor.Targets.AsValueEnumerable().Contains(templateId))
+                yield return descriptor;
+        }
     }
 
     public static void UpdateParameters(Catalogue catalogue, PerkState state)
@@ -58,7 +63,7 @@ public static class ConsumableEffects
         var allergy = parameters.Allergy ?? new Dictionary<string, AllergyTargets>();
         foreach (var perk in catalogue.All)
         {
-            var effect = perk.Effects.Select(Describe).FirstOrDefault(e => e != null);
+            var effect = perk.Effects.AsValueEnumerable().Select(Describe).FirstOrDefault(e => e != null);
             if (effect == null)
             {
                 continue;
@@ -66,7 +71,7 @@ public static class ConsumableEffects
 
             if (state.SeasonalPerks.Contains(perk.Id))
             {
-                allergy[perk.Id] = new AllergyTargets { TargetItems = effect.Targets.ToList() };
+                allergy[perk.Id] = new AllergyTargets { TargetItems = effect.Targets.AsValueEnumerable().ToList() };
             }
             else
             {
@@ -89,9 +94,10 @@ public static class ConsumableEffects
         // Preserve catalogue order when two perks refresh the same effect family.
         foreach (var perk in runtime.Perks)
         {
-            foreach (var descriptor in perk.Effects.Select(Describe))
+            foreach (var effect in perk.Effects)
             {
-                if (descriptor != null && descriptor.Targets.Contains(templateId))
+                var descriptor = Describe(effect);
+                if (descriptor != null && descriptor.Targets.AsValueEnumerable().Contains(templateId))
                 {
                     yield return descriptor;
                 }

@@ -18,6 +18,7 @@ public sealed class MissionCheckpoint
             run.Status != MissionRunStatuses.Active
             || run.Restoring
             || run.PlayerDefeated
+            || run.TechnicalFailure
             || run.ExitReached
             || run.Logic.Failure.Length > 0
         )
@@ -60,8 +61,11 @@ public sealed class MissionCheckpoint
             throw new InvalidOperationException("No matching checkpoint restoration is pending.");
         var candidate = JsonConvert.DeserializeObject<MissionLogicState>(JsonConvert.SerializeObject(restored.Logic))!;
         var actors = candidate.Actors;
-        var living = actors.Values.Where(a => a.Spawned && !a.Dead).ToArray();
-        if (replacementIds.Count != living.Length || replacementIds.Values.Distinct(StringComparer.Ordinal).Count() != living.Length)
+        var living = actors.Values.AsValueEnumerable().Where(a => a.Spawned && !a.Dead).ToArray();
+        if (
+            replacementIds.Count != living.Length
+            || replacementIds.Values.AsValueEnumerable().Distinct(StringComparer.Ordinal).Count() != living.Length
+        )
             throw new InvalidOperationException("Every surviving checkpoint actor requires a distinct replacement.");
         // Validate the whole mapping before changing any state.
         foreach (var actor in living)
@@ -81,10 +85,10 @@ public sealed class MissionCheckpoint
         }
         // Unspawned generated profiles from the checkpoint are re-requested by the
         // restored wave and must never count as living or defeated actors.
-        foreach (var actor in actors.Values.Where(a => !a.Spawned).ToArray())
+        foreach (var actor in actors.Values.AsValueEnumerable().Where(a => !a.Spawned).ToArray())
             actors.Remove(actor.ProfileId);
         foreach (var zone in candidate.Zones.Values)
-            zone.Occupants = zone.Occupants.Where(replacementIds.ContainsKey).Select(id => replacementIds[id]).ToList();
+            zone.Occupants = zone.Occupants.AsValueEnumerable().Where(replacementIds.ContainsKey).Select(id => replacementIds[id]).ToList();
         MissionLogic.Apply(
             mission,
             layout,

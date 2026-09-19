@@ -18,7 +18,7 @@ public sealed class StringTargets : IEnumerable<string>
     public StringTargets(IEnumerable<string> values)
     {
         IsList = true;
-        Values = values.ToList();
+        Values = values.AsValueEnumerable().ToList();
     }
 
     public static implicit operator StringTargets(string value)
@@ -33,7 +33,7 @@ public sealed class StringTargets : IEnumerable<string>
 
     public static explicit operator string?(StringTargets? value)
     {
-        return value?.Values.FirstOrDefault();
+        return value?.Values.AsValueEnumerable().FirstOrDefault();
     }
 
     public IEnumerator<string> GetEnumerator()
@@ -48,7 +48,7 @@ public sealed class StringTargets : IEnumerable<string>
 
     public override string ToString()
     {
-        return Values.FirstOrDefault() ?? "";
+        return Values.AsValueEnumerable().FirstOrDefault() ?? "";
     }
 }
 
@@ -83,7 +83,7 @@ public sealed class StringTargetsConverter : JsonConverter<StringTargets>
         }
         else
         {
-            writer.WriteValue(value.Values.Single());
+            writer.WriteValue(value.Values.AsValueEnumerable().Single());
         }
     }
 }

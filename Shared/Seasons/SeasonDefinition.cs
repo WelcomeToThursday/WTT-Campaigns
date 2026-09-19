@@ -90,7 +90,14 @@ public sealed class SeasonDefinition : ExtensibleJsonModel
     [JsonIgnore]
     public IEnumerable<SeasonReward> AllRewards
     {
-        get { return Pages.SelectMany(p => p.Rewards).Concat(SeasonalRewards); }
+        get
+        {
+            foreach (var page in Pages)
+            foreach (var reward in page.Rewards)
+                yield return reward;
+            foreach (var reward in SeasonalRewards)
+                yield return reward;
+        }
     }
 }
 
@@ -217,12 +224,12 @@ public sealed class SeasonValidationResult
     public List<SeasonValidationIssue> Issues { get; set; } = new();
     public bool CanPublish
     {
-        get { return Issues.All(i => i.Severity != "error"); }
+        get { return Issues.AsValueEnumerable().All(i => i.Severity != "error"); }
     }
 
     public bool CanActivate
     {
-        get { return CanPublish && Issues.All(i => i.Severity != "dependency"); }
+        get { return CanPublish && Issues.AsValueEnumerable().All(i => i.Severity != "dependency"); }
     }
 
     public void Add(string path, string message, string severity = "error")

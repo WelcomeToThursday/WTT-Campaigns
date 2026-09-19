@@ -59,10 +59,6 @@ internal static class EditorLayoutSpec
             B("Rotate", "Rotate"),
             B("Scale", "Scale"),
             B("Snap", "Snap"),
-            T("CameraSpeedLabel", "Fly m/s"),
-            B("CameraSlower", "-"),
-            I("CameraSpeed", ""),
-            B("CameraFaster", "+"),
             R(
                 "EditorMapToolbar",
                 B("EditorWalk", "Walkthrough"),
@@ -345,12 +341,47 @@ internal static class EditorLayoutSpec
             )
         ),
         G(
+            "Console",
+            new Node(
+                "scroll",
+                "ConsoleToolbarScroll",
+                "",
+                R(
+                    "ConsoleToolbar",
+                    T("ConsoleTextSize", "Text: 16"),
+                    B("ConsoleTextSmaller", "A−"),
+                    B("ConsoleTextLarger", "A+"),
+                    B("ConsoleTextReset", "Reset"),
+                    Check("ConsoleAll", "All client logs"),
+                    Check("ConsoleInfo", "Info"),
+                    Check("ConsoleWarning", "Warnings"),
+                    Check("ConsoleError", "Errors"),
+                    Check("ConsoleDebug", "Debug"),
+                    Check("ConsoleScroll", "Auto-scroll"),
+                    B("ConsoleClear", "Clear"),
+                    B("ConsoleCopy", "Copy selected")
+                )
+            ),
+            I("ConsoleSearch", "Search logs"),
+            new Node("list", "ConsoleMessages", ""),
+            new Node(
+                "foldout",
+                "ConsoleDetailsFold",
+                "Message details",
+                new Node("scroll", "ConsoleDetailsScroll", "", I("ConsoleDetails", ""))
+            ),
+            T("ConsoleCounts", ""),
+            T("ConsoleHint", ""),
+            I("ConsoleCommand", "Command")
+        ),
+        G(
             "WindowsMenu",
             B("LibraryToggle", "Browser"),
             B("InspectorToggle", "Properties"),
             B("LootWindowToggle", "Loot configuration"),
             B("EnvironmentWindowToggle", "Environment"),
             B("HelpWindowToggle", "Editor controls"),
+            B("ConsoleWindowToggle", "Console"),
             T("UiSizeLabel", "UI size: 85%"),
             R("UiSizeActions", B("UiSizeSmaller", "Smaller"), B("UiSizeLarger", "Larger")),
             B("UiSizeReset", "Reset UI size"),
@@ -358,14 +389,7 @@ internal static class EditorLayoutSpec
         ),
         G("ContextMenu", B("EditorUnload", "Unload map / return home"), B("EnvironmentToggle", "Environment / time and weather")),
         R("CaptureTask", T("CaptureRequest", ""), B("Complete", "Complete capture"), B("Cancel", "Cancel")),
-        R(
-            "StatusBar",
-            T("Status", ""),
-            T("PreviewStatus", ""),
-            B("NoticeToggle", "Notice..."),
-            G("NoticePanel", new Node("scroll", "NoticeScroll", "", T("NoticeText", "")), B("NoticeDismiss", "Dismiss notice")),
-            T("Request", "")
-        ),
+        R("StatusBar", T("Status", ""), T("PreviewStatus", ""), T("Request", "")),
         T("EditorWalkStatus", "Esc to return to editing"),
         G(
             "ConflictShield",

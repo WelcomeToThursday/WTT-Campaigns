@@ -69,7 +69,7 @@ internal sealed partial class EditorToolkitWindows
             var id in RaidEditorView
                 .ToolIds.AsValueEnumerable()
                 .Select(t => "Tool:" + t)
-                .Concat(new[] { "Inspector", "EnvironmentMenu", "Controls", "LootConfiguration" })
+                .Concat(new[] { "Inspector", "EnvironmentMenu", "Controls", "LootConfiguration", "Console" })
         )
         {
             _panels.Add(id, new() { Id = id });
@@ -77,15 +77,25 @@ internal sealed partial class EditorToolkitWindows
             BindDrag(id, view.WindowElement(id, "Resize"), true);
             view.WindowElement(id).RegisterCallback<PointerDownEvent>(_ => Focus(id), TrickleDown.TrickleDown);
             var window = view.WindowElement(id);
-            window.RegisterCallback<GeometryChangedEvent>(evt =>
+            Action fitFields = () =>
             {
-                var narrow = evt.newRect.width < 340;
+                var narrow = window.layout.width < 340;
                 // Rows own their wrapping policy. Resizing must preserve compact pairs such as paging.
                 foreach (var field in window.Query<TextField>().ToList())
                     EditorControlLayout.Field(field, narrow);
-            });
+            };
+            window.RegisterCallback<GeometryChangedEvent>(_ => _view.AfterLayout(fitFields));
         }
         Bind("LibraryCollapse", () => ShowPanel("Library", false));
+        Bind(
+            "ConsoleClose",
+            () =>
+            {
+                _view.ReleaseFocus();
+                ShowPanel("Console", false);
+            }
+        );
+        Bind("ConsoleWindowToggle", () => ToggleWindow("Console"));
         Bind("LootClose", () => ShowPanel("LootConfiguration", false));
         Bind("LootTool", () => ToggleWindow("LootConfiguration"));
         Bind("LootWindowToggle", () => ToggleWindow("LootConfiguration"));
@@ -127,7 +137,7 @@ internal sealed partial class EditorToolkitWindows
         _view.Element("Workspace").Add(_dropPreview);
         _tooltip.AddToClassList("editor-tooltip");
         _view.Document.Content.Add(_tooltip);
-        _tooltip.RegisterCallback<GeometryChangedEvent>(_ => PlaceTooltip());
+        _tooltip.RegisterCallback<GeometryChangedEvent>(_ => _view.AfterLayout(PlaceTooltip));
         HideTooltip();
         SetupMenus();
         ResetLayout();
@@ -168,6 +178,8 @@ internal sealed partial class EditorToolkitWindows
 
     internal void ShowPanel(string id, bool visible)
     {
+        if (visible && ViewportMaximized)
+            SetViewportMaximized(false);
         id = Resolve(id);
         if (visible && !AllowedPanel(id))
             return;
@@ -254,7 +266,7 @@ internal sealed partial class EditorToolkitWindows
             return;
         _category = category;
         _selection = selection;
-        if (selection.Length > 0 && !IsOpen("Inspector"))
+        if (selection.Length > 0 && !IsOpen("Inspector") && !ViewportMaximized)
             ShowPanel("Inspector", true);
         ((ScrollView)_view.Element("PropertyScroll")).scrollOffset = Vector2.zero;
     }
@@ -283,6 +295,19 @@ internal sealed partial class EditorToolkitWindows
         FitPanels();
     }
 
+    internal bool ViewportMaximized { get; private set; }
+
+    internal void SetViewportMaximized(bool maximized)
+    {
+        CancelInteraction();
+        DismissMenus();
+        _view.DismissDropdowns();
+        ViewportMaximized = maximized;
+        _view.Caption("ViewportMaximize", maximized ? "Restore" : "Maximize");
+        _chrome.style.display = maximized ? DisplayStyle.None : DisplayStyle.Flex;
+        FitPanels();
+    }
+
     private void FitPanels()
     {
         var area = Area;
@@ -293,7 +318,7 @@ internal sealed partial class EditorToolkitWindows
             var id = pair.Key;
             var p = pair.Value;
             var group = EditorDockLayout.Nodes(_dock).AsValueEnumerable().FirstOrDefault(n => n.Tabs.AsValueEnumerable().Contains(id));
-            var visible = p.Visible && !_walkthrough && AllowedPanel(id);
+            var visible = p.Visible && !_walkthrough && !ViewportMaximized && AllowedPanel(id);
             Rect rect;
             if (group != null)
             {
@@ -308,7 +333,11 @@ internal sealed partial class EditorToolkitWindows
             else
             {
                 var width = Math.Clamp(float.IsFinite(p.Width) ? p.Width : 360, Math.Min(280, area.Width), area.Width);
-                var height = Math.Clamp(float.IsFinite(p.Height) ? p.Height : 360, Math.Min(180, area.Height), area.Height);
+                var height = Math.Clamp(
+                    float.IsFinite(p.Height) ? p.Height : 360,
+                    Math.Min(id == "Console" ? 300 : 180, area.Height),
+                    area.Height
+                );
                 var x = _view.Document.Width * (.5f + (float.IsFinite(p.X) ? p.X : 0)) - width / 2;
                 var y = _view.Document.Height * (.5f - (float.IsFinite(p.Y) ? p.Y : 0)) - height / 2;
                 rect = new(
@@ -329,6 +358,8 @@ internal sealed partial class EditorToolkitWindows
         {
             if (!_dockRects.TryGetValue(node.Id, out var r))
                 continue;
+            if (node.Kind == "viewport")
+                _view.SetViewport(ViewportMaximized ? area : r);
             if (_bars.TryGetValue(node.Id, out var bar))
                 Place(bar, new(r.X, r.Y, r.Width, EditorDockLayout.TabHeight));
             if (
@@ -382,6 +413,9 @@ internal sealed partial class EditorToolkitWindows
 
     internal void ResetLayout()
     {
+        ViewportMaximized = false;
+        _chrome.style.display = DisplayStyle.Flex;
+        _view.Caption("ViewportMaximize", "Maximize");
         CancelInteraction();
         _dock = EditorDockNode.Default();
         _sized.Clear();
@@ -391,7 +425,8 @@ internal sealed partial class EditorToolkitWindows
             {
                 Id = id,
                 Width =
-                    id == "LootConfiguration" ? 460
+                    id == "Console" ? 760
+                    : id == "LootConfiguration" ? 460
                     : id is "Tool:Scene" or "Tool:AI" ? 420
                     : 360,
                 Height = id == "LootConfiguration" ? 620 : 400,

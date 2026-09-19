@@ -5,6 +5,10 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Authoring\Controllers\EditorAiSelection.cs" Link="Client\EditorAiSelection.cs" />
+    <Compile Include="..\Client\Authoring\Controllers\EditorMapRecords.cs" Link="Client\EditorMapRecords.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneCatalogRequestState.cs" Link="Client\SceneCatalogRequestState.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneOperationLifetime.cs" Link="Client\SceneOperationLifetime.cs" />
     <Compile Include="..\Client\Profiles\ProfileSaveGate.cs" Link="Client\ProfileSaveGate.cs" />
     <Compile Include="..\UI\Screens\EditorHomeComposition.cs" Link="UI\EditorHomeComposition.cs" />
     <EmbeddedResource Include="..\tools\unity\EditorToolkit\*.uxml" LogicalName="EditorToolkit.%(Filename).uxml" />
@@ -16,9 +20,15 @@
     <Compile Include="..\Client\Authoring\Views\EditorLayoutSpec.cs" Link="Client\EditorLayoutSpec.cs" />
     <Compile Include="..\Client\Encounters\EncounterCorePlan.cs" Link="Client\EncounterCorePlan.cs" />
     <Compile Include="..\Client\Encounters\EncounterMovementPolicy.cs" Link="Client\EncounterMovementPolicy.cs" />
+    <Compile Include="..\Client\Encounters\EncounterRecovery.cs" Link="Client\EncounterRecovery.cs" />
+    <Compile Include="..\Client\Encounters\EncounterWorkBudget.cs" Link="Client\EncounterWorkBudget.cs" />
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
     <Compile Include="..\UI\Controls\EditorToolSession.cs" Link="UI\EditorToolSession.cs" />
     <Compile Include="..\UI\Controls\EditorDockLayout.cs" Link="UI\EditorDockLayout.cs" />
+    <Compile Include="..\UI\Controls\EditorViewportCoordinates.cs" Link="UI\EditorViewportCoordinates.cs" />
+    <Compile Include="..\UI\Controls\EditorViewportState.cs" Link="UI\EditorViewportState.cs" />
+    <Compile Include="..\Client\Authoring\EditorCameraGesture.cs" Link="Client\EditorCameraGesture.cs" />
+    <Compile Include="..\Client\Authoring\EditorPointerRestore.cs" Link="Client\EditorPointerRestore.cs" />
     <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
     <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
     <Compile Include="..\Client\Authoring\EditorOpenState.cs" Link="Client\EditorOpenState.cs" />
@@ -68,6 +78,10 @@
     <Compile Include="..\Client\Authoring\Views\CatalogGridLayout.cs" Link="Client\CatalogGridLayout.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneObjectIndex.cs" Link="Client\SceneObjectIndex.cs" />
     <Compile Include="..\Client\Authoring\Rendering\EditorRenderSize.cs" Link="Client\EditorRenderSize.cs" />
+    <Compile Include="..\Client\Authoring\Console\EditorConsoleFeedback.cs" Link="Client\EditorConsoleFeedback.cs" />
+    <Compile Include="..\Client\Authoring\Console\EditorConsoleBuffer.cs" Link="Client\EditorConsoleBuffer.cs" />
+    <Compile Include="..\Client\Authoring\Console\EditorConsoleCommands.cs" Link="Client\EditorConsoleCommands.cs" />
+    <Compile Include="..\Client\Authoring\Console\EditorConsoleAvailability.cs" Link="Client\EditorConsoleAvailability.cs" />
     <Compile Include="..\Client\Authoring\EditorTiming.cs" Link="Client\EditorTiming.cs" />
     <Compile Include="..\Client\Authoring\EditorCollectionPolicy.cs" Link="Client\EditorCollectionPolicy.cs" />
     <Compile Include="..\Client\Authoring\Rendering\EditorHud.cs" Link="Client\EditorHud.cs" />

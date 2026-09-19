@@ -80,11 +80,12 @@ internal sealed partial class RaidEditorView
         var parent = Element("LibraryScroll");
         Browser.Paged = parent.Q<ScrollView>("BrowserPages");
         EditorScrollStyle.Apply(_paged);
-        _paged.contentViewport.RegisterCallback<GeometryChangedEvent>(evt =>
+        Action fitPages = () =>
         {
             if (state.Presentation == 2)
-                state.Paged.contentContainer.style.width = evt.newRect.width;
-        });
+                state.Paged.contentContainer.style.width = state.Paged.contentViewport.layout.width;
+        };
+        _paged.contentViewport.RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(fitPages));
         for (var i = 0; i < (owner == "Scene" ? CatalogGridLayout.MaximumItems : 10); i++)
         {
             var button = Document.Clone<Button>("BrowserRow");

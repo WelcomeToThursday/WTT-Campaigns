@@ -10,6 +10,7 @@ Use **SPT 4.1.x / EFT 0.16.9.40743**, with:
 - **MoreBotsAPI 2.1.1 or later**, with matching client and server components.
 - **Black Division 1.3.1 or later**, with matching client and server components.
 - **WTT-ContentBackport 2.0.1 or later** and its dependencies.
+- **WTT-CommonLib 3.0.6 or later**, with matching client and server components.
 
 Dependencies are separate downloads. Install matching WTT-Campaigns client, UI and server components from the same release. See [installation](../README.md#installation).
 
@@ -49,6 +50,10 @@ See the [perk guides](Home.md#perk-details) for resource rounding, prices, sympt
 - Some artwork and presentation are placeholders. This beta does not reproduce every live EFT feature or visual detail.
 
 The [Battle Pass](battle-pass-gameplay.md) supports local claims, exchanges and saved character progress. A reward being locked does not mean all reward transactions are unavailable.
+
+## Editor diagnostics
+
+Use **Windows → Console** for retained editor feedback and client logs. It captures messages while hidden; **All client logs** includes other client sources but does not stream server logs. See [Console](editor-toolkit.md#console) for filtering, copying and commands. Installed-file checks do not establish live docking, input, rendering or third-party AI behavior.
 
 ## Report a problem
 

@@ -1,28 +1,38 @@
 using Newtonsoft.Json;
 using SPT.Common.Http;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Controllers;
 
-public sealed partial class RaidEditor
+internal sealed partial class EditorCatalogController
 {
     private readonly List<SceneCatalogEntry> _containerItems = new();
+
     private readonly List<SceneCatalogEntry> _containerKeys = new();
+
     private int _containerKeyIndex,
         _containerKeySearchGeneration;
+
     private string _containerSelectionId = "";
+
     private readonly List<string> _containerPools = new();
+
     private int _containerItemIndex,
         _containerContentIndex,
         _containerQuantity = 1,
         _containerSearchGeneration;
+
     private readonly Dictionary<string, string> _containerItemNames = new();
+
     private MapObjectEdit? ConfiguredContainer =>
-        SceneWorkspace && _sceneTab != "Catalog" && MapPoint is MapObjectEdit edit && SceneAssetRules.IsContainer(edit) ? edit : null;
+        SceneWorkspace && _sceneTab != "Catalog" && _context.MapPoint is MapObjectEdit edit && SceneAssetRules.IsContainer(edit)
+            ? edit
+            : null;
 
     private void EditContainer(Action<ContainerSettings> change)
     {
@@ -30,7 +40,7 @@ public sealed partial class RaidEditor
             return;
         try
         {
-            MapEdit(layout =>
+            _context.MapEdit(layout =>
             {
                 var edit = layout.Objects.AsValueEnumerable().First(o => o.Id == selected.Id);
                 change(edit.Container ??= new ContainerSettings());
@@ -38,10 +48,10 @@ public sealed partial class RaidEditor
         }
         catch (Exception e)
         {
-            _notice = e.Message;
+            _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
             Plugin.Error(e);
         }
-        Refresh();
+        _context.Refresh();
     }
 
     private void BindContainerControls(RaidEditorView view)
@@ -63,8 +73,8 @@ public sealed partial class RaidEditor
                     EditContainer(s => s.SpawnChance = chance);
                 else
                 {
-                    _notice = "Spawn chance must be a whole number from 0 to 100.";
-                    Refresh();
+                    _context.ReportFeedback("Spawn chance must be a whole number from 0 to 100.", ConsoleSeverity.Warning);
+                    _context.Refresh();
                 }
             }
         );
@@ -77,8 +87,8 @@ public sealed partial class RaidEditor
                     && string.IsNullOrEmpty(ConfiguredContainer?.Container?.KeyTemplate)
                 )
                 {
-                    _notice = "Find a key in Access and choose Use selected key first.";
-                    Refresh();
+                    _context.ReportFeedback("Find a key in Access and choose Use selected key first.", ConsoleSeverity.Warning);
+                    _context.Refresh();
                     return;
                 }
                 EditContainer(s => s.Locked = !s.Locked);
@@ -96,8 +106,8 @@ public sealed partial class RaidEditor
                     _containerQuantity = count;
                 else
                 {
-                    _notice = "Quantity must be between 1 and 10000.";
-                    Refresh();
+                    _context.ReportFeedback("Quantity must be between 1 and 10000.", ConsoleSeverity.Warning);
+                    _context.Refresh();
                 }
             }
         );
@@ -164,8 +174,8 @@ public sealed partial class RaidEditor
         }
         catch (Exception e)
         {
-            _notice = e.Message;
-            Refresh();
+            _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
+            _context.Refresh();
         }
     }
 
@@ -219,22 +229,24 @@ public sealed partial class RaidEditor
                 _containerKeyIndex = 0;
             else
                 _containerItemIndex = 0;
-            _notice = response.Total > response.Entries.Count ? "Showing the first 10 matches. Refine the search to find your item." : "";
-            Refresh();
+            _context.ReportFeedback(
+                response.Total > response.Entries.Count ? "Showing the first 10 matches. Refine the search to find your item." : ""
+            );
+            _context.Refresh();
         }
         catch (Exception e)
         {
             if (generation == (keys ? _containerKeySearchGeneration : _containerSearchGeneration))
             {
-                _notice = e.Message;
-                Refresh();
+                _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
+                _context.Refresh();
             }
         }
     }
 
     private void PresentContainerControls()
     {
-        var view = _view!;
+        var view = _context.View!;
         var edit = ConfiguredContainer;
         view.Visible("ContainerSettingsGroup", edit != null);
         view.Visible("ContainerEmpty", edit == null);

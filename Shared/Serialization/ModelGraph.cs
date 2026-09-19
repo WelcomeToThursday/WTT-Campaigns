@@ -33,12 +33,14 @@ public static class ModelGraph
 
     public static IEnumerable<PropertyInfo> Properties(object value)
     {
-        return value
-            .GetType()
-            .GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p =>
-                p.CanRead && p.CanWrite && p.GetIndexParameters().Length == 0 && p.GetCustomAttribute<JsonIgnoreAttribute>() == null
-            );
+        foreach (var property in value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            if (
+                property.CanRead
+                && property.CanWrite
+                && property.GetIndexParameters().Length == 0
+                && property.GetCustomAttribute<JsonIgnoreAttribute>() == null
+            )
+                yield return property;
     }
 
     public static string? Id(object value)
@@ -65,12 +67,12 @@ public static class ModelGraph
             };
             yield break;
         }
-        if (value == null || value.GetType().IsValueType || parents.Any(p => ReferenceEquals(p, value)))
+        if (value == null || value.GetType().IsValueType || parents.AsValueEnumerable().Any(p => ReferenceEquals(p, value)))
         {
             yield break;
         }
 
-        var ancestors = parents.Concat(new[] { value }).ToArray();
+        var ancestors = parents.AsValueEnumerable().Concat(new[] { value }).ToArray();
         if (value is StringTargets targets)
         {
             for (var i = 0; i < targets.Values.Count; i++)
@@ -92,7 +94,7 @@ public static class ModelGraph
         }
         else if (value is IDictionary dictionary)
         {
-            foreach (var key in dictionary.Keys.Cast<object>().ToArray())
+            foreach (var key in dictionary.Keys.AsValueEnumerable().Cast<object>().ToArray())
             {
                 foreach (
                     var leaf in Visit(
@@ -161,15 +163,15 @@ public static class ModelGraph
 
     public static void Rewrite(object source, Func<string, string> replace)
     {
-        var texts = Texts(source).ToArray();
+        var texts = Texts(source).AsValueEnumerable().ToArray();
         foreach (var text in texts)
         {
             text.Set(replace(text.Value));
         }
 
-        foreach (var dictionary in texts.SelectMany(t => t.Ancestors).OfType<IDictionary>().Distinct())
+        foreach (var dictionary in texts.AsValueEnumerable().SelectMany(t => t.Ancestors).OfType<IDictionary>().Distinct())
         {
-            foreach (var key in dictionary.Keys.OfType<string>().ToArray())
+            foreach (var key in dictionary.Keys.AsValueEnumerable().OfType<string>().ToArray())
             {
                 var next = replace(key);
                 if (key == next)

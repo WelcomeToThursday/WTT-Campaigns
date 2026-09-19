@@ -108,9 +108,12 @@ internal sealed class RaidEditorSession
         Changed?.Invoke();
     }
 
+    internal bool CanUndo => Definition != null && !Retired && !Previewing && Conflict == null && _undo.Count > 0;
+    internal bool CanRedo => Definition != null && !Retired && !Previewing && Conflict == null && _redo.Count > 0;
+
     internal void Undo(bool redo)
     {
-        if (Definition == null || Conflict != null || Previewing)
+        if (Definition == null || Conflict != null || Retired || Previewing)
         {
             return;
         }

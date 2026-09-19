@@ -98,7 +98,8 @@ public static class MissionTransaction
         // Keep the just-committed receipt. Prefer evicting old terminal-run
         // receipts, then use timestamp and operation id for deterministic ties.
         var removable = state
-            .Receipts.Where(entry => entry.Key != operationId)
+            .Receipts.AsValueEnumerable()
+            .Where(entry => entry.Key != operationId)
             .OrderBy(entry => MissionRunStatuses.IsTerminal(entry.Value.Status) ? 0 : 1)
             .ThenBy(entry => entry.Value.Timestamp)
             .ThenBy(entry => entry.Key, StringComparer.Ordinal)

@@ -49,7 +49,8 @@ public static class MissionLibrary
             MissionAvailability.FromStart => true,
             MissionAvailability.QuestAccepted => status is "Started" or "AvailableForFinish" or "Success",
             MissionAvailability.QuestCompleted => status == "Success",
-            MissionAvailability.ChapterReached => story?.Chapters.FirstOrDefault(c => c.Id == link.UnlockTargetId) is { } chapter
+            MissionAvailability.ChapterReached => story?.Chapters.AsValueEnumerable().FirstOrDefault(c => c.Id == link.UnlockTargetId)
+                is { } chapter
                 && StoryRules.Evaluate(chapter.Visibility, story, progress, facts),
             MissionAvailability.StoryAction => progress.UnlockedMissionLinks.Contains(link.Id),
             _ => false,
@@ -85,7 +86,7 @@ public static class MissionLibrary
         );
         Need(
             package.Documents.Count == 0
-                && package.AllRewards.Count() == 0
+                && package.AllRewards.AsValueEnumerable().Count() == 0
                 && package.TraderOffers.Count == 0
                 && package.TraderAssorts.Count == 0
                 && package.Offers.Count == 0
@@ -100,12 +101,14 @@ public static class MissionLibrary
             "Mission package content exceeds its limits."
         );
         Need(
-            package.Items.All(i => SeasonValidator.IsId(i.Id) && SeasonValidator.IsId(i.CloneFrom))
-                && package.Items.Select(i => i.Id).Distinct().Count() == package.Items.Count,
+            package.Items.AsValueEnumerable().All(i => SeasonValidator.IsId(i.Id) && SeasonValidator.IsId(i.CloneFrom))
+                && package.Items.AsValueEnumerable().Select(i => i.Id).Distinct().Count() == package.Items.Count,
             "Mission item definitions require unique valid identities and source templates."
         );
         Need(
-            package.Zones.All(z => package.MapLayouts.Any(l => l.Id == z.LayoutId && l.Location == z.Location)),
+            package
+                .Zones.AsValueEnumerable()
+                .All(z => package.MapLayouts.AsValueEnumerable().Any(l => l.Id == z.LayoutId && l.Location == z.Location)),
             "Mission zones must belong to the package layout and map."
         );
         Need(package.Missions.Count == 1, "A mission package contains exactly one mission.");
@@ -125,7 +128,12 @@ public static class MissionLibrary
             "Enter a mission briefing (up to 4000 characters)."
         );
         Need(!layout.ApplyInNormalRaids, "Mission layouts cannot apply in normal raids.");
-        foreach (var error in Spatial.MapLayoutRules.Errors(layout, walkthrough: true).Concat(MissionLogicRules.Errors(mission, layout)))
+        foreach (
+            var error in Spatial
+                .MapLayoutRules.Errors(layout, walkthrough: true)
+                .AsValueEnumerable()
+                .Concat(MissionLogicRules.Errors(mission, layout))
+        )
             result.Add("Missions", error);
         foreach (var error in Spatial.SpatialRules.Errors(package))
             result.Add("Zones", error);
@@ -138,7 +146,7 @@ public static class MissionLibrary
             result.Add("MissionLinks", "Use at most 1000 mission links.");
             return;
         }
-        var ids = new HashSet<string>(campaign.Missions.Select(m => m.Id));
+        var ids = campaign.Missions.AsValueEnumerable().Select(m => m.Id).ToHashSet();
         var missions = new HashSet<string>();
         foreach (var link in campaign.MissionLinks)
         {
@@ -165,17 +173,28 @@ public static class MissionLibrary
             Need(link.ContentHash == PackageHash(link.Package), "The pinned mission checksum does not match.");
             Need(Enum.IsDefined(typeof(MissionAvailability), link.Availability), "Choose a supported availability mode.");
             if (link.Availability is MissionAvailability.QuestAccepted or MissionAvailability.QuestCompleted)
-                Need(campaign.Story?.Quests.Any(q => q.QuestId == link.UnlockTargetId) == true, "Choose a story quest for unlocking.");
+                Need(
+                    campaign.Story?.Quests.AsValueEnumerable().Any(q => q.QuestId == link.UnlockTargetId) == true,
+                    "Choose a story quest for unlocking."
+                );
             if (link.Availability == MissionAvailability.ChapterReached)
-                Need(campaign.Story?.Chapters.Any(c => c.Id == link.UnlockTargetId) == true, "Choose a story chapter for unlocking.");
+                Need(
+                    campaign.Story?.Chapters.AsValueEnumerable().Any(c => c.Id == link.UnlockTargetId) == true,
+                    "Choose a story chapter for unlocking."
+                );
             if (link.QuestId.Length > 0)
             {
-                Need(campaign.Story?.Quests.Any(q => q.QuestId == link.QuestId) == true, "The completion quest must belong to this story.");
+                Need(
+                    campaign.Story?.Quests.AsValueEnumerable().Any(q => q.QuestId == link.QuestId) == true,
+                    "The completion quest must belong to this story."
+                );
                 var condition = campaign
-                    .Quests.FirstOrDefault(q => q.Id == link.QuestId)
-                    ?.Conditions.AvailableForFinish.FirstOrDefault(c => c.Id == link.CompletionConditionId);
+                    .Quests.AsValueEnumerable()
+                    .FirstOrDefault(q => q.Id == link.QuestId)
+                    ?.Conditions.AvailableForFinish.AsValueEnumerable()
+                    .FirstOrDefault(c => c.Id == link.CompletionConditionId);
                 var variable = condition?.Target?.Values is { Count: 1 } values
-                    ? campaign.Story?.Variables.FirstOrDefault(v => v.Id == values[0])
+                    ? campaign.Story?.Variables.AsValueEnumerable().FirstOrDefault(v => v.Id == values[0])
                     : null;
                 Need(
                     condition?.ConditionType == "GlobalVariableValue"
@@ -191,27 +210,41 @@ public static class MissionLibrary
         }
     }
 
-    public static IEnumerable<string> ReferencedItems(SeasonDefinition package) =>
-        package
-            .MapLayouts.SelectMany(layout =>
-                layout
-                    .Loot.SelectMany(l => l.Items)
-                    .Select(i => i.Template)
-                    .Concat(layout.Doors.Select(d => d.KeyId ?? ""))
-                    .Concat(layout.Objects.Select(o => o.Target.Template))
-                    .Concat(
-                        layout
-                            .Objects.Where(o => o.Container != null)
-                            .SelectMany(o => o.Container!.Contents.Select(c => c.Template).Append(o.Container.KeyTemplate))
-                    )
-            )
-            .Concat(
-                package
-                    .Zones.Where(z => z.Uses.Contains("Salvage"))
-                    .SelectMany(z => z.Salvage.Rewards.Select(r => r.ItemTpl).Append(z.Salvage.RequiredItemTpl))
-            )
-            .Where(SeasonValidator.IsId)
-            .Distinct();
+    public static IEnumerable<string> ReferencedItems(SeasonDefinition package)
+    {
+        var seen = new HashSet<string>();
+        foreach (var template in Candidates())
+            if (SeasonValidator.IsId(template) && seen.Add(template))
+                yield return template;
+
+        IEnumerable<string> Candidates()
+        {
+            foreach (var layout in package.MapLayouts)
+            {
+                foreach (var loot in layout.Loot)
+                foreach (var item in loot.Items)
+                    yield return item.Template;
+                foreach (var door in layout.Doors)
+                    yield return door.KeyId ?? "";
+                foreach (var item in layout.Objects)
+                    yield return item.Target.Template;
+                foreach (var item in layout.Objects)
+                    if (item.Container != null)
+                    {
+                        foreach (var content in item.Container.Contents)
+                            yield return content.Template;
+                        yield return item.Container.KeyTemplate;
+                    }
+            }
+            foreach (var zone in package.Zones)
+                if (zone.Uses.Contains("Salvage"))
+                {
+                    foreach (var reward in zone.Salvage.Rewards)
+                        yield return reward.ItemTpl;
+                    yield return zone.Salvage.RequiredItemTpl;
+                }
+        }
+    }
 
     public static string PackageHash(SeasonDefinition package)
     {
@@ -224,14 +257,15 @@ public static class MissionLibrary
 
     public static SeasonDefinition Standalone(IEnumerable<SeasonDefinition> published, MissionRun? active)
     {
-        var all = published.ToList();
-        var packages = all.GroupBy(p => p.Id)
-            .Select(g => g.OrderByDescending(p => p.Revision).First())
+        var all = published.AsValueEnumerable().ToList();
+        var packages = all.AsValueEnumerable()
+            .GroupBy(p => p.Id)
+            .Select(g => g.AsValueEnumerable().OrderByDescending(p => p.Revision).First())
             .Where(p => p.MissionPackage?.AllowStandalonePlay == true)
             .ToList();
         if (active is { ContextVersion: 3, Scope: StandaloneScope } && !MissionRunStatuses.IsTerminal(active.Status))
         {
-            var pinned = all.FirstOrDefault(p => p.Id == active.PackageId && p.Revision == active.PackageRevision);
+            var pinned = all.AsValueEnumerable().FirstOrDefault(p => p.Id == active.PackageId && p.Revision == active.PackageRevision);
             packages.RemoveAll(p => p.Id == active.PackageId);
             if (pinned != null)
                 packages.Add(pinned);
@@ -241,8 +275,8 @@ public static class MissionLibrary
             definition.MissionLinks.Add(
                 new CampaignMissionLink
                 {
-                    Id = package.Missions.Single().Id,
-                    MissionId = package.Missions.Single().Id,
+                    Id = package.Missions.AsValueEnumerable().Single().Id,
+                    MissionId = package.Missions.AsValueEnumerable().Single().Id,
                     Revision = package.Revision,
                     Package = package,
                     ContentHash = PackageHash(package),
@@ -258,20 +292,30 @@ public static class MissionLibrary
         {
             var package = SeasonCompiler.Copy(link.Package);
             var owned = package
-                .MapLayouts.SelectMany(Spatial.MapLayoutRules.OwnedIds)
-                .Concat(package.Zones.Select(z => z.Id))
-                .Concat(package.Missions.SelectMany(m => m.Events.Select(e => e.Id).Concat(m.Objectives.Select(o => o.Id))))
-                .Distinct();
+                .MapLayouts.AsValueEnumerable()
+                .SelectMany(Spatial.MapLayoutRules.OwnedIds)
+                .Concat(package.Zones.AsValueEnumerable().Select(z => z.Id))
+                .Concat(
+                    package
+                        .Missions.AsValueEnumerable()
+                        .SelectMany(m =>
+                            m.Events.AsValueEnumerable().Select(e => e.Id).Concat(m.Objectives.AsValueEnumerable().Select(o => o.Id))
+                        )
+                )
+                .Distinct()
+                .ToArray();
             using var sha = System.Security.Cryptography.SHA256.Create();
-            var replacements = owned.ToDictionary(
-                id => id,
-                id =>
-                    BitConverter
-                        .ToString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(link.Id + ":" + id)))
-                        .Replace("-", "")
-                        .ToLowerInvariant()
-                        .Substring(0, 24)
-            );
+            var replacements = owned
+                .AsValueEnumerable()
+                .ToDictionary(
+                    id => id,
+                    id =>
+                        BitConverter
+                            .ToString(sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(link.Id + ":" + id)))
+                            .Replace("-", "")
+                            .ToLowerInvariant()
+                            .Substring(0, 24)
+                );
             Serialization.ModelGraph.Rewrite(
                 package,
                 text =>
@@ -284,7 +328,7 @@ public static class MissionLibrary
                         : text;
                 }
             );
-            var mission = package.Missions.Single();
+            var mission = package.Missions.AsValueEnumerable().Single();
             mission.Id = link.Id;
             mission.QuestId = link.QuestId;
             mission.CompletionConditionId = link.CompletionConditionId;

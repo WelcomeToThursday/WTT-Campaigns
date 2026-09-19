@@ -251,7 +251,7 @@ public sealed class EncounterSpawnAdmission
         lock (_gate)
         {
             _invalidatedContexts.Add(key);
-            var tokens = _active.Values.Where(r => Matches(context, r)).Select(r => r.Token).ToArray();
+            var tokens = _active.Values.AsValueEnumerable().Where(r => Matches(context, r)).Select(r => r.Token).ToArray();
             foreach (var token in tokens)
             {
                 _active.Remove(token);
@@ -332,7 +332,7 @@ public sealed class EncounterWaveRuntimeState
     {
         Index = index;
         WaveId = wave.Id;
-        ExpectedBots = wave.Roster?.Where(r => r != null).Sum(r => Math.Max(r.Count, 0)) ?? 0;
+        ExpectedBots = wave.Roster?.AsValueEnumerable().Where(r => r != null).Sum(r => Math.Max(r.Count, 0)) ?? 0;
         Status = EncounterWaveStatus.Pending;
     }
 
@@ -404,7 +404,10 @@ public sealed class EncounterWaveStateMachine
     public EncounterWaveStateMachine(MapEncounter encounter)
     {
         _encounter = encounter ?? throw new ArgumentNullException(nameof(encounter));
-        _states = (encounter.Waves ?? new()).Select((wave, index) => new EncounterWaveRuntimeState(index, wave)).ToList();
+        _states = (encounter.Waves ?? new())
+            .AsValueEnumerable()
+            .Select((wave, index) => new EncounterWaveRuntimeState(index, wave))
+            .ToList();
     }
 
     public MapEncounter Encounter => _encounter;
@@ -415,7 +418,7 @@ public sealed class EncounterWaveStateMachine
     /// <summary>Capture only settled waves; callers hold scheduling and await native generation first.</summary>
     public EncounterCheckpoint Capture(double now)
     {
-        if (!double.IsFinite(now) || _halted || _states.Any(s => s.Status == EncounterWaveStatus.Generating))
+        if (!double.IsFinite(now) || _halted || _states.AsValueEnumerable().Any(s => s.Status == EncounterWaveStatus.Generating))
             throw new InvalidOperationException("Encounter generation must settle before capturing a checkpoint.");
         return new EncounterCheckpoint
         {
@@ -424,13 +427,14 @@ public sealed class EncounterWaveStateMachine
             ActivationKey = _activationKey,
             ActivationOffset = _activationTime - now,
             Waves = _states
+                .AsValueEnumerable()
                 .Select(s => new EncounterWaveCheckpoint
                 {
                     WaveId = s.WaveId,
                     Status = s.Status == EncounterWaveStatus.Ready ? EncounterWaveStatus.Pending : s.Status,
                     ActivatedOffset = s.ActivatedAt - now,
                     CompletedOffset = s.CompletedAt - now,
-                    LivingProfileIds = s.ActiveProfileIds.ToList(),
+                    LivingProfileIds = s.ActiveProfileIds.AsValueEnumerable().ToList(),
                 })
                 .ToList(),
         };
@@ -563,7 +567,7 @@ public sealed class EncounterWaveStateMachine
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(generationId) || _states.Any(s => s.GenerationId == generationId))
+        if (string.IsNullOrWhiteSpace(generationId) || _states.AsValueEnumerable().Any(s => s.GenerationId == generationId))
         {
             error = "Each wave generation requires a unique identity.";
             return false;
@@ -597,7 +601,7 @@ public sealed class EncounterWaveStateMachine
         }
 
         var wave = _encounter.Waves![waveIndex];
-        var roster = wave.Roster?.FirstOrDefault(r => r != null && r.Id == rosterId);
+        var roster = wave.Roster?.AsValueEnumerable().FirstOrDefault(r => r != null && r.Id == rosterId);
         if (roster == null)
         {
             error = "The profile roster entry is unknown.";
@@ -605,19 +609,19 @@ public sealed class EncounterWaveStateMachine
         }
 
         var reservations = _reservations[waveIndex];
-        if (reservations.Any(r => r.ProfileId == profileId || r.SpawnPointId == spawnPointId))
+        if (reservations.AsValueEnumerable().Any(r => r.ProfileId == profileId || r.SpawnPointId == spawnPointId))
         {
             error = "Profiles and authored spawn points can be reserved only once per wave.";
             return false;
         }
 
-        if (reservations.Count(r => r.RosterId == rosterId) >= roster.Count)
+        if (reservations.AsValueEnumerable().Count(r => r.RosterId == rosterId) >= roster.Count)
         {
             error = "The roster count has already been reserved.";
             return false;
         }
 
-        if (roster.SpawnPointIds == null || !roster.SpawnPointIds.Contains(spawnPointId, StringComparer.Ordinal))
+        if (roster.SpawnPointIds == null || !roster.SpawnPointIds.AsValueEnumerable().Contains(spawnPointId, StringComparer.Ordinal))
         {
             error = "The spawn point is not authored for this roster entry.";
             return false;
@@ -656,12 +660,15 @@ public sealed class EncounterWaveStateMachine
 
         var reservations = _reservations.GetValueOrDefault(waveIndex) ?? new();
         var wave = _encounter.Waves![waveIndex];
-        var counts = reservations.GroupBy(r => r.RosterId).ToDictionary(g => g.Key, g => g.Count(), StringComparer.Ordinal);
+        var counts = reservations
+            .AsValueEnumerable()
+            .GroupBy(r => r.RosterId)
+            .ToDictionary(g => g.Key, g => g.AsValueEnumerable().Count(), StringComparer.Ordinal);
         var complete =
             double.IsFinite(now)
             && reservations.Count == state.ExpectedBots
             && wave.Roster != null
-            && wave.Roster.All(r => r != null && counts.GetValueOrDefault(r.Id) == r.Count);
+            && wave.Roster.AsValueEnumerable().All(r => r != null && counts.GetValueOrDefault(r.Id) == r.Count);
         if (!complete)
         {
             FailGeneration(waveIndex, generationId, "Profile generation or authored spawn reservations were incomplete.");
@@ -725,7 +732,7 @@ public sealed class EncounterWaveStateMachine
         if (
             !TryGetState(waveIndex, out var state)
             || state.Status != EncounterWaveStatus.Active
-            || !state.ActiveProfileIds.Contains(profileId)
+            || !state.ActiveProfileIds.AsValueEnumerable().Contains(profileId)
         )
         {
             return false;
@@ -741,13 +748,15 @@ public sealed class EncounterWaveStateMachine
     {
         _halted = true;
         foreach (
-            var state in _states.Where(s =>
-                s.Status
-                    is EncounterWaveStatus.Pending
-                        or EncounterWaveStatus.Ready
-                        or EncounterWaveStatus.Generating
-                        or EncounterWaveStatus.Active
-            )
+            var state in _states
+                .AsValueEnumerable()
+                .Where(s =>
+                    s.Status
+                        is EncounterWaveStatus.Pending
+                            or EncounterWaveStatus.Ready
+                            or EncounterWaveStatus.Generating
+                            or EncounterWaveStatus.Active
+                )
         )
         {
             state.Status = EncounterWaveStatus.Cancelled;
@@ -815,6 +824,11 @@ public sealed class PatrolBotSnapshot
 public interface IPatrolNavigation
 {
     bool CanReach(SpatialVector from, SpatialVector to);
+}
+
+public interface IPatrolNavigationBudget : IPatrolNavigation
+{
+    bool Deferred { get; }
 }
 
 public enum PatrolRuntimeStatus
@@ -917,7 +931,9 @@ public sealed class EncounterPatrolStateMachine
     {
         error = "";
         _orderedBotIds.Clear();
-        _orderedBotIds.AddRange((orderedBotIds ?? Array.Empty<string>()).Where(id => !string.IsNullOrWhiteSpace(id)));
+        _orderedBotIds.AddRange(
+            (orderedBotIds ?? Array.Empty<string>()).AsValueEnumerable().Where(id => !string.IsNullOrWhiteSpace(id)).ToArray()
+        );
         if (_orderedBotIds.Count == 0)
         {
             error = "A patrol requires at least one bot.";
@@ -933,7 +949,7 @@ public sealed class EncounterPatrolStateMachine
             return false;
         }
 
-        if (_orderedBotIds.Distinct(StringComparer.Ordinal).Count() != _orderedBotIds.Count)
+        if (_orderedBotIds.AsValueEnumerable().Distinct(StringComparer.Ordinal).Count() != _orderedBotIds.Count)
         {
             error = "Patrol bot identities must be unique.";
             _status = PatrolRuntimeStatus.Failed;
@@ -954,6 +970,30 @@ public sealed class EncounterPatrolStateMachine
         return Start(orderedBotIds, out _);
     }
 
+    public bool TryUpdateBudgeted(
+        IEnumerable<PatrolBotSnapshot> snapshots,
+        double now,
+        IPatrolNavigation navigation,
+        out PatrolUpdate update
+    )
+    {
+        var saved = (_targetWaypoint, _direction, _waitUntil, _leaderId, _status, _reason);
+        update = Update(snapshots, now, navigation);
+        if (navigation is IPatrolNavigationBudget { Deferred: true })
+        {
+            (_targetWaypoint, _direction, _waitUntil, _leaderId, _status, _reason) = saved;
+            update = new PatrolUpdate
+            {
+                Status = _status,
+                SuspensionReason = _reason,
+                LeaderId = _leaderId,
+                TargetWaypointIndex = _targetWaypoint,
+            };
+            return false;
+        }
+        return true;
+    }
+
     public PatrolUpdate Update(IEnumerable<PatrolBotSnapshot> snapshots, double now, IPatrolNavigation navigation)
     {
         var result = new PatrolUpdate
@@ -972,10 +1012,12 @@ public sealed class EncounterPatrolStateMachine
         }
 
         var byId = (snapshots ?? Array.Empty<PatrolBotSnapshot>())
-            .Where(s => s != null && _orderedBotIds.Contains(s.BotId, StringComparer.Ordinal))
+            .AsValueEnumerable()
+            .Where(s => s != null && _orderedBotIds.AsValueEnumerable().Contains(s.BotId, StringComparer.Ordinal))
             .GroupBy(s => s.BotId, StringComparer.Ordinal)
-            .ToDictionary(g => g.Key, g => g.Last(), StringComparer.Ordinal);
+            .ToDictionary(g => g.Key, g => g.AsValueEnumerable().Last(), StringComparer.Ordinal);
         var survivors = _orderedBotIds
+            .AsValueEnumerable()
             .Where(id => byId.TryGetValue(id, out var snapshot) && snapshot.Alive)
             .Select(id => byId[id])
             .ToArray();
@@ -986,17 +1028,18 @@ public sealed class EncounterPatrolStateMachine
             return Snapshot(result);
         }
 
-        var leader = _orderedBotIds.FirstOrDefault(id => byId.TryGetValue(id, out var snapshot) && snapshot.Alive) ?? "";
+        var leader =
+            _orderedBotIds.AsValueEnumerable().FirstOrDefault(id => byId.TryGetValue(id, out var snapshot) && snapshot.Alive) ?? "";
         var leaderChanged = leader != _leaderId;
         _leaderId = leader;
 
-        var missing = _orderedBotIds.Any(id => !byId.ContainsKey(id));
+        var missing = _orderedBotIds.AsValueEnumerable().Any(id => !byId.ContainsKey(id));
         var blocker =
             missing ? PatrolSuspensionReason.UnknownState
-            : survivors.Any(s => s.ControlState == PatrolBotControlState.Combat) ? PatrolSuspensionReason.Combat
-            : survivors.Any(s => s.ControlState == PatrolBotControlState.Searching) ? PatrolSuspensionReason.Searching
-            : survivors.Any(s => s.ControlState == PatrolBotControlState.Recovery) ? PatrolSuspensionReason.Recovery
-            : survivors.Any(s => s.ControlState != PatrolBotControlState.Eligible) ? PatrolSuspensionReason.UnknownState
+            : survivors.AsValueEnumerable().Any(s => s.ControlState == PatrolBotControlState.Combat) ? PatrolSuspensionReason.Combat
+            : survivors.AsValueEnumerable().Any(s => s.ControlState == PatrolBotControlState.Searching) ? PatrolSuspensionReason.Searching
+            : survivors.AsValueEnumerable().Any(s => s.ControlState == PatrolBotControlState.Recovery) ? PatrolSuspensionReason.Recovery
+            : survivors.AsValueEnumerable().Any(s => s.ControlState != PatrolBotControlState.Eligible) ? PatrolSuspensionReason.UnknownState
             : PatrolSuspensionReason.None;
         if (blocker != PatrolSuspensionReason.None)
         {
@@ -1038,7 +1081,7 @@ public sealed class EncounterPatrolStateMachine
         }
 
         var target = _route.Waypoints[_targetWaypoint];
-        if (target == null || survivors.Any(s => !navigation.CanReach(s.Position, target.Position)))
+        if (target == null || survivors.AsValueEnumerable().Any(s => !navigation.CanReach(s.Position, target.Position)))
         {
             _status = PatrolRuntimeStatus.Suspended;
             _reason = PatrolSuspensionReason.Unreachable;
@@ -1047,6 +1090,7 @@ public sealed class EncounterPatrolStateMachine
 
         _reason = PatrolSuspensionReason.None;
         result.Commands = survivors
+            .AsValueEnumerable()
             .Select(s => new PatrolMovementCommand
             {
                 BotId = s.BotId,

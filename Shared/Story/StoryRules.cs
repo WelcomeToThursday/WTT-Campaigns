@@ -64,7 +64,8 @@ public static class StoryRules
     public static int Variable(StoryDefinition definition, StoryProgress state, StoryFacts facts, string id)
     {
         var variable =
-            definition.Variables.SingleOrDefault(v => v.Id == id) ?? throw new InvalidOperationException("Unknown story variable: " + id);
+            definition.Variables.AsValueEnumerable().SingleOrDefault(v => v.Id == id)
+            ?? throw new InvalidOperationException("Unknown story variable: " + id);
         var values = variable.Scope switch
         {
             StoryVariableScope.Profile => state.Variables,
@@ -96,8 +97,8 @@ public static class StoryRules
         }
         return c.Type switch
         {
-            "All" => c.Conditions.All(child => Evaluate(child, definition, state, facts, depth + 1)),
-            "Any" => c.Conditions.Any(child => Evaluate(child, definition, state, facts, depth + 1)),
+            "All" => c.Conditions.AsValueEnumerable().All(child => Evaluate(child, definition, state, facts, depth + 1)),
+            "Any" => c.Conditions.AsValueEnumerable().Any(child => Evaluate(child, definition, state, facts, depth + 1)),
             "Not" => c.Conditions.Count == 1 && !Evaluate(c.Conditions[0], definition, state, facts, depth + 1),
             "VariableValue" => CompareValue(Variable(definition, state, facts, c.Target)),
             "QuestStatus" => c.Status.Contains(facts.QuestStatuses.GetValueOrDefault(c.Target) ?? "Locked"),
@@ -127,9 +128,10 @@ public static class StoryRules
         {
             return Array.Empty<StoryDialogLine>();
         }
-        var dialog = definition.Dialogs.Single(d => d.Id == conversation.DialogId);
+        var dialog = definition.Dialogs.AsValueEnumerable().Single(d => d.Id == conversation.DialogId);
         return dialog
-            .Lines.Where(line => Evaluate(line.Trigger, definition, state, facts) && RandomMatches(line.Random, conversation))
+            .Lines.AsValueEnumerable()
+            .Where(line => Evaluate(line.Trigger, definition, state, facts) && RandomMatches(line.Random, conversation))
             .ToArray();
     }
 
@@ -146,7 +148,7 @@ public static class StoryRules
 
     public static bool ChapterComplete(StoryChapter chapter, StoryDefinition definition, StoryFacts facts)
     {
-        var required = definition.Quests.Where(q => q.ChapterId == chapter.Id && q.Main).ToArray();
-        return required.Length > 0 && required.All(q => facts.QuestStatuses.GetValueOrDefault(q.QuestId) == "Success");
+        var required = definition.Quests.AsValueEnumerable().Where(q => q.ChapterId == chapter.Id && q.Main).ToArray();
+        return required.Length > 0 && required.AsValueEnumerable().All(q => facts.QuestStatuses.GetValueOrDefault(q.QuestId) == "Success");
     }
 }

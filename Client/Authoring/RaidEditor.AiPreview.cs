@@ -1,5 +1,6 @@
 using EFT.UI.Screens;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Preview;
 using WTT.Campaigns.Client.Encounters;
 using WTT.Campaigns.Client.Missions;
@@ -40,7 +41,7 @@ public sealed partial class RaidEditor
         if (_session!.Busy || _session.Dirty)
         {
             _aiRequested = playtest;
-            _notice = "Starting AI preview after the draft synchronizes…";
+            ReportFeedback("Starting AI preview after the draft synchronizes…");
             return;
         }
         var session = _session;
@@ -50,7 +51,7 @@ public sealed partial class RaidEditor
         var transitionStage = "scene preparation";
         _aiPreparing = true;
         _aiPreviewStatus = "Preparing AI preview…";
-        _notice = "";
+        ReportFeedback("");
         session.Previewing = session.Hold = true;
         _aiDefeatPending = false;
         _aiPlaytest = false;
@@ -71,9 +72,11 @@ public sealed partial class RaidEditor
             if (_editorMissionRequested && !_editorMissionUseEncounters)
                 layout.Encounters.Clear();
             _mapScene ??= new();
-            _notice = _aiPreviewStatus = _editorMissionRequested
-                ? "Preparing mission test · loading item models…"
-                : "Preparing AI preview · loading item models…";
+            ReportFeedback(
+                _aiPreviewStatus = _editorMissionRequested
+                    ? "Preparing mission test · loading item models…"
+                    : "Preparing AI preview · loading item models…"
+            );
             if (_view?.Valid == true)
                 Refresh(false);
             await _mapScene.ApplyAsync(layout, false, lifetime.Token);
@@ -104,7 +107,7 @@ public sealed partial class RaidEditor
                     {
                         if (_aiLifetime != lifetime || lifetime.IsCancellationRequested || _session != session)
                             return;
-                        _notice = _aiPreviewStatus = "Preparing playtest · " + stage;
+                        ReportFeedback(_aiPreviewStatus = "Preparing playtest · " + stage);
                         if (_view?.Valid == true)
                             Refresh(false);
                     }
@@ -171,7 +174,7 @@ public sealed partial class RaidEditor
             _editorDirector?.Observe(
                 new WTT.Campaigns.Shared.Missions.MissionSignal { Kind = WTT.Campaigns.Shared.Missions.MissionSignals.Start }
             );
-            _notice = "";
+            ReportFeedback("");
         }
         catch (OperationCanceledException)
         {
@@ -179,7 +182,10 @@ public sealed partial class RaidEditor
         }
         catch (Exception error)
         {
-            _notice = (_editorMissionRequested ? "Mission test unavailable: " : "AI preview unavailable: ") + error.Message;
+            ReportFeedback(
+                (_editorMissionRequested ? "Mission test unavailable: " : "AI preview unavailable: ") + error.Message,
+                ConsoleSeverity.Error
+            );
             Plugin.Error(error);
             EndAiPreview();
         }
@@ -210,7 +216,7 @@ public sealed partial class RaidEditor
         _aiLifetime?.Cancel();
         _aiPlaytest = _aiPreview = false;
         _aiDefeatPending = false;
-        _aiPreviewStatus = _notice;
+        _aiPreviewStatus = LastFeedback;
         try
         {
             _aiRuntime?.Reset();
@@ -219,7 +225,10 @@ public sealed partial class RaidEditor
         catch (Exception error)
         {
             _aiCleanupFailed = true;
-            _notice = _aiPreviewStatus = "Preview cleanup needs attention: " + error.GetBaseException().Message;
+            ReportFeedback(
+                _aiPreviewStatus = "Preview cleanup needs attention: " + error.GetBaseException().Message,
+                ConsoleSeverity.Error
+            );
             Plugin.Error(error);
             return;
         }
@@ -262,7 +271,10 @@ public sealed partial class RaidEditor
             {
                 _aiCleanupFailed = true;
                 _aiPlayer = gear;
-                _notice = _aiPreviewStatus = "Preview cleanup needs attention: " + error.GetBaseException().Message;
+                ReportFeedback(
+                    _aiPreviewStatus = "Preview cleanup needs attention: " + error.GetBaseException().Message,
+                    ConsoleSeverity.Error
+                );
             }
             Plugin.Error(error);
         }
@@ -335,7 +347,7 @@ public sealed partial class RaidEditor
             || _shortcut.Value.IsDown()
         )
         {
-            _notice = _aiDefeatPending ? "Playtest defeated. Preview reset." : "AI preview reset.";
+            ReportFeedback(_aiDefeatPending ? "Playtest defeated. Preview reset." : "AI preview reset.");
             EndAiPreview();
             return true;
         }
@@ -354,7 +366,7 @@ public sealed partial class RaidEditor
         }
         catch (Exception error)
         {
-            _notice = "AI preview stopped: " + error.GetBaseException().Message;
+            ReportFeedback("AI preview stopped: " + error.GetBaseException().Message, ConsoleSeverity.Error);
             Plugin.Error(error);
             EndAiPreview();
             return true;

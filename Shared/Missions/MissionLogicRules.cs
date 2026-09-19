@@ -18,24 +18,31 @@ public static class MissionLogicRules
             mission.Events == null
             || mission.Objectives == null
             || mission.Requirements == null
-            || mission.Events.Any(e => e == null || e.Actions == null || e.Actions.Any(a => a == null))
-            || mission.Objectives.Any(o => o == null || o.TargetIds == null)
-            || mission.Requirements.Any(r => r == null || r.ObjectiveIds == null)
+            || mission
+                .Events.AsValueEnumerable()
+                .Any(e => e == null || e.Actions == null || e.Actions.AsValueEnumerable().Any(a => a == null))
+            || mission.Objectives.AsValueEnumerable().Any(o => o == null || o.TargetIds == null)
+            || mission.Requirements.AsValueEnumerable().Any(r => r == null || r.ObjectiveIds == null)
         )
             return new() { "Mission logic collections cannot be null or contain null records." };
         Need(
             mission.Events.Count <= 128 && mission.Objectives.Count <= 128 && mission.Requirements.Count <= 128,
             "Mission logic is limited to 128 events, objectives and requirements each."
         );
-        var ids = mission.Events.Select(e => e.Id).Concat(mission.Objectives.Select(o => o.Id)).ToArray();
+        var ids = mission
+            .Events.AsValueEnumerable()
+            .Select(e => e.Id)
+            .Concat(mission.Objectives.AsValueEnumerable().Select(o => o.Id))
+            .ToArray();
         Need(
-            ids.All(id => !string.IsNullOrWhiteSpace(id) && id.Length <= 120) && ids.Distinct().Count() == ids.Length,
+            ids.AsValueEnumerable().All(id => !string.IsNullOrWhiteSpace(id) && id.Length <= 120)
+                && ids.AsValueEnumerable().Distinct().Count() == ids.Length,
             "Mission events and objectives need unique identities (up to 120 characters)."
         );
         Need(
-            mission.Events.All(e => e.Actions.Count <= 32)
-                && mission.Objectives.All(o => o.TargetIds.Count <= 128)
-                && mission.Requirements.All(r => r.ObjectiveIds.Count <= 128),
+            mission.Events.AsValueEnumerable().All(e => e.Actions.Count <= 32)
+                && mission.Objectives.AsValueEnumerable().All(o => o.TargetIds.Count <= 128)
+                && mission.Requirements.AsValueEnumerable().All(r => r.ObjectiveIds.Count <= 128),
             "Mission action and reference collections exceed their limits."
         );
         return errors;
@@ -51,27 +58,31 @@ public static class MissionLogicRules
             if (!condition)
                 errors.Add(message);
         }
-        var encounters = layout.Encounters.Select(e => e.Id).ToHashSet();
-        var waves = layout.Encounters.SelectMany(e => e.Waves).Select(w => w.Id).ToHashSet();
-        var rosters = layout.Encounters.SelectMany(e => e.Waves).SelectMany(w => w.Roster).ToArray();
-        var rosterIds = rosters.Select(r => r.Id).ToHashSet();
+        var encounters = layout.Encounters.AsValueEnumerable().Select(e => e.Id).ToHashSet();
+        var waves = layout.Encounters.AsValueEnumerable().SelectMany(e => e.Waves).Select(w => w.Id).ToHashSet();
+        var rosters = layout.Encounters.AsValueEnumerable().SelectMany(e => e.Waves).SelectMany(w => w.Roster).ToArray();
+        var rosterIds = rosters.AsValueEnumerable().Select(r => r.Id).ToHashSet();
         var squads = layout
-            .Encounters.SelectMany(e =>
-                e.Waves.SelectMany(w => w.Roster).Where(r => r.SquadId.Length > 0).Select(r => e.Id + ":" + r.SquadId)
+            .Encounters.AsValueEnumerable()
+            .SelectMany(e =>
+                e.Waves.AsValueEnumerable().SelectMany(w => w.Roster).Where(r => r.SquadId.Length > 0).Select(r => e.Id + ":" + r.SquadId)
             )
             .ToHashSet();
         var zones = layout
-            .Checkpoints.Select(c => c.Id)
+            .Checkpoints.AsValueEnumerable()
+            .Select(c => c.Id)
             .Concat(layout.Exit == null ? Array.Empty<string>() : new[] { layout.Exit.Id })
             .ToHashSet();
         var interactions = layout
-            .Doors.Select(d => d.Id)
-            .Concat(layout.Objects.Where(o => o.Container != null || SceneAssetRules.IsContainer(o)).Select(o => o.Id))
+            .Doors.AsValueEnumerable()
+            .Select(d => d.Id)
+            .Concat(layout.Objects.AsValueEnumerable().Where(o => o.Container != null || SceneAssetRules.IsContainer(o)).Select(o => o.Id))
             .ToHashSet();
-        var objectives = mission.Objectives.Select(o => o.Id).ToHashSet();
-        var rules = mission.Events.Select(e => e.Id).ToHashSet();
+        var objectives = mission.Objectives.AsValueEnumerable().Select(o => o.Id).ToHashSet();
+        var rules = mission.Events.AsValueEnumerable().Select(e => e.Id).ToHashSet();
         var timers = mission
-            .Events.SelectMany(e => e.Actions)
+            .Events.AsValueEnumerable()
+            .SelectMany(e => e.Actions)
             .Where(a => a.Type == MissionAction.Timer)
             .Select(a => a.TargetId)
             .ToHashSet();
@@ -97,15 +108,15 @@ public static class MissionLogicRules
             Need(
                 objective.TargetIds.Count > 0
                     && objective.TargetIds.Count <= 128
-                    && objective.TargetIds.Distinct().Count() == objective.TargetIds.Count
-                    && objective.TargetIds.All(targets.Contains),
+                    && objective.TargetIds.AsValueEnumerable().Distinct().Count() == objective.TargetIds.Count
+                    && objective.TargetIds.AsValueEnumerable().All(targets.Contains),
                 "Choose valid, distinct objective targets: " + objective.Name
             );
             if (objective.Type is MissionObjective.Target or MissionObjective.Protect)
                 Need(
                     objective.TargetKind == "Roster"
                         && objective.TargetIds.Count == 1
-                        && rosters.Any(r => r.Id == objective.TargetIds[0] && r.Count == 1),
+                        && rosters.AsValueEnumerable().Any(r => r.Id == objective.TargetIds[0] && r.Count == 1),
                     "Individual targets require one single-bot roster: " + objective.Name
                 );
             if (objective.Type == MissionObjective.Survive)
@@ -124,7 +135,10 @@ public static class MissionLogicRules
             );
             Need(
                 objective.OnStart
-                    || mission.Events.SelectMany(e => e.Actions).Any(a => a.Type == MissionAction.Objective && a.TargetId == objective.Id),
+                    || mission
+                        .Events.AsValueEnumerable()
+                        .SelectMany(e => e.Actions)
+                        .Any(a => a.Type == MissionAction.Objective && a.TargetId == objective.Id),
                 "Objective has no activation event: " + objective.Name
             );
         }
@@ -138,7 +152,7 @@ public static class MissionLogicRules
                 rule.Source switch
                 {
                     MissionSignals.Start => rule.SourceId.Length == 0,
-                    MissionSignals.Checkpoint => layout.Checkpoints.Any(c => c.Id == rule.SourceId),
+                    MissionSignals.Checkpoint => layout.Checkpoints.AsValueEnumerable().Any(c => c.Id == rule.SourceId),
                     MissionSignals.Enter or MissionSignals.Leave => zones.Contains(rule.SourceId),
                     MissionSignals.Interaction => interactions.Contains(rule.SourceId),
                     MissionSignals.Timer => timers.Contains(rule.SourceId),
@@ -154,9 +168,9 @@ public static class MissionLogicRules
                 Need(
                     action.Type switch
                     {
-                        MissionAction.Encounter => layout.Encounters.Any(e =>
-                            e.Id == action.TargetId && e.Trigger.Type == MapEncounterTrigger.Event
-                        ),
+                        MissionAction.Encounter => layout
+                            .Encounters.AsValueEnumerable()
+                            .Any(e => e.Id == action.TargetId && e.Trigger.Type == MapEncounterTrigger.Event),
                         MissionAction.Objective => objectives.Contains(action.TargetId),
                         MissionAction.Timer => !string.IsNullOrWhiteSpace(action.TargetId)
                             && action.TargetId.Length <= 120
@@ -171,15 +185,17 @@ public static class MissionLogicRules
         foreach (var requirement in mission.Requirements)
         {
             Need(
-                requirement.CheckpointId.Length == 0 || layout.Checkpoints.Any(c => c.Id == requirement.CheckpointId),
+                requirement.CheckpointId.Length == 0 || layout.Checkpoints.AsValueEnumerable().Any(c => c.Id == requirement.CheckpointId),
                 "Objective gate references a missing checkpoint."
             );
-            Need(requirement.ObjectiveIds.All(objectives.Contains), "Objective gate references a missing objective.");
+            Need(requirement.ObjectiveIds.AsValueEnumerable().All(objectives.Contains), "Objective gate references a missing objective.");
             if (requirement.CheckpointId.Length > 0)
                 Need(
-                    !mission.Objectives.Any(o =>
-                        requirement.ObjectiveIds.Contains(o.Id) && o.Type == MissionObjective.Protect && o.UntilEventId.Length == 0
-                    ),
+                    !mission
+                        .Objectives.AsValueEnumerable()
+                        .Any(o =>
+                            requirement.ObjectiveIds.Contains(o.Id) && o.Type == MissionObjective.Protect && o.UntilEventId.Length == 0
+                        ),
                     "Protect-until-exit cannot gate a checkpoint."
                 );
         }
@@ -199,8 +215,17 @@ public static class MissionLogicRules
                 MissionSignals.Timer => "timer:" + e.SourceId,
                 MissionSignals.Checkpoint => "checkpoint:" + e.SourceId,
                 MissionSignals.Death => "encounter:"
-                    + layout.Encounters.FirstOrDefault(c => c.Waves.Any(w => w.Roster.Any(r => r.Id == e.SourceId)))?.Id,
-                MissionSignals.Wave => "encounter:" + layout.Encounters.FirstOrDefault(c => c.Waves.Any(w => w.Id == e.SourceId))?.Id,
+                    + layout
+                        .Encounters.AsValueEnumerable()
+                        .FirstOrDefault(c =>
+                            c.Waves.AsValueEnumerable().Any(w => w.Roster.AsValueEnumerable().Any(r => r.Id == e.SourceId))
+                        )
+                        ?.Id,
+                MissionSignals.Wave => "encounter:"
+                    + layout
+                        .Encounters.AsValueEnumerable()
+                        .FirstOrDefault(c => c.Waves.AsValueEnumerable().Any(w => w.Id == e.SourceId))
+                        ?.Id,
                 _ => "source:" + e.Source + ":" + e.SourceId,
             };
         foreach (var e in mission.Events)
@@ -219,27 +244,31 @@ public static class MissionLogicRules
         foreach (var o in mission.Objectives)
         {
             foreach (
-                var encounter in layout.Encounters.Where(e =>
-                    e.Waves.Any(w =>
-                        w.Roster.Any(r =>
-                            MissionLogic.Matches(
-                                o,
-                                new MissionActor
-                                {
-                                    EncounterId = e.Id,
-                                    RosterId = r.Id,
-                                    SquadId = r.SquadId,
-                                }
+                var encounter in layout
+                    .Encounters.AsValueEnumerable()
+                    .Where(e =>
+                        e.Waves.AsValueEnumerable()
+                            .Any(w =>
+                                w.Roster.AsValueEnumerable()
+                                    .Any(r =>
+                                        MissionLogic.Matches(
+                                            o,
+                                            new MissionActor
+                                            {
+                                                EncounterId = e.Id,
+                                                RosterId = r.Id,
+                                                SquadId = r.SquadId,
+                                            }
+                                        )
+                                    )
                             )
-                        )
                     )
-                )
             )
                 Edge("encounter:" + encounter.Id, "objective:" + o.Id);
             if (o.UntilEventId.Length > 0)
                 Edge("rule:" + o.UntilEventId, "objective:" + o.Id);
         }
-        foreach (var r in mission.Requirements.Where(r => r.CheckpointId.Length > 0))
+        foreach (var r in mission.Requirements.AsValueEnumerable().Where(r => r.CheckpointId.Length > 0))
         foreach (var id in r.ObjectiveIds)
             Edge("objective:" + id, "checkpoint:" + r.CheckpointId);
         var visiting = new HashSet<string>();
@@ -250,13 +279,16 @@ public static class MissionLogicRules
                 return false;
             if (!visiting.Add(node))
                 return true;
-            if (graph.TryGetValue(node, out var links) && links.Any(Cycle))
+            if (graph.TryGetValue(node, out var links) && links.AsValueEnumerable().Any(Cycle))
                 return true;
             visiting.Remove(node);
             done.Add(node);
             return false;
         }
-        Need(!graph.Keys.ToArray().Any(Cycle), "Mission events/objectives contain a circular dependency.");
+        Need(
+            !graph.Keys.AsValueEnumerable().ToArray().AsValueEnumerable().Any(Cycle),
+            "Mission events/objectives contain a circular dependency."
+        );
         return errors;
     }
 }

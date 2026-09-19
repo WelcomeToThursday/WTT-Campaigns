@@ -44,6 +44,7 @@ public static class EffectParametersValidator
         if (
             effect.ItemFilter != null
             && (effect.ItemFilter.Include ?? new())
+                .AsValueEnumerable()
                 .Concat(effect.ItemFilter.Exclude ?? new())
                 .Any(f => f.Field is not ("_tpl" or "ParentId") || string.IsNullOrEmpty(f.Value))
         )

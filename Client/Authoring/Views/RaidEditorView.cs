@@ -10,6 +10,7 @@ internal sealed partial class RaidEditorView : IDisposable
 {
     internal readonly EditorToolkitDocument Document;
     internal readonly EditorToolkitWindows Windows;
+    internal readonly EditorConsoleView Console;
     internal GameObject Root => Document.Host;
     private readonly Dictionary<string, EditorControl> _controls = new(StringComparer.Ordinal);
     private readonly List<EditorInput> _inputs = new();
@@ -18,10 +19,48 @@ internal sealed partial class RaidEditorView : IDisposable
     private string _context = "";
     private VisualElement? _choicePopup;
     private RouteOverlay _routeOverlay = null!;
+    private readonly HashSet<Action> _pendingLayout = new();
+
+    // GeometryChanged runs inside UI Toolkit's layout pass. Coalesce any resulting
+    // style changes and apply them during our next tick, outside that pass.
+    internal void AfterLayout(Action action) => _pendingLayout.Add(action);
+
+    private void ApplyPendingLayout()
+    {
+        if (_pendingLayout.Count == 0)
+            return;
+        var actions = _pendingLayout.AsValueEnumerable().ToArray();
+        _pendingLayout.Clear();
+        foreach (var action in actions)
+            action();
+    }
+
     internal bool Valid => !_disposed && Root;
-    internal bool PointerOver => Document.PointerOver;
+    internal readonly Image GameViewport = EditorToolkitDocument.CloneTemplate<Image>("GameViewport");
+    internal Rect ViewportPixels { get; private set; }
+    internal bool PointerOver => !ViewportPixels.Contains(UnityEngine.Input.mousePosition) || Document.PointerOver;
+
+    internal void SetViewport(EditorDockRect dock)
+    {
+        _viewportToolbar.style.left = dock.X;
+        _viewportToolbar.style.top = dock.Y;
+        _viewportToolbar.style.width = dock.Width;
+        _viewportMenu.style.width = Math.Min(230, dock.Width);
+        var pixels = EditorViewportCoordinates.Pixels(EditorViewportState.Content(dock), Document.Scale, Screen.width, Screen.height);
+        ViewportPixels = new Rect(pixels.X, pixels.Y, pixels.Width, pixels.Height);
+        // Use the same rounded pixel bounds for presentation, projection, and input.
+        foreach (var element in new VisualElement[] { GameViewport, _routeOverlay })
+        {
+            element.style.left = pixels.X / Document.Scale;
+            element.style.top = (Screen.height - pixels.Y - pixels.Height) / Document.Scale;
+            element.style.width = pixels.Width / Document.Scale;
+            element.style.height = pixels.Height / Document.Scale;
+        }
+    }
+
     internal bool Typing =>
         Document.Typing
+        || ViewportMenuOpen
         || _dropdownDismissFrame == Time.frameCount
         || NumericDragging
         || Windows.Interacting
@@ -64,11 +103,21 @@ internal sealed partial class RaidEditorView : IDisposable
         {
             Build();
             Windows = new EditorToolkitWindows(this);
+            Console = new EditorConsoleView(this);
             EditorLayoutPreferences.Attach(Windows);
             BuildUsability();
             Document.Tick = () =>
             {
+                ApplyPendingLayout();
                 Windows.Tick();
+                Console.Tick();
+                if (
+                    ViewportMenuOpen
+                    && UnityEngine.Input.GetMouseButtonDown(0)
+                    && !_viewportMenu.worldBound.Contains(Document.Pointer)
+                    && !Element("ViewportOverlays").worldBound.Contains(Document.Pointer)
+                )
+                    DismissViewportMenu();
                 PollCatalogCapacity();
                 RefreshUsability();
             };
@@ -89,7 +138,7 @@ internal sealed partial class RaidEditorView : IDisposable
             };
             Document.CancelTyping = () =>
             {
-                if (DismissDropdowns())
+                if (Console.CancelTyping() || DismissDropdowns())
                     return;
                 foreach (var input in _inputs)
                     if (input.isFocused)
@@ -212,7 +261,7 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected, long layoutRevision = 0)
     {
-        if (layout == null || !camera)
+        if (layout == null || !camera || !ViewportState.Shows(EditorOverlays.Routes | EditorOverlays.Ai))
         {
             HideRoute();
             return;
@@ -223,9 +272,19 @@ internal sealed partial class RaidEditorView : IDisposable
             _levelRoute.Id = layout.Id;
             _levelRoute.Location = layout.Location;
             _levelRoute.Exit = layout.Exit;
+            _levelRoute.SpawnPoints = layout.SpawnPoints;
+            _levelRoute.PatrolRoutes = layout.PatrolRoutes;
+            _levelRoute.Encounters = layout.Encounters;
             layout = _levelRoute;
         }
-        _routeOverlay.Refresh(layout, camera!, selected, layoutRevision);
+        _routeOverlay.Refresh(
+            layout,
+            camera!,
+            selected,
+            layoutRevision,
+            ViewportState.Shows(EditorOverlays.Routes),
+            ViewportState.Shows(EditorOverlays.Ai)
+        );
     }
 
     internal void HideRoute() => _routeOverlay.style.display = DisplayStyle.None;
@@ -237,6 +296,7 @@ internal sealed partial class RaidEditorView : IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        Console.Unbind();
         Windows.CancelInteraction();
         foreach (var input in _inputs)
             input.CancelEdit();

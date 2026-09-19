@@ -126,7 +126,7 @@ public static class MissionLogic
             throw new InvalidOperationException("Mission observation time cannot move backwards.");
         var elapsed = input.Time - state.Time;
         // Accumulate using the previous occupancy sample, never retroactively credit a newly entered area.
-        foreach (var objective in mission.Objectives.Where(o => o.Type == MissionObjective.Defend))
+        foreach (var objective in mission.Objectives.AsValueEnumerable().Where(o => o.Type == MissionObjective.Defend))
         {
             var progress = Progress(state, objective.Id);
             if (progress.Status != "Active")
@@ -134,7 +134,9 @@ public static class MissionLogic
             var held =
                 state.Zones.TryGetValue(objective.ZoneId, out var zone)
                 && zone.PlayerInside
-                && !zone.Occupants.Any(id => state.Actors.TryGetValue(id, out var actor) && !actor.Dead && Matches(objective, actor));
+                && !zone
+                    .Occupants.AsValueEnumerable()
+                    .Any(id => state.Actors.TryGetValue(id, out var actor) && !actor.Dead && Matches(objective, actor));
             if (held)
                 progress.Seconds = Math.Min(objective.Seconds, progress.Seconds + elapsed);
             progress.Detail = held ? "Holding" : "Paused · leave the area uncontested and stay inside";
@@ -142,7 +144,7 @@ public static class MissionLogic
         state.Time = input.Time;
         var queue = new Queue<MissionSignal>();
         queue.Enqueue(input);
-        foreach (var timer in state.Timers.Where(t => t.Value <= state.Time).ToArray())
+        foreach (var timer in state.Timers.AsValueEnumerable().Where(t => t.Value <= state.Time).ToArray())
         {
             state.Timers.Remove(timer.Key);
             state.FinishedTimers.Add(timer.Key);
@@ -164,7 +166,7 @@ public static class MissionLogic
             if (signal.Kind == MissionSignals.Start && !state.Started)
             {
                 state.Started = true;
-                foreach (var objective in mission.Objectives.Where(o => o.OnStart))
+                foreach (var objective in mission.Objectives.AsValueEnumerable().Where(o => o.OnStart))
                     Activate(state, objective.Id);
             }
             if (signal.Kind is MissionSignals.Spawn or MissionSignals.Death)
@@ -187,7 +189,7 @@ public static class MissionLogic
                 state.CompletedWaves.Add(signal.TargetId);
             if (signal.Kind == MissionSignals.Encounter)
                 state.CompletedEncounters.Add(signal.TargetId);
-            foreach (var rule in mission.Events.Where(r => r.Source == signal.Kind && r.SourceId == signal.TargetId))
+            foreach (var rule in mission.Events.AsValueEnumerable().Where(r => r.Source == signal.Kind && r.SourceId == signal.TargetId))
             {
                 if (!state.FiredRules.Add(rule.Id))
                     continue;
@@ -210,19 +212,20 @@ public static class MissionLogic
                 var progress = Progress(state, objective.Id);
                 if (progress.Status != "Active")
                     continue;
-                var actors = state.Actors.Values.Where(a => Matches(objective, a)).ToArray();
-                progress.Count = actors.Count(a => a.Dead);
+                var actors = state.Actors.Values.AsValueEnumerable().Where(a => Matches(objective, a)).ToArray();
+                progress.Count = actors.AsValueEnumerable().Count(a => a.Dead);
                 var expected = Expected(layout, objective);
                 var complete = false;
                 if (objective.Type is MissionObjective.Eliminate or MissionObjective.Target)
-                    complete = expected > 0 && actors.Length == expected && actors.All(a => a.Spawned && a.Dead);
+                    complete = expected > 0 && actors.Length == expected && actors.AsValueEnumerable().All(a => a.Spawned && a.Dead);
                 else if (objective.Type == MissionObjective.Survive)
-                    complete = objective.TargetIds.Count > 0 && objective.TargetIds.All(state.CompletedEncounters.Contains);
+                    complete =
+                        objective.TargetIds.Count > 0 && objective.TargetIds.AsValueEnumerable().All(state.CompletedEncounters.Contains);
                 else if (objective.Type == MissionObjective.Defend)
                     complete = progress.Seconds >= objective.Seconds;
                 else if (objective.Type == MissionObjective.Protect)
                 {
-                    if (actors.Any(a => a.Dead))
+                    if (actors.AsValueEnumerable().Any(a => a.Dead))
                     {
                         progress.Status = "Failed";
                         progress.Detail = "Protected actor died";
@@ -274,32 +277,40 @@ public static class MissionLogic
         );
 
     public static int Expected(MapLayout layout, MissionObjective objective) =>
-        layout.Encounters.Sum(e =>
-            e.Waves.Sum(w =>
-                w.Roster.Where(r =>
-                        Matches(
-                            objective,
-                            new MissionActor
-                            {
-                                EncounterId = e.Id,
-                                RosterId = r.Id,
-                                SquadId = r.SquadId,
-                            }
-                        )
+        layout
+            .Encounters.AsValueEnumerable()
+            .Sum(e =>
+                e.Waves.AsValueEnumerable()
+                    .Sum(w =>
+                        w.Roster.AsValueEnumerable()
+                            .Where(r =>
+                                Matches(
+                                    objective,
+                                    new MissionActor
+                                    {
+                                        EncounterId = e.Id,
+                                        RosterId = r.Id,
+                                        SquadId = r.SquadId,
+                                    }
+                                )
+                            )
+                            .Sum(r => r.Count)
                     )
-                    .Sum(r => r.Count)
-            )
-        );
+            );
 
     public static bool CanAdvance(MissionDefinition mission, MissionLogicState state, string checkpointId, out string error)
     {
         error = state.Failure;
         if (error.Length > 0)
             return false;
-        var ids = mission.Requirements.Where(r => r.CheckpointId == checkpointId).SelectMany(r => r.ObjectiveIds).ToHashSet();
+        var ids = mission
+            .Requirements.AsValueEnumerable()
+            .Where(r => r.CheckpointId == checkpointId)
+            .SelectMany(r => r.ObjectiveIds)
+            .ToHashSet();
         if (checkpointId.Length == 0)
-            ids.UnionWith(mission.Objectives.Where(o => o.Required).Select(o => o.Id));
-        foreach (var objective in mission.Objectives.Where(o => o.Required && ids.Contains(o.Id)))
+            ids.UnionWith(mission.Objectives.AsValueEnumerable().Where(o => o.Required).Select(o => o.Id).ToArray());
+        foreach (var objective in mission.Objectives.AsValueEnumerable().Where(o => o.Required && ids.Contains(o.Id)))
         {
             var progress = Progress(state, objective.Id);
             if (progress.Status == "Completed")
@@ -312,7 +323,7 @@ public static class MissionLogic
                 && progress.Status == "Active"
             )
             {
-                var actors = state.Actors.Values.Where(a => Matches(objective, a)).ToArray();
+                var actors = state.Actors.Values.AsValueEnumerable().Where(a => Matches(objective, a)).ToArray();
                 if (actors.Length == 1 && actors[0].Spawned && !actors[0].Dead)
                     continue;
             }

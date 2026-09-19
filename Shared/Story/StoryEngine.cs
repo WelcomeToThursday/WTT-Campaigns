@@ -18,7 +18,7 @@ public sealed class StoryEngine(
     public void Start(string entryId, string conversationId)
     {
         var entry =
-            definition.EntryPoints.SingleOrDefault(e => e.Id == entryId)
+            definition.EntryPoints.AsValueEnumerable().SingleOrDefault(e => e.Id == entryId)
             ?? throw new InvalidOperationException("Unknown conversation entry point.");
         if (entry.Kind == "InLobby" && facts.InRaid || entry.Kind != "InLobby" && !facts.InRaid)
         {
@@ -45,7 +45,10 @@ public sealed class StoryEngine(
         var conversation = RequireConversation(conversationId);
         facts.TraderId = conversation.TraderId;
         var line =
-            StoryRules.EligibleLines(definition, state, facts).SingleOrDefault(l => l.Id == lineId && l.Side == "Player")
+            StoryRules
+                .EligibleLines(definition, state, facts)
+                .AsValueEnumerable()
+                .SingleOrDefault(l => l.Id == lineId && l.Side == "Player")
             ?? throw new InvalidOperationException("This reply is no longer available.");
         Execute(line);
         Advance();
@@ -69,7 +72,7 @@ public sealed class StoryEngine(
                     SetVariable(action.Target, action.Value, action.Scope);
                     break;
                 case StoryActionType.DiaryNote:
-                    if (!definition.Notes.Any(n => n.Id == action.Target))
+                    if (!definition.Notes.AsValueEnumerable().Any(n => n.Id == action.Target))
                     {
                         throw new InvalidOperationException("Unknown journal note.");
                     }
@@ -132,7 +135,7 @@ public sealed class StoryEngine(
 
     private void SetVariable(string id, int value, StoryVariableScope scope)
     {
-        var variable = definition.Variables.Single(v => v.Id == id);
+        var variable = definition.Variables.AsValueEnumerable().Single(v => v.Id == id);
         if (variable.Scope != scope)
         {
             throw new InvalidOperationException("Incorrect variable scope.");
@@ -149,7 +152,7 @@ public sealed class StoryEngine(
 
     private void EnterDialog(string id, string startPoint)
     {
-        var dialog = definition.Dialogs.Single(d => d.Id == id);
+        var dialog = definition.Dialogs.AsValueEnumerable().Single(d => d.Id == id);
         var conversation = RequireConversation(state.Conversation?.Id ?? "");
         if (dialog.TraderId != conversation.TraderId)
         {
@@ -158,7 +161,7 @@ public sealed class StoryEngine(
         conversation.DialogId = id;
         if (dialog.MainVariable.Length > 0)
         {
-            var variable = definition.Variables.Single(v => v.Id == dialog.MainVariable);
+            var variable = definition.Variables.AsValueEnumerable().Single(v => v.Id == dialog.MainVariable);
             if (startPoint.Length > 0 || variable.Scope == StoryVariableScope.Dialogue)
             {
                 var initial = startPoint.Length == 0 ? variable.InitialValue : dialog.StartPoints[startPoint];
@@ -174,13 +177,15 @@ public sealed class StoryEngine(
         conversation.RandomValues.Clear();
         foreach (
             var group in definition
-                .Dialogs.Single(d => d.Id == conversation.DialogId)
-                .Lines.Where(l => l.Random != null)
+                .Dialogs.AsValueEnumerable()
+                .Single(d => d.Id == conversation.DialogId)
+                .Lines.AsValueEnumerable()
+                .Where(l => l.Random != null)
                 .Select(l => l.Random!)
                 .GroupBy(r => r.VariableId + ":" + r.Group)
         )
         {
-            conversation.RandomValues[group.Key] = random(group.First().Maximum);
+            conversation.RandomValues[group.Key] = random(group.AsValueEnumerable().First().Maximum);
         }
     }
 
@@ -202,7 +207,7 @@ public sealed class StoryEngine(
         var visited = new HashSet<string>();
         while (state.Conversation is { Closed: false })
         {
-            var candidates = StoryRules.EligibleLines(definition, state, facts).Where(l => l.Side == "Npc").ToArray();
+            var candidates = StoryRules.EligibleLines(definition, state, facts).AsValueEnumerable().Where(l => l.Side == "Npc").ToArray();
             if (candidates.Length == 0)
             {
                 return;

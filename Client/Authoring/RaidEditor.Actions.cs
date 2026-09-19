@@ -1,9 +1,9 @@
 using System.Globalization;
 using EFT.Ballistics;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
-using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.Shared.Story;
 using WTT.Campaigns.UI.Controls;
@@ -11,7 +11,6 @@ using ZLinq;
 using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
 using Dropdown = WTT.Campaigns.Client.Authoring.Views.EditorChoice;
 using InputField = WTT.Campaigns.Client.Authoring.Views.EditorInput;
-using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -42,6 +41,7 @@ public sealed partial class RaidEditor
         var view = new RaidEditorView();
         try
         {
+            BindConsole(view);
             BindEnvironment(view);
             BindHazards(view);
             BindCameraControls(view);
@@ -58,7 +58,7 @@ public sealed partial class RaidEditor
                         }
                         catch (Exception e)
                         {
-                            _notice = e.Message;
+                            ReportFeedback(e.Message, ConsoleSeverity.Error);
                             Plugin.Error(e);
                         }
                     }
@@ -77,7 +77,7 @@ public sealed partial class RaidEditor
                         }
                         catch (Exception e)
                         {
-                            _notice = e.Message;
+                            ReportFeedback(e.Message, ConsoleSeverity.Error);
                             Plugin.Error(e);
                         }
                     }
@@ -122,7 +122,7 @@ public sealed partial class RaidEditor
                 "Next",
                 () =>
                 {
-                    if ((_page + 1) * LibraryPageSize < LibraryTotal)
+                    if ((_page + 1) * Catalog.LibraryPageSize < Catalog.LibraryTotal)
                     {
                         _page++;
                     }
@@ -172,7 +172,7 @@ public sealed partial class RaidEditor
                 () =>
                 {
                     _picking = true;
-                    _notice = "Click a scene object. Use Select parent to choose its binding target.";
+                    ReportFeedback("Click a scene object. Use Select parent to choose its binding target.");
                 }
             );
             Button(
@@ -214,8 +214,8 @@ public sealed partial class RaidEditor
                     () =>
                     {
                         CancelDrag();
-                        if (SceneWorkspace)
-                            SceneTransform(value);
+                        if (Catalog.SceneWorkspace)
+                            Catalog.SceneTransform(value);
                         else
                             _tool = value;
                         Refresh();
@@ -259,7 +259,7 @@ public sealed partial class RaidEditor
                     }
                     else if (_mode == "AI")
                     {
-                        EditAiName(value);
+                        Ai.EditAiName(value);
                     }
                     else
                     {
@@ -303,7 +303,7 @@ public sealed partial class RaidEditor
                                 {
                                     if (_mode == "AI")
                                     {
-                                        EditAiVector(property, axis, number);
+                                        Ai.EditAiVector(property, axis, number);
                                         return;
                                     }
                                     EditPoint(point =>
@@ -347,7 +347,7 @@ public sealed partial class RaidEditor
                             {
                                 if (_mode == "AI")
                                 {
-                                    EditAiRadius(number);
+                                    Ai.EditAiRadius(number);
                                 }
                                 else
                                     EditPoint(p =>
@@ -379,9 +379,9 @@ public sealed partial class RaidEditor
             );
             Button("KeepLocal", () => _session?.Resolve(true));
             Button("KeepRemote", () => _session?.Resolve(false));
-            BindMapControls(view);
-            BindSceneControls(view);
-            BindAiControls(view);
+            Maps.Bind(view);
+            Catalog.Bind(view);
+            Ai.Bind(view);
             view.ToolContext = _mode == "Maps" ? "Layouts" : _mode;
             if (!view.Windows.LayoutRestored)
                 view.Windows.BrowseCategory();
@@ -402,24 +402,24 @@ public sealed partial class RaidEditor
         }
         else
         {
-            _notice = "Enter a finite number using a decimal point.";
+            ReportFeedback("Enter a finite number using a decimal point.", ConsoleSeverity.Warning);
         }
     }
 
     private void EditPoint(Action<SpatialCapture> action)
     {
-        if (AiWorkspace)
+        if (Ai.AiWorkspace)
         {
-            var proxy = AiSelectedPoint();
+            var proxy = Ai.AiSelectedPoint();
             if (proxy == null)
                 return;
             action(proxy);
-            EditAiPoint(proxy);
+            Ai.EditAiPoint(proxy);
             return;
         }
-        if (SceneWorkspace && !CanTransformScene("Move"))
+        if (Catalog.SceneWorkspace && !CanTransformScene("Move"))
             return;
-        if (SceneWorkspace && MapPoint == null)
+        if (Catalog.SceneWorkspace && Maps.MapPoint == null)
         {
             CommitSceneSelection(action);
             return;
@@ -428,7 +428,7 @@ public sealed partial class RaidEditor
         _session?.Edit(s =>
         {
             var point =
-                (MapWorkspace || SceneWorkspace)
+                (MapWorkspace || Catalog.SceneWorkspace)
                     ? s.MapLayouts.AsValueEnumerable().SelectMany(MapLayoutRules.Points).FirstOrDefault(p => p.Id == id)
                     : s.Zones.AsValueEnumerable().Cast<SpatialCapture>().Concat(s.Captures).FirstOrDefault(p => p.Id == id);
             if (point != null)
@@ -468,7 +468,7 @@ public sealed partial class RaidEditor
     {
         if (_session?.Definition == null)
         {
-            _notice = "Connect a draft in the web editor first.";
+            ReportFeedback("Connect a draft in the web editor first.", ConsoleSeverity.Warning);
             return;
         }
         var id = Guid.NewGuid().ToString("N").Substring(0, 24);
@@ -481,7 +481,7 @@ public sealed partial class RaidEditor
         var layoutId = (!MissionContent || !_zoneCreateShared) && EditorMode.Ready ? _layoutId : "";
         if ((!MissionContent || !_zoneCreateShared) && EditorMode.Ready && Layout == null)
         {
-            _notice = "Select a layout in Layouts before creating a layout-owned zone.";
+            ReportFeedback("Select a layout in Layouts before creating a layout-owned zone.", ConsoleSeverity.Warning);
             Refresh();
             return;
         }
@@ -510,7 +510,7 @@ public sealed partial class RaidEditor
             return;
         if (!shared && (!EditorMode.Ready || Layout == null))
         {
-            _notice = "Select a layout in Layouts before assigning layout ownership.";
+            ReportFeedback("Select a layout in Layouts before assigning layout ownership.", ConsoleSeverity.Warning);
             Refresh();
             return;
         }
@@ -520,16 +520,18 @@ public sealed partial class RaidEditor
             var layoutId = shared ? "" : _layoutId;
             if (!SetZoneLayout(zone.Id, layoutId, out var error))
             {
-                _notice = error;
+                ReportFeedback(error, ConsoleSeverity.Warning);
                 Refresh();
                 return;
             }
         }
 
         _zoneCreateShared = shared;
-        _notice = shared
-            ? "New zones will be Shared across layouts."
-            : "New zones will belong to " + (Layout?.Name ?? "the selected layout") + ".";
+        ReportFeedback(
+            shared
+                ? "New zones will be Shared across layouts."
+                : "New zones will belong to " + (Layout?.Name ?? "the selected layout") + "."
+        );
         Refresh();
     }
 
@@ -540,7 +542,7 @@ public sealed partial class RaidEditor
 
         if (!SetZoneLayout(zone.Id, layoutId, out var error))
         {
-            _notice = error;
+            ReportFeedback(error, ConsoleSeverity.Warning);
             Refresh();
             return;
         }
@@ -551,7 +553,7 @@ public sealed partial class RaidEditor
         var owner = string.IsNullOrEmpty(layoutId)
             ? "Shared"
             : _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == layoutId)?.Name ?? layoutId;
-        _notice = "Zone scope changed to " + owner + ".";
+        ReportFeedback("Zone scope changed to " + owner + ".");
         Refresh();
     }
 
@@ -603,23 +605,23 @@ public sealed partial class RaidEditor
 
     private void Place(bool aim)
     {
-        if (AiWorkspace)
+        if (Ai.AiWorkspace)
         {
-            if (!TryAiPlacement(out var aiPosition, out var aiScene))
+            if (!Ai.TryAiPlacement(out var aiPosition, out var aiScene))
                 return;
-            var selected = AiSelectedPoint();
+            var selected = Ai.AiSelectedPoint();
             if (selected == null)
                 return;
             selected.Position = ZoneRuntime.Vector(aiPosition);
             selected.Scene = aiScene;
-            EditAiPoint(selected);
+            Ai.EditAiPoint(selected);
             return;
         }
         var scene = PlayerScene();
         var position = aim ? Aim(out scene) : _player?.Transform.position;
         if (position == null)
         {
-            _notice = "Aim at scene geometry first.";
+            ReportFeedback("Aim at scene geometry first.", ConsoleSeverity.Warning);
             return;
         }
         EditPoint(point =>
@@ -638,7 +640,7 @@ public sealed partial class RaidEditor
 
         if (sceneObject && !_picked)
         {
-            _notice = "Pick a scene object first.";
+            ReportFeedback("Pick a scene object first.", ConsoleSeverity.Warning);
             return;
         }
         var id = Selected is not SeasonZone && Selected != null ? Selected.Id : Guid.NewGuid().ToString("N").Substring(0, 24);
@@ -664,14 +666,14 @@ public sealed partial class RaidEditor
 
     private void Duplicate()
     {
-        if (AiWorkspace)
+        if (Ai.AiWorkspace)
         {
-            DuplicateAiSelection();
+            Ai.DuplicateAiSelection();
             return;
         }
-        if (MapWorkspace || SceneWorkspace)
+        if (MapWorkspace || Catalog.SceneWorkspace)
         {
-            DuplicateMapRecord();
+            Maps.DuplicateMapRecord();
             return;
         }
         if (_mode == "Bindings" && Binding != null)
@@ -713,15 +715,15 @@ public sealed partial class RaidEditor
 
     private void Delete()
     {
-        if (AiWorkspace)
+        if (Ai.AiWorkspace)
         {
-            DeleteAiSelection();
+            Ai.DeleteAiSelection();
             Refresh();
             return;
         }
-        if (MapWorkspace || SceneWorkspace)
+        if (MapWorkspace || Catalog.SceneWorkspace)
         {
-            DeleteMapRecord();
+            Maps.DeleteMapRecord();
             return;
         }
         if (_session?.Definition == null)
@@ -740,7 +742,7 @@ public sealed partial class RaidEditor
         var uses = SpatialRules.Uses(_session.Definition, _selected).AsValueEnumerable().ToArray();
         if (uses.Length > 0)
         {
-            _notice = "Reassign before deleting: " + string.Join(", ", uses);
+            ReportFeedback("Reassign before deleting: " + string.Join(", ", uses), ConsoleSeverity.Warning);
             return;
         }
         _session.Edit(s =>
@@ -764,10 +766,10 @@ public sealed partial class RaidEditor
             if (_session?.Definition?.MapLayouts.AsValueEnumerable().Any(l => l.Id == id) == true)
                 _layoutId = id;
             _selected = id;
-            if (EditorMode.Ready && MapPoint is MapObjectEdit or MapLootPlacement)
+            if (EditorMode.Ready && Maps.MapPoint is MapObjectEdit or MapLootPlacement)
             {
                 EnterSceneSelection();
-                SelectSceneRow(id);
+                Catalog.SelectSceneRow(id);
             }
         }
         else if (_mode == "AI")
@@ -777,8 +779,8 @@ public sealed partial class RaidEditor
         }
         else if (_mode == "Scene")
         {
-            if (SceneWorkspace)
-                SelectSceneRow(id);
+            if (Catalog.SceneWorkspace)
+                Catalog.SelectSceneRow(id);
             else
                 _picked = _sceneIndex.Entries[int.Parse(id, CultureInfo.InvariantCulture)].Target;
         }
@@ -851,7 +853,7 @@ public sealed partial class RaidEditor
         {
             if (Binding.Kind is not ("Trigger" or "Cinematic"))
             {
-                _notice = "Only Trigger and Cinematic events accept zones.";
+                ReportFeedback("Only Trigger and Cinematic events accept zones.", ConsoleSeverity.Warning);
                 return;
             }
             var id = Binding.Id;
@@ -867,7 +869,7 @@ public sealed partial class RaidEditor
         var error = ObjectError();
         if (error.Length > 0)
         {
-            _notice = error;
+            ReportFeedback(error, ConsoleSeverity.Warning);
             return;
         }
         Capture(true);
@@ -896,17 +898,17 @@ public sealed partial class RaidEditor
 
         if (Selected == null)
         {
-            _notice = "Select the captured record first.";
+            ReportFeedback("Select the captured record first.", ConsoleSeverity.Warning);
             return;
         }
         if (_task.Tool == "Zone" && Selected is not SeasonZone)
         {
-            _notice = "This task needs a zone.";
+            ReportFeedback("This task needs a zone.", ConsoleSeverity.Warning);
             return;
         }
         if (_task.Tool == "Object" && (Selected.ObjectPath.Length == 0 || ObjectError().Length > 0))
         {
-            _notice = ObjectError();
+            ReportFeedback(ObjectError(), ConsoleSeverity.Warning);
             return;
         }
         _session.TaskStatus(_task, "Completed", Selected.Id);
@@ -937,7 +939,7 @@ public sealed partial class RaidEditor
             _mode = "Layouts";
         view.ToolContext = _mode == "Maps" ? "Layouts" : _mode;
         ValidateToolSelection();
-        view.SetToolkitContext(ToolkitContext);
+        view.SetToolkitContext(Catalog.ToolkitContext);
         view.Text(
             "Connection",
             (_session.Definition?.Name ?? "Waiting for a connected draft")
@@ -949,7 +951,7 @@ public sealed partial class RaidEditor
             "Request",
             _task == null ? "RAID CONTINUES \u00B7 Player remains in place" : "RAID CONTINUES \u00B7 " + _task.Tool + " capture requested"
         );
-        view.Feedback(_session.Status, _aiPreviewStatus, _notice);
+        view.Feedback(_session.Status, _aiPreviewStatus);
         view.Conflict(_session);
         // Do not repurpose or hide a row between pointer-down and pointer-up.
         if (view.RowPressed)
@@ -961,6 +963,8 @@ public sealed partial class RaidEditor
             view.Highlight(mode, _mode == mode);
         RefreshToolBrowser();
         view.Caption("Snap", _snap ? "Snap: on" : "Snap: off");
+        view.Caption("ViewportSnap", _snap ? "Snap: on" : "Snap: off");
+        view.Highlight("ViewportSnap", _snap);
         var point = Selected;
         view.Caption("AddBox", _mode == "Bindings" ? "+ Trigger" : "+ Box");
         view.Caption("AddSphere", _mode == "Bindings" ? "+ Interaction" : "+ Sphere");
@@ -1036,10 +1040,10 @@ public sealed partial class RaidEditor
 
         view.Text("Details", details);
         view.Caption("UseObject", point is SeasonZone && Binding != null ? "Bind selected zone" : "Use scene target");
-        RefreshMaps(geometry);
+        Maps.RefreshMaps(geometry);
         RefreshWorkspace();
-        RefreshAiWorkspace();
-        PresentScene();
+        Ai.RefreshAiWorkspace();
+        Catalog.PresentScene();
         RefreshOtherToolBrowsers();
         PresentContentMode();
     }
@@ -1047,26 +1051,26 @@ public sealed partial class RaidEditor
     private void RefreshToolBrowser()
     {
         var view = _view!;
-        var capacity = SceneWorkspace && _sceneTab == "Catalog" ? view.CatalogPageSize : 10;
-        if (_catalogPageSize != capacity && _mode == "Scene")
+        var capacity = Catalog.SceneWorkspace && Catalog.SceneTab == "Catalog" ? view.CatalogPageSize : 10;
+        if (Catalog.CatalogPageSize != capacity && _mode == "Scene")
         {
-            _page = CatalogGridLayout.Repage(_page, _catalogPageSize, capacity);
-            _catalogPageSize = capacity;
+            _page = CatalogGridLayout.Repage(_page, Catalog.CatalogPageSize, capacity);
+            Catalog.CatalogPageSize = capacity;
             _libraryKey = "";
         }
         var search = view.Get<InputField>("Search").text;
-        var doorTree = SceneWorkspace && _sceneFilter == "Doors";
+        var doorTree = Catalog.SceneWorkspace && Catalog.SceneFilter == "Doors";
         var treeMode = doorTree || _mode == "AI" || EditorMode.Ready && (_mode == "Routes" && MissionContent || _mode == "Zones");
         var libraryKey =
-            $"{_mode}|{_sceneTab}|{_sceneFilter}|{_catalogSource}|{_assetCatalog?.Revision}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
+            $"{_mode}|{Catalog.SceneTab}|{Catalog.SceneFilter}|{Catalog.CatalogSource}|{Catalog.AssetRevision}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{Catalog.CatalogGeneration}|{Catalog.CatalogLoading}|{(Catalog.RemoteCatalog ? _page : 0)}";
         if (_libraryKey != libraryKey)
         {
             _libraryKey = libraryKey;
             _rows.Clear();
             if (MapWorkspace && _session.Definition != null && !treeMode)
-                MapRows();
-            else if (SceneWorkspace)
-                SceneRows(search);
+                Maps.MapRows();
+            else if (Catalog.SceneWorkspace)
+                Catalog.SceneRows(search);
             else if (_mode == "Scene")
             {
                 foreach (var entry in _sceneIndex.Search(search))
@@ -1132,16 +1136,18 @@ public sealed partial class RaidEditor
                 : "Zones:" + _layoutId;
             if (doorTree)
             {
-                var doorContext = "Doors:" + _sceneTab + ":" + _layoutId;
+                var doorContext = "Doors:" + Catalog.SceneTab + ":" + _layoutId;
                 var entries = _rows
                     .AsValueEnumerable()
-                    .Select(r => (r.Id, r.Label, _sceneRoots.TryGetValue(r.Id, out var t) && t ? t.gameObject.scene.name : "Layout doors"))
+                    .Select(r =>
+                        (r.Id, r.Label, Catalog.SceneRoots.TryGetValue(r.Id, out var t) && t ? t.gameObject.scene.name : "Layout doors")
+                    )
                     .ToArray();
                 view.RefreshTree(
                     doorContext,
-                    _session.ContentVersion + _sceneRoots.Count,
+                    _session.ContentVersion + Catalog.SceneRoots.Count,
                     search,
-                    ToolkitSelection,
+                    Catalog.ToolkitSelection,
                     expanded => EditorTreeModel.Create(doorContext, EditorLibraryTrees.Doors(entries), search, expanded)
                 );
             }
@@ -1195,15 +1201,15 @@ public sealed partial class RaidEditor
         {
             view.HideTree();
         }
-        if (!RemoteCatalog)
-            _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / LibraryPageSize));
+        if (!Catalog.RemoteCatalog)
+            _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / Catalog.LibraryPageSize));
         for (var i = 0; i < view.RowCapacity && !treeMode; i++)
         {
-            var index = LibraryOffset + i;
+            var index = Catalog.LibraryOffset + i;
             view.Get<EditorButton>("Row" + i).Identity = index < _rows.Count ? _rows[index].Id : "";
             view.Caption("Row" + i, index < _rows.Count ? _rows[index].Label : "");
             view.Get<Button>("Row" + i).interactable = index < _rows.Count;
-            view.Visible("Row" + i, i < LibraryPageSize && index < _rows.Count);
+            view.Visible("Row" + i, i < Catalog.LibraryPageSize && index < _rows.Count);
         }
         RefreshToolBrowserSummary();
         RefreshToolActions();

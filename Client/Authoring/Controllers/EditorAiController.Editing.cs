@@ -1,271 +1,58 @@
 using System.Globalization;
 using UnityEngine;
-using WTT.Campaigns.Client.Authoring.Views;
+using WTT.Campaigns.Client.Authoring.Console;
+using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
-using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
-using InputField = WTT.Campaigns.Client.Authoring.Views.EditorInput;
-using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Controllers;
 
-public sealed partial class RaidEditor
+internal sealed partial class EditorAiController
 {
     private string _aiSelectionKind = "";
 
-    private readonly struct AiSelection
-    {
-        internal AiSelection(
-            string kind,
-            MapEncounter? encounter = null,
-            MapEncounterWave? wave = null,
-            MapEncounterRosterEntry? roster = null,
-            SpatialCapture? spawn = null,
-            MapPatrolRoute? route = null,
-            SpatialCapture? waypoint = null
-        )
-        {
-            Kind = kind;
-            Encounter = encounter;
-            Wave = wave;
-            Roster = roster;
-            Spawn = spawn;
-            Route = route;
-            Waypoint = waypoint;
-        }
+    internal bool AiWorkspace => _context.ToolId == "AI";
 
-        internal string Kind { get; }
-        internal MapEncounter? Encounter { get; }
-        internal MapEncounterWave? Wave { get; }
-        internal MapEncounterRosterEntry? Roster { get; }
-        internal SpatialCapture? Spawn { get; }
-        internal MapPatrolRoute? Route { get; }
-        internal SpatialCapture? Waypoint { get; }
-        internal MapVolume? TriggerVolume => Encounter?.Trigger?.Volume;
-        internal SpatialCapture? Point =>
-            Kind switch
-            {
-                "spawn" => Spawn,
-                "waypoint" => Waypoint,
-                "trigger" => TriggerVolume,
-                _ => null,
-            };
-        internal string Id =>
-            Point?.Id
-            ?? (
-                Kind == "enc" ? Encounter?.Id
-                : Kind == "wave" ? Wave?.Id
-                : Kind == "roster" ? Roster?.Id
-                : Kind == "route" ? Route?.Id
-                : ""
-            )
-            ?? "";
-        internal string Name =>
-            Point?.Name
-            ?? (
-                Kind == "enc" ? Encounter?.Name
-                : Kind == "wave" ? Wave?.Name
-                : Kind == "roster" ? Roster?.Id
-                : Kind == "route" ? Route?.Name
-                : ""
-            )
-            ?? "";
-
-        // The default struct is used when the active layout has no matching
-        // selection. Its auto-property backing field is null until a value is
-        // assigned, so validity must tolerate the default value.
-        internal bool Valid => !string.IsNullOrEmpty(Kind);
-    }
-
-    private bool AiWorkspace => _mode == "AI";
     private bool _inspectAiNavigation;
-    private readonly List<string> _aiSpawnChoices = new();
-    private readonly List<string> _aiPatrolChoices = new();
 
-    private void BindAiControls(RaidEditorView view)
-    {
-        _ = new MissionEditorPanel(view, view.ElementForTool("AI", "AiTools"), () => _session);
-        RaidEditorAiContracts.LayoutProvider = () => Layout;
-        view.Button("AiEncounter", AddAiEncounter);
-        view.Button("AiWave", AddAiWave);
-        view.Button("AiRoster", AddAiRoster);
-        view.Button("AiSpawn", AddAiSpawn);
-        view.Button("AiPatrol", AddAiPatrol);
-        view.Button("AiWaypoint", AddAiWaypoint);
-        view.Button("AiTrigger", CycleAiTrigger);
-        view.Button("AiObserve", () => BeginAiPreview(false));
-        view.Dropdown(
-            "AiPlaytestGear",
-            i =>
-            {
-                if (!AiPreviewBusy)
-                    _aiUseProfileKit = i == 1;
-                Refresh();
-            }
-        );
-        view.Button("AiPlaytest", () => BeginAiPreview(true));
-        view.Button("TestCheckpoints", TestEditorCheckpoints);
-        view.Button("AiReset", EndAiPreview);
-        view.Button("AiSimulate", SimulateSelectedAiEvent);
-        view.Button(
-            "AiNavigation",
-            () =>
-            {
-                _inspectAiNavigation = !_inspectAiNavigation;
-                RefreshAiWorkspace();
-            }
-        );
-        view.Button("AiWaveWaitPrevious", ToggleAiWaveWait);
-        view.Dropdown("AiRosterRole", SetAiRole);
-        view.Dropdown("AiRosterDifficulty", SetAiDifficulty);
-        view.Dropdown(
-            "AiRosterSpawnNext",
-            index =>
-            {
-                var selected = AiSelected(out var kind);
-                if (kind != "roster" || selected.Roster == null || index <= 0 || index > _aiSpawnChoices.Count)
-                    return;
-                var ids = new List<string>(selected.Roster.SpawnPointIds);
-                var id = _aiSpawnChoices[index - 1];
-                if (!ids.Remove(id))
-                    ids.Add(id);
-                EditAiSpawnPoints(string.Join(",", ids));
-            }
-        );
-        view.Dropdown(
-            "AiRosterPatrolNext",
-            index =>
-            {
-                if (index >= 0 && index < _aiPatrolChoices.Count)
-                    EditAiRosterText("PatrolRouteId", _aiPatrolChoices[index]);
-            }
-        );
-        view.Dropdown("AiPace", SetAiPace);
-        view.Dropdown("AiCompletion", SetAiCompletion);
-        view.Input("AiTriggerEventId", value => EditAiTriggerText("EventId", value));
-        view.Input("AiTriggerZoneId", value => EditAiTriggerText("ZoneId", value));
-        view.Input("AiWaveDelaySeconds", value => EditAiWaveDelay(value));
-        view.Input("AiRosterCount", value => EditAiRosterCount(value));
-        view.Input("AiRosterSquadId", value => EditAiRosterText("SquadId", value));
-        view.Input("AiRosterSpawnPoints", EditAiSpawnPoints);
-        view.Input("AiRosterPatrolRoute", value => EditAiRosterText("PatrolRouteId", value));
-        view.Input("AiWaypointWaitSeconds", EditAiWaypointWait);
-    }
+    private readonly List<string> _aiSpawnChoices = new();
+
+    private readonly List<string> _aiPatrolChoices = new();
 
     private void EditAi(Action<MapLayout> edit)
     {
-        if (_session?.Definition == null || AiPreviewBusy || _session.Previewing || !AiWorkspace || _layoutId.Length == 0)
+        if (
+            _context.Session?.Definition == null
+            || _context.AiPreviewBusy
+            || _context.Session.Previewing
+            || !AiWorkspace
+            || _context.LayoutId.Length == 0
+        )
             return;
-        _session.Edit(definition =>
+        _context.Session.Edit(definition =>
         {
-            var layout = definition.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == _layoutId);
+            var layout = definition.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == _context.LayoutId);
             if (layout == null)
                 throw new InvalidOperationException("Select a mission layout before authoring AI encounters.");
             edit(layout);
         });
-        _libraryKey = "";
-        Refresh();
+        _context.LibraryKey = "";
+        _context.Refresh();
     }
-
-    private static string Display(string? value, string fallback) => string.IsNullOrWhiteSpace(value) ? fallback : value;
 
     private static IEnumerable<T> Items<T>(IEnumerable<T>? values) => values ?? Array.Empty<T>();
 
-    private static string AiRoleDisplay(string? role) =>
-        role switch
-        {
-            "assault" => "Scav",
-            "pmcUSEC" => "USEC",
-            "pmcBEAR" => "BEAR",
-            null or "" => "Unsupported",
-            _ => "Unsupported · " + role,
-        };
-
-    private AiSelection AiSelected(out string kind)
+    internal EditorAiSelection AiSelected(out string kind)
     {
         kind = "";
-        if (Layout == null || !TryAiSelection(Layout, _selected, out var selection))
+        if (_context.Layout == null || !EditorAiSelection.TryResolve(_context.Layout, _context.SelectionId, out var selection))
             return default;
         kind = selection.Kind;
         return selection;
     }
 
-    private static bool TryAiSelection(MapLayout layout, string selected, out AiSelection selection)
-    {
-        selection = default;
-        var parts = selected.Split(':');
-        if (parts.Length < 2)
-            return false;
-
-        if (parts[0] == "enc")
-        {
-            var encounter = (Items(layout.Encounters)).AsValueEnumerable().FirstOrDefault(e => e?.Id == parts[1]);
-            if (encounter == null)
-                return false;
-            selection = new AiSelection("enc", encounter: encounter);
-            return true;
-        }
-
-        if (parts[0] == "trigger")
-        {
-            var encounter = (Items(layout.Encounters)).AsValueEnumerable().FirstOrDefault(e => e?.Id == parts[1]);
-            if (encounter?.Trigger?.Volume == null)
-                return false;
-            selection = new AiSelection("trigger", encounter: encounter);
-            return true;
-        }
-
-        if (parts[0] == "spawn")
-        {
-            var spawn = (Items(layout.SpawnPoints)).AsValueEnumerable().FirstOrDefault(p => p?.Id == parts[1]);
-            if (spawn == null)
-                return false;
-            selection = new AiSelection("spawn", spawn: spawn);
-            return true;
-        }
-
-        if (parts[0] == "route")
-        {
-            var route = (Items(layout.PatrolRoutes)).AsValueEnumerable().FirstOrDefault(r => r?.Id == parts[1]);
-            if (route == null)
-                return false;
-            selection = new AiSelection("route", route: route);
-            return true;
-        }
-
-        if (parts[0] == "waypoint" && parts.Length >= 3)
-        {
-            var route = (Items(layout.PatrolRoutes)).AsValueEnumerable().FirstOrDefault(r => r?.Id == parts[1]);
-            var waypoint = Items(route?.Waypoints).AsValueEnumerable().FirstOrDefault(p => p?.Id == parts[2]);
-            if (route == null || waypoint == null)
-                return false;
-            selection = new AiSelection("waypoint", route: route, waypoint: waypoint);
-            return true;
-        }
-
-        var encounterForChild = (Items(layout.Encounters)).AsValueEnumerable().FirstOrDefault(e => e?.Id == parts[1]);
-        var wave = Items(encounterForChild?.Waves).AsValueEnumerable().FirstOrDefault(w => w?.Id == (parts.Length >= 3 ? parts[2] : ""));
-        if (wave == null)
-            return false;
-        if (parts[0] == "wave")
-        {
-            selection = new AiSelection("wave", encounter: encounterForChild, wave: wave);
-            return true;
-        }
-
-        if (parts[0] == "roster" && parts.Length >= 4)
-        {
-            var roster = Items(wave.Roster).AsValueEnumerable().FirstOrDefault(r => r?.Id == parts[3]);
-            if (roster == null)
-                return false;
-            selection = new AiSelection("roster", encounter: encounterForChild, wave: wave, roster: roster);
-            return true;
-        }
-        return false;
-    }
-
-    private SpatialCapture? AiSelectedPoint()
+    internal SpatialCapture? AiSelectedPoint()
     {
         var selected = AiSelected(out _);
         var point = selected.Point;
@@ -278,9 +65,9 @@ public sealed partial class RaidEditor
 
     private List<string> ValidateAiLayout()
     {
-        if (_session?.Definition == null)
+        if (_context.Session?.Definition == null)
             return new List<string>();
-        var layout = _session.Definition.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == _layoutId);
+        var layout = _context.Session.Definition.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == _context.LayoutId);
         if (layout == null)
             return new List<string> { "Select a mission layout before previewing encounters." };
         return MapEncounterRules.Errors(layout, new RaidEditorAiContracts.Navigation(), true, true);
@@ -293,15 +80,15 @@ public sealed partial class RaidEditor
         var error = RaidEditorAiContracts.RouteError(candidate);
         if (error.Length == 0)
             return true;
-        _notice = "Edit rejected: " + error;
+        _context.ReportFeedback("Edit rejected: " + error, ConsoleSeverity.Warning);
         return false;
     }
 
     private bool TryValidateSelectedAiWaypoint(string selectedId, Action<SpatialCapture> edit)
     {
         if (
-            Layout == null
-            || !TryAiSelection(Layout, selectedId, out var selected)
+            _context.Layout == null
+            || !EditorAiSelection.TryResolve(_context.Layout, selectedId, out var selected)
             || selected.Kind != "waypoint"
             || selected.Route == null
             || selected.Waypoint == null
@@ -321,9 +108,9 @@ public sealed partial class RaidEditor
 
     private void AddAiEncounter()
     {
-        if (Layout == null)
+        if (_context.Layout == null)
         {
-            _notice = "Select a layout before adding an encounter.";
+            _context.ReportFeedback("Select a layout before adding an encounter.", ConsoleSeverity.Warning);
             return;
         }
         var encounterId = RaidEditorAiContracts.Id();
@@ -359,8 +146,8 @@ public sealed partial class RaidEditor
                 }
             )
         );
-        _selected = "enc:" + encounterId;
-        Refresh();
+        _context.SelectionId = "enc:" + encounterId;
+        _context.Refresh();
     }
 
     private void AddAiWave()
@@ -368,7 +155,7 @@ public sealed partial class RaidEditor
         var selected = AiSelected(out var kind);
         if (!selected.Valid || selected.Encounter == null || kind != "enc")
         {
-            _notice = "Select an encounter before adding a wave.";
+            _context.ReportFeedback("Select an encounter before adding a wave.", ConsoleSeverity.Warning);
             return;
         }
         var encounterId = selected.Encounter.Id;
@@ -378,8 +165,8 @@ public sealed partial class RaidEditor
             var encounter = layout.Encounters.AsValueEnumerable().FirstOrDefault(e => e.Id == encounterId);
             encounter?.Waves.Add(new MapEncounterWave { Id = id, Name = "Wave" });
         });
-        _selected = "wave:" + encounterId + ":" + id;
-        Refresh();
+        _context.SelectionId = "wave:" + encounterId + ":" + id;
+        _context.Refresh();
     }
 
     private void AddAiRoster()
@@ -389,7 +176,7 @@ public sealed partial class RaidEditor
         var wave = kind == "enc" ? Items(encounter?.Waves).AsValueEnumerable().FirstOrDefault() : selected.Wave;
         if (!selected.Valid || encounter == null || wave == null || kind is not ("enc" or "wave" or "roster"))
         {
-            _notice = "Select an encounter or wave before adding a roster entry.";
+            _context.ReportFeedback("Select an encounter or wave before adding a roster entry.", ConsoleSeverity.Warning);
             return;
         }
         var encounterId = encounter.Id;
@@ -414,24 +201,24 @@ public sealed partial class RaidEditor
                 }
             );
         });
-        _selected = "roster:" + encounterId + ":" + waveId + ":" + id;
-        Refresh();
+        _context.SelectionId = "roster:" + encounterId + ":" + waveId + ":" + id;
+        _context.Refresh();
     }
 
-    private bool TryAiPlacement(out Vector3 position, out string scene)
+    internal bool TryAiPlacement(out Vector3 position, out string scene)
     {
         position = default;
         scene = "";
-        if (!_open || !_camera || !TryRouteFloor(_flyPosition, 20, out var floor))
+        if (!_context.IsOpen || !_context.Camera || !_context.TryRouteFloor(_context.CameraPosition, 20, out var floor))
         {
-            _notice = "Move the editor camera above a floor within 20 metres to place an AI marker.";
+            _context.ReportFeedback("Move the editor camera above a floor within 20 metres to place an AI marker.");
             return false;
         }
         position = floor.point;
         scene = floor.transform.gameObject.scene.name;
         if (!RaidEditorAiContracts.TryNav(position, out var safe) || (safe - position).sqrMagnitude > .2f * .2f)
         {
-            _notice = "Placement rejected: choose a clear NavMesh standing area.";
+            _context.ReportFeedback("Placement rejected: choose a clear NavMesh standing area.", ConsoleSeverity.Warning);
             return false;
         }
         position = safe;
@@ -440,7 +227,7 @@ public sealed partial class RaidEditor
 
     private void AddAiSpawn()
     {
-        if (Layout == null || !TryAiPlacement(out var position, out var scene))
+        if (_context.Layout == null || !TryAiPlacement(out var position, out var scene))
             return;
         var id = RaidEditorAiContracts.Id();
         EditAi(layout =>
@@ -449,22 +236,22 @@ public sealed partial class RaidEditor
                 {
                     Id = id,
                     Name = "New spawn point",
-                    Location = _session!.Location,
+                    Location = _context.Session!.Location,
                     Scene = scene,
                     Position = ZoneRuntime.Vector(position),
-                    Rotation = new SpatialVector { Y = _flyRotation.eulerAngles.y },
+                    Rotation = new SpatialVector { Y = _context.CameraRotation.eulerAngles.y },
                 }
             )
         );
-        _selected = "spawn:" + id;
-        Refresh();
+        _context.SelectionId = "spawn:" + id;
+        _context.Refresh();
     }
 
     private void AddAiPatrol()
     {
-        if (Layout == null)
+        if (_context.Layout == null)
         {
-            _notice = "Select a layout before adding a patrol route.";
+            _context.ReportFeedback("Select a layout before adding a patrol route.", ConsoleSeverity.Warning);
             return;
         }
         var id = RaidEditorAiContracts.Id();
@@ -479,8 +266,8 @@ public sealed partial class RaidEditor
                 }
             )
         );
-        _selected = "route:" + id;
-        Refresh();
+        _context.SelectionId = "route:" + id;
+        _context.Refresh();
     }
 
     private void AddAiWaypoint()
@@ -492,7 +279,7 @@ public sealed partial class RaidEditor
             : null;
         if (route == null || !TryAiPlacement(out var position, out var scene))
         {
-            _notice = "Select a patrol route, then place its waypoint on the NavMesh.";
+            _context.ReportFeedback("Select a patrol route, then place its waypoint on the NavMesh.", ConsoleSeverity.Warning);
             return;
         }
         var routeId = route.Id;
@@ -501,10 +288,10 @@ public sealed partial class RaidEditor
         {
             Id = id,
             Name = "Waypoint " + ((route.Waypoints?.Count ?? 0) + 1),
-            Location = _session!.Location,
+            Location = _context.Session!.Location,
             Scene = scene,
             Position = ZoneRuntime.Vector(position),
-            Rotation = new SpatialVector { Y = _flyRotation.eulerAngles.y },
+            Rotation = new SpatialVector { Y = _context.CameraRotation.eulerAngles.y },
         };
         if (
             !TryValidateAiRoute(
@@ -524,54 +311,31 @@ public sealed partial class RaidEditor
                 throw new InvalidOperationException("The selected patrol route no longer exists.");
             MapPatrolRouteEditing.Append(target, RaidEditorSession.Copy(waypoint));
         });
-        _selected = "waypoint:" + routeId + ":" + id;
-        Refresh();
+        _context.SelectionId = "waypoint:" + routeId + ":" + id;
+        _context.Refresh();
     }
 
-    private void EditAiName(string value)
+    internal void EditAiName(string value)
     {
-        var selectedId = _selected;
+        var selectedId = _context.SelectionId;
         EditAi(layout =>
         {
-            if (!TryAiSelection(layout, selectedId, out var selected))
+            if (!EditorAiSelection.TryResolve(layout, selectedId, out var selected))
                 return;
-            var name = value.Trim();
-            switch (selected.Kind)
-            {
-                case "enc":
-                    if (selected.Encounter != null)
-                        selected.Encounter.Name = name;
-                    break;
-                case "wave":
-                    if (selected.Wave != null)
-                        selected.Wave.Name = name;
-                    break;
-                case "roster":
-                    break;
-                case "spawn":
-                case "waypoint":
-                case "trigger":
-                    if (selected.Point != null)
-                        selected.Point.Name = name;
-                    break;
-                case "route":
-                    if (selected.Route != null)
-                        selected.Route.Name = name;
-                    break;
-            }
+            selected.Rename(value);
         });
     }
 
-    private void EditAiPoint(SpatialCapture point)
+    internal void EditAiPoint(SpatialCapture point)
     {
-        var selectedId = _selected;
+        var selectedId = _context.SelectionId;
         if (
             point.Position == null
             || !RaidEditorAiContracts.TryNav(ZoneRuntime.Vector(point.Position), out var safe)
             || (safe - ZoneRuntime.Vector(point.Position)).sqrMagnitude > .001f
         )
         {
-            _notice = "Position rejected: it is not on a clear NavMesh standing area.";
+            _context.ReportFeedback("Position rejected: it is not on a clear NavMesh standing area.", ConsoleSeverity.Warning);
             return;
         }
         if (
@@ -589,7 +353,7 @@ public sealed partial class RaidEditor
             return;
         EditAi(layout =>
         {
-            if (!TryAiSelection(layout, selectedId, out var selected) || selected.Point == null)
+            if (!EditorAiSelection.TryResolve(layout, selectedId, out var selected) || selected.Point == null)
                 return;
             var target = selected.Point;
             target.Name = point.Name;
@@ -604,13 +368,13 @@ public sealed partial class RaidEditor
         });
     }
 
-    private void DuplicateAiSelection()
+    internal void DuplicateAiSelection()
     {
         var selected = AiSelected(out var kind);
         var sourceId = selected.Id;
         if (!selected.Valid || kind is not ("spawn" or "route" or "enc"))
         {
-            _notice = "Select an encounter, spawn point or patrol route to duplicate it.";
+            _context.ReportFeedback("Select an encounter, spawn point or patrol route to duplicate it.", ConsoleSeverity.Warning);
             return;
         }
         var id = RaidEditorAiContracts.Id();
@@ -648,17 +412,17 @@ public sealed partial class RaidEditor
                 layout.Encounters.Add(copy);
             }
         });
-        _selected = kind + ":" + id;
-        Refresh();
+        _context.SelectionId = kind + ":" + id;
+        _context.Refresh();
     }
 
-    private void EditAiVector(string group, int axis, float value)
+    internal void EditAiVector(string group, int axis, float value)
     {
-        var selectedId = _selected;
+        var selectedId = _context.SelectionId;
         if (
             group == "Position"
-            && Layout != null
-            && TryAiSelection(Layout, selectedId, out var selected)
+            && _context.Layout != null
+            && EditorAiSelection.TryResolve(_context.Layout, selectedId, out var selected)
             && selected.Point != null
             && selected.Point.Position != null
         )
@@ -668,7 +432,7 @@ public sealed partial class RaidEditor
             var proposedWorld = ZoneRuntime.Vector(proposed);
             if (!RaidEditorAiContracts.TryNav(proposedWorld, out var safe) || (safe - proposedWorld).sqrMagnitude > .001f)
             {
-                _notice = "Position rejected: it is not on a clear NavMesh standing area.";
+                _context.ReportFeedback("Position rejected: it is not on a clear NavMesh standing area.", ConsoleSeverity.Warning);
                 return;
             }
             if (
@@ -685,7 +449,7 @@ public sealed partial class RaidEditor
         }
         EditAi(layout =>
         {
-            if (!TryAiSelection(layout, selectedId, out var selected) || selected.Point == null)
+            if (!EditorAiSelection.TryResolve(layout, selectedId, out var selected) || selected.Point == null)
                 return;
             var target = selected.Point;
             if (group == "Size" && target is MapVolume volume)
@@ -724,22 +488,22 @@ public sealed partial class RaidEditor
             vector.Z = value;
     }
 
-    private void EditAiRadius(float value)
+    internal void EditAiRadius(float value)
     {
         if (value <= 0 || !float.IsFinite(value))
             return;
-        var selectedId = _selected;
+        var selectedId = _context.SelectionId;
         EditAi(layout =>
         {
-            if (TryAiSelection(layout, selectedId, out var selected) && selected.Point is MapVolume volume)
+            if (EditorAiSelection.TryResolve(layout, selectedId, out var selected) && selected.Point is MapVolume volume)
                 volume.Radius = value;
         });
     }
 
-    private void DeleteAiSelection()
+    internal void DeleteAiSelection()
     {
         var selected = AiSelected(out var kind);
-        var parts = _selected.Split(':');
+        var parts = _context.SelectionId.Split(':');
         if (!selected.Valid || parts.Length < 2)
             return;
         var id = parts[1];
@@ -776,265 +540,40 @@ public sealed partial class RaidEditor
                     wave.Roster.RemoveAll(r => r.Id == parts[3]);
             }
         });
-        _selected = "";
-        Refresh();
+        _context.SelectionId = "";
+        _context.Refresh();
     }
 
-    private bool AiAcceptPreview(SpatialCapture point, SpatialCapture before)
+    internal bool AiAcceptPreview(SpatialCapture point, SpatialCapture before)
     {
         if (!AiWorkspace || point.Position == null)
             return true;
         var proposed = ZoneRuntime.Vector(point.Position);
         if (!RaidEditorAiContracts.TryNav(proposed, out var safe) || (safe - proposed).sqrMagnitude > .001f)
         {
-            RestorePoint(point, before);
-            _notice = "Drag rejected: the AI position must remain on a clear NavMesh standing area.";
+            _context.RestorePoint(point, before);
+            _context.ReportFeedback(
+                "Drag rejected: the AI position must remain on a clear NavMesh standing area.",
+                ConsoleSeverity.Warning
+            );
             return false;
         }
-        if (Layout != null && TryAiSelection(Layout, _selected, out var selected) && selected.Kind == "waypoint" && selected.Route != null)
+        if (
+            _context.Layout != null
+            && EditorAiSelection.TryResolve(_context.Layout, _context.SelectionId, out var selected)
+            && selected.Kind == "waypoint"
+            && selected.Route != null
+        )
         {
             var error = RaidEditorAiContracts.RouteError(selected.Route);
             if (error.Length > 0)
             {
-                RestorePoint(point, before);
-                _notice = "Drag rejected: " + error;
+                _context.RestorePoint(point, before);
+                _context.ReportFeedback("Drag rejected: " + error, ConsoleSeverity.Warning);
                 return false;
             }
         }
         return true;
-    }
-
-    private void RefreshAiWorkspace()
-    {
-        if (_view?.Valid != true)
-            return;
-        var visible = AiWorkspace;
-        _view.Visible("AiTools", visible);
-        _view.Visible("AiToolsScroll", visible);
-        _view.InspectNavigation(visible && _inspectAiNavigation);
-        _view.Caption("AiNavigation", "Inspect navigation: " + (_inspectAiNavigation ? "on" : "off"));
-        _view.Windows.SetTooltip(
-            "AiNavigation",
-            "Select a spawn to see nearby navigation samples, authored cuts, and its core connection. Local cores are created when preview starts."
-        );
-        foreach (var name in RaidEditorAiView.CreationControls)
-            _view.Visible(name, visible);
-        if (!visible)
-        {
-            foreach (var name in RaidEditorAiView.InspectorGroups)
-                _view.Visible(name, false);
-            foreach (var name in RaidEditorAiView.InspectorFields)
-                _view.Visible(name + "Group", false);
-            RefreshAiRoutes();
-            return;
-        }
-
-        var selected = AiSelected(out var kind);
-        _aiSelectionKind = kind;
-        _view.Text("LibraryHeading", "BROWSER / AI");
-        _view.Text("Identity", selected.Valid ? selected.Id : "Select an encounter, spawn, patrol or waypoint");
-        _view.Value("Name", selected.Valid ? selected.Name : "");
-        var point = selected.Point;
-        SetVectorFields("Position", point?.Position);
-        SetVectorFields("Rotation", point?.Rotation);
-        SetVectorFields("Size", (point as MapVolume)?.Size);
-        _view.Value("Radius", ((point as MapVolume)?.Radius ?? 0).ToString("0.###", CultureInfo.InvariantCulture));
-
-        var encounter = selected.Encounter;
-        var trigger = encounter?.Trigger;
-        var wave = selected.Wave;
-        var roster = selected.Roster;
-        var route = selected.Route;
-        var isEncounter = kind == "enc" && encounter != null;
-        var isWave = kind == "wave" && wave != null;
-        var isRoster = kind == "roster" && roster != null;
-        var isRoute = kind == "route" && route != null;
-        var isWaypoint = kind == "waypoint" && route != null;
-        var isTrigger = kind == "trigger" && trigger?.Volume != null;
-        _view.Visible("AiTriggerSection", isEncounter);
-        _view.Visible("AiWaveSection", isWave);
-        _view.Visible("AiRosterSection", isRoster);
-        _view.Visible("AiAssignmentSection", isRoster);
-        _view.Visible("AiPatrolSection", isRoute || isWaypoint);
-        _view.Visible("AiTriggerEventIdGroup", isEncounter && trigger?.Type == MapEncounterTrigger.Event);
-        _view.Visible("AiTriggerZoneIdGroup", isEncounter && trigger?.Type == MapEncounterTrigger.PlayerEntry);
-        _view.Visible("AiWaveDelaySecondsGroup", isWave);
-        _view.Visible("AiWaveWaitPreviousGroup", isWave);
-        _view.Visible("AiRosterRoleGroup", isRoster);
-        _view.Visible("AiRosterDifficultyGroup", isRoster);
-        _view.Visible("AiRosterCountGroup", isRoster);
-        _view.Visible("AiRosterSquadIdGroup", isRoster);
-        _view.Visible("AiRosterSpawnPointsGroup", false);
-        _view.Visible("AiRosterPatrolRouteGroup", false);
-        _view.Visible("AiPaceGroup", isRoute);
-        _view.Visible("AiCompletionGroup", isRoute);
-        _view.Visible("AiWaypointWaitSecondsGroup", isWaypoint);
-        _view.Visible("AiTriggerGroup", isEncounter);
-        _view.Visible("AiRosterSpawnNextGroup", isRoster);
-        _view.Visible("AiRosterPatrolNextGroup", isRoster);
-        _view.Visible("PositionGroup", point != null);
-        _view.Visible("RotationGroup", point != null);
-        _view.Visible("SizeGroup", isTrigger);
-        _view.Visible("RadiusGroup", isTrigger);
-
-        if (isEncounter)
-        {
-            _view.Caption("AiTrigger", "Trigger: " + Display(trigger?.Type, MapEncounterTrigger.MissionStart));
-            _view.Value("AiTriggerEventId", trigger?.EventId ?? "");
-            _view.Value("AiTriggerZoneId", trigger?.ZoneId ?? "");
-        }
-        if (isWave)
-        {
-            _view.Value("AiWaveDelaySeconds", wave!.DelaySeconds.ToString("0.###", CultureInfo.InvariantCulture));
-            _view.Checked("AiWaveWaitPrevious", wave.WaitForPreviousWave);
-        }
-        if (isRoster)
-        {
-            SetAiChoice("AiRosterRole", AiRoleValues, roster!.Role);
-            SetAiChoice("AiRosterDifficulty", AiDifficultyValues, roster.Difficulty);
-            _view.Value("AiRosterCount", roster.Count.ToString(CultureInfo.InvariantCulture));
-            _view.Value("AiRosterSquadId", roster.SquadId ?? "");
-            _view.Value("AiRosterSpawnPoints", string.Join(", ", roster.SpawnPointIds ?? new()));
-            _view.Value("AiRosterPatrolRoute", roster.PatrolRouteId ?? "");
-            RefreshAiAssignments(roster);
-        }
-        if (isRoute)
-        {
-            SetAiChoice("AiPace", AiPaceValues, route!.Pace);
-            SetAiChoice("AiCompletion", AiCompletionValues, route.Completion);
-        }
-        if (isWaypoint)
-        {
-            var index = route!.Waypoints.FindIndex(p => p.Id == selected.Waypoint!.Id);
-            var wait = route.WaitSeconds != null && index >= 0 && index < route.WaitSeconds.Count ? route.WaitSeconds[index] : 0;
-            _view.Value("AiWaypointWaitSeconds", wait.ToString("0.###", CultureInfo.InvariantCulture));
-        }
-
-        _view.Text("Details", selected.Valid ? AiDetails(selected) : "AI authoring and preview. Select a record to edit.");
-        _view.Get<Button>("AiReset").interactable = AiPreviewBusy;
-        _view.Get<Button>("AiSimulate").interactable = _aiPreview;
-        _view.Windows.SetTooltip(
-            "AiSimulate",
-            "Select an encounter, wave or roster to simulate its trigger. A patrol route controls movement after spawning; it does not activate an encounter."
-        );
-        var editable = !AiPreviewBusy && _session?.Conflict == null && _session?.Definition != null && !_session.Previewing;
-        foreach (
-            var name in new[]
-            {
-                "AiEncounter",
-                "AiWave",
-                "AiRoster",
-                "AiSpawn",
-                "AiPatrol",
-                "AiWaypoint",
-                "AiTrigger",
-                "Delete",
-                "AiWaveWaitPrevious",
-            }
-        )
-            _view.Get<Button>(name).interactable = editable;
-        foreach (var id in new[] { "AiRosterRole", "AiRosterDifficulty", "AiPace", "AiCompletion" })
-            _view.Get<EditorChoice>(id).interactable = editable;
-        _view.Get<EditorChoice>("AiRosterSpawnNext").interactable = editable;
-        _view.Get<EditorChoice>("AiRosterPatrolNext").interactable = editable;
-        _view.Get<Button>("AiWave").interactable = editable && selected.Encounter != null;
-        _view.Get<Button>("AiRoster").interactable = editable && selected.Wave != null;
-        _view.Get<Button>("AiWaypoint").interactable = editable && selected.Route != null;
-        _view.Windows.SetTooltip("AiWave", "Select an encounter in the tree, then add a wave.");
-        _view.Windows.SetTooltip("AiRoster", "Select a wave in the tree, then add its bot roster.");
-        _view.Windows.SetTooltip("AiWaypoint", "Select a patrol route in the tree, then place a waypoint.");
-        foreach (
-            var name in new[]
-            {
-                "AiTriggerEventId",
-                "AiTriggerZoneId",
-                "AiWaveDelaySeconds",
-                "AiRosterCount",
-                "AiRosterSquadId",
-                "AiRosterSpawnPoints",
-                "AiRosterPatrolRoute",
-                "AiWaypointWaitSeconds",
-            }
-        )
-            _view.Get<InputField>(name).interactable = editable;
-        _view.Feedback(_session!.Status, _aiPreviewStatus, _notice);
-        RefreshAiRoutes();
-    }
-
-    private void RefreshAiAssignments(MapEncounterRosterEntry roster)
-    {
-        _aiSpawnChoices.Clear();
-        _aiPatrolChoices.Clear();
-        var spawns = new List<EditorChoice.OptionData> { new("Add / remove spawn…") };
-        var names = new List<string>();
-        foreach (var point in Layout!.SpawnPoints)
-        {
-            _aiSpawnChoices.Add(point.Id);
-            var assigned = roster.SpawnPointIds.Contains(point.Id);
-            var label = (_aiSpawnChoices.Count) + ". " + point.Name;
-            spawns.Add(new((assigned ? "✓ " : "+ ") + label));
-            if (assigned)
-                names.Add(label);
-        }
-        foreach (var id in roster.SpawnPointIds)
-            if (!_aiSpawnChoices.Contains(id))
-            {
-                _aiSpawnChoices.Add(id);
-                spawns.Add(new("Remove missing spawn: " + id));
-                names.Add("Missing spawn: " + id);
-            }
-        _view!.SetDropdown("AiRosterSpawnNext", spawns, 0);
-        _view.Text("AiAssignedSpawns", names.Count == 0 ? "No spawns assigned" : string.Join("\n", names));
-        var patrols = new List<EditorChoice.OptionData> { new("Patrol: none") };
-        _aiPatrolChoices.Add("");
-        foreach (var route in Layout.PatrolRoutes)
-        {
-            _aiPatrolChoices.Add(route.Id);
-            patrols.Add(new("Patrol: " + (_aiPatrolChoices.Count - 1) + ". " + route.Name));
-        }
-        var index = _aiPatrolChoices.IndexOf(roster.PatrolRouteId ?? "");
-        if (index < 0)
-        {
-            index = _aiPatrolChoices.Count;
-            _aiPatrolChoices.Add(roster.PatrolRouteId);
-            patrols.Add(new("Missing patrol: " + roster.PatrolRouteId));
-        }
-        _view.SetDropdown("AiRosterPatrolNext", patrols, index);
-    }
-
-    private void SetVectorFields(string group, SpatialVector? vector)
-    {
-        var values = vector == null ? new[] { 0f, 0f, 0f } : new[] { vector.X, vector.Y, vector.Z };
-        for (var i = 0; i < 3; i++)
-            _view!.Value(group + "XYZ"[i], values[i].ToString("0.###", CultureInfo.InvariantCulture));
-    }
-
-    private static string AiDetails(AiSelection selected)
-    {
-        var id = selected.Id;
-        return selected.Kind switch
-        {
-            "enc" => "Encounter · "
-                + Display(selected.Encounter?.Trigger?.Type, MapEncounterTrigger.MissionStart)
-                + "\nFinite waves · preview only",
-            "trigger" => "Trigger volume · independently authored\nNavMesh and standing clearance checked before preview",
-            "wave" => "Wave · delay "
-                + selected.Wave!.DelaySeconds.ToString("0.###", CultureInfo.InvariantCulture)
-                + "s\nRoster entries use installed bot generation",
-            "roster" => "Role: "
-                + AiRoleDisplay(selected.Roster!.Role)
-                + " · count "
-                + selected.Roster.Count
-                + "\nSupported roles: Scav, USEC, BEAR. Special and modded roles are unavailable.\nSAIN owns combat; patrols yield during combat/search/recovery",
-            "route" => "Patrol · "
-                + Display(selected.Route!.Completion, MapPatrolRoute.Loop)
-                + " · "
-                + Display(selected.Route.Pace, MapPatrolRoute.Walk)
-                + "\nOrdered waypoints use the checkpoint route renderer",
-            "waypoint" => "Waypoint · NavMesh checked before preview\n" + id,
-            "spawn" => "Authored spawn reservation · NavMesh checked before preview\n" + id,
-            _ => "AI authoring record",
-        };
     }
 
     private void CycleAiTrigger()
@@ -1042,7 +581,7 @@ public sealed partial class RaidEditor
         var selected = AiSelected(out var kind);
         if (selected.Encounter == null || kind != "enc")
         {
-            _notice = "Select an encounter before changing its activation trigger.";
+            _context.ReportFeedback("Select an encounter before changing its activation trigger.", ConsoleSeverity.Warning);
             return;
         }
         var encounterId = selected.Encounter.Id;
@@ -1056,11 +595,11 @@ public sealed partial class RaidEditor
         {
             try
             {
-                volume = CaptureVolume("Encounter trigger");
+                volume = _context.CaptureVolume("Encounter trigger");
             }
             catch (Exception error)
             {
-                _notice = error.Message;
+                _context.ReportFeedback(error.Message, ConsoleSeverity.Error);
                 return;
             }
         }
@@ -1090,39 +629,42 @@ public sealed partial class RaidEditor
                 encounter.Trigger.Volume = null;
             }
         });
-        Refresh();
+        _context.Refresh();
     }
 
     private void SimulateSelectedAiEvent()
     {
-        if (!_aiPreview || _aiRuntime == null)
+        if (!_context.AiPreview || !_context.AiRuntimeAvailable)
             return;
         var selected = AiSelected(out _);
         var trigger = selected.Encounter?.Trigger;
         if (trigger == null)
         {
-            _notice = "Select an encounter, wave or roster and use Simulate. A patrol route alone does not activate bots.";
+            _context.ReportFeedback(
+                "Select an encounter, wave or roster and use Simulate. A patrol route alone does not activate bots.",
+                ConsoleSeverity.Warning
+            );
             return;
         }
-        _notice = "Trigger simulated. Each encounter activates once per preview; Reset preview to run it again.";
+        _context.ReportFeedback("Trigger simulated. Each encounter activates once per preview; Reset preview to run it again.");
         if (trigger.Type == MapEncounterTrigger.MissionStart)
         {
-            SimulateAiStart();
+            _context.SimulateAiStart();
             return;
         }
         if (trigger.Type == MapEncounterTrigger.Event)
         {
             if (string.IsNullOrWhiteSpace(trigger.EventId))
             {
-                _notice = "Enter an event id before simulating this encounter.";
+                _context.ReportFeedback("Enter an event id before simulating this encounter.", ConsoleSeverity.Warning);
                 return;
             }
-            SimulateAiEvent(trigger.EventId);
+            _context.SimulateAiEvent(trigger.EventId);
             return;
         }
         // Player-entry triggers are exposed as an explicit preview event so
         // simulation never moves the editor player or advances campaign state.
-        SimulateAiEntry(selected.Encounter!.Id);
+        _context.SimulateAiEntry(selected.Encounter!.Id);
     }
 
     private void EditAiTriggerText(string property, string value)
@@ -1147,7 +689,7 @@ public sealed partial class RaidEditor
     {
         if (!TryFinite(value, out var delay) || delay < 0 || delay > 3600)
         {
-            _notice = "Wave delay must be between 0 and 3600 seconds.";
+            _context.ReportFeedback("Wave delay must be between 0 and 3600 seconds.", ConsoleSeverity.Warning);
             return;
         }
         var selected = AiSelected(out var kind);
@@ -1186,23 +728,12 @@ public sealed partial class RaidEditor
     }
 
     private static readonly string[] AiRoleValues = { "assault", "pmcUSEC", "pmcBEAR" };
-    private static readonly string[] AiDifficultyValues = { "easy", "normal", "hard" };
-    private static readonly string[] AiPaceValues = { MapPatrolRoute.Walk, MapPatrolRoute.Run };
-    private static readonly string[] AiCompletionValues = { MapPatrolRoute.Loop, MapPatrolRoute.PingPong, MapPatrolRoute.Stop };
 
-    private void SetAiChoice(string id, string[] values, string value)
-    {
-        var options = new List<EditorChoice.OptionData>();
-        foreach (var option in values)
-            options.Add(new EditorChoice.OptionData(id == "AiRosterRole" ? AiRoleDisplay(option) : option));
-        var index = Array.IndexOf(values, value);
-        if (index < 0)
-        {
-            index = options.Count;
-            options.Add(new EditorChoice.OptionData(value + " (current)"));
-        }
-        _view!.SetDropdown(id, options, index);
-    }
+    private static readonly string[] AiDifficultyValues = { "easy", "normal", "hard" };
+
+    private static readonly string[] AiPaceValues = { MapPatrolRoute.Walk, MapPatrolRoute.Run };
+
+    private static readonly string[] AiCompletionValues = { MapPatrolRoute.Loop, MapPatrolRoute.PingPong, MapPatrolRoute.Stop };
 
     private void SetAiRole(int index)
     {
@@ -1260,7 +791,7 @@ public sealed partial class RaidEditor
             || count > MapEncounterRules.MaxBotsPerWave
         )
         {
-            _notice = "Roster count must be between 1 and 256.";
+            _context.ReportFeedback("Roster count must be between 1 and 256.", ConsoleSeverity.Warning);
             return;
         }
         EditAiRosterText("Count", count.ToString(CultureInfo.InvariantCulture));
@@ -1344,7 +875,7 @@ public sealed partial class RaidEditor
                     available.Add(point.Id);
             if (roster == null || available.Count == 0)
             {
-                _notice = "Add an authored AI spawn point before assigning one.";
+                _context.ReportFeedback("Add an authored AI spawn point before assigning one.", ConsoleSeverity.Warning);
                 return;
             }
             roster.SpawnPointIds ??= new();
@@ -1354,7 +885,10 @@ public sealed partial class RaidEditor
             {
                 if (next.Length == 0)
                 {
-                    _notice = "Add another authored AI spawn point before assigning this roster count.";
+                    _context.ReportFeedback(
+                        "Add another authored AI spawn point before assigning this roster count.",
+                        ConsoleSeverity.Warning
+                    );
                     return;
                 }
                 roster.SpawnPointIds.Add(next);
@@ -1377,7 +911,7 @@ public sealed partial class RaidEditor
             }
             else
             {
-                _notice = "This roster already uses its only available authored spawn point.";
+                _context.ReportFeedback("This roster already uses its only available authored spawn point.", ConsoleSeverity.Warning);
             }
         });
     }
@@ -1404,7 +938,7 @@ public sealed partial class RaidEditor
                     available.Add(patrol.Id);
             if (roster == null || available.Count == 0)
             {
-                _notice = "Add a patrol route before assigning one.";
+                _context.ReportFeedback("Add a patrol route before assigning one.", ConsoleSeverity.Warning);
                 return;
             }
             var index = available.IndexOf(roster.PatrolRouteId);
@@ -1452,7 +986,7 @@ public sealed partial class RaidEditor
     {
         if (!TryFinite(value, out var wait) || wait < 0 || wait > 3600)
         {
-            _notice = "Waypoint wait must be between 0 and 3600 seconds.";
+            _context.ReportFeedback("Waypoint wait must be between 0 and 3600 seconds.", ConsoleSeverity.Warning);
             return;
         }
         var selected = AiSelected(out var kind);

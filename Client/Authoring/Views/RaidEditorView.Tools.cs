@@ -117,16 +117,17 @@ internal sealed partial class RaidEditorView
         ((EditorButton)_toolControls[tool]["CatalogList"]).onClick.AddListener(() => SetCatalogGrid(tool, false));
         Element("CatalogViews").style.display = DisplayStyle.None;
         var actions = (ScrollView)Element("ToolActionsScroll");
-        window.RegisterCallback<GeometryChangedEvent>(evt =>
+        Action fitActions = () =>
         {
             actions.style.maxHeight =
-                tool == "AI" ? Math.Max(30, evt.newRect.height * .38f)
+                tool == "AI" ? Math.Max(30, window.layout.height * .38f)
                 : tool == "Scene" ? 54
-                : tool is "Hazards" or "Zones" ? Math.Clamp(evt.newRect.height * .35f, 60, 140)
-                : Math.Clamp(evt.newRect.height * .2f, 30, 100);
+                : tool is "Hazards" or "Zones" ? Math.Clamp(window.layout.height * .35f, 60, 140)
+                : Math.Clamp(window.layout.height * .2f, 30, 100);
             foreach (var field in window.Query<TextField>().ToList())
-                EditorControlLayout.Field(field, evt.newRect.width < 340);
-        });
+                EditorControlLayout.Field(field, window.layout.width < 340);
+        };
+        window.RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(fitActions));
         ConfigureToolActions(tool, false, false);
     }
 

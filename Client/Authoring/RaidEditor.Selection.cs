@@ -1,13 +1,12 @@
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Controllers;
 using WTT.Campaigns.Client.Authoring.Scenes;
-using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;
 using ZLinq;
 using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
 using InputField = WTT.Campaigns.Client.Authoring.Views.EditorInput;
-using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -17,11 +16,11 @@ public sealed partial class RaidEditor
     private string _sceneSelectionError = "";
     private readonly HashSet<string> _sceneRestrictionLog = new();
     private readonly List<Renderer> _sceneRenderers = new();
-    private SpatialCapture? ScenePoint => MapPoint ?? (_picked ? _sceneSelectionPose : null);
+    private SpatialCapture? ScenePoint => Maps.MapPoint ?? (_picked ? _sceneSelectionPose : null);
 
     private bool CanTransformScene(string tool) =>
-        CanSceneEdit
-        && _sceneTab != "Catalog"
+        Catalog.CanSceneEdit
+        && Catalog.SceneTab != "Catalog"
         && ScenePoint != null
         && (ScenePoint is MapVolume || SceneSelectionTarget)
         && _sceneSelectionError.Length == 0
@@ -63,7 +62,7 @@ public sealed partial class RaidEditor
         }
         _sceneSelectionPose = new MapObjectEdit
         {
-            Id = MapId(),
+            Id = EditorMapRecords.NewId(),
             Name = target.name,
             Location = _session!.Location,
             Scene = target.gameObject.scene.name,
@@ -75,19 +74,19 @@ public sealed partial class RaidEditor
         };
         if (_tool == "Scale" && !CanTransformScene("Scale"))
             _tool = "Move";
-        _sceneRoots[target.GetInstanceID().ToString()] = target;
+        Catalog.RememberSceneTarget(target);
         _libraryKey = "";
         _selectionBoundsFrame = -1;
     }
 
     private void CommitSceneSelection(Action<SpatialCapture> action)
     {
-        if (!CanTransformScene("Move") || _sceneSelectionPose == null || MapPoint != null)
+        if (!CanTransformScene("Move") || _sceneSelectionPose == null || Maps.MapPoint != null)
             return;
         var after = SceneSelectionEdit.Prepare(_sceneSelectionPose, action);
         if (after == null)
             return;
-        MapEdit(layout =>
+        Maps.MapEdit(layout =>
         {
             layout.Objects.Add(after);
             _selected = after.Id;
@@ -97,10 +96,10 @@ public sealed partial class RaidEditor
 
     private void EditTransformProperty(string field, Action<SpatialCapture> action)
     {
-        if (SceneWorkspace && !CanTransformScene(field == "Size" ? "Scale" : "Move"))
+        if (Catalog.SceneWorkspace && !CanTransformScene(field == "Size" ? "Scale" : "Move"))
             return;
         if (
-            !SceneWorkspace
+            !Catalog.SceneWorkspace
             || !_centerAnchor
             || field == "Position"
             || !CanTransformScene(field == "Size" ? "Scale" : "Rotate")
@@ -127,7 +126,7 @@ public sealed partial class RaidEditor
                     )
                 )
                     return;
-                _mapScene!.Reconcile(Layout, MapPoint == null ? point as MapObjectEdit : null);
+                _mapScene!.Reconcile(Layout, Maps.MapPoint == null ? point as MapObjectEdit : null);
                 if (_mapScene.TargetErrors.Count > 0)
                     throw new InvalidOperationException(_mapScene.TargetErrors[0]);
                 point.Position = ZoneRuntime.Vector(SceneSelectionGeometry.PositionForAnchor(target, localAnchor, anchor));
@@ -159,7 +158,7 @@ public sealed partial class RaidEditor
         previous.Page = _page;
         previous.Picked = _picked;
         _mode = "Scene";
-        _sceneTab = "Existing";
+        Catalog.SceneTab = "Existing";
         if (_view != null)
         {
             _view.ToolContext = "Scene";
@@ -174,14 +173,14 @@ public sealed partial class RaidEditor
         if (!_camera)
             return;
         var target = ScenePicking.Pick(
-            _camera!.ScreenPointToRay(Input.mousePosition),
+            _camera!.EditorScreenPointToRay(Input.mousePosition),
             PickableRenderers(),
             t => _mapScene?.RecordAt(t) != null
         );
         if (target)
         {
             EnterSceneSelection();
-            SelectSceneTarget(target!);
+            Catalog.SelectSceneTarget(target!);
         }
         else
         {
@@ -189,23 +188,23 @@ public sealed partial class RaidEditor
             _selected = "";
             _sceneSelectionPose = null;
             _sceneSelectionError = "";
-            _notice = "Click an object to select it.";
+            ReportFeedback("Click an object to select it.");
             Refresh();
         }
     }
 
     private void PresentPickedProperties()
     {
-        if (!SceneWorkspace || _sceneTab == "Catalog")
+        if (!Catalog.SceneWorkspace || Catalog.SceneTab == "Catalog")
             return;
         var point = ScenePoint;
         if (point == null)
         {
-            if (MapDoor is not { } door)
+            if (Maps.MapDoor is not { } door)
                 return;
             var doorView = _view!;
             doorView.Value("MapName", door.Name);
-            doorView.Get<InputField>("MapName").readOnly = !CanSceneEdit;
+            doorView.Get<InputField>("MapName").readOnly = !Catalog.CanSceneEdit;
             foreach (var group in new[] { "Position", "Rotation", "Size" })
             foreach (var axis in "XYZ")
             {
@@ -263,7 +262,7 @@ public sealed partial class RaidEditor
         );
         if (_sceneSelectionError.Length > 0)
             view.Text("SceneInfo", "Selected for inspection. " + _sceneSelectionError);
-        else if (MapPoint == null)
+        else if (Maps.MapPoint == null)
             view.Text("SceneInfo", "Drag a handle or edit a property. Changes are saved only when you edit; Esc cancels a drag.");
         if (
             editable

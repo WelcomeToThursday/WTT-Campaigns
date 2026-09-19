@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using ZLinq;
 
 namespace WTT.Campaigns.Shared.Hub;
 
@@ -65,7 +65,7 @@ public static class HubRules
         raid.Finished = true;
         if (survived)
         {
-            foreach (var id in extractedIds.Distinct())
+            foreach (var id in extractedIds.AsValueEnumerable().Distinct())
             {
                 if (raid.Picked.Contains(id) && raid.Spawned.ContainsKey(id) && roll() < chance)
                 {
@@ -79,6 +79,6 @@ public static class HubRules
 
     public static int Shortage(IEnumerable<KeyValuePair<string, int>> costs, IReadOnlyDictionary<string, int> owned)
     {
-        return costs.Sum(c => Math.Max(0, c.Value - (owned.TryGetValue(c.Key, out var count) ? count : 0)));
+        return costs.AsValueEnumerable().Sum(c => Math.Max(0, c.Value - (owned.TryGetValue(c.Key, out var count) ? count : 0)));
     }
 }

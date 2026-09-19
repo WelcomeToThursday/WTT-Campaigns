@@ -1,8 +1,5 @@
-using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Controllers;
 using WTT.Campaigns.Client.Authoring.Views;
-using WTT.Campaigns.Client.Spatial;
-using WTT.Campaigns.Client.Story;
-using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
@@ -20,7 +17,7 @@ public sealed partial class RaidEditor
         if (_view?.Valid != true || _session == null)
             return;
         var state =
-            $"{_assetCatalog?.Revision}|{_session.ContentVersion}|{_session.Status}|{_notice}|{_aiPreviewStatus}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{_placementLifetime != null}|{_view.Windows.HasMenu}";
+            $"{Catalog.AssetRevision}|{_session.ContentVersion}|{_session.Status}|{LastFeedback}|{_aiPreviewStatus}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{Catalog.Placing}|{_view.Windows.HasMenu}";
         if (_presentedIndexCount != _sceneIndex.Count || state != _passiveState)
         {
             _presentedIndexCount = _sceneIndex.Count;
@@ -34,17 +31,17 @@ public sealed partial class RaidEditor
         var view = _view!;
         view.Text("LibraryHeading", "BROWSER / " + (_mode == "Bindings" ? "EVENTS" : _mode.ToUpperInvariant()));
         view.Value("CameraSpeed", CameraSpeed.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture));
-        view.Get<Button>("CameraSlower").interactable = CameraSpeed > .25f;
-        view.Get<Button>("CameraFaster").interactable = CameraSpeed < 96f;
+        view.Get<Button>("ViewportSlower").interactable = CameraSpeed > .25f;
+        view.Get<Button>("ViewportFaster").interactable = CameraSpeed < 96f;
         var maps = MapWorkspace && EditorMode.Ready;
         var point = _mode == "Scene" ? null : Selected;
         var aiKind = "";
-        var aiSelection = _mode == "AI" ? AiSelected(out aiKind) : default;
+        EditorAiSelection aiSelection = _mode == "AI" ? Ai.AiSelected(out aiKind) : default;
         var selection =
             _mode == "Bindings" ? Binding?.Id ?? ""
             : _mode == "Scene" ? (_picked ? _picked!.GetInstanceID().ToString() : "")
             : _mode == "AI" ? _selected
-            : maps ? MapPoint?.Id ?? MapDoor?.Id ?? Layout?.Id ?? ""
+            : maps ? Maps.MapPoint?.Id ?? Maps.MapDoor?.Id ?? Layout?.Id ?? ""
             : point?.Id ?? "";
         if (selection.Length == 0 && _picked && (_mode == "Captures" || _mode == "Bindings"))
             selection = "picked:" + _picked!.GetInstanceID();
@@ -52,13 +49,13 @@ public sealed partial class RaidEditor
             _mode == "AI" ? (aiSelection.Valid ? aiKind : "")
             : point == null && _picked && !maps && (_mode == "Scene" || _mode == "Captures" || Binding == null) ? "Scene"
             : point is SeasonZone zone ? zone.Shape
-            : MapPoint is MapObjectEdit obj ? obj.Operation
-            : MapPoint is MapVolume volume
+            : Maps.MapPoint is MapObjectEdit obj ? obj.Operation
+            : Maps.MapPoint is MapVolume volume
                 ? Layout!.Barriers.AsValueEnumerable().Any(b => b.Id == volume.Id) ? "Barrier"
                     : Layout!.Checkpoints.AsValueEnumerable().Any(p => p.Id == volume.Id) ? "Checkpoint"
                     : "Volume"
-            : MapDoor != null ? "Door"
-            : maps && MapPoint == null ? "Layout"
+            : Maps.MapDoor != null ? "Door"
+            : maps && Maps.MapPoint == null ? "Layout"
             : "Point";
         view.Windows.Present(
             _mode,
@@ -68,28 +65,28 @@ public sealed partial class RaidEditor
             _mode != "AI" && _picked,
             EditorMode.Ready,
             point is SeasonZone && Binding != null,
-            SceneWorkspace
+            Catalog.SceneWorkspace
         );
-        if (!SceneWorkspace)
+        if (!Catalog.SceneWorkspace)
             view.Windows.Select(_mode, selection);
         foreach (var tool in new[] { "Move", "Rotate", "Scale" })
         {
             view.Highlight(tool, _tool == tool);
-            if (!SceneWorkspace)
+            if (!Catalog.SceneWorkspace)
                 view.Get<Button>(tool).interactable =
                     point != null
                     && (tool != "Scale" || point is SeasonZone || point is MapVolume || point is MapObjectEdit { Operation: "Copy" });
         }
         view.Highlight("Snap", _snap);
         view.Get<Button>("Parent").interactable = _picked && _picked!.parent;
-        view.Text("CaptureRequest", _task == null ? "" : _task.Tool + " capture · " + _notice);
+        view.Text("CaptureRequest", _task == null ? "" : _task.Tool + " capture · " + LastFeedback);
         view.Text(
             "Request",
             (_picking ? "Click scenery · Esc cancel" : "RMB fly · Ctrl+F8 close")
                 + (EditorMode.Ready ? " · EDITOR / Gameplay disabled" : " · RAID CONTINUES")
         );
         // Keep the compact status readable; hovering reveals the full operation message.
-        view.Feedback(_session!.Status, _aiPreviewStatus, _notice);
+        view.Feedback(_session!.Status, _aiPreviewStatus);
         if (_mode == "Scene" && _picked)
             view.Text("Identity", _picked!.name);
         view.Windows.SetTooltip("Connection", view.Get<Text>("Connection").text);
@@ -126,7 +123,7 @@ public sealed partial class RaidEditor
                 "Redo",
             }
         )
-            if (!SceneWorkspace || name != "MapAtPlayer")
+            if (!Catalog.SceneWorkspace || name != "MapAtPlayer")
                 view.Get<Button>(name).interactable = canEdit;
         foreach (
             var name in new[]
@@ -176,32 +173,33 @@ public sealed partial class RaidEditor
                     : $"{view.TreeRecordCount} records"
                 : _rows.Count == 0
                     ? "No matching records"
-                    : $"{LibraryTotal} records · Page {_page + 1} / {(LibraryTotal + LibraryPageSize - 1) / LibraryPageSize}"
+                    : $"{Catalog.LibraryTotal} records · Page {_page + 1} / {(Catalog.LibraryTotal + Catalog.LibraryPageSize - 1) / Catalog.LibraryPageSize}"
         );
         if (_mode == "Scene" && SceneIndexStatus.Length > 0)
             view.Text("LibraryCount", _sceneIndex.Count + " records · " + (!_sceneIndex.Complete ? "Indexing…" : "Limit reached"));
         view.Visible("Previous", !treeMode);
         view.Visible("Next", !treeMode);
         view.Get<Button>("Previous").interactable = !treeMode && _page > 0;
-        view.Get<Button>("Next").interactable = !treeMode && (_page + 1) * LibraryPageSize < LibraryTotal;
+        view.Get<Button>("Next").interactable = !treeMode && (_page + 1) * Catalog.LibraryPageSize < Catalog.LibraryTotal;
         for (var i = 0; i < view.RowCapacity && !treeMode; i++)
         {
-            var index = LibraryOffset + i;
+            var index = Catalog.LibraryOffset + i;
             var selected =
                 index < _rows.Count
                 && (
                     _mode == "Bindings" ? _rows[index].Id == Binding?.Id
-                    : _mode == "Scene" && !SceneWorkspace
+                    : _mode == "Scene" && !Catalog.SceneWorkspace
                         ? _picked && int.TryParse(_rows[index].Id, out var sceneIndex) && _sceneIndex.Entries[sceneIndex].Target == _picked
-                    : SceneWorkspace && _sceneTab == "Catalog" ? _rows[index].Id == _catalogSelection
-                    : SceneWorkspace && _picked ? _rows[index].Id == _picked!.GetInstanceID().ToString() || _rows[index].Id == _selected
+                    : Catalog.SceneWorkspace && Catalog.SceneTab == "Catalog" ? _rows[index].Id == Catalog.CatalogSelection
+                    : Catalog.SceneWorkspace && _picked
+                        ? _rows[index].Id == _picked!.GetInstanceID().ToString() || _rows[index].Id == _selected
                     : _rows[index].Id == _selected
                 );
             view.Highlight("Row" + i, selected);
             view.Windows.SetTooltip(
                 "Row" + i,
                 index >= _rows.Count ? ""
-                    : _mode == "Scene" && !SceneWorkspace && int.TryParse(_rows[index].Id, out var tipIndex)
+                    : _mode == "Scene" && !Catalog.SceneWorkspace && int.TryParse(_rows[index].Id, out var tipIndex)
                         ? _sceneIndex.Path(_sceneIndex.Entries[tipIndex].Target) ?? _rows[index].Label
                     : _rows[index].Label
             );

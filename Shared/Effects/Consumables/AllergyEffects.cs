@@ -18,10 +18,12 @@ public static class AllergyEffects
             || effect.ItemFilter?.Exclude is not { } exclude
             || exclude.Count != 0
             || include.Count != 3
-            || include.Any(r => r.Field != "ParentId")
-            || !new HashSet<string?>(include.Select(r => r.Value)).SetEquals(
-                new[] { "5448f3a14bdc2d27728b4569", "5448f3a64bdc2d60728b456a", "543be6674bdc2df1348b4569" }
-            )
+            || include.AsValueEnumerable().Any(r => r.Field != "ParentId")
+            || !include
+                .AsValueEnumerable()
+                .Select(r => r.Value)
+                .ToHashSet()
+                .SetEquals(new[] { "5448f3a14bdc2d27728b4569", "5448f3a64bdc2d60728b456a", "543be6674bdc2df1348b4569" })
             || effect.SubEffects is not { } subs
         )
         {
@@ -37,18 +39,20 @@ public static class AllergyEffects
             ["energyRecovery"] = (30, -3),
             ["hydrationRecovery"] = (30, -3),
         };
-        var enabled = subs.Where(p => p.Value.Enabled == true).ToArray();
+        var enabled = subs.AsValueEnumerable().Where(p => p.Value.Enabled == true).ToArray();
         return enabled.Length == expected.Count
-            && enabled.All(p =>
-                expected.TryGetValue(p.Key, out var value)
-                && p.Value.DurationSeconds.Equals(value.duration)
-                && (p.Value.Amount ?? 0).Equals(value.rate)
-            );
+            && enabled
+                .AsValueEnumerable()
+                .All(p =>
+                    expected.TryGetValue(p.Key, out var value)
+                    && p.Value.DurationSeconds.Equals(value.duration)
+                    && (p.Value.Amount ?? 0).Equals(value.rate)
+                );
     }
 
     public static T[] Sample<T>(IEnumerable<T> source, int count, Func<int, int> next)
     {
-        var pool = source.Distinct().ToArray();
+        var pool = source.AsValueEnumerable().Distinct().ToArray();
         count = Math.Min(Math.Max(count, 0), pool.Length);
         for (var i = 0; i < count; i++)
         {
@@ -61,7 +65,7 @@ public static class AllergyEffects
             var j = i + offset;
             (pool[i], pool[j]) = (pool[j], pool[i]);
         }
-        return pool.Take(count).ToArray();
+        return pool.AsValueEnumerable().Take(count).ToArray();
     }
 
     public static void UpdateParameters(
@@ -72,9 +76,9 @@ public static class AllergyEffects
     )
     {
         var allergy = state.SeasonalPerkEffectParameters.Allergy ?? new Dictionary<string, AllergyTargets>();
-        foreach (var perk in catalogue.All.Where(p => state.SeasonalPerks.Contains(p.Id)))
+        foreach (var perk in catalogue.All.AsValueEnumerable().Where(p => state.SeasonalPerks.Contains(p.Id)))
         {
-            var effect = perk.Effects.FirstOrDefault(Supports);
+            var effect = perk.Effects.AsValueEnumerable().FirstOrDefault(Supports);
             if (effect == null)
             {
                 continue;
@@ -85,8 +89,8 @@ public static class AllergyEffects
                 allergy.TryGetValue(perk.Id, out var receipt)
                 && receipt?.TargetItems is { } saved
                 && saved.Count == 3
-                && saved.All(s => !string.IsNullOrEmpty(s))
-                && saved.Distinct().Count() == 3
+                && saved.AsValueEnumerable().All(s => !string.IsNullOrEmpty(s))
+                && saved.AsValueEnumerable().Distinct().Count() == 3
             )
             {
                 continue;
@@ -98,7 +102,7 @@ public static class AllergyEffects
                 throw new InvalidOperationException("Allergic needs at least three compatible item templates.");
             }
 
-            allergy[perk.Id] = new AllergyTargets { TargetItems = targets.ToList() };
+            allergy[perk.Id] = new AllergyTargets { TargetItems = targets.AsValueEnumerable().ToList() };
         }
         if (allergy.Count > 0)
         {
@@ -129,16 +133,18 @@ public static class AllergyEffects
             yield break;
         }
 
-        foreach (var effect in perk.Effects.Where(Supports))
+        foreach (var effect in perk.Effects)
         {
-            var enabled = effect.SubEffects!.Where(p => p.Value.Enabled == true);
+            if (!Supports(effect))
+                continue;
+            var enabled = effect.SubEffects!.AsValueEnumerable().Where(p => p.Value.Enabled == true).ToArray();
             foreach (var sub in Sample(enabled, 3, next))
             {
                 yield return new ConsumableEffect(
                     sub.Key,
                     sub.Value.DurationSeconds!.Value,
                     sub.Value.Amount ?? 0,
-                    targets.Select(s => s!).ToArray()
+                    targets.AsValueEnumerable().Select(s => s!).ToArray()
                 );
             }
         }

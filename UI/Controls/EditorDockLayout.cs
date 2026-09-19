@@ -69,9 +69,10 @@ public static class EditorDockLayout
         var tabs = GroupAll(nodes);
         var group = EditorDockNode.Group(tabs);
         group.Active = nodes.Where(n => n.Kind == "tabs").Select(n => n.Active).FirstOrDefault(visible.Contains) ?? group.Active;
-        if (area.Width >= ToolWidth + Divider + ViewWidth && area.Height >= ToolHeight + TabHeight)
+        var toolHeight = Minimum(group, visible).Height;
+        if (area.Width >= ToolWidth + Divider + ViewWidth && area.Height >= toolHeight)
             return EditorDockNode.Split("horizontal", group, viewport, .35f);
-        if (area.Height >= ToolHeight + TabHeight + Divider + 180 && area.Width >= ViewWidth)
+        if (area.Height >= toolHeight + Divider + 180 && area.Width >= ViewWidth)
             return EditorDockNode.Split("vertical", group, viewport, .45f);
         return viewport; // Visible windows become clamped floating windows.
     }
@@ -102,7 +103,7 @@ public static class EditorDockLayout
         if (node.Kind == "viewport")
             return (ViewWidth, 180);
         if (node.Kind == "tabs")
-            return (ToolWidth, ToolHeight + TabHeight);
+            return (ToolWidth, (node.Tabs.Contains("Console") && visible.Contains("Console") ? 300 : ToolHeight) + TabHeight);
         var a = Minimum(node.First!, visible);
         var b = Minimum(node.Second!, visible);
         if (a.Width == 0)

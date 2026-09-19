@@ -15,6 +15,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     private static readonly Dictionary<string, VisualTreeAsset> Templates = new();
     private static Font? _font;
     private static Shader? _previewShader;
+    private static Shader? _viewportShader;
     private bool _disposed;
     internal readonly GameObject Host;
     internal readonly PanelSettings Settings;
@@ -60,6 +61,12 @@ internal sealed class EditorToolkitDocument : IDisposable
                 {
                     if (evt.keyCode != KeyCode.Escape)
                         return;
+                    if (EscapeFrame == Time.frameCount)
+                    {
+                        evt.StopPropagation();
+                        evt.PreventDefault();
+                        return;
+                    }
                     if (Typing)
                     {
                         EscapeFrame = Time.frameCount;
@@ -88,6 +95,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     }
 
     internal Shader PreviewShader => _previewShader!;
+    internal Shader ViewportShader => _viewportShader!;
 
     // Detach the authored root: a TemplateContainer would change the existing
     // docking and direct-child layout contracts.
@@ -107,7 +115,7 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     private static void EnsureAssets()
     {
-        if (_template && _tree && _font && _previewShader && Templates.Count == 45)
+        if (_template && _tree && _font && _previewShader && _viewportShader && Templates.Count == 49)
             return;
         Plugin.LogInfo("Editor Toolkit: loading shared assets");
         const string path = "assets/mods/wtt-campaigns.assets/editortoolkit/";
@@ -125,7 +133,8 @@ internal sealed class EditorToolkitDocument : IDisposable
         _tree = _bundle.LoadAsset<VisualTreeAsset>(path + "editor.uxml");
         _font = _bundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
         _previewShader = _bundle.LoadAsset<Shader>("assets/mods/wtt-campaigns.assets/raideditor/campaignscenepreview.shader");
-        if (!_template || !_tree || !_font || !_previewShader)
+        _viewportShader = _bundle.LoadAsset<Shader>(path + "viewportcopy.shader");
+        if (!_template || !_tree || !_font || !_previewShader || !_viewportShader)
             throw new InvalidOperationException("Editor Toolkit assets are incomplete.");
         Templates.Clear();
         foreach (
@@ -145,6 +154,8 @@ internal sealed class EditorToolkitDocument : IDisposable
                 "ConflictRow",
                 "ConflictShield",
                 "ContextMenu",
+                "Console",
+                "ConsoleRow",
                 "Controls",
                 "DockDivider",
                 "DockTab",
@@ -176,6 +187,8 @@ internal sealed class EditorToolkitDocument : IDisposable
                 "WindowsMenu",
                 "Workspace",
                 "WorkspaceTitleBar",
+                "GameViewport",
+                "ViewportToolbar",
             }
         )
         {

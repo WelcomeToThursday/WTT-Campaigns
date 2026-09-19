@@ -10,7 +10,7 @@ public sealed class AllergyTargets : ExtensibleJsonModel
 
     internal AllergyTargets DeepClone()
     {
-        var copy = new AllergyTargets { TargetItems = TargetItems?.ToList() };
+        var copy = new AllergyTargets { TargetItems = TargetItems?.AsValueEnumerable().ToList() };
         CopyExtraTo(copy);
         return copy;
     }

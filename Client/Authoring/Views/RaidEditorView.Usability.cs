@@ -11,9 +11,6 @@ internal sealed partial class RaidEditorView
     private string _inspectorContext = "";
     private Button? _sceneMore;
     private VisualElement[] _secondarySceneGroups = Array.Empty<VisualElement>();
-    private string _noticeText = "",
-        _lastNotice = "";
-    private bool _noticeExpanded;
     private string _conflictFingerprint = "";
     private Label _cameraError = null!;
 
@@ -39,10 +36,8 @@ internal sealed partial class RaidEditorView
             _pinned.Add((header, Element(owner)));
         }
         Element("DetailsGroup").Insert(0, Element("IdentityGroup"));
-        Element("Inspector")
-            .RegisterCallback<GeometryChangedEvent>(evt =>
-                Element("Inspector").EnableInClassList("editor-narrow", evt.newRect.width < 320)
-            );
+        Action fitInspector = () => Element("Inspector").EnableInClassList("editor-narrow", Element("Inspector").layout.width < 320);
+        Element("Inspector").RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(fitInspector));
         Section("Preview", false, "ScenePreviewGroup", "ScenePreviewRetryGroup");
         Section("Scene details", false, "SceneRestoreGroup", "SceneInfoGroup");
         Section("Transform", true, "PositionGroup", "RotationGroup", "SizeGroup", "RadiusGroup", "PlacementGroup");
@@ -60,10 +55,9 @@ internal sealed partial class RaidEditorView
             var controls = _toolControls[tool];
             var filters = controls["Library"].Element.Q<VisualElement>("BrowserFilters");
             filters.Insert(0, controls["Search"].Element);
-            controls["Library"]
-                .Element.RegisterCallback<GeometryChangedEvent>(evt =>
-                    controls["Library"].Element.EnableInClassList("editor-narrow", evt.newRect.width < 380)
-                );
+            Action fitLibrary = () =>
+                controls["Library"].Element.EnableInClassList("editor-narrow", controls["Library"].Element.layout.width < 380);
+            controls["Library"].Element.RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(fitLibrary));
         }
         var scene = _toolControls["Scene"];
         _secondarySceneGroups = new[] { scene["Library"].Element.Q("ScenePropActions"), scene["Library"].Element.Q("SceneWorldActions") };
@@ -71,7 +65,7 @@ internal sealed partial class RaidEditorView
         _sceneMore.text = "More actions…";
         _sceneMore.tooltip = "Move, copy, hide, barriers and doors";
         scene["CreationTools"].Element.Add(_sceneMore);
-        scene["Library"].Element.RegisterCallback<GeometryChangedEvent>(_ => RefreshSceneOverflow());
+        scene["Library"].Element.RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(RefreshSceneOverflow));
         scene["Library"].Element.schedule.Execute(RefreshSceneOverflow);
         _sceneMore.clicked += () =>
         {
@@ -90,24 +84,6 @@ internal sealed partial class RaidEditorView
                 i => buttons[i].onClick.Invoke()
             );
         };
-        Button(
-            "NoticeToggle",
-            () =>
-            {
-                _noticeExpanded = !_noticeExpanded;
-                RefreshNotice();
-            }
-        );
-        Button(
-            "NoticeDismiss",
-            () =>
-            {
-                _noticeText = "";
-                _noticeExpanded = false;
-                RefreshNotice();
-            }
-        );
-        RefreshNotice();
     }
 
     private void Section(string title, bool expanded, params string[] ids)
@@ -180,29 +156,13 @@ internal sealed partial class RaidEditorView
         }
     }
 
-    internal void Feedback(string synchronization, string preview, string notice)
+    internal void Feedback(string synchronization, string preview)
     {
         Text("Status", synchronization);
         Text("PreviewStatus", preview);
         Visible("PreviewStatus", preview.Length > 0);
         Windows.SetTooltip("Status", synchronization);
         Windows.SetTooltip("PreviewStatus", preview);
-        if (notice != _lastNotice)
-        {
-            _lastNotice = notice;
-            if (notice.Length > 0 && notice != preview)
-                _noticeText = notice;
-        }
-        RefreshNotice();
-    }
-
-    private void RefreshNotice()
-    {
-        Visible("NoticeToggle", _noticeText.Length > 0);
-        Caption("NoticeToggle", _noticeExpanded ? "Hide notice" : "Notice…");
-        Element("NoticeToggle").tooltip = _noticeText;
-        Text("NoticeText", _noticeText);
-        Visible("NoticePanel", _noticeExpanded && _noticeText.Length > 0);
     }
 
     private void PresentConflicts(WTT.Campaigns.Shared.Authoring.AuthoringResponse conflict)

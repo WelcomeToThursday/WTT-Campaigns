@@ -1,3 +1,4 @@
+using WTT.Campaigns.Client.Authoring.Controllers;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;
@@ -34,10 +35,10 @@ public sealed partial class RaidEditor
             _view.ToolContext = tool;
             return;
         }
-        CancelPlacement();
+        Catalog.CancelPlacement();
         CancelDrag();
         _picking = false;
-        _sceneRebindId = "";
+        Catalog.RebindId = "";
         var previous = ToolStateFor(_mode);
         previous.Selection = _selected;
         previous.Page = _page;
@@ -70,7 +71,7 @@ public sealed partial class RaidEditor
             return;
         var valid = _mode switch
         {
-            "AI" => AiSelected(out _).Valid,
+            "AI" => Ai.AiSelected(out _).Valid,
             "Layouts" => _session.Definition.MapLayouts.AsValueEnumerable().Any(l => l.Id == _selected),
             "Zones" or "Hazards" => (EditorMode.Ready ? FilterZonesForLayout(_layoutId) : _session.Definition.Zones)
                 .AsValueEnumerable()
@@ -81,9 +82,9 @@ public sealed partial class RaidEditor
             "Routes" => _session
                 .Definition.MapLayouts.AsValueEnumerable()
                 .Any(l => l.Id == _selected || l.Checkpoints.AsValueEnumerable().Any(p => p.Id == _selected))
-                || MapPoint != null,
+                || Maps.MapPoint != null,
             "Bindings" => _session.Definition.Story?.RaidBindings.AsValueEnumerable().Any(b => b.Id == _bindingTarget) == true,
-            "Scene" => !EditorMode.Ready || MapPoint != null || MapDoor != null,
+            "Scene" => !EditorMode.Ready || Maps.MapPoint != null || Maps.MapDoor != null,
             _ => true,
         };
         var state = ToolStateFor(_mode);
@@ -122,8 +123,8 @@ public sealed partial class RaidEditor
                 _picked = state.Picked;
                 ValidateToolSelection();
                 RefreshToolBrowser();
-                if (SceneWorkspace)
-                    PresentSceneThumbnails(false);
+                if (Catalog.SceneWorkspace)
+                    Catalog.PresentSceneThumbnails(false);
                 view.Windows.FitContents();
                 state.Selection = _selected;
                 state.Page = _page;
@@ -143,9 +144,9 @@ public sealed partial class RaidEditor
     private void RefreshToolActions()
     {
         var view = _view!;
-        view.ConfigureToolActions(_mode, EditorMode.Ready, SceneWorkspace);
-        view.SetRowThumbnails(SceneWorkspace && _sceneTab == "Catalog");
-        view.Visible("SceneFilters", SceneWorkspace);
+        view.ConfigureToolActions(_mode, EditorMode.Ready, Catalog.SceneWorkspace);
+        view.SetRowThumbnails(Catalog.SceneWorkspace && Catalog.SceneTab == "Catalog");
+        view.Visible("SceneFilters", Catalog.SceneWorkspace);
         view.Caption("AddBox", _mode == "Bindings" ? "+ Trigger" : "+ Box");
         view.Caption("AddSphere", _mode == "Bindings" ? "+ Interaction" : "+ Sphere");
         var editable = _session?.Definition != null && !_session.Retired && _session.Conflict == null;
@@ -189,7 +190,7 @@ public sealed partial class RaidEditor
             editable && EditorMode.Ready && !_walking && !AiPreviewBusy && Layout != null;
         if (_mode != "AI")
             return;
-        var selected = AiSelected(out _);
+        EditorAiSelection selected = Ai.AiSelected(out _);
         var canAuthor = editable && !AiPreviewBusy && !_session!.Previewing && Layout != null;
         foreach (var name in new[] { "AiEncounter", "AiWave", "AiRoster", "AiSpawn", "AiPatrol", "AiWaypoint" })
             view.Get<EditorButton>(name).interactable = canAuthor;
@@ -198,6 +199,6 @@ public sealed partial class RaidEditor
         view.Get<EditorButton>("AiWaypoint").interactable = canAuthor && selected.Route != null;
         view.Get<EditorButton>("AiReset").interactable = AiPreviewBusy;
         view.Get<EditorButton>("AiSimulate").interactable = editable && _aiPreview;
-        view.Caption("AiNavigation", "Inspect navigation: " + (_inspectAiNavigation ? "on" : "off"));
+        view.Caption("AiNavigation", "Inspect navigation: " + (Ai.InspectNavigation ? "on" : "off"));
     }
 }

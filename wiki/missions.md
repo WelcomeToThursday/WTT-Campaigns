@@ -14,6 +14,10 @@ Mission runs use your active character's equipment and normal raid rules. Death,
 
 Only authored enemies spawn during a mission. Map scenery, doors, barriers, placed loot, and layout zones belong to that mission run. Ordinary raids continue using their normal map and spawn rules.
 
+## Interrupted encounters
+
+If an authored encounter cannot recover from a technical failure, the mission pauses and explains the interruption separately from player defeat. **Retry checkpoint** restores the last saved checkpoint with a fresh attempt when retries are enabled. **End attempt** exits alive without awarding mission completion. If the server cannot acknowledge the interruption, the attempt remains paused until communication succeeds. See [Encounter failure recovery](ai-encounters.md#encounter-failure-recovery) for AI limits, bounded retries and cleanup.
+
 ## Author a mission
 
 Open **Mission library** from Campaign Creator, or visit `/wtt-campaigns/creator/missions`. Choose **Create mission**, select its map, and save. Open Campaign Editor in the game, select that mission draft and map, and author its start, checkpoints, exit, scene edits and encounters. The dedicated web editor provides objectives, events and container loot. No campaign or quest is required.

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 
 namespace WTT.Campaigns.Client.Authoring;
@@ -171,7 +172,7 @@ public sealed partial class RaidEditor
                     var renderer = node.GetComponent<Renderer>();
                     if (renderer && renderer is MeshRenderer or SkinnedMeshRenderer)
                         _sceneRenderers.Add(renderer);
-                    DiscoverSceneNode(node);
+                    Catalog.DiscoverSceneNode(node);
                 }
                 if (node && !_sceneIndex.Add(node, node.name))
                 {
@@ -185,7 +186,7 @@ public sealed partial class RaidEditor
         {
             _sceneIndex.Limit();
             FinishSceneIndex();
-            _notice = "Scene indexing stopped: " + e.Message;
+            ReportFeedback("Scene indexing stopped: " + e.Message, ConsoleSeverity.Error);
             Plugin.Error(e);
         }
     }
@@ -198,7 +199,7 @@ public sealed partial class RaidEditor
                 $"Raid editor scene index: {_sceneIndex.Count} objects, {_sceneIndex.RetainedCharacters} cached characters, limited={_sceneIndex.Limited}."
             );
             if (_sceneIndex.Limited)
-                _notice = SceneIndexStatus;
+                ReportFeedback(SceneIndexStatus);
         }
         _sceneWalk?.Dispose();
         _sceneWalk = null;
@@ -207,7 +208,9 @@ public sealed partial class RaidEditor
     private void ClearSceneIndex()
     {
         FinishSceneIndex();
-        ClearSceneCatalog();
+        Catalog.Reset();
+        _aiController?.Reset();
+        _mapController?.Reset();
         _sceneIndex.Clear();
         _sceneStarted = false;
         _picked = null;

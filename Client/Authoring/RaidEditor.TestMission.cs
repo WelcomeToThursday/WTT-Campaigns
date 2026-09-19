@@ -2,6 +2,7 @@ using Comfort.Common;
 using EFT;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Missions;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Authoring;
@@ -125,7 +126,7 @@ public sealed partial class RaidEditor
 
     private void CheckpointTestMessage(string message)
     {
-        _notice = message;
+        ReportFeedback(message);
         Plugin.LogInfo(message);
         EFT.UI.ItemUiContext.Instance.ShowMessageWindow(message, null, null, "OK", 0f, forceShow: true);
     }
@@ -140,8 +141,8 @@ public sealed partial class RaidEditor
         _checkpointTestLayout = Layout.Id;
         _checkpointTestDraft = _session.DraftId;
         _checkpointTestDeadline = Time.realtimeSinceStartup + 30f;
-        _notice = "Preparing checkpoint test · waiting for the draft to synchronize…";
-        Plugin.LogInfo(_notice);
+        ReportFeedback("Preparing checkpoint test · waiting for the draft to synchronize…");
+        Plugin.LogInfo(LastFeedback);
         StartPendingEditorMissionTest();
     }
 
@@ -232,7 +233,7 @@ public sealed partial class RaidEditor
         _editorMissionCompleted = false;
         _editorMissionCheckpoint = 0;
         _editorMissionPending = response;
-        _notice = "Mission test will start when the editor workspace is ready…";
+        ReportFeedback("Mission test will start when the editor workspace is ready…");
         StartPendingEditorMissionTest();
     }
 
@@ -492,10 +493,10 @@ public sealed partial class RaidEditor
         }
         catch (Exception error)
         {
-            _notice = "Mission test progress failed: " + error.Message;
+            ReportFeedback("Mission test progress failed: " + error.Message, ConsoleSeverity.Error);
             if (_testRetryGuard?.Frozen == true)
                 BreakTestRestore(error);
-            _aiPreviewStatus = _notice;
+            _aiPreviewStatus = LastFeedback;
             Plugin.Error(error);
             if (_view?.Valid == true)
                 _view.Text("EditorWalkStatus", _aiPreviewStatus);
@@ -541,7 +542,7 @@ public sealed partial class RaidEditor
             _editorMissionTest = previous;
             _editorMissionRequested = true;
             _editorMissionCompleted = true;
-            _notice = "Mission test retry failed: " + error.Message;
+            ReportFeedback("Mission test retry failed: " + error.Message, ConsoleSeverity.Error);
             Plugin.Error(error);
         }
         finally

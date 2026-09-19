@@ -69,7 +69,7 @@ internal static class EditorOpenChecks
             editor.Methods.Single(m => m.Name == "Open").Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "TryBegin"),
             "Every automatic editor opening respects the failure latch"
         );
-        var aiSelection = editor.NestedTypes.Single(t => t.Name == "AiSelection");
+        var aiSelection = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Controllers.EditorAiSelection");
         check(
             aiSelection
                 .Methods.Single(m => m.Name == "get_Valid")

@@ -20,7 +20,12 @@ internal sealed class EncounterPatrolRuntime
         internal EFT.HealthSystem.ActiveHealthController Health = null!;
         internal bool DeathConfirmed;
 
-        internal void OnDeath(EDamageType _) => DeathConfirmed = true;
+        internal void OnDeath(EDamageType _)
+        {
+            DeathConfirmed = true;
+            Squad.Planning = false;
+            Squad.NextUpdate = 0;
+        }
 
         internal Squad Squad = null!;
         internal string Id = "";
@@ -39,6 +44,9 @@ internal sealed class EncounterPatrolRuntime
         internal readonly EncounterPatrolStateMachine State = new(route);
         internal readonly List<Member> Members = new();
         internal readonly List<PatrolBotSnapshot> Snapshots = new();
+        internal readonly EncounterPlanningNavigation Navigation = new(new EncounterNavigation(), EncounterNavigationBudget.Plan);
+        internal bool Planning;
+        internal float NextUpdate;
     }
 
     private static readonly Dictionary<BotOwner, Member> Owners = new();
@@ -49,8 +57,8 @@ internal sealed class EncounterPatrolRuntime
     private static bool _installed;
     private readonly Dictionary<string, Squad> _squads = new(StringComparer.Ordinal);
     private readonly MapLayout _layout;
-    private readonly EncounterNavigation _navigation = new();
-    private float _nextUpdate;
+    private readonly List<Squad> _schedule = new();
+    private int _nextSquad;
     internal string Status { get; private set; } = "No patrols";
 
     internal Dictionary<string, PatrolCheckpoint> Capture()
@@ -65,7 +73,12 @@ internal sealed class EncounterPatrolRuntime
     {
         foreach (var pair in saved)
             if (_squads.TryGetValue(pair.Key, out var squad))
+            {
                 squad.State.Restore(pair.Value, Time.time);
+                squad.Planning = false;
+                squad.NextUpdate = 0;
+                squad.Navigation.Clear();
+            }
     }
 
     internal EncounterPatrolRuntime(MapLayout layout)
@@ -138,7 +151,10 @@ internal sealed class EncounterPatrolRuntime
             _layout.PatrolRoutes.AsValueEnumerable().FirstOrDefault(r => r.Id == routeId)
             ?? throw new InvalidOperationException("The assigned patrol route is missing.");
         if (!_squads.TryGetValue(squadId, out var squad))
+        {
             _squads.Add(squadId, squad = new Squad(route));
+            _schedule.Add(squad);
+        }
         if (squad.State.Route.Id != routeId)
             throw new InvalidOperationException("A squad cannot follow two patrol routes.");
         var member = new Member
@@ -155,6 +171,8 @@ internal sealed class EncounterPatrolRuntime
         Owners.Add(bot, member);
         Movers.Add(bot.Mover, member);
         squad.State.Start(squad.Members.AsValueEnumerable().Select(m => m.Id).ToArray());
+        squad.Planning = false;
+        squad.NextUpdate = 0;
         Plugin.LogInfo(
             $"AI patrol assigned: bot={bot.ProfileId}, squad={squadId}, route='{route.Name}' ({route.Id}), waypoints={route.Waypoints.Count}"
         );
@@ -162,43 +180,69 @@ internal sealed class EncounterPatrolRuntime
 
     internal void Tick()
     {
-        if (Time.time < _nextUpdate)
+        if (_schedule.Count == 0)
             return;
-        _nextUpdate = Time.time + .5f;
         var suspended = 0;
-        foreach (var squad in _squads.Values)
+        var pending = 0;
+        var first = _nextSquad;
+        _nextSquad = (_nextSquad + 1) % _schedule.Count;
+        for (var index = 0; index < _schedule.Count; index++)
         {
-            squad.Snapshots.Clear();
-            foreach (var member in squad.Members)
-            {
-                var bot = member.Bot;
-                member.DeathConfirmed |= !member.Health.IsAlive;
-                var alive = !member.DeathConfirmed;
-                squad.Snapshots.Add(
-                    new PatrolBotSnapshot
-                    {
-                        BotId = member.Id,
-                        Alive = alive,
-                        ControlState =
-                            !bot || !bot.GetPlayer ? PatrolBotControlState.Unknown
-                            : Eligible(bot) ? PatrolBotControlState.Eligible
-                            : PatrolBotControlState.Recovery,
-                        Position =
-                            bot && bot.GetPlayer
-                                ? new SpatialVector
-                                {
-                                    X = bot.GetPlayer.Transform.position.x,
-                                    Y = bot.GetPlayer.Transform.position.y,
-                                    Z = bot.GetPlayer.Transform.position.z,
-                                }
-                                : new SpatialVector(),
-                    }
-                );
-                member.Command = null;
-            }
-            var update = squad.State.Update(squad.Snapshots, Time.time, _navigation);
-            if (update.Status == PatrolRuntimeStatus.Suspended)
+            var squad = _schedule[(first + index) % _schedule.Count];
+            if (squad.State.Status == PatrolRuntimeStatus.Suspended)
                 suspended++;
+            if (!squad.Planning && Time.time < squad.NextUpdate)
+                continue;
+            // Do not allocate/replay a planning pass when no query can make progress this frame.
+            // Combat still publishes its suspension immediately without needing a path query.
+            if (!EncounterNavigationBudget.CanPlan && SquadEligible(squad))
+            {
+                pending++;
+                continue;
+            }
+            if (!squad.Planning || !SquadEligible(squad))
+            {
+                squad.Navigation.Clear();
+                squad.Snapshots.Clear();
+                foreach (var member in squad.Members)
+                {
+                    var bot = member.Bot;
+                    if (!member.DeathConfirmed)
+                        member.DeathConfirmed = !member.Health.IsAlive;
+                    var alive = !member.DeathConfirmed;
+                    squad.Snapshots.Add(
+                        new PatrolBotSnapshot
+                        {
+                            BotId = member.Id,
+                            Alive = alive,
+                            ControlState =
+                                !bot || !bot.GetPlayer ? PatrolBotControlState.Unknown
+                                : Eligible(bot) ? PatrolBotControlState.Eligible
+                                : PatrolBotControlState.Recovery,
+                            Position =
+                                bot && bot.GetPlayer
+                                    ? new SpatialVector
+                                    {
+                                        X = bot.GetPlayer.Transform.position.x,
+                                        Y = bot.GetPlayer.Transform.position.y,
+                                        Z = bot.GetPlayer.Transform.position.z,
+                                    }
+                                    : new SpatialVector(),
+                        }
+                    );
+                }
+                squad.Planning = true;
+            }
+            squad.Navigation.BeginPass();
+            if (!squad.State.TryUpdateBudgeted(squad.Snapshots, Time.time, squad.Navigation, out var update))
+            {
+                pending++;
+                continue;
+            }
+            squad.Planning = false;
+            squad.NextUpdate = Time.time + .5f;
+            foreach (var member in squad.Members)
+                member.Command = null;
             foreach (var command in update.Commands)
             {
                 var member = squad.Members.AsValueEnumerable().First(m => m.Id == command.BotId);
@@ -207,7 +251,11 @@ internal sealed class EncounterPatrolRuntime
             if (update.Commands.Count == 0)
                 Release(squad);
         }
-        Status = _squads.Count + " patrol squads" + (suspended > 0 ? " · " + suspended + " suspended" : "");
+        Status =
+            _squads.Count
+            + " patrol squads"
+            + (suspended > 0 ? " · " + suspended + " suspended" : "")
+            + (pending > 0 ? " · " + pending + " awaiting navigation budget" : "");
     }
 
     internal static bool Eligible(BotOwner bot) => EligibilityReason(bot).Length == 0;
@@ -291,7 +339,7 @@ internal sealed class EncounterPatrolRuntime
         if (!Owners.TryGetValue(bot, out var member) || !Active(bot) || member.Command == null)
             return;
         var command = member.Command;
-        if (Time.time < member.NextMove)
+        if (Time.time < member.NextMove || !EncounterNavigationBudget.Move())
         {
             FaceMovement(member);
             return;
@@ -440,6 +488,20 @@ internal sealed class EncounterPatrolRuntime
             + native;
     }
 
+    internal void Remove(BotOwner bot)
+    {
+        if (!Owners.TryGetValue(bot, out var member))
+            return;
+        Release(member);
+        member.Health.DiedEvent -= member.OnDeath;
+        Owners.Remove(bot);
+        Movers.Remove(member.Mover);
+        // Keep a dead snapshot so the existing route does not treat this member as missing.
+        member.DeathConfirmed = true;
+        member.Squad.Planning = false;
+        member.Squad.NextUpdate = 0;
+    }
+
     internal void Reset()
     {
         foreach (var squad in _squads.Values)
@@ -454,6 +516,8 @@ internal sealed class EncounterPatrolRuntime
             }
         }
         _squads.Clear();
+        _schedule.Clear();
+        _nextSquad = 0;
     }
 }
 

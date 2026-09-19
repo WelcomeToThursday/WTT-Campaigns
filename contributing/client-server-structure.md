@@ -12,6 +12,7 @@ Namespaces match folders beneath each project, such as `WTT.Campaigns.Client.Pro
 | `Hub` | Hub presentation and transactions, document tracking, banner sound and video lifecycle |
 | `Patches` | Explicit patch registration and hooks grouped by game feature |
 | `Authoring` | Editor entry points, session and transport state, diagnostics, and the `RaidEditor` coordinator |
+| `Authoring.Controllers` | AI editing, scene catalog/placement, map/door editing, and their internal context interfaces |
 | `Authoring.Views` | Toolkit documents, controls, windows, layout, tree models, and editor screens |
 | `Authoring.Scenes` | Scene discovery, selection, model ownership, navigation, and route overlays |
 | `Authoring.Rendering` | Editor camera environment, weather, visibility, HUD suppression, and render guards |
@@ -25,7 +26,13 @@ Namespaces match folders beneath each project, such as `WTT.Campaigns.Client.Pro
 
 The `UI` namespace here contains EFT integration. Game-independent Unity views remain in the separate [UI project](ui-structure.md). Client components are added at runtime; their namespace changes do not require rebuilding the artwork bundle.
 
-Keep the authoring root for coordination. Put new helpers in the area that owns their behavior and import that namespace explicitly; avoid project-wide global imports. All `RaidEditor` partial declarations stay in the root because they are one type, even when an individual file handles scene or view operations. Helper types that are not partial declarations belong in their own area. Keep namespace depth shallow and introduce another area only when it has a distinct responsibility shared by several types.
+Keep the authoring root for coordination. Put new helpers in the area that owns their behavior and import that namespace explicitly; avoid project-wide global imports. All `RaidEditor` partial declarations stay in the root because they are one type. Its remaining responsibilities include Unity lifecycle, sessions, camera/input, tool selection, refresh scheduling, walkthroughs and AI/mission playtests.
+
+`Authoring.Controllers` contains `EditorAiController`, `EditorCatalogController`, and `EditorMapController`. They bind controls and own their feature's editing state. They receive internal context interfaces, not a concrete `RaidEditor` reference. `IEditorDocumentContext` exposes current document/view coordination; each controller's additional interface exposes only its required editor services. `RaidEditor.Controllers.cs` implements these interfaces explicitly without making coordinator fields public. Cross-tool actions go through these interfaces.
+
+Resolve selections from the current session definition for every edit, including after undo/redo or a remote definition replacement. Apply document changes through `RaidEditorSession.Edit`. Pure AI selection and map-record operations live beside their controllers and are exercised by offline checks. Scene catalog request generations, placement cancellation, navigation contracts, native assets, and scene discovery remain in `Authoring.Scenes`; Toolkit presentation stays in `Authoring.Views`, and equipment/item previews stay in `Authoring.Preview`.
+
+Bind controllers when constructing a view, reset their session-owned state when clearing the scene index, and dispose them when destroying the editor. Catalog reset invalidates pending responses, cancels placement and thumbnail work, and releases owned assets. Closing the view cancels placement while retaining the same-session browser state. Keep native AI preview and walkthrough teardown in the coordinator. Controller files use matching folder/namespace names, and each standalone type or interface has its own named file.
 
 ## Server
 

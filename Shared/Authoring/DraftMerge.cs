@@ -20,7 +20,9 @@ public static class DraftMerge
         if (baseline is JObject b && local is JObject l && remote is JObject r)
         {
             var result = new JObject();
-            foreach (var key in b.Properties().Concat(l.Properties()).Concat(r.Properties()).Select(p => p.Name).Distinct())
+            foreach (
+                var key in b.Properties().AsValueEnumerable().Concat(l.Properties()).Concat(r.Properties()).Select(p => p.Name).Distinct()
+            )
             {
                 var merged = Merge(b[key], l[key], r[key], conflicts, path + "/" + key);
                 if (merged != null)
@@ -38,11 +40,17 @@ public static class DraftMerge
         if (baseline is JArray ba && local is JArray la && remote is JArray ra && Keyed(ba) && Keyed(la) && Keyed(ra))
         {
             var result = new JArray();
-            var old = ba.Select(Key).ToArray();
-            var lo = la.Select(Key).Where(old.Contains).ToArray();
-            var ro = ra.Select(Key).Where(old.Contains).ToArray();
-            var order = !lo.SequenceEqual(old.Where(lo.Contains)) ? la.Concat(ra) : ra.Concat(la);
-            if (!lo.SequenceEqual(old.Where(lo.Contains)) && !ro.SequenceEqual(old.Where(ro.Contains)) && !lo.SequenceEqual(ro))
+            var old = ba.AsValueEnumerable().Select(Key).ToArray();
+            var lo = la.AsValueEnumerable().Select(Key).Where(id => old.AsValueEnumerable().Contains(id)).ToArray();
+            var ro = ra.AsValueEnumerable().Select(Key).Where(id => old.AsValueEnumerable().Contains(id)).ToArray();
+            var order = !lo.AsValueEnumerable().SequenceEqual(old.AsValueEnumerable().Where(id => lo.AsValueEnumerable().Contains(id)))
+                ? la.AsValueEnumerable().Concat(ra).ToArray()
+                : ra.AsValueEnumerable().Concat(la).ToArray();
+            if (
+                !lo.AsValueEnumerable().SequenceEqual(old.AsValueEnumerable().Where(id => lo.AsValueEnumerable().Contains(id)))
+                && !ro.AsValueEnumerable().SequenceEqual(old.AsValueEnumerable().Where(id => ro.AsValueEnumerable().Contains(id)))
+                && !lo.SequenceEqual(ro)
+            )
             {
                 conflicts.Add(
                     new()
@@ -54,12 +62,12 @@ public static class DraftMerge
                 );
             }
 
-            foreach (var id in order.Concat(ba).Select(Key).Distinct())
+            foreach (var id in order.AsValueEnumerable().Concat(ba).Select(Key).Distinct())
             {
                 var merged = Merge(
-                    ba.FirstOrDefault(x => Key(x) == id),
-                    la.FirstOrDefault(x => Key(x) == id),
-                    ra.FirstOrDefault(x => Key(x) == id),
+                    ba.AsValueEnumerable().FirstOrDefault(x => Key(x) == id),
+                    la.AsValueEnumerable().FirstOrDefault(x => Key(x) == id),
+                    ra.AsValueEnumerable().FirstOrDefault(x => Key(x) == id),
                     conflicts,
                     path + "/" + id
                 );
@@ -88,6 +96,7 @@ public static class DraftMerge
 
     private static bool Keyed(JArray values)
     {
-        return values.All(v => v is JObject && Key(v).Length > 0) && values.Select(Key).Distinct().Count() == values.Count;
+        return values.AsValueEnumerable().All(v => v is JObject && Key(v).Length > 0)
+            && values.AsValueEnumerable().Select(Key).Distinct().Count() == values.Count;
     }
 }

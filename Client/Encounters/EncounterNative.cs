@@ -395,6 +395,7 @@ internal sealed class EncounterNative
         }
         catch (Exception exception)
         {
+            activation.Cancelled = true;
             activation.Stage = ActivationStage.Failed;
             throw new InvalidOperationException("Native encounter bot activation failed: " + exception.Message, exception);
         }
@@ -898,6 +899,17 @@ internal sealed class EncounterNative
             UnityEngine.Debug.LogError("WTT encounter native squad group removal failed: " + exception);
             return false;
         }
+    }
+
+    internal void RemoveProfile(string profileId)
+    {
+        if (!_ownedByProfile.TryGetValue(profileId, out var owned))
+            return;
+        owned.Activation.Cancelled = true;
+        owned.Activation.Stage = ActivationStage.Cancelled;
+        DisposeOwnedBot(owned, _spawner);
+        if (!owned.Removed)
+            throw new InvalidOperationException("Native cleanup remains pending for encounter actor " + profileId + ".");
     }
 
     private void DisposeOwnedBot(OwnedBot owned, BotSpawner? spawner)

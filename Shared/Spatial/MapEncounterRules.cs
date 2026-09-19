@@ -159,7 +159,7 @@ public static class MapEncounterRules
             }
         }
 
-        var spawnIds = layout.SpawnPoints.Where(p => p != null).Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
+        var spawnIds = layout.SpawnPoints.AsValueEnumerable().Where(p => p != null).Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
         var encounterIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var encounter in layout.Encounters)
         {
@@ -341,7 +341,11 @@ public static class MapEncounterRules
                 }
                 if (trigger.Volume != null && trigger.ZoneId.Length > 0)
                     errors.Add("Choose either an encounter volume or a checkpoint trigger reference: " + path);
-                if (trigger.ZoneId.Length > 0 && !layout.Checkpoints.Any(p => p.Id == trigger.ZoneId) && layout.Exit?.Id != trigger.ZoneId)
+                if (
+                    trigger.ZoneId.Length > 0
+                    && !layout.Checkpoints.AsValueEnumerable().Any(p => p.Id == trigger.ZoneId)
+                    && layout.Exit?.Id != trigger.ZoneId
+                )
                     errors.Add("Encounter trigger reference must identify a checkpoint or exit in this layout: " + path);
                 if (trigger.EventId.Length > 0)
                     errors.Add("Player-entry encounters cannot specify an event: " + path);

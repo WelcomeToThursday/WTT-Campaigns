@@ -8,39 +8,44 @@ using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
 using RawImage = WTT.Campaigns.Client.Authoring.Views.EditorImage;
-using Text = WTT.Campaigns.Client.Authoring.Views.EditorLabel;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Controllers;
 
-public sealed partial class RaidEditor
+internal sealed partial class EditorCatalogController
 {
-    private string ToolkitSelection =>
-        _sceneTab == "Catalog" ? _catalogSelection : MapPoint?.Id ?? MapDoor?.Id ?? (_picked ? _picked!.GetInstanceID().ToString() : "");
-    private string ToolkitContext =>
-        !SceneWorkspace
-            ? _mode + ":" + _layoutId + ":" + _selected
-            : _catalogSource + ":" + _sceneTab + ":" + _sceneFilter + ":" + _layoutId + ":" + ToolkitSelection;
+    internal string ToolkitSelection =>
+        _sceneTab == "Catalog"
+            ? _catalogSelection
+            : _context.MapPoint?.Id ?? _context.MapDoor?.Id ?? (_context.Picked ? _context.Picked!.GetInstanceID().ToString() : "");
 
-    private void PresentScene()
+    internal string ToolkitContext =>
+        !SceneWorkspace
+            ? _context.ToolId + ":" + _context.LayoutId + ":" + _context.SelectionId
+            : _catalogSource + ":" + _sceneTab + ":" + _sceneFilter + ":" + _context.LayoutId + ":" + ToolkitSelection;
+
+    internal void PresentScene()
     {
-        var view = _view!;
+        var view = _context.View!;
         var scene = SceneWorkspace;
         var sceneKind =
-            ScenePoint is MapObjectEdit objectEdit ? objectEdit.Operation
-            : ScenePoint is MapVolume volume && Layout?.Barriers.AsValueEnumerable().Any(b => b.Id == volume.Id) == true ? "Barrier"
-            : ScenePoint is MapVolume ? "Volume"
-            : MapDoor?.PlaceNew == true ? "PlacedDoor"
-            : MapDoor != null || PickedDoor ? "Door"
+            _context.ScenePoint is MapObjectEdit objectEdit ? objectEdit.Operation
+            : _context.ScenePoint is MapVolume volume && _context.Layout?.Barriers.AsValueEnumerable().Any(b => b.Id == volume.Id) == true
+                ? "Barrier"
+            : _context.ScenePoint is MapVolume ? "Volume"
+            : _context.MapDoor?.PlaceNew == true ? "PlacedDoor"
+            : _context.MapDoor != null || _context.PickedDoor ? "Door"
             : "Loot";
         view.Windows.PresentScene(
             scene,
             _sceneTab,
             sceneKind,
-            _sceneTab == "Catalog" ? _catalogSelection.Length > 0 : MapPoint != null || MapDoor != null || _picked,
-            ScenePoint != null || MapDoor != null,
+            _sceneTab == "Catalog"
+                ? _catalogSelection.Length > 0
+                : _context.MapPoint != null || _context.MapDoor != null || _context.Picked,
+            _context.ScenePoint != null || _context.MapDoor != null,
             CanSceneEdit,
-            _picked,
-            MapPoint != null
+            _context.Picked,
+            _context.MapPoint != null
         );
         if (!scene)
         {
@@ -64,42 +69,44 @@ public sealed partial class RaidEditor
             new List<EditorChoice.OptionData> { new("All game"), new("Current map") },
             _catalogSource == "All game" ? 0 : 1
         );
-        var point = ScenePoint;
+        var point = _context.ScenePoint;
         var catalog = _sceneTab == "Catalog";
         view.Checked("SceneRepeat", _repeatPlacement);
         view.Get<Button>("SceneRepeat").interactable = CanSceneEdit;
         var removed = sceneKind == "Hide";
-        var selected = catalog ? _catalogSelection.Length > 0 : point != null || MapDoor != null || _picked;
+        var selected = catalog ? _catalogSelection.Length > 0 : point != null || _context.MapDoor != null || _context.Picked;
         view.Get<Button>("ScenePlace").interactable =
             CanSceneEdit
             && selected
-            && _placementLifetime == null
+            && !_placementRequests.Active
             && (_selectedCatalogEntry == null || CatalogError(_selectedCatalogEntry).Length == 0);
-        view.Get<Button>("SceneMove").interactable = CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
-        view.Get<Button>("SceneRotate").interactable = CanSceneEdit && selected && sceneKind != "Door" && _sceneSelectionError.Length == 0;
-        view.Get<Button>("SceneScale").interactable = CanTransformScene("Scale");
-        view.Get<Button>("SceneRemove").interactable = CanSceneEdit && selected && _sceneSelectionError.Length == 0;
-        view.Get<Button>("SceneRestore").interactable = CanSceneEdit && MapPoint is MapObjectEdit { Operation: "Move" or "Hide" };
-        view.Get<Button>("SceneRebind").interactable = CanSceneEdit && MapPoint is MapObjectEdit;
+        view.Get<Button>("SceneMove").interactable =
+            CanSceneEdit && selected && sceneKind != "Door" && _context.SceneSelectionError.Length == 0;
+        view.Get<Button>("SceneRotate").interactable =
+            CanSceneEdit && selected && sceneKind != "Door" && _context.SceneSelectionError.Length == 0;
+        view.Get<Button>("SceneScale").interactable = _context.CanTransformScene("Scale");
+        view.Get<Button>("SceneRemove").interactable = CanSceneEdit && selected && _context.SceneSelectionError.Length == 0;
+        view.Get<Button>("SceneRestore").interactable = CanSceneEdit && _context.MapPoint is MapObjectEdit { Operation: "Move" or "Hide" };
+        view.Get<Button>("SceneRebind").interactable = CanSceneEdit && _context.MapPoint is MapObjectEdit;
         foreach (var tool in new[] { "Move", "Rotate", "Scale" })
-            view.Get<Button>(tool).interactable = CanTransformScene(tool);
+            view.Get<Button>(tool).interactable = _context.CanTransformScene(tool);
         var name = catalog
             ? (
                 (_sceneFilter == "Props" || _sceneFilter == "Doors") && _sceneRoots.TryGetValue(_catalogSelection, out var source) && source
                     ? source.name
                     : _selectedCatalogEntry?.Name
             ) ?? "Select an item"
-            : point?.Name ?? MapDoor?.Name ?? (_picked ? _picked!.name : "Select an object");
+            : point?.Name ?? _context.MapDoor?.Name ?? (_context.Picked ? _context.Picked!.name : "Select an object");
         view.Text("SceneHeading", name);
         view.Text(
             "SceneInfo",
-            Layout == null ? "Select or create a layout in Layouts first."
+            _context.Layout == null ? "Select or create a layout in Layouts first."
                 : removed ? "Removed from this layout. Restore original returns it to its original position."
                 : catalog
                     ? (
                         _selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0
                             ? CatalogError(_selectedCatalogEntry)
-                        : _placementLifetime != null
+                        : _placementRequests.Active
                             ? (
                                 _repeatPlacement
                                     ? "Click surfaces to place copies · Escape finishes."
@@ -109,13 +116,13 @@ public sealed partial class RaidEditor
                     )
                 : sceneKind == "Door" ? "Use Door state to cycle the saved native state. Remove clears it from this layout."
                 : point == null ? "Choose Move or Rotate to edit this object. Remove hides it in this layout."
-                : "Saved in " + Layout.Name + ". Undo and redo restore scene changes."
+                : "Saved in " + _context.Layout.Name + ". Undo and redo restore scene changes."
         );
         view.Text(
             "LibraryCount",
-            _catalogLoading && RemoteCatalog ? "Loading catalog…"
+            _catalogRequests.Loading && RemoteCatalog ? "Loading catalog…"
                 : LibraryTotal == 0 ? "No matching objects"
-                : LibraryTotal + " objects · " + (_page + 1) + " / " + ((LibraryTotal + LibraryPageSize - 1) / LibraryPageSize)
+                : LibraryTotal + " objects · " + (_context.Page + 1) + " / " + ((LibraryTotal + LibraryPageSize - 1) / LibraryPageSize)
         );
         if (AssetCatalog)
             view.Text("LibraryCount", LibraryTotal + " objects � " + _assetCatalog?.Status);
@@ -124,22 +131,22 @@ public sealed partial class RaidEditor
             selected
                 ? catalog
                     ? _catalogSelection
-                    : MapPoint?.Id ?? MapDoor?.Id ?? (_picked ? _picked!.GetInstanceID().ToString() : "")
+                    : _context.MapPoint?.Id ?? _context.MapDoor?.Id ?? (_context.Picked ? _context.Picked!.GetInstanceID().ToString() : "")
                 : ""
         );
         PresentContainerControls();
-        view.Get<Button>("SceneFrame").interactable = CanFrameScene;
-        view.Get<Button>("SceneAnchor").interactable = _drag == null && _placementLifetime == null && !_walking;
-        view.Caption("SceneAnchor", _centerAnchor ? "Anchor: Center" : "Anchor: Pivot");
+        view.Get<Button>("SceneFrame").interactable = _context.CanFrameScene;
+        view.Get<Button>("SceneAnchor").interactable = !_context.IsDragging && !_placementRequests.Active && !_context.Walking;
+        view.Caption("SceneAnchor", _context.CenterAnchor ? "Anchor: Center" : "Anchor: Pivot");
         PresentSceneThumbnails();
         if (_sceneFilter == "Doors")
         {
             view.Visible("CatalogViews", false);
-            view.Text("LibraryCount", _rows.Count + " doors · grouped by scene");
+            view.Text("LibraryCount", _context.Rows.Count + " doors · grouped by scene");
             if (catalog && _sceneRoots.TryGetValue(_catalogSelection, out var doorSource) && doorSource)
             {
                 var reason = SceneDoorPlacement.Restriction(doorSource);
-                view.Get<Button>("ScenePlace").interactable = CanSceneEdit && _placementLifetime == null && reason.Length == 0;
+                view.Get<Button>("ScenePlace").interactable = CanSceneEdit && !_placementRequests.Active && reason.Length == 0;
                 view.Text(
                     "SceneInfo",
                     reason.Length > 0
@@ -148,12 +155,12 @@ public sealed partial class RaidEditor
                 );
             }
         }
-        PresentPickedProperties();
-        PresentDoorControls();
-        if (_mapScene?.Loading == true)
+        _context.PresentPickedProperties();
+        _context.PresentDoorControls();
+        if (_context.MapScene?.Loading == true)
             view.Text("SceneInfo", "Loading placed item models…");
-        if (_sceneSelectionError.Length == 0 && _mapScene?.TargetErrors.Count > 0)
-            view.Text("SceneInfo", _mapScene.TargetErrors.AsValueEnumerable().Take(2).JoinToString("\n"));
+        if (_context.SceneSelectionError.Length == 0 && _context.MapScene?.TargetErrors.Count > 0)
+            view.Text("SceneInfo", _context.MapScene.TargetErrors.AsValueEnumerable().Take(2).JoinToString("\n"));
     }
 
     private void SetThumbnail(RawImage image, string key)
@@ -172,17 +179,17 @@ public sealed partial class RaidEditor
         internal WTT.Campaigns.Shared.Authoring.SceneCatalogEntry? Entry;
     }
 
-    private void PresentSceneThumbnails(bool inspector = true)
+    internal void PresentSceneThumbnails(bool inspector = true)
     {
-        if (_view?.Valid != true || !SceneWorkspace)
+        if (_context.View?.Valid != true || !SceneWorkspace)
             return;
-        var view = _view;
+        var view = _context.View;
         var catalog = _sceneTab == "Catalog";
         var wanted = new HashSet<string> { _sceneFilter + ":" + _catalogSelection };
         view.SetRowThumbnails(catalog);
         if (catalog && _sceneFilter != "Doors")
-            for (var i = LibraryOffset; i < Math.Min(_rows.Count, LibraryOffset + LibraryPageSize); i++)
-                wanted.Add(_sceneFilter + ":" + _rows[i].Id);
+            for (var i = LibraryOffset; i < Math.Min(_context.Rows.Count, LibraryOffset + LibraryPageSize); i++)
+                wanted.Add(_sceneFilter + ":" + _context.Rows[i].Id);
         for (var i = _thumbnailQueue.Count - 1; i >= 0; i--)
             if (!catalog || !wanted.Contains(_thumbnailQueue[i].Key))
             {
@@ -195,14 +202,14 @@ public sealed partial class RaidEditor
         for (var i = 0; i < view.RowCapacity; i++)
         {
             var index = LibraryOffset + i;
-            var visible = catalog && _sceneFilter != "Doors" && i < LibraryPageSize && index < _rows.Count;
+            var visible = catalog && _sceneFilter != "Doors" && i < LibraryPageSize && index < _context.Rows.Count;
             view.Visible("SceneIcon" + i, visible);
             if (!visible)
             {
                 view.Visible("SceneIconStatus" + i, false);
                 continue;
             }
-            var id = _rows[index].Id;
+            var id = _context.Rows[index].Id;
             var key = _sceneFilter + ":" + id;
             RequestThumbnail(id, key);
             SetThumbnail(view.Get<RawImage>("SceneIcon" + i), key);
@@ -210,7 +217,7 @@ public sealed partial class RaidEditor
             view.Visible("SceneIconStatus" + i, _previews.Get(key) == null);
             view.Windows.SetTooltip(
                 "Row" + i,
-                _rows[index].Label + (_previews.Error(key) is { Length: > 0 } error ? "\nPreview unavailable: " + error : "")
+                _context.Rows[index].Label + (_previews.Error(key) is { Length: > 0 } error ? "\nPreview unavailable: " + error : "")
             );
         }
         if (!inspector)
@@ -234,7 +241,7 @@ public sealed partial class RaidEditor
                 _catalogSelection,
                 () =>
                 {
-                    _libraryKey = "";
+                    _context.LibraryKey = "";
                 }
             );
             _ = LoadContainerTemplates();
@@ -350,7 +357,7 @@ public sealed partial class RaidEditor
                 finally
                 {
                     if (owned && texture)
-                        Destroy(texture);
+                        UnityEngine.Object.Destroy(texture);
                 }
                 if (epoch == _previews.Generation)
                     PresentSceneThumbnails();
@@ -366,7 +373,7 @@ public sealed partial class RaidEditor
 
     private Texture RenderPropThumbnail(Transform source, GameObject? prepared = null)
     {
-        var model = prepared ?? (_mapScene ??= new()).CopyForPlacement(source);
+        var model = prepared ?? (_context.MapScene ??= new()).CopyForPlacement(source);
         var rig = new GameObject("CampaignEditor thumbnail camera");
         var rt = new RenderTexture(192, 192, 24);
         var materials = new List<Material>();
@@ -397,7 +404,7 @@ public sealed partial class RaidEditor
                 for (var i = 0; i < originals.Length; i++)
                 {
                     var original = originals[i];
-                    var material = new Material(_view!.PreviewShader);
+                    var material = new Material(_context.View!.PreviewShader);
                     materials.Add(material);
                     var opacity =
                         original
@@ -454,7 +461,7 @@ public sealed partial class RaidEditor
         catch
         {
             if (texture)
-                Destroy(texture);
+                UnityEngine.Object.Destroy(texture);
             throw;
         }
         finally
@@ -462,14 +469,14 @@ public sealed partial class RaidEditor
             RenderTexture.active = previous;
             model.SetActive(false);
             rig.SetActive(false);
-            Destroy(model);
-            Destroy(rig);
+            UnityEngine.Object.Destroy(model);
+            UnityEngine.Object.Destroy(rig);
             foreach (var material in materials)
-                Destroy(material);
+                UnityEngine.Object.Destroy(material);
             foreach (var opaque in opaqueTextures.Values)
-                Destroy(opaque);
+                UnityEngine.Object.Destroy(opaque);
             rt.Release();
-            Destroy(rt);
+            UnityEngine.Object.Destroy(rt);
         }
     }
 
@@ -501,7 +508,7 @@ public sealed partial class RaidEditor
         catch
         {
             if (result)
-                Destroy(result);
+                UnityEngine.Object.Destroy(result);
             throw;
         }
         finally
@@ -538,7 +545,7 @@ public sealed partial class RaidEditor
         catch
         {
             if (result)
-                Destroy(result);
+                UnityEngine.Object.Destroy(result);
             throw;
         }
         finally

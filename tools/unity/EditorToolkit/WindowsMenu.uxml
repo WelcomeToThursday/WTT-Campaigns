@@ -6,6 +6,7 @@
         <ui:Button name="LootWindowToggle" class="editor-action" text="Loot configuration" />
         <ui:Button name="EnvironmentWindowToggle" class="editor-action" text="Environment" />
         <ui:Button name="HelpWindowToggle" class="editor-action" text="Editor controls" />
+        <ui:Button name="ConsoleWindowToggle" class="editor-action" text="Console" />
         <ui:Label name="UiSizeLabel" class="editor-label" text="UI size: 85%" picking-mode="Ignore" />
         <ui:VisualElement name="UiSizeActions" class="editor-actions editor-action-row">
             <ui:Button name="UiSizeSmaller" class="editor-action" text="Smaller" />

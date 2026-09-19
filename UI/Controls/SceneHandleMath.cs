@@ -11,8 +11,8 @@ public static class SceneHandleMath
         tangent = Vector2.right;
         for (var i = 1; i < path.Length; i++)
         {
-            var a = camera.WorldToScreenPoint(path[i - 1]);
-            var b = camera.WorldToScreenPoint(path[i]);
+            var a = camera.EditorWorldToScreenPoint(path[i - 1]);
+            var b = camera.EditorWorldToScreenPoint(path[i]);
             if (a.z <= camera.nearClipPlane || b.z <= camera.nearClipPlane)
                 continue;
             var direction = (Vector2)(b - a);
@@ -60,12 +60,12 @@ public static class SceneHandleMath
 
     public static float MetresPerPixel(Camera camera, Vector3 position)
     {
-        var depth = camera.WorldToScreenPoint(position).z;
+        var depth = camera.EditorWorldToScreenPoint(position).z;
         return camera.orthographic
-            ? camera.orthographicSize * 2 / Mathf.Max(1, camera.pixelHeight)
+            ? camera.orthographicSize * 2 / Mathf.Max(1, SceneViewport.ScreenRect(camera).height)
             : 2
                 * Mathf.Max(camera.nearClipPlane, depth)
                 * Mathf.Tan(camera.fieldOfView * Mathf.Deg2Rad / 2)
-                / Mathf.Max(1, camera.pixelHeight);
+                / Mathf.Max(1, SceneViewport.ScreenRect(camera).height);
     }
 }

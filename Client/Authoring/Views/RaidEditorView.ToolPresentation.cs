@@ -100,7 +100,7 @@ internal sealed partial class RaidEditorView
             }
         }
 
-        foreach (var id in new[] { "Inspector", "EnvironmentMenu", "LootConfiguration", "Controls" })
+        foreach (var id in new[] { "Inspector", "EnvironmentMenu", "LootConfiguration", "Controls", "Console" })
             EditorToolWindowStyle.Apply(Element(id));
     }
 

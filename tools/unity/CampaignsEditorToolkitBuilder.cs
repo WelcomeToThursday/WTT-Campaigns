@@ -24,6 +24,8 @@ public static class CampaignsEditorToolkitBuilder
         "ConflictRow",
         "ConflictShield",
         "ContextMenu",
+        "Console",
+        "ConsoleRow",
         "Controls",
         "DockDivider",
         "DockTab",
@@ -55,6 +57,8 @@ public static class CampaignsEditorToolkitBuilder
         "WindowsMenu",
         "Workspace",
         "WorkspaceTitleBar",
+        "GameViewport",
+        "ViewportToolbar",
     };
 
     [Serializable]
@@ -92,7 +96,39 @@ public static class CampaignsEditorToolkitBuilder
             // Exercise imported and reloaded UXML factories, including controls
             // whose fields are bound dynamically rather than by EditorLayoutSpec.
             string[] slots =
-                name == "HomePicker" ? new[] { "Heading:Label", "Close:Button", "Choices:ListView", "Empty:Label" }
+                name == "ViewportToolbar"
+                    ? new[]
+                    {
+                        "ViewportTitle:Label",
+                        "ViewportTools:ScrollView",
+                        "CameraSpeed:TextField",
+                        "ViewportMaximize:Button",
+                        "ViewportSnap:Button",
+                        "ViewportOverlayMenu:VisualElement",
+                        "OverlayZones:Toggle",
+                        "OverlayRoutes:Toggle",
+                        "OverlayAi:Toggle",
+                        "OverlayBounds:Toggle",
+                        "OverlayHandles:Toggle",
+                    }
+                : name == "Console"
+                    ? new[]
+                    {
+                        "ConsoleMessages:ListView",
+                        "ConsoleCommand:TextField",
+                        "ConsoleSearch:TextField",
+                        "ConsoleDetailsFold:Foldout",
+                        "ConsoleDetails:TextField",
+                        "ConsoleClear:Button",
+                        "ConsoleCopy:Button",
+                        "ConsoleAll:Toggle",
+                        "ConsoleTextSize:Label",
+                        "ConsoleTextSmaller:Button",
+                        "ConsoleTextLarger:Button",
+                        "ConsoleTextReset:Button",
+                    }
+                : name == "ConsoleRow" ? new[] { "ConsoleTime:Label", "ConsoleMessage:Label" }
+                : name == "HomePicker" ? new[] { "Heading:Label", "Close:Button", "Choices:ListView", "Empty:Label" }
                 : name == "PickerRow" ? new[] { "selected:Label", "name:Label" }
                 : name == "ChoicePopup"
                     ? new[] { "ChoicePanel:VisualElement", "ChoiceSearch:TextField", "Choices:ListView", "ChoiceEmpty:Label" }
@@ -129,6 +165,8 @@ public static class CampaignsEditorToolkitBuilder
                 throw new InvalidOperationException("Window template is missing runtime binding slots.");
             if (name == "Action" && !(first[0] is Button) || name == "Field" && !(first[0] is TextField))
                 throw new InvalidOperationException("Wrong editor control template type: " + name);
+            if (name == "GameViewport" && (!(first[0] is Image) || first[0].pickingMode != PickingMode.Ignore))
+                throw new InvalidOperationException("Viewport must be an image that leaves input to the editor.");
             if (name == "Library")
             {
                 var search = first.Q<TextField>("Search");
@@ -146,6 +184,25 @@ public static class CampaignsEditorToolkitBuilder
                     throw new InvalidOperationException("Browser instances share search state.");
                 if (ReferenceEquals(first.Q<ListView>("BrowserTree"), second.Q<ListView>("BrowserTree")))
                     throw new InvalidOperationException("Browser instances share their list view.");
+            }
+            if (name == "Console")
+            {
+                if (first.Q<ListView>("ConsoleMessages").virtualizationMethod != CollectionVirtualizationMethod.DynamicHeight)
+                    throw new InvalidOperationException("Console output must allow wrapped, variable-height messages.");
+                foreach (var toggle in first.Query<Toggle>(className: "editor-console-toggle").ToList())
+                    if (!toggle.ClassListContains("editor-setting"))
+                        throw new InvalidOperationException("Console filters must use the editor's setting controls.");
+                if (
+                    !first.Q<TextField>("ConsoleDetails").isReadOnly
+                    || !first.Q<TextField>("ConsoleDetails").multiline
+                    || first.Q<Foldout>("ConsoleDetailsFold").value
+                    || first.Q<Toggle>("ConsoleAll").value
+                    || !first.Q<Toggle>("ConsoleInfo").value
+                    || !first.Q<Toggle>("ConsoleScroll").value
+                )
+                    throw new InvalidOperationException("Console defaults or message details are invalid.");
+                if (first.Q<ListView>("ConsoleMessages").Contains(first.Q<TextField>("ConsoleCommand")))
+                    throw new InvalidOperationException("Console command entry must remain outside the scrolling list.");
             }
             if (name == "Inspector")
             {
@@ -249,6 +306,84 @@ public static class CampaignsEditorToolkitBuilder
         }
     }
 
+    private static void ValidateViewportCopy(Shader shader)
+    {
+        if (!shader || ShaderUtil.ShaderHasError(shader))
+            throw new InvalidOperationException("Viewport copy shader failed to compile.");
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            return;
+        var previous = RenderTexture.active;
+        var srgbWrite = GL.sRGBWrite;
+        var material = new Material(shader);
+        var source = new Texture2D(4, 4, TextureFormat.RGBAFloat, false, true);
+        var readback = new Texture2D(4, 4, TextureFormat.RGBAFloat, false, true);
+        var linear = new RenderTexture(4, 4, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+        try
+        {
+            linear.Create();
+            foreach (var alpha in new[] { 0f, .05f, 1f })
+            foreach (var encoding in new[] { RenderTextureReadWrite.Linear, RenderTextureReadWrite.sRGB })
+            {
+                var colors = new Color[16];
+                // Distinct rows AND columns detect inversion, mirroring and rotation.
+                // A uniform image can check opacity but cannot detect an upside-down frame.
+                for (var y = 0; y < 4; y++)
+                for (var x = 0; x < 4; x++)
+                    colors[y * 4 + x] = new Color(.1f + x * .2f, .1f + y * .2f, .75f, alpha);
+                source.filterMode = FilterMode.Point;
+                source.SetPixels(colors);
+                source.Apply();
+                var target = new RenderTexture(4, 4, 0, RenderTextureFormat.ARGB32, encoding);
+                try
+                {
+                    target.Create();
+                    GL.sRGBWrite = target.sRGB;
+                    Graphics.Blit(source, target, material);
+                    GL.sRGBWrite = false;
+                    Graphics.Blit(target, linear);
+                    RenderTexture.active = linear;
+                    readback.ReadPixels(new Rect(0, 0, 4, 4), 0, 0);
+                    readback.Apply();
+                    var actual = readback.GetPixels();
+                    for (var y = 0; y < 4; y++)
+                    for (var x = 0; x < 4; x++)
+                    {
+                        var pixel = actual[y * 4 + x];
+                        var sourceY = SystemInfo.graphicsUVStartsAtTop ? 3 - y : y;
+                        var expected = colors[sourceY * 4 + x];
+                        if (
+                            Mathf.Abs(pixel.r - expected.r) > .012f
+                            || Mathf.Abs(pixel.g - expected.g) > .012f
+                            || Mathf.Abs(pixel.b - expected.b) > .012f
+                            || pixel.a < .99f
+                        )
+                            throw new InvalidOperationException(
+                                $"Viewport orientation/color/opacity regression: {encoding}, source alpha={alpha}, pixel=({x},{y}), expected={expected}, actual={pixel}."
+                            );
+                    }
+                }
+                finally
+                {
+                    target.Release();
+                    UnityEngine.Object.DestroyImmediate(target);
+                }
+            }
+            Debug.Log(
+                "Viewport GPU regression: asymmetric rows/columns have the correct presentation orientation; RGB preserved and output opaque for zero, partial and full source alpha in linear and sRGB targets."
+            );
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            GL.sRGBWrite = srgbWrite;
+            linear.Release();
+            UnityEngine.Object.DestroyImmediate(linear);
+            UnityEngine.Object.DestroyImmediate(source);
+            UnityEngine.Object.DestroyImmediate(readback);
+            UnityEngine.Object.DestroyImmediate(material);
+        }
+    }
+
     public static void Build()
     {
         const string folder = "Assets/Mods/WTT-Campaigns.Assets/EditorToolkit";
@@ -257,7 +392,7 @@ public static class CampaignsEditorToolkitBuilder
         var sources = new List<SourceHash>();
         foreach (var file in Directory.GetFiles(Path.Combine(project, "tools/unity/EditorToolkit")))
         {
-            if (Path.GetExtension(file) != ".uxml" && Path.GetExtension(file) != ".uss")
+            if (Path.GetExtension(file) != ".uxml" && Path.GetExtension(file) != ".uss" && Path.GetExtension(file) != ".shader")
                 continue;
             File.Copy(file, folder + "/" + Path.GetFileName(file), true);
             sources.Add(new SourceHash { file = "EditorToolkit/" + Path.GetFileName(file), sha256 = Hash(file) });
@@ -309,6 +444,7 @@ public static class CampaignsEditorToolkitBuilder
             path,
             folder + "/Editor.uxml",
             folder + "/Editor.uss",
+            folder + "/ViewportCopy.shader",
             folder + "/m_RuntimeShader.asset",
             folder + "/m_RuntimeWorldShader.asset",
             folder + "/m_AtlasBlitShader.asset",
@@ -334,6 +470,7 @@ public static class CampaignsEditorToolkitBuilder
         if (bundle.LoadAllAssets<Shader>().Length < 3)
             throw new InvalidOperationException("Runtime UI Toolkit shaders were not embedded in the bundle.");
         ValidateTemplates(name => bundle.LoadAsset<VisualTreeAsset>(folder + "/" + name + ".uxml"));
+        ValidateViewportCopy(bundle.LoadAsset<Shader>(folder + "/ViewportCopy.shader"));
         bundle.Unload(true);
         File.WriteAllText(
             Path.Combine(output, "editor-toolkit-validation.json"),

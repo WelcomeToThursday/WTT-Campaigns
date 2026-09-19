@@ -55,6 +55,8 @@ internal sealed class EncounterHoldRuntime
             bot.Steering.LookToMovingDirection();
         if (Time.time < hold.NextMove)
             return;
+        if (!EncounterNavigationBudget.Move())
+            return;
         hold.NextMove = Time.time + .5f;
         var distance = (bot.GetPlayer.Transform.position - hold.Anchor).sqrMagnitude;
         hold.Returning = EncounterMovementPolicy.ReturnToAnchor(hold.Returning, distance);
@@ -83,6 +85,15 @@ internal sealed class EncounterHoldRuntime
         hold.Path.Submitted(bot, hold.Anchor);
         bot.Steering.LookToMovingDirection();
         hold.Status = "Returning";
+    }
+
+    internal void Remove(BotOwner bot)
+    {
+        Stop(bot);
+        if (Holds.TryGetValue(bot, out var hold))
+            Movers.Remove(hold.Mover);
+        Holds.Remove(bot);
+        _owned.Remove(bot);
     }
 
     internal void Reset()

@@ -3,8 +3,8 @@ using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
-using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Spatial;
+using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
 namespace WTT.Campaigns.Client.Authoring;
@@ -28,6 +28,7 @@ public sealed partial class RaidEditor
     }
 
     private Drag? _drag;
+    internal bool IsDragging => _drag != null;
     private bool _picking;
     private readonly List<LineRenderer> _lines = new();
     private Material? _lineMaterial,
@@ -67,7 +68,7 @@ public sealed partial class RaidEditor
             if (_tool == "Rotate" && _drag.RotationPlane)
             {
                 var plane = new Plane(Axis(_drag.Axis), _drag.Anchor);
-                var ray = _camera!.ScreenPointToRay(mouse);
+                var ray = _camera!.EditorScreenPointToRay(mouse);
                 if (plane.Raycast(ray, out var distance))
                     amount = Vector3.SignedAngle(_drag.RotationStart, ray.GetPoint(distance) - _drag.Anchor, Axis(_drag.Axis));
             }
@@ -135,7 +136,7 @@ public sealed partial class RaidEditor
                 );
                 obj.Scale = ZoneRuntime.Vector(scale);
             }
-            if (_mode == "AI" && !AiAcceptPreview(point, before))
+            if (_mode == "AI" && !Ai.AiAcceptPreview(point, before))
             {
                 Refresh();
                 return;
@@ -158,14 +159,22 @@ public sealed partial class RaidEditor
         {
             if ((_mode == "Maps" || _mode == "Scene") && ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
             {
-                _picking = _sceneRebindId.Length > 0;
+                _picking = Catalog.RebindId.Length > 0;
                 return;
             }
-            if (Physics.Raycast(_camera!.ScreenPointToRay(Input.mousePosition), out var hit, 1000, ~0, QueryTriggerInteraction.Collide))
+            if (
+                Physics.Raycast(
+                    _camera!.EditorScreenPointToRay(Input.mousePosition),
+                    out var hit,
+                    1000,
+                    ~0,
+                    QueryTriggerInteraction.Collide
+                )
+            )
             {
                 _picked = hit.transform;
                 _picking = false;
-                _notice = "Scene target selected. Check its components, then use the target.";
+                ReportFeedback("Scene target selected. Check its components, then use the target.");
                 Refresh();
             }
             return;
@@ -176,9 +185,9 @@ public sealed partial class RaidEditor
             if (axis >= 0)
             {
                 var world = HandleOrigin(selected);
-                var origin = _camera!.WorldToScreenPoint(world);
+                var origin = _camera!.EditorWorldToScreenPoint(world);
                 var length = HandleLength(selected);
-                var end = _camera.WorldToScreenPoint(world + HandleAxis(selected, axis) * length);
+                var end = _camera!.EditorWorldToScreenPoint(world + HandleAxis(selected, axis) * length);
                 var direction = (Vector2)(end - origin);
                 if (_tool == "Rotate")
                     direction = HoverTangent(selected, axis);
@@ -190,15 +199,15 @@ public sealed partial class RaidEditor
                     Direction = direction.normalized,
                     PixelsPerMetre = direction.magnitude / length,
                     Anchor = world,
-                    Centered = SceneWorkspace && _centerAnchor,
-                    AnchorTarget = SceneWorkspace ? SceneSelectionTarget : null,
+                    Centered = Catalog.SceneWorkspace && _centerAnchor,
+                    AnchorTarget = Catalog.SceneWorkspace ? SceneSelectionTarget : null,
                     LocalAnchor =
-                        SceneWorkspace && SceneSelectionTarget ? SceneSelectionTarget!.InverseTransformPoint(world) : Vector3.zero,
-                    Transient = SceneWorkspace && MapPoint == null,
+                        Catalog.SceneWorkspace && SceneSelectionTarget ? SceneSelectionTarget!.InverseTransformPoint(world) : Vector3.zero,
+                    Transient = Catalog.SceneWorkspace && Maps.MapPoint == null,
                 };
                 if (_tool == "Rotate")
                 {
-                    var ray = _camera.ScreenPointToRay(mouse);
+                    var ray = _camera.EditorScreenPointToRay(mouse);
                     var plane = new Plane(Axis(axis), world);
                     _drag.RotationPlane = plane.Raycast(ray, out var distance);
                     if (_drag.RotationPlane)
@@ -212,8 +221,8 @@ public sealed partial class RaidEditor
             return;
         var closest = FilterZonesForLayout(_layoutId)
             .AsValueEnumerable()
-            .Select(z => (Zone: z, Screen: _camera!.WorldToScreenPoint(ZoneRuntime.Vector(z.Position))))
-            .Where(z => z.Screen.z > 0)
+            .Select(z => (Zone: z, Screen: _camera!.EditorWorldToScreenPoint(ZoneRuntime.Vector(z.Position))))
+            .Where(z => z.Screen.z > 0 && _view!.ViewportState.Shows(EditorOverlays.Zones))
             .OrderBy(z => Vector2.Distance(mouse, z.Screen))
             .FirstOrDefault();
         if (closest.Zone != null && Vector2.Distance(mouse, closest.Screen) < 24)
@@ -309,9 +318,11 @@ public sealed partial class RaidEditor
         }
 
         _lineIndex = 0;
+        var overlays = _view!.ViewportState;
         foreach (
             var zone in FilterZonesForLayout(_layoutId)
                 .AsValueEnumerable()
+                .Where(_ => overlays.Shows(EditorOverlays.Zones))
                 .OrderBy(z => z.Id == _selected ? 0 : 1)
                 .ThenBy(z => Vector3.Distance(_flyPosition, ZoneRuntime.Vector(z.Position)))
                 .Take(100)
@@ -368,18 +379,14 @@ public sealed partial class RaidEditor
             Line(new[] { center - Vector3.right * .15f, center + Vector3.right * .15f }, color);
             Line(new[] { center - Vector3.up * .15f, center + Vector3.up * .15f }, color);
         }
-        _view?.DrawRoute(
-            (_mode == "Routes" || _mode == "AI") && !_walking ? Layout : null,
-            _camera,
-            _selected,
-            _session?.ContentVersion ?? 0
-        );
-        DrawSelectionBounds();
+        _view?.DrawRoute(!_walking ? Layout : null, _camera, _selected, _session?.ContentVersion ?? 0);
+        if (overlays.Shows(EditorOverlays.Bounds))
+            DrawSelectionBounds();
         if (
             Selected is { } selected
             && CanUseHandle(selected)
             && _camera
-            && _camera!.WorldToScreenPoint(HandleOrigin(selected)).z > _camera.nearClipPlane
+            && _camera!.EditorWorldToScreenPoint(HandleOrigin(selected)).z > _camera!.nearClipPlane
         )
         {
             var hover = _drag?.Axis ?? HoverHandle(selected);

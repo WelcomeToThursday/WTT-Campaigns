@@ -16,7 +16,7 @@ public sealed partial class RaidEditor
     private bool _hasSelectionBounds;
     private Transform? SceneSelectionTarget =>
         _picked ? _picked
-        : MapPoint != null ? _mapScene?.TargetFor(MapPoint.Id, MapPoint as MapObjectEdit)
+        : Maps.MapPoint != null ? _mapScene?.TargetFor(Maps.MapPoint.Id, Maps.MapPoint as MapObjectEdit)
         : null;
 
     private bool TrySelectionBounds(out Bounds bounds)
@@ -32,22 +32,30 @@ public sealed partial class RaidEditor
         return _hasSelectionBounds;
     }
 
-    private bool CanFrameScene =>
-        SceneWorkspace
-        && _sceneTab != "Catalog"
+    private bool CanFrameScene => CanFrameSceneForCommand && !_view!.Typing;
+
+    private bool CanFrameSceneForCommand =>
+        Catalog.SceneWorkspace
+        && Catalog.SceneTab != "Catalog"
         && !_walking
         && _drag == null
-        && _placementLifetime == null
+        && !Catalog.Placing
         && _view?.Valid == true
-        && !_view.Typing
         && !_view.Windows.HasMenu
         && _session?.Conflict == null
-        && MapPoint is not MapObjectEdit { Operation: "Hide" }
+        && Maps.MapPoint is not MapObjectEdit { Operation: "Hide" }
         && TrySelectionBounds(out _);
 
     private void FrameSceneSelection()
     {
-        if (!CanFrameScene || !_camera || !TrySelectionBounds(out var bounds))
+        if (!CanFrameScene)
+            return;
+        FrameSceneSelectionCore();
+    }
+
+    private void FrameSceneSelectionCore()
+    {
+        if (!CanFrameSceneForCommand || !_camera || !TrySelectionBounds(out var bounds))
             return;
         var halfAngle = Mathf.Atan(Mathf.Tan(_camera!.fieldOfView * Mathf.Deg2Rad / 2) * Mathf.Min(1, _camera.aspect));
         var distance = Mathf.Max(_camera.nearClipPlane + bounds.extents.magnitude, bounds.extents.magnitude / Mathf.Sin(halfAngle) * 1.25f);
@@ -58,7 +66,7 @@ public sealed partial class RaidEditor
 
     private Vector3 HandleOrigin(SpatialCapture point)
     {
-        if (SceneWorkspace && _centerAnchor)
+        if (Catalog.SceneWorkspace && _centerAnchor)
         {
             if (_drag != null && _tool != "Move")
                 return _drag.Anchor;
@@ -68,7 +76,8 @@ public sealed partial class RaidEditor
         return ZoneRuntime.Vector(point.Position);
     }
 
-    private bool CanUseHandle(SpatialCapture point) => !SceneWorkspace || CanTransformScene(_tool);
+    private bool CanUseHandle(SpatialCapture point) =>
+        _view?.ViewportState.Shows(EditorOverlays.Handles) == true && (!Catalog.SceneWorkspace || CanTransformScene(_tool));
 
     private void KeepDragAnchor(SpatialCapture point, Drag drag)
     {
@@ -146,7 +155,7 @@ public sealed partial class RaidEditor
 
     private void DrawSelectionBounds()
     {
-        if (!SceneWorkspace || _sceneTab == "Catalog" || !TrySelectionBounds(out var bounds))
+        if (!Catalog.SceneWorkspace || Catalog.SceneTab == "Catalog" || !TrySelectionBounds(out var bounds))
             return;
         var corners = new Vector3[8];
         for (var i = 0; i < 8; i++)

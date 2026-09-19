@@ -26,9 +26,13 @@ internal static class GameplaySerialization
         return token switch
         {
             JObject obj => new JObject(
-                obj.Properties().OrderBy(p => p.Name, StringComparer.Ordinal).Select(p => new JProperty(p.Name, Canonical(p.Value)))
+                obj.Properties()
+                    .AsValueEnumerable()
+                    .OrderBy(p => p.Name, StringComparer.Ordinal)
+                    .Select(p => new JProperty(p.Name, Canonical(p.Value)))
+                    .ToArray()
             ),
-            JArray array => new JArray(array.Select(Canonical)),
+            JArray array => new JArray(array.AsValueEnumerable().Select(Canonical).ToArray()),
             _ => token.DeepClone(),
         };
     }

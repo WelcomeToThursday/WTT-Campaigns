@@ -1,3 +1,53 @@
+# WTT-Campaigns 0.10.1 — Editor console, viewport and AI recovery
+
+Changes since **0.10.0**. This update adds an in-game editor console, improves the scene viewport and camera controls, and adds workload limits and recovery handling for authored AI encounters.
+
+## Editor console and feedback
+
+- **Dockable console.** Open **Windows → Console** to view Campaigns messages, or enable **All client logs** for game and other mod output. Search, severity filters, message details, copy and auto-scroll are included. Window placement and visibility are saved.
+- **Editor commands.** Use `help`, `clear`, `status`, `tool`, `window`, `selection`, `focus`, `camera speed`, `undo` and `redo`. Command entry supports quoted arguments, Tab completion and Up/Down history, and respects editor session, conflict and preview restrictions.
+- **Readable output.** Wrapped messages scroll independently of command entry. Info, Debug, Warning and Error have distinct colors and edge markers. Timestamps align to the second; details and copied text retain milliseconds. A− / A+ / Reset controls save console text size separately from editor UI scaling, without enlarging the title or toolbar. Scrolling back pauses auto-scroll.
+- **Console replaces notices.** Editor action feedback, validation warnings and operation errors now go directly to the console. The old Notice pop-up and show/hide/dismiss controls have been removed. Feedback is retained while the console is hidden; UI refreshes do not republish it.
+- **Bounded logging.** Console history is limited to 2,000 entries and 2 MiB of text per editor session; long individual messages are truncated and discarded-entry counts are shown. Server log streaming and scripting are not included.
+
+## Viewport and camera
+
+- The game view now occupies the editor's central viewport and resizes with dock dividers. Picking, placement, handles and route markers use the same viewport coordinates; floating tools block clicks through them. It presents the existing camera output without rendering a second scene.
+- Added viewport camera-speed controls, snapping, saved overlay choices, clean view and Maximize / Restore. Use **Shift+Space** over the viewport to maximize/restore and **G** to toggle clean view. Escape restores the viewport before closing the editor.
+- Added **Alt+left-drag** orbit and **middle-drag** pan, alongside right-mouse free flight. Improved pointer capture/restoration and navigation behavior around editor controls. Walkthrough and playtest restore fullscreen game presentation.
+
+## Authored AI and mission recovery
+
+- Added configurable authored-AI budgets: defaults are **64 active bots**, **one spawning wave** and **eight navigation checks per frame**. Ready waves wait for capacity, oversized waves are rejected before spawning, and native actor activation is limited to once per frame. Ordinary raid spawning and SAIN combat are unchanged by these budgets.
+- Patrol planning distributes work across frames and squads. Deferred navigation work is distinguished from an unreachable route.
+- Recognized transient profile-request failures retry up to three total attempts. Partial-wave activation rolls back registered actors and AI bindings, and spawn observations are published only after the whole wave activates.
+- Unrecoverable mission encounter failures pause the attempt as a technical interruption, separately from player defeat. When enabled, checkpoint retry restores the saved checkpoint with a fresh attempt identity. Ending an interrupted attempt uses the native alive exit path without granting mission completion; acknowledgement failures keep the attempt paused.
+
+## Compatibility and maintenance
+
+- Reorganized editor controllers and migrated shared collection queries to ZLinq, with offline compatibility checks against the client 1.5.3 and server 1.5.6 libraries. Shared does not ship its own ZLinq copy.
+- Added offline coverage for viewport input, AI budgets and recovery, console commands, bounded concurrent logging, feedback delivery and listener cleanup.
+- Updated the wiki for console controls, viewport navigation, mission interruption recovery and dependencies. The full wiki is embedded in the server for Creator’s Documentation pages and included as readable files in the archive.
+
+## Updating and validation
+
+Targets **SPT 4.1.x / EFT 0.16.9.40743**, with AI integration targeting **SPT 4.1.5**. Dependencies remain **UnityToolkit 2.0.2+** with its prepatcher, **WTT-CommonLib 3.0.6+**, **WTT-ContentBackport 2.0.1+** and its dependencies, **BigBrain 1.5.0+**, **SAIN 4.5.1+**, **MoreBotsAPI 2.1.1+**, and **Black Division 1.3.1+**. Install dependencies separately.
+
+Close the game and server and back up profiles before updating. Extract `BepInEx` and `SPT_Runtime` into your SPT installation and install the **full matching 0.10.1 package**, including UI bundles and asset libraries. Preserve configuration, profiles and the server mod's entire `creator` folder. Restart the server and client manually. There is no content-format or authoring-protocol bump in this patch.
+
+Offline validation covers contracts, installed API compatibility and asset hashes. Live Unity presentation, input, checkpoint recovery and third-party AI behavior still require in-game verification. Fika remains unsupported; this beta does not include a complete authored story campaign.
+
+## Guides
+
+- [Installation and overview](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.1/README.md)
+- [Editor console](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.1/wiki/editor-toolkit.md#console)
+- [Viewport and authoring](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.1/wiki/raid-authoring.md)
+- [AI budgets and recovery](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.1/wiki/ai-encounters.md#encounter-failure-recovery)
+
+[Full changes since 0.10.0](https://github.com/WelcomeToThursday/WTT-Campaigns/compare/V0.10.0...V0.10.1)
+
+---
+
 # WTT-Campaigns 0.10.0 — Missions, levels and editor improvements
 
 This beta separates playable missions from ordinary-raid levels, adds reusable mission publishing, and expands the in-game and web authoring tools.

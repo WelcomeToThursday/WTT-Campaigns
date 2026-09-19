@@ -22,11 +22,12 @@
   <Target Name="BuildEditorToolkitAssets" BeforeTargets="Build" Condition="'$(RebuildEditorToolkit)' == 'true'">
     <Error Condition="!Exists('$(UnityEditorExe)')" Text="Set UnityEditorExe to the Unity 2022.3.43f1 editor executable." />
     <PropertyGroup>
+      <UnityGraphicsArguments Condition="'$(UnityGraphicsArguments)' == ''">-nographics</UnityGraphicsArguments>
       <_ToolkitSdk>$([System.IO.Path]::GetFullPath('$(CampaignsAssetsDir)..\..\..\'))</_ToolkitSdk>
     </PropertyGroup>
     <Copy SourceFiles="tools\unity\CampaignsEditorToolkitBuilder.cs" DestinationFolder="$(CampaignsAssetsDir)Editor\" />
     <MakeDir Directories="artifacts" />
-    <Exec Command="&quot;$(UnityEditorExe)&quot; -batchmode -nographics -quit -projectPath &quot;$(_ToolkitSdk).&quot; -executeMethod CampaignsEditorToolkitBuilder.Build -logFile &quot;$(MSBuildProjectDirectory)\artifacts\editor-toolkit-unity.log&quot;" />
+    <Exec Command="&quot;$(UnityEditorExe)&quot; -batchmode $(UnityGraphicsArguments) -quit -projectPath &quot;$(_ToolkitSdk).&quot; -executeMethod CampaignsEditorToolkitBuilder.Build -logFile &quot;$(MSBuildProjectDirectory)\artifacts\editor-toolkit-unity.log&quot;" />
   </Target>
   <Target Name="Build">
     <Error Condition="'@(_DeployProject)' == ''" Text="DeploymentScope must be All, Client, Server or UI." />
@@ -44,6 +45,7 @@
   <Target Name="Validate" DependsOnTargets="Build">
     <Error Condition="!Exists('$(_NativeAssembly)')" Text="Missing game reference: $(_NativeAssembly)" />
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; &quot;$(_NativeAssembly)&quot;" />
+    <Exec Command="dotnet &quot;@(_TestAssembly)&quot; --shared-zlinq &quot;@(_TestAssembly->'%(RootDir)%(Directory)')WTT-Campaigns.Shared.dll&quot; &quot;$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll&quot; &quot;$(ServerDir)ZLinq.dll&quot;" />
     <Exec Condition="'@(_WebTestAssembly)' != ''" Command="dotnet &quot;@(_WebTestAssembly)&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\test_quest_backports.py&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\build_kord_copy.py&quot; --check" />
@@ -108,7 +110,7 @@
     <Error Condition="'$(PackageDir)' == ''" Text="PackageDir is required. Use tools/package.ps1 to choose a timestamped release directory." />
     <Copy SourceFiles="@(_PlannedFiles)" DestinationFiles="@(_PlannedFiles->'$(PackageDir)\%(PackagePath)')" />
     <ItemGroup>
-      <_PackageDocument Include="README.md;RELEASE_NOTES.md;LICENSE;THIRD_PARTY_NOTICES.md;wiki\**\*" />
+      <_PackageDocument Include="README.md;RELEASE_NOTES.md;LICENSE;THIRD_PARTY_NOTICES.md;CONTRIBUTING.md;contributing\**\*.md;Client\Resources\README.md;wiki\**\*" />
       <_PackageCopy Include="@(_PackageDocument)">
         <Destination>$(PackageDir)\$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '%(_PackageDocument.FullPath)'))</Destination>
       </_PackageCopy>

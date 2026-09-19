@@ -5,7 +5,7 @@ public static class QuestDependencyRules
 {
     public static IReadOnlyCollection<string> Cycles(IEnumerable<NativeQuest> definitions)
     {
-        var quests = definitions.Where(q => q.SeasonalEnabled != false).ToDictionary(q => q.Id);
+        var quests = definitions.AsValueEnumerable().Where(q => q.SeasonalEnabled != false).ToDictionary(q => q.Id);
         var active = new HashSet<(string Id, bool Finished)>();
         var complete = new HashSet<(string Id, bool Finished)>();
         var cycles = new HashSet<string>();
@@ -26,17 +26,19 @@ public static class QuestDependencyRules
             }
             var conditions = node.Finished ? quest.Conditions.AvailableForFinish : quest.Conditions.AvailableForStart;
             foreach (
-                var condition in conditions.Where(c => c.ConditionType == "Quest" && c.IsNecessary != false && c.Status is { Count: > 0 })
+                var condition in conditions
+                    .AsValueEnumerable()
+                    .Where(c => c.ConditionType == "Quest" && c.IsNecessary != false && c.Status is { Count: > 0 })
             )
             {
                 // Any accepted pre-start or negative state means completion of
                 // the referenced quest is not a mandatory prerequisite.
                 var states = condition.Status!;
-                if (!states.All(s => s is "2" or "3" or "4" or "Started" or "AvailableForFinish" or "Success"))
+                if (!states.AsValueEnumerable().All(s => s is "2" or "3" or "4" or "Started" or "AvailableForFinish" or "Success"))
                 {
                     continue;
                 }
-                var finished = states.All(s => s is "3" or "4" or "AvailableForFinish" or "Success");
+                var finished = states.AsValueEnumerable().All(s => s is "3" or "4" or "AvailableForFinish" or "Success");
                 foreach (var target in condition.Target ?? new Serialization.StringTargets(Array.Empty<string>()))
                 {
                     Visit((target, finished));
