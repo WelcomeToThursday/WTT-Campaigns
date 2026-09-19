@@ -83,8 +83,8 @@ dotnet_naming_symbols.constant_fields.applicable_kinds = field
 dotnet_naming_symbols.constant_fields.required_modifiers = const
 dotnet_naming_style.pascal_case_style.capitalization = pascal_case
 
-# internal and private fields should be _camelCase
-dotnet_naming_rule.camel_case_for_private_internal_fields.severity = suggestion
+# Keep the private/internal field naming preference without diagnostics
+dotnet_naming_rule.camel_case_for_private_internal_fields.severity = none
 dotnet_naming_rule.camel_case_for_private_internal_fields.symbols = private_internal_fields
 dotnet_naming_rule.camel_case_for_private_internal_fields.style = camel_case_underscore_style
 dotnet_naming_symbols.private_internal_fields.applicable_kinds = field
@@ -92,10 +92,17 @@ dotnet_naming_symbols.private_internal_fields.applicable_accessibilities = priva
 dotnet_naming_style.camel_case_underscore_style.required_prefix = _
 dotnet_naming_style.camel_case_underscore_style.capitalization = camel_case
 
+# Harmony uses special parameter names such as __instance and __originalMethod.
+dotnet_naming_rule.Parameters.severity = none
+dotnet_naming_rule.Parameters.symbols = parameters
+dotnet_naming_rule.Parameters.style = parameter_style
+dotnet_naming_symbols.parameters.applicable_kinds = parameter
+dotnet_naming_style.parameter_style.capitalization = camel_case
+
 # Code style defaults
 csharp_using_directive_placement = outside_namespace:error
 dotnet_sort_system_directives_first = true
-csharp_prefer_braces = true:warning
+csharp_prefer_braces = true:none
 csharp_prefer_static_local_function = true:suggestion
 csharp_prefer_simple_using_statement = false:none
 csharp_style_prefer_switch_expression = true:suggestion
@@ -116,13 +123,13 @@ dotnet_style_prefer_conditional_expression_over_return = true:silent
 csharp_prefer_simple_default_expression = true:suggestion
 
 # Expression-bodied members
-csharp_style_expression_bodied_methods = false:warning
-csharp_style_expression_bodied_constructors = false:warning
-csharp_style_expression_bodied_operators = false:warning
-csharp_style_expression_bodied_properties = false:warning
-csharp_style_expression_bodied_indexers = false:warning
-csharp_style_expression_bodied_accessors = false:warning
-csharp_style_expression_bodied_local_functions = false:warning
+csharp_style_expression_bodied_methods = false:none
+csharp_style_expression_bodied_constructors = false:none
+csharp_style_expression_bodied_operators = false:none
+csharp_style_expression_bodied_properties = false:none
+csharp_style_expression_bodied_indexers = false:none
+csharp_style_expression_bodied_accessors = false:none
+csharp_style_expression_bodied_local_functions = false:none
 csharp_style_expression_bodied_lambdas = true
 
 # Pattern matching
