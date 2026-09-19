@@ -11,7 +11,10 @@ public sealed class EffectParameters : ExtensibleJsonModel
 
     public EffectParameters DeepClone()
     {
-        var copy = new EffectParameters { Allergy = Allergy?.ToDictionary(pair => pair.Key, pair => pair.Value?.DeepClone()!) };
+        var copy = new EffectParameters
+        {
+            Allergy = Allergy?.AsValueEnumerable().ToDictionary(pair => pair.Key, pair => pair.Value?.DeepClone()!),
+        };
         CopyExtraTo(copy);
         return copy;
     }

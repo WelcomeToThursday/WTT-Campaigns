@@ -14,10 +14,10 @@ public static class SceneAssetRules
         && !value.StartsWith("/")
         && !value.Contains('\\')
         && !value.Contains(':')
-        && value.Split('/').All(p => p.Length > 0 && p is not "." and not "..");
+        && value.Split('/').AsValueEnumerable().All(p => p.Length > 0 && p is not "." and not "..");
 
     public static string CacheFingerprint(IEnumerable<string> dependencyEvidence) =>
-        Identity("scene-index-v1", string.Join("\n", dependencyEvidence.OrderBy(e => e, StringComparer.Ordinal)));
+        Identity("scene-index-v1", dependencyEvidence.AsValueEnumerable().OrderBy(e => e, StringComparer.Ordinal).JoinToString("\n"));
 
     public static string Identity(string bundle, string asset)
     {

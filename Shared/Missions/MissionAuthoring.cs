@@ -31,48 +31,92 @@ public static class MissionAuthoring
 
     public static string NewId() => Guid.NewGuid().ToString("N").Substring(0, 24);
 
-    public static IEnumerable<(string Id, string Name)> Targets(MapLayout layout, string kind) =>
-        kind switch
+    // Public streaming contracts use native iterators: ZLinq's net10 enumerators cannot
+    // be stored in the state machines emitted by our netstandard2.1 compilation.
+    public static IEnumerable<(string Id, string Name)> Targets(MapLayout layout, string kind)
+    {
+        var squads = new HashSet<(string, string)>();
+        foreach (var encounter in layout.Encounters)
         {
-            "Roster" => layout.Encounters.SelectMany(e =>
-                e.Waves.SelectMany(w => w.Roster.Select(r => (r.Id, e.Name + " / " + w.Name + " / " + r.Role + " × " + r.Count)))
-            ),
-            "Squad" => layout
-                .Encounters.SelectMany(e =>
-                    e.Waves.SelectMany(w =>
-                        w.Roster.Where(r => r.SquadId.Length > 0).Select(r => (e.Id + ":" + r.SquadId, e.Name + " / " + r.SquadId))
-                    )
-                )
-                .Distinct(),
-            _ => layout.Encounters.Select(e => (e.Id, e.Name)),
-        };
+            if (kind is not ("Roster" or "Squad"))
+            {
+                yield return (encounter.Id, encounter.Name);
+                continue;
+            }
+            foreach (var wave in encounter.Waves)
+            foreach (var entry in wave.Roster)
+            {
+                if (kind == "Roster")
+                    yield return (entry.Id, encounter.Name + " / " + wave.Name + " / " + entry.Role + " × " + entry.Count);
+                else if (entry.SquadId.Length > 0)
+                {
+                    var squad = (encounter.Id + ":" + entry.SquadId, encounter.Name + " / " + entry.SquadId);
+                    if (squads.Add(squad))
+                        yield return squad;
+                }
+            }
+        }
+    }
 
-    public static IEnumerable<(string Id, string Name)> SourceTargets(MissionDefinition mission, MapLayout layout, string source) =>
-        source switch
+    public static IEnumerable<(string Id, string Name)> SourceTargets(MissionDefinition mission, MapLayout layout, string source)
+    {
+        switch (source)
         {
-            MissionSignals.Checkpoint => layout.Checkpoints.Select(c => (c.Id, c.Name)),
-            MissionSignals.Enter or MissionSignals.Leave or MissionSignals.Sample => layout
-                .Checkpoints.Concat(layout.Exit == null ? Array.Empty<MapVolume>() : new[] { layout.Exit })
-                .Select(c => (c.Id, c.Name)),
-            MissionSignals.Complete or MissionSignals.Fail => mission.Objectives.Select(o => (o.Id, o.Name)),
-            MissionSignals.Death => Targets(layout, "Roster"),
-            MissionSignals.Encounter => Targets(layout, "Encounter"),
-            MissionSignals.Wave => layout.Encounters.SelectMany(e => e.Waves.Select(w => (w.Id, e.Name + " / " + w.Name))),
-            MissionSignals.Timer => mission
-                .Events.SelectMany(e => e.Actions)
-                .Where(a => a.Type == MissionAction.Timer)
-                .Select(a => (a.TargetId, a.TargetId))
-                .Distinct(),
-            MissionSignals.Interaction => layout
-                .Doors.Select(d => (d.Id, d.Name))
-                .Concat(layout.Objects.Where(o => o.Container != null || SceneAssetRules.IsContainer(o)).Select(o => (o.Id, o.Name))),
-            _ => Array.Empty<(string, string)>(),
-        };
+            case MissionSignals.Checkpoint:
+            case MissionSignals.Enter:
+            case MissionSignals.Leave:
+            case MissionSignals.Sample:
+                foreach (var checkpoint in layout.Checkpoints)
+                    yield return (checkpoint.Id, checkpoint.Name);
+                if (source != MissionSignals.Checkpoint && layout.Exit != null)
+                    yield return (layout.Exit.Id, layout.Exit.Name);
+                break;
+            case MissionSignals.Complete:
+            case MissionSignals.Fail:
+                foreach (var objective in mission.Objectives)
+                    yield return (objective.Id, objective.Name);
+                break;
+            case MissionSignals.Death:
+            case MissionSignals.Encounter:
+                foreach (var target in Targets(layout, source == MissionSignals.Death ? "Roster" : "Encounter"))
+                    yield return target;
+                break;
+            case MissionSignals.Wave:
+                foreach (var encounter in layout.Encounters)
+                foreach (var wave in encounter.Waves)
+                    yield return (wave.Id, encounter.Name + " / " + wave.Name);
+                break;
+            case MissionSignals.Timer:
+                var timers = new HashSet<string>();
+                foreach (var rule in mission.Events)
+                foreach (var action in rule.Actions)
+                    if (action.Type == MissionAction.Timer && timers.Add(action.TargetId))
+                        yield return (action.TargetId, action.TargetId);
+                break;
+            case MissionSignals.Interaction:
+                foreach (var door in layout.Doors)
+                    yield return (door.Id, door.Name);
+                foreach (var item in layout.Objects)
+                    if (item.Container != null || SceneAssetRules.IsContainer(item))
+                        yield return (item.Id, item.Name);
+                break;
+        }
+    }
 
-    public static IEnumerable<(string Id, string Name)> ActionTargets(MissionDefinition mission, MapLayout layout, string type) =>
-        type == MissionAction.Objective
-            ? mission.Objectives.Select(o => (o.Id, o.Name))
-            : layout.Encounters.Where(e => e.Trigger.Type == MapEncounterTrigger.Event).Select(e => (e.Id, e.Name));
+    public static IEnumerable<(string Id, string Name)> ActionTargets(MissionDefinition mission, MapLayout layout, string type)
+    {
+        if (type == MissionAction.Objective)
+        {
+            foreach (var objective in mission.Objectives)
+                yield return (objective.Id, objective.Name);
+        }
+        else
+        {
+            foreach (var encounter in layout.Encounters)
+                if (encounter.Trigger.Type == MapEncounterTrigger.Event)
+                    yield return (encounter.Id, encounter.Name);
+        }
+    }
 
     public static void Remap(MissionDefinition mission, IReadOnlyDictionary<string, string> ids)
     {
@@ -90,7 +134,8 @@ public static class MissionAuthoring
             objective.ZoneId = Map(objective.ZoneId);
             objective.UntilEventId = Map(objective.UntilEventId);
             objective.TargetIds = objective
-                .TargetIds.Select(id =>
+                .TargetIds.AsValueEnumerable()
+                .Select(id =>
                     objective.TargetKind == "Squad" && id.Contains(':')
                         ? Map(id.Substring(0, id.IndexOf(':'))) + id.Substring(id.IndexOf(':'))
                         : Map(id)
@@ -100,7 +145,7 @@ public static class MissionAuthoring
         foreach (var gate in mission.Requirements)
         {
             gate.CheckpointId = Map(gate.CheckpointId);
-            gate.ObjectiveIds = gate.ObjectiveIds.Select(Map).ToList();
+            gate.ObjectiveIds = gate.ObjectiveIds.AsValueEnumerable().Select(Map).ToList();
         }
     }
 }

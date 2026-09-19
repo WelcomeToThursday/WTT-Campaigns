@@ -7,24 +7,35 @@ public static class NativeContent
 {
     public static IEnumerable<NativeCondition> AllConditions(this NativeQuest quest)
     {
-        return quest.Conditions.All().SelectMany(c => c.DescendantsAndSelf()).Where(c => !string.IsNullOrEmpty(c.ConditionType));
+        foreach (var root in quest.Conditions.All())
+        foreach (var condition in root.DescendantsAndSelf())
+            if (!string.IsNullOrEmpty(condition.ConditionType))
+                yield return condition;
     }
 
     public static IEnumerable<NativeCondition> All(this NativeQuestConditions stages)
     {
-        return stages.AvailableForStart.Concat(stages.AvailableForFinish).Concat(stages.Fail);
+        foreach (var condition in stages.AvailableForStart)
+            yield return condition;
+        foreach (var condition in stages.AvailableForFinish)
+            yield return condition;
+        foreach (var condition in stages.Fail)
+            yield return condition;
     }
 
     public static IEnumerable<NativeCondition> DescendantsAndSelf(this NativeCondition condition)
     {
         yield return condition;
-        foreach (var child in (condition.Counter?.Conditions ?? new()).Concat(condition.VisibilityConditions))
+        foreach (var child in condition.Counter?.Conditions ?? new())
         {
             foreach (var nested in child.DescendantsAndSelf())
             {
                 yield return nested;
             }
         }
+        foreach (var child in condition.VisibilityConditions)
+        foreach (var nested in child.DescendantsAndSelf())
+            yield return nested;
         if (condition.Props != null)
         {
             foreach (var nested in condition.Props.DescendantsAndSelf())
@@ -47,12 +58,16 @@ public static class NativeContent
 
     public static IEnumerable<NativeReward> AllRewards(this NativeQuest quest)
     {
-        return quest.Rewards.Values.SelectMany(r => r);
+        foreach (var rewards in quest.Rewards.Values)
+        foreach (var reward in rewards)
+            yield return reward;
     }
 
     public static IEnumerable<NativeItem> AllItems(this NativeQuest quest)
     {
-        return quest.AllRewards().SelectMany(r => r.Items);
+        foreach (var reward in quest.AllRewards())
+        foreach (var item in reward.Items)
+            yield return item;
     }
 
     public static string Text(this NativeQuest quest, string key, string language = "en")

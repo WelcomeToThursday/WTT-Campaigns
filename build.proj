@@ -45,6 +45,7 @@
   <Target Name="Validate" DependsOnTargets="Build">
     <Error Condition="!Exists('$(_NativeAssembly)')" Text="Missing game reference: $(_NativeAssembly)" />
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; &quot;$(_NativeAssembly)&quot;" />
+    <Exec Command="dotnet &quot;@(_TestAssembly)&quot; --shared-zlinq &quot;@(_TestAssembly->'%(RootDir)%(Directory)')WTT-Campaigns.Shared.dll&quot; &quot;$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll&quot; &quot;$(ServerDir)ZLinq.dll&quot;" />
     <Exec Condition="'@(_WebTestAssembly)' != ''" Command="dotnet &quot;@(_WebTestAssembly)&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\test_quest_backports.py&quot;" />
     <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Server'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\build_kord_copy.py&quot; --check" />

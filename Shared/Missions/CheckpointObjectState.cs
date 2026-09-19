@@ -83,7 +83,12 @@ public sealed class CheckpointObjectState
                     var target = invocation.Target;
                     // UI and optional integrations may have replaced their subscriptions since capture.
                     // Preserve their current subscriptions instead of resurrecting retired external objects.
-                    if (target != null && !map.ContainsKey(target) && !_entries.ContainsKey(target) && !live.Contains(invocation))
+                    if (
+                        target != null
+                        && !map.ContainsKey(target)
+                        && !_entries.ContainsKey(target)
+                        && !live.AsValueEnumerable().Contains(invocation)
+                    )
                         continue;
                     var rebound =
                         target != null && map.TryGetValue(target, out var newTarget)
@@ -94,7 +99,7 @@ public sealed class CheckpointObjectState
                 foreach (var invocation in live)
                     if (
                         (invocation.Target == null || !_owns(invocation.Target))
-                        && !(result?.GetInvocationList().Contains(invocation) ?? false)
+                        && !(result?.GetInvocationList().AsValueEnumerable().Contains(invocation) ?? false)
                     )
                         result = Delegate.Combine(result, invocation);
                 return result;
@@ -218,7 +223,7 @@ public sealed class CheckpointObjectState
             entry.JsonToken = true;
             if (token is JContainer container)
             {
-                entry.Items = container.Children().Cast<object?>().ToArray();
+                entry.Items = container.Children().AsValueEnumerable().Cast<object?>().ToArray();
                 foreach (var child in entry.Items)
                     Capture(child, true);
             }
@@ -254,7 +259,7 @@ public sealed class CheckpointObjectState
         }
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(HashSet<>))
         {
-            entry.Items = ((IEnumerable)value).Cast<object?>().ToArray();
+            entry.Items = ((IEnumerable)value).AsValueEnumerable().Cast<object?>().ToArray();
             entry.SetClear = type.GetMethod("Clear", Type.EmptyTypes);
             entry.SetAdd = type.GetMethod("Add", type.GenericTypeArguments);
             foreach (var item in entry.Items)

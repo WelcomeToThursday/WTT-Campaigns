@@ -59,7 +59,10 @@ public static class StoryQuestCompatibility
     {
         return Supports(
             condition,
-            quest.AllConditions().Any(p => p.Counter?.Conditions.SelectMany(c => c.DescendantsAndSelf()).Contains(condition) == true)
+            quest
+                .AllConditions()
+                .AsValueEnumerable()
+                .Any(p => p.Counter?.Conditions.AsValueEnumerable().SelectMany(c => c.DescendantsAndSelf()).Contains(condition) == true)
         );
     }
 

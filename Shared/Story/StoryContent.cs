@@ -5,21 +5,34 @@ public static class StoryContent
     public static IEnumerable<string> OwnedIds(StoryDefinition? story)
     {
         if (story == null)
-        {
-            return Enumerable.Empty<string>();
-        }
-        return story
-            .Chapters.Select(c => c.Id)
-            .Concat(story.Notes.Select(n => n.Id))
-            .Concat(story.Notes.SelectMany(n => n.Links.Select(l => l.Id)))
-            .Concat(story.Dialogs.Select(d => d.Id))
-            .Concat(story.Dialogs.SelectMany(d => d.Lines.Select(l => l.Id)))
-            .Concat(story.Dialogs.SelectMany(d => d.Lines.SelectMany(l => l.Actions.Select(a => a.Id))))
-            .Concat(story.Variables.Select(v => v.Id))
-            .Concat(story.EntryPoints.Select(e => e.Id))
-            .Concat(story.RaidBindings.Select(b => b.Id))
-            .Concat(story.RaidBindings.SelectMany(b => b.Actions.Select(a => a.Id)))
-            .Concat(story.Media.Select(m => m.Id));
+            yield break;
+        foreach (var chapter in story.Chapters)
+            yield return chapter.Id;
+        foreach (var note in story.Notes)
+            yield return note.Id;
+        foreach (var note in story.Notes)
+        foreach (var link in note.Links)
+            yield return link.Id;
+        foreach (var dialog in story.Dialogs)
+            yield return dialog.Id;
+        foreach (var dialog in story.Dialogs)
+        foreach (var line in dialog.Lines)
+            yield return line.Id;
+        foreach (var dialog in story.Dialogs)
+        foreach (var line in dialog.Lines)
+        foreach (var action in line.Actions)
+            yield return action.Id;
+        foreach (var variable in story.Variables)
+            yield return variable.Id;
+        foreach (var entry in story.EntryPoints)
+            yield return entry.Id;
+        foreach (var binding in story.RaidBindings)
+            yield return binding.Id;
+        foreach (var binding in story.RaidBindings)
+        foreach (var action in binding.Actions)
+            yield return action.Id;
+        foreach (var media in story.Media)
+            yield return media.Id;
     }
 
     public static void AddTexts(StoryDefinition? story, Dictionary<string, string> texts)
@@ -36,7 +49,7 @@ public static class StoryContent
         {
             texts[note.Id + " text"] = note.Text;
         }
-        foreach (var line in story.Dialogs.SelectMany(d => d.Lines))
+        foreach (var line in story.Dialogs.AsValueEnumerable().SelectMany(d => d.Lines))
         {
             texts[line.Id + " text"] = line.Text;
             if (line.Confirmation.Length > 0)

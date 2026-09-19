@@ -21,7 +21,7 @@ public static class SeasonValidator
 
     public static bool IsId(string? id)
     {
-        return id != null && id.Length == 24 && id.All(c => "0123456789abcdef".Contains(c));
+        return id != null && id.Length == 24 && id.AsValueEnumerable().All(c => "0123456789abcdef".Contains(c));
     }
 
     public static SeasonValidationResult Validate(SeasonDefinition season)
@@ -66,13 +66,15 @@ public static class SeasonValidator
         {
             if (
                 !string.IsNullOrEmpty(zone.LayoutId)
-                && Spatial.SpatialRules.Uses(s, zone.Id).Any()
+                && Spatial.SpatialRules.Uses(s, zone.Id).AsValueEnumerable().Any()
                 && !MissionOwnsZoneReferences(s, zone)
-                && !s.MapLayouts.Any(l =>
-                    l.Id == zone.LayoutId
-                    && l.ApplyInNormalRaids
-                    && Authoring.EditorContentRules.Mode(s, l.Id) == Authoring.EditorContentMode.Level
-                )
+                && !s
+                    .MapLayouts.AsValueEnumerable()
+                    .Any(l =>
+                        l.Id == zone.LayoutId
+                        && l.ApplyInNormalRaids
+                        && Authoring.EditorContentRules.Mode(s, l.Id) == Authoring.EditorContentMode.Level
+                    )
             )
             {
                 r.Add("Zones/" + zone.Id, "Quest/story zones require an enabled ordinary-raid level or their owning mission: " + zone.Id);
@@ -86,7 +88,13 @@ public static class SeasonValidator
             );
         if (s.Missions.Count > 0 && s.FormatVersion < 7)
             r.Add("Missions", "Mission definitions require campaign format 7.");
-        if (s.MapLayouts.Count > 128 || s.MapLayouts.SelectMany(Spatial.MapLayoutRules.OwnedIds).GroupBy(x => x).Any(g => g.Count() > 1))
+        if (
+            s.MapLayouts.Count > 128
+            || s.MapLayouts.AsValueEnumerable()
+                .SelectMany(Spatial.MapLayoutRules.OwnedIds)
+                .GroupBy(x => x)
+                .Any(g => g.AsValueEnumerable().Count() > 1)
+        )
             r.Add("Maps", "Layouts require unique identities (at most 128 layouts).");
         foreach (var layout in s.MapLayouts)
         foreach (var error in Spatial.MapLayoutRules.Errors(layout))
@@ -100,12 +108,13 @@ public static class SeasonValidator
         Need(s.Locales.ContainsKey("en"), "Localization", "English fallback is required.");
         Need(s.Documents.Count is >= 1 and <= 8, "Documents", "Choose between one and eight document types.");
         Need(
-            s.Documents.Select(d => d.ItemId).Distinct().Count() == s.Documents.Count,
+            s.Documents.AsValueEnumerable().Select(d => d.ItemId).Distinct().Count() == s.Documents.Count,
             "Documents",
             "Each document requires a different item template."
         );
         Need(
-            s.Collection.DocumentsPerRaid is >= 0 and <= 8 && s.Collection.MapCounts.Values.All(n => n is >= 0 and <= 8),
+            s.Collection.DocumentsPerRaid is >= 0 and <= 8
+                && s.Collection.MapCounts.Values.AsValueEnumerable().All(n => n is >= 0 and <= 8),
             "Documents",
             "Raid and map caps must be between zero and eight."
         );
@@ -116,7 +125,12 @@ public static class SeasonValidator
         );
         Need(s.Collection.ClassifiedChancePercent is >= 0 and <= 100, "Documents", "Classified chance must be 0–100 percent.");
         Need(s.ExchangeRate is >= 1 and <= 100000 && s.CrateCost is >= 1 and <= 100000, "Exchanges", "Exchange costs must be 1–100000.");
-        if (s.Items.Count > 1000 || s.Quests.Count > 1000 || s.Perks.All.Count() > 2000 || s.AllRewards.Count() > 610)
+        if (
+            s.Items.Count > 1000
+            || s.Quests.Count > 1000
+            || s.Perks.All.AsValueEnumerable().Count() > 2000
+            || s.AllRewards.AsValueEnumerable().Count() > 610
+        )
         {
             r.Add("Overview", "Pack content exceeds authoring limits (1000 items/quests, 2000 perks, 610 reward tiles).");
             return;
@@ -161,7 +175,7 @@ public static class SeasonValidator
                     r.Add("Items/" + item.Id, "Item clone dependency cycle.");
                     break;
                 }
-                next = s.Items.FirstOrDefault(i => i.Id == next.CloneFrom);
+                next = s.Items.AsValueEnumerable().FirstOrDefault(i => i.Id == next.CloneFrom);
             }
         }
         foreach (var perk in s.Perks.All)
@@ -176,7 +190,7 @@ public static class SeasonValidator
             }
 
             Need(
-                perk.Conflicts.All(id => id != perk.Id && s.Perks.Personal.Any(p => p.Id == id)),
+                perk.Conflicts.AsValueEnumerable().All(id => id != perk.Id && s.Perks.Personal.AsValueEnumerable().Any(p => p.Id == id)),
                 path,
                 "Conflicts must reference other personal perks."
             );
@@ -196,7 +210,8 @@ public static class SeasonValidator
             );
         }
         Need(
-            s.Rules.EnabledCommonIds.All(id => s.Perks.Common.Any(p => p.Id == id && EffectSupport.UnavailableReason(p) == null)),
+            s.Rules.EnabledCommonIds.AsValueEnumerable()
+                .All(id => s.Perks.Common.AsValueEnumerable().Any(p => p.Id == id && EffectSupport.UnavailableReason(p) == null)),
             "Perks",
             "Common rules include an unknown or unsupported perk."
         );
@@ -205,7 +220,8 @@ public static class SeasonValidator
         {
             var p = s.Pages[page];
             Need(
-                p.PreviousRequirement >= 0 && p.PreviousRequirement <= (page == 0 ? 0 : s.Pages[page - 1].Rewards.Count(x => x.Enabled)),
+                p.PreviousRequirement >= 0
+                    && p.PreviousRequirement <= (page == 0 ? 0 : s.Pages[page - 1].Rewards.AsValueEnumerable().Count(x => x.Enabled)),
                 "Battle pass/" + page,
                 "The previous-page requirement is impossible."
             );
@@ -218,12 +234,14 @@ public static class SeasonValidator
             Identity(reward.Id, path);
             Need(reward.Side is "" or "USEC" or "BEAR" or "Usec" or "Bear", path, "Unknown faction.");
             Need(
-                reward.Costs.Select(c => c.DocumentId).Distinct().Count() == reward.Costs.Count,
+                reward.Costs.AsValueEnumerable().Select(c => c.DocumentId).Distinct().Count() == reward.Costs.Count,
                 path,
                 "Combine duplicate document costs."
             );
             Need(
-                reward.Costs.All(c => c.Count is >= 1 and <= 100000 && s.Documents.Any(d => d.Id == c.DocumentId)),
+                reward
+                    .Costs.AsValueEnumerable()
+                    .All(c => c.Count is >= 1 and <= 100000 && s.Documents.AsValueEnumerable().Any(d => d.Id == c.DocumentId)),
                 path,
                 "Costs require known documents and positive quantities."
             );
@@ -233,7 +251,11 @@ public static class SeasonValidator
             }
 
             Need(IsId(reward.Image) && IsId(reward.BigImage), path, "Choose thumbnail and full artwork.");
-            Need(reward.Grants.All(g => g != null) && reward.Conditions.All(c => c != null), path, "Malformed payload or condition.");
+            Need(
+                reward.Grants.AsValueEnumerable().All(g => g != null) && reward.Conditions.AsValueEnumerable().All(c => c != null),
+                path,
+                "Malformed payload or condition."
+            );
             Need(reward.Grants.Count > 0, path, "Add at least one reward payload.");
             foreach (var grant in reward.Grants)
             {
@@ -249,7 +271,7 @@ public static class SeasonValidator
                     Need(IsId((string?)grant.Target), path, "Select a reward target.");
                 }
 
-                if (kind == "Item" || (kind == "AssortmentUnlock" && !s.TraderOffers.Any(o => o.Id == grant.Target)))
+                if (kind == "Item" || (kind == "AssortmentUnlock" && !s.TraderOffers.AsValueEnumerable().Any(o => o.Id == grant.Target)))
                 {
                     ItemTree(grant.Items, path, r);
                 }
@@ -288,7 +310,7 @@ public static class SeasonValidator
             }
         }
         Need(
-            s.Crates.Select(c => c.ItemId).Distinct().Count() == s.Crates.Count,
+            s.Crates.AsValueEnumerable().Select(c => c.ItemId).Distinct().Count() == s.Crates.Count,
             "Exchanges",
             "Crate definitions must have unique item templates."
         );
@@ -298,14 +320,14 @@ public static class SeasonValidator
                 IsId(crate.ItemId)
                     && crate.RewardCount is >= 1 and <= 100
                     && crate.Pool.Count > 0
-                    && crate.Pool.All(p => IsId(p.Key) && p.Value > 0 && !double.IsInfinity(p.Value)),
+                    && crate.Pool.AsValueEnumerable().All(p => IsId(p.Key) && p.Value > 0 && !double.IsInfinity(p.Value)),
                 "Exchanges",
                 "Crates require a template, 1–100 rewards, and positive finite item weights."
             );
         }
 
-        var quests = s.Quests.ToDictionary(q => q.Id);
-        var disabledQuests = s.Quests.Count(q => q.SeasonalEnabled == false);
+        var quests = s.Quests.AsValueEnumerable().ToDictionary(q => q.Id);
+        var disabledQuests = s.Quests.AsValueEnumerable().Count(q => q.SeasonalEnabled == false);
         if (disabledQuests > 0)
         {
             r.Add(
@@ -316,7 +338,7 @@ public static class SeasonValidator
         }
         foreach (var quest in quests)
         {
-            var storyQuest = s.Story?.Quests.Any(q => q.QuestId == quest.Key) == true;
+            var storyQuest = s.Story?.Quests.AsValueEnumerable().Any(q => q.QuestId == quest.Key) == true;
             Identity(quest.Key, "Quests/" + quest.Key);
             if ((bool?)quest.Value.SeasonalEnabled == false)
             {
@@ -368,7 +390,9 @@ public static class SeasonValidator
                     if (kind is "FindItem" or "HandoverItem")
                     {
                         Need(
-                            condition.Target is { IsList: true } targets && targets.Values.Count > 0 && targets.All(IsId),
+                            condition.Target is { IsList: true } targets
+                                && targets.Values.Count > 0
+                                && targets.AsValueEnumerable().All(IsId),
                             path,
                             "Select objective items."
                         );
@@ -393,29 +417,31 @@ public static class SeasonValidator
                     {
                         Need(
                             condition.Status is { Count: > 0 } statuses
-                                && statuses.All(status =>
-                                    status
-                                        is "0"
-                                            or "1"
-                                            or "2"
-                                            or "3"
-                                            or "4"
-                                            or "5"
-                                            or "6"
-                                            or "7"
-                                            or "8"
-                                            or "9"
-                                            or "Locked"
-                                            or "AvailableForStart"
-                                            or "Started"
-                                            or "AvailableForFinish"
-                                            or "Success"
-                                            or "Fail"
-                                            or "FailRestartable"
-                                            or "MarkedAsFailed"
-                                            or "Expired"
-                                            or "AvailableAfter"
-                                ),
+                                && statuses
+                                    .AsValueEnumerable()
+                                    .All(status =>
+                                        status
+                                            is "0"
+                                                or "1"
+                                                or "2"
+                                                or "3"
+                                                or "4"
+                                                or "5"
+                                                or "6"
+                                                or "7"
+                                                or "8"
+                                                or "9"
+                                                or "Locked"
+                                                or "AvailableForStart"
+                                                or "Started"
+                                                or "AvailableForFinish"
+                                                or "Success"
+                                                or "Fail"
+                                                or "FailRestartable"
+                                                or "MarkedAsFailed"
+                                                or "Expired"
+                                                or "AvailableAfter"
+                                    ),
                             path,
                             "Quest conditions require valid quest states."
                         );
@@ -440,15 +466,21 @@ public static class SeasonValidator
         ValidateMissions(s, quests, r, Need, Identity);
         foreach (var faction in new[] { s.Starting.Usec, s.Starting.Bear })
         {
-            Need(faction.Skills.Values.All(n => n is >= 0 and <= 51), "Starting character", "Starting skill levels must be 0–51.");
             Need(
-                faction.Items.All(i => IsId(i.Template) && i.Count is >= 1 and <= 10000000 && (i.Slot.Length == 0 || i.Count == 1)),
+                faction.Skills.Values.AsValueEnumerable().All(n => n is >= 0 and <= 51),
+                "Starting character",
+                "Starting skill levels must be 0–51."
+            );
+            Need(
+                faction
+                    .Items.AsValueEnumerable()
+                    .All(i => IsId(i.Template) && i.Count is >= 1 and <= 10000000 && (i.Slot.Length == 0 || i.Count == 1)),
                 "Starting character",
                 "Choose valid starter items and quantities; equipment slots hold one item."
             );
             Need(
-                faction.Items.Where(i => i.Slot.Length > 0).Select(i => i.Slot).Distinct().Count()
-                    == faction.Items.Count(i => i.Slot.Length > 0),
+                faction.Items.AsValueEnumerable().Where(i => i.Slot.Length > 0).Select(i => i.Slot).Distinct().Count()
+                    == faction.Items.AsValueEnumerable().Count(i => i.Slot.Length > 0),
                 "Starting character",
                 "Only one replacement per equipment slot."
             );
@@ -463,7 +495,7 @@ public static class SeasonValidator
         )
         {
             need(s.Missions.Count <= 1000, "Missions", "Use at most 1000 mission definitions.");
-            var layouts = s.MapLayouts.ToDictionary(l => l.Id);
+            var layouts = s.MapLayouts.AsValueEnumerable().ToDictionary(l => l.Id);
             var missionIds = new HashSet<string>();
             foreach (var mission in s.Missions)
             {
@@ -483,7 +515,7 @@ public static class SeasonValidator
                 need(IsId(mission.LayoutId) && layouts.ContainsKey(mission.LayoutId), path, "Choose an existing mission layout.");
                 need(IsId(mission.QuestId) && quests.ContainsKey(mission.QuestId), path, "Choose an existing native quest.");
                 need(
-                    IsId(mission.QuestId) && s.Story?.Quests.Any(q => q.QuestId == mission.QuestId) == true,
+                    IsId(mission.QuestId) && s.Story?.Quests.AsValueEnumerable().Any(q => q.QuestId == mission.QuestId) == true,
                     path,
                     "Mission quests must belong to the campaign story."
                 );
@@ -496,6 +528,7 @@ public static class SeasonValidator
                 foreach (
                     var error in Spatial
                         .MapLayoutRules.Errors(layout, walkthrough: true)
+                        .AsValueEnumerable()
                         .Concat(WTT.Campaigns.Shared.Missions.MissionLogicRules.Errors(mission, layout))
                 )
                 {
@@ -512,12 +545,14 @@ public static class SeasonValidator
                     continue;
                 }
 
-                var condition = quest.Conditions?.AvailableForFinish?.FirstOrDefault(c => (string?)c.Id == mission.CompletionConditionId);
+                var condition = quest
+                    .Conditions?.AvailableForFinish?.AsValueEnumerable()
+                    .FirstOrDefault(c => (string?)c.Id == mission.CompletionConditionId);
                 need(IsId(mission.CompletionConditionId), path, "Choose the mission completion objective.");
                 need(condition != null, path, "Mission completion objective must be in AvailableForFinish.");
                 need(condition?.ConditionType == "GlobalVariableValue", path, "Mission completion objective must use GlobalVariableValue.");
                 var variableId = condition?.Target?.Values is { Count: 1 } values ? values[0] : "";
-                var variable = s.Story?.Variables.FirstOrDefault(v => v.Id == variableId);
+                var variable = s.Story?.Variables.AsValueEnumerable().FirstOrDefault(v => v.Id == variableId);
                 need(
                     variable != null && variable.Scope == StoryVariableScope.Profile && variable.InitialValue == 0,
                     path,
@@ -537,13 +572,14 @@ public static class SeasonValidator
             // A layout-owned zone is available during a mission run only when every
             // quest reference belongs to a mission using that same layout. Story raid
             // bindings have no mission identity and remain ordinary-raid data.
-            if (season.Story?.RaidBindings.Any(binding => binding.ZoneId == zone.Id) == true)
+            if (season.Story?.RaidBindings.AsValueEnumerable().Any(binding => binding.ZoneId == zone.Id) == true)
             {
                 return false;
             }
 
             var missionQuestIds = season
-                .Missions.Where(mission => mission.LayoutId == zone.LayoutId && IsId(mission.QuestId))
+                .Missions.AsValueEnumerable()
+                .Where(mission => mission.LayoutId == zone.LayoutId && IsId(mission.QuestId))
                 .Select(mission => mission.QuestId)
                 .ToHashSet(StringComparer.Ordinal);
             if (missionQuestIds.Count == 0)
@@ -552,14 +588,20 @@ public static class SeasonValidator
             }
 
             return season
-                .Quests.Where(quest => quest.AllConditions().Any(condition => Spatial.SpatialRules.References(condition).Contains(zone.Id)))
+                .Quests.AsValueEnumerable()
+                .Where(quest =>
+                    quest
+                        .AllConditions()
+                        .AsValueEnumerable()
+                        .Any(condition => Spatial.SpatialRules.References(condition).AsValueEnumerable().Contains(zone.Id))
+                )
                 .All(quest => missionQuestIds.Contains(quest.Id));
         }
 
         void Grid(IEnumerable<SeasonReward> rewards, int columns, int rows, string path)
         {
             var cells = new HashSet<(int, int)>();
-            foreach (var tile in rewards.Where(t => t.Enabled))
+            foreach (var tile in rewards.AsValueEnumerable().Where(t => t.Enabled))
             {
                 Need(
                     tile.X >= 0
@@ -594,19 +636,19 @@ public static class SeasonValidator
             result.Add(path, "An item payload needs an item tree.");
             return;
         }
-        var nodes = items.ToList();
-        var ids = nodes.Select(i => i.Id).ToList();
+        var nodes = items.AsValueEnumerable().ToList();
+        var ids = nodes.AsValueEnumerable().Select(i => i.Id).ToList();
         if (
             nodes.Count != items.Count
-            || ids.Any(id => !IsId(id))
-            || ids.Distinct().Count() != ids.Count
-            || nodes.Any(i => !IsId((string?)i.Template))
+            || ids.AsValueEnumerable().Any(id => !IsId(id))
+            || ids.AsValueEnumerable().Distinct().Count() != ids.Count
+            || nodes.AsValueEnumerable().Any(i => !IsId((string?)i.Template))
         )
         {
             result.Add(path, "Invalid or duplicate item tree identities.");
             return;
         }
-        var roots = nodes.Where(i => i.ParentId == null || !ids.Contains(i.ParentId)).ToArray();
+        var roots = nodes.AsValueEnumerable().Where(i => i.ParentId == null || !ids.Contains(i.ParentId)).ToArray();
         if (roots.Length != 1)
         {
             result.Add(path, "Each item payload requires one root.");
@@ -623,7 +665,7 @@ public static class SeasonValidator
                     result.Add(path, "Cyclic item tree.");
                     break;
                 }
-                current = nodes.FirstOrDefault(n => n.Id == (string?)current.ParentId)!;
+                current = nodes.AsValueEnumerable().FirstOrDefault(n => n.Id == (string?)current.ParentId)!;
                 if (current == null)
                 {
                     result.Add(path, "Detached item tree.");

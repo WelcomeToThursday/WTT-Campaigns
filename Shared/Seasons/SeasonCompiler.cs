@@ -78,39 +78,66 @@ public static class SeasonCompiler
 
     public static IEnumerable<string> Dependencies(SeasonDefinition season)
     {
-        var owned = season.Items.Select(i => i.Id).Concat(season.ImportedItems.Keys).ToHashSet();
-        var items = season
-            .Items.Select(i => i.CloneFrom)
-            .Concat(Missions.MissionLibrary.ReferencedItems(season))
-            .Concat(season.Documents.Select(d => d.ItemId))
-            .Concat(season.Crates.SelectMany(c => c.Pool.Keys))
-            .Concat(season.QuestLoot.Select(l => l.ItemTemplate))
-            .Concat(season.Crafts.Select(c => c.EndProduct))
-            .Concat(season.Crafts.SelectMany(c => c.Requirements).Where(r => r.Type == "Item").Select(r => r.TemplateId!))
-            .Concat(
-                season.TraderOffers.SelectMany(o =>
-                    o.Items.Select(i => i.Template).Concat(o.Barter.SelectMany(b => b).Select(b => b.Template))
+        var owned = season.Items.AsValueEnumerable().Select(i => i.Id).Concat(season.ImportedItems.Keys).ToHashSet();
+        return Enumerate();
+        IEnumerable<string> Enumerate()
+        {
+            var items = season
+                .Items.AsValueEnumerable()
+                .Select(i => i.CloneFrom)
+                .Concat(Missions.MissionLibrary.ReferencedItems(season))
+                .Concat(season.Documents.AsValueEnumerable().Select(d => d.ItemId))
+                .Concat(season.Crates.AsValueEnumerable().SelectMany(c => c.Pool.Keys))
+                .Concat(season.QuestLoot.AsValueEnumerable().Select(l => l.ItemTemplate))
+                .Concat(season.Crafts.AsValueEnumerable().Select(c => c.EndProduct))
+                .Concat(
+                    season
+                        .Crafts.AsValueEnumerable()
+                        .SelectMany(c => c.Requirements)
+                        .Where(r => r.Type == "Item")
+                        .Select(r => r.TemplateId!)
                 )
+                .Concat(
+                    season
+                        .TraderOffers.AsValueEnumerable()
+                        .SelectMany(o =>
+                            o.Items.AsValueEnumerable()
+                                .Select(i => i.Template)
+                                .Concat(o.Barter.AsValueEnumerable().SelectMany(b => b).Select(b => b.Template))
+                        )
+                )
+                .Concat(
+                    season
+                        .Zones.AsValueEnumerable()
+                        .Where(z => z.Uses.Contains("Salvage"))
+                        .SelectMany(z => z.Salvage.Rewards.AsValueEnumerable().Select(r => r.ItemTpl).Append(z.Salvage.RequiredItemTpl))
+                )
+                .Concat(
+                    new[] { season.Starting.Usec, season.Starting.Bear }
+                        .AsValueEnumerable()
+                        .SelectMany(f => f.Items.AsValueEnumerable().Select(i => i.Template))
+                )
+                .Concat(
+                    season
+                        .AllRewards.AsValueEnumerable()
+                        .Where(r => r.Enabled)
+                        .SelectMany(r => r.Grants)
+                        .SelectMany(g => g.Items)
+                        .Concat(season.Quests.AsValueEnumerable().Where(q => q.SeasonalEnabled != false).SelectMany(q => q.AllItems()))
+                        .Select(i => i.Template)
+                )
+                .ToArray();
+            foreach (
+                var dependency in season
+                    .Dependencies.AsValueEnumerable()
+                    .Concat(season.MissionLinks.AsValueEnumerable().SelectMany(l => Dependencies(l.Package)))
+                    .Concat(items.AsValueEnumerable().Where(i => !owned.Contains(i)).Select(i => "item:" + i))
+                    .Distinct()
+                    .OrderBy(i => i, StringComparer.Ordinal)
+                    .ToArray()
             )
-            .Concat(
-                season
-                    .Zones.Where(z => z.Uses.Contains("Salvage"))
-                    .SelectMany(z => z.Salvage.Rewards.Select(r => r.ItemTpl).Append(z.Salvage.RequiredItemTpl))
-            )
-            .Concat(new[] { season.Starting.Usec, season.Starting.Bear }.SelectMany(f => f.Items.Select(i => i.Template)))
-            .Concat(
-                season
-                    .AllRewards.Where(r => r.Enabled)
-                    .SelectMany(r => r.Grants)
-                    .SelectMany(g => g.Items)
-                    .Concat(season.Quests.Where(q => q.SeasonalEnabled != false).SelectMany(q => q.AllItems()))
-                    .Select(i => i.Template)
-            );
-        return season
-            .Dependencies.Concat(season.MissionLinks.SelectMany(l => Dependencies(l.Package)))
-            .Concat(items.Where(i => !owned.Contains(i)).Select(i => "item:" + i))
-            .Distinct()
-            .OrderBy(i => i, StringComparer.Ordinal);
+                yield return dependency;
+        }
     }
 
     public static HubState Hub(SeasonDefinition season)
@@ -127,7 +154,8 @@ public static class SeasonCompiler
             WindowSeconds = season.Collection.WindowSeconds,
             DocumentLimit = season.Collection.DocumentLimit,
             Documents = season
-                .Documents.Select(d => new HubDocument
+                .Documents.AsValueEnumerable()
+                .Select(d => new HubDocument
                 {
                     Id = d.Id,
                     Name = d.Name,
@@ -137,13 +165,14 @@ public static class SeasonCompiler
                 })
                 .ToArray(),
             Pages = season
-                .Pages.Select(p => new HubPage
+                .Pages.AsValueEnumerable()
+                .Select(p => new HubPage
                 {
                     PreviousRequirement = p.PreviousRequirement,
-                    Rewards = p.Rewards.Where(r => r.Enabled).Select(Tile).ToArray(),
+                    Rewards = p.Rewards.AsValueEnumerable().Where(r => r.Enabled).Select(Tile).ToArray(),
                 })
                 .ToArray(),
-            SeasonalRewards = season.SeasonalRewards.Where(r => r.Enabled).Select(Tile).ToArray(),
+            SeasonalRewards = season.SeasonalRewards.AsValueEnumerable().Where(r => r.Enabled).Select(Tile).ToArray(),
             Slides = Copy(season.Slides).ToArray(),
             UniversalImage = season.UniversalImage,
             UniversalUnavailableImage = season.UniversalUnavailableImage,
@@ -163,9 +192,10 @@ public static class SeasonCompiler
             SeasonId = season.Id,
             ExchangeRate = season.ExchangeRate,
             ItemExchange = new() { ItemId = season.ExchangeCrate, RequiredDocuments = season.CrateCost },
-            Documents = season.Documents.Select(d => new HubGameplayDocument { Id = d.Id, ItemId = d.ItemId }).ToList(),
+            Documents = season.Documents.AsValueEnumerable().Select(d => new HubGameplayDocument { Id = d.Id, ItemId = d.ItemId }).ToList(),
             Rewards = season
-                .AllRewards.Where(r => r.Enabled)
+                .AllRewards.AsValueEnumerable()
+                .Where(r => r.Enabled)
                 .ToDictionary(r => r.Id, r => new HubGameplayReward { Grants = Copy(r.Grants), Conditions = Copy(r.Conditions) }),
             Offers = Copy(season.Offers),
             TraderOffers = Copy(season.TraderOffers),
@@ -175,16 +205,41 @@ public static class SeasonCompiler
 
     public static IEnumerable<string> Assets(SeasonDefinition season)
     {
-        return season
-            .Perks.All.Select(p => p.ImageUrl)
-            .Concat(season.Documents.SelectMany(d => new[] { d.Image, d.UnavailableImage }))
-            .Concat(season.AllRewards.SelectMany(r => new[] { r.Image, r.BigImage }))
-            .Concat(new[] { season.UniversalImage, season.UniversalUnavailableImage, season.Branding.Badge, season.Branding.Banner })
-            .Concat(season.Slides.Select(s => s.Image))
-            .Concat(season.Story?.Chapters.SelectMany(c => new[] { c.Image, c.Icon }) ?? Enumerable.Empty<string>())
-            .Concat(season.MissionLinks.SelectMany(l => Assets(l.Package)))
-            .Where(s => !string.IsNullOrEmpty(s))
-            .Distinct();
+        var seen = new HashSet<string>();
+        foreach (var asset in Candidates())
+            if (!string.IsNullOrEmpty(asset) && seen.Add(asset))
+                yield return asset;
+
+        IEnumerable<string> Candidates()
+        {
+            foreach (var perk in season.Perks.All)
+                yield return perk.ImageUrl;
+            foreach (var document in season.Documents)
+            {
+                yield return document.Image;
+                yield return document.UnavailableImage;
+            }
+            foreach (var reward in season.AllRewards)
+            {
+                yield return reward.Image;
+                yield return reward.BigImage;
+            }
+            yield return season.UniversalImage;
+            yield return season.UniversalUnavailableImage;
+            yield return season.Branding.Badge;
+            yield return season.Branding.Banner;
+            foreach (var slide in season.Slides)
+                yield return slide.Image;
+            if (season.Story != null)
+                foreach (var chapter in season.Story.Chapters)
+                {
+                    yield return chapter.Image;
+                    yield return chapter.Icon;
+                }
+            foreach (var link in season.MissionLinks)
+            foreach (var asset in Assets(link.Package))
+                yield return asset;
+        }
     }
 
     public static string GameplayIdentity(SeasonDefinition season)

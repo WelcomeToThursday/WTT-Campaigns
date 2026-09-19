@@ -23,16 +23,18 @@ public static class StoryObservationRules
         }
 
         if (
-            observation.Items.Select(i => i.Id).Distinct().Count() != observation.Items.Count
-            || observation.Items.Any(i =>
-                !SeasonValidator.IsId(i.Id ?? "")
-                || !SeasonValidator.IsId(i.Template ?? "")
-                || i.Data.Length > 32768
-                || i.StackCount is < 1 or > 1000000000
-            )
-            || observation.Counters.Any(c => !conditions.Contains(c.Key) || !Finite(c.Value, int.MaxValue))
-            || observation.CompletedConditions.Any(c => !conditions.Contains(c))
-            || observation.Skills.Any(s => s.Key.Length is < 1 or > 64 || !Finite(s.Value, 100))
+            observation.Items.AsValueEnumerable().Select(i => i.Id).Distinct().Count() != observation.Items.Count
+            || observation
+                .Items.AsValueEnumerable()
+                .Any(i =>
+                    !SeasonValidator.IsId(i.Id ?? "")
+                    || !SeasonValidator.IsId(i.Template ?? "")
+                    || i.Data.Length > 32768
+                    || i.StackCount is < 1 or > 1000000000
+                )
+            || observation.Counters.AsValueEnumerable().Any(c => !conditions.Contains(c.Key) || !Finite(c.Value, int.MaxValue))
+            || observation.CompletedConditions.AsValueEnumerable().Any(c => !conditions.Contains(c))
+            || observation.Skills.AsValueEnumerable().Any(s => s.Key.Length is < 1 or > 64 || !Finite(s.Value, 100))
         )
         {
             throw new InvalidOperationException("The raid observation contains unknown or invalid facts.");
@@ -47,7 +49,10 @@ public static class StoryObservationRules
         facts.Observation = observation;
         facts.Level = observation.Level;
         facts.FreeSpecialSlots = observation.FreeSpecialSlots;
-        facts.Items = observation.Items.GroupBy(i => i.Template!).ToDictionary(g => g.Key, g => g.Sum(i => (double)i.StackCount));
+        facts.Items = observation
+            .Items.AsValueEnumerable()
+            .GroupBy(i => i.Template!)
+            .ToDictionary(g => g.Key, g => g.AsValueEnumerable().Sum(i => (double)i.StackCount));
         facts.CompletedConditions.ExceptWith(observation.Counters.Keys);
         foreach (var counter in observation.Counters)
         {

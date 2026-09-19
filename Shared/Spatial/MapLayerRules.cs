@@ -16,19 +16,20 @@ public static class MapLayerRules
     )
     {
         var layouts = published
+            .AsValueEnumerable()
             .Where(p => seasonId.Length == 0 || p.Id == seasonId)
             .OrderBy(p => p.Id, StringComparer.Ordinal)
             .SelectMany(p =>
-                p.MapLayouts.Where(l =>
-                        l.Location == location && Authoring.EditorContentRules.Mode(p, l.Id) == Authoring.EditorContentMode.Level
-                    )
+                p.MapLayouts.AsValueEnumerable()
+                    .Where(l => l.Location == location && Authoring.EditorContentRules.Mode(p, l.Id) == Authoring.EditorContentMode.Level)
                     .Select(l =>
                     {
                         var copy = Seasons.SeasonCompiler.Copy(l);
                         copy.ApplyInNormalRaids = Enabled(p.Id, l, seasonId.Length == 0 ? overrides : null);
                         return copy;
                     })
-            );
+            )
+            .ToArray();
         return Compose(layouts, location);
     }
 
@@ -41,19 +42,28 @@ public static class MapLayerRules
     {
         var result = new List<MapLayerContent>();
         var zoneIds = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var package in published.Where(p => seasonId.Length == 0 || p.Id == seasonId).OrderBy(p => p.Id, StringComparer.Ordinal))
         foreach (
-            var layout in package.MapLayouts.Where(l =>
-                l.Location == location
-                && Authoring.EditorContentRules.Mode(package, l.Id) == Authoring.EditorContentMode.Level
-                && Enabled(package.Id, l, seasonId.Length == 0 ? overrides : null)
-            )
+            var package in published
+                .AsValueEnumerable()
+                .Where(p => seasonId.Length == 0 || p.Id == seasonId)
+                .OrderBy(p => p.Id, StringComparer.Ordinal)
+        )
+        foreach (
+            var layout in package
+                .MapLayouts.AsValueEnumerable()
+                .Where(l =>
+                    l.Location == location
+                    && Authoring.EditorContentRules.Mode(package, l.Id) == Authoring.EditorContentMode.Level
+                    && Enabled(package.Id, l, seasonId.Length == 0 ? overrides : null)
+                )
         )
         {
             var content = new MapLayerContent
             {
                 Source = Key(package.Id, layout.Id),
-                Zones = Seasons.SeasonCompiler.Copy(package.Zones.Where(z => z.LayoutId == layout.Id && z.Location == location).ToList()),
+                Zones = Seasons.SeasonCompiler.Copy(
+                    package.Zones.AsValueEnumerable().Where(z => z.LayoutId == layout.Id && z.Location == location).ToList()
+                ),
                 Extract = layout.Exit == null ? null : Seasons.SeasonCompiler.Copy(layout.Exit),
             };
             foreach (var zone in content.Zones)
@@ -66,7 +76,7 @@ public static class MapLayerRules
 
     public static MapLayout? Compose(IEnumerable<MapLayout> layouts, string location)
     {
-        var enabled = layouts.Where(l => l.ApplyInNormalRaids && l.Location == location).ToArray();
+        var enabled = layouts.AsValueEnumerable().Where(l => l.ApplyInNormalRaids && l.Location == location).ToArray();
         if (enabled.Length == 0)
             return null;
         var combined = new MapLayout
@@ -74,24 +84,33 @@ public static class MapLayerRules
             Id = enabled[0].Id,
             Name = "Normal raid map layers",
             Location = location,
-            Objects = enabled.SelectMany(l => l.Objects).ToList(),
-            Doors = enabled.SelectMany(l => l.Doors).ToList(),
-            Barriers = enabled.SelectMany(l => l.Barriers).ToList(),
-            Loot = enabled.SelectMany(l => l.Loot).ToList(),
+            Objects = enabled.AsValueEnumerable().SelectMany(l => l.Objects).ToList(),
+            Doors = enabled.AsValueEnumerable().SelectMany(l => l.Doors).ToList(),
+            Barriers = enabled.AsValueEnumerable().SelectMany(l => l.Barriers).ToList(),
+            Loot = enabled.AsValueEnumerable().SelectMany(l => l.Loot).ToList(),
         };
         var errors = MapLayoutRules.Errors(combined);
         if (errors.Count > 0)
             throw new InvalidOperationException(
-                "Enabled layers on " + location + " (" + string.Join(", ", enabled.Select(l => l.Name)) + "): " + string.Join(" ", errors)
+                "Enabled layers on "
+                    + location
+                    + " ("
+                    + enabled.AsValueEnumerable().Select(l => l.Name).JoinToString(", ")
+                    + "): "
+                    + string.Join(" ", errors)
             );
         return combined;
     }
 
     public static IEnumerable<string> Errors(IEnumerable<MapLayout> layouts)
     {
-        var saved = layouts.ToArray();
-        foreach (var location in saved.Where(l => l.ApplyInNormalRaids).Select(l => l.Location).Distinct())
+        var saved = layouts.AsValueEnumerable().ToArray();
+        var locations = new HashSet<string>();
+        foreach (var layout in saved)
         {
+            if (!layout.ApplyInNormalRaids || !locations.Add(layout.Location))
+                continue;
+            var location = layout.Location;
             string? error = null;
             try
             {

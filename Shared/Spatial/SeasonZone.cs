@@ -83,14 +83,18 @@ public static class SpatialRules
 {
     public static IEnumerable<NativeCondition> Conditions(SeasonDefinition season)
     {
-        return ModelGraph.Texts(season.Quests).SelectMany(t => t.Ancestors.OfType<NativeCondition>()).Distinct();
+        var seen = new HashSet<NativeCondition>();
+        foreach (var text in ModelGraph.Texts(season.Quests))
+        foreach (var ancestor in text.Ancestors)
+            if (ancestor is NativeCondition condition && seen.Add(condition))
+                yield return condition;
     }
 
     public static IEnumerable<string> References(NativeCondition c)
     {
-        return c.ConditionType == "VisitPlace" ? c.Target?.Values ?? Enumerable.Empty<string>()
-            : c.ConditionType == "InZone" ? c.ZoneIds ?? Enumerable.Empty<string>()
-            : c.ZoneId == null ? Enumerable.Empty<string>()
+        return c.ConditionType == "VisitPlace" ? (IEnumerable<string>?)c.Target?.Values ?? Array.Empty<string>()
+            : c.ConditionType == "InZone" ? (IEnumerable<string>?)c.ZoneIds ?? Array.Empty<string>()
+            : c.ZoneId == null ? Array.Empty<string>()
             : new[] { c.ZoneId };
     }
 
@@ -114,9 +118,13 @@ public static class SpatialRules
 
     public static IEnumerable<string> Uses(SeasonDefinition season, string id)
     {
-        return (
-            season.Story?.RaidBindings.Where(b => b.ZoneId == id).Select(b => "Raid event " + b.Id) ?? Enumerable.Empty<string>()
-        ).Concat(Conditions(season).Where(c => References(c).Contains(id)).Select(c => "Objective " + c.Id));
+        if (season.Story != null)
+            foreach (var binding in season.Story.RaidBindings)
+                if (binding.ZoneId == id)
+                    yield return "Raid event " + binding.Id;
+        foreach (var condition in Conditions(season))
+            if (References(condition).AsValueEnumerable().Contains(id))
+                yield return "Objective " + condition.Id;
     }
 
     public static List<string> Errors(SeasonDefinition season, bool requireCompleteSalvage = true)
@@ -128,7 +136,7 @@ public static class SpatialRules
             errors.Add("At most 2000 zones and 2000 captures are supported.");
         }
 
-        foreach (var point in season.Zones.Cast<SpatialCapture>().Concat(season.Captures))
+        foreach (var point in season.Zones.AsValueEnumerable().Cast<SpatialCapture>().Concat(season.Captures))
         {
             if (!SeasonValidator.IsId(point.Id) || !ids.Add(point.Id))
             {
@@ -172,12 +180,16 @@ public static class SpatialRules
 
                 if (
                     zone.Uses == null
-                    || zone.Uses.Any(u => u is not ("InZone" or "VisitPlace" or "LeaveItemAtLocation" or "Salvage" or "Shoot"))
+                    || zone.Uses.AsValueEnumerable()
+                        .Any(u => u is not ("InZone" or "VisitPlace" or "LeaveItemAtLocation" or "Salvage" or "Shoot"))
                 )
                 {
                     errors.Add("Unsupported quest zone use: " + zone.Id);
                 }
-                if (zone.RequiredQuestId.Length > 0 && !season.Quests.Any(q => q.Id == zone.RequiredQuestId && q.SeasonalEnabled != false))
+                if (
+                    zone.RequiredQuestId.Length > 0
+                    && !season.Quests.AsValueEnumerable().Any(q => q.Id == zone.RequiredQuestId && q.SeasonalEnabled != false)
+                )
                     errors.Add("Zone quest gate must reference an active owned quest: " + zone.Id);
                 if (zone.Uses?.Contains("Salvage") == true)
                 {
@@ -187,7 +199,7 @@ public static class SpatialRules
                         && (
                             zone.RequiredQuestId.Length == 0
                             || salvage.Rewards.Count != 1
-                            || salvage.Rewards.Any(r => r.ToQuestInventory || r.Count != 1)
+                            || salvage.Rewards.AsValueEnumerable().Any(r => r.ToQuestInventory || r.Count != 1)
                         )
                     )
                         errors.Add("Recovery interactions require a quest gate and ordinary inventory rewards: " + zone.Id);
@@ -199,7 +211,7 @@ public static class SpatialRules
                             || !float.IsFinite(salvage.SalvageTime)
                             || salvage.SalvageTime <= 0
                             || salvage.Rewards == null
-                            || salvage.Rewards.Any(r => r == null || !SeasonValidator.IsId(r.ItemTpl) || r.Count <= 0)
+                            || salvage.Rewards.AsValueEnumerable().Any(r => r == null || !SeasonValidator.IsId(r.ItemTpl) || r.Count <= 0)
                         )
                     )
                         errors.Add(
@@ -219,7 +231,7 @@ public static class SpatialRules
                 continue;
             }
 
-            var zone = season.Zones.FirstOrDefault(z => z.Id == binding.ZoneId);
+            var zone = season.Zones.AsValueEnumerable().FirstOrDefault(z => z.Id == binding.ZoneId);
             if (
                 zone == null
                 || zone.Location != binding.Location
@@ -232,7 +244,7 @@ public static class SpatialRules
         }
         foreach (var condition in Conditions(season))
         {
-            foreach (var zone in season.Zones.Where(z => References(condition).Contains(z.Id)))
+            foreach (var zone in season.Zones.AsValueEnumerable().Where(z => References(condition).AsValueEnumerable().Contains(z.Id)))
             {
                 if (!zone.Uses.Contains(condition.ConditionType))
                 {

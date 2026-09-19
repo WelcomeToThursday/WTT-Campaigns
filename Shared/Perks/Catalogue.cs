@@ -13,6 +13,12 @@ public sealed class Catalogue
     [JsonIgnore]
     public IEnumerable<Perk> All
     {
-        get { return Common.Concat(Personal); }
+        get
+        {
+            foreach (var perk in Common)
+                yield return perk;
+            foreach (var perk in Personal)
+                yield return perk;
+        }
     }
 }

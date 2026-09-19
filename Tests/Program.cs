@@ -9,6 +9,12 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 4 && args[0] == "--shared-zlinq")
+{
+    WTT.Campaigns.Tests.SharedZLinqChecks.Run(args[1], args[2], args[3]);
+    return;
+}
+
 if (args.Length == 2 && args[0] == "--preview-gear-data")
 {
     WTT.Campaigns.Tests.EditorPreviewGearChecks.RunDatabase(args[1]);

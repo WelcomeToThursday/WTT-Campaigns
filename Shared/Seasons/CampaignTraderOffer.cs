@@ -60,8 +60,10 @@ public static class TraderOfferRules
     // verification reuse after duplicating a campaign without trusting imported receipts.
     public static string AssemblyHash(IReadOnlyList<NativeItem> items)
     {
-        var copy = SeasonCompiler.Copy(items.ToList());
-        var identities = copy.Select((item, index) => new { item.Id, Value = index.ToString() }).ToDictionary(p => p.Id, p => p.Value);
+        var copy = SeasonCompiler.Copy(items.AsValueEnumerable().ToList());
+        var identities = copy.AsValueEnumerable()
+            .Select((item, index) => new { item.Id, Value = index.ToString() })
+            .ToDictionary(p => p.Id, p => p.Value);
         foreach (var item in copy)
         {
             item.Id = identities[item.Id];
@@ -90,16 +92,20 @@ public static class TraderOfferRules
             )
                 result.Add(path, "Assortment changes require format 3 and a unique fixed-assort trader.");
             if (
-                assort.RemovedOffers.Any(id => !SeasonValidator.IsId(id))
-                || assort.RemovedOffers.Distinct().Count() != assort.RemovedOffers.Count
+                assort.RemovedOffers.AsValueEnumerable().Any(id => !SeasonValidator.IsId(id))
+                || assort.RemovedOffers.AsValueEnumerable().Distinct().Count() != assort.RemovedOffers.Count
             )
                 result.Add(path, "Removed offer identities must be valid and unique.");
             foreach (
                 var grant in definition
-                    .AllRewards.SelectMany(r => r.Grants)
+                    .AllRewards.AsValueEnumerable()
+                    .SelectMany(r => r.Grants)
                     .Where(g => g.Type == "AssortmentUnlock" && g.TraderId == assort.TraderId)
             )
-                if (!definition.TraderOffers.Any(o => o.Id == grant.Target) && !assort.AllowsInstalled(grant.Target ?? ""))
+                if (
+                    !definition.TraderOffers.AsValueEnumerable().Any(o => o.Id == grant.Target)
+                    && !assort.AllowsInstalled(grant.Target ?? "")
+                )
                     result.Add(path, "A reward still references an installed offer removed from this assortment.");
         }
         var ids = new HashSet<string>();
@@ -119,7 +125,7 @@ public static class TraderOfferRules
             Need(offer.Items.Count <= MaxItems, "An assembly supports at most 256 items.");
             SeasonValidator.ItemTree(offer.Items, path, result);
             Need(
-                offer.Items.Count(i => i.Id == offer.Id && (i.ParentId == null || i.ParentId == "hideout")) == 1,
+                offer.Items.AsValueEnumerable().Count(i => i.Id == offer.Id && (i.ParentId == null || i.ParentId == "hideout")) == 1,
                 "Offer identity must match its root item."
             );
             foreach (var item in offer.Items)
@@ -147,35 +153,46 @@ public static class TraderOfferRules
             );
             Need(
                 offer.Barter.Count is > 0 and <= 16
-                    && offer.Barter.All(b =>
-                        b.Count is > 0 and <= 32
-                        && b.All(c =>
-                            SeasonValidator.IsId(c.Template) && c.Count > 0 && c.Count <= 1000000000 && Math.Truncate(c.Count) == c.Count
-                        )
-                    ),
+                    && offer
+                        .Barter.AsValueEnumerable()
+                        .All(b =>
+                            b.Count is > 0 and <= 32
+                            && b.AsValueEnumerable()
+                                .All(c =>
+                                    SeasonValidator.IsId(c.Template)
+                                    && c.Count > 0
+                                    && c.Count <= 1000000000
+                                    && Math.Truncate(c.Count) == c.Count
+                                )
+                        ),
                 "Each payment alternative needs positive whole-number costs."
             );
             if (offer.RequiresUnlock)
                 Need(
-                    definition.AllRewards.Any(r => r.Enabled && r.Grants.Any(g => g.Type == "AssortmentUnlock" && g.Target == offer.Id))
-                        || definition.Quests.Any(q =>
-                            q.SeasonalEnabled != false
-                            && q.Id == offer.UnlockQuestId
-                            && (q.Rewards.GetValueOrDefault("Success") ?? new()).Any(g =>
-                                g.Type == "AssortmentUnlock" && g.Target == offer.Id
-                            )
-                        ),
+                    definition
+                        .AllRewards.AsValueEnumerable()
+                        .Any(r => r.Enabled && r.Grants.AsValueEnumerable().Any(g => g.Type == "AssortmentUnlock" && g.Target == offer.Id))
+                        || definition
+                            .Quests.AsValueEnumerable()
+                            .Any(q =>
+                                q.SeasonalEnabled != false
+                                && q.Id == offer.UnlockQuestId
+                                && (q.Rewards.GetValueOrDefault("Success") ?? new())
+                                    .AsValueEnumerable()
+                                    .Any(g => g.Type == "AssortmentUnlock" && g.Target == offer.Id)
+                            ),
                     "An unlock-only offer needs an enabled reward that unlocks it."
                 );
             if (offer.UnlockQuestId.Length > 0)
                 Need(
-                    offer.RequiresUnlock && definition.Quests.Any(q => q.Id == offer.UnlockQuestId && q.SeasonalEnabled != false),
+                    offer.RequiresUnlock
+                        && definition.Quests.AsValueEnumerable().Any(q => q.Id == offer.UnlockQuestId && q.SeasonalEnabled != false),
                     "A quest offer requires an active owned quest and an unlock gate."
                 );
         }
-        foreach (var grant in definition.AllRewards.SelectMany(r => r.Grants).Where(g => g.Type == "AssortmentUnlock"))
+        foreach (var grant in definition.AllRewards.AsValueEnumerable().SelectMany(r => r.Grants).Where(g => g.Type == "AssortmentUnlock"))
         {
-            var offer = definition.TraderOffers.FirstOrDefault(o => o.Id == grant.Target);
+            var offer = definition.TraderOffers.AsValueEnumerable().FirstOrDefault(o => o.Id == grant.Target);
             if (offer != null && (grant.TraderId != offer.TraderId || grant.Items.Count != 0))
                 result.Add(
                     "Trader offers/" + offer.Id,

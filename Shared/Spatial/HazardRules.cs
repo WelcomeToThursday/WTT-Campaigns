@@ -23,7 +23,7 @@ public static class HazardRules
     {
         if (zone.Hazard == null)
             yield break;
-        if (!Kinds.Contains(zone.Hazard.Kind))
+        if (!Kinds.AsValueEnumerable().Contains(zone.Hazard.Kind))
             yield return "Unknown hazard type: " + zone.Id;
         if (zone.Shape != "Box")
             yield return "Hazards require a box volume: " + zone.Id;

@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using ZLinq;
 
 namespace WTT.Campaigns.Shared.Hub;
 
@@ -43,7 +43,8 @@ public static class HubProvenance
             throw new InvalidOperationException("Invalid destination document stack.");
         }
         // Always move the same conserved units. Reacquisition and subsequent splits cannot mint pickup identities.
-        to.Units.AddRange(from.Units.Take(count));
+        foreach (var unit in from.Units.AsValueEnumerable().Take(count))
+            to.Units.Add(unit);
         from.Units.RemoveRange(0, count);
     }
 }

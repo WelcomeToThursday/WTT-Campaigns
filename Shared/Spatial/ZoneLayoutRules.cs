@@ -16,13 +16,13 @@ public static class ZoneLayoutRules
     {
         if (zones == null)
         {
-            return Enumerable.Empty<SeasonZone>();
+            yield break;
         }
 
         layoutId ??= "";
-        return zones.Where(z =>
-            z != null && (string.Equals(z.LayoutId ?? "", layoutId, StringComparison.Ordinal) || includeShared && IsShared(z))
-        );
+        foreach (var zone in zones)
+            if (zone != null && (string.Equals(zone.LayoutId ?? "", layoutId, StringComparison.Ordinal) || includeShared && IsShared(zone)))
+                yield return zone;
     }
 
     /// <summary>Returns only zones owned by a concrete layout. Empty ownership is Shared, never a layout owner.</summary>
@@ -30,10 +30,12 @@ public static class ZoneLayoutRules
     {
         if (zones == null || string.IsNullOrEmpty(layoutId))
         {
-            return Enumerable.Empty<SeasonZone>();
+            yield break;
         }
 
-        return zones.Where(z => z != null && string.Equals(z.LayoutId, layoutId, StringComparison.Ordinal));
+        foreach (var zone in zones)
+            if (zone != null && string.Equals(zone.LayoutId, layoutId, StringComparison.Ordinal))
+                yield return zone;
     }
 
     /// <summary>Returns the validation error for assigning a zone on a map to the requested layout.</summary>
@@ -44,7 +46,7 @@ public static class ZoneLayoutRules
             return "";
         }
 
-        var layout = season.MapLayouts.FirstOrDefault(l => l != null && l.Id == layoutId);
+        var layout = season.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l != null && l.Id == layoutId);
         if (layout == null)
         {
             return "The selected layout does not exist.";
@@ -90,8 +92,8 @@ public static class ZoneLayoutRules
             throw new InvalidOperationException("Choose a different destination layout for the zone copy.");
         }
 
-        var source = season.MapLayouts.FirstOrDefault(l => l != null && l.Id == sourceLayoutId);
-        var destination = season.MapLayouts.FirstOrDefault(l => l != null && l.Id == destinationLayoutId);
+        var source = season.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l != null && l.Id == sourceLayoutId);
+        var destination = season.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l != null && l.Id == destinationLayoutId);
         if (source == null || destination == null)
         {
             throw new InvalidOperationException("Both layouts must exist before copying their zones.");
@@ -102,8 +104,8 @@ public static class ZoneLayoutRules
             throw new InvalidOperationException("Layout zone copies require layouts on the same map.");
         }
 
-        var zones = OwnedByLayout(season.Zones, sourceLayoutId).ToArray();
-        if (OwnedByLayout(season.Zones, destinationLayoutId).Any())
+        var zones = OwnedByLayout(season.Zones, sourceLayoutId).AsValueEnumerable().ToArray();
+        if (OwnedByLayout(season.Zones, destinationLayoutId).AsValueEnumerable().Any())
         {
             throw new InvalidOperationException("The destination layout already owns zones.");
         }
@@ -170,7 +172,7 @@ public static class ZoneLayoutRules
             return false;
         }
 
-        var layout = season.MapLayouts.FirstOrDefault(l => l != null && l.Id == layoutId);
+        var layout = season.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l != null && l.Id == layoutId);
         if (layout == null)
         {
             error = "The selected layout does not exist.";
@@ -180,7 +182,8 @@ public static class ZoneLayoutRules
         if (deleteLayout)
         {
             var missions = season
-                .Missions.Where(mission => string.Equals(mission.LayoutId, layoutId, StringComparison.Ordinal))
+                .Missions.AsValueEnumerable()
+                .Where(mission => string.Equals(mission.LayoutId, layoutId, StringComparison.Ordinal))
                 .Select(mission => mission.Name + " · Mission " + mission.Id)
                 .Distinct(StringComparer.Ordinal)
                 .ToArray();
@@ -191,9 +194,10 @@ public static class ZoneLayoutRules
             }
         }
 
-        var zones = OwnedByLayout(season.Zones, layoutId).ToArray();
+        var zones = OwnedByLayout(season.Zones, layoutId).AsValueEnumerable().ToArray();
         var uses = zones
-            .SelectMany(z => SpatialRules.Uses(season, z.Id).Select(use => z.Name + " · " + use))
+            .AsValueEnumerable()
+            .SelectMany(z => SpatialRules.Uses(season, z.Id).AsValueEnumerable().Select(use => z.Name + " · " + use))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         if (uses.Length > 0)

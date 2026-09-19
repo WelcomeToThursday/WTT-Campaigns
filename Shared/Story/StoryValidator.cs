@@ -25,7 +25,7 @@ public static class StoryValidator
             story.Chapters.Count > 100
             || story.Quests.Count > 1000
             || story.Dialogs.Count > 1000
-            || story.Dialogs.Sum(d => d.Lines.Count) > 20000
+            || story.Dialogs.AsValueEnumerable().Sum(d => d.Lines.Count) > 20000
             || story.Notes.Count > 10000
             || story.Variables.Count > 20000
             || story.RaidBindings.Count > 10000
@@ -35,16 +35,18 @@ public static class StoryValidator
             return;
         }
         var owned = new HashSet<string> { season.Id, season.BattlePassId };
-        owned.UnionWith(season.Documents.Select(d => d.Id));
-        owned.UnionWith(season.Items.Select(i => i.Id));
+        owned.UnionWith(season.Documents.AsValueEnumerable().Select(d => d.Id).ToArray());
+        owned.UnionWith(season.Items.AsValueEnumerable().Select(i => i.Id).ToArray());
         owned.UnionWith(season.ImportedItems.Keys);
-        owned.UnionWith(season.Perks.All.Select(p => p.Id));
-        owned.UnionWith(season.AllRewards.Select(r => r.Id));
+        owned.UnionWith(season.Perks.All.AsValueEnumerable().Select(p => p.Id).ToArray());
+        owned.UnionWith(season.AllRewards.AsValueEnumerable().Select(r => r.Id).ToArray());
         owned.UnionWith(
             season
-                .Quests.Select(q => q.Id)
-                .Concat(season.Quests.SelectMany(q => q.AllConditions()).Select(c => c.Id))
-                .Concat(season.Quests.SelectMany(q => q.AllItems()).Select(i => i.Id))
+                .Quests.AsValueEnumerable()
+                .Select(q => q.Id)
+                .Concat(season.Quests.AsValueEnumerable().SelectMany(q => q.AllConditions()).Select(c => c.Id))
+                .Concat(season.Quests.AsValueEnumerable().SelectMany(q => q.AllItems()).Select(i => i.Id))
+                .ToArray()
         );
         var ids = new HashSet<string>();
         void Identity(string id, string path)
@@ -53,18 +55,24 @@ public static class StoryValidator
             Need(ids.Add(id), path, "Duplicate story identity: " + id);
             Need(!owned.Contains(id), path, "Story identity collides with another owned campaign object: " + id);
         }
-        var chapters = story.Chapters.Select(x => x.Id).ToHashSet();
-        var dialogs = story.Dialogs.Select(x => x.Id).ToHashSet();
-        var notes = story.Notes.Select(x => x.Id).ToHashSet();
-        var variables = story.Variables.Select(x => x.Id).ToHashSet();
-        var media = story.Media.Select(x => x.Id).ToHashSet();
-        var entries = story.EntryPoints.Select(x => x.Id).ToHashSet();
-        var bindings = story.RaidBindings.Select(x => x.Id).ToHashSet();
+        var chapters = story.Chapters.AsValueEnumerable().Select(x => x.Id).ToHashSet();
+        var dialogs = story.Dialogs.AsValueEnumerable().Select(x => x.Id).ToHashSet();
+        var notes = story.Notes.AsValueEnumerable().Select(x => x.Id).ToHashSet();
+        var variables = story.Variables.AsValueEnumerable().Select(x => x.Id).ToHashSet();
+        var media = story.Media.AsValueEnumerable().Select(x => x.Id).ToHashSet();
+        var entries = story.EntryPoints.AsValueEnumerable().Select(x => x.Id).ToHashSet();
+        var bindings = story.RaidBindings.AsValueEnumerable().Select(x => x.Id).ToHashSet();
         var quests = season
-            .Quests.Select(x => x.Id ?? "")
-            .Concat(season.Dependencies.Where(x => x.StartsWith("quest:", StringComparison.Ordinal)).Select(x => x.Substring(6)))
+            .Quests.AsValueEnumerable()
+            .Select(x => x.Id ?? "")
+            .Concat(
+                season
+                    .Dependencies.AsValueEnumerable()
+                    .Where(x => x.StartsWith("quest:", StringComparison.Ordinal))
+                    .Select(x => x.Substring(6))
+            )
             .ToHashSet();
-        var conditions = season.Quests.SelectMany(q => q.AllConditions()).Select(c => (string?)c.Id ?? "").ToHashSet();
+        var conditions = season.Quests.AsValueEnumerable().SelectMany(q => q.AllConditions()).Select(c => (string?)c.Id ?? "").ToHashSet();
         void Condition(StoryCondition c, string path, int depth = 0)
         {
             if (depth > 32)
@@ -94,7 +102,11 @@ public static class StoryValidator
             if (c.Type == "QuestStatus")
             {
                 Need(quests.Contains(c.Target), path, "Unknown quest: " + c.Target);
-                Need(c.Status.Count > 0 && c.Status.All(StoryRules.QuestStatuses.Contains), path, "Named quest statuses are required.");
+                Need(
+                    c.Status.Count > 0 && c.Status.AsValueEnumerable().All(StoryRules.QuestStatuses.Contains),
+                    path,
+                    "Named quest statuses are required."
+                );
             }
             if (c.Type is "QuestConditionStatus" or "CompleteCondition" or "HasItemForHandover")
             {
@@ -116,13 +128,15 @@ public static class StoryValidator
             );
             if (a.Type == StoryActionType.UnlockMission)
                 Need(
-                    season.MissionLinks.Any(l => l.Id == a.Target && l.Availability == Missions.MissionAvailability.StoryAction),
+                    season
+                        .MissionLinks.AsValueEnumerable()
+                        .Any(l => l.Id == a.Target && l.Availability == Missions.MissionAvailability.StoryAction),
                     path,
                     "Choose a mission link unlocked by story action."
                 );
             if (a.Type == StoryActionType.SetVariable)
             {
-                var variable = story.Variables.FirstOrDefault(v => v.Id == a.Target);
+                var variable = story.Variables.AsValueEnumerable().FirstOrDefault(v => v.Id == a.Target);
                 Need(variable != null && variable.Scope == a.Scope, path, "Variable target and scope must match its declaration.");
             }
             if (a.Type == StoryActionType.DiaryNote)
@@ -165,7 +179,9 @@ public static class StoryValidator
                 if (a.Type != StoryActionType.SelectQuest)
                 {
                     Need(
-                        a.QuestId.Length == 0 || story.Quests.Any(q => q.QuestId == a.QuestId) && season.Quests.Any(q => q.Id == a.QuestId),
+                        a.QuestId.Length == 0
+                            || story.Quests.AsValueEnumerable().Any(q => q.QuestId == a.QuestId)
+                                && season.Quests.AsValueEnumerable().Any(q => q.Id == a.QuestId),
                         path,
                         "Native mutations require a quest owned by this story."
                     );
@@ -178,7 +194,7 @@ public static class StoryValidator
             if (a.Type == StoryActionType.StartCinematic)
             {
                 Need(
-                    story.Media.Any(m => m.Id == a.Target && m.Kind is "Cinematic" or "Video"),
+                    story.Media.AsValueEnumerable().Any(m => m.Id == a.Target && m.Kind is "Cinematic" or "Video"),
                     path,
                     "A cinematic or video media target is required."
                 );
@@ -202,7 +218,7 @@ public static class StoryValidator
             foreach (var pair in quest.StatusNotes)
             {
                 Need(StoryRules.QuestStatuses.Contains(pair.Key), quest.QuestId, "Unknown note-trigger status.");
-                Need(pair.Value.All(notes.Contains), quest.QuestId, "Unknown status note.");
+                Need(pair.Value.AsValueEnumerable().All(notes.Contains), quest.QuestId, "Unknown status note.");
             }
         }
         foreach (var note in story.Notes)
@@ -210,7 +226,7 @@ public static class StoryValidator
             Identity(note.Id, note.Id);
             Need(chapters.Contains(note.ChapterId), note.Id, "Unknown note chapter.");
             Need(note.Text.Length > 0, note.Id, "Note text is required.");
-            Need(note.ConditionIds.All(conditions.Contains), note.Id, "Unknown note objective.");
+            Need(note.ConditionIds.AsValueEnumerable().All(conditions.Contains), note.Id, "Unknown note objective.");
             foreach (var link in note.Links)
             {
                 Identity(link.Id, note.Id);
@@ -230,12 +246,24 @@ public static class StoryValidator
             Need(SeasonValidator.IsId(dialog.TraderId), dialog.Id, "A trader identity is required.");
             Need(variables.Contains(dialog.MainVariable), dialog.Id, "Declare the dialogue's main variable.");
             Need(dialog.Lines.Count > 0, dialog.Id, "A dialogue requires lines.");
-            Need(dialog.StartPoints.Keys.All(k => k.Length is > 0 and <= 64), dialog.Id, "Start points require names up to 64 characters.");
+            Need(
+                dialog.StartPoints.Keys.AsValueEnumerable().All(k => k.Length is > 0 and <= 64),
+                dialog.Id,
+                "Start points require names up to 64 characters."
+            );
             foreach (
-                var group in dialog.Lines.Where(l => l.Random != null).Select(l => l.Random!).GroupBy(r => r.VariableId + ":" + r.Group)
+                var group in dialog
+                    .Lines.AsValueEnumerable()
+                    .Where(l => l.Random != null)
+                    .Select(l => l.Random!)
+                    .GroupBy(r => r.VariableId + ":" + r.Group)
             )
             {
-                Need(group.Select(r => r.Maximum).Distinct().Count() == 1, dialog.Id, "A random group must use the same maximum.");
+                Need(
+                    group.AsValueEnumerable().Select(r => r.Maximum).Distinct().Count() == 1,
+                    dialog.Id,
+                    "A random group must use the same maximum."
+                );
             }
             foreach (var line in dialog.Lines)
             {
@@ -257,14 +285,16 @@ public static class StoryValidator
                 )
                 {
                     Need(
-                        reference.Item1.Length == 0 || story.Media.Any(m => m.Id == reference.Item1 && m.Kind == reference.Item2),
+                        reference.Item1.Length == 0
+                            || story.Media.AsValueEnumerable().Any(m => m.Id == reference.Item1 && m.Kind == reference.Item2),
                         line.Id,
                         "Playback media is missing or has the wrong kind."
                     );
                 }
                 foreach (
                     var sequence in line
-                        .Playback.Animations.Concat(line.Playback.SecondaryAnimations)
+                        .Playback.Animations.AsValueEnumerable()
+                        .Concat(line.Playback.SecondaryAnimations)
                         .Concat(line.Playback.LipSyncs)
                         .Concat(line.Playback.Subtitles)
                 )
@@ -301,7 +331,7 @@ public static class StoryValidator
             Identity(entry.Id, entry.Id);
             Need(dialogs.Contains(entry.DialogId), entry.Id, "Unknown entry dialogue.");
             Need(SeasonValidator.IsId(entry.TraderId), entry.Id, "Invalid entry trader.");
-            var entryDialog = story.Dialogs.FirstOrDefault(d => d.Id == entry.DialogId);
+            var entryDialog = story.Dialogs.AsValueEnumerable().FirstOrDefault(d => d.Id == entry.DialogId);
             Need(entryDialog?.TraderId == entry.TraderId, entry.Id, "Entry and dialog must belong to the same trader.");
             Need(
                 entry.StartPoint.Length == 0 || entryDialog?.StartPoints.ContainsKey(entry.StartPoint) == true,
@@ -328,25 +358,25 @@ public static class StoryValidator
             Need(
                 binding.Kind == "Collectible"
                     ? SeasonValidator.IsId(binding.ItemId)
-                    : (binding.ObjectPath.Length > 0 || season.Zones.Any(z => z.Id == binding.ZoneId)),
+                    : (binding.ObjectPath.Length > 0 || season.Zones.AsValueEnumerable().Any(z => z.Id == binding.ZoneId)),
                 binding.Id,
                 "A collectible item or exact scene object path is required."
             );
             Need(binding.EntryPointId.Length == 0 || entries.Contains(binding.EntryPointId), binding.Id, "Unknown bound entry point.");
             Need(binding.MediaId.Length == 0 || media.Contains(binding.MediaId), binding.Id, "Unknown bound media.");
             Need(
-                binding.MediaId.Length == 0 || story.Media.Any(m => m.Id == binding.MediaId && m.Kind != "TraderScene"),
+                binding.MediaId.Length == 0 || story.Media.AsValueEnumerable().Any(m => m.Id == binding.MediaId && m.Kind != "TraderScene"),
                 binding.Id,
                 "A trader room cannot be played as event media."
             );
-            var boundEntry = story.EntryPoints.FirstOrDefault(e => e.Id == binding.EntryPointId);
+            var boundEntry = story.EntryPoints.AsValueEnumerable().FirstOrDefault(e => e.Id == binding.EntryPointId);
             Need(boundEntry == null || boundEntry.Kind != "InLobby", binding.Id, "Raid events require a raid conversation entry.");
             if (boundEntry?.Scene.Length > 0 && binding.Kind != "Collectible")
             {
                 Need(
                     (
                         binding.ZoneId.Length > 0
-                            ? season.Zones.Any(z => z.Id == binding.ZoneId && z.Scene == boundEntry.Scene)
+                            ? season.Zones.AsValueEnumerable().Any(z => z.Id == binding.ZoneId && z.Scene == boundEntry.Scene)
                             : binding.ObjectPath.StartsWith(boundEntry.Scene + ":/", StringComparison.Ordinal)
                     ),
                     binding.Id,
@@ -355,7 +385,8 @@ public static class StoryValidator
             }
 
             Need(
-                binding.Kind != "Cinematic" || story.Media.Any(m => m.Id == binding.MediaId && m.Kind is "Cinematic" or "Video"),
+                binding.Kind != "Cinematic"
+                    || story.Media.AsValueEnumerable().Any(m => m.Id == binding.MediaId && m.Kind is "Cinematic" or "Video"),
                 binding.Id,
                 "Cinematic bindings require a cinematic or video resource."
             );
@@ -369,7 +400,7 @@ public static class StoryValidator
         {
             Identity(resource.Id, resource.Id);
             Need(
-                resource.Sha256.Length == 64 && resource.Sha256.All(Uri.IsHexDigit),
+                resource.Sha256.Length == 64 && resource.Sha256.AsValueEnumerable().All(Uri.IsHexDigit),
                 resource.Id,
                 "Media requires its bundle SHA-256 checksum."
             );
@@ -380,7 +411,8 @@ public static class StoryValidator
                 "Only trader rooms may be assigned to a valid trader."
             );
             Need(
-                resource.TraderId.Length == 0 || story.Media.Count(m => m.Kind == "TraderScene" && m.TraderId == resource.TraderId) == 1,
+                resource.TraderId.Length == 0
+                    || story.Media.AsValueEnumerable().Count(m => m.Kind == "TraderScene" && m.TraderId == resource.TraderId) == 1,
                 resource.Id,
                 "Assign only one custom room to each trader."
             );

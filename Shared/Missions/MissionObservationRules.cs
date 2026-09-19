@@ -17,7 +17,7 @@ public static class MissionObservationRules
         {
             if (signal == null || !double.IsFinite(signal.Time) || signal.Time > maximumTime + 2)
                 throw new InvalidOperationException("Mission observation time is invalid.");
-            var zone = layout.Checkpoints.Any(c => c.Id == signal.TargetId) || layout.Exit?.Id == signal.TargetId;
+            var zone = layout.Checkpoints.AsValueEnumerable().Any(c => c.Id == signal.TargetId) || layout.Exit?.Id == signal.TargetId;
             var valid = signal.Kind switch
             {
                 MissionSignals.Start => signal.TargetId.Length == 0 && !run.Logic.Started,
@@ -26,17 +26,31 @@ public static class MissionObservationRules
                 MissionSignals.Sample => zone
                     && signal.Occupants != null
                     && signal.Occupants.Count <= 4096
-                    && signal.Occupants.Distinct().Count() == signal.Occupants.Count
-                    && signal.Occupants.All(id => run.Logic.Actors.TryGetValue(id, out var actor) && actor.Spawned && !actor.Dead),
-                MissionSignals.Interaction => layout.Doors.Any(d => d.Id == signal.TargetId)
-                    || layout.Objects.Any(o => o.Id == signal.TargetId && (o.Container != null || SceneAssetRules.IsContainer(o))),
+                    && signal.Occupants.AsValueEnumerable().Distinct().Count() == signal.Occupants.Count
+                    && signal
+                        .Occupants.AsValueEnumerable()
+                        .All(id => run.Logic.Actors.TryGetValue(id, out var actor) && actor.Spawned && !actor.Dead),
+                MissionSignals.Interaction => layout.Doors.AsValueEnumerable().Any(d => d.Id == signal.TargetId)
+                    || layout
+                        .Objects.AsValueEnumerable()
+                        .Any(o => o.Id == signal.TargetId && (o.Container != null || SceneAssetRules.IsContainer(o))),
                 MissionSignals.Tick => signal.TargetId.Length == 0,
                 MissionSignals.Wave => layout
-                    .Encounters.SelectMany(e => e.Waves)
-                    .Any(w => w.Id == signal.TargetId && Complete(run, w.Roster.Sum(r => r.Count), a => a.WaveId == w.Id)),
-                MissionSignals.Encounter => layout.Encounters.Any(e =>
-                    e.Id == signal.TargetId && Complete(run, e.Waves.Sum(w => w.Roster.Sum(r => r.Count)), a => a.EncounterId == e.Id)
-                ),
+                    .Encounters.AsValueEnumerable()
+                    .SelectMany(e => e.Waves)
+                    .Any(w =>
+                        w.Id == signal.TargetId && Complete(run, w.Roster.AsValueEnumerable().Sum(r => r.Count), a => a.WaveId == w.Id)
+                    ),
+                MissionSignals.Encounter => layout
+                    .Encounters.AsValueEnumerable()
+                    .Any(e =>
+                        e.Id == signal.TargetId
+                        && Complete(
+                            run,
+                            e.Waves.AsValueEnumerable().Sum(w => w.Roster.AsValueEnumerable().Sum(r => r.Count)),
+                            a => a.EncounterId == e.Id
+                        )
+                    ),
                 _ => false,
             };
             if (!valid)
@@ -47,7 +61,7 @@ public static class MissionObservationRules
 
     private static bool Complete(MissionRun run, int expected, Func<MissionActor, bool> match)
     {
-        var actors = run.Logic.Actors.Values.Where(match).ToArray();
-        return expected > 0 && actors.Length == expected && actors.All(a => a.Spawned && a.Dead);
+        var actors = run.Logic.Actors.Values.AsValueEnumerable().Where(match).ToArray();
+        return expected > 0 && actors.Length == expected && actors.AsValueEnumerable().All(a => a.Spawned && a.Dead);
     }
 }

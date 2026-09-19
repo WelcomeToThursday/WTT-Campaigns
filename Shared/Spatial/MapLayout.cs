@@ -184,60 +184,81 @@ public sealed class MapVolume : SpatialCapture
 
 public static class MapLayoutRules
 {
-    public static bool NeedsFormat9(MapLayout layout) => layout.Objects?.Any(o => o?.Container != null) == true;
+    public static bool NeedsFormat9(MapLayout layout) => layout.Objects?.AsValueEnumerable().Any(o => o?.Container != null) == true;
 
     public static bool NeedsFormat8(MapLayout layout) =>
-        layout.Objects?.Any(o => o?.Target?.IsAsset == true || (o != null && SceneAssetRules.IsContainer(o))) == true;
+        layout.Objects?.AsValueEnumerable().Any(o => o?.Target?.IsAsset == true || (o != null && SceneAssetRules.IsContainer(o))) == true;
 
     public static bool NeedsFormat5(MapLayout layout) =>
-        layout.Loot?.Count > 0 || layout.Objects?.Any(o => o?.Target?.Kind != "Prop") == true;
+        layout.Loot?.Count > 0 || layout.Objects?.AsValueEnumerable().Any(o => o?.Target?.Kind != "Prop") == true;
 
     public static bool NeedsFormat6(MapLayout layout) =>
         layout.SpawnPoints?.Count > 0 || layout.Encounters?.Count > 0 || layout.PatrolRoutes?.Count > 0;
 
     public static int Format(IEnumerable<MapLayout> layouts) =>
-        layouts.Any(NeedsFormat9) ? 9
-        : layouts.Any(NeedsFormat8) ? 8
-        : layouts.Any(NeedsFormat6) ? 6
-        : layouts.Any(NeedsFormat5) ? 5
+        layouts.AsValueEnumerable().Any(NeedsFormat9) ? 9
+        : layouts.AsValueEnumerable().Any(NeedsFormat8) ? 8
+        : layouts.AsValueEnumerable().Any(NeedsFormat6) ? 6
+        : layouts.AsValueEnumerable().Any(NeedsFormat5) ? 5
         : 4;
 
-    public static IEnumerable<SpatialCapture> Points(MapLayout layout) =>
-        (layout.Objects?.Cast<SpatialCapture>() ?? Enumerable.Empty<SpatialCapture>())
-            .Concat((layout.Doors ?? new()).Where(d => d != null && d.PlaceNew))
-            .Concat(layout.Loot ?? new())
-            .Concat(layout.Barriers ?? new())
-            .Concat(layout.Checkpoints ?? new())
-            .Concat(layout.Start == null ? Array.Empty<SpatialCapture>() : new[] { layout.Start })
-            .Concat(layout.Exit == null ? Array.Empty<SpatialCapture>() : new[] { layout.Exit })
-            .Concat(layout.SpawnPoints ?? new())
-            .Concat(layout.PatrolRoutes?.SelectMany(r => r?.Waypoints ?? new()) ?? Enumerable.Empty<SpatialCapture>())
-            .Concat(
-                layout.Encounters?.SelectMany(e =>
-                    e?.Trigger?.Volume == null ? Enumerable.Empty<SpatialCapture>() : new[] { e.Trigger.Volume }
-                )
-                    ?? Enumerable.Empty<SpatialCapture>()
-            );
+    public static IEnumerable<SpatialCapture> Points(MapLayout layout)
+    {
+        foreach (var point in layout.Objects ?? new())
+            yield return point;
+        foreach (var door in layout.Doors ?? new())
+            if (door != null && door.PlaceNew)
+                yield return door;
+        foreach (var point in layout.Loot ?? new())
+            yield return point;
+        foreach (var point in layout.Barriers ?? new())
+            yield return point;
+        foreach (var point in layout.Checkpoints ?? new())
+            yield return point;
+        if (layout.Start != null)
+            yield return layout.Start;
+        if (layout.Exit != null)
+            yield return layout.Exit;
+        foreach (var point in layout.SpawnPoints ?? new())
+            yield return point;
+        foreach (var route in layout.PatrolRoutes ?? new())
+        foreach (var point in route?.Waypoints ?? new())
+            yield return point;
+        foreach (var encounter in layout.Encounters ?? new())
+            if (encounter?.Trigger?.Volume != null)
+                yield return encounter.Trigger.Volume;
+    }
 
-    public static IEnumerable<string> OwnedIds(MapLayout layout) =>
-        new[] { layout.Id }
-            .Concat(Points(layout).Select(p => p.Id))
-            .Concat((layout.Doors ?? new()).Where(d => d != null && !d.PlaceNew).Select(d => d.Id))
-            .Concat((layout.Loot ?? new()).Where(l => l != null).SelectMany(l => l.Items ?? new()).Select(i => i.Id))
-            .Concat((layout.PatrolRoutes ?? new()).Where(r => r != null).Select(r => r.Id))
-            .Concat(
-                (layout.Encounters ?? new())
-                    .Where(e => e != null)
-                    .SelectMany(e =>
-                        new[] { e.Id }
-                            .Concat((e.Waves ?? new()).Where(w => w != null).Select(w => w.Id))
-                            .Concat(
-                                (e.Waves ?? new())
-                                    .Where(w => w != null)
-                                    .SelectMany(w => (w.Roster ?? new()).Where(entry => entry != null).Select(entry => entry.Id))
-                            )
-                    )
-            );
+    public static IEnumerable<string> OwnedIds(MapLayout layout)
+    {
+        yield return layout.Id;
+        foreach (var point in Points(layout))
+            yield return point.Id;
+        foreach (var door in layout.Doors ?? new())
+            if (door != null && !door.PlaceNew)
+                yield return door.Id;
+        foreach (var loot in layout.Loot ?? new())
+            if (loot != null)
+                foreach (var item in loot.Items ?? new())
+                    yield return item.Id;
+        foreach (var route in layout.PatrolRoutes ?? new())
+            if (route != null)
+                yield return route.Id;
+        foreach (var encounter in layout.Encounters ?? new())
+        {
+            if (encounter == null)
+                continue;
+            yield return encounter.Id;
+            foreach (var wave in encounter.Waves ?? new())
+                if (wave != null)
+                    yield return wave.Id;
+            foreach (var wave in encounter.Waves ?? new())
+                if (wave != null)
+                    foreach (var entry in wave.Roster ?? new())
+                        if (entry != null)
+                            yield return entry.Id;
+        }
+    }
 
     public static bool Positive(SpatialVector? v) => v?.Finite == true && v.X > 0 && v.Y > 0 && v.Z > 0;
 
@@ -254,7 +275,7 @@ public static class MapLayoutRules
         Need(!string.IsNullOrWhiteSpace(layout.Location) && layout.Location.Length <= 120, "Choose a map.");
         if (
             layout.Loot == null
-            || layout.Loot.Any(x => x == null)
+            || layout.Loot.AsValueEnumerable().Any(x => x == null)
             || layout.Objects == null
             || layout.Doors == null
             || layout.Barriers == null
@@ -262,21 +283,23 @@ public static class MapLayoutRules
             || layout.SpawnPoints == null
             || layout.Encounters == null
             || layout.PatrolRoutes == null
-            || layout.Objects.Any(o => o == null)
-            || layout.Doors.Any(d => d == null)
-            || layout.Barriers.Any(v => v == null)
-            || layout.Checkpoints.Any(v => v == null)
-            || layout.SpawnPoints.Any(p => p == null)
-            || layout.Encounters.Any(e => e == null)
-            || layout.PatrolRoutes.Any(r => r == null)
+            || layout.Objects.AsValueEnumerable().Any(o => o == null)
+            || layout.Doors.AsValueEnumerable().Any(d => d == null)
+            || layout.Barriers.AsValueEnumerable().Any(v => v == null)
+            || layout.Checkpoints.AsValueEnumerable().Any(v => v == null)
+            || layout.SpawnPoints.AsValueEnumerable().Any(p => p == null)
+            || layout.Encounters.AsValueEnumerable().Any(e => e == null)
+            || layout.PatrolRoutes.AsValueEnumerable().Any(r => r == null)
         )
         {
             errors.Add("Layout collections cannot contain null records.");
             return errors;
         }
-        var ids = OwnedIds(layout).ToArray();
+        var ids = OwnedIds(layout).AsValueEnumerable().ToArray();
         Need(
-            ids.Length <= 2000 && ids.All(SeasonValidator.IsId) && ids.Distinct().Count() == ids.Length,
+            ids.Length <= 2000
+                && ids.AsValueEnumerable().All(SeasonValidator.IsId)
+                && ids.AsValueEnumerable().Distinct().Count() == ids.Length,
             "Layout records require unique identities (at most 2000 records)."
         );
         foreach (var point in Points(layout))
@@ -351,7 +374,12 @@ public static class MapLayoutRules
 
         foreach (var error in MapEncounterRules.Errors(layout))
             errors.Add(error);
-        foreach (var target in layout.Objects.Select(o => o.Target).Concat(layout.Doors.Select(d => d.Target)))
+        foreach (
+            var target in layout
+                .Objects.AsValueEnumerable()
+                .Select(o => o.Target)
+                .Concat(layout.Doors.AsValueEnumerable().Select(d => d.Target))
+        )
             Need(
                 target != null
                     && (
@@ -363,7 +391,7 @@ public static class MapLayoutRules
                     ),
                 "Capture or rebind the scene target."
             );
-        foreach (var target in layout.Objects.Select(o => o.Target).Where(t => t != null && t.Kind != "Prop"))
+        foreach (var target in layout.Objects.AsValueEnumerable().Select(o => o.Target).Where(t => t != null && t.Kind != "Prop"))
         {
             Need(target.Origin?.Finite == true, "Invalid original loot position.");
             Need(
@@ -373,13 +401,21 @@ public static class MapLayoutRules
             Need(target.Kind != "Container" || !string.IsNullOrWhiteSpace(target.NativeId), "Containers require a stable native identity.");
         }
         var targets = layout
-            .Objects.Where(o => o.Operation != "Copy" && o.Target != null)
+            .Objects.AsValueEnumerable()
+            .Where(o => o.Operation != "Copy" && o.Target != null)
             .Select(o => o.Target.Scene + "/" + o.Target.Path)
-            .Concat(layout.Doors.Where(d => d.Target != null && !d.PlaceNew).Select(d => d.Target.Scene + "/" + d.Target.Path))
+            .Concat(
+                layout
+                    .Doors.AsValueEnumerable()
+                    .Where(d => d.Target != null && !d.PlaceNew)
+                    .Select(d => d.Target.Scene + "/" + d.Target.Path)
+            )
             .ToArray();
-        Need(targets.Distinct().Count() == targets.Length, "A scene object has conflicting overrides.");
+        Need(targets.AsValueEnumerable().Distinct().Count() == targets.Length, "A scene object has conflicting overrides.");
         Need(
-            !targets.Any(a => targets.Any(b => a != b && a.StartsWith(b + "/", StringComparison.Ordinal))),
+            !targets
+                .AsValueEnumerable()
+                .Any(a => targets.AsValueEnumerable().Any(b => a != b && a.StartsWith(b + "/", StringComparison.Ordinal))),
             "Edit a parent or its children, not both in one layout."
         );
         if (walkthrough)

@@ -43,7 +43,7 @@ public sealed class NativeModelConverter : JsonConverter
     {
         var result = new JObject();
         var contract = (JsonObjectContract)serializer.ContractResolver.ResolveContract(model.GetType());
-        foreach (var property in contract.Properties.Where(p => !p.Ignored && p.Readable))
+        foreach (var property in contract.Properties.AsValueEnumerable().Where(p => !p.Ignored && p.Readable))
         {
             var value = property.ValueProvider!.GetValue(model);
             if (value != null)
@@ -67,7 +67,14 @@ public sealed class NativeModelConverter : JsonConverter
         var contract = (JsonObjectContract)serializer.ContractResolver.ResolveContract(model.GetType());
         if (model.Source != null && model.Baseline != null)
         {
-            foreach (var key in fields.Properties().Select(p => p.Name).Union(model.Source.Properties().Select(p => p.Name)).ToArray())
+            foreach (
+                var key in fields
+                    .Properties()
+                    .AsValueEnumerable()
+                    .Select(p => p.Name)
+                    .Union(model.Source.Properties().AsValueEnumerable().Select(p => p.Name))
+                    .ToArray()
+            )
             {
                 if (contract.Properties.GetClosestMatchProperty(key)?.Ignored == true)
                 {

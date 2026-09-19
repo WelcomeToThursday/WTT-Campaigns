@@ -11,14 +11,14 @@ public static class Selection
         IReadOnlyDictionary<string, string> unavailable
     )
     {
-        var values = ids.ToList();
+        var values = ids.AsValueEnumerable().ToList();
         var chosen = new HashSet<string>(values, StringComparer.Ordinal);
         if (values.Count != chosen.Count)
         {
             return "A modifier was selected more than once.";
         }
 
-        var index = catalogue.Personal.ToDictionary(p => p.Id);
+        var index = catalogue.Personal.AsValueEnumerable().ToDictionary(p => p.Id);
         foreach (var id in chosen)
         {
             if (!index.TryGetValue(id, out var perk))
@@ -31,7 +31,7 @@ public static class Selection
                 return reason;
             }
 
-            if (perk.Conflicts.Any(chosen.Contains))
+            if (perk.Conflicts.AsValueEnumerable().Any(chosen.Contains))
             {
                 return "Two selected modifiers cannot be used together.";
             }
@@ -47,6 +47,6 @@ public static class Selection
     public static long Balance(Catalogue catalogue, IEnumerable<string> ids, int startingPoints)
     {
         var selected = new HashSet<string>(ids);
-        return startingPoints + catalogue.Personal.Where(p => selected.Contains(p.Id)).Sum(p => (long)(p.Points ?? 0));
+        return startingPoints + catalogue.Personal.AsValueEnumerable().Where(p => selected.Contains(p.Id)).Sum(p => (long)(p.Points ?? 0));
     }
 }

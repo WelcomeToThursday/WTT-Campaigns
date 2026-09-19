@@ -24,6 +24,6 @@ public abstract class ExtensibleJsonModel
 
     protected void CopyExtraTo(ExtensibleJsonModel copy)
     {
-        copy._extra = _extra?.ToDictionary(pair => pair.Key, pair => pair.Value.DeepClone());
+        copy._extra = _extra?.AsValueEnumerable().ToDictionary(pair => pair.Key, pair => pair.Value.DeepClone());
     }
 }

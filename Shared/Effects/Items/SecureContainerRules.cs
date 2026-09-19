@@ -8,6 +8,6 @@ public static class SecureContainerRules
 
     public static bool Allows(RuntimeEffects effects, string templateId, IEnumerable<string> ancestors)
     {
-        return effects.Matching(EffectId).All(e => RuntimeEffects.MatchesFilter(e.ItemFilter, templateId, ancestors));
+        return effects.Matching(EffectId).AsValueEnumerable().All(e => RuntimeEffects.MatchesFilter(e.ItemFilter, templateId, ancestors));
     }
 }
