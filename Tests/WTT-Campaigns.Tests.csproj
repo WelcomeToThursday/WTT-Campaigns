@@ -5,6 +5,10 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Authoring\Controllers\EditorAiSelection.cs" Link="Client\EditorAiSelection.cs" />
+    <Compile Include="..\Client\Authoring\Controllers\EditorMapRecords.cs" Link="Client\EditorMapRecords.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneCatalogRequestState.cs" Link="Client\SceneCatalogRequestState.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneOperationLifetime.cs" Link="Client\SceneOperationLifetime.cs" />
     <Compile Include="..\Client\Profiles\ProfileSaveGate.cs" Link="Client\ProfileSaveGate.cs" />
     <Compile Include="..\UI\Screens\EditorHomeComposition.cs" Link="UI\EditorHomeComposition.cs" />
     <EmbeddedResource Include="..\tools\unity\EditorToolkit\*.uxml" LogicalName="EditorToolkit.%(Filename).uxml" />

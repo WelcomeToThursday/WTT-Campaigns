@@ -171,7 +171,7 @@ public sealed partial class RaidEditor
                     var renderer = node.GetComponent<Renderer>();
                     if (renderer && renderer is MeshRenderer or SkinnedMeshRenderer)
                         _sceneRenderers.Add(renderer);
-                    DiscoverSceneNode(node);
+                    Catalog.DiscoverSceneNode(node);
                 }
                 if (node && !_sceneIndex.Add(node, node.name))
                 {
@@ -207,7 +207,9 @@ public sealed partial class RaidEditor
     private void ClearSceneIndex()
     {
         FinishSceneIndex();
-        ClearSceneCatalog();
+        Catalog.Reset();
+        _aiController?.Reset();
+        _mapController?.Reset();
         _sceneIndex.Clear();
         _sceneStarted = false;
         _picked = null;

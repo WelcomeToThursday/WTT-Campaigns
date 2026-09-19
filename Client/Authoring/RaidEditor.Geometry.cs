@@ -3,7 +3,6 @@ using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
-using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
@@ -28,6 +27,7 @@ public sealed partial class RaidEditor
     }
 
     private Drag? _drag;
+    internal bool IsDragging => _drag != null;
     private bool _picking;
     private readonly List<LineRenderer> _lines = new();
     private Material? _lineMaterial,
@@ -135,7 +135,7 @@ public sealed partial class RaidEditor
                 );
                 obj.Scale = ZoneRuntime.Vector(scale);
             }
-            if (_mode == "AI" && !AiAcceptPreview(point, before))
+            if (_mode == "AI" && !Ai.AiAcceptPreview(point, before))
             {
                 Refresh();
                 return;
@@ -158,7 +158,7 @@ public sealed partial class RaidEditor
         {
             if ((_mode == "Maps" || _mode == "Scene") && ScenePicking.Dispatch(EditorMode.Ready, _mode, PickScene))
             {
-                _picking = _sceneRebindId.Length > 0;
+                _picking = Catalog.RebindId.Length > 0;
                 return;
             }
             if (Physics.Raycast(_camera!.ScreenPointToRay(Input.mousePosition), out var hit, 1000, ~0, QueryTriggerInteraction.Collide))
@@ -190,11 +190,11 @@ public sealed partial class RaidEditor
                     Direction = direction.normalized,
                     PixelsPerMetre = direction.magnitude / length,
                     Anchor = world,
-                    Centered = SceneWorkspace && _centerAnchor,
-                    AnchorTarget = SceneWorkspace ? SceneSelectionTarget : null,
+                    Centered = Catalog.SceneWorkspace && _centerAnchor,
+                    AnchorTarget = Catalog.SceneWorkspace ? SceneSelectionTarget : null,
                     LocalAnchor =
-                        SceneWorkspace && SceneSelectionTarget ? SceneSelectionTarget!.InverseTransformPoint(world) : Vector3.zero,
-                    Transient = SceneWorkspace && MapPoint == null,
+                        Catalog.SceneWorkspace && SceneSelectionTarget ? SceneSelectionTarget!.InverseTransformPoint(world) : Vector3.zero,
+                    Transient = Catalog.SceneWorkspace && Maps.MapPoint == null,
                 };
                 if (_tool == "Rotate")
                 {

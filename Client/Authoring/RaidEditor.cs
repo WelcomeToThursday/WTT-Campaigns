@@ -1,5 +1,4 @@
 using BepInEx.Configuration;
-using Comfort.Common;
 using EFT;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -72,9 +71,9 @@ public sealed partial class RaidEditor : MonoBehaviour
         get
         {
             if (_mode == "AI")
-                return AiSelectedPoint();
-            if (MapWorkspace || SceneWorkspace)
-                return MapPoint ?? (SceneWorkspace && _sceneTab != "Catalog" ? _sceneSelectionPose : null);
+                return Ai.AiSelectedPoint();
+            if (MapWorkspace || Catalog.SceneWorkspace)
+                return Maps.MapPoint ?? (Catalog.SceneWorkspace && Catalog.SceneTab != "Catalog" ? _sceneSelectionPose : null);
             return _session
                 ?.Definition?.Zones.AsValueEnumerable()
                 .Cast<SpatialCapture>()
@@ -259,7 +258,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 return;
             if (EditorMode.Ready && !_open && !_walking && !AiPreviewBusy && !OtherModal && _session.Definition != null)
                 Open();
-            _session.Hold = AiPreviewBusy || _walking || _view?.Typing == true || _drag != null || _placementLifetime != null;
+            _session.Hold = AiPreviewBusy || _walking || _view?.Typing == true || _drag != null || Catalog.Placing;
             if (!_session.Busy && Time.realtimeSinceStartup >= _nextPoll)
             {
                 _nextPoll = Time.realtimeSinceStartup + 1;
@@ -306,9 +305,9 @@ public sealed partial class RaidEditor : MonoBehaviour
                     EventSystem.current?.SetSelectedGameObject(null);
                     return;
                 }
-                if (_placementLifetime != null)
+                if (Catalog.Placing)
                 {
-                    CancelPlacement(inspectLast: true);
+                    Catalog.CancelPlacement(inspectLast: true);
                 }
                 else if (_drag != null)
                 {
@@ -317,7 +316,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 else if (_picking)
                 {
                     _picking = false;
-                    _sceneRebindId = "";
+                    Catalog.RebindId = "";
                 }
                 else
                 {
@@ -344,7 +343,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 if (
                     !Input.GetMouseButton(1)
                     && _drag == null
-                    && _placementLifetime == null
+                    && !Catalog.Placing
                     && !Input.GetKey(KeyCode.LeftControl)
                     && !Input.GetKey(KeyCode.RightControl)
                     && !Input.GetKey(KeyCode.LeftAlt)
@@ -358,16 +357,16 @@ public sealed partial class RaidEditor : MonoBehaviour
                         : Input.GetKeyDown(KeyCode.E) ? "Rotate"
                         : Input.GetKeyDown(KeyCode.R) ? "Scale"
                         : "";
-                    if (tool.Length > 0 && (SceneWorkspace ? CanTransformScene(tool) : Selected != null || MapPoint != null))
+                    if (tool.Length > 0 && (Catalog.SceneWorkspace ? CanTransformScene(tool) : Selected != null || Maps.MapPoint != null))
                     {
-                        if (SceneWorkspace)
-                            SceneTransform(tool);
+                        if (Catalog.SceneWorkspace)
+                            Catalog.SceneTransform(tool);
                         else
                             _tool = tool;
                         Refresh();
                     }
                 }
-                if (!PlacementInput())
+                if (!Catalog.PlacementInput())
                     GeometryInput();
             }
             if (Time.realtimeSinceStartup >= _nextRefresh)
@@ -560,8 +559,8 @@ public sealed partial class RaidEditor : MonoBehaviour
             SaveCameraBookmark();
             CancelDrag();
             _picking = false;
-            _sceneRebindId = "";
-            CancelPlacement();
+            Catalog.RebindId = "";
+            Catalog.CancelPlacement();
             _view?.Windows.DismissMenus();
             _session?.Persist();
         }
@@ -606,7 +605,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             if (_view?.Valid == true)
                 _view.SetVisible(false);
             ClearLines();
-            ClearAiRoutes();
+            Ai.ClearAiRoutes();
             _camera = null;
         }
     }
@@ -622,6 +621,9 @@ public sealed partial class RaidEditor : MonoBehaviour
         }
 
         ClearSceneIndex();
+        _aiController?.Dispose();
+        _catalogController?.Dispose();
+        _mapController?.Dispose();
         _view?.Dispose();
         if (Instance == this)
         {

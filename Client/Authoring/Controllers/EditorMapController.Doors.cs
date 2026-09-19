@@ -4,22 +4,24 @@ using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Controllers;
 
-public sealed partial class RaidEditor
+internal sealed partial class EditorMapController
 {
     private readonly List<WTT.Campaigns.Shared.Authoring.SceneCatalogEntry> _doorKeys = new();
+
     private int _doorKeyIndex,
         _doorKeyGeneration;
-    private Door? PickedDoor => _picked ? _picked!.GetComponent<Door>() : null;
+
+    internal Door? PickedDoor => _context.Picked ? _context.Picked!.GetComponent<Door>() : null;
 
     private void EditDoor(Action<MapDoorEdit> change)
     {
-        if (!CanSceneEdit || MapDoor == null && !PickedDoor)
+        if (!_context.CanSceneEdit || MapDoor == null && !PickedDoor)
             return;
         MapEdit(layout =>
         {
-            var edit = layout.Doors.AsValueEnumerable().FirstOrDefault(d => d.Id == _selected);
+            var edit = layout.Doors.AsValueEnumerable().FirstOrDefault(d => d.Id == _context.SelectionId);
             if (edit == null)
             {
                 var target = MapSceneAdapter.Capture(PickedDoor!.transform, true);
@@ -30,7 +32,7 @@ public sealed partial class RaidEditor
                 {
                     edit = new MapDoorEdit
                     {
-                        Id = MapId(),
+                        Id = EditorMapRecords.NewId(),
                         Name = PickedDoor.name,
                         Target = target,
                     };
@@ -38,11 +40,11 @@ public sealed partial class RaidEditor
                 }
             }
             change(edit);
-            _selected = edit.Id;
+            _context.SelectionId = edit.Id;
         });
     }
 
-    private void BindDoorControls(RaidEditorView view)
+    internal void BindDoorControls(RaidEditorView view)
     {
         view.Dropdown("DoorStartState", i => EditDoor(d => d.State = new[] { "Unchanged", "Shut", "Open", "Locked" }[i]));
         view.Input("DoorKeyId", text => EditDoor(d => d.KeyId = text.Trim()));
@@ -61,22 +63,22 @@ public sealed partial class RaidEditor
         view.Dropdown("DoorOperatable", i => EditDoor(d => d.Operatable = i == 0 ? null : i == 1));
     }
 
-    private void PresentDoorControls()
+    internal void PresentDoorControls()
     {
-        var visible = SceneWorkspace && _sceneTab != "Catalog" && (MapDoor != null || PickedDoor);
-        var view = _view!;
+        var visible = _context.SceneWorkspace && _context.SceneTab != "Catalog" && (MapDoor != null || PickedDoor);
+        var view = _context.View!;
         view.Visible("DoorInspectorGroup", visible);
         if (!visible)
             return;
         view.Visible("MapInspector", true);
         var door = MapDoor;
         view.Value("MapName", door?.Name ?? PickedDoor!.name);
-        view.Get<EditorInput>("MapName").readOnly = !CanSceneEdit;
+        view.Get<EditorInput>("MapName").readOnly = !_context.CanSceneEdit;
         view.Visible("MapPositionGroup", door?.PlaceNew == true);
         view.Visible("MapRotationGroup", door?.PlaceNew == true);
         view.Visible("MapSizeGroup", false);
         view.Visible("MapAtPlayer", door?.PlaceNew == true);
-        view.Get<EditorButton>("SceneRemove").interactable = CanSceneEdit && door != null;
+        view.Get<EditorButton>("SceneRemove").interactable = _context.CanSceneEdit && door != null;
         view.SetDropdown(
             "DoorStartState",
             new List<EditorChoice.OptionData> { new("Original"), new("Closed"), new("Open"), new("Locked") },
@@ -102,15 +104,15 @@ public sealed partial class RaidEditor
                 : 0
         );
         foreach (var id in new[] { "DoorStartState", "DoorBreach", "DoorOperatable" })
-            view.Get<EditorChoice>(id).interactable = CanSceneEdit;
-        view.Get<EditorInput>("DoorKeyId").readOnly = !CanSceneEdit;
-        view.Get<EditorButton>("DoorOriginalKey").interactable = CanSceneEdit;
+            view.Get<EditorChoice>(id).interactable = _context.CanSceneEdit;
+        view.Get<EditorInput>("DoorKeyId").readOnly = !_context.CanSceneEdit;
+        view.Get<EditorButton>("DoorOriginalKey").interactable = _context.CanSceneEdit;
         view.SetDropdown(
             "DoorKeyResults",
             _doorKeys.AsValueEnumerable().Select(k => new EditorChoice.OptionData(k.Name)).ToList(),
             _doorKeyIndex
         );
-        view.Get<EditorButton>("DoorUseKey").interactable = CanSceneEdit && _doorKeys.Count > 0;
+        view.Get<EditorButton>("DoorUseKey").interactable = _context.CanSceneEdit && _doorKeys.Count > 0;
         view.Text(
             "DoorHelp",
             "Starting state applies once. Find a key by name and choose Use selected key, or enter its template ID. Empty removes the key requirement; Original key preserves the source setting. New doors retain their original size."
@@ -144,14 +146,14 @@ public sealed partial class RaidEditor
             if (response != null)
                 _doorKeys.AddRange(response.Entries.AsValueEnumerable().Where(e => !string.IsNullOrEmpty(e.KeyId)).ToArray());
             _doorKeyIndex = 0;
-            Refresh();
+            _context.Refresh();
         }
         catch (Exception error)
         {
             if (generation == _doorKeyGeneration && session == EditorMode.SessionId)
             {
-                _notice = error.Message;
-                Refresh();
+                _context.Notice = error.Message;
+                _context.Refresh();
             }
         }
     }

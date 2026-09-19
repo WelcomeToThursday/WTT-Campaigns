@@ -194,6 +194,7 @@ internal static class UiCompatibilityChecks
             PreviewNativeChecks.CheckEscape(assembly.MainModule, client.MainModule);
             EditorOpenChecks.Client(client, Check);
             AiControlsChecks.Run(client, Check);
+            EditorControllerCompatibilityChecks.Run(client, Check);
             var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
             var geometry = editor.Methods.Single(m => m.Name == "GeometryInput");
             Check(

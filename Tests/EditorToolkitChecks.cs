@@ -269,7 +269,7 @@ internal static class EditorToolkitChecks
         // The typed wrappers also call Get<T>, but their control name is an
         // argument rather than a literal inside Get. Check the container caller
         // against the actual layout, including captions chosen by a branch.
-        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Controllers.EditorCatalogController");
         foreach (var name in new[] { "PresentContainerControls", "BindContainerControls" })
         {
             string? control = null;
