@@ -17,7 +17,7 @@ public sealed partial class RaidEditor
         if (_view?.Valid != true || _session == null)
             return;
         var state =
-            $"{Catalog.AssetRevision}|{_session.ContentVersion}|{_session.Status}|{_notice}|{_aiPreviewStatus}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{Catalog.Placing}|{_view.Windows.HasMenu}";
+            $"{Catalog.AssetRevision}|{_session.ContentVersion}|{_session.Status}|{LastFeedback}|{_aiPreviewStatus}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{Catalog.Placing}|{_view.Windows.HasMenu}";
         if (_presentedIndexCount != _sceneIndex.Count || state != _passiveState)
         {
             _presentedIndexCount = _sceneIndex.Count;
@@ -79,14 +79,14 @@ public sealed partial class RaidEditor
         }
         view.Highlight("Snap", _snap);
         view.Get<Button>("Parent").interactable = _picked && _picked!.parent;
-        view.Text("CaptureRequest", _task == null ? "" : _task.Tool + " capture · " + _notice);
+        view.Text("CaptureRequest", _task == null ? "" : _task.Tool + " capture · " + LastFeedback);
         view.Text(
             "Request",
             (_picking ? "Click scenery · Esc cancel" : "RMB fly · Ctrl+F8 close")
                 + (EditorMode.Ready ? " · EDITOR / Gameplay disabled" : " · RAID CONTINUES")
         );
         // Keep the compact status readable; hovering reveals the full operation message.
-        view.Feedback(_session!.Status, _aiPreviewStatus, _notice);
+        view.Feedback(_session!.Status, _aiPreviewStatus);
         if (_mode == "Scene" && _picked)
             view.Text("Identity", _picked!.name);
         view.Windows.SetTooltip("Connection", view.Get<Text>("Connection").text);

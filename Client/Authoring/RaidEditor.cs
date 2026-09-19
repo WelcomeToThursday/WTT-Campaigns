@@ -2,6 +2,7 @@ using BepInEx.Configuration;
 using EFT;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Rendering;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
@@ -51,8 +52,7 @@ public sealed partial class RaidEditor : MonoBehaviour
     private readonly List<(Renderer Renderer, bool Enabled)> _renderers = new();
     private string _selected = "",
         _mode = "Zones",
-        _tool = "Move",
-        _notice = "";
+        _tool = "Move";
     private int _page;
     private Transform? _picked;
     private CaptureTask? _task;
@@ -164,6 +164,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     Close();
                     _ = _session.Retire();
                     _session = null;
+                    StopConsole();
                 }
                 else if (EditorMissionTestActive && (_editorMissionPending == null || !player || !AuthoringEnabled))
                 {
@@ -177,6 +178,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 {
                     _toolStates.Clear();
                     _session = new RaidEditorSession(ZoneRuntime.Location);
+                    StartConsole();
                     if (EditorMode.Ready)
                     {
                         _layoutId = EditorMode.SelectedLayout;
@@ -233,14 +235,14 @@ public sealed partial class RaidEditor : MonoBehaviour
             {
                 EndWalkthrough();
                 Close();
-                _notice = "Editor closed because another screen took priority.";
+                ReportFeedback("Editor closed because another screen took priority.");
             }
             // Keep draft controls and recovery accessible while the native socket
             // reconnects. Only the applied physical walkthrough needs to stop.
             if (_walking && Time.realtimeSinceStartup - _lastContact > 20)
             {
                 EndWalkthrough(returnToEditor: true);
-                _notice = "Walkthrough restored while the editor connection recovers.";
+                ReportFeedback("Walkthrough restored while the editor connection recovers.");
                 return;
             }
             // Escape belongs to the walkthrough for this entire frame. Reopening
@@ -286,13 +288,17 @@ public sealed partial class RaidEditor : MonoBehaviour
             AdvanceSceneIndex();
             if (Input.GetKeyDown(KeyCode.Escape))
             {
+                if (_view!.Document.EscapeFrame == Time.frameCount)
+                    return;
                 if (_view!.Windows.DismissMenus())
                     return;
                 if (_view.DismissDropdowns())
                     return;
                 if (_view.Typing)
                 {
-                    _view.ReleaseFocus();
+                    if (!_view.Console.CancelTyping())
+                        _view.ReleaseFocus();
+                    _view.Document.EscapeFrame = Time.frameCount;
                     EventSystem.current?.SetSelectedGameObject(null);
                     return;
                 }
@@ -380,7 +386,7 @@ public sealed partial class RaidEditor : MonoBehaviour
         {
             _openState.Fail();
             EndWalkthrough();
-            _notice = e.Message;
+            ReportFeedback(e.Message, ConsoleSeverity.Error);
             Plugin.Error(e);
             Plugin.LogInfo("Editor automatic opening paused after an error. Press the editor shortcut to retry, or reopen the map.");
             Close();
@@ -609,6 +615,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
     private void OnDestroy()
     {
+        StopConsole();
         EndWalkthrough();
         EndEditorMissionRoute();
         Close();
@@ -660,10 +667,12 @@ public sealed partial class RaidEditor : MonoBehaviour
             _layoutId = taskZone.LayoutId;
         _selected = task.RecordId;
         _mode = task.Tool == "Zone" ? "Zones" : "Captures";
-        _notice =
+        ReportFeedback(
             task.Tool == "Zone"
                 ? "Place or edit a zone, then complete the capture."
-                : "Pick a scene object or capture a transform, then complete.";
+                : "Pick a scene object or capture a transform, then complete.",
+            ConsoleSeverity.Warning
+        );
         _session!.TaskStatus(task, "Opened");
         Refresh();
     }

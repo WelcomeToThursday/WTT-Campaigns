@@ -1,0 +1,31 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="Console" class="editor-console">
+        <ui:ScrollView name="ConsoleToolbarScroll" mode="Horizontal" class="editor-console-toolbar-scroll">
+            <ui:VisualElement name="ConsoleToolbar" class="editor-console-toolbar">
+                <ui:Label name="ConsoleTextSize" text="Text: 16" class="editor-console-font-label" picking-mode="Ignore" />
+                <ui:Button name="ConsoleTextSmaller" text="A−" tooltip="Smaller console text" class="editor-action" />
+                <ui:Button name="ConsoleTextLarger" text="A+" tooltip="Larger console text" class="editor-action" />
+                <ui:Button name="ConsoleTextReset" text="Reset" tooltip="Reset console text to 16" class="editor-action" />
+                <ui:Toggle name="ConsoleAll" class="editor-setting editor-console-toggle" label="All client logs" tooltip="Include game and other mod messages" />
+                <ui:Toggle name="ConsoleInfo" class="editor-setting editor-console-toggle" label="Info" value="true" />
+                <ui:Toggle name="ConsoleWarning" class="editor-setting editor-console-toggle" label="Warnings" value="true" />
+                <ui:Toggle name="ConsoleError" class="editor-setting editor-console-toggle" label="Errors" value="true" />
+                <ui:Toggle name="ConsoleDebug" class="editor-setting editor-console-toggle" label="Debug" value="true" />
+                <ui:Toggle name="ConsoleScroll" class="editor-setting editor-console-toggle" label="Auto-scroll" value="true" />
+                <ui:Button name="ConsoleClear" text="Clear" class="editor-action" />
+                <ui:Button name="ConsoleCopy" text="Copy selected" class="editor-action" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+        <ui:TextField name="ConsoleSearch" label="Search logs" class="editor-field" />
+        <ui:ListView name="ConsoleMessages" virtualization-method="DynamicHeight" class="editor-console-messages" />
+        <ui:Foldout name="ConsoleDetailsFold" text="Message details" value="false" class="editor-console-details">
+            <ui:ScrollView name="ConsoleDetailsScroll" class="editor-console-details-scroll">
+                <ui:TextField name="ConsoleDetails" multiline="true" readonly="true" class="editor-console-detail-text" />
+            </ui:ScrollView>
+        </ui:Foldout>
+        <ui:Label name="ConsoleCounts" class="editor-console-counts" picking-mode="Ignore" />
+        <ui:Label name="ConsoleHint" class="editor-console-hint" picking-mode="Ignore" />
+        <ui:TextField name="ConsoleCommand" label="Command" class="editor-field editor-console-input" tooltip="Enter runs; Tab completes; Up/Down recall commands" />
+    </ui:VisualElement>
+</ui:UXML>

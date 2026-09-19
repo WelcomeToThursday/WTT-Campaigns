@@ -118,8 +118,10 @@ internal static class EditorSessionChecks
             );
 
             session.Edit(d => d.Name = "Changed");
+            check(session.CanUndo && !session.CanRedo, "Console undo availability follows the actual session history.");
             check(session.Dirty, "An edit marks the committed draft dirty.");
             session.Undo(false);
+            check(session.CanRedo, "Console redo becomes available after a session undo.");
             check(!session.Dirty && session.Definition!.Name == "Original", "Undoing to the baseline clears dirty state.");
             session.Undo(true);
             check(session.Dirty && session.Definition!.Name == "Changed", "Redo restores dirty state.");

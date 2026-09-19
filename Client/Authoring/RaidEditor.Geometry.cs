@@ -174,7 +174,7 @@ public sealed partial class RaidEditor
             {
                 _picked = hit.transform;
                 _picking = false;
-                _notice = "Scene target selected. Check its components, then use the target.";
+                ReportFeedback("Scene target selected. Check its components, then use the target.");
                 Refresh();
             }
             return;

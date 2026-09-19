@@ -1,3 +1,4 @@
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
@@ -157,7 +158,7 @@ internal sealed partial class EditorMapController
         {
             if (!_context.TryDeleteLayoutZones(_context.LayoutId, out var error))
             {
-                _context.Notice = error;
+                _context.ReportFeedback(error, ConsoleSeverity.Warning);
                 _context.Refresh();
                 return;
             }

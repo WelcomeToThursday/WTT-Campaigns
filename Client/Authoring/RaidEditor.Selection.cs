@@ -188,7 +188,7 @@ public sealed partial class RaidEditor
             _selected = "";
             _sceneSelectionPose = null;
             _sceneSelectionError = "";
-            _notice = "Click an object to select it.";
+            ReportFeedback("Click an object to select it.");
             Refresh();
         }
     }

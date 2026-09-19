@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using SPT.Common.Http;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Authoring;
@@ -47,7 +48,7 @@ internal sealed partial class EditorCatalogController
         }
         catch (Exception e)
         {
-            _context.Notice = e.Message;
+            _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
             Plugin.Error(e);
         }
         _context.Refresh();
@@ -72,7 +73,7 @@ internal sealed partial class EditorCatalogController
                     EditContainer(s => s.SpawnChance = chance);
                 else
                 {
-                    _context.Notice = "Spawn chance must be a whole number from 0 to 100.";
+                    _context.ReportFeedback("Spawn chance must be a whole number from 0 to 100.", ConsoleSeverity.Warning);
                     _context.Refresh();
                 }
             }
@@ -86,7 +87,7 @@ internal sealed partial class EditorCatalogController
                     && string.IsNullOrEmpty(ConfiguredContainer?.Container?.KeyTemplate)
                 )
                 {
-                    _context.Notice = "Find a key in Access and choose Use selected key first.";
+                    _context.ReportFeedback("Find a key in Access and choose Use selected key first.", ConsoleSeverity.Warning);
                     _context.Refresh();
                     return;
                 }
@@ -105,7 +106,7 @@ internal sealed partial class EditorCatalogController
                     _containerQuantity = count;
                 else
                 {
-                    _context.Notice = "Quantity must be between 1 and 10000.";
+                    _context.ReportFeedback("Quantity must be between 1 and 10000.", ConsoleSeverity.Warning);
                     _context.Refresh();
                 }
             }
@@ -173,7 +174,7 @@ internal sealed partial class EditorCatalogController
         }
         catch (Exception e)
         {
-            _context.Notice = e.Message;
+            _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
             _context.Refresh();
         }
     }
@@ -228,15 +229,16 @@ internal sealed partial class EditorCatalogController
                 _containerKeyIndex = 0;
             else
                 _containerItemIndex = 0;
-            _context.Notice =
-                response.Total > response.Entries.Count ? "Showing the first 10 matches. Refine the search to find your item." : "";
+            _context.ReportFeedback(
+                response.Total > response.Entries.Count ? "Showing the first 10 matches. Refine the search to find your item." : ""
+            );
             _context.Refresh();
         }
         catch (Exception e)
         {
             if (generation == (keys ? _containerKeySearchGeneration : _containerSearchGeneration))
             {
-                _context.Notice = e.Message;
+                _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
                 _context.Refresh();
             }
         }

@@ -248,7 +248,7 @@ internal sealed partial class EditorAiController
             }
         )
             _context.View.Get<InputField>(name).interactable = editable;
-        _context.View.Feedback(_context.Session!.Status, _context.AiPreviewStatus, _context.Notice);
+        _context.View.Feedback(_context.Session!.Status, _context.AiPreviewStatus);
         RefreshAiRoutes();
     }
 

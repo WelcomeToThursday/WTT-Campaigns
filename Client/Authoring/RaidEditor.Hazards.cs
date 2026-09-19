@@ -1,5 +1,6 @@
 using System.Threading;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
@@ -78,7 +79,7 @@ public sealed partial class RaidEditor
         }
         catch (Exception error)
         {
-            _notice = error.Message;
+            ReportFeedback(error.Message, ConsoleSeverity.Error);
             Plugin.Error(error);
         }
     }
@@ -104,7 +105,7 @@ public sealed partial class RaidEditor
             return;
         if ((!MissionContent || !_zoneCreateShared) && Layout == null)
         {
-            _notice = "Select a layout before placing a hazard, or choose Shared scope.";
+            ReportFeedback("Select a layout before placing a hazard, or choose Shared scope.", ConsoleSeverity.Warning);
             Refresh();
             return;
         }
@@ -151,12 +152,12 @@ public sealed partial class RaidEditor
             _session.Edit(s => s.Zones.Add(zone));
             _selected = zone.Id;
             _mode = "Hazards";
-            _notice = "Placed " + HazardRules.Label(kind) + ". Move, rotate and resize its area in the inspector.";
+            ReportFeedback("Placed " + HazardRules.Label(kind) + ". Move, rotate and resize its area in the inspector.");
             Refresh();
         }
         catch (Exception error)
         {
-            _notice = error.Message;
+            ReportFeedback(error.Message, ConsoleSeverity.Error);
             Plugin.Error(error);
         }
     }

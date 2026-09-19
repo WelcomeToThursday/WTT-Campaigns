@@ -20,7 +20,8 @@ internal sealed partial class RaidEditorView
         control.Element.RegisterCallback<PointerLeaveEvent>(_ => Windows?.HideTooltip());
     }
 
-    private static bool IsWindow(string id) => id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration";
+    private static bool IsWindow(string id) =>
+        id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration" or "Console";
 
     private VisualElement BindAuthored(EditorLayoutSpec.Node section, VisualElement parent)
     {
@@ -45,7 +46,7 @@ internal sealed partial class RaidEditorView
                 "button" or "toggle" => new EditorButton(element),
                 "choice" => new EditorChoice((Button)element, OpenChoice),
                 "text" => new EditorLabel((Label)element),
-                "input" => new EditorInput((TextField)element, node.Id == "Search"),
+                "input" => new EditorInput((TextField)element, node.Id is "Search" or "ConsoleSearch" or "ConsoleCommand"),
                 "image" => new EditorImage((Image)element),
                 _ => new EditorControl(element),
             };
@@ -109,7 +110,7 @@ internal sealed partial class RaidEditorView
         {
             var parent = section.Id == "EditorWalkStatus" || section.Id == "ConflictShield" ? Document.Content : workspace;
             var element = BindAuthored(section, parent);
-            if (section.Id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration")
+            if (section.Id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration" or "Console")
             {
                 BindWindowChrome(
                     element,
@@ -117,11 +118,13 @@ internal sealed partial class RaidEditorView
                     section.Id == "Library" ? "BROWSER"
                         : section.Id == "Inspector" ? "PROPERTIES"
                         : section.Id == "LootConfiguration" ? "LOOT CONFIGURATION"
+                        : section.Id == "Console" ? "CONSOLE"
                         : section.Id == "Controls" ? "EDITOR CONTROLS"
                         : "ENVIRONMENT",
                     section.Id == "Library" ? "LibraryCollapse"
                         : section.Id == "Inspector" ? "InspectorCollapse"
                         : section.Id == "LootConfiguration" ? "LootClose"
+                        : section.Id == "Console" ? "ConsoleClose"
                         : section.Id == "Controls" ? "HelpClose"
                         : "EnvironmentClose"
                 );

@@ -1,4 +1,5 @@
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Controllers;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
@@ -139,7 +140,7 @@ public sealed partial class RaidEditor
         if (_session?.Busy == true || _session?.Dirty == true)
         {
             _walkRequested = true;
-            _notice = "Starting walkthrough after synchronization…";
+            ReportFeedback("Starting walkthrough after synchronization…");
             Refresh(false);
             return;
         }
@@ -164,7 +165,7 @@ public sealed partial class RaidEditor
         _walkAssetLifetime = new CancellationTokenSource();
         var walkLifetime = _walkAssetLifetime;
         _session!.Previewing = _session.Hold = true;
-        _notice = "Preparing walkthrough scenery and containers�";
+        ReportFeedback("Preparing walkthrough scenery and containers�");
         try
         {
             _walkLayout = RaidEditorSession.Copy(Layout);
@@ -213,7 +214,7 @@ public sealed partial class RaidEditor
             if (ReferenceEquals(_walkAssetLifetime, walkLifetime))
             {
                 EndWalkthrough();
-                _notice = e.Message;
+                ReportFeedback(e.Message, ConsoleSeverity.Error);
                 Refresh(false);
             }
         }
@@ -276,7 +277,7 @@ public sealed partial class RaidEditor
                     _player.Rotation = _returnFacing;
                 }
                 else
-                    _notice = "Preview restored. Return position is obstructed; player remains here.";
+                    ReportFeedback("Preview restored. Return position is obstructed; player remains here.");
             }
             _returnPosition = null;
             if (_session != null)

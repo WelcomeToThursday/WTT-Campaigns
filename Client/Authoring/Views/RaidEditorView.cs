@@ -10,6 +10,7 @@ internal sealed partial class RaidEditorView : IDisposable
 {
     internal readonly EditorToolkitDocument Document;
     internal readonly EditorToolkitWindows Windows;
+    internal readonly EditorConsoleView Console;
     internal GameObject Root => Document.Host;
     private readonly Dictionary<string, EditorControl> _controls = new(StringComparer.Ordinal);
     private readonly List<EditorInput> _inputs = new();
@@ -102,12 +103,14 @@ internal sealed partial class RaidEditorView : IDisposable
         {
             Build();
             Windows = new EditorToolkitWindows(this);
+            Console = new EditorConsoleView(this);
             EditorLayoutPreferences.Attach(Windows);
             BuildUsability();
             Document.Tick = () =>
             {
                 ApplyPendingLayout();
                 Windows.Tick();
+                Console.Tick();
                 if (
                     ViewportMenuOpen
                     && UnityEngine.Input.GetMouseButtonDown(0)
@@ -135,7 +138,7 @@ internal sealed partial class RaidEditorView : IDisposable
             };
             Document.CancelTyping = () =>
             {
-                if (DismissDropdowns())
+                if (Console.CancelTyping() || DismissDropdowns())
                     return;
                 foreach (var input in _inputs)
                     if (input.isFocused)
@@ -293,6 +296,7 @@ internal sealed partial class RaidEditorView : IDisposable
         if (_disposed)
             return;
         _disposed = true;
+        Console.Unbind();
         Windows.CancelInteraction();
         foreach (var input in _inputs)
             input.CancelEdit();

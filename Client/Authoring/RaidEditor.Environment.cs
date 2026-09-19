@@ -1,4 +1,5 @@
 using System.Globalization;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Rendering;
 using WTT.Campaigns.Client.Authoring.Views;
 using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
@@ -27,7 +28,7 @@ public sealed partial class RaidEditor
                     catch (Exception e)
                     {
                         Plugin.Error(e);
-                        _notice = e.Message;
+                        ReportFeedback(e.Message, ConsoleSeverity.Error);
                     }
                 }
             );

@@ -32,14 +32,15 @@ public sealed partial class RaidEditor
         return _hasSelectionBounds;
     }
 
-    private bool CanFrameScene =>
+    private bool CanFrameScene => CanFrameSceneForCommand && !_view!.Typing;
+
+    private bool CanFrameSceneForCommand =>
         Catalog.SceneWorkspace
         && Catalog.SceneTab != "Catalog"
         && !_walking
         && _drag == null
         && !Catalog.Placing
         && _view?.Valid == true
-        && !_view.Typing
         && !_view.Windows.HasMenu
         && _session?.Conflict == null
         && Maps.MapPoint is not MapObjectEdit { Operation: "Hide" }
@@ -47,7 +48,14 @@ public sealed partial class RaidEditor
 
     private void FrameSceneSelection()
     {
-        if (!CanFrameScene || !_camera || !TrySelectionBounds(out var bounds))
+        if (!CanFrameScene)
+            return;
+        FrameSceneSelectionCore();
+    }
+
+    private void FrameSceneSelectionCore()
+    {
+        if (!CanFrameSceneForCommand || !_camera || !TrySelectionBounds(out var bounds))
             return;
         var halfAngle = Mathf.Atan(Mathf.Tan(_camera!.fieldOfView * Mathf.Deg2Rad / 2) * Mathf.Min(1, _camera.aspect));
         var distance = Mathf.Max(_camera.nearClipPlane + bounds.extents.magnitude, bounds.extents.magnitude / Mathf.Sin(halfAngle) * 1.25f);

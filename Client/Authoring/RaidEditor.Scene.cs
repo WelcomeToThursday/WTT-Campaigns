@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 
 namespace WTT.Campaigns.Client.Authoring;
@@ -185,7 +186,7 @@ public sealed partial class RaidEditor
         {
             _sceneIndex.Limit();
             FinishSceneIndex();
-            _notice = "Scene indexing stopped: " + e.Message;
+            ReportFeedback("Scene indexing stopped: " + e.Message, ConsoleSeverity.Error);
             Plugin.Error(e);
         }
     }
@@ -198,7 +199,7 @@ public sealed partial class RaidEditor
                 $"Raid editor scene index: {_sceneIndex.Count} objects, {_sceneIndex.RetainedCharacters} cached characters, limited={_sceneIndex.Limited}."
             );
             if (_sceneIndex.Limited)
-                _notice = SceneIndexStatus;
+                ReportFeedback(SceneIndexStatus);
         }
         _sceneWalk?.Dispose();
         _sceneWalk = null;

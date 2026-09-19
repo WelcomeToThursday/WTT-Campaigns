@@ -1,5 +1,6 @@
 using System.Globalization;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
@@ -79,7 +80,7 @@ internal sealed partial class EditorAiController
         var error = RaidEditorAiContracts.RouteError(candidate);
         if (error.Length == 0)
             return true;
-        _context.Notice = "Edit rejected: " + error;
+        _context.ReportFeedback("Edit rejected: " + error, ConsoleSeverity.Warning);
         return false;
     }
 
@@ -109,7 +110,7 @@ internal sealed partial class EditorAiController
     {
         if (_context.Layout == null)
         {
-            _context.Notice = "Select a layout before adding an encounter.";
+            _context.ReportFeedback("Select a layout before adding an encounter.", ConsoleSeverity.Warning);
             return;
         }
         var encounterId = RaidEditorAiContracts.Id();
@@ -154,7 +155,7 @@ internal sealed partial class EditorAiController
         var selected = AiSelected(out var kind);
         if (!selected.Valid || selected.Encounter == null || kind != "enc")
         {
-            _context.Notice = "Select an encounter before adding a wave.";
+            _context.ReportFeedback("Select an encounter before adding a wave.", ConsoleSeverity.Warning);
             return;
         }
         var encounterId = selected.Encounter.Id;
@@ -175,7 +176,7 @@ internal sealed partial class EditorAiController
         var wave = kind == "enc" ? Items(encounter?.Waves).AsValueEnumerable().FirstOrDefault() : selected.Wave;
         if (!selected.Valid || encounter == null || wave == null || kind is not ("enc" or "wave" or "roster"))
         {
-            _context.Notice = "Select an encounter or wave before adding a roster entry.";
+            _context.ReportFeedback("Select an encounter or wave before adding a roster entry.", ConsoleSeverity.Warning);
             return;
         }
         var encounterId = encounter.Id;
@@ -210,14 +211,14 @@ internal sealed partial class EditorAiController
         scene = "";
         if (!_context.IsOpen || !_context.Camera || !_context.TryRouteFloor(_context.CameraPosition, 20, out var floor))
         {
-            _context.Notice = "Move the editor camera above a floor within 20 metres to place an AI marker.";
+            _context.ReportFeedback("Move the editor camera above a floor within 20 metres to place an AI marker.");
             return false;
         }
         position = floor.point;
         scene = floor.transform.gameObject.scene.name;
         if (!RaidEditorAiContracts.TryNav(position, out var safe) || (safe - position).sqrMagnitude > .2f * .2f)
         {
-            _context.Notice = "Placement rejected: choose a clear NavMesh standing area.";
+            _context.ReportFeedback("Placement rejected: choose a clear NavMesh standing area.", ConsoleSeverity.Warning);
             return false;
         }
         position = safe;
@@ -250,7 +251,7 @@ internal sealed partial class EditorAiController
     {
         if (_context.Layout == null)
         {
-            _context.Notice = "Select a layout before adding a patrol route.";
+            _context.ReportFeedback("Select a layout before adding a patrol route.", ConsoleSeverity.Warning);
             return;
         }
         var id = RaidEditorAiContracts.Id();
@@ -278,7 +279,7 @@ internal sealed partial class EditorAiController
             : null;
         if (route == null || !TryAiPlacement(out var position, out var scene))
         {
-            _context.Notice = "Select a patrol route, then place its waypoint on the NavMesh.";
+            _context.ReportFeedback("Select a patrol route, then place its waypoint on the NavMesh.", ConsoleSeverity.Warning);
             return;
         }
         var routeId = route.Id;
@@ -334,7 +335,7 @@ internal sealed partial class EditorAiController
             || (safe - ZoneRuntime.Vector(point.Position)).sqrMagnitude > .001f
         )
         {
-            _context.Notice = "Position rejected: it is not on a clear NavMesh standing area.";
+            _context.ReportFeedback("Position rejected: it is not on a clear NavMesh standing area.", ConsoleSeverity.Warning);
             return;
         }
         if (
@@ -373,7 +374,7 @@ internal sealed partial class EditorAiController
         var sourceId = selected.Id;
         if (!selected.Valid || kind is not ("spawn" or "route" or "enc"))
         {
-            _context.Notice = "Select an encounter, spawn point or patrol route to duplicate it.";
+            _context.ReportFeedback("Select an encounter, spawn point or patrol route to duplicate it.", ConsoleSeverity.Warning);
             return;
         }
         var id = RaidEditorAiContracts.Id();
@@ -431,7 +432,7 @@ internal sealed partial class EditorAiController
             var proposedWorld = ZoneRuntime.Vector(proposed);
             if (!RaidEditorAiContracts.TryNav(proposedWorld, out var safe) || (safe - proposedWorld).sqrMagnitude > .001f)
             {
-                _context.Notice = "Position rejected: it is not on a clear NavMesh standing area.";
+                _context.ReportFeedback("Position rejected: it is not on a clear NavMesh standing area.", ConsoleSeverity.Warning);
                 return;
             }
             if (
@@ -551,7 +552,10 @@ internal sealed partial class EditorAiController
         if (!RaidEditorAiContracts.TryNav(proposed, out var safe) || (safe - proposed).sqrMagnitude > .001f)
         {
             _context.RestorePoint(point, before);
-            _context.Notice = "Drag rejected: the AI position must remain on a clear NavMesh standing area.";
+            _context.ReportFeedback(
+                "Drag rejected: the AI position must remain on a clear NavMesh standing area.",
+                ConsoleSeverity.Warning
+            );
             return false;
         }
         if (
@@ -565,7 +569,7 @@ internal sealed partial class EditorAiController
             if (error.Length > 0)
             {
                 _context.RestorePoint(point, before);
-                _context.Notice = "Drag rejected: " + error;
+                _context.ReportFeedback("Drag rejected: " + error, ConsoleSeverity.Warning);
                 return false;
             }
         }
@@ -577,7 +581,7 @@ internal sealed partial class EditorAiController
         var selected = AiSelected(out var kind);
         if (selected.Encounter == null || kind != "enc")
         {
-            _context.Notice = "Select an encounter before changing its activation trigger.";
+            _context.ReportFeedback("Select an encounter before changing its activation trigger.", ConsoleSeverity.Warning);
             return;
         }
         var encounterId = selected.Encounter.Id;
@@ -595,7 +599,7 @@ internal sealed partial class EditorAiController
             }
             catch (Exception error)
             {
-                _context.Notice = error.Message;
+                _context.ReportFeedback(error.Message, ConsoleSeverity.Error);
                 return;
             }
         }
@@ -636,10 +640,13 @@ internal sealed partial class EditorAiController
         var trigger = selected.Encounter?.Trigger;
         if (trigger == null)
         {
-            _context.Notice = "Select an encounter, wave or roster and use Simulate. A patrol route alone does not activate bots.";
+            _context.ReportFeedback(
+                "Select an encounter, wave or roster and use Simulate. A patrol route alone does not activate bots.",
+                ConsoleSeverity.Warning
+            );
             return;
         }
-        _context.Notice = "Trigger simulated. Each encounter activates once per preview; Reset preview to run it again.";
+        _context.ReportFeedback("Trigger simulated. Each encounter activates once per preview; Reset preview to run it again.");
         if (trigger.Type == MapEncounterTrigger.MissionStart)
         {
             _context.SimulateAiStart();
@@ -649,7 +656,7 @@ internal sealed partial class EditorAiController
         {
             if (string.IsNullOrWhiteSpace(trigger.EventId))
             {
-                _context.Notice = "Enter an event id before simulating this encounter.";
+                _context.ReportFeedback("Enter an event id before simulating this encounter.", ConsoleSeverity.Warning);
                 return;
             }
             _context.SimulateAiEvent(trigger.EventId);
@@ -682,7 +689,7 @@ internal sealed partial class EditorAiController
     {
         if (!TryFinite(value, out var delay) || delay < 0 || delay > 3600)
         {
-            _context.Notice = "Wave delay must be between 0 and 3600 seconds.";
+            _context.ReportFeedback("Wave delay must be between 0 and 3600 seconds.", ConsoleSeverity.Warning);
             return;
         }
         var selected = AiSelected(out var kind);
@@ -784,7 +791,7 @@ internal sealed partial class EditorAiController
             || count > MapEncounterRules.MaxBotsPerWave
         )
         {
-            _context.Notice = "Roster count must be between 1 and 256.";
+            _context.ReportFeedback("Roster count must be between 1 and 256.", ConsoleSeverity.Warning);
             return;
         }
         EditAiRosterText("Count", count.ToString(CultureInfo.InvariantCulture));
@@ -868,7 +875,7 @@ internal sealed partial class EditorAiController
                     available.Add(point.Id);
             if (roster == null || available.Count == 0)
             {
-                _context.Notice = "Add an authored AI spawn point before assigning one.";
+                _context.ReportFeedback("Add an authored AI spawn point before assigning one.", ConsoleSeverity.Warning);
                 return;
             }
             roster.SpawnPointIds ??= new();
@@ -878,7 +885,10 @@ internal sealed partial class EditorAiController
             {
                 if (next.Length == 0)
                 {
-                    _context.Notice = "Add another authored AI spawn point before assigning this roster count.";
+                    _context.ReportFeedback(
+                        "Add another authored AI spawn point before assigning this roster count.",
+                        ConsoleSeverity.Warning
+                    );
                     return;
                 }
                 roster.SpawnPointIds.Add(next);
@@ -901,7 +911,7 @@ internal sealed partial class EditorAiController
             }
             else
             {
-                _context.Notice = "This roster already uses its only available authored spawn point.";
+                _context.ReportFeedback("This roster already uses its only available authored spawn point.", ConsoleSeverity.Warning);
             }
         });
     }
@@ -928,7 +938,7 @@ internal sealed partial class EditorAiController
                     available.Add(patrol.Id);
             if (roster == null || available.Count == 0)
             {
-                _context.Notice = "Add a patrol route before assigning one.";
+                _context.ReportFeedback("Add a patrol route before assigning one.", ConsoleSeverity.Warning);
                 return;
             }
             var index = available.IndexOf(roster.PatrolRouteId);
@@ -976,7 +986,7 @@ internal sealed partial class EditorAiController
     {
         if (!TryFinite(value, out var wait) || wait < 0 || wait > 3600)
         {
-            _context.Notice = "Waypoint wait must be between 0 and 3600 seconds.";
+            _context.ReportFeedback("Waypoint wait must be between 0 and 3600 seconds.", ConsoleSeverity.Warning);
             return;
         }
         var selected = AiSelected(out var kind);

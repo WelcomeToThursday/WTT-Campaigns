@@ -47,6 +47,8 @@ internal static class EditorToolkitChecks
                     "text" => "Label",
                     "image" => "Image",
                     "scroll" => "ScrollView",
+                    "list" => "ListView",
+                    "foldout" => "Foldout",
                     _ => "VisualElement",
                 };
                 if (!elements.Remove(node.Id, out var element) || element.Name.LocalName != tag)

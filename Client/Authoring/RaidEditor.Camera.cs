@@ -2,6 +2,7 @@ using System.Globalization;
 using BepInEx.Configuration;
 using Newtonsoft.Json;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Views;
 
 namespace WTT.Campaigns.Client.Authoring;
@@ -82,14 +83,16 @@ public sealed partial class RaidEditor
     private float CameraSpeed =>
         float.IsNaN(_cameraSpeed.Value) || float.IsInfinity(_cameraSpeed.Value) ? 6f : Mathf.Clamp(_cameraSpeed.Value, .25f, 96f);
 
+    private void SetCameraSpeed(float value)
+    {
+        _cameraSpeed.Value = Mathf.Clamp(value, .25f, 96f);
+        _view?.Get<EditorInput>("CameraSpeed").SetTextWithoutNotify(CameraSpeed.ToString("0.##", CultureInfo.InvariantCulture));
+        Refresh(false);
+    }
+
     private void BindCameraControls(RaidEditorView view)
     {
-        void Set(float value)
-        {
-            _cameraSpeed.Value = Mathf.Clamp(value, .25f, 96f);
-            view.Get<EditorInput>("CameraSpeed").SetTextWithoutNotify(CameraSpeed.ToString("0.##", CultureInfo.InvariantCulture));
-            Refresh(false);
-        }
+        void Set(float value) => SetCameraSpeed(value);
         view.Button("ViewportSlower", () => Set(CameraSpeed / 2));
         view.Button("ViewportFaster", () => Set(CameraSpeed * 2));
         view.Button(
@@ -114,7 +117,7 @@ public sealed partial class RaidEditor
                     Set(speed);
                 else
                 {
-                    _notice = "Camera speed must be 0.25–96 metres per second.";
+                    ReportFeedback("Camera speed must be 0.25–96 metres per second.", ConsoleSeverity.Warning);
                     view.Get<EditorInput>("CameraSpeed").SetTextWithoutNotify(CameraSpeed.ToString("0.##", CultureInfo.InvariantCulture));
                     Refresh(false);
                 }

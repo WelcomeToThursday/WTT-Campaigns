@@ -1,6 +1,7 @@
 using EFT.Interactive;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Authoring;
@@ -75,7 +76,7 @@ internal sealed partial class EditorCatalogController
                 _placementLoot = _selectedCatalogEntry;
                 if (_placementLoot == null || _placementLoot.Error.Length > 0)
                     throw new InvalidOperationException(_placementLoot?.Error ?? "Select an available catalog item.");
-                _context.Notice = "Loading item model…";
+                _context.ReportFeedback("Loading item model…");
                 model = await SceneLootModel.Create(_placementLoot.Items, token);
                 if (token.IsCancellationRequested)
                 {
@@ -93,14 +94,14 @@ internal sealed partial class EditorCatalogController
             foreach (var collider in model.GetComponentsInChildren<Collider>(true))
                 collider.enabled = false;
             model.SetActive(false);
-            _context.Notice = "Point at a surface and click to place · Esc cancels";
+            _context.ReportFeedback("Point at a surface and click to place · Esc cancels");
         }
         catch (OperationCanceledException) { }
         catch (Exception e)
         {
             if (_placementRequests.IsCurrent(token))
             {
-                _context.Notice = e.Message;
+                _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
                 CancelPlacement();
             }
         }

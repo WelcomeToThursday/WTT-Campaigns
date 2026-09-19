@@ -61,6 +61,12 @@ internal sealed class EditorToolkitDocument : IDisposable
                 {
                     if (evt.keyCode != KeyCode.Escape)
                         return;
+                    if (EscapeFrame == Time.frameCount)
+                    {
+                        evt.StopPropagation();
+                        evt.PreventDefault();
+                        return;
+                    }
                     if (Typing)
                     {
                         EscapeFrame = Time.frameCount;
@@ -109,7 +115,7 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     private static void EnsureAssets()
     {
-        if (_template && _tree && _font && _previewShader && _viewportShader && Templates.Count == 47)
+        if (_template && _tree && _font && _previewShader && _viewportShader && Templates.Count == 49)
             return;
         Plugin.LogInfo("Editor Toolkit: loading shared assets");
         const string path = "assets/mods/wtt-campaigns.assets/editortoolkit/";
@@ -148,6 +154,8 @@ internal sealed class EditorToolkitDocument : IDisposable
                 "ConflictRow",
                 "ConflictShield",
                 "ContextMenu",
+                "Console",
+                "ConsoleRow",
                 "Controls",
                 "DockDivider",
                 "DockTab",

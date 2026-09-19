@@ -1,4 +1,5 @@
 using EFT.Interactive;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Spatial;
@@ -152,7 +153,7 @@ internal sealed partial class EditorMapController
         {
             if (generation == _doorKeyGeneration && session == EditorMode.SessionId)
             {
-                _context.Notice = error.Message;
+                _context.ReportFeedback(error.Message, ConsoleSeverity.Error);
                 _context.Refresh();
             }
         }

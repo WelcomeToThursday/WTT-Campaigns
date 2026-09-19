@@ -3,6 +3,7 @@ using EFT.Interactive;
 using Newtonsoft.Json;
 using SPT.Common.Http;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Authoring;
@@ -173,7 +174,7 @@ internal sealed partial class EditorCatalogController
                     }
                     catch (Exception e)
                     {
-                        _context.Notice = e.Message;
+                        _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
                         Plugin.Error(e);
                     }
                 }
@@ -278,7 +279,7 @@ internal sealed partial class EditorCatalogController
                     return;
                 _sceneRebindId = _context.SelectionId;
                 _context.Picking = true;
-                _context.Notice = "Click the replacement object · Esc cancels";
+                _context.ReportFeedback("Click the replacement object · Esc cancels");
             }
         );
     }
@@ -509,13 +510,13 @@ internal sealed partial class EditorCatalogController
             }
             _catalog = result;
             if (_catalog.Error != null)
-                _context.Notice = _catalog.Error;
+                _context.ReportFeedback(_catalog.Error, ConsoleSeverity.Error);
         }
         catch (Exception e)
         {
             if (_catalogRequests.IsCurrent(generation, key))
             {
-                _context.Notice = e.Message;
+                _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
                 _catalog = new SceneCatalogResponse { Error = e.Message };
             }
         }
@@ -556,7 +557,7 @@ internal sealed partial class EditorCatalogController
         var authored = _context.MapScene?.RecordAt(hit);
         if (_sceneRebindId.Length > 0 && authored != null)
         {
-            _context.Notice = "Choose an original map object as the replacement.";
+            _context.ReportFeedback("Choose an original map object as the replacement.", ConsoleSeverity.Warning);
             return;
         }
         if (authored != null)
@@ -593,13 +594,13 @@ internal sealed partial class EditorCatalogController
         var root = MapSceneAdapter.Root(hit) ?? WTT.Campaigns.UI.Controls.SceneSelectionGeometry.VisualRoot(hit);
         if (!root)
         {
-            _context.Notice = MapSceneAdapter.Supported(hit);
+            _context.ReportFeedback(MapSceneAdapter.Supported(hit), ConsoleSeverity.Warning);
             return;
         }
         var error = MapSceneAdapter.Supported(root);
         if (_sceneRebindId.Length > 0 && error.Length > 0)
         {
-            _context.Notice = error;
+            _context.ReportFeedback(error, ConsoleSeverity.Warning);
             return;
         }
         if (_sceneRebindId.Length > 0)
@@ -614,7 +615,7 @@ internal sealed partial class EditorCatalogController
             }
             if (rebound.Target.Kind != target.Kind)
             {
-                _context.Notice = "Select the same object type as the original target.";
+                _context.ReportFeedback("Select the same object type as the original target.", ConsoleSeverity.Warning);
                 return;
             }
             _context.MapEdit(l => l.Objects.AsValueEnumerable().Single(o => o.Id == id).Target = target);
@@ -643,7 +644,10 @@ internal sealed partial class EditorCatalogController
             _context.SelectionId = record.Id;
         _sceneTab = "Existing";
         _context.SetSceneSelectionPose(root!, binding, error);
-        _context.Notice = error.Length > 0 ? "Selected for inspection. " + error : "Selected " + root!.name;
+        _context.ReportFeedback(
+            error.Length > 0 ? "Selected for inspection. " + error : "Selected " + root!.name,
+            error.Length > 0 ? ConsoleSeverity.Warning : ConsoleSeverity.Info
+        );
         _context.Refresh();
         _context.View?.Windows.ShowPanel(ConfiguredContainer != null ? "LootConfiguration" : "Inspector", true);
     }
@@ -707,7 +711,7 @@ internal sealed partial class EditorCatalogController
         }
         catch (Exception e)
         {
-            _context.Notice = e.Message;
+            _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
         }
     }
 

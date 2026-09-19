@@ -166,6 +166,7 @@ WTT.Campaigns.Tests.ZoneLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.HazardChecks.Run(Check);
 WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorDockChecks.Run(Check);
+WTT.Campaigns.Tests.EditorConsoleChecks.Run(Check);
 WTT.Campaigns.Tests.EditorViewportChecks.Run(Check);
 WTT.Campaigns.Tests.EditorViewportInteractionChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);

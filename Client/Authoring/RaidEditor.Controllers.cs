@@ -1,5 +1,6 @@
 using EFT.Interactive;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Controllers;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Authoring.Views;
@@ -31,11 +32,9 @@ public sealed partial class RaidEditor : IEditorAiContext, IEditorCatalogContext
     {
         get => _mode;
     }
-    string IEditorDocumentContext.Notice
-    {
-        get => _notice;
-        set => _notice = value;
-    }
+
+    void IEditorDocumentContext.ReportFeedback(string message, ConsoleSeverity severity) => ReportFeedback(message, severity);
+
     List<(string Id, string Label)> IEditorDocumentContext.Rows
     {
         get => _rows;

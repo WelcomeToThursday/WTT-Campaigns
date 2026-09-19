@@ -24,6 +24,10 @@
 - [Story authoring](story-authoring.md)
 - [Dialogue and interactions](dialogue-and-interactions.md)
 - [Custom story media](story-media-bundles.md)
+- [Mission and Level Editor](editor-mode.md)
+- [Editor console and controls](editor-toolkit.md)
+- [AI encounters and recovery](ai-encounters.md)
+- [Map layers](map-layers.md)
 - [Raid authoring](raid-authoring.md)
 - [Story Sandbox](story-sandbox.md)
 

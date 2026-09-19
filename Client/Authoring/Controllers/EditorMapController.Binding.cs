@@ -1,4 +1,5 @@
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
@@ -22,7 +23,7 @@ internal sealed partial class EditorMapController
                     }
                     catch (Exception e)
                     {
-                        _context.Notice = e.Message;
+                        _context.ReportFeedback(e.Message, ConsoleSeverity.Error);
                         Plugin.Error(e);
                     }
                 }

@@ -1,6 +1,7 @@
 using System.Globalization;
 using EFT.Ballistics;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
@@ -40,6 +41,7 @@ public sealed partial class RaidEditor
         var view = new RaidEditorView();
         try
         {
+            BindConsole(view);
             BindEnvironment(view);
             BindHazards(view);
             BindCameraControls(view);
@@ -56,7 +58,7 @@ public sealed partial class RaidEditor
                         }
                         catch (Exception e)
                         {
-                            _notice = e.Message;
+                            ReportFeedback(e.Message, ConsoleSeverity.Error);
                             Plugin.Error(e);
                         }
                     }
@@ -75,7 +77,7 @@ public sealed partial class RaidEditor
                         }
                         catch (Exception e)
                         {
-                            _notice = e.Message;
+                            ReportFeedback(e.Message, ConsoleSeverity.Error);
                             Plugin.Error(e);
                         }
                     }
@@ -170,7 +172,7 @@ public sealed partial class RaidEditor
                 () =>
                 {
                     _picking = true;
-                    _notice = "Click a scene object. Use Select parent to choose its binding target.";
+                    ReportFeedback("Click a scene object. Use Select parent to choose its binding target.");
                 }
             );
             Button(
@@ -400,7 +402,7 @@ public sealed partial class RaidEditor
         }
         else
         {
-            _notice = "Enter a finite number using a decimal point.";
+            ReportFeedback("Enter a finite number using a decimal point.", ConsoleSeverity.Warning);
         }
     }
 
@@ -466,7 +468,7 @@ public sealed partial class RaidEditor
     {
         if (_session?.Definition == null)
         {
-            _notice = "Connect a draft in the web editor first.";
+            ReportFeedback("Connect a draft in the web editor first.", ConsoleSeverity.Warning);
             return;
         }
         var id = Guid.NewGuid().ToString("N").Substring(0, 24);
@@ -479,7 +481,7 @@ public sealed partial class RaidEditor
         var layoutId = (!MissionContent || !_zoneCreateShared) && EditorMode.Ready ? _layoutId : "";
         if ((!MissionContent || !_zoneCreateShared) && EditorMode.Ready && Layout == null)
         {
-            _notice = "Select a layout in Layouts before creating a layout-owned zone.";
+            ReportFeedback("Select a layout in Layouts before creating a layout-owned zone.", ConsoleSeverity.Warning);
             Refresh();
             return;
         }
@@ -508,7 +510,7 @@ public sealed partial class RaidEditor
             return;
         if (!shared && (!EditorMode.Ready || Layout == null))
         {
-            _notice = "Select a layout in Layouts before assigning layout ownership.";
+            ReportFeedback("Select a layout in Layouts before assigning layout ownership.", ConsoleSeverity.Warning);
             Refresh();
             return;
         }
@@ -518,16 +520,18 @@ public sealed partial class RaidEditor
             var layoutId = shared ? "" : _layoutId;
             if (!SetZoneLayout(zone.Id, layoutId, out var error))
             {
-                _notice = error;
+                ReportFeedback(error, ConsoleSeverity.Warning);
                 Refresh();
                 return;
             }
         }
 
         _zoneCreateShared = shared;
-        _notice = shared
-            ? "New zones will be Shared across layouts."
-            : "New zones will belong to " + (Layout?.Name ?? "the selected layout") + ".";
+        ReportFeedback(
+            shared
+                ? "New zones will be Shared across layouts."
+                : "New zones will belong to " + (Layout?.Name ?? "the selected layout") + "."
+        );
         Refresh();
     }
 
@@ -538,7 +542,7 @@ public sealed partial class RaidEditor
 
         if (!SetZoneLayout(zone.Id, layoutId, out var error))
         {
-            _notice = error;
+            ReportFeedback(error, ConsoleSeverity.Warning);
             Refresh();
             return;
         }
@@ -549,7 +553,7 @@ public sealed partial class RaidEditor
         var owner = string.IsNullOrEmpty(layoutId)
             ? "Shared"
             : _session?.Definition?.MapLayouts.AsValueEnumerable().FirstOrDefault(l => l.Id == layoutId)?.Name ?? layoutId;
-        _notice = "Zone scope changed to " + owner + ".";
+        ReportFeedback("Zone scope changed to " + owner + ".");
         Refresh();
     }
 
@@ -617,7 +621,7 @@ public sealed partial class RaidEditor
         var position = aim ? Aim(out scene) : _player?.Transform.position;
         if (position == null)
         {
-            _notice = "Aim at scene geometry first.";
+            ReportFeedback("Aim at scene geometry first.", ConsoleSeverity.Warning);
             return;
         }
         EditPoint(point =>
@@ -636,7 +640,7 @@ public sealed partial class RaidEditor
 
         if (sceneObject && !_picked)
         {
-            _notice = "Pick a scene object first.";
+            ReportFeedback("Pick a scene object first.", ConsoleSeverity.Warning);
             return;
         }
         var id = Selected is not SeasonZone && Selected != null ? Selected.Id : Guid.NewGuid().ToString("N").Substring(0, 24);
@@ -738,7 +742,7 @@ public sealed partial class RaidEditor
         var uses = SpatialRules.Uses(_session.Definition, _selected).AsValueEnumerable().ToArray();
         if (uses.Length > 0)
         {
-            _notice = "Reassign before deleting: " + string.Join(", ", uses);
+            ReportFeedback("Reassign before deleting: " + string.Join(", ", uses), ConsoleSeverity.Warning);
             return;
         }
         _session.Edit(s =>
@@ -849,7 +853,7 @@ public sealed partial class RaidEditor
         {
             if (Binding.Kind is not ("Trigger" or "Cinematic"))
             {
-                _notice = "Only Trigger and Cinematic events accept zones.";
+                ReportFeedback("Only Trigger and Cinematic events accept zones.", ConsoleSeverity.Warning);
                 return;
             }
             var id = Binding.Id;
@@ -865,7 +869,7 @@ public sealed partial class RaidEditor
         var error = ObjectError();
         if (error.Length > 0)
         {
-            _notice = error;
+            ReportFeedback(error, ConsoleSeverity.Warning);
             return;
         }
         Capture(true);
@@ -894,17 +898,17 @@ public sealed partial class RaidEditor
 
         if (Selected == null)
         {
-            _notice = "Select the captured record first.";
+            ReportFeedback("Select the captured record first.", ConsoleSeverity.Warning);
             return;
         }
         if (_task.Tool == "Zone" && Selected is not SeasonZone)
         {
-            _notice = "This task needs a zone.";
+            ReportFeedback("This task needs a zone.", ConsoleSeverity.Warning);
             return;
         }
         if (_task.Tool == "Object" && (Selected.ObjectPath.Length == 0 || ObjectError().Length > 0))
         {
-            _notice = ObjectError();
+            ReportFeedback(ObjectError(), ConsoleSeverity.Warning);
             return;
         }
         _session.TaskStatus(_task, "Completed", Selected.Id);
@@ -947,7 +951,7 @@ public sealed partial class RaidEditor
             "Request",
             _task == null ? "RAID CONTINUES \u00B7 Player remains in place" : "RAID CONTINUES \u00B7 " + _task.Tool + " capture requested"
         );
-        view.Feedback(_session.Status, _aiPreviewStatus, _notice);
+        view.Feedback(_session.Status, _aiPreviewStatus);
         view.Conflict(_session);
         // Do not repurpose or hide a row between pointer-down and pointer-up.
         if (view.RowPressed)

@@ -24,6 +24,8 @@ public static class CampaignsEditorToolkitBuilder
         "ConflictRow",
         "ConflictShield",
         "ContextMenu",
+        "Console",
+        "ConsoleRow",
         "Controls",
         "DockDivider",
         "DockTab",
@@ -109,6 +111,23 @@ public static class CampaignsEditorToolkitBuilder
                         "OverlayBounds:Toggle",
                         "OverlayHandles:Toggle",
                     }
+                : name == "Console"
+                    ? new[]
+                    {
+                        "ConsoleMessages:ListView",
+                        "ConsoleCommand:TextField",
+                        "ConsoleSearch:TextField",
+                        "ConsoleDetailsFold:Foldout",
+                        "ConsoleDetails:TextField",
+                        "ConsoleClear:Button",
+                        "ConsoleCopy:Button",
+                        "ConsoleAll:Toggle",
+                        "ConsoleTextSize:Label",
+                        "ConsoleTextSmaller:Button",
+                        "ConsoleTextLarger:Button",
+                        "ConsoleTextReset:Button",
+                    }
+                : name == "ConsoleRow" ? new[] { "ConsoleTime:Label", "ConsoleMessage:Label" }
                 : name == "HomePicker" ? new[] { "Heading:Label", "Close:Button", "Choices:ListView", "Empty:Label" }
                 : name == "PickerRow" ? new[] { "selected:Label", "name:Label" }
                 : name == "ChoicePopup"
@@ -165,6 +184,25 @@ public static class CampaignsEditorToolkitBuilder
                     throw new InvalidOperationException("Browser instances share search state.");
                 if (ReferenceEquals(first.Q<ListView>("BrowserTree"), second.Q<ListView>("BrowserTree")))
                     throw new InvalidOperationException("Browser instances share their list view.");
+            }
+            if (name == "Console")
+            {
+                if (first.Q<ListView>("ConsoleMessages").virtualizationMethod != CollectionVirtualizationMethod.DynamicHeight)
+                    throw new InvalidOperationException("Console output must allow wrapped, variable-height messages.");
+                foreach (var toggle in first.Query<Toggle>(className: "editor-console-toggle").ToList())
+                    if (!toggle.ClassListContains("editor-setting"))
+                        throw new InvalidOperationException("Console filters must use the editor's setting controls.");
+                if (
+                    !first.Q<TextField>("ConsoleDetails").isReadOnly
+                    || !first.Q<TextField>("ConsoleDetails").multiline
+                    || first.Q<Foldout>("ConsoleDetailsFold").value
+                    || first.Q<Toggle>("ConsoleAll").value
+                    || !first.Q<Toggle>("ConsoleInfo").value
+                    || !first.Q<Toggle>("ConsoleScroll").value
+                )
+                    throw new InvalidOperationException("Console defaults or message details are invalid.");
+                if (first.Q<ListView>("ConsoleMessages").Contains(first.Q<TextField>("ConsoleCommand")))
+                    throw new InvalidOperationException("Console command entry must remain outside the scrolling list.");
             }
             if (name == "Inspector")
             {

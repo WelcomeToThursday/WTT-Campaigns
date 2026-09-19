@@ -38,6 +38,7 @@ internal sealed partial class EditorToolkitWindows
                         id == "Tool:Routes" && _view.ContentMode == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level ? "Extracts"
                         : id.StartsWith("Tool:") ? RaidEditorView.ToolTitle(id.Substring(5))
                         : id == "LootConfiguration" ? "Loot configuration"
+                        : id == "Console" ? "Console"
                         : id == "Inspector" ? "Properties"
                         : id == "Controls" ? "Help"
                         : "Environment";
@@ -152,7 +153,12 @@ internal sealed partial class EditorToolkitWindows
             }
             _dragMoved = true;
             var rect = _resize
-                ? new Rect(_before.x, _before.y, Math.Max(280, _before.width + delta.x), Math.Max(180, _before.height + delta.y))
+                ? new Rect(
+                    _before.x,
+                    _before.y,
+                    Math.Max(280, _before.width + delta.x),
+                    Math.Max(id == "Console" ? 300 : 180, _before.height + delta.y)
+                )
                 : new Rect(_before.x + delta.x, _before.y + delta.y, _before.width, _before.height);
             var p = _panels[id];
             p.Width = rect.width;
