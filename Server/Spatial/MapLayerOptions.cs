@@ -35,7 +35,7 @@ public sealed class MapLayerOptions(SeasonService seasons, SeasonRepository repo
             if (saved.Revision != request.Revision)
                 throw new InvalidOperationException("Map layer selections changed. Reopen the screen to refresh them.");
             var match = published
-                .SelectMany(p => p.MapLayouts.Select(l => (Campaign: p.Id, Layout: l)))
+                .SelectMany(p => p.MapLayouts.Where(l => WTT.Campaigns.Shared.Authoring.EditorContentRules.Mode(p, l.Id) == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level).Select(l => (Campaign: p.Id, Layout: l)))
                 .SingleOrDefault(p => MapLayerRules.Key(p.Campaign, p.Layout.Id) == request.Key);
             if (match.Layout == null)
                 throw new InvalidOperationException("This published layer is no longer available.");
@@ -43,7 +43,10 @@ public sealed class MapLayerOptions(SeasonService seasons, SeasonRepository repo
             next.Overrides[request.Key] = request.Enabled;
             // Disabling must remain possible even when other enabled layers conflict.
             if (request.Enabled)
+            {
                 MapLayerRules.ForCharacter(published, "", match.Layout.Location, next.Overrides);
+                MapLayerRules.ContentForCharacter(published, "", match.Layout.Location, next.Overrides);
+            }
             next.Revision++;
             await data.SaveProfileDataAsync(new MongoId(identity), StorageKey, next);
             saved = next;
@@ -54,7 +57,7 @@ public sealed class MapLayerOptions(SeasonService seasons, SeasonRepository repo
             Revision = saved.Revision,
             Layers = published
                 .SelectMany(p =>
-                    p.MapLayouts.Select(l => new MapLayerOption
+                    p.MapLayouts.Where(l => WTT.Campaigns.Shared.Authoring.EditorContentRules.Mode(p, l.Id) == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level).Select(l => new MapLayerOption
                     {
                         Key = MapLayerRules.Key(p.Id, l.Id),
                         Name = l.Name,

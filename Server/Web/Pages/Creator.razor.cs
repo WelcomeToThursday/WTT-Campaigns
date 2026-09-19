@@ -19,7 +19,6 @@ public partial class Creator
     [Inject]
     private NavigationManager Navigation { get; set; } = null!;
     private string _missionTab = "Missions";
-    private string CampaignEditorUrl => "/wtt-campaigns/creator" + (_draft == null ? "" : "?draft=" + Uri.EscapeDataString(_draft.Id));
 
     private void OpenMissionEditor()
     {
@@ -346,6 +345,7 @@ public partial class Creator
     {
         Run(() =>
         {
+            CheckLevelEdit();
             if (_draft != null && RaidAuthoring.Connected(_draft.Id))
             {
                 SyncDraft();
@@ -373,6 +373,7 @@ public partial class Creator
     {
         Run(() =>
         {
+            CheckLevelEdit();
             _validation = Content.Validate(S);
             _validationSnapshot = JsonConvert.SerializeObject(S);
             _section = "Preview and publish";
@@ -383,7 +384,7 @@ public partial class Creator
 
             _published = Repository.Publish(_draft!, _validation);
             _message =
-                S.MissionPackage != null
+                LevelEditor ? "Level content published. Restart SPT to load the revision; enable the desired level in Map Layers for ordinary raids." : S.MissionPackage != null
                     ? "Mission published. Export it below to share, or link its revision from Campaign Creator. Restart SPT to load it for play."
                     : "Pack published. Export it to share, or restart SPT and choose the campaign when creating a campaign character.";
         });

@@ -59,7 +59,7 @@ internal sealed partial class RaidEditorView : IDisposable
 
     internal RaidEditorView()
     {
-        Document = new EditorToolkitDocument("Campaign Editor", 32100);
+        Document = new EditorToolkitDocument("Editor", 32100);
         try
         {
             Build();
@@ -149,7 +149,7 @@ internal sealed partial class RaidEditorView : IDisposable
         foreach (var (tool, control) in Matching(name))
             ((EditorButton)control).onClick.AddListener(() =>
             {
-                if (Activate(tool))
+                if (AllowsAction(name) && Activate(tool))
                     action();
             });
     }
@@ -208,6 +208,8 @@ internal sealed partial class RaidEditorView : IDisposable
         PresentConflicts(conflict);
     }
 
+    private readonly WTT.Campaigns.Shared.Spatial.MapLayout _levelRoute = new();
+
     internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected, long layoutRevision = 0)
     {
         if (layout == null || !camera)
@@ -216,6 +218,13 @@ internal sealed partial class RaidEditorView : IDisposable
             return;
         }
         _routeOverlay.style.display = DisplayStyle.Flex;
+        if (ContentMode != WTT.Campaigns.Shared.Authoring.EditorContentMode.Mission)
+        {
+            _levelRoute.Id = layout.Id;
+            _levelRoute.Location = layout.Location;
+            _levelRoute.Exit = layout.Exit;
+            layout = _levelRoute;
+        }
         _routeOverlay.Refresh(layout, camera!, selected, layoutRevision);
     }
 

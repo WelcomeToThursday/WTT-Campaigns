@@ -9,8 +9,16 @@ public class MapLayerRequest
     public string Location { get; set; } = "";
 }
 
+public sealed class MapLayerContent
+{
+    public string Source { get; set; } = "";
+    public List<SeasonZone> Zones { get; set; } = new();
+    public MapVolume? Extract { get; set; }
+}
+
 public sealed class MapLayerResponse
 {
+    public List<MapLayerContent> Content { get; set; } = new();
     public string CharacterId { get; set; } = "";
     public string SeasonId { get; set; } = "";
     public string RaidId { get; set; } = "";

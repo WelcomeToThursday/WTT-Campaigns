@@ -92,7 +92,8 @@ internal static class EditorToolkitChecks
             foreach (var item in WTT.Campaigns.UI.Screens.EditorHomeComposition.Elements)
             {
                 var tag =
-                    item.Kind == "Button" ? "Button"
+                    item.Kind == "Field" ? "TextField"
+                    : item.Kind == "Button" ? "Button"
                     : item.Kind == "Panel" ? "VisualElement"
                     : "Label";
                 if (!home.Remove(item.Id, out var element) || element.Name.LocalName != tag)

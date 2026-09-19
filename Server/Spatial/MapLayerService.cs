@@ -22,19 +22,16 @@ public sealed class MapLayerService(
 {
     private readonly ConcurrentDictionary<string, MapLayerResponse> _raids = new(StringComparer.Ordinal);
 
-    private MapLayout? Compose(string character, string location)
+    private (MapLayout? Layout, List<MapLayerContent> Content) Compose(string character, string location)
     {
         var seasonId = seasons.IsSeasonal(character) ? seasons.CharacterSeasonId(character) : "";
         var published =
             seasonId.Length > 0
                 ? new[] { repository.Runtime(seasonId).Definition }
-                : repository.OrdinaryPlayable().Select(p => p.Definition);
-        return MapLayerRules.ForCharacter(
-            published,
-            seasonId,
-            location,
-            seasonId.Length == 0 ? options.ReadSaved(character).Overrides : null
-        );
+                : repository.OrdinaryPlayable().Select(p => p.Definition).ToArray();
+        var overrides = seasonId.Length == 0 ? options.ReadSaved(character).Overrides : null;
+        return (MapLayerRules.ForCharacter(published, seasonId, location, overrides),
+            MapLayerRules.ContentForCharacter(published, seasonId, location, overrides));
     }
 
     public void Validate(string character, string location) => Compose(character, location);
@@ -50,7 +47,8 @@ public sealed class MapLayerService(
         if (seasons.EffectiveId(root) != character)
             throw new InvalidOperationException("The map layer character is no longer active.");
         var seasonId = seasons.IsSeasonal(character) ? seasons.CharacterSeasonId(character) : "";
-        var layout = Compose(character, location);
+        var snapshot = Compose(character, location);
+        var layout = snapshot.Layout;
         _raids[character] = new MapLayerResponse
         {
             CharacterId = character,
@@ -58,6 +56,7 @@ public sealed class MapLayerService(
             Location = location,
             RaidId = raidId,
             Layout = layout == null ? null : SeasonCompiler.Copy(layout),
+            Content = snapshot.Content,
             ContainerLoot = layout == null ? new() : containers.Create(layout),
         };
     }

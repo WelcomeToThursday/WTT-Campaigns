@@ -44,6 +44,13 @@ public partial class Creator
             return;
         }
 
+        if (LevelEditor)
+        {
+            if (_draft?.Id != DraftQuery || _levelLayout != LayoutQuery)
+                Leave(() => OpenLevel(new WTT.Campaigns.Shared.Authoring.EditorLayoutChoice { DraftId = DraftQuery, Id = LayoutQuery ?? "" }));
+            return;
+        }
+
         if (_openedQuery == DraftQuery && _draft?.Id == DraftQuery)
         {
             if (MissionEditor && _openedSectionQuery != SectionQuery)

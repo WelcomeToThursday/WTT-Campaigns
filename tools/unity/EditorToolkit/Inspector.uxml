@@ -217,7 +217,7 @@
                     <ui:Toggle name="MapNormalRaid" class="editor-setting" label="Apply in normal raids" />
                 </ui:VisualElement>
                 <ui:VisualElement name="MapLayerHelpGroup" class="editor-group">
-                    <ui:Label name="MapLayerHelp" class="editor-label" text="After publication: regular characters combine enabled layers from all published campaigns; campaign characters use their own campaign. Scenery, doors, barriers and loot apply; routes, zones and AI remain separate." picking-mode="Ignore" />
+                    <ui:Label name="MapLayerHelp" class="editor-label" text="After publication: regular characters combine enabled layers from all published campaigns; campaign characters use their own campaign. Scenery, doors, barriers, loot, layout zones, hazards and additional extracts apply. Native PMC spawning and AI remain unchanged." picking-mode="Ignore" />
                 </ui:VisualElement>
                 <ui:VisualElement name="MapPositionGroup" class="editor-group">
                     <ui:Label name="MapPositionCaption" class="editor-label" text="POSITION · metres" picking-mode="Ignore" />

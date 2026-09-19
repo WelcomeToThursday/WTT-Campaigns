@@ -35,7 +35,7 @@ public sealed partial class RaidEditor
 
     private async void BeginAiPreview(bool playtest)
     {
-        if (AiPreviewBusy || _walking || !EditorMode.Ready || !_open || Layout == null || _session?.Conflict != null)
+        if (AiPreviewBusy || _walking || !MissionContent || !EditorMode.Ready || !_open || Layout == null || _session?.Conflict != null)
             return;
         if (_session!.Busy || _session.Dirty)
         {
@@ -81,7 +81,7 @@ public sealed partial class RaidEditor
             transitionTimer.Restart();
             transitionStage = "validation and equipment";
             lifetime.Token.ThrowIfCancellationRequested();
-            if (_session != session || !EditorMode.Ready || !player)
+            if (_session != session || !MissionContent || !EditorMode.Ready || !player)
                 throw new OperationCanceledException();
             Physics.SyncTransforms();
             var errors = MapEncounterRules.Errors(layout, new EncounterNavigation(), true, true);
@@ -111,7 +111,7 @@ public sealed partial class RaidEditor
                 );
             }
             lifetime.Token.ThrowIfCancellationRequested();
-            if (_session != session || !EditorMode.Ready || !player)
+            if (_session != session || !MissionContent || !EditorMode.Ready || !player)
                 throw new OperationCanceledException();
             _aiRuntime = new EncounterPreviewRuntime();
             Plugin.LogInfo($"Preview transition: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
@@ -327,7 +327,7 @@ public sealed partial class RaidEditor
         }
         if (
             _aiDefeatPending
-            || !EditorMode.Ready
+            || !MissionContent || !EditorMode.Ready
             || _session?.Conflict != null
             || Time.realtimeSinceStartup - _lastContact > 20
             || Input.GetKeyDown(KeyCode.Escape)

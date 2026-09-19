@@ -36,7 +36,7 @@ public sealed class ZoneRuntime : MonoBehaviour
 
     internal GameObject? Find(string id)
     {
-        return _zones.TryGetValue(id, out var zone) ? zone : null;
+        return _zones.TryGetValue(id, out var zone) ? zone : LevelZoneRuntime.Find(id);
     }
 
     /// <summary>
@@ -236,8 +236,14 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
     private Player? _owner;
     private string _requiredQuestId = "";
 
+    internal SeasonZone? Definition { get; private set; }
+
+    internal static bool QuestActive(string id) => WTT.Campaigns.Shared.Authoring.EditorContentRules.QuestEligible(id,
+        Plugin.Player?.Profile.QuestsData.AsValueEnumerable().FirstOrDefault(q => q.Id.ToString() == id)?.Status.ToString());
+
     internal void Initialize(SeasonZone zone)
     {
+        Definition = zone;
         _requiredQuestId = zone.RequiredQuestId;
         void Add<T>()
             where T : TriggerWithId
@@ -320,9 +326,7 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
     public void OnTriggerEnter(Collider other)
     {
         if (
-            _requiredQuestId.Length > 0
-            && Story.StoryClient.Current?.Facts?.QuestStatuses.GetValueOrDefault(_requiredQuestId)
-                is not ("Started" or "AvailableForFinish")
+            !QuestActive(_requiredQuestId)
         )
             return;
         if (!Singleton<GameWorld>.Instantiated)

@@ -34,6 +34,9 @@ internal sealed class EncounterPreservationChecks : WTT.Campaigns.Server.Editor.
             imported.Definition.FormatVersion == 6 && imported.Definition.MapLayouts[0].Encounters.Count == 1,
             "Format 6 pack export/import preserves layout encounters"
         );
+        // AI editing belongs to a mission, including legacy embedded missions.
+        draft.Definition.Missions.Add(new() { Id = SeasonRepository.NewId(), LayoutId = layout.Id, Name = "AI mission" });
+        draft = repository.Save(draft);
         var service = new RaidAuthoringService(repository);
         var owner = SeasonRepository.NewId();
         var profile = SeasonRepository.NewId();

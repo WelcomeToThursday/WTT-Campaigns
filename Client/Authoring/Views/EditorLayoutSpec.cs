@@ -44,7 +44,7 @@ internal static class EditorLayoutSpec
     {
         R(
             "WorkspaceTitleBar",
-            T("WorkspaceTitle", "CAMPAIGN EDITOR · BETA"),
+            T("WorkspaceTitle", "EDITOR · BETA"),
             T("Connection", "Connecting…"),
             B("ContextToggle", "Session"),
             B("WindowsToggle", "Windows"),
@@ -274,7 +274,7 @@ internal static class EditorLayoutSpec
                         "MapLayerHelpGroup",
                         T(
                             "MapLayerHelp",
-                            "After publication: regular characters combine enabled layers from all published campaigns; campaign characters use their own campaign. Scenery, doors, barriers and loot apply; routes, zones and AI remain separate."
+                            "After publication: regular characters combine enabled layers from all published campaigns; campaign characters use their own campaign. Scenery, doors, barriers, loot, layout zones, hazards and additional extracts apply. Native PMC spawning and AI remain unchanged."
                         )
                     ),
                     V("MapPosition", "POSITION · metres"),

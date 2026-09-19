@@ -1,7 +1,7 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <Style src="Editor.uss" />
     <ui:VisualElement name="WorkspaceTitleBar" class="editor-toolbar editor-actions editor-action-row">
-        <ui:Label name="WorkspaceTitle" text="CAMPAIGN EDITOR · BETA" class="editor-label" picking-mode="Ignore" />
+        <ui:Label name="WorkspaceTitle" text="EDITOR · BETA" class="editor-label" picking-mode="Ignore" />
         <ui:Label name="Connection" text="Connecting…" class="editor-label" picking-mode="Ignore" />
         <ui:Button name="ContextToggle" text="Session" class="editor-action" />
         <ui:Button name="WindowsToggle" text="Windows" class="editor-action" />

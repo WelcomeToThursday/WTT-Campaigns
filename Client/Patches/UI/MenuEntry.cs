@@ -164,7 +164,7 @@ internal sealed class MenuEntry(Type screenType) : ModulePatch("WTT.Campaigns.Me
         button.name = "CampaignEditorEntry";
         button.OnClick.RemoveAllListeners();
         button.OnClick.AddListener(() => Authoring.EditorMode.Instance.Enter());
-        button.SetRawText("CAMPAIGN EDITOR", 24);
+        button.SetRawText("EDITOR", 24);
         button.SetIcon(null);
         button.Interactable = !Plugin.InRaid;
         if (button.transform.parent.GetComponent<VerticalLayoutGroup>() == null)

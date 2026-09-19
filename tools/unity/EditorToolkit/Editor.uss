@@ -302,3 +302,6 @@
 .editor-root .editor-axis-x > .unity-base-field__label { color: rgb(220, 147, 137); }
 .editor-root .editor-axis-y > .unity-base-field__label { color: rgb(151, 199, 145); }
 .editor-root .editor-axis-z > .unity-base-field__label { color: rgb(145, 179, 222); }
+
+.editor-root .editor-home-tab { font-size: 19px; border-bottom-width: 3px; }
+.editor-root .editor-home-tab.editor-active-tab { background-color: var(--editor-selection); color: var(--editor-text-bright); border-bottom-color: var(--editor-accent); }

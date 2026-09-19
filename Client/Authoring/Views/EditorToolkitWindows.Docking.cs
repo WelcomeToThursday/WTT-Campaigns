@@ -35,7 +35,8 @@ internal sealed partial class EditorToolkitWindows
                 {
                     var tab = _view.Document.Clone<Label>("DockTab");
                     tab.text =
-                        id.StartsWith("Tool:") ? RaidEditorView.ToolTitle(id.Substring(5))
+                        id == "Tool:Routes" && _view.ContentMode == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level ? "Extracts"
+                        : id.StartsWith("Tool:") ? RaidEditorView.ToolTitle(id.Substring(5))
                         : id == "LootConfiguration" ? "Loot configuration"
                         : id == "Inspector" ? "Properties"
                         : id == "Controls" ? "Help"

@@ -542,7 +542,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
         }
     }
 
-    internal void Ghosts(MapLayout? layout)
+    internal void Ghosts(MapLayout? layout, bool mission = true)
     {
         ClearGhosts();
 
@@ -550,7 +550,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
             return;
         foreach (var volume in layout.Barriers)
             _ghosts.Add(Volume(volume, true));
-        foreach (var volume in layout.Checkpoints)
+        foreach (var volume in mission ? layout.Checkpoints : new List<MapVolume>())
             _ghosts.Add(Volume(volume, true, RouteGhostMaterial(false)));
         if (layout.Exit != null)
             _ghosts.Add(Volume(layout.Exit, true, RouteGhostMaterial(true)));

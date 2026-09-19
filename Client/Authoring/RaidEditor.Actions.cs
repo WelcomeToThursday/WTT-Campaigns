@@ -478,8 +478,8 @@ public sealed partial class RaidEditor
             scene = PlayerScene();
         }
 
-        var layoutId = !_zoneCreateShared && EditorMode.Ready ? _layoutId : "";
-        if (!_zoneCreateShared && EditorMode.Ready && Layout == null)
+        var layoutId = (!MissionContent || !_zoneCreateShared) && EditorMode.Ready ? _layoutId : "";
+        if ((!MissionContent || !_zoneCreateShared) && EditorMode.Ready && Layout == null)
         {
             _notice = "Select a layout in Layouts before creating a layout-owned zone.";
             Refresh();
@@ -931,6 +931,9 @@ public sealed partial class RaidEditor
         }
 
         var view = _view;
+        view.ContentMode = ContentMode;
+        view.HasStory = _session.Definition?.Story != null;
+        if (!ContentToolAllowed(_mode)) _mode = "Layouts";
         view.ToolContext = _mode == "Maps" ? "Layouts" : _mode;
         ValidateToolSelection();
         view.SetToolkitContext(ToolkitContext);
@@ -1037,6 +1040,7 @@ public sealed partial class RaidEditor
         RefreshAiWorkspace();
         PresentScene();
         RefreshOtherToolBrowsers();
+        PresentContentMode();
     }
 
     private void RefreshToolBrowser()
@@ -1051,7 +1055,7 @@ public sealed partial class RaidEditor
         }
         var search = view.Get<InputField>("Search").text;
         var doorTree = SceneWorkspace && _sceneFilter == "Doors";
-        var treeMode = doorTree || _mode == "AI" || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
+        var treeMode = doorTree || _mode == "AI" || EditorMode.Ready && (_mode == "Routes" && MissionContent || _mode == "Zones");
         var libraryKey =
             $"{_mode}|{_sceneTab}|{_sceneFilter}|{_catalogSource}|{_assetCatalog?.Revision}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{_catalogGeneration}|{_catalogLoading}|{(RemoteCatalog ? _page : 0)}";
         if (_libraryKey != libraryKey)

@@ -25,6 +25,7 @@ public sealed partial class RaidEditor
 
     private void ActivateTool(string tool)
     {
+        if (!ContentToolAllowed(tool)) return;
         if (_view == null || !RaidEditorView.ToolIds.AsValueEnumerable().Contains(tool) || _session?.Conflict != null)
             return;
         if (_mode == tool)
@@ -74,6 +75,7 @@ public sealed partial class RaidEditor
                 .AsValueEnumerable()
                 .Any(z => z.Id == _selected),
             "Captures" => _session.Definition.Captures.AsValueEnumerable().Any(c => c.Id == _selected),
+            "Routes" when !MissionContent => _session.Definition.MapLayouts.AsValueEnumerable().Any(l => l.Id == _selected) || Layout?.Exit?.Id == _selected,
             "Routes" => _session
                 .Definition.MapLayouts.AsValueEnumerable()
                 .Any(l => l.Id == _selected || l.Checkpoints.AsValueEnumerable().Any(p => p.Id == _selected))

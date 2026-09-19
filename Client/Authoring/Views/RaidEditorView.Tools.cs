@@ -9,9 +9,20 @@ internal sealed partial class RaidEditorView
 {
     internal static readonly string[] ToolIds = { "Layouts", "Routes", "Zones", "Hazards", "Bindings", "Captures", "Scene", "AI" };
     private readonly Dictionary<string, Dictionary<string, EditorControl>> _toolControls = new();
+    internal WTT.Campaigns.Shared.Authoring.EditorContentMode ContentMode;
+    internal bool HasStory;
+    internal bool AllowsTool(string tool) => WTT.Campaigns.Shared.Authoring.EditorContentRules.ToolAllowed(ContentMode, tool, HasStory);
+    internal bool AllowsAction(string action) => WTT.Campaigns.Shared.Authoring.EditorContentRules.ActionAllowed(ContentMode, action);
     internal string ToolContext = "Layouts";
     internal Action<string>? ToolActivated;
     private bool _registerLocal;
+
+    internal void PresentToolTitle(string tool, string title)
+    {
+        var heading = (EditorLabel)_toolControls[tool]["LibraryHeading"];
+        heading.text = title;
+        heading.Element.tooltip = title;
+    }
 
     internal static string ToolTitle(string id) => id == "Bindings" ? "Events" : id;
 
@@ -32,6 +43,7 @@ internal sealed partial class RaidEditorView
 
     internal bool Activate(string tool)
     {
+        if (!AllowsTool(tool)) return false;
         if (tool.Length == 0)
             return true;
         if (Windows?.Modal == true)
@@ -118,7 +130,7 @@ internal sealed partial class RaidEditorView
 
     internal void ConfigureToolActions(string tool, bool mapReady, bool sceneWorkspace)
     {
-        void Show(string id, bool show) => _toolControls[tool][id].Visible = show;
+        void Show(string id, bool show) => _toolControls[tool][id].Visible = show && AllowsAction(id) && AllowsTool(tool);
         Show("SceneTabs", tool == "Scene" && sceneWorkspace);
         Show("SceneFilters", tool == "Scene" && sceneWorkspace);
         Show("AddBox", tool is "Zones" or "Bindings");

@@ -147,7 +147,7 @@ public sealed partial class RaidEditor
 
     private async void PrepareLayoutCheckpointTest()
     {
-        if (_checkpointTestPreparing || EditorMissionTestActive || AiPreviewBusy || _walking || !EditorMode.Ready)
+        if (_checkpointTestPreparing || EditorMissionTestActive || AiPreviewBusy || _walking || !MissionContent || !EditorMode.Ready)
         {
             CheckpointTestMessage("Finish the current preview or walkthrough before testing checkpoints.");
             return;
@@ -219,7 +219,7 @@ public sealed partial class RaidEditor
             || string.IsNullOrWhiteSpace(response.RunId)
         )
             throw new InvalidDataException("The editor mission test returned no route descriptor.");
-        if (!EditorMode.Ready)
+        if (EditorMode.SelectedContentMode != WTT.Campaigns.Shared.Authoring.EditorContentMode.Mission || !EditorMode.Ready)
             throw new InvalidOperationException("The editor session is not ready for a mission test.");
         if (EditorMissionTestActive || AiPreviewBusy)
             throw new InvalidOperationException("Finish or reset the current editor test before starting another one.");
@@ -259,7 +259,7 @@ public sealed partial class RaidEditor
                 PrepareLayoutCheckpointTest();
             }
         }
-        if (_editorMissionPending == null || _session == null || !_open || Layout == null || _walking || !EditorMode.Ready || AiPreviewBusy)
+        if (_editorMissionPending == null || _session == null || !_open || Layout == null || _walking || !MissionContent || !EditorMode.Ready || AiPreviewBusy)
             return;
         if (_session.Busy || _session.Dirty || _session.Conflict != null)
             return;

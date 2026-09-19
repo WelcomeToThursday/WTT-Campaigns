@@ -57,8 +57,8 @@ internal static class MapLayoutUiChecks
             await renderer.Mount(host);
             var component = renderer.Components<MapLayoutWorkspace>().Single();
             check(
-                renderer.Text(component.Id).Contains("Building route") && renderer.Text(component.Id).Contains("Walkthrough requires"),
-                "Creator shows incomplete saved layouts and route readiness"
+                renderer.Text(component.Id).Contains("Building route") && !renderer.Text(component.Id).Contains("Walkthrough requires"),
+                "Ordinary levels do not require mission routes even when legacy checkpoints are preserved"
             );
             check(
                 renderer.Text(component.Id).Contains("assets/crate.bundle")

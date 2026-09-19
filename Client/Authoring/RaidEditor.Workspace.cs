@@ -161,13 +161,13 @@ public sealed partial class RaidEditor
         if (_mode == "Routes")
             view.Get<Button>("MapCopy").interactable = canEdit && routeIndex >= 0;
         view.Get<Button>("EditorWalk").interactable =
-            canEdit && Layout != null && !_walkRequested && MapLayoutRules.Errors(Layout, true).Count == 0;
+            canEdit && Layout != null && !_walkRequested && MapLayoutRules.Errors(Layout, MissionContent).Count == 0;
     }
 
     private void RefreshToolBrowserSummary()
     {
         var view = _view!;
-        var treeMode = _mode == "AI" || EditorMode.Ready && (_mode == "Routes" || _mode == "Zones");
+        var treeMode = _mode == "AI" || EditorMode.Ready && (_mode == "Routes" && MissionContent || _mode == "Zones");
         view.Text(
             "LibraryCount",
             treeMode

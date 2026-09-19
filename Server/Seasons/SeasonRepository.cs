@@ -438,7 +438,15 @@ public sealed partial class SeasonRepository
         }
     }
 
-    public DraftEnvelope Create(bool duplicate, SeasonDefinition? source = null)
+    public DraftEnvelope CreateLevel(string name, string location)
+    {
+        name = name.Trim();
+        if (name.Length is < 1 or > 120 || string.IsNullOrWhiteSpace(location) || location.Length > 120 || location == "hideout")
+            throw new InvalidOperationException("Enter a level name (up to 120 characters) and choose a raid location.");
+        return Create(false, levelName: name, levelLocation: location);
+    }
+
+    public DraftEnvelope Create(bool duplicate, SeasonDefinition? source = null, string? levelName = null, string? levelLocation = null)
     {
         source ??= duplicate ? Current.Definition : Legacy;
         var definition = Duplicate(source);
@@ -486,6 +494,13 @@ public sealed partial class SeasonRepository
                 },
             };
             definition.Locales = new() { ["en"] = new() };
+        }
+        if (levelName != null)
+        {
+            // Reuse the existing storage/publishing envelope without a user-selected campaign.
+            definition.Name = levelName;
+            definition.FormatVersion = Math.Max(definition.FormatVersion, 4);
+            definition.MapLayouts.Add(new() { Id = NewId(), Name = levelName, Location = levelLocation!, ApplyInNormalRaids = false });
         }
         return Save(new DraftEnvelope { Id = NewId(), Definition = definition });
     }

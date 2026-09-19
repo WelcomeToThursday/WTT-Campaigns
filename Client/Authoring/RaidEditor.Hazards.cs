@@ -102,7 +102,7 @@ public sealed partial class RaidEditor
     {
         if (!EditorMode.Ready || _session?.Definition == null || _session.Previewing || _session.Conflict != null || AiPreviewBusy)
             return;
-        if (!_zoneCreateShared && Layout == null)
+        if ((!MissionContent || !_zoneCreateShared) && Layout == null)
         {
             _notice = "Select a layout before placing a hazard, or choose Shared scope.";
             Refresh();
@@ -145,7 +145,7 @@ public sealed partial class RaidEditor
                 Rotation = new SpatialVector { Y = _flyRotation.eulerAngles.y },
                 Size = size,
                 Uses = new(),
-                LayoutId = _zoneCreateShared ? "" : _layoutId,
+                LayoutId = MissionContent && _zoneCreateShared ? "" : _layoutId,
                 Hazard = new HazardSettings { Kind = kind },
             };
             _session.Edit(s => s.Zones.Add(zone));

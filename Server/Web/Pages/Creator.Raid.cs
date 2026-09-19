@@ -65,6 +65,8 @@ public partial class Creator
             return;
         }
 
+        CheckLevelEdit();
+
         var result = RaidAuthoring.Save(_draft.Id, JsonConvert.DeserializeObject<SeasonDefinition>(_baseline)!, S);
         if (result.Conflicts.Count > 0)
         {

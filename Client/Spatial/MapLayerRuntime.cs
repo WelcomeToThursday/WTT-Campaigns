@@ -17,6 +17,8 @@ internal sealed class MapLayerRuntime : MonoBehaviour
         internal readonly CancellationTokenSource Lifetime = new();
         internal readonly MapSceneAdapter Scene = new();
         internal readonly MissionLoot Loot = new();
+        internal readonly LevelZoneRuntime Zones = new();
+        internal readonly LevelExtractRuntime Extracts = new();
         internal GameWorld World = null!;
         internal Player Player = null!;
         internal string Character = "",
@@ -32,7 +34,8 @@ internal sealed class MapLayerRuntime : MonoBehaviour
             Lifetime.Cancel();
             try
             {
-                Loot.Dispose();
+                try { Extracts.Dispose(); }
+                finally { try { Zones.Dispose(); } finally { Loot.Dispose(); } }
             }
             finally
             {
@@ -58,6 +61,7 @@ internal sealed class MapLayerRuntime : MonoBehaviour
         && !ReferenceEquals(_excludedWorld, Singleton<GameWorld>.Instance)
         && !string.IsNullOrEmpty(Character)
         && Plugin.Player?.Profile.Id == Character
+        && Plugin.Player.Profile.Info.Side != EPlayerSide.Savage
         && !Authoring.EditorMode.Active
         && !MissionRaidRuntime.HasPending
         && !MissionRaidRuntime.Starting
@@ -138,6 +142,9 @@ internal sealed class MapLayerRuntime : MonoBehaviour
             await run.Scene.ApplyAsync(response.Layout, requirePlayerRoute: false, token: token, runtime: true);
             RequireCurrent(run, token);
             await run.Loot.ApplyAsync(response.Layout, response.RaidId, token, response.ContainerLoot);
+            RequireCurrent(run, token);
+            run.Zones.Apply(response.Content);
+            run.Extracts.Apply(response.Content, run.Player);
             RequireCurrent(run, token);
             Plugin.LogInfo("Applied normal raid map layers on " + run.Location + ".");
         }

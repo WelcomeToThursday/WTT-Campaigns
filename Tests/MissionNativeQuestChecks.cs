@@ -91,6 +91,23 @@ internal static class MissionNativeQuestChecks
                 "Mission extraction isolation includes native " + name
             );
 
+        var pointType = types["EFT.Interactive.ExfiltrationPoint"];
+        var scenario = types["CommonAssets.Scripts.Game.EndByExitTrigerScenario"];
+        var timers = types["EFT.UI.ExtractionTimersPanel"];
+        check(timers.Fields.Any(f => f.Name == "_timers" && f.FieldType.FullName.Contains("Dictionary`2<System.String,EFT.UI.BattleTimer.ExitTimerPanel>")),
+            "Native extract timer registry supports individually owned additional timers");
+        check(timers.Fields.Any(f => f.Name == "_timerPanelTemplate" && f.IsPublic)
+            && timers.Fields.Any(f => f.Name == "_container" && f.IsPublic), "Additional extracts use the native timer prefab and container");
+        foreach (var method in new[] { "LoadSettings", "Disable" })
+            check(pointType.Methods.Any(m => m.Name == method && m.IsPublic), "Native level extract contract: " + method);
+        check(pointType.Interfaces.Any(i => i.InterfaceType.Name == "IPhysicsTrigger"), "Native level extracts use physics trigger dispatch");
+        foreach (var method in new[] { "StartExtraction", "CancelExtraction", "OnStatusChangedHandler" })
+            check(scenario.Methods.Any(m => m.Name == method && m.IsPublic), "Native level countdown contract: " + method);
+        check(extraction.Properties.Single(p => p.Name == "ExfiltrationPoints").SetMethod.IsPublic,
+            "Added level extracts can register without replacing native exits");
+        check(scenario.Methods.Single(m => m.Name == "Update").Body.Instructions.Any(i =>
+            i.Operand is FieldReference f && f.Name == "ExfiltrationTime"), "Native scenario owns the extract countdown");
+
         string Id() => Guid.NewGuid().ToString("N")[..24];
         var layout = new MapLayout
         {

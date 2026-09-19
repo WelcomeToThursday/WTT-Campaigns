@@ -1,0 +1,5 @@
+@page "/wtt-campaigns/creator/levels"
+@attribute [Authorize(Policy = "Administrator")]
+@rendermode InteractiveServer
+@layout SPTarkov.Server.Web.Layout.BaseMudBlazorLayout
+<Creator LevelEditor="true" />

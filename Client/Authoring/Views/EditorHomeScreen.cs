@@ -44,7 +44,7 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
             screen.Build();
             var manager = EftScreenManager.Instance;
             if (manager.TryGetScreen(ScreenType, out var existing) && existing)
-                throw new InvalidOperationException("The Campaign editor screen is already registered.");
+                throw new InvalidOperationException("The editor screen is already registered.");
             manager.RegisterScreen(ScreenType, screen);
             return screen;
         }
@@ -98,7 +98,7 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
 
     private void Build()
     {
-        _document = new EditorToolkitDocument("Campaign Editor Home", 32100);
+        _document = new EditorToolkitDocument("Editor Home", 32100);
         _document.Content.AddToClassList("editor-home-background");
         _document.Content.pickingMode = PickingMode.Position;
         _document.Tick = Fit;
@@ -120,7 +120,12 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
 
     internal void Interactable(string name, bool value) => _buttons[name].SetEnabled(value);
 
-    internal void Visible(string name, bool value) => _buttons[name].style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+    internal void SelectedTab(string name, bool value) => _buttons[name].EnableInClassList("editor-active-tab", value);
+
+    internal void Visible(string name, bool value) => _stage.Q(name).style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+
+    internal string LevelName => _stage.Q<TextField>("EditorLevelName").value;
+    internal void ResetLevelName() => _stage.Q<TextField>("EditorLevelName").SetValueWithoutNotify("New level");
 
     internal void Text(string name, string value)
     {

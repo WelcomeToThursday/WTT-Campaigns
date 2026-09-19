@@ -1,14 +1,16 @@
 @using WTT.Campaigns.Shared.Spatial
 <section class="editor-section"><h2>Zones and captures</h2><p>Create spatial records in the connected raid. Preview shapes do not execute quests or story actions.</p>
-<div class="row"><RaidCaptureButton /><RaidCaptureButton Tool="Transform" Label="Capture transform in raid" /><RaidCaptureButton Tool="Object" Label="Pick scene object in raid" /></div>
+@if (LayoutId.Length == 0) { <div class="row"><RaidCaptureButton /><RaidCaptureButton Tool="Transform" Label="Capture transform in raid" /><RaidCaptureButton Tool="Object" Label="Pick scene object in raid" /></div> }
+else { <RaidCaptureButton Tool="MapLayout" TargetKind="MapLayout" TargetId="@LayoutId" RecordId="@LayoutId" Label="Open this level to create zones, hazards and captures" /> }
 <label>Find a record<input type="search" @bind="_search" @bind:event="oninput" /></label>
-@foreach (var record in Season.Zones.Cast<SpatialCapture>().Concat(Season.Captures).Where(r => r.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)))
+@foreach (var record in (LayoutId.Length == 0 ? Season.Zones.Cast<SpatialCapture>().Concat(Season.Captures) : Season.Zones.Where(z => z.LayoutId == LayoutId).Cast<SpatialCapture>()).Where(r => r.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)))
 {
     <details class="editor-card" @key="record.Id"><summary>@record.Name · @record.Location · @record.Scene@(record is SeasonZone summaryZone ? " · " + ZoneScope(summaryZone) : "")</summary>
     <label>Name<input maxlength="120" @bind="record.Name" /></label><small>@record.Id</small>
     <SpatialVectorFields Value="record.Position" Changed="Changed" /><SpatialVectorFields Value="record.Rotation" Label="Rotation (degrees)" Changed="Changed" />
     @if (record is SeasonZone zone)
     {
+        @if (LayoutId.Length == 0) {
         <label>Zone scope<select @bind="zone.LayoutId" @bind:after="NotifyChanged">
             <option value="">Shared · independent of layouts</option>
             @foreach (var layout in Season.MapLayouts.Where(l => l.Location == zone.Location))
@@ -17,6 +19,7 @@
             }
         </select></label>
         <small>Shared zones are available independently of a layout. Layout zones belong only to the selected layout.</small>
+        }
         <label>Shape<select @bind="zone.Shape"><option>Box</option><option>Sphere</option></select></label>
         @if (zone.Shape == "Box") { <SpatialVectorFields Value="zone.Size" Label="Size (metres)" Changed="Changed" /> }
         else { <label>Radius (metres)<input type="number" min="0.05" step="0.05" @bind="zone.Radius" /></label> }
@@ -51,6 +54,7 @@
 </section>
 @code {
     [Parameter] public SeasonDefinition Season { get; set; } = null!;
+    [Parameter] public string LayoutId { get; set; } = "";
     [Parameter] public EventCallback Changed { get; set; }
     private string _search = "";
     private IEnumerable<ContentChoice> OwnedItems => WTT.Campaigns.Server.Web.Authoring.StoryAuthoring.Choices(Season, "items").Select(c => new ContentChoice(c.Id, c.Name));

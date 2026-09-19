@@ -76,6 +76,7 @@ internal sealed class RaidEditorSession
         try
         {
             action(Definition);
+            EditorContentRules.ValidateEdit(before, Definition);
         }
         catch
         {

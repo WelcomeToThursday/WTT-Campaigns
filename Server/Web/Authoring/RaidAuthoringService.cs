@@ -120,7 +120,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
             }
 
             if (task.Tool == "MapLayout" && Editor.EditorSessionRegistry.Find(c.Client.CharacterId)?.Ready != true)
-                throw new InvalidOperationException("Open this map in Campaign Editor first.");
+                throw new InvalidOperationException("Open this map in Editor first.");
             c.Client.Tasks.RemoveAll(t => t.Status is "Completed" or "Cancelled");
             task.Id = Guid.NewGuid().ToString("N");
             task.Status = "Pending";
@@ -367,6 +367,7 @@ public sealed class RaidAuthoringService(SeasonRepository repository)
                         if (proposed.Missions.Any(WTT.Campaigns.Shared.Missions.MissionLogic.HasLogic))
                             proposed.FormatVersion = Math.Max(proposed.FormatVersion, 10);
                     }
+                    WTT.Campaigns.Shared.Authoring.EditorContentRules.ValidateEdit(baseline, proposed);
                     foreach (
                         var layout in proposed.MapLayouts.Where(l =>
                             !baseline.MapLayouts.Any(b => b.Id == l.Id && JToken.DeepEquals(JObject.FromObject(b), JObject.FromObject(l)))

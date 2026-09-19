@@ -59,6 +59,17 @@ internal static class MissionLibraryUiChecks
             check(ReferenceEquals(openedDraft, currentDraft.GetValue(page)) && (string?)currentTab.GetValue(page) == "Missions",
                 "Switching mission workspace query preserves the open draft");
             currentDraft.SetValue(page, null);
+            var levelPage = new WTT.Campaigns.Server.Web.Pages.Creator { LevelEditor = true, DraftQuery = draft.Id, LayoutQuery = layout.Id };
+            pageType.GetProperty("Repository", members)!.SetValue(levelPage, repository);
+            applyQuery.Invoke(levelPage, null);
+            check(currentDraft.GetValue(levelPage) == null, "Level deep links refuse mission packages instead of opening them as levels");
+            var levelDraft = repository.Save(new DraftEnvelope { Id = SeasonRepository.NewId(), Definition = new SeasonDefinition
+                { MapLayouts = [new() { Id = SeasonRepository.NewId(), Name = "Ordinary level", Location = "woods" }] } });
+            levelPage.DraftQuery = levelDraft.Id;
+            levelPage.LayoutQuery = levelDraft.Definition.MapLayouts[0].Id;
+            applyQuery.Invoke(levelPage, null);
+            check(((DraftEnvelope?)currentDraft.GetValue(levelPage))?.Id == levelDraft.Id,
+                "Level deep links open an individual level without a campaign picker");
             foreach (var search in new[] { "", "Interchange" })
             {
                 pageType.GetField("_librarySearch", members)!.SetValue(page, search);
@@ -77,17 +88,27 @@ internal static class MissionLibraryUiChecks
                 check(renderer.Components<MissionLogicFields>().Count() == 1, "Independent mission editor retains objective and event editing");
                 var campaign = new DraftEnvelope { Id = "legacy-draft", Definition = new SeasonDefinition
                 {
-                    Name = "New campaign", Missions = [new() { Name = "Test" }], MapLayouts = [new() { Name = "Test layout", Location = "Interchange" }],
+                    Name = "New campaign", Missions = [new() { Name = "Test", LayoutId = "mission-layout" }], MapLayouts = [new() { Id = "mission-layout", Name = "Test layout", Location = "Interchange" }, new() { Id = "level-layout", Name = "Ordinary PMC level", Location = "woods" }],
                 } };
                 await renderer.Mount(new LibraryHost([campaign, draft]));
                 var legacyText = string.Join(" ", renderer.Components<CampaignDraftMissions>().Select(c => renderer.Text(c.Id)));
                 check(legacyText.Contains("New campaign") && legacyText.Contains("Test layout") && legacyText.Contains("Edit missions and layouts"),
                     "Mission library discovers existing campaign missions by mission or layout name and offers editing");
+                check(!legacyText.Contains("Ordinary PMC level"), "Mission library excludes ordinary campaign-stored levels");
                 check(!legacyText.Contains("Mission layout"), "Campaign mission discovery excludes independent mission drafts");
                 await renderer.Mount(new LibraryHost([campaign, draft], "Interchange"));
                 var mapText = string.Join(" ", renderer.Components<CampaignDraftMissions>().Select(c => renderer.Text(c.Id)));
                 check(mapText.Contains("Test layout") && mapText.Contains("Interchange") && mapText.Contains("Open layouts"),
                     "Existing layouts are searchable by map and offer direct layout access");
+                await renderer.Mount(new MapOnlyHost(campaign.Definition, EditorContentMode.Level));
+                var levelComponent = renderer.Components<MapLayoutWorkspace>().Single();
+                check(renderer.Text(levelComponent.Id).Contains("Ordinary PMC level") && !renderer.Text(levelComponent.Id).Contains("Test layout"),
+                    "Level workspace filters out mission-owned layouts from mixed drafts");
+                check(!renderer.Components<EncounterInspection>().Any(), "Level workspace never renders authored encounter controls");
+                await renderer.Mount(new MapOnlyHost(campaign.Definition, EditorContentMode.Mission));
+                var missionComponent = renderer.Components<MapLayoutWorkspace>().Single();
+                check(renderer.Text(missionComponent.Id).Contains("Test layout") && !renderer.Text(missionComponent.Id).Contains("Ordinary PMC level")
+                    && !renderer.Text(missionComponent.Id).Contains("Apply in normal raids"), "Mission layouts cannot be enabled as normal levels in the web editor");
             });
             var target = typeof(SPTarkov.Server.Core.Controllers.QuestController).GetMethods().Single(m => m.Name == "CompleteQuest");
             check(target.GetParameters().Select(p => p.ParameterType).Take(3).SequenceEqual(new[]
@@ -143,6 +164,17 @@ internal static class MissionLibraryUiChecks
         {
             builder.OpenComponent<MissionWorkspace>(0);
             builder.AddAttribute(1, "Season", definition);
+            builder.CloseComponent();
+        }
+    }
+
+    private sealed class MapOnlyHost(SeasonDefinition definition, EditorContentMode mode) : ComponentBase
+    {
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenComponent<MapLayoutWorkspace>(0);
+            builder.AddAttribute(1, "Season", definition);
+            builder.AddAttribute(2, "Mode", mode);
             builder.CloseComponent();
         }
     }

@@ -713,3 +713,17 @@
 .season-creator.mission-editor > :is(.creator-header, .editor-toolbar, .standalone-mission-body) { width:100%; max-width:1280px; margin-inline:auto; }
 .season-creator .standalone-mission-body { margin-top:20px; min-width:0; }
 .season-creator .container-loot-row > .item-preview-image { flex:0 0 80px; width:80px; }
+
+/* Shared navigation between the three authoring workflows. */
+.season-creator nav[aria-label="Content editors"] { display: flex; gap: .5rem; flex-wrap: wrap; margin: .75rem 0; }
+.season-creator nav[aria-label="Content editors"] a { padding: .5rem .9rem; border: 1px solid currentColor; border-radius: .3rem; text-decoration: none; }
+.season-creator nav[aria-label="Content editors"] a[aria-current="page"] { font-weight: 700; border-bottom-width: 3px; }
+
+/* The level workspace has no campaign sidebar; align it with its toolbar. */
+.season-creator > .editor-body.level-editor {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1720px;
+    margin-inline: auto;
+    min-height: 0;
+}

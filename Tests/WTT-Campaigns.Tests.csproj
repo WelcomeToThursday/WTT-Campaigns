@@ -5,6 +5,7 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Profiles\ProfileSaveGate.cs" Link="Client\ProfileSaveGate.cs" />
     <Compile Include="..\UI\Screens\EditorHomeComposition.cs" Link="UI\EditorHomeComposition.cs" />
     <EmbeddedResource Include="..\tools\unity\EditorToolkit\*.uxml" LogicalName="EditorToolkit.%(Filename).uxml" />
     <Compile Include="..\Client\Authoring\Scenes\SceneDoorState.cs" Link="Client\SceneDoorState.cs" />

@@ -19,7 +19,7 @@ public static class MapLayerRules
             .Where(p => seasonId.Length == 0 || p.Id == seasonId)
             .OrderBy(p => p.Id, StringComparer.Ordinal)
             .SelectMany(p =>
-                p.MapLayouts.Where(l => l.Location == location)
+                p.MapLayouts.Where(l => l.Location == location && Authoring.EditorContentRules.Mode(p, l.Id) == Authoring.EditorContentMode.Level)
                     .Select(l =>
                     {
                         var copy = Seasons.SeasonCompiler.Copy(l);
@@ -28,6 +28,31 @@ public static class MapLayerRules
                     })
             );
         return Compose(layouts, location);
+    }
+
+    public static List<MapLayerContent> ContentForCharacter(
+        IEnumerable<Seasons.SeasonDefinition> published, string seasonId, string location,
+        IReadOnlyDictionary<string, bool>? overrides = null)
+    {
+        var result = new List<MapLayerContent>();
+        var zoneIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var package in published.Where(p => seasonId.Length == 0 || p.Id == seasonId).OrderBy(p => p.Id, StringComparer.Ordinal))
+        foreach (var layout in package.MapLayouts.Where(l => l.Location == location
+            && Authoring.EditorContentRules.Mode(package, l.Id) == Authoring.EditorContentMode.Level
+            && Enabled(package.Id, l, seasonId.Length == 0 ? overrides : null)))
+        {
+            var content = new MapLayerContent
+            {
+                Source = Key(package.Id, layout.Id),
+                Zones = Seasons.SeasonCompiler.Copy(package.Zones.Where(z => z.LayoutId == layout.Id && z.Location == location).ToList()),
+                Extract = layout.Exit == null ? null : Seasons.SeasonCompiler.Copy(layout.Exit)
+            };
+            foreach (var zone in content.Zones)
+                if (!zoneIds.Add(zone.Id))
+                    throw new InvalidOperationException("Enabled levels contain duplicate zone identity: " + zone.Id);
+            result.Add(content);
+        }
+        return result;
     }
 
     public static MapLayout? Compose(IEnumerable<MapLayout> layouts, string location)

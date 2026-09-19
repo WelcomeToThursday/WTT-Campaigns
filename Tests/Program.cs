@@ -84,6 +84,7 @@ if (args.Length == 3 && args[0] == "--unity-toolkit")
 if (args.Length == 3 && args[0] == "--editor-toolkit")
 {
     WTT.Campaigns.Tests.EditorToolkitChecks.Run(args[1], args[2]);
+    WTT.Campaigns.Tests.LevelRuntimeChecks.Run(args[2]);
     return;
 }
 
@@ -145,6 +146,7 @@ WTT.Campaigns.Tests.RequestIdentityChecks.Run(Check);
 WTT.Campaigns.Tests.RaidStartupChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.ImageRequestCacheChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.ProfileReconnectChecks.Run(Check).GetAwaiter().GetResult();
+await WTT.Campaigns.Tests.ProfileSaveChecks.Run(Check);
 WTT.Campaigns.Tests.NativeModelChecks.Run(Check);
 WTT.Campaigns.Tests.SeasonItemBundleChecks.Run(Check);
 WTT.Campaigns.Tests.StoryChecks.Run(Check);
@@ -207,6 +209,7 @@ WTT.Campaigns.Tests.CreatorChecks.Run(Check);
 WTT.Campaigns.Tests.MissionTestCampaign.Run(Check);
 WTT.Campaigns.Tests.MissionAuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.MapLayerChecks.Run(Check);
+WTT.Campaigns.Tests.EditorContentChecks.Run(Check);
 await WTT.Campaigns.Tests.PreviewLoadGuardChecks.Run(Check);
 WTT.Campaigns.Tests.MissionRuntimeChecks.Run(Check);
 WTT.Campaigns.Tests.MissionLogicChecks.Run(Check);
