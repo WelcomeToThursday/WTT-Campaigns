@@ -9,6 +9,13 @@ namespace WTT.Campaigns.Shared.Missions;
 /// </summary>
 public static class MissionRunRules
 {
+    public static void InterruptEncounter(MissionRun run)
+    {
+        if (run.Status != MissionRunStatuses.Active || run.Restoring || run.ExitReached)
+            throw new InvalidOperationException("This mission cannot report an encounter failure now.");
+        run.TechnicalFailure = true;
+    }
+
     private static readonly HashSet<string> AliveExtractionResults = new(StringComparer.OrdinalIgnoreCase)
     {
         "survived",
@@ -35,7 +42,7 @@ public static class MissionRunRules
             error = "The mission run is unavailable.";
             return false;
         }
-        if (run.Restoring || run.PlayerDefeated)
+        if (run.Restoring || run.PlayerDefeated || run.TechnicalFailure)
         {
             error = "Checkpoint restoration must finish before mission progress can continue.";
             return false;
@@ -85,7 +92,7 @@ public static class MissionRunRules
             return false;
         }
 
-        if (run.Restoring || run.PlayerDefeated)
+        if (run.Restoring || run.PlayerDefeated || run.TechnicalFailure)
         {
             error = "Checkpoint restoration must finish before extraction.";
             return false;
@@ -112,6 +119,11 @@ public static class MissionRunRules
         if (!AliveExtractionResults.Contains(result ?? ""))
         {
             failureReason = "The mission raid did not end with a successful extraction.";
+            return false;
+        }
+        if (run.TechnicalFailure)
+        {
+            failureReason = "Mission interrupted by a technical AI failure.";
             return false;
         }
         if (run.Restoring || run.PlayerDefeated)

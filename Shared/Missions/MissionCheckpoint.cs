@@ -18,6 +18,7 @@ public sealed class MissionCheckpoint
             run.Status != MissionRunStatuses.Active
             || run.Restoring
             || run.PlayerDefeated
+            || run.TechnicalFailure
             || run.ExitReached
             || run.Logic.Failure.Length > 0
         )

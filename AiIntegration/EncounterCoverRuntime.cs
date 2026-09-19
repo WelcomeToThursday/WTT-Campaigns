@@ -251,6 +251,16 @@ internal sealed class EncounterCoverRuntime
         return $"cover: candidates={binding.Data.ValidCollidersList.Count}, accepted={binding.Finder.CoverPoints.Count}, authoredAdded={binding.Added}, invalidated={binding.Invalidated}, rejected={binding.Rejected}, selected={(chosen == null ? "none" : chosen.Position.ToString("F2"))}";
     }
 
+    internal void Remove(EFT.BotOwner bot)
+    {
+        if (!Bots.TryGetValue(bot, out var binding))
+            return;
+        Bots.Remove(bot);
+        DataOwners.Remove(binding.Data);
+        Analyzers.Remove(binding.Analyzer);
+        _owned.Remove(binding);
+    }
+
     internal void Reset()
     {
         foreach (var binding in _owned)

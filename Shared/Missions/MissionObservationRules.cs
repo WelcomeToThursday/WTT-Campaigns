@@ -7,7 +7,7 @@ public static class MissionObservationRules
 {
     public static void Apply(MissionDefinition mission, MapLayout layout, MissionRun run, MissionRequest request, double maximumTime)
     {
-        if (run.Restoring)
+        if (run.Restoring || run.TechnicalFailure)
             throw new InvalidOperationException("Mission observations are frozen during checkpoint restoration.");
         if (request.AttemptGeneration != run.AttemptGeneration)
             throw new InvalidOperationException("Mission observations belong to a retired attempt.");

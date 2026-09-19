@@ -172,7 +172,8 @@ internal sealed class EncounterPatrolRuntime
             foreach (var member in squad.Members)
             {
                 var bot = member.Bot;
-                member.DeathConfirmed |= !member.Health.IsAlive;
+                if (!member.DeathConfirmed)
+                    member.DeathConfirmed = !member.Health.IsAlive;
                 var alive = !member.DeathConfirmed;
                 squad.Snapshots.Add(
                     new PatrolBotSnapshot
@@ -438,6 +439,18 @@ internal sealed class EncounterPatrolRuntime
         var reason = EligibilityReason(bot);
         return $"route='{member.Squad.State.Route.Name}', waypoint={member.Squad.State.TargetWaypointIndex + 1}, state={member.Squad.State.Status}/{member.Squad.State.SuspensionReason}, eligibility={(reason.Length == 0 ? "eligible" : reason)}, owns={member.OwnsNavigation}, path={member.PathStatus}, lastWriter={member.LastWriter}; "
             + native;
+    }
+
+    internal void Remove(BotOwner bot)
+    {
+        if (!Owners.TryGetValue(bot, out var member))
+            return;
+        Release(member);
+        member.Health.DiedEvent -= member.OnDeath;
+        Owners.Remove(bot);
+        Movers.Remove(member.Mover);
+        // Keep a dead snapshot so the existing route does not treat this member as missing.
+        member.DeathConfirmed = true;
     }
 
     internal void Reset()

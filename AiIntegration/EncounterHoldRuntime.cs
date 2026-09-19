@@ -85,6 +85,15 @@ internal sealed class EncounterHoldRuntime
         hold.Status = "Returning";
     }
 
+    internal void Remove(BotOwner bot)
+    {
+        Stop(bot);
+        if (Holds.TryGetValue(bot, out var hold))
+            Movers.Remove(hold.Mover);
+        Holds.Remove(bot);
+        _owned.Remove(bot);
+    }
+
     internal void Reset()
     {
         foreach (var bot in _owned)

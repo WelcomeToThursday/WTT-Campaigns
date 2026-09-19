@@ -42,9 +42,16 @@ public static class MissionAcknowledgement
 
     public static void Require(MissionRun expected, MissionRun? returned, bool committed)
     {
+        if (!committed)
+            throw new InvalidOperationException("The server did not acknowledge this mission attempt.");
+        RequireCurrent(expected, returned);
+    }
+
+    // Read-only refreshes establish identity and revision, never acknowledge a mutation.
+    public static void RequireCurrent(MissionRun expected, MissionRun? returned)
+    {
         if (
-            !committed
-            || returned == null
+            returned == null
             || returned.ContextVersion != expected.ContextVersion
             || returned.Scope != expected.Scope
             || returned.PackageId != expected.PackageId

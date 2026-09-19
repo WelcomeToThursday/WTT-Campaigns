@@ -169,7 +169,7 @@ public sealed class MissionService(
         }
         else if (kind == "retry-prepare")
         {
-            if (!run.PlayerDefeated && run.Logic.Failure.Length == 0)
+            if (!run.PlayerDefeated && !run.TechnicalFailure && run.Logic.Failure.Length == 0)
                 throw new InvalidOperationException("Only a failed mission attempt can retry its checkpoint.");
             if (!mission.CheckpointRetries || !_checkpoints.TryGetValue(run.RunId, out var saved))
                 throw new InvalidOperationException("The raid-local checkpoint is unavailable.");
@@ -187,6 +187,11 @@ public sealed class MissionService(
             if (!mission.CheckpointRetries || !_checkpoints.TryGetValue(run.RunId, out var saved))
                 throw new InvalidOperationException("The raid-local checkpoint is unavailable.");
             saved.Mission.CommitRestore(mission, layout, run, run.RestoredActorIds);
+            changed = true;
+        }
+        else if (kind == "technical-failure")
+        {
+            MissionRunRules.InterruptEncounter(run);
             changed = true;
         }
         else if (kind == "defeat")
@@ -859,6 +864,7 @@ public sealed class MissionService(
             run.Status != MissionRunStatuses.Active
             || run.Restoring
             || run.PlayerDefeated
+            || run.TechnicalFailure
             || request.AttemptGeneration != run.AttemptGeneration
             || !MissionRunRules.MatchesIdentity(run, active.Id, request.RunId, request.RaidId, request.EncounterToken)
         )

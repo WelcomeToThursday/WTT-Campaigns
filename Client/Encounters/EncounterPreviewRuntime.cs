@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.HealthSystem;
 using Newtonsoft.Json;
@@ -218,6 +219,7 @@ internal sealed class EncounterPreviewRuntime
             .AsValueEnumerable()
             .Where(r =>
                 !r.Finished
+                && r.Encounter.Waves[r.Wave].Status == EncounterWaveStatus.Active
                 && !r.DeathConfirmed
                 && r.Player
                 && r.Health.IsAlive
@@ -304,7 +306,7 @@ internal sealed class EncounterPreviewRuntime
 
     internal void Tick(bool settling = false)
     {
-        if (!_ready || _ended || (_paused && !settling))
+        if (!_ready || _ended || Failure != null || (_paused && !settling))
             return;
         _lifetime!.Token.ThrowIfCancellationRequested();
         if (!_player)
@@ -361,11 +363,12 @@ internal sealed class EncounterPreviewRuntime
             }
             if (!_paused)
                 foreach (var wave in state.ReadyWaves(now))
-                    _work.Add(SpawnWave(state, wave));
+                    if (Failure == null)
+                        _work.Add(SpawnWave(state, wave));
         }
         _work.RemoveAll(t => t.IsCompleted);
         var failed = _encounters.AsValueEnumerable().FirstOrDefault(e => e.IsFailed);
-        Failure =
+        Failure ??=
             failed == null
                 ? null
                 : failed.Encounter.Name
@@ -426,6 +429,8 @@ internal sealed class EncounterPreviewRuntime
             return;
         var token = _lifetime!.Token;
         var reserved = new List<SpatialCapture>();
+        var cleanup = new EncounterWaveCleanup();
+        var staged = new List<BotRecord>();
         try
         {
             var wave = state.Encounter.Waves[waveIndex];
@@ -485,11 +490,18 @@ internal sealed class EncounterPreviewRuntime
                                 }
                             );
                     var response = JsonConvert.DeserializeObject<EditorEncounterProfilesResponse>(
-                        await RequestHandler.PostJsonAsync(
-                            _context.Mode == EncounterRuntimeModes.Mission
-                                ? "/wtt-campaigns/missions/encounter-profiles"
-                                : "/wtt-campaigns/editor/encounter-profiles",
-                            body
+                        await EncounterRecovery.RequestAsync(
+                            () =>
+                                RequestHandler.PostJsonAsync(
+                                    _context.Mode == EncounterRuntimeModes.Mission
+                                        ? "/wtt-campaigns/missions/encounter-profiles"
+                                        : "/wtt-campaigns/editor/encounter-profiles",
+                                    body
+                                ),
+                            token,
+                            attempt => Plugin.LogInfo($"Encounter '{state.Encounter.Name}' profile transport retry {attempt}/3"),
+                            (milliseconds, cancellation) =>
+                                UniTask.Delay(milliseconds, delayType: DelayType.Realtime, cancellationToken: cancellation).AsTask()
                         )
                     );
                     token.ThrowIfCancellationRequested();
@@ -525,6 +537,7 @@ internal sealed class EncounterPreviewRuntime
                     CheckPosition(point);
                     if (!state.TryReserveBot(waveIndex, generation, roster.Id, profile.Id, point.Id, out var error))
                         throw new InvalidOperationException(error);
+                    cleanup.Track(() => _native.RemoveProfile(profile.Id));
                     var bot = await _native.SpawnAsync(profile, point, state.Encounter.Id, squad, token);
                     token.ThrowIfCancellationRequested();
                     if (!bot || !bot.GetPlayer)
@@ -547,23 +560,35 @@ internal sealed class EncounterPreviewRuntime
                     record.DeathConfirmed = !record.Health.IsAlive;
                     record.Health.DiedEvent += record.OnDeath;
                     _bots.Add(record);
+                    staged.Add(record);
+                    cleanup.Track(() =>
+                    {
+                        record.Health.DiedEvent -= record.OnDeath;
+                        _bots.Remove(record);
+                        _ai?.Remove(bot);
+                    });
                     RetryGuard?.Track(record.Player);
-                    ActorRegistered?.Invoke(
-                        new MissionActor
-                        {
-                            ProfileId = profile.Id,
-                            EncounterId = state.Encounter.Id,
-                            WaveId = wave.Id,
-                            RosterId = roster.Id,
-                            SquadId = roster.SquadId,
-                        }
-                    );
-                    Signal?.Invoke(new MissionSignal { Kind = MissionSignals.Spawn, ProfileId = profile.Id });
                     _ai!.Add(bot, squad, roster.PatrolRouteId, point);
                 }
             }
             if (!state.TryCommitGeneration(waveIndex, generation, Clock, out var failure))
                 throw new InvalidOperationException(failure);
+            cleanup.Commit();
+            // Publish only a complete wave: a partial native failure must not create mission actors or spawn events.
+            foreach (var record in staged)
+            {
+                ActorRegistered?.Invoke(
+                    new MissionActor
+                    {
+                        ProfileId = record.ProfileId,
+                        EncounterId = state.Encounter.Id,
+                        WaveId = wave.Id,
+                        RosterId = record.RosterId,
+                        SquadId = wave.Roster.AsValueEnumerable().First(r => r.Id == record.RosterId).SquadId,
+                    }
+                );
+                Signal?.Invoke(new MissionSignal { Kind = MissionSignals.Spawn, ProfileId = record.ProfileId });
+            }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested)
         {
@@ -573,10 +598,20 @@ internal sealed class EncounterPreviewRuntime
         {
             var message = error.GetBaseException().Message;
             state.FailGeneration(waveIndex, generation, string.IsNullOrWhiteSpace(message) ? error.Message : message);
+            Failure = state.Encounter.Name + ": " + message;
             Plugin.Error(error);
         }
         finally
         {
+            try
+            {
+                cleanup.Rollback();
+            }
+            catch (Exception error)
+            {
+                Failure = error.Message;
+                Plugin.Error(error);
+            }
             foreach (var point in reserved)
                 _pendingAnchors.Remove(point);
         }
@@ -587,6 +622,16 @@ internal sealed class EncounterPreviewRuntime
         if (!_navigation.IsOnNavMesh(point.Position) || !_navigation.HasStandingClearance(point.Position))
             throw new InvalidOperationException("Spawn point is blocked or off the NavMesh: " + point.Name);
     }
+
+    internal void StopWork()
+    {
+        _paused = true;
+        foreach (var record in _bots)
+            RetryGuard?.Track(record.Player);
+        _lifetime?.Cancel();
+    }
+
+    internal Task WaitForWorkAsync() => Task.WhenAll(_work.AsValueEnumerable().ToArray());
 
     internal void Reset(bool preserveWorld = false)
     {

@@ -28,6 +28,25 @@ internal sealed class EncounterAiRuntime(MapLayout layout) : IEncounterAiRuntime
 
     public string Describe(BotOwner bot) => EncounterPatrolRuntime.Describe(bot) + "; " + EncounterCoverRuntime.Describe(bot);
 
+    public void Remove(BotOwner bot)
+    {
+        try
+        {
+            _patrol.Remove(bot);
+        }
+        finally
+        {
+            try
+            {
+                _holds.Remove(bot);
+            }
+            finally
+            {
+                _cover.Remove(bot);
+            }
+        }
+    }
+
     public void Reset()
     {
         try

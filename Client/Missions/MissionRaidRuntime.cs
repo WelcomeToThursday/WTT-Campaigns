@@ -207,20 +207,19 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
         try
         {
             _encounters?.Tick();
+            if (!_ending && !string.IsNullOrWhiteSpace(_encounters?.Failure))
+            {
+                EncounterFailed(_encounters!.Failure!);
+                return;
+            }
             _director?.Tick();
             if ((_director?.HasPending == true || _unacknowledgedSignals != null) && !_reportingObservations && !_ending)
                 _ = ReportObservationsAsync();
-            if (!_ending && !string.IsNullOrWhiteSpace(_encounters?.Failure))
-            {
-                _hud?.SetStatus("Encounter failed · mission attempt ended");
-                RequestNativeFailure("Mission encounter failed");
-            }
         }
         catch (Exception exception)
         {
             Plugin.Error(exception);
-            _hud?.SetStatus("Encounter runtime stopped: " + exception.Message);
-            RequestNativeFailure("Mission encounter runtime stopped");
+            EncounterFailed(exception.Message);
         }
     }
 
@@ -600,7 +599,13 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
         {
             await _progressGate.WaitAsync(lifetime.Token);
             acquired = true;
-            if (director == _director && (director.HasPending || _unacknowledgedSignals != null) && !_ending && _run != null)
+            if (
+                director == _director
+                && (director.HasPending || _unacknowledgedSignals != null)
+                && !_ending
+                && !_technicalFailure
+                && _run != null
+            )
             {
                 if (_unacknowledgedSignals == null)
                 {
@@ -656,7 +661,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
         {
             await _progressGate.WaitAsync(lifetime.Token);
             acquired = true;
-            if (!IsProgressCurrent(lifetime, player, world, run, descriptor, generation))
+            if (_technicalFailure || !IsProgressCurrent(lifetime, player, world, run, descriptor, generation))
                 return;
             if (kind == "Checkpoint" && checkpointIndex != _run!.NextCheckpointIndex)
                 return;
@@ -748,7 +753,9 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
                 return;
             Plugin.Error(exception);
             _hud?.SetStatus("Mission progress failed: " + exception.Message);
-            if (_retryGuard?.Frozen == true)
+            if (!string.IsNullOrWhiteSpace(_encounters?.Failure))
+                EncounterFailed(_encounters!.Failure!);
+            else if (_retryGuard?.Frozen == true)
                 BrokenRestore(exception);
         }
         finally
@@ -856,6 +863,8 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
         _retryBusy = _retryBroken = _retryShown = false;
         _retryFailure = "";
         _retryDeath = null;
+        _technicalFailure = _technicalFailureAcknowledged = false;
+        _technicalFailureOperation = "";
         _director?.Dispose();
         _director = null;
         _unacknowledgedSignals = null;

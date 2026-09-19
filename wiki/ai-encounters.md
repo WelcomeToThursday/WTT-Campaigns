@@ -38,6 +38,14 @@ Compatible **BigBrain 1.5.0** and **SAIN 4.5.1** are required for the initial **
 
 Layout editing is frozen while preparing or running a preview. Each new preview has fresh encounter state and gear. Quests, rewards, insurance, persistent loot, and campaign progression do not advance.
 
+## Encounter failure recovery
+
+Profile requests retry recognized network/timeout failures up to three total attempts, with short delays. Invalid profiles, rejected identities and native activation failures are not automatically replayed. A native bot profile remains single-use within its attempt.
+
+If a wave only spawns partly, its registered bots and AI bindings are removed. Spawn observations are published only after the whole wave is active. A cleanup error remains visible and requires a checkpoint retry or preview reset.
+
+During a mission, an unrecoverable encounter error pauses the attempt and records a technical interruption separately from player defeat. **Retry checkpoint** restores the last saved checkpoint with a fresh attempt identity when checkpoint retries are enabled. **End attempt** uses the native alive exit path; it does not kill the player or award mission completion. If the server cannot acknowledge the interruption, the attempt stays paused until communication succeeds. Editor previews return to editing through their existing reset path.
+
 ## Manual acceptance
 
 Offline checks and installed-file hashes do not establish live compatibility. Restart applications manually after installing matching components, then verify:
@@ -49,5 +57,7 @@ Offline checks and installed-file hashes do not establish live compatibility. Re
 - Defeat, Escape, reset, and repeated previews restore the editor and leave the source profile unchanged.
 - Ordinary raids retain their existing behavior.
 - Repeated previews do not accumulate bots or equipment, grow memory continuously, or introduce periodic frame stalls.
+- Exercise an interrupted profile request and a partial-wave activation failure: retries remain bounded, no duplicate bots appear, and incomplete waves produce no spawn/completion observations.
+- For a mission with checkpoint retries, verify an AI interruption offers the saved checkpoint, restores surviving actors once, and permits normal progress afterward. Ending the interrupted attempt must not record a player death or unlock mission rewards. Repeat with checkpoint retries disabled to verify the end-only path.
 
 On the main toolbar, choose **Placeholder kit** (default) or **Copy main-profile kit** before starting a playtest. Both use disposable item copies; the main profile is unchanged. The selection lasts for the current editor session. Reconnect the editor after installing this update to prepare its placeholder kit.

@@ -196,6 +196,7 @@ WTT.Campaigns.Tests.EditorMemoryChecks.Run(Check);
 WTT.Campaigns.Tests.EditorPreviewGearChecks.Run();
 WTT.Campaigns.Tests.EncounterContractsChecks.Run(Check);
 WTT.Campaigns.Tests.EncounterRuntimeChecks.Run(Check);
+WTT.Campaigns.Tests.EncounterRecoveryChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.PreviewFreezeChecks.Run(Check);
 WTT.Campaigns.Tests.PatrolDispatchChecks.Run(Check);
 WTT.Campaigns.Tests.PatrolDirectionChecks.Run(Check);
