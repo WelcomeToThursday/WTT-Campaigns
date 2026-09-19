@@ -1,6 +1,6 @@
 # WTT-Campaigns
 
-**0.10.0 — Editor tools, containers and character recovery**
+**0.10.0 — Missions, levels and editor improvements**
 
 [Campaign Editor and mission map layouts](wiki/editor-mode.md): open a disposable editor character, reshape supported scenery, author AI encounters and patrols, and build [playable missions](wiki/missions.md).
 

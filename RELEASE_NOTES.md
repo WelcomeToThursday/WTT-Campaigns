@@ -1,3 +1,43 @@
+# WTT-Campaigns 0.10.0 — Missions, levels and editor improvements
+
+This beta separates playable missions from ordinary-raid levels, adds reusable mission publishing, and expands the in-game and web authoring tools.
+
+## New and improved
+
+- **Independent missions.** Create and publish missions with their own briefing, map layout, objectives, encounters and loot. Campaigns can link a specific published revision with their own story unlock and optional quest-completion binding. Existing campaign-owned missions remain supported.
+- **Dedicated Level Editor.** Editor home and the web Creator now have separate Missions and Levels libraries. Create a level from a name and map, then open its focused workspace. Mission-owned layouts retain mission tools; ordinary levels expose the tools relevant to normal raids.
+- **Levels in ordinary raids.** Published, enabled layouts can add scenery, doors, barriers, loot, containers, layout-owned zones, hazards and additional extracts. Regular characters choose layers from MAP LAYERS; campaign characters use their campaign defaults. Mission layouts are excluded from ordinary-raid layers. Native player spawns and normal AI remain in control.
+- **Mission objectives and checkpoints.** Expanded mission event and AI objective authoring, encounter brain choices, and checkpoint restoration handling. Disposable tests support rehearsing mission content without transferring results to the original character.
+- **More usable editor workspace.** Compact, resizable panels, improved docking and toolbars, searchable choices, numeric editing, collapsible inspectors and saved layout preferences. Editor presentation now uses Unity-authored templates and styles.
+- **Scene, doors and loot.** Improved scene selection and outlines, deliberate placement and repeat placement, native prop movement, placed-door recovery, container map identities and generated ammunition positions.
+- **Zones, hazards and character transitions.** Layout-scoped zones and native hazard authoring, improved preview equipment loading, and a profile-save gate that lets pending character operations finish before entering disposable editor state.
+
+## Requirements and updating
+
+Targets **SPT 4.1.x / EFT 0.16.9.40743**, with AI integration targeting **SPT 4.1.5**. Install dependencies separately: **UnityToolkit 2.0.2+** with its prepatcher, **WTT-CommonLib 3.0.6+**, **WTT-ContentBackport 2.0.1+** and its dependencies, **BigBrain 1.5.0+**, **SAIN 4.5.1+**, **MoreBotsAPI 2.1.1+**, and **Black Division 1.3.1+**. See the README for details.
+
+Close the game and server and back up profiles before updating. Extract the archive's `BepInEx` and `SPT_Runtime` folders into your SPT installation. Install the **full matching 0.10.0 package**, including UI bundles, AI integration and asset libraries. Preserve configuration, regular and campaign profiles, and the server mod's entire `creator` folder. Start the server and game manually when ready.
+
+Independent mission packages and campaign links use **content format 11**. Older content remains supported. Update client and server together. New levels are saved as drafts; publish and enable them before expecting changes in ordinary raids. Publishing a legacy shared draft publishes that entire draft.
+
+## Beta limitations
+
+- Fika is not supported. This release does not include a complete authored story campaign.
+- Offline validation checks contracts, assemblies and assets; live Unity presentation, checkpoint retries, AI/SAIN behavior and consecutive-raid cleanup still require in-game verification.
+- Ordinary missions use your actual character and normal raid consequences. Use disposable editor tests for rehearsal.
+- Levels do not add mission AI, checkpoints, retries or custom player starts. Unsupported scene objects remain restricted, and the editor does not rebuild navigation meshes.
+- Missing dependencies and unresolved scene targets must be corrected before running affected content.
+
+## Guides
+
+- [Installation and overview](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.0/README.md)
+- [Mission Editor and Level Editor](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.0/wiki/editor-mode.md)
+- [Independent missions and campaign links](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.0/wiki/missions.md)
+- [Map layers in ordinary raids](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.0/wiki/map-layers.md)
+- [AI encounters and patrols](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.10.0/wiki/ai-encounters.md)
+
+---
+
 # WTT-Campaigns 0.9.0 — Editor tools, containers and character recovery
 
 This beta expands the Campaign Editor with a game-wide asset catalog, configurable native loot containers and a more flexible workspace. It also adds recovery for surviving campaign characters and updates the built-in KORD campaign copy.
