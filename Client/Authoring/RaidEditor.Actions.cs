@@ -933,7 +933,8 @@ public sealed partial class RaidEditor
         var view = _view;
         view.ContentMode = ContentMode;
         view.HasStory = _session.Definition?.Story != null;
-        if (!ContentToolAllowed(_mode)) _mode = "Layouts";
+        if (!ContentToolAllowed(_mode))
+            _mode = "Layouts";
         view.ToolContext = _mode == "Maps" ? "Layouts" : _mode;
         ValidateToolSelection();
         view.SetToolkitContext(ToolkitContext);

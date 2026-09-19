@@ -141,8 +141,10 @@ internal static class ZoneLayoutChecks
         );
         second.ApplyInNormalRaids = true;
         var levelPublication = SeasonValidator.Validate(season);
-        check(!levelPublication.Issues.Any(issue => issue.Path == "Zones/" + conditionZone.Id && issue.Severity == "error"),
-            "Enabled ordinary-raid levels provide their native quest zones during publication");
+        check(
+            !levelPublication.Issues.Any(issue => issue.Path == "Zones/" + conditionZone.Id && issue.Severity == "error"),
+            "Enabled ordinary-raid levels provide their native quest zones during publication"
+        );
         second.ApplyInNormalRaids = false;
         conditionZone.LayoutId = "";
         var sharedPublication = SeasonValidator.Validate(season);

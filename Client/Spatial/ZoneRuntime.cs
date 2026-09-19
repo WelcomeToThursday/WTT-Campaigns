@@ -238,8 +238,11 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
 
     internal SeasonZone? Definition { get; private set; }
 
-    internal static bool QuestActive(string id) => WTT.Campaigns.Shared.Authoring.EditorContentRules.QuestEligible(id,
-        Plugin.Player?.Profile.QuestsData.AsValueEnumerable().FirstOrDefault(q => q.Id.ToString() == id)?.Status.ToString());
+    internal static bool QuestActive(string id) =>
+        WTT.Campaigns.Shared.Authoring.EditorContentRules.QuestEligible(
+            id,
+            Plugin.Player?.Profile.QuestsData.AsValueEnumerable().FirstOrDefault(q => q.Id.ToString() == id)?.Status.ToString()
+        );
 
     internal void Initialize(SeasonZone zone)
     {
@@ -325,9 +328,7 @@ public sealed class NativeZoneBridge : MonoBehaviour, IPhysicsTriggerWithStay
 
     public void OnTriggerEnter(Collider other)
     {
-        if (
-            !QuestActive(_requiredQuestId)
-        )
+        if (!QuestActive(_requiredQuestId))
             return;
         if (!Singleton<GameWorld>.Instantiated)
         {

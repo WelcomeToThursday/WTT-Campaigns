@@ -64,8 +64,16 @@ public static class SeasonValidator
         Need(s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11, "Overview", "Unsupported campaign format version.");
         foreach (var zone in s.Zones)
         {
-            if (!string.IsNullOrEmpty(zone.LayoutId) && Spatial.SpatialRules.Uses(s, zone.Id).Any() && !MissionOwnsZoneReferences(s, zone)
-                && !s.MapLayouts.Any(l => l.Id == zone.LayoutId && l.ApplyInNormalRaids && Authoring.EditorContentRules.Mode(s, l.Id) == Authoring.EditorContentMode.Level))
+            if (
+                !string.IsNullOrEmpty(zone.LayoutId)
+                && Spatial.SpatialRules.Uses(s, zone.Id).Any()
+                && !MissionOwnsZoneReferences(s, zone)
+                && !s.MapLayouts.Any(l =>
+                    l.Id == zone.LayoutId
+                    && l.ApplyInNormalRaids
+                    && Authoring.EditorContentRules.Mode(s, l.Id) == Authoring.EditorContentMode.Level
+                )
+            )
             {
                 r.Add("Zones/" + zone.Id, "Quest/story zones require an enabled ordinary-raid level or their owning mission: " + zone.Id);
             }

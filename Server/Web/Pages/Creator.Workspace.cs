@@ -47,7 +47,9 @@ public partial class Creator
         if (LevelEditor)
         {
             if (_draft?.Id != DraftQuery || _levelLayout != LayoutQuery)
-                Leave(() => OpenLevel(new WTT.Campaigns.Shared.Authoring.EditorLayoutChoice { DraftId = DraftQuery, Id = LayoutQuery ?? "" }));
+                Leave(() =>
+                    OpenLevel(new WTT.Campaigns.Shared.Authoring.EditorLayoutChoice { DraftId = DraftQuery, Id = LayoutQuery ?? "" })
+                );
             return;
         }
 
@@ -64,7 +66,8 @@ public partial class Creator
         Run(() =>
         {
             Open(Repository.Load(DraftQuery));
-            if (MissionEditor) _missionTab = SectionQuery == "Layouts" ? "Layouts" : "Missions";
+            if (MissionEditor)
+                _missionTab = SectionQuery == "Layouts" ? "Layouts" : "Missions";
             if (SectionQuery != null && Sections.Contains(SectionQuery))
             {
                 _section = SectionQuery;

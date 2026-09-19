@@ -30,8 +30,10 @@ public sealed class MapLayerService(
                 ? new[] { repository.Runtime(seasonId).Definition }
                 : repository.OrdinaryPlayable().Select(p => p.Definition).ToArray();
         var overrides = seasonId.Length == 0 ? options.ReadSaved(character).Overrides : null;
-        return (MapLayerRules.ForCharacter(published, seasonId, location, overrides),
-            MapLayerRules.ContentForCharacter(published, seasonId, location, overrides));
+        return (
+            MapLayerRules.ForCharacter(published, seasonId, location, overrides),
+            MapLayerRules.ContentForCharacter(published, seasonId, location, overrides)
+        );
     }
 
     public void Validate(string character, string location) => Compose(character, location);

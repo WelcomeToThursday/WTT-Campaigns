@@ -18,7 +18,13 @@ internal sealed class ProfileSaveGate
                 return;
             _owner = owner;
             _pending = save();
-            _ = _pending.ContinueWith(t => { _ = t.Exception; }, TaskContinuationOptions.OnlyOnFaulted);
+            _ = _pending.ContinueWith(
+                t =>
+                {
+                    _ = t.Exception;
+                },
+                TaskContinuationOptions.OnlyOnFaulted
+            );
         }
 
         var pending = _pending;

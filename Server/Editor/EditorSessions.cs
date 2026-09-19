@@ -126,8 +126,8 @@ public sealed class EditorSessions(
         if (request.LayoutId.Length > 0 && !repository.Load(request.DraftId).Definition.MapLayouts.Any(l => l.Id == request.LayoutId))
             throw new InvalidOperationException("Layout no longer exists in this draft.");
         var definition = repository.Load(request.DraftId).Definition;
-        var layoutId = request.LayoutId.Length == 0 && definition.MissionPackage != null
-            ? definition.MapLayouts.Single().Id : request.LayoutId;
+        var layoutId =
+            request.LayoutId.Length == 0 && definition.MissionPackage != null ? definition.MapLayouts.Single().Id : request.LayoutId;
         session.Select(request.DraftId, layoutId);
         return Response(session);
     }
@@ -216,6 +216,15 @@ public sealed class EditorSessions(
                             Location = l.Location,
                         })
                         .ToList(),
-            Drafts = repository.Drafts().Select(d => new EditorDraftChoice { Id = d.Id, Name = d.Definition.Name, Mode = EditorContentRules.Mode(d.Definition), Modes = EditorContentRules.AvailableModes(d.Definition) }).ToList(),
+            Drafts = repository
+                .Drafts()
+                .Select(d => new EditorDraftChoice
+                {
+                    Id = d.Id,
+                    Name = d.Definition.Name,
+                    Mode = EditorContentRules.Mode(d.Definition),
+                    Modes = EditorContentRules.AvailableModes(d.Definition),
+                })
+                .ToList(),
         };
 }

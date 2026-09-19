@@ -143,7 +143,8 @@ internal sealed partial class EditorToolkitWindows
 
     private bool AllowedPanel(string id) => !id.StartsWith("Tool:") || _view.AllowsTool(id.Substring(5));
 
-    private HashSet<string> OpenIds() => _panels.AsValueEnumerable().Where(p => p.Value.Visible && AllowedPanel(p.Key)).Select(p => p.Key).ToHashSet();
+    private HashSet<string> OpenIds() =>
+        _panels.AsValueEnumerable().Where(p => p.Value.Visible && AllowedPanel(p.Key)).Select(p => p.Key).ToHashSet();
 
     private EditorDockRect Area =>
         new(56, 84, Math.Max(1, _view.Document.Width - 64), Math.Max(1, _view.Document.Height - 84 - (_capture ? 88 : 40)));
@@ -168,7 +169,8 @@ internal sealed partial class EditorToolkitWindows
     internal void ShowPanel(string id, bool visible)
     {
         id = Resolve(id);
-        if (visible && !AllowedPanel(id)) return;
+        if (visible && !AllowedPanel(id))
+            return;
         _panels[id].Visible = visible;
         if (visible)
         {

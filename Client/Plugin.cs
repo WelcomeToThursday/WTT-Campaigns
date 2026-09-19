@@ -138,17 +138,26 @@ public sealed class Plugin : BaseUnityPlugin
     {
         var app = App ?? throw new InvalidOperationException("The game menu is not ready.");
         var session = app.Session;
-        await SaveGate.Run(session, () =>
+        await SaveGate.Run(
+            session,
+            () =>
             {
                 if (session is not ClientBackendSession native)
                     return false;
-                LogInfo($"WTT-Campaigns switch/save: queue={native.QueueStatus}, flushing={native.IsFlushing}, incoming={native._incomingOperations.Count}, unsent={native._unsentCommands.Count}, waiting={native._waitingOperation != null}.");
+                LogInfo(
+                    $"WTT-Campaigns switch/save: queue={native.QueueStatus}, flushing={native.IsFlushing}, incoming={native._incomingOperations.Count}, unsent={native._unsentCommands.Count}, waiting={native._waitingOperation != null}."
+                );
                 // Idle alone is not sufficient: unsent inventory operations can
                 // remain queued until EFT's periodic send. Do not discard them.
-                return ProfileSaveGate.IsEmpty(native.QueueStatus == EOperationQueueStatus.Idle,
-                    native.IsFlushing, native._incomingOperations.Count, native._unsentCommands.Count,
-                    native._waitingOperation != null);
-            }, async () =>
+                return ProfileSaveGate.IsEmpty(
+                    native.QueueStatus == EOperationQueueStatus.Idle,
+                    native.IsFlushing,
+                    native._incomingOperations.Count,
+                    native._unsentCommands.Count,
+                    native._waitingOperation != null
+                );
+            },
+            async () =>
             {
                 LogInfo("WTT-Campaigns switch/save: invoking native save.");
                 var pending = session.FlushOperationQueue();
@@ -156,7 +165,9 @@ public sealed class Plugin : BaseUnityPlugin
                 var result = await pending;
                 if (!result.Succeed)
                     throw new InvalidOperationException("Pending profile operations could not be saved: " + result.Error);
-            }, token => UniTask.Delay(30000, delayType: DelayType.Realtime, cancellationToken: token).AsTask());
+            },
+            token => UniTask.Delay(30000, delayType: DelayType.Realtime, cancellationToken: token).AsTask()
+        );
         if (!ReferenceEquals(app.Session, session))
             throw new InvalidOperationException("The active character changed while saving. Try again from the menu.");
         LogInfo("WTT-Campaigns switch/save: pending operations saved.");

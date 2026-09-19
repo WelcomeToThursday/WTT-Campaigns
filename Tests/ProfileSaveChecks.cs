@@ -15,7 +15,11 @@ internal static class ProfileSaveChecks
         var gate = new ProfileSaveGate();
         var owner = new object();
         var saves = 0;
-        Task Save() { saves++; return Task.CompletedTask; }
+        Task Save()
+        {
+            saves++;
+            return Task.CompletedTask;
+        }
         Task Never(CancellationToken token) => Task.Delay(Timeout.Infinite, token);
         await gate.Run(owner, () => true, Save, Never);
         check(saves == 0, "Empty menu entry bypasses the native flush entirely");
@@ -27,13 +31,29 @@ internal static class ProfileSaveChecks
         var continued = false;
         async Task Enter()
         {
-            await gate.Run(owner, () => false, () => { saves++; return pending.Task; }, _ => expired.Task);
+            await gate.Run(
+                owner,
+                () => false,
+                () =>
+                {
+                    saves++;
+                    return pending.Task;
+                },
+                _ => expired.Task
+            );
             continued = true;
         }
         var entry = Enter();
         expired.SetResult();
-        try { await entry; check(false, "Save deadline must abort entry"); }
-        catch (TimeoutException) { check(!continued, "A stuck save cannot switch profile identity"); }
+        try
+        {
+            await entry;
+            check(false, "Save deadline must abort entry");
+        }
+        catch (TimeoutException)
+        {
+            check(!continued, "A stuck save cannot switch profile identity");
+        }
         var retry = gate.Run(owner, () => true, Save, Never);
         check(!retry.IsCompleted && saves == 2, "Retry waits for the same native save even if queue now looks empty");
         pending.SetResult();
@@ -44,6 +64,9 @@ internal static class ProfileSaveChecks
             await gate.Run(owner, () => false, () => Task.FromException(new InvalidOperationException("save failed")), Never);
             check(false, "Native save failure must propagate");
         }
-        catch (InvalidOperationException e) { check(e.Message == "save failed", "Native save failure blocks the transition"); }
+        catch (InvalidOperationException e)
+        {
+            check(e.Message == "save failed", "Native save failure blocks the transition");
+        }
     }
 }

@@ -14,10 +14,22 @@ public enum EditorContentMode
 public static class EditorContentRules
 {
     public static List<EditorLayoutChoice> Levels(IEnumerable<(string Id, SeasonDefinition Definition)> drafts) =>
-        drafts.SelectMany(d => d.Definition.MapLayouts
-            .Where(l => Mode(d.Definition, l.Id) == EditorContentMode.Level)
-            .Select(l => new EditorLayoutChoice { DraftId = d.Id, Id = l.Id, Name = l.Name, Location = l.Location, Mode = EditorContentMode.Level }))
-            .OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase).ThenBy(l => l.DraftId).ThenBy(l => l.Id).ToList();
+        drafts
+            .SelectMany(d =>
+                d.Definition.MapLayouts.Where(l => Mode(d.Definition, l.Id) == EditorContentMode.Level)
+                    .Select(l => new EditorLayoutChoice
+                    {
+                        DraftId = d.Id,
+                        Id = l.Id,
+                        Name = l.Name,
+                        Location = l.Location,
+                        Mode = EditorContentMode.Level,
+                    })
+            )
+            .OrderBy(l => l.Name, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(l => l.DraftId)
+            .ThenBy(l => l.Id)
+            .ToList();
 
     public static List<EditorContentMode> AvailableModes(SeasonDefinition definition) =>
         definition.MapLayouts.Select(l => Mode(definition, l.Id)).Append(Mode(definition)).Distinct().ToList();
@@ -29,8 +41,11 @@ public static class EditorContentRules
     {
         if (definition == null)
             return EditorContentMode.None;
-        if (definition.MissionPackage != null || definition.Missions.Any(m => m.LayoutId == layoutId)
-            || (layoutId.Length > 0 && definition.MissionLinks.Any(link => link.Package.MapLayouts.Any(l => l.Id == layoutId))))
+        if (
+            definition.MissionPackage != null
+            || definition.Missions.Any(m => m.LayoutId == layoutId)
+            || (layoutId.Length > 0 && definition.MissionLinks.Any(link => link.Package.MapLayouts.Any(l => l.Id == layoutId)))
+        )
             return EditorContentMode.Mission;
         return EditorContentMode.Level;
     }

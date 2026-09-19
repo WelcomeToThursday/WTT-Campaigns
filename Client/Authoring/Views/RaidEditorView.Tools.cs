@@ -11,8 +11,11 @@ internal sealed partial class RaidEditorView
     private readonly Dictionary<string, Dictionary<string, EditorControl>> _toolControls = new();
     internal WTT.Campaigns.Shared.Authoring.EditorContentMode ContentMode;
     internal bool HasStory;
+
     internal bool AllowsTool(string tool) => WTT.Campaigns.Shared.Authoring.EditorContentRules.ToolAllowed(ContentMode, tool, HasStory);
+
     internal bool AllowsAction(string action) => WTT.Campaigns.Shared.Authoring.EditorContentRules.ActionAllowed(ContentMode, action);
+
     internal string ToolContext = "Layouts";
     internal Action<string>? ToolActivated;
     private bool _registerLocal;
@@ -43,7 +46,8 @@ internal sealed partial class RaidEditorView
 
     internal bool Activate(string tool)
     {
-        if (!AllowsTool(tool)) return false;
+        if (!AllowsTool(tool))
+            return false;
         if (tool.Length == 0)
             return true;
         if (Windows?.Modal == true)

@@ -95,7 +95,10 @@ public sealed class EditorMissionTestService(SeasonRepository repository, Season
         if (draft.Status != DraftStatus.Active)
             throw new InvalidOperationException("Restore this draft before testing it.");
 
-        if (EditorContentRules.Mode(draft.Definition, request.LayoutId.Length > 0 ? request.LayoutId : session.Layout) != EditorContentMode.Mission)
+        if (
+            EditorContentRules.Mode(draft.Definition, request.LayoutId.Length > 0 ? request.LayoutId : session.Layout)
+            != EditorContentMode.Mission
+        )
             throw new InvalidOperationException("Mission tests and checkpoints require Mission Editor.");
         var checkpointTest = request.Action == EditorTestActions.PrepareCheckpoints;
         var mission = checkpointTest

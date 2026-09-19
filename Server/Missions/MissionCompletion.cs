@@ -1,9 +1,9 @@
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common;
+using WTT.Campaigns.Server.Story;
 using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Story;
-using WTT.Campaigns.Server.Story;
 
 namespace WTT.Campaigns.Server.Missions;
 
@@ -12,9 +12,7 @@ internal static class MissionCompletion
     internal static void Apply(PmcData pmc, SeasonDefinition definition, MissionDefinition mission)
     {
         var seasonId = definition.Id;
-        var storyDefinition =
-            definition.Story
-            ?? throw new InvalidOperationException("Mission completion requires a story-backed quest.");
+        var storyDefinition = definition.Story ?? throw new InvalidOperationException("Mission completion requires a story-backed quest.");
         if (!storyDefinition.Quests.Any(q => q.QuestId == mission.QuestId))
             throw new InvalidOperationException("The mission quest is not registered in the campaign story.");
 

@@ -35,8 +35,14 @@ internal static class EditorContentChecks
         };
         check(EditorContentRules.Mode(null) == EditorContentMode.None, "No content has a neutral editor title");
         check(EditorContentRules.Mode(pack, level.Id) == EditorContentMode.Level, "Disabled ordinary layouts use Level Editor");
-        check(EditorContentRules.AvailableModes(pack).SequenceEqual(new[] { EditorContentMode.Level }), "Ordinary content appears only under Levels");
-        check(EditorContentRules.Includes(new EditorDraftChoice { Mode = EditorContentMode.Mission }, EditorContentMode.Mission), "Older picker responses retain their single content mode");
+        check(
+            EditorContentRules.AvailableModes(pack).SequenceEqual(new[] { EditorContentMode.Level }),
+            "Ordinary content appears only under Levels"
+        );
+        check(
+            EditorContentRules.Includes(new EditorDraftChoice { Mode = EditorContentMode.Mission }, EditorContentMode.Mission),
+            "Older picker responses retain their single content mode"
+        );
         level.ApplyInNormalRaids = true;
         check(EditorContentRules.Mode(pack, level.Id) == EditorContentMode.Level, "Enablement does not change editor mode");
         foreach (var action in new[] { "MapStart", "MapCheckpoint", "AiObserve", "AiPlaytest", "TestCheckpoints" })
@@ -70,12 +76,19 @@ internal static class EditorContentChecks
         pack.Missions.Add(new() { Id = Id(22), LayoutId = level.Id });
         check(EditorContentRules.Mode(pack, level.Id) == EditorContentMode.Mission, "Legacy mission ownership selects Mission Editor");
         var mixedChoice = new EditorDraftChoice { Mode = EditorContentRules.Mode(pack), Modes = EditorContentRules.AvailableModes(pack) };
-        check(EditorContentRules.Includes(mixedChoice, EditorContentMode.Mission) && EditorContentRules.Includes(mixedChoice, EditorContentMode.Level), "Legacy campaign missions remain discoverable alongside the new level option");
+        check(
+            EditorContentRules.Includes(mixedChoice, EditorContentMode.Mission)
+                && EditorContentRules.Includes(mixedChoice, EditorContentMode.Level),
+            "Legacy campaign missions remain discoverable alongside the new level option"
+        );
         check(MapLayerRules.ForCharacter(new[] { pack }, "", "woods") == null, "Mission-owned layouts never run as ordinary layers");
         check(MapLayerRules.ContentForCharacter(new[] { pack }, "", "woods").Count == 0, "Mission zones and exits stay out of levels");
         pack.MissionPackage = new MissionPackage { AllowStandalonePlay = true };
         check(EditorContentRules.Mode(pack) == EditorContentMode.Mission, "Standalone packages use Mission Editor");
-        check(EditorContentRules.AvailableModes(pack).SequenceEqual(new[] { EditorContentMode.Mission }), "Standalone mission packages never appear under Levels");
+        check(
+            EditorContentRules.AvailableModes(pack).SequenceEqual(new[] { EditorContentMode.Mission }),
+            "Standalone mission packages never appear under Levels"
+        );
         pack.MissionPackage = null;
         pack.Missions.Clear();
         level.Exit = new() { Id = Id(30), Location = "woods" };

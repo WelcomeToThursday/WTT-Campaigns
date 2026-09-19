@@ -12,11 +12,15 @@ public sealed partial class SeasonRepository
         var output = new List<(string Key, SeasonDefinition Definition)>();
         foreach (var pack in Packs().Where(p => p.Manifest.ContentKind == "Mission"))
         {
-            try { output.Add((pack.Key, Pack(pack.Key))); }
+            try
+            {
+                output.Add((pack.Key, Pack(pack.Key)));
+            }
             catch (Exception error) when (error is IOException or InvalidOperationException or Newtonsoft.Json.JsonException)
             {
                 var message = "Mission pack " + pack.Key + ": " + error.Message;
-                if (!StorageWarnings.Contains(message)) StorageWarnings.Add(message);
+                if (!StorageWarnings.Contains(message))
+                    StorageWarnings.Add(message);
             }
         }
         return output;
@@ -25,16 +29,30 @@ public sealed partial class SeasonRepository
     public DraftEnvelope CreateMission()
     {
         var layout = new WTT.Campaigns.Shared.Spatial.MapLayout { Id = NewId(), Name = "Mission layout" };
-        var mission = new MissionDefinition { Id = NewId(), Name = "New mission", Briefing = "Complete the route and extract.", LayoutId = layout.Id, CheckpointRetries = true };
-        return Save(new DraftEnvelope
+        var mission = new MissionDefinition
         {
             Id = NewId(),
-            Definition = new SeasonDefinition
+            Name = "New mission",
+            Briefing = "Complete the route and extract.",
+            LayoutId = layout.Id,
+            CheckpointRetries = true,
+        };
+        return Save(
+            new DraftEnvelope
             {
-                Id = mission.Id, BattlePassId = NewId(), Name = mission.Name, FormatVersion = MissionLibrary.FormatVersion,
-                MissionPackage = new(), Missions = [mission], MapLayouts = [layout],
-            },
-        });
+                Id = NewId(),
+                Definition = new SeasonDefinition
+                {
+                    Id = mission.Id,
+                    BattlePassId = NewId(),
+                    Name = mission.Name,
+                    FormatVersion = MissionLibrary.FormatVersion,
+                    MissionPackage = new(),
+                    Missions = [mission],
+                    MapLayouts = [layout],
+                },
+            }
+        );
     }
 
     public DraftEnvelope ExtractMission(DraftEnvelope campaign, string missionId)
@@ -47,22 +65,36 @@ public sealed partial class SeasonRepository
         layout.ApplyInNormalRaids = false;
         var package = new SeasonDefinition
         {
-            Id = mission.Id, BattlePassId = NewId(), Name = mission.Name, Author = campaign.Definition.Author,
-            FormatVersion = MissionLibrary.FormatVersion, MissionPackage = new(), Missions = [mission], MapLayouts = [layout],
-            Zones = SeasonCompiler.Copy(campaign.Definition.Zones.Where(z => z.LayoutId == layout.Id || z.LayoutId.Length == 0 && z.Location == layout.Location).ToList()),
+            Id = mission.Id,
+            BattlePassId = NewId(),
+            Name = mission.Name,
+            Author = campaign.Definition.Author,
+            FormatVersion = MissionLibrary.FormatVersion,
+            MissionPackage = new(),
+            Missions = [mission],
+            MapLayouts = [layout],
+            Zones = SeasonCompiler.Copy(
+                campaign
+                    .Definition.Zones.Where(z => z.LayoutId == layout.Id || z.LayoutId.Length == 0 && z.Location == layout.Location)
+                    .ToList()
+            ),
             Dependencies = campaign.Definition.Dependencies.Where(d => d.StartsWith("mod:", StringComparison.Ordinal)).ToList(),
-            Items = SeasonCompiler.Copy(campaign.Definition.Items), ImportedItems = SeasonCompiler.Copy(campaign.Definition.ImportedItems),
+            Items = SeasonCompiler.Copy(campaign.Definition.Items),
+            ImportedItems = SeasonCompiler.Copy(campaign.Definition.ImportedItems),
         };
-        foreach (var zone in package.Zones) zone.LayoutId = layout.Id;
+        foreach (var zone in package.Zones)
+            zone.LayoutId = layout.Id;
         var required = MissionLibrary.ReferencedItems(package).ToHashSet();
         var changed = true;
         while (changed)
         {
             changed = false;
-            foreach (var item in package.Items.Where(i => required.Contains(i.Id))) changed |= required.Add(item.CloneFrom);
+            foreach (var item in package.Items.Where(i => required.Contains(i.Id)))
+                changed |= required.Add(item.CloneFrom);
             foreach (var item in package.ImportedItems.Where(i => required.Contains(i.Key)))
-                foreach (var text in WTT.Campaigns.Shared.Serialization.ModelGraph.Texts(item.Value))
-                    if (package.ImportedItems.ContainsKey(text.Value) || package.Items.Any(i => i.Id == text.Value)) changed |= required.Add(text.Value);
+            foreach (var text in WTT.Campaigns.Shared.Serialization.ModelGraph.Texts(item.Value))
+                if (package.ImportedItems.ContainsKey(text.Value) || package.Items.Any(i => i.Id == text.Value))
+                    changed |= required.Add(text.Value);
         }
         package.Items.RemoveAll(i => !required.Contains(i.Id));
         package.ImportedItems = package.ImportedItems.Where(i => required.Contains(i.Key)).ToDictionary(i => i.Key, i => i.Value);
@@ -87,21 +119,29 @@ public sealed partial class SeasonRepository
             throw new InvalidOperationException("Choose the package extracted from this mission.");
         var link = new CampaignMissionLink
         {
-            Id = legacy?.Id ?? NewId(), MissionId = mission.Id, Revision = package.Revision,
-            ContentHash = MissionLibrary.PackageHash(package), Package = package,
+            Id = legacy?.Id ?? NewId(),
+            MissionId = mission.Id,
+            Revision = package.Revision,
+            ContentHash = MissionLibrary.PackageHash(package),
+            Package = package,
             Availability = legacy == null ? MissionAvailability.FromStart : MissionAvailability.QuestAccepted,
-            UnlockTargetId = legacy?.QuestId ?? "", QuestId = legacy?.QuestId ?? "",
-            CompletionConditionId = legacy?.CompletionConditionId ?? "", LegacyMissionId = legacy?.Id ?? "",
+            UnlockTargetId = legacy?.QuestId ?? "",
+            QuestId = legacy?.QuestId ?? "",
+            CompletionConditionId = legacy?.CompletionConditionId ?? "",
+            LegacyMissionId = legacy?.Id ?? "",
         };
         var proposed = SeasonCompiler.Copy(campaign);
         proposed.FormatVersion = Math.Max(proposed.FormatVersion, MissionLibrary.FormatVersion);
-        if (legacy != null) proposed.Missions.RemoveAll(m => m.Id == legacy.Id);
+        if (legacy != null)
+            proposed.Missions.RemoveAll(m => m.Id == legacy.Id);
         proposed.MissionLinks.Add(link);
         var links = new SeasonValidationResult();
         MissionLibrary.ValidateLinks(proposed, links);
-        if (!links.CanPublish) throw new InvalidOperationException(string.Join("; ", links.Issues.Select(i => i.Message)));
+        if (!links.CanPublish)
+            throw new InvalidOperationException(string.Join("; ", links.Issues.Select(i => i.Message)));
         campaign.FormatVersion = proposed.FormatVersion;
-        if (legacy != null) campaign.Missions.RemoveAll(m => m.Id == legacy.Id);
+        if (legacy != null)
+            campaign.Missions.RemoveAll(m => m.Id == legacy.Id);
         campaign.MissionLinks.Add(link);
         return link;
     }
@@ -109,7 +149,11 @@ public sealed partial class SeasonRepository
     public void UpdateMissionLink(CampaignMissionLink link, string key)
     {
         var package = Pack(key);
-        if (package.MissionPackage == null || package.Missions.SingleOrDefault()?.Id != link.MissionId || !SeasonValidator.Validate(package).CanPublish)
+        if (
+            package.MissionPackage == null
+            || package.Missions.SingleOrDefault()?.Id != link.MissionId
+            || !SeasonValidator.Validate(package).CanPublish
+        )
             throw new InvalidOperationException("Choose a valid revision of the linked mission.");
         link.Package = package;
         link.Revision = package.Revision;

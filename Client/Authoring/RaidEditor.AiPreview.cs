@@ -327,7 +327,8 @@ public sealed partial class RaidEditor
         }
         if (
             _aiDefeatPending
-            || !MissionContent || !EditorMode.Ready
+            || !MissionContent
+            || !EditorMode.Ready
             || _session?.Conflict != null
             || Time.realtimeSinceStartup - _lastContact > 20
             || Input.GetKeyDown(KeyCode.Escape)

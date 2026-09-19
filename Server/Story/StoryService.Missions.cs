@@ -7,7 +7,12 @@ namespace WTT.Campaigns.Server.Story;
 
 public sealed partial class StoryService
 {
-    internal bool MissionLinkEligible(string id, SPTarkov.Server.Core.Models.Eft.Profile.SptProfile profile, string seasonId, CampaignMissionLink link)
+    internal bool MissionLinkEligible(
+        string id,
+        SPTarkov.Server.Core.Models.Eft.Profile.SptProfile profile,
+        string seasonId,
+        CampaignMissionLink link
+    )
     {
         var definition = repository.Runtime(seasonId).Definition.Story;
         var progress = StoryStore.Read(profile.CharacterData!.PmcData!, seasonId);
@@ -15,10 +20,16 @@ public sealed partial class StoryService
         return MissionLibrary.Eligible(link, definition, progress, facts);
     }
 
-    internal void RefreshMissionLinksUnderLease(string id, SPTarkov.Server.Core.Models.Eft.Profile.SptProfile profile, string seasonId, StoryFacts? currentFacts = null)
+    internal void RefreshMissionLinksUnderLease(
+        string id,
+        SPTarkov.Server.Core.Models.Eft.Profile.SptProfile profile,
+        string seasonId,
+        StoryFacts? currentFacts = null
+    )
     {
         var definition = repository.Runtime(seasonId).Definition;
-        if (definition.MissionLinks.Count == 0) return;
+        if (definition.MissionLinks.Count == 0)
+            return;
         var pmc = profile.CharacterData!.PmcData!;
         var missions = WTT.Campaigns.Server.Missions.MissionStore.Read(pmc, seasonId);
         var changed = false;
@@ -26,9 +37,14 @@ public sealed partial class StoryService
         var facts = currentFacts ?? (definition.Story == null ? new StoryFacts() : Facts(id, profile, progress, definition.Story));
         foreach (var link in definition.MissionLinks)
         {
-            if (MissionLibrary.Eligible(link, definition.Story, progress, facts)) changed |= missions.UnlockedMissionIds.Add(link.Id);
+            if (MissionLibrary.Eligible(link, definition.Story, progress, facts))
+                changed |= missions.UnlockedMissionIds.Add(link.Id);
             if (missions.CompletedMissionIds.Contains(link.Id) && link.QuestId.Length > 0)
-                ApplyMissionCompletionUnderLease(pmc, seasonId, new MissionDefinition { QuestId = link.QuestId, CompletionConditionId = link.CompletionConditionId });
+                ApplyMissionCompletionUnderLease(
+                    pmc,
+                    seasonId,
+                    new MissionDefinition { QuestId = link.QuestId, CompletionConditionId = link.CompletionConditionId }
+                );
         }
         if (changed)
         {

@@ -259,7 +259,16 @@ public sealed partial class RaidEditor
                 PrepareLayoutCheckpointTest();
             }
         }
-        if (_editorMissionPending == null || _session == null || !_open || Layout == null || _walking || !MissionContent || !EditorMode.Ready || AiPreviewBusy)
+        if (
+            _editorMissionPending == null
+            || _session == null
+            || !_open
+            || Layout == null
+            || _walking
+            || !MissionContent
+            || !EditorMode.Ready
+            || AiPreviewBusy
+        )
             return;
         if (_session.Busy || _session.Dirty || _session.Conflict != null)
             return;

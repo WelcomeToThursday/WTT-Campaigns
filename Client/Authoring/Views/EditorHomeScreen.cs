@@ -125,6 +125,7 @@ public sealed class EditorHomeScreen : EftScreen<EditorHomeScreen.Controller, Ed
     internal void Visible(string name, bool value) => _stage.Q(name).style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
 
     internal string LevelName => _stage.Q<TextField>("EditorLevelName").value;
+
     internal void ResetLevelName() => _stage.Q<TextField>("EditorLevelName").SetValueWithoutNotify("New level");
 
     internal void Text(string name, string value)

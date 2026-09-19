@@ -35,7 +35,13 @@ public sealed class MapLayerOptions(SeasonService seasons, SeasonRepository repo
             if (saved.Revision != request.Revision)
                 throw new InvalidOperationException("Map layer selections changed. Reopen the screen to refresh them.");
             var match = published
-                .SelectMany(p => p.MapLayouts.Where(l => WTT.Campaigns.Shared.Authoring.EditorContentRules.Mode(p, l.Id) == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level).Select(l => (Campaign: p.Id, Layout: l)))
+                .SelectMany(p =>
+                    p.MapLayouts.Where(l =>
+                            WTT.Campaigns.Shared.Authoring.EditorContentRules.Mode(p, l.Id)
+                            == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level
+                        )
+                        .Select(l => (Campaign: p.Id, Layout: l))
+                )
                 .SingleOrDefault(p => MapLayerRules.Key(p.Campaign, p.Layout.Id) == request.Key);
             if (match.Layout == null)
                 throw new InvalidOperationException("This published layer is no longer available.");
@@ -57,14 +63,18 @@ public sealed class MapLayerOptions(SeasonService seasons, SeasonRepository repo
             Revision = saved.Revision,
             Layers = published
                 .SelectMany(p =>
-                    p.MapLayouts.Where(l => WTT.Campaigns.Shared.Authoring.EditorContentRules.Mode(p, l.Id) == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level).Select(l => new MapLayerOption
-                    {
-                        Key = MapLayerRules.Key(p.Id, l.Id),
-                        Name = l.Name,
-                        Campaign = p.Name,
-                        Location = l.Location,
-                        Enabled = MapLayerRules.Enabled(p.Id, l, saved.Overrides),
-                    })
+                    p.MapLayouts.Where(l =>
+                            WTT.Campaigns.Shared.Authoring.EditorContentRules.Mode(p, l.Id)
+                            == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level
+                        )
+                        .Select(l => new MapLayerOption
+                        {
+                            Key = MapLayerRules.Key(p.Id, l.Id),
+                            Name = l.Name,
+                            Campaign = p.Name,
+                            Location = l.Location,
+                            Enabled = MapLayerRules.Enabled(p.Id, l, saved.Overrides),
+                        })
                 )
                 .OrderBy(l => l.Location, StringComparer.Ordinal)
                 .ThenBy(l => l.Campaign)

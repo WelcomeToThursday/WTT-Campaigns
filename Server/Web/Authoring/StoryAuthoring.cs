@@ -208,7 +208,8 @@ public static class StoryAuthoring
                 "Value" or "Scope" => a.Type == StoryActionType.SetVariable,
                 "StandingChange" => a.Type == StoryActionType.TraderStanding,
                 "Target" => a.Type
-                    is StoryActionType.UnlockMission or StoryActionType.SetVariable
+                    is StoryActionType.UnlockMission
+                        or StoryActionType.SetVariable
                         or StoryActionType.TraderStanding
                         or StoryActionType.DiaryNote
                         or StoryActionType.SwitchDialog

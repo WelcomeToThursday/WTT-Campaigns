@@ -34,8 +34,21 @@ internal sealed class MapLayerRuntime : MonoBehaviour
             Lifetime.Cancel();
             try
             {
-                try { Extracts.Dispose(); }
-                finally { try { Zones.Dispose(); } finally { Loot.Dispose(); } }
+                try
+                {
+                    Extracts.Dispose();
+                }
+                finally
+                {
+                    try
+                    {
+                        Zones.Dispose();
+                    }
+                    finally
+                    {
+                        Loot.Dispose();
+                    }
+                }
             }
             finally
             {

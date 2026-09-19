@@ -384,9 +384,11 @@ public partial class Creator
 
             _published = Repository.Publish(_draft!, _validation);
             _message =
-                LevelEditor ? "Level content published. Restart SPT to load the revision; enable the desired level in Map Layers for ordinary raids." : S.MissionPackage != null
+                LevelEditor
+                    ? "Level content published. Restart SPT to load the revision; enable the desired level in Map Layers for ordinary raids."
+                : S.MissionPackage != null
                     ? "Mission published. Export it below to share, or link its revision from Campaign Creator. Restart SPT to load it for play."
-                    : "Pack published. Export it to share, or restart SPT and choose the campaign when creating a campaign character.";
+                : "Pack published. Export it to share, or restart SPT and choose the campaign when creating a campaign character.";
         });
     }
 
