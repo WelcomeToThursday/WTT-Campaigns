@@ -15,7 +15,7 @@ if ($client) {
     if ($toolkitCheck.schema -ne 2 -or !$toolkitCheck.validated -or $toolkitCheck.unity -ne '2022.3.43f1' -or (Get-FileHash -LiteralPath (Join-Path $notificationRoot 'wtt_campaigns_editor_toolkit.bundle') -Algorithm SHA256).Hash -ne $toolkitCheck.sha256) {
         throw 'Editor Toolkit bundle must pass matching Unity SDK import and bundle validation before installation.'
     }
-    $toolkitSources = @('CampaignsEditorToolkitBuilder.cs') + @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'unity/EditorToolkit') -File | Where-Object { $_.Extension -in '.uxml', '.uss' } | ForEach-Object { 'EditorToolkit/' + $_.Name })
+    $toolkitSources = @('CampaignsEditorToolkitBuilder.cs') + @(Get-ChildItem -LiteralPath (Join-Path $PSScriptRoot 'unity/EditorToolkit') -File | Where-Object { $_.Extension -in '.uxml', '.uss', '.shader' } | ForEach-Object { 'EditorToolkit/' + $_.Name })
     if ((($toolkitSources | Sort-Object) -join ',') -ne (($toolkitCheck.sources.file | Sort-Object) -join ',')) {
         throw 'Editor Toolkit source inventory changed. Rebuild the Unity assets.'
     }

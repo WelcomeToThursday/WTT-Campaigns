@@ -23,6 +23,7 @@
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
     <Compile Include="..\UI\Controls\EditorToolSession.cs" Link="UI\EditorToolSession.cs" />
     <Compile Include="..\UI\Controls\EditorDockLayout.cs" Link="UI\EditorDockLayout.cs" />
+    <Compile Include="..\UI\Controls\EditorViewportCoordinates.cs" Link="UI\EditorViewportCoordinates.cs" />
     <Compile Include="..\UI\Controls\EditorWindowLayout.cs" Link="UI\EditorWindowLayout.cs" />
     <Compile Include="..\UI\Controls\EditorTreeModel.cs" Link="UI\EditorTreeModel.cs" />
     <Compile Include="..\Client\Authoring\EditorOpenState.cs" Link="Client\EditorOpenState.cs" />

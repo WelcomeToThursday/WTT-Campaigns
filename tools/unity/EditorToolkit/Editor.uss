@@ -305,3 +305,7 @@
 
 .editor-root .editor-home-tab { font-size: 19px; border-bottom-width: 3px; }
 .editor-root .editor-home-tab.editor-active-tab { background-color: var(--editor-selection); color: var(--editor-text-bright); border-bottom-color: var(--editor-accent); }
+
+/* The final native camera frame sits below the editor tools and route overlay. */
+.editor-scene-workspace { background-color: var(--editor-workspace); }
+.editor-game-viewport { position: absolute; background-color: rgb(0, 0, 0); }

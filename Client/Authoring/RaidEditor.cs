@@ -35,6 +35,7 @@ public sealed partial class RaidEditor : MonoBehaviour
     private bool _open,
         _snap = true;
     private Camera? _camera;
+    private EditorViewport? _viewport;
     private Vector3 _savedPosition,
         _flyPosition;
     private Quaternion _savedRotation,
@@ -478,6 +479,10 @@ public sealed partial class RaidEditor : MonoBehaviour
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.None;
         _view.SetVisible(true);
+        _view.Windows.Tick();
+        _viewport = _camera.gameObject.AddComponent<EditorViewport>();
+        _viewport.Attach(_camera, _view.GameViewport, _view.Document.ViewportShader);
+        _viewport.Resize(_view.ViewportPixels);
         Plugin.LogInfo("Editor loading: indexing scene");
         IndexScene();
         Plugin.LogInfo("Editor loading: presenting workspace");
@@ -490,6 +495,7 @@ public sealed partial class RaidEditor : MonoBehaviour
     {
         if (_open && camera == _camera)
         {
+            _viewport?.Apply();
             camera.transform.SetPositionAndRotation(_flyPosition, _flyRotation);
             _environment?.Pose(_flyPosition, _flyRotation);
         }
@@ -505,6 +511,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
         try
         {
+            _viewport?.Resize(_view!.ViewportPixels);
             _looking = CameraLooking;
             Cursor.lockState = _looking ? CursorLockMode.Locked : CursorLockMode.None;
             Cursor.visible = !_looking;
@@ -569,6 +576,12 @@ public sealed partial class RaidEditor : MonoBehaviour
             _open = false;
             _looking = false;
             Camera.onPreCull -= CameraPose;
+            if (_viewport)
+            {
+                _viewport!.enabled = false;
+                Destroy(_viewport);
+            }
+            _viewport = null;
             if (_camera)
             {
                 _camera!.transform.SetPositionAndRotation(_savedPosition, _savedRotation);

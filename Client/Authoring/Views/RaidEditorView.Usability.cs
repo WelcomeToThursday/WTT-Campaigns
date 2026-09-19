@@ -39,10 +39,8 @@ internal sealed partial class RaidEditorView
             _pinned.Add((header, Element(owner)));
         }
         Element("DetailsGroup").Insert(0, Element("IdentityGroup"));
-        Element("Inspector")
-            .RegisterCallback<GeometryChangedEvent>(evt =>
-                Element("Inspector").EnableInClassList("editor-narrow", evt.newRect.width < 320)
-            );
+        Action fitInspector = () => Element("Inspector").EnableInClassList("editor-narrow", Element("Inspector").layout.width < 320);
+        Element("Inspector").RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(fitInspector));
         Section("Preview", false, "ScenePreviewGroup", "ScenePreviewRetryGroup");
         Section("Scene details", false, "SceneRestoreGroup", "SceneInfoGroup");
         Section("Transform", true, "PositionGroup", "RotationGroup", "SizeGroup", "RadiusGroup", "PlacementGroup");
@@ -60,10 +58,9 @@ internal sealed partial class RaidEditorView
             var controls = _toolControls[tool];
             var filters = controls["Library"].Element.Q<VisualElement>("BrowserFilters");
             filters.Insert(0, controls["Search"].Element);
-            controls["Library"]
-                .Element.RegisterCallback<GeometryChangedEvent>(evt =>
-                    controls["Library"].Element.EnableInClassList("editor-narrow", evt.newRect.width < 380)
-                );
+            Action fitLibrary = () =>
+                controls["Library"].Element.EnableInClassList("editor-narrow", controls["Library"].Element.layout.width < 380);
+            controls["Library"].Element.RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(fitLibrary));
         }
         var scene = _toolControls["Scene"];
         _secondarySceneGroups = new[] { scene["Library"].Element.Q("ScenePropActions"), scene["Library"].Element.Q("SceneWorldActions") };
@@ -71,7 +68,7 @@ internal sealed partial class RaidEditorView
         _sceneMore.text = "More actions…";
         _sceneMore.tooltip = "Move, copy, hide, barriers and doors";
         scene["CreationTools"].Element.Add(_sceneMore);
-        scene["Library"].Element.RegisterCallback<GeometryChangedEvent>(_ => RefreshSceneOverflow());
+        scene["Library"].Element.RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(RefreshSceneOverflow));
         scene["Library"].Element.schedule.Execute(RefreshSceneOverflow);
         _sceneMore.clicked += () =>
         {

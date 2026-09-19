@@ -5,6 +5,7 @@ using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Spatial;
+using WTT.Campaigns.UI.Controls;
 
 namespace WTT.Campaigns.Client.Authoring.Controllers;
 
@@ -119,11 +120,23 @@ internal sealed partial class EditorCatalogController
         var overUi = EventSystem.current?.IsPointerOverGameObject() == true || _context.View?.PointerOver == true;
         var hitSurface =
             !overUi
-            && Physics.Raycast(_context.Camera!.ScreenPointToRay(Input.mousePosition), out _, 1000, ~0, QueryTriggerInteraction.Ignore);
+            && Physics.Raycast(
+                _context.Camera!.EditorScreenPointToRay(Input.mousePosition),
+                out _,
+                1000,
+                ~0,
+                QueryTriggerInteraction.Ignore
+            );
         _placement!.SetActive(hitSurface);
         if (!hitSurface || Input.GetMouseButton(1))
             return true;
-        Physics.Raycast(_context.Camera!.ScreenPointToRay(Input.mousePosition), out var hit, 1000, ~0, QueryTriggerInteraction.Ignore);
+        Physics.Raycast(
+            _context.Camera!.EditorScreenPointToRay(Input.mousePosition),
+            out var hit,
+            1000,
+            ~0,
+            QueryTriggerInteraction.Ignore
+        );
         var position = hit.point;
         if (_context.Snap && !Input.GetKey(KeyCode.LeftAlt))
             position = new Vector3(Mathf.Round(position.x * 20) / 20, Mathf.Round(position.y * 20) / 20, Mathf.Round(position.z * 20) / 20);

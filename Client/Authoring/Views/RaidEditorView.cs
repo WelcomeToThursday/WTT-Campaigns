@@ -18,8 +18,41 @@ internal sealed partial class RaidEditorView : IDisposable
     private string _context = "";
     private VisualElement? _choicePopup;
     private RouteOverlay _routeOverlay = null!;
+    private readonly HashSet<Action> _pendingLayout = new();
+
+    // GeometryChanged runs inside UI Toolkit's layout pass. Coalesce any resulting
+    // style changes and apply them during our next tick, outside that pass.
+    internal void AfterLayout(Action action) => _pendingLayout.Add(action);
+
+    private void ApplyPendingLayout()
+    {
+        if (_pendingLayout.Count == 0)
+            return;
+        var actions = _pendingLayout.AsValueEnumerable().ToArray();
+        _pendingLayout.Clear();
+        foreach (var action in actions)
+            action();
+    }
+
     internal bool Valid => !_disposed && Root;
-    internal bool PointerOver => Document.PointerOver;
+    internal readonly Image GameViewport = EditorToolkitDocument.CloneTemplate<Image>("GameViewport");
+    internal Rect ViewportPixels { get; private set; }
+    internal bool PointerOver => !ViewportPixels.Contains(UnityEngine.Input.mousePosition) || Document.PointerOver;
+
+    internal void SetViewport(EditorDockRect dock)
+    {
+        var pixels = EditorViewportCoordinates.Pixels(dock, Document.Scale, Screen.width, Screen.height);
+        ViewportPixels = new Rect(pixels.X, pixels.Y, pixels.Width, pixels.Height);
+        // Use the same rounded pixel bounds for presentation, projection, and input.
+        foreach (var element in new VisualElement[] { GameViewport, _routeOverlay })
+        {
+            element.style.left = pixels.X / Document.Scale;
+            element.style.top = (Screen.height - pixels.Y - pixels.Height) / Document.Scale;
+            element.style.width = pixels.Width / Document.Scale;
+            element.style.height = pixels.Height / Document.Scale;
+        }
+    }
+
     internal bool Typing =>
         Document.Typing
         || _dropdownDismissFrame == Time.frameCount
@@ -68,6 +101,7 @@ internal sealed partial class RaidEditorView : IDisposable
             BuildUsability();
             Document.Tick = () =>
             {
+                ApplyPendingLayout();
                 Windows.Tick();
                 PollCatalogCapacity();
                 RefreshUsability();

@@ -97,7 +97,10 @@ internal sealed partial class RaidEditorView
     private void Build()
     {
         var workspace = Document.Clone<VisualElement>("Workspace");
+        workspace.AddToClassList("editor-scene-workspace");
         Document.Content.Add(workspace);
+        GameViewport.scaleMode = ScaleMode.StretchToFill;
+        workspace.Add(GameViewport);
         Register("Workspace", new EditorControl(workspace));
         _routeOverlay = new RouteOverlay();
         workspace.Add(_routeOverlay);

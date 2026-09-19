@@ -173,7 +173,7 @@ public sealed partial class RaidEditor
         if (!_camera)
             return;
         var target = ScenePicking.Pick(
-            _camera!.ScreenPointToRay(Input.mousePosition),
+            _camera!.EditorScreenPointToRay(Input.mousePosition),
             PickableRenderers(),
             t => _mapScene?.RecordAt(t) != null
         );

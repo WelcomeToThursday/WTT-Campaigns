@@ -77,13 +77,14 @@ internal sealed partial class EditorToolkitWindows
             BindDrag(id, view.WindowElement(id, "Resize"), true);
             view.WindowElement(id).RegisterCallback<PointerDownEvent>(_ => Focus(id), TrickleDown.TrickleDown);
             var window = view.WindowElement(id);
-            window.RegisterCallback<GeometryChangedEvent>(evt =>
+            Action fitFields = () =>
             {
-                var narrow = evt.newRect.width < 340;
+                var narrow = window.layout.width < 340;
                 // Rows own their wrapping policy. Resizing must preserve compact pairs such as paging.
                 foreach (var field in window.Query<TextField>().ToList())
                     EditorControlLayout.Field(field, narrow);
-            });
+            };
+            window.RegisterCallback<GeometryChangedEvent>(_ => _view.AfterLayout(fitFields));
         }
         Bind("LibraryCollapse", () => ShowPanel("Library", false));
         Bind("LootClose", () => ShowPanel("LootConfiguration", false));
@@ -127,7 +128,7 @@ internal sealed partial class EditorToolkitWindows
         _view.Element("Workspace").Add(_dropPreview);
         _tooltip.AddToClassList("editor-tooltip");
         _view.Document.Content.Add(_tooltip);
-        _tooltip.RegisterCallback<GeometryChangedEvent>(_ => PlaceTooltip());
+        _tooltip.RegisterCallback<GeometryChangedEvent>(_ => _view.AfterLayout(PlaceTooltip));
         HideTooltip();
         SetupMenus();
         ResetLayout();
@@ -329,6 +330,8 @@ internal sealed partial class EditorToolkitWindows
         {
             if (!_dockRects.TryGetValue(node.Id, out var r))
                 continue;
+            if (node.Kind == "viewport")
+                _view.SetViewport(r);
             if (_bars.TryGetValue(node.Id, out var bar))
                 Place(bar, new(r.X, r.Y, r.Width, EditorDockLayout.TabHeight));
             if (

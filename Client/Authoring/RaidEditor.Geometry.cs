@@ -4,6 +4,7 @@ using UnityEngine.Rendering;
 using WTT.Campaigns.Client.Authoring.Scenes;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
+using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
 namespace WTT.Campaigns.Client.Authoring;
@@ -67,7 +68,7 @@ public sealed partial class RaidEditor
             if (_tool == "Rotate" && _drag.RotationPlane)
             {
                 var plane = new Plane(Axis(_drag.Axis), _drag.Anchor);
-                var ray = _camera!.ScreenPointToRay(mouse);
+                var ray = _camera!.EditorScreenPointToRay(mouse);
                 if (plane.Raycast(ray, out var distance))
                     amount = Vector3.SignedAngle(_drag.RotationStart, ray.GetPoint(distance) - _drag.Anchor, Axis(_drag.Axis));
             }
@@ -161,7 +162,15 @@ public sealed partial class RaidEditor
                 _picking = Catalog.RebindId.Length > 0;
                 return;
             }
-            if (Physics.Raycast(_camera!.ScreenPointToRay(Input.mousePosition), out var hit, 1000, ~0, QueryTriggerInteraction.Collide))
+            if (
+                Physics.Raycast(
+                    _camera!.EditorScreenPointToRay(Input.mousePosition),
+                    out var hit,
+                    1000,
+                    ~0,
+                    QueryTriggerInteraction.Collide
+                )
+            )
             {
                 _picked = hit.transform;
                 _picking = false;
@@ -176,9 +185,9 @@ public sealed partial class RaidEditor
             if (axis >= 0)
             {
                 var world = HandleOrigin(selected);
-                var origin = _camera!.WorldToScreenPoint(world);
+                var origin = _camera!.EditorWorldToScreenPoint(world);
                 var length = HandleLength(selected);
-                var end = _camera.WorldToScreenPoint(world + HandleAxis(selected, axis) * length);
+                var end = _camera!.EditorWorldToScreenPoint(world + HandleAxis(selected, axis) * length);
                 var direction = (Vector2)(end - origin);
                 if (_tool == "Rotate")
                     direction = HoverTangent(selected, axis);
@@ -198,7 +207,7 @@ public sealed partial class RaidEditor
                 };
                 if (_tool == "Rotate")
                 {
-                    var ray = _camera.ScreenPointToRay(mouse);
+                    var ray = _camera.EditorScreenPointToRay(mouse);
                     var plane = new Plane(Axis(axis), world);
                     _drag.RotationPlane = plane.Raycast(ray, out var distance);
                     if (_drag.RotationPlane)
@@ -212,7 +221,7 @@ public sealed partial class RaidEditor
             return;
         var closest = FilterZonesForLayout(_layoutId)
             .AsValueEnumerable()
-            .Select(z => (Zone: z, Screen: _camera!.WorldToScreenPoint(ZoneRuntime.Vector(z.Position))))
+            .Select(z => (Zone: z, Screen: _camera!.EditorWorldToScreenPoint(ZoneRuntime.Vector(z.Position))))
             .Where(z => z.Screen.z > 0)
             .OrderBy(z => Vector2.Distance(mouse, z.Screen))
             .FirstOrDefault();
@@ -379,7 +388,7 @@ public sealed partial class RaidEditor
             Selected is { } selected
             && CanUseHandle(selected)
             && _camera
-            && _camera!.WorldToScreenPoint(HandleOrigin(selected)).z > _camera.nearClipPlane
+            && _camera!.EditorWorldToScreenPoint(HandleOrigin(selected)).z > _camera!.nearClipPlane
         )
         {
             var hover = _drag?.Axis ?? HoverHandle(selected);

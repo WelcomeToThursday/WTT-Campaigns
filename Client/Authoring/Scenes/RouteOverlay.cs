@@ -5,6 +5,7 @@ using UnityEngine.UIElements;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
+using WTT.Campaigns.UI.Controls;
 
 namespace WTT.Campaigns.Client.Authoring.Scenes;
 
@@ -33,7 +34,8 @@ internal sealed class RouteOverlay : VisualElement
     {
         pickingMode = PickingMode.Ignore;
         style.position = Position.Absolute;
-        style.left = style.right = style.top = style.bottom = 0;
+        style.left = style.top = 0;
+        style.overflow = Overflow.Hidden;
         generateVisualContent += context => Populate(context, -1);
         _navigationLegend.style.display = DisplayStyle.None;
         Add(_navigationLegend);
@@ -59,9 +61,9 @@ internal sealed class RouteOverlay : VisualElement
             var bz = Vector3.Dot(b - camera.transform.position, camera.transform.forward);
             if (!RouteVisuals.ClipNear(az, bz, near, out var from, out var to))
                 continue;
-            var sa = camera.WorldToScreenPoint(Vector3.Lerp(a, b, from));
-            var sb = camera.WorldToScreenPoint(Vector3.Lerp(a, b, to));
-            if (!RouteVisuals.ClipScreen(ref sa.x, ref sa.y, ref sb.x, ref sb.y, Screen.width, Screen.height))
+            var sa = camera.EditorWorldToScreenPoint(Vector3.Lerp(a, b, from));
+            var sb = camera.EditorWorldToScreenPoint(Vector3.Lerp(a, b, to));
+            if (!ClipViewport(camera, ref sa, ref sb))
                 continue;
             if (Local(sa, out var la) && Local(sb, out var lb))
                 _segments.Add((la, lb, Color.white));
@@ -179,8 +181,8 @@ internal sealed class RouteOverlay : VisualElement
         Color? tint = null
     )
     {
-        var screen = camera.WorldToScreenPoint(ZoneRuntime.Vector(point.Position));
-        if (!(screen.z >= near && screen.x >= 0 && screen.x <= Screen.width && screen.y >= 0 && screen.y <= Screen.height))
+        var screen = camera.EditorWorldToScreenPoint(ZoneRuntime.Vector(point.Position));
+        if (!(screen.z >= near && SceneViewport.ScreenRect(camera).Contains(screen)))
             return;
         if (!Local(screen, out var local))
             return;
@@ -207,9 +209,9 @@ internal sealed class RouteOverlay : VisualElement
         var bz = Vector3.Dot(b - camera.transform.position, camera.transform.forward);
         if (!RouteVisuals.ClipNear(az, bz, near, out var start, out var end))
             return;
-        var sa = camera.WorldToScreenPoint(Vector3.Lerp(a, b, start));
-        var sb = camera.WorldToScreenPoint(Vector3.Lerp(a, b, end));
-        if (!RouteVisuals.ClipScreen(ref sa.x, ref sa.y, ref sb.x, ref sb.y, Screen.width, Screen.height))
+        var sa = camera.EditorWorldToScreenPoint(Vector3.Lerp(a, b, start));
+        var sb = camera.EditorWorldToScreenPoint(Vector3.Lerp(a, b, end));
+        if (!ClipViewport(camera, ref sa, ref sb))
             return;
         if (Local(sa, out var la) && Local(sb, out var lb))
             _segments.Add((la, lb, color));
@@ -246,9 +248,27 @@ internal sealed class RouteOverlay : VisualElement
         }
     }
 
+    private static bool ClipViewport(Camera camera, ref Vector3 a, ref Vector3 b)
+    {
+        var rect = SceneViewport.ScreenRect(camera);
+        a.x -= rect.x;
+        a.y -= rect.y;
+        b.x -= rect.x;
+        b.y -= rect.y;
+        var visible = RouteVisuals.ClipScreen(ref a.x, ref a.y, ref b.x, ref b.y, rect.width, rect.height);
+        a.x += rect.x;
+        a.y += rect.y;
+        b.x += rect.x;
+        b.y += rect.y;
+        return visible;
+    }
+
     private bool Local(Vector2 screen, out Vector2 local)
     {
-        local = panel == null ? Vector2.zero : RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, Screen.height - screen.y));
+        local =
+            panel == null
+                ? Vector2.zero
+                : this.WorldToLocal(RuntimePanelUtils.ScreenToPanel(panel, new Vector2(screen.x, Screen.height - screen.y)));
         return panel != null;
     }
 
