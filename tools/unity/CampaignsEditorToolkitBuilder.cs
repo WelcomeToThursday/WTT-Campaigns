@@ -167,6 +167,8 @@ public static class CampaignsEditorToolkitBuilder
                 throw new InvalidOperationException("Wrong editor control template type: " + name);
             if (name == "GameViewport" && (!(first[0] is Image) || first[0].pickingMode != PickingMode.Ignore))
                 throw new InvalidOperationException("Viewport must be an image that leaves input to the editor.");
+            if (name == "RouteLegend" && (!(first[0] is ScrollView) || first.Q<Label>("RouteLegendText") == null))
+                throw new InvalidOperationException("Route diagnostics require a scrollable legend with a text label.");
             if (name == "Library")
             {
                 var search = first.Q<TextField>("Search");
@@ -206,6 +208,9 @@ public static class CampaignsEditorToolkitBuilder
             }
             if (name == "Inspector")
             {
+                foreach (var id in new[] { "AiWaypointInsert", "AiWaypointEarlier", "AiWaypointLater", "AiRouteReverse" })
+                    if (first.Q<Button>(id) == null || second.Q<Button>(id) == null)
+                        throw new InvalidOperationException("Missing patrol editing control: " + id);
                 foreach (
                     var id in new[]
                     {

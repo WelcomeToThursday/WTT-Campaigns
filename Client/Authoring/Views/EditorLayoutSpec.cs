@@ -244,6 +244,10 @@ internal static class EditorLayoutSpec
                     G(
                         "AiPatrolSection",
                         T("AiPatrolHeading", "PATROL MOVEMENT"),
+                        B("AiWaypointInsert", "Insert after selected"),
+                        B("AiRouteReverse", "Reverse route"),
+                        B("AiWaypointEarlier", "Move earlier"),
+                        B("AiWaypointLater", "Move later"),
                         C("AiPace", "Pace"),
                         C("AiCompletion", "Route end"),
                         F("AiWaypointWaitSeconds", "Wait (seconds)")

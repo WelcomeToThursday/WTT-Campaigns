@@ -607,7 +607,7 @@ public sealed partial class RaidEditor
     {
         if (Ai.AiWorkspace)
         {
-            if (!Ai.TryAiPlacement(out var aiPosition, out var aiScene))
+            if (!Ai.TryAiPlacement(out var aiPosition, out var aiScene, _selected.StartsWith("waypoint:", StringComparison.Ordinal)))
                 return;
             var selected = Ai.AiSelectedPoint();
             if (selected == null)

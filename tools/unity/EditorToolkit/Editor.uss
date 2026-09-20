@@ -226,7 +226,8 @@
 .editor-test-actions { position: absolute; right: 45px; top: 225px; width: 280px; }
 .editor-test-status { position: absolute; left: 45px; bottom: 70px; width: 650px; white-space: normal; }
 .editor-route-caption { position: absolute; font-size: 14px; -unity-font-style: bold; background-color: rgba(6, 8, 9, .95); padding-left: 4px; padding-right: 4px; max-width: 240px; overflow: hidden; }
-.editor-route-legend { position: absolute; left: 16px; bottom: 48px; max-width: 620px; white-space: normal; background-color: rgba(6, 8, 9, .9); color: white; padding: 6px 10px; }
+.editor-route-legend-panel { position: absolute; left: 16px; bottom: 48px; width: 460px; max-width: 80%; max-height: 35%; background-color: rgba(6, 8, 9, .9); }
+.editor-route-legend { white-space: normal; color: white; padding: 6px 10px; }
 .editor-root #CategoryRail .unity-button { border-left-width: 1px; border-left-color: var(--editor-border); }
 .editor-root #CategoryRail .editor-open-tool { border-left-width: 3px; border-left-color: rgb(166, 153, 102); }
 

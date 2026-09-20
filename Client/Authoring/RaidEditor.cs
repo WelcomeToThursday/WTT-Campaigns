@@ -62,7 +62,9 @@ public sealed partial class RaidEditor : MonoBehaviour
         get
         {
             if (_mode == "AI")
-                return Ai.AiSelectedPoint();
+                // Gizmos preview against the live draft, then restore Before and commit
+                // once on release. Discrete actions still use AiSelectedPoint's copy.
+                return Ai.AiSelected(out _).Point;
             if (MapWorkspace || Catalog.SceneWorkspace)
                 return Maps.MapPoint ?? (Catalog.SceneWorkspace && Catalog.SceneTab != "Catalog" ? _sceneSelectionPose : null);
             return _session

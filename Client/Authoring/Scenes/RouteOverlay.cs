@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UIElements;
 using WTT.Campaigns.Client.Authoring.Views;
+using WTT.Campaigns.Client.Encounters;
 using WTT.Campaigns.Client.Spatial;
 using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;
@@ -14,7 +15,7 @@ internal sealed class RouteOverlay : VisualElement
 {
     private readonly List<(SpatialCapture Point, RouteRole Role, int Number)> _points = new();
     private readonly List<(SpatialCapture Point, RouteRole Role, int Number, string Caption, string Selection)> _aiPoints = new();
-    private readonly List<(SpatialCapture From, SpatialCapture To, Color Color)> _aiSegments = new();
+    private readonly List<(SpatialCapture From, SpatialCapture To, Color Color, string Route)> _aiSegments = new();
     private readonly List<(Vector2 A, Vector2 B, Color Color)> _segments = new();
     private readonly List<(Vector2 Position, RouteRole Role, bool Selected, Color Color)> _markers = new();
     private readonly List<Label> _labels = new();
@@ -27,18 +28,30 @@ internal sealed class RouteOverlay : VisualElement
     private MapLayout? _aiDescriptorLayout;
     private long _aiDescriptorRevision = long.MinValue;
     private readonly NavigationInspection _navigation = new();
+    private readonly PatrolRouteInspection _patrol = new();
+    private readonly EncounterNavigation _pathNavigation;
+    private readonly Func<SpatialVector, SpatialVector, EncounterPathResult> _queryPath;
+    private MapLayout? _pathLayout;
+    private MapLayout? _selectionLayout;
+    private string _pathSelection = "";
+    private long _pathRevision = long.MinValue;
+    private MapPatrolRoute? _selectedPatrol;
     internal bool InspectNavigation;
-    private readonly Label _navigationLegend = EditorToolkitDocument.CloneTemplate<Label>("RouteLegend");
+    private readonly ScrollView _navigationPanel = EditorToolkitDocument.CloneTemplate<ScrollView>("RouteLegend");
+    private readonly Label _navigationLegend;
 
     internal RouteOverlay()
     {
+        _pathNavigation = new EncounterNavigation(() => _pathLayout);
+        _queryPath = _pathNavigation.EvaluatePath;
         pickingMode = PickingMode.Ignore;
         style.position = Position.Absolute;
         style.left = style.top = 0;
         style.overflow = Overflow.Hidden;
         generateVisualContent += context => Populate(context, -1);
-        _navigationLegend.style.display = DisplayStyle.None;
-        Add(_navigationLegend);
+        _navigationLegend = _navigationPanel.Q<Label>("RouteLegendText");
+        _navigationPanel.style.display = DisplayStyle.None;
+        Add(_navigationPanel);
     }
 
     internal static Color RoleColor(RouteRole role)
@@ -76,9 +89,26 @@ internal sealed class RouteOverlay : VisualElement
         // checkpoints. Cache authored descriptors when the layout changes;
         // only their camera projection and clipping are performed per frame.
         RefreshAiDescriptors(layout, layoutRevision);
+        _pathLayout = layout;
+        if (!ReferenceEquals(layout, _selectionLayout) || _pathSelection != selected || _pathRevision != layoutRevision)
+        {
+            _selectionLayout = layout;
+            _pathSelection = selected;
+            _pathRevision = layoutRevision;
+            _selectedPatrol = null;
+            if (selected.StartsWith("route:", StringComparison.Ordinal) || selected.StartsWith("waypoint:", StringComparison.Ordinal))
+            {
+                var parts = selected.Split(':');
+                _selectedPatrol = layout.PatrolRoutes.Find(r => r.Id == parts[1]);
+            }
+        }
+        var selectedRoute = ai ? _selectedPatrol : null;
+        _patrol.Refresh(selectedRoute, selected, layoutRevision, SceneNavigation.Revision,
+            Time.frameCount, Time.realtimeSinceStartup, _queryPath, Time.frameCount >= SceneNavigation.ReadyFrame);
         if (ai)
             foreach (var segment in _aiSegments)
-                AddSegment(segment.From, segment.To, camera, near, segment.Color);
+                if (segment.Route != selectedRoute?.Id)
+                    AddSegment(segment.From, segment.To, camera, near, segment.Color);
 
         var labelIndex = 0;
         foreach (var point in _points)
@@ -94,8 +124,12 @@ internal sealed class RouteOverlay : VisualElement
         if (ai)
             foreach (var point in _aiPoints)
                 AddMarker(point.Point, point.Role, point.Selection == selected, point.Caption, camera, near, ref labelIndex);
-        _navigationLegend.style.display = InspectNavigation && ai ? DisplayStyle.Flex : DisplayStyle.None;
-        if (InspectNavigation && ai)
+        if (selectedRoute != null)
+            DrawPatrol(selectedRoute, camera, near, ref labelIndex);
+        _navigationPanel.style.display = ai && (InspectNavigation || selectedRoute != null) ? DisplayStyle.Flex : DisplayStyle.None;
+        if (selectedRoute != null)
+            _navigationLegend.text = _patrol.Summary(InspectNavigation);
+        else if (InspectNavigation && ai)
         {
             _navigation.Refresh(layout, selected);
             _navigationLegend.text = _navigation.Summary;
@@ -148,7 +182,7 @@ internal sealed class RouteOverlay : VisualElement
                     continue;
                 _aiPoints.Add((waypoint, RouteRole.Patrol, i + 1, caption + " · " + (i + 1), "waypoint:" + route.Id + ":" + waypoint.Id));
                 if (i > 0 && route.Waypoints[i - 1] != null)
-                    _aiSegments.Add((route.Waypoints[i - 1], waypoint, RoleColor(RouteRole.Patrol)));
+                    _aiSegments.Add((route.Waypoints[i - 1], waypoint, RoleColor(RouteRole.Patrol), route.Id));
             }
             if (
                 route.Completion == MapPatrolRoute.Loop
@@ -156,7 +190,7 @@ internal sealed class RouteOverlay : VisualElement
                 && route.Waypoints[0] != null
                 && route.Waypoints[^1] != null
             )
-                _aiSegments.Add((route.Waypoints[^1], route.Waypoints[0], RoleColor(RouteRole.Patrol)));
+                _aiSegments.Add((route.Waypoints[^1], route.Waypoints[0], RoleColor(RouteRole.Patrol), route.Id));
         }
         foreach (var spawn in (IEnumerable<SpatialCapture>?)layout.SpawnPoints ?? Array.Empty<SpatialCapture>())
             if (spawn != null)
@@ -198,6 +232,73 @@ internal sealed class RouteOverlay : VisualElement
         label.style.left = Mathf.Clamp(local.x + 17, 4, Mathf.Max(4, contentRect.width - 144));
         label.style.top = Mathf.Clamp(local.y - 12, 4, Mathf.Max(4, contentRect.height - 24));
         label.style.display = DisplayStyle.Flex;
+    }
+
+    private void DrawPatrol(MapPatrolRoute route, Camera camera, float near, ref int labelIndex)
+    {
+        foreach (var leg in _patrol.Segments)
+        {
+            var result = leg.Result;
+            var good = result.Status == EncounterPathStatus.Complete;
+            var color = good ? new Color(.35f, .85f, .45f) : result.Status == EncounterPathStatus.Pending
+                ? new Color(1f, .75f, .25f) : new Color(1f, .35f, .3f);
+            Vector2? captionAt = null;
+            var longest = 0f;
+            if (good)
+            {
+                for (var i = 1; i < result.Corners.Length; i++)
+                {
+                    var count = _segments.Count;
+                    AddSegment(EncounterNavigation.ToVector3(result.Corners[i - 1]), EncounterNavigation.ToVector3(result.Corners[i]), camera, near, color);
+                    if (_segments.Count == count) continue;
+                    var segment = _segments[count];
+                    var delta = segment.B - segment.A;
+                    if (delta.sqrMagnitude < 1) continue;
+                    var direction = delta.normalized;
+                    var normal = new Vector2(-direction.y, direction.x);
+                    var offset = route.Completion == MapPatrolRoute.PingPong ? normal * 3 : Vector2.zero;
+                    segment = (segment.A + offset, segment.B + offset, color);
+                    _segments[count] = segment;
+                    var middle = (segment.A + segment.B) * .5f;
+                    if (delta.sqrMagnitude > longest) { longest = delta.sqrMagnitude; captionAt = middle + normal * 12; }
+                    if (delta.sqrMagnitude >= 24 * 24)
+                    {
+                        var tip = middle + direction * 7;
+                        _segments.Add((tip, middle - direction * 7 + normal * 6, color));
+                        _segments.Add((tip, middle - direction * 7 - normal * 6, color));
+                    }
+                }
+            }
+            else
+            {
+                var from = route.Waypoints[leg.From];
+                var to = route.Waypoints[leg.To];
+                if (from?.Position?.Finite == true && to?.Position?.Finite == true)
+                {
+                    var count = _segments.Count;
+                    AddSegment(from, to, camera, near, color);
+                    if (_segments.Count > count)
+                    {
+                        var segment = _segments[count];
+                        _segments.RemoveAt(count);
+                        captionAt = (segment.A + segment.B) * .5f;
+                        var steps = Mathf.Clamp(Mathf.CeilToInt(Vector2.Distance(segment.A, segment.B) / 16), 1, 200);
+                        for (var i = 0; i < steps; i++)
+                            _segments.Add((Vector2.Lerp(segment.A, segment.B, (float)i / steps),
+                                Vector2.Lerp(segment.A, segment.B, (i + .55f) / steps), color));
+                    }
+                }
+            }
+            if (captionAt.HasValue)
+            {
+                var label = Label(labelIndex++);
+                label.text = leg.Caption;
+                label.style.color = color;
+                label.style.left = Mathf.Clamp(captionAt.Value.x, 4, Mathf.Max(4, contentRect.width - 180));
+                label.style.top = Mathf.Clamp(captionAt.Value.y, 4, Mathf.Max(4, contentRect.height - 24));
+                label.style.display = DisplayStyle.Flex;
+            }
+        }
     }
 
     private void AddSegment(SpatialCapture from, SpatialCapture to, Camera camera, float near, Color color)

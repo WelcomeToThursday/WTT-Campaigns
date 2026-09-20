@@ -982,6 +982,8 @@ internal static class EncounterHookChecks
         );
         var navigation = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNavigation");
         var path = RequireMethod(navigation, "TryPatrolPath");
+        Require(Calls(path, "EvaluatePath"), "Native movement uses the same path evaluation as route inspection");
+        path = navigation.Methods.Single(m => m.Name == "EvaluatePath" && m.Parameters[0].ParameterType.FullName == "UnityEngine.Vector3");
         foreach (var call in new[] { "CalculatePath", "get_status", "get_corners", "ClearSegments" })
             Require(Calls(path, call), "Live patrol paths validate " + call);
         Require(

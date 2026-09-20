@@ -273,6 +273,7 @@ internal sealed partial class RaidEditorView : IDisposable
             _levelRoute.Location = layout.Location;
             _levelRoute.Exit = layout.Exit;
             _levelRoute.SpawnPoints = layout.SpawnPoints;
+            _levelRoute.Barriers = layout.Barriers;
             _levelRoute.PatrolRoutes = layout.PatrolRoutes;
             _levelRoute.Encounters = layout.Encounters;
             layout = _levelRoute;

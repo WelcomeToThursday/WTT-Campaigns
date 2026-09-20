@@ -62,7 +62,7 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         return HasStandingClearance(world, ignoredPlayer);
     }
 
-    private bool HasStandingClearance(Vector3 world, EFT.Player? ignoredPlayer)
+    private bool HasStandingClearance(Vector3 world, EFT.Player? ignoredPlayer, bool ignorePlayers = false)
     {
         try
         {
@@ -78,7 +78,7 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
                 if (!collider)
                     continue;
                 var owner = collider.GetComponentInParent<EFT.Player>();
-                if (ignoredPlayer != null && owner != null && ReferenceEquals(owner, ignoredPlayer))
+                if (owner != null && (ignorePlayers || (ignoredPlayer != null && ReferenceEquals(owner, ignoredPlayer))))
                     continue;
                 return false;
             }
@@ -100,29 +100,50 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         return HasCompletePath(from, to);
     }
 
-    internal bool HasCompletePath(Vector3 from, Vector3 to)
+    internal bool HasCompletePath(Vector3 from, Vector3 to) => EvaluatePath(from, to).Status == EncounterPathStatus.Complete;
+
+    internal EncounterPathResult EvaluatePath(SpatialVector from, SpatialVector to) =>
+        TryToVector(from, out var start) && TryToVector(to, out var end)
+            ? EvaluatePath(start, end) : new(EncounterPathStatus.Failed, reason: "Invalid waypoint coordinates");
+
+    private EncounterPathResult EvaluatePath(Vector3 from, Vector3 to)
     {
         try
         {
+            if (!NavMesh.SamplePosition(from, out var start, PointTolerance, NavMeshAreaMask)
+                || (start.position - from).sqrMagnitude > PointTolerance * PointTolerance)
+                return new(EncounterPathStatus.Failed, reason: "Start waypoint is off NavMesh");
+            if (!NavMesh.SamplePosition(to, out var end, PointTolerance, NavMeshAreaMask)
+                || (end.position - to).sqrMagnitude > PointTolerance * PointTolerance)
+                return new(EncounterPathStatus.Failed, reason: "End waypoint is off NavMesh");
+            // Moving bots occupy their own origin and may share a target. Standing geometry
+            // must be clear, but transient players are handled by native movement avoidance.
+            if (!HasStandingClearance(from, null, true))
+                return new(EncounterPathStatus.Failed, reason: "Start waypoint is obstructed");
+            if (!HasStandingClearance(to, null, true))
+                return new(EncounterPathStatus.Failed, reason: "End waypoint is obstructed");
+            if ((from - to).sqrMagnitude <= .0001f)
+                return new(EncounterPathStatus.Complete, new[] { Spatial(from), Spatial(to) });
             var path = new NavMeshPath();
-            if ((from - to).sqrMagnitude <= 0.0001f)
-            {
-                // Unity reports one corner for a zero-length path.  It is still a complete
-                // path when both endpoints are on the same NavMesh surface.
-                return NavMesh.SamplePosition(from, out _, PointTolerance, NavMeshAreaMask)
-                    && NavMesh.SamplePosition(to, out _, PointTolerance, NavMeshAreaMask);
-            }
-
-            if (!NavMesh.CalculatePath(from, to, NavMeshAreaMask, path) || path.status != NavMeshPathStatus.PathComplete)
-                return false;
+            var found = NavMesh.CalculatePath(from, to, NavMeshAreaMask, path);
             var corners = path.corners;
-            return corners != null && corners.Length >= 2 && ClearSegments(corners);
+            var points = new SpatialVector[corners.Length];
+            for (var i = 0; i < corners.Length; i++) points[i] = Spatial(corners[i]);
+            if (!found || path.status != NavMeshPathStatus.PathComplete)
+                return new(EncounterPathStatus.Failed, points, found ? path.status.ToString() : "No path");
+            if (corners.Length < 2 || (corners[corners.Length - 1] - to).sqrMagnitude > PointTolerance * PointTolerance)
+                return new(EncounterPathStatus.Failed, points, "Path does not reach waypoint");
+            if (!ClearSegments(corners))
+                return new(EncounterPathStatus.Failed, points, "Path blocked by solid scenery or authored barrier");
+            return new(EncounterPathStatus.Complete, points);
         }
-        catch
+        catch (Exception error)
         {
-            return false;
+            return new(EncounterPathStatus.Failed, reason: "Navigation unavailable: " + error.Message);
         }
     }
+
+    private static SpatialVector Spatial(Vector3 point) => new() { X = point.x, Y = point.y, Z = point.z };
 
     internal static Vector3 ToVector3(SpatialVector value)
     {
@@ -131,24 +152,12 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
 
     internal bool TryPatrolPath(Vector3 from, Vector3 to, out Vector3[] corners, out string status)
     {
+        var result = EvaluatePath(from, to);
+        status = result.Status == EncounterPathStatus.Complete ? "PathComplete" : result.Reason;
         corners = Array.Empty<Vector3>();
-        var path = new NavMeshPath();
-        var found = NavMesh.CalculatePath(from, to, NavMeshAreaMask, path);
-        status = found ? path.status.ToString() : "No path";
-        if (!found || path.status != NavMeshPathStatus.PathComplete)
-            return false;
-        var result = path.corners;
-        if (result.Length < 2 || (result[result.Length - 1] - to).sqrMagnitude > PointTolerance * PointTolerance)
-        {
-            status = "Path does not reach waypoint";
-            return false;
-        }
-        if (!ClearSegments(result))
-        {
-            status = "Path blocked by solid scenery";
-            return false;
-        }
-        corners = result;
+        if (result.Status != EncounterPathStatus.Complete) return false;
+        corners = new Vector3[result.Corners.Length];
+        for (var i = 0; i < corners.Length; i++) corners[i] = ToVector3(result.Corners[i]);
         return true;
     }
 

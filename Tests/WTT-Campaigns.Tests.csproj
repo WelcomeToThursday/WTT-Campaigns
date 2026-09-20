@@ -5,6 +5,8 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Encounters\EncounterPathResult.cs" Link="Client\EncounterPathResult.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\PatrolRouteInspection.cs" Link="Client\PatrolRouteInspection.cs" />
     <Compile Include="..\Client\Authoring\Controllers\EditorAiSelection.cs" Link="Client\EditorAiSelection.cs" />
     <Compile Include="..\Client\Authoring\Controllers\EditorMapRecords.cs" Link="Client\EditorMapRecords.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneCatalogRequestState.cs" Link="Client\SceneCatalogRequestState.cs" />

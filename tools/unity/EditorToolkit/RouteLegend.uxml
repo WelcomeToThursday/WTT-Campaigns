@@ -1,4 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <Style src="Editor.uss" />
-    <ui:Label class="editor-route-legend" picking-mode="Ignore" enable-rich-text="false" />
+    <ui:ScrollView class="editor-route-legend-panel" mode="Vertical" horizontal-scroller-visibility="Hidden">
+        <ui:Label name="RouteLegendText" class="editor-route-legend" picking-mode="Ignore" enable-rich-text="false" />
+    </ui:ScrollView>
 </ui:UXML>

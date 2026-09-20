@@ -202,6 +202,7 @@ WTT.Campaigns.Tests.EncounterBudgetChecks.Run(Check);
 WTT.Campaigns.Tests.PreviewFreezeChecks.Run(Check);
 WTT.Campaigns.Tests.PatrolDispatchChecks.Run(Check);
 WTT.Campaigns.Tests.PatrolDirectionChecks.Run(Check);
+WTT.Campaigns.Tests.PatrolToolsChecks.Run(Check);
 WTT.Campaigns.Tests.EditorHudChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTerrainChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTriggerChecks.Run(Check);

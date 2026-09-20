@@ -5,6 +5,7 @@ using Newtonsoft.Json.Linq;
 using WTT.Campaigns.Client.Authoring;
 using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Seasons;
+using WTT.Campaigns.Shared.Spatial;
 
 namespace WTT.Campaigns.Tests;
 
@@ -209,6 +210,42 @@ internal static class EditorSessionChecks
             socket.Reply = _ => new AuthoringResponse();
             await recovered.Tick();
             check(!recovered.Dirty && recovered.Definition == null, "Revoking the draft clears dirty state.");
+            BepInEx.Paths.ConfigPath = Path.Combine(folder, "patrol");
+            var routeDefinition = new SeasonDefinition { Id = "patrol", Name = "Patrol drafts", FormatVersion = 6 };
+            routeDefinition.Missions.Add(new() { Id = "mission", LayoutId = "layout" });
+            routeDefinition.MapLayouts.Add(new() { Id = "layout", PatrolRoutes = [new()
+            {
+                Id = "route", Waypoints = [new() { Id = "a" }, new() { Id = "b" }], WaitSeconds = [3, 7],
+            }] });
+            socket.Reply = _ => Response(routeDefinition);
+            var routeSession = new RaidEditorSession("interchange") { Hold = true };
+            await routeSession.Tick();
+            foreach (var operation in new Action<MapPatrolRoute>[]
+            {
+                r => MapPatrolRouteEditing.Insert(r, 1, new() { Id = "inserted", Position = new() { Y = 500 } }),
+                r => MapPatrolRouteEditing.Move(r, 0, 1),
+                MapPatrolRouteEditing.Reverse,
+                r => r.Waypoints[0].Position.Y = 1000,
+            })
+            {
+                var beforeRoute = JsonConvert.SerializeObject(routeSession.Definition!.MapLayouts[0].PatrolRoutes[0]);
+                var revision = routeSession.ContentVersion;
+                routeSession.Edit(d => operation(d.MapLayouts[0].PatrolRoutes[0]));
+                var afterRoute = JsonConvert.SerializeObject(routeSession.Definition!.MapLayouts[0].PatrolRoutes[0]);
+                check(beforeRoute != afterRoute && routeSession.ContentVersion == revision + 1, "A waypoint operation commits one editor revision");
+                routeSession.Undo(false);
+                check(JsonConvert.SerializeObject(routeSession.Definition!.MapLayouts[0].PatrolRoutes[0]) == beforeRoute,
+                    "One undo restores waypoint order, IDs, positions and waits");
+                routeSession.Undo(true);
+                check(JsonConvert.SerializeObject(routeSession.Definition!.MapLayouts[0].PatrolRoutes[0]) == afterRoute,
+                    "One redo restores the waypoint operation including invalid draft positions");
+                routeSession.Undo(false);
+            }
+            routeSession.Previewing = true;
+            var previewRevision = routeSession.ContentVersion;
+            routeSession.Edit(d => MapPatrolRouteEditing.Reverse(d.MapLayouts[0].PatrolRoutes[0]));
+            check(routeSession.ContentVersion == previewRevision, "Route editing remains disabled during preview");
+
         }
         finally
         {

@@ -170,7 +170,7 @@ internal sealed class EncounterPatrolRuntime
         squad.Members.Add(member);
         Owners.Add(bot, member);
         Movers.Add(bot.Mover, member);
-        squad.State.Start(squad.Members.AsValueEnumerable().Select(m => m.Id).ToArray());
+        squad.State.UpdateMembers(squad.Members.AsValueEnumerable().Select(m => m.Id).ToArray());
         squad.Planning = false;
         squad.NextUpdate = 0;
         Plugin.LogInfo(
@@ -241,6 +241,8 @@ internal sealed class EncounterPatrolRuntime
             }
             squad.Planning = false;
             squad.NextUpdate = Time.time + .5f;
+            if (update.Rejoined)
+                Plugin.LogInfo($"AI patrol rejoined: route='{squad.State.Route.Name}', waypoint={update.TargetWaypointIndex + 1}");
             foreach (var member in squad.Members)
                 member.Command = null;
             foreach (var command in update.Commands)

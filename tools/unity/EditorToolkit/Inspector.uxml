@@ -156,6 +156,14 @@
                 </ui:VisualElement>
                 <ui:VisualElement name="AiPatrolSection" class="editor-group">
                     <ui:Label name="AiPatrolHeading" class="editor-label" text="PATROL MOVEMENT" picking-mode="Ignore" />
+                    <ui:VisualElement class="editor-actions editor-action-row">
+                        <ui:Button name="AiWaypointInsert" class="editor-action" text="Insert after selected" />
+                        <ui:Button name="AiRouteReverse" class="editor-action" text="Reverse route" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="editor-actions editor-action-row">
+                        <ui:Button name="AiWaypointEarlier" class="editor-action" text="Move earlier" />
+                        <ui:Button name="AiWaypointLater" class="editor-action" text="Move later" />
+                    </ui:VisualElement>
                     <ui:VisualElement name="AiPaceGroup" class="editor-actions editor-action-row">
                         <ui:Label text="Movement pace" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                         <ui:Button name="AiPace" class="editor-choice" text="Patrol pace" />
