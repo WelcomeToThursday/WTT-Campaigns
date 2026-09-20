@@ -374,3 +374,9 @@
 .editor-console-size-24 { --console-font-size: 24px; --console-time-width: 120px; }
 
 .editor-spline-card { margin-top: 6px; margin-bottom: 6px; padding: 6px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: #465667; border-right-color: #465667; border-bottom-color: #465667; border-left-color: #465667; background-color: rgba(24, 32, 40, 0.94); }
+.editor-navigation > .editor-label, .editor-navigation > .editor-actions { flex-shrink: 0; }
+.editor-navigation .editor-label { white-space: normal; min-width: 0; }
+.editor-navigation-state { color: #a9d1ef; -unity-font-style: bold; }
+.editor-navigation-card { margin: 4px 0; padding: 8px; border-width: 1px; border-color: #465667; background-color: rgba(24, 32, 40, 0.94); flex-shrink: 0; }
+.editor-navigation-feedback { color: #f5d070; }
+.editor-navigation .editor-setting { flex-shrink: 0; min-width: 0; }

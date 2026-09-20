@@ -75,6 +75,7 @@
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --recovery-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_container_library.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\bin\$(Configuration)\netstandard2.1\ContainerLibrary&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_hazard_library.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\bin\$(Configuration)\netstandard2.1\HazardLibrary&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_navigation_collision.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\Resources\Navigation\native-collision.json&quot;" />
     <Exec Condition="'@(_UiAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-artwork &quot;@(_UiAssembly)&quot;" />
     <GetFileHash Files="@(_SharedAssembly)" Condition="'$(DeploymentScope)' == 'Client' or '$(DeploymentScope)' == 'Server'">
       <Output TaskParameter="Hash" PropertyName="_SharedHash" />

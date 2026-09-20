@@ -1,6 +1,7 @@
 using EFT.UI.Screens;
 using UnityEngine;
 using WTT.Campaigns.Client.Authoring.Console;
+using WTT.Campaigns.Client.Authoring.Navigation;
 using WTT.Campaigns.Client.Authoring.Preview;
 using WTT.Campaigns.Client.Encounters;
 using WTT.Campaigns.Client.Missions;
@@ -36,6 +37,18 @@ public sealed partial class RaidEditor
 
     private async void BeginAiPreview(bool playtest)
     {
+        if (
+            _navigationPaint?.Busy == true
+            || _navigationStroke != null
+            || (playtest || _editorMissionRequested) && _navigationPaint?.Active == true
+        )
+        {
+            ReportFeedback(
+                "Finish navigation work first. Use Observe for a manual navigation preview; clear it before player playtests or mission rehearsals.",
+                ConsoleSeverity.Warning
+            );
+            return;
+        }
         if (AiPreviewBusy || _walking || !MissionContent || !EditorMode.Ready || !_open || Layout == null || _session?.Conflict != null)
             return;
         if (_session!.Busy || _session.Dirty)
@@ -46,6 +59,8 @@ public sealed partial class RaidEditor
         }
         var session = _session;
         var player = _player!;
+        _aiPaintObservation = _navigationPaint?.Active == true ? _navigationPaint : null;
+        _navigationBrush = "";
         var lifetime = _aiLifetime = new CancellationTokenSource();
         var transitionTimer = System.Diagnostics.Stopwatch.StartNew();
         var transitionStage = "scene preparation";
@@ -71,6 +86,8 @@ public sealed partial class RaidEditor
                     : RaidEditorSession.Copy(Layout);
             if (_editorMissionRequested && !_editorMissionUseEncounters)
                 layout.Encounters.Clear();
+            if (_aiPaintObservation != null && _mapScene == null)
+                throw new InvalidOperationException("The baked scenery is no longer available. Restore and rebake before observing bots.");
             _mapScene ??= new();
             ReportFeedback(
                 _aiPreviewStatus = _editorMissionRequested
@@ -79,7 +96,10 @@ public sealed partial class RaidEditor
             );
             if (_view?.Valid == true)
                 Refresh(false);
-            await _mapScene.ApplyAsync(layout, false, lifetime.Token);
+            if (_aiPaintObservation != null)
+                _aiPaintObservation.RequireObservation();
+            else
+                await _mapScene.ApplyAsync(layout, false, lifetime.Token);
             Plugin.LogInfo($"Preview transition: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
             transitionTimer.Restart();
             transitionStage = "validation and equipment";
@@ -118,6 +138,7 @@ public sealed partial class RaidEditor
             lifetime.Token.ThrowIfCancellationRequested();
             if (_session != session || !MissionContent || !EditorMode.Ready || !player)
                 throw new OperationCanceledException();
+            _aiPaintObservation?.RequireObservation();
             _aiRuntime = new EncounterPreviewRuntime();
             Plugin.LogInfo($"Preview transition: {transitionStage} {transitionTimer.ElapsedMilliseconds} ms");
             transitionTimer.Restart();
@@ -138,6 +159,7 @@ public sealed partial class RaidEditor
                 lifetime.Token
             );
             lifetime.Token.ThrowIfCancellationRequested();
+            _aiPaintObservation?.RequireObservation();
             if (playtest)
             {
                 Close();
@@ -172,6 +194,7 @@ public sealed partial class RaidEditor
                     lifetime.Token
                 );
             await CaptureTestStart(lifetime.Token);
+            _aiPaintObservation?.RequireObservation();
             _aiRuntime.MissionStart();
             _editorDirector?.Observe(
                 new WTT.Campaigns.Shared.Missions.MissionSignal { Kind = WTT.Campaigns.Shared.Missions.MissionSignals.Start }
@@ -246,18 +269,24 @@ public sealed partial class RaidEditor
         var player = _player;
         var gear = _aiPlayer;
         var scene = _mapScene;
+        // Observe owns bots, but borrows the already-baked editor scene. Keep it for
+        // a second observation and explicit native restoration after bots are removed.
+        var preserveScene = _aiPaintObservation != null && _open;
+        _aiPaintObservation = null;
         var lifetime = _aiLifetime;
         var position = _returnPosition;
         var facing = _returnFacing;
         _aiPlayer = null;
-        _mapScene = null;
+        if (!preserveScene)
+            _mapScene = null;
         _aiLifetime = null;
         _returnPosition = null;
         try
         {
             _aiLoot?.Dispose();
             _aiLoot = null;
-            scene?.Dispose();
+            if (!preserveScene)
+                scene?.Dispose();
             Plugin.LogInfo($"Preview reset: scene cleanup {transitionTimer.ElapsedMilliseconds} ms");
             transitionTimer.Restart();
             if (gear != null)
@@ -357,6 +386,7 @@ public sealed partial class RaidEditor
         {
             if (_aiPreview)
             {
+                _aiPaintObservation?.RequireObservation();
                 _aiRuntime?.Tick();
                 _editorDirector?.Tick();
                 if ((_editorDirector?.HasPending == true || _editorSignals != null) && !_editorMissionProgressPending)
@@ -374,7 +404,7 @@ public sealed partial class RaidEditor
             return true;
         }
         if (_aiRuntime != null && !_editorMissionRequested)
-            _aiPreviewStatus = _aiRuntime.Status;
+            _aiPreviewStatus = (_aiPaintObservation != null ? "MANUAL NAVIGATION PREVIEW · " : "") + _aiRuntime.Status;
         if (_view?.Valid == true && _aiPlaytest)
             _view.Text("EditorWalkStatus", _aiPreviewStatus + " · Esc to return to editing");
         return false;

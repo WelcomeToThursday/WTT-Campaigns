@@ -74,7 +74,7 @@ public static class MissionLibrary
             if (!ok)
                 result.Add("Missions", message);
         }
-        Need(package.FormatVersion == FormatVersion && package.MissionPackage?.Version == 1, "Unsupported mission package format.");
+        Need(package.FormatVersion is 11 or 12 or 13 && package.MissionPackage?.Version == 1, "Unsupported mission package format.");
         Need(SeasonValidator.IsId(package.Id), "Mission package identity is invalid.");
         Need(
             !string.IsNullOrWhiteSpace(package.Name) && package.Name.Length <= 120,
@@ -117,6 +117,10 @@ public static class MissionLibrary
             return;
         var mission = package.Missions[0];
         var layout = package.MapLayouts[0];
+        Need(
+            package.FormatVersion >= Spatial.MapLayoutRules.Format(package.MapLayouts),
+            "Mission content requires a newer package format."
+        );
         Need(
             SeasonValidator.IsId(mission.Id) && mission.Id == package.Id && mission.LayoutId == layout.Id,
             "Choose the package's mission layout."

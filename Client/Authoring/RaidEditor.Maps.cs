@@ -149,6 +149,11 @@ public sealed partial class RaidEditor
 
     private async void BeginWalkthrough()
     {
+        if (_navigationPaint?.Busy == true || _navigationPaint?.Active == true)
+        {
+            ReportFeedback("Clear the manual navigation preview before starting a walkthrough.");
+            return;
+        }
         if (
             !EditorMode.Ready
             || _walking

@@ -46,6 +46,14 @@ internal static class ModIdentityChecks
                 Require(
                     plugin.CustomAttributes.Any(a =>
                         a.AttributeType.FullName == "BepInEx.BepInDependency"
+                        && (string)a.ConstructorArguments[0].Value == "xyz.drakia.waypoints"
+                        && (string)a.ConstructorArguments[1].Value == "1.9.0"
+                    ),
+                    "Client requires Waypoints 1.9.0 and orders registration capture after its loader"
+                );
+                Require(
+                    plugin.CustomAttributes.Any(a =>
+                        a.AttributeType.FullName == "BepInEx.BepInDependency"
                         && (string)a.ConstructorArguments[0].Value == "com.wtt.commonlib"
                         && (string)a.ConstructorArguments[1].Value == "3.0.6"
                     ),

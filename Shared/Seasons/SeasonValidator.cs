@@ -62,7 +62,7 @@ public static class SeasonValidator
             }
         }
         Need(
-            s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12,
+            s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13,
             "Overview",
             "Unsupported campaign format version."
         );

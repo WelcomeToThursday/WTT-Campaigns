@@ -46,7 +46,10 @@ public sealed partial class SeasonRepository
                     Id = mission.Id,
                     BattlePassId = NewId(),
                     Name = mission.Name,
-                    FormatVersion = MissionLibrary.FormatVersion,
+                    FormatVersion = Math.Max(
+                        MissionLibrary.FormatVersion,
+                        WTT.Campaigns.Shared.Spatial.MapLayoutRules.Format(new[] { layout })
+                    ),
                     MissionPackage = new(),
                     Missions = [mission],
                     MapLayouts = [layout],
@@ -69,7 +72,7 @@ public sealed partial class SeasonRepository
             BattlePassId = NewId(),
             Name = mission.Name,
             Author = campaign.Definition.Author,
-            FormatVersion = MissionLibrary.FormatVersion,
+            FormatVersion = Math.Max(MissionLibrary.FormatVersion, WTT.Campaigns.Shared.Spatial.MapLayoutRules.Format(new[] { layout })),
             MissionPackage = new(),
             Missions = [mission],
             MapLayouts = [layout],

@@ -19,6 +19,9 @@ coverage/
 /release/
 /Client/Resources/*
 !/Client/Resources/README.md
+!/Client/Resources/Navigation/
+/Client/Resources/Navigation/*
+!/Client/Resources/Navigation/native-collision.json
 
 # Game assemblies, extracted assets and packaged binaries are supplied locally
 *.dll

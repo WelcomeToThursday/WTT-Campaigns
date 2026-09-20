@@ -64,7 +64,7 @@ public sealed partial class RaidEditor
         {
             get
             {
-                var names = new List<string> { "Console", "Properties", "Environment", "Editor controls", "Loot configuration" };
+                var names = new List<string> { "Console", "Navigation", "Properties", "Environment", "Editor controls", "Loot configuration" };
                 names.AddRange(Tools);
                 return names.ToArray();
             }
@@ -73,7 +73,7 @@ public sealed partial class RaidEditor
         public string? Unavailable(string command)
         {
             var e = _editor;
-            if (command is "clear" or "status" or "selection")
+            if (command is "clear" or "status" or "selection" or "navmesh")
                 return null;
             return EditorConsoleAvailability.Check(
                 command,
@@ -92,6 +92,8 @@ public sealed partial class RaidEditor
             var e = _editor;
             switch (command)
             {
+                case "navmesh":
+                    return e.RunNavigationCommand(args);
                 case "clear":
                     e._console!.Buffer.Clear();
                     return "";
@@ -122,6 +124,7 @@ public sealed partial class RaidEditor
                         "Editor controls" => "Controls",
                         "Loot configuration" => "LootConfiguration",
                         "Console" => "Console",
+                        "Navigation" => "Navigation",
                         _ => "Tool:" + args[0],
                     };
                     var visible = args[1] == "show" || args[1] == "toggle" && !e._view!.Windows.IsOpen(id);

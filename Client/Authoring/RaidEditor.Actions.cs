@@ -42,6 +42,7 @@ public sealed partial class RaidEditor
         try
         {
             BindConsole(view);
+            BindNavigationPanel(view);
             BindEnvironment(view);
             BindHazards(view);
             BindCameraControls(view);

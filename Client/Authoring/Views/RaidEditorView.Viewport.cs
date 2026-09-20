@@ -100,6 +100,13 @@ internal sealed partial class RaidEditorView
         Highlight("ViewportClean", ViewportState.Clean);
     }
 
+    internal void ShowNavigationOverlay()
+    {
+        if (ViewportState.Clean)
+            ToggleCleanView();
+        _viewportMenu.Q<Toggle>("OverlayAi").value = true;
+    }
+
     private bool DismissViewportMenu()
     {
         if (!ViewportMenuOpen)

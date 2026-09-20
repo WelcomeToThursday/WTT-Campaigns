@@ -114,6 +114,7 @@ if (args.Length == 3 && args[0] == "--install-test-mission")
 
 if (args.Length == 3 && args[0] == "--encounter-hooks")
 {
+    WTT.Campaigns.Tests.NavigationAssemblyChecks.Run(args[1], args[2]);
     WTT.Campaigns.Tests.EncounterHookChecks.Run(args[1], args[2]);
     return;
 }
@@ -167,6 +168,7 @@ WTT.Campaigns.Tests.HazardChecks.Run(Check);
 WTT.Campaigns.Tests.EditorWindowLayoutChecks.Run(Check);
 WTT.Campaigns.Tests.EditorDockChecks.Run(Check);
 WTT.Campaigns.Tests.EditorConsoleChecks.Run(Check);
+WTT.Campaigns.Tests.NavigationExperimentChecks.Run(Check);
 WTT.Campaigns.Tests.EditorViewportChecks.Run(Check);
 WTT.Campaigns.Tests.EditorViewportInteractionChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);

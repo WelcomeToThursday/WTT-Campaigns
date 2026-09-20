@@ -6,6 +6,7 @@ Use **SPT 4.1.x / EFT 0.16.9.40743**, with:
 
 - **UnityToolkit 2.0.2 or later**, including its plugin libraries and prepatcher.
 - **BigBrain 1.5.0 or later**.
+- **Waypoints 1.9.0 or later**.
 - **SAIN 4.5.1 or later**, with matching client and server components.
 - **MoreBotsAPI 2.1.1 or later**, with matching client and server components.
 - **Black Division 1.3.1 or later**, with matching client and server components.

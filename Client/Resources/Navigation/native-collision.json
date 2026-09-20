@@ -1,0 +1,287 @@
+{
+  "Schema": 1,
+  "Files": [
+    {
+      "Path": "Managed/UnityEngine.TerrainPhysicsModule.dll",
+      "Sha256": "0B4DD03FA3B87C946DC6DB95571C8F68F818E6FAEE5C7A2DA176A806FC23A931"
+    },
+    {
+      "Path": "globalgamemanagers",
+      "Sha256": "E75E77D831BCCCD96981896147F53F572EF78B4AC22FCE1FCBB8DC93AF3079F9"
+    },
+    {
+      "Path": "level63",
+      "Sha256": "3294652E52894F1CD91E1B5707C0FC00CA406C8F7890947B5ABAA975002D1092"
+    },
+    {
+      "Path": "sharedassets63.assets",
+      "Sha256": "0979AF4FC6F3482001F35A9D3269AD495D41E07F2560C2BBBEE1507CC8571C6E"
+    }
+  ],
+  "Terrains": [
+    {
+      "ScenePath": "Assets/Content/Locations/Shopping_Mall/Shopping_Mall_Terrain.unity",
+      "BuildIndex": 63,
+      "Hierarchy": [
+        {
+          "Name": "terrain",
+          "Sibling": -1,
+          "Position": [
+            -647.199951171875,
+            -90.676025390625,
+            -810.121337890625
+          ],
+          "Rotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "Name": "Slice_2_2",
+          "Sibling": 3,
+          "Position": [
+            700.0,
+            0.0,
+            700.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "EnableTreeColliders": false,
+      "DataName": "Slice_2_2",
+      "DataFile": "sharedassets63.assets",
+      "Resolution": 1025,
+      "TreeCount": 1612,
+      "Size": [
+        700.0,
+        180.0,
+        700.0
+      ]
+    },
+    {
+      "ScenePath": "Assets/Content/Locations/Shopping_Mall/Shopping_Mall_Terrain.unity",
+      "BuildIndex": 63,
+      "Hierarchy": [
+        {
+          "Name": "terrain",
+          "Sibling": -1,
+          "Position": [
+            -647.199951171875,
+            -90.676025390625,
+            -810.121337890625
+          ],
+          "Rotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "Name": "Slice_1_2",
+          "Sibling": 1,
+          "Position": [
+            700.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "Name": "Slice_1_2",
+          "Sibling": 0,
+          "Position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "EnableTreeColliders": false,
+      "DataName": "Slice_1_2",
+      "DataFile": "sharedassets63.assets",
+      "Resolution": 1025,
+      "TreeCount": 1492,
+      "Size": [
+        700.0,
+        180.0,
+        700.0
+      ]
+    },
+    {
+      "ScenePath": "Assets/Content/Locations/Shopping_Mall/Shopping_Mall_Terrain.unity",
+      "BuildIndex": 63,
+      "Hierarchy": [
+        {
+          "Name": "terrain",
+          "Sibling": -1,
+          "Position": [
+            -647.199951171875,
+            -90.676025390625,
+            -810.121337890625
+          ],
+          "Rotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "Name": "Slice_2_1",
+          "Sibling": 2,
+          "Position": [
+            0.0,
+            0.0,
+            700.0
+          ],
+          "Rotation": [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "EnableTreeColliders": false,
+      "DataName": "Slice_2_1",
+      "DataFile": "sharedassets63.assets",
+      "Resolution": 1025,
+      "TreeCount": 1429,
+      "Size": [
+        700.0,
+        180.0,
+        700.0
+      ]
+    },
+    {
+      "ScenePath": "Assets/Content/Locations/Shopping_Mall/Shopping_Mall_Terrain.unity",
+      "BuildIndex": 63,
+      "Hierarchy": [
+        {
+          "Name": "terrain",
+          "Sibling": -1,
+          "Position": [
+            -647.199951171875,
+            -90.676025390625,
+            -810.121337890625
+          ],
+          "Rotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "Name": "Slice_1_1",
+          "Sibling": 0,
+          "Position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        },
+        {
+          "Name": "Slice_1_1",
+          "Sibling": 0,
+          "Position": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "Rotation": [
+            -0.0,
+            -0.0,
+            -0.0,
+            1.0
+          ],
+          "Scale": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      ],
+      "EnableTreeColliders": false,
+      "DataName": "Slice_1_1",
+      "DataFile": "sharedassets63.assets",
+      "Resolution": 1025,
+      "TreeCount": 992,
+      "Size": [
+        700.0,
+        180.0,
+        700.0
+      ]
+    }
+  ]
+}

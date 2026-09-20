@@ -45,6 +45,13 @@ internal sealed class EditorConsoleCommands
         new("camera", "camera speed [value]", "Read or set camera speed (0.25–96 metres/second).", 1, 2),
         new("undo", "undo", "Undo the previous edit.", 0, 0),
         new("redo", "redo", "Redo the previous undone edit.", 0, 0),
+        new(
+            "navmesh",
+            "navmesh <build|scan|status|issues [page]|select number|cancel|restore|view [all/floor]|hide|report>",
+            "Build previews only saved Add/Block paint. Native navigation stays loaded. Restore clears owned edits; scan checks the painted region. Use Windows → Navigation for brushes and explicit connections.",
+            1,
+            2
+        ),
     };
     private readonly IEditorConsoleHost _host;
 
@@ -142,6 +149,8 @@ internal sealed class EditorConsoleCommands
             args[0] = Resolve(args[0], _host.Windows, "window");
             args[1] = Resolve(args[1], new[] { "show", "hide", "toggle" }, "window action");
         }
+        if (command.Name == "navmesh")
+            Navigation.NavigationCommand.Validate(args);
         var unavailable = _host.Unavailable(command.Name);
         if (unavailable != null)
             return "Unavailable: " + unavailable;
@@ -180,6 +189,10 @@ internal sealed class EditorConsoleCommands
             choices.AddRange(new[] { "show", "hide", "toggle" });
         else if (tokens.Length == 2 && Equal(tokens[0], "camera"))
             choices.Add("speed");
+        else if (tokens.Length == 2 && Equal(tokens[0], "navmesh"))
+            choices.AddRange(Navigation.NavigationCommand.Actions);
+        else if (tokens.Length == 3 && Equal(tokens[0], "navmesh") && Equal(tokens[1], "view"))
+            choices.AddRange(new[] { "all", "floor" });
         var prefix = new StringBuilder();
         for (var i = 0; i < tokens.Length - 1; i++)
             prefix.Append(Quote(tokens[i])).Append(' ');

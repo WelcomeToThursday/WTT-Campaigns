@@ -16,6 +16,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     private static Font? _font;
     private static Shader? _previewShader;
     private static Shader? _viewportShader;
+    private static Shader? _navigationShader;
     private bool _disposed;
     internal readonly GameObject Host;
     internal readonly PanelSettings Settings;
@@ -96,6 +97,14 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     internal Shader PreviewShader => _previewShader!;
     internal Shader ViewportShader => _viewportShader!;
+    internal static Shader NavigationShader
+    {
+        get
+        {
+            EnsureAssets();
+            return _navigationShader!;
+        }
+    }
 
     // Detach the authored root: a TemplateContainer would change the existing
     // docking and direct-child layout contracts.
@@ -115,7 +124,7 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     private static void EnsureAssets()
     {
-        if (_template && _tree && _font && _previewShader && _viewportShader && Templates.Count == 49)
+        if (_template && _tree && _font && _previewShader && _viewportShader && _navigationShader && Templates.Count == 50)
             return;
         Plugin.LogInfo("Editor Toolkit: loading shared assets");
         const string path = "assets/mods/wtt-campaigns.assets/editortoolkit/";
@@ -134,7 +143,8 @@ internal sealed class EditorToolkitDocument : IDisposable
         _font = _bundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
         _previewShader = _bundle.LoadAsset<Shader>("assets/mods/wtt-campaigns.assets/raideditor/campaignscenepreview.shader");
         _viewportShader = _bundle.LoadAsset<Shader>(path + "viewportcopy.shader");
-        if (!_template || !_tree || !_font || !_previewShader || !_viewportShader)
+        _navigationShader = _bundle.LoadAsset<Shader>(path + "navigationsurface.shader");
+        if (!_template || !_tree || !_font || !_previewShader || !_viewportShader || !_navigationShader)
             throw new InvalidOperationException("Editor Toolkit assets are incomplete.");
         Templates.Clear();
         foreach (
@@ -156,6 +166,7 @@ internal sealed class EditorToolkitDocument : IDisposable
                 "ContextMenu",
                 "Console",
                 "ConsoleRow",
+                "Navigation",
                 "Controls",
                 "DockDivider",
                 "DockTab",

@@ -391,10 +391,12 @@ public sealed partial class RaidEditor
         }
         _view?.DrawRoute(!_walking ? Layout : null, _camera, _selected, _session?.ContentVersion ?? 0);
         Splines.Draw(Line);
+        DrawNavigationPaintHandles();
         if (overlays.Shows(EditorOverlays.Bounds))
             DrawSelectionBounds();
         if (
             !Splines.Editing
+            && _navigationBrush.Length == 0
             && Selected is { } selected
             && CanUseHandle(selected)
             && _camera

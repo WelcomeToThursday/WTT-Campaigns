@@ -16,6 +16,7 @@
       TargetPath="HazardLibrary\%(Filename)%(Extension)"
     />
     <Using Remove="System.Linq" />
+    <EmbeddedResource Include="Resources\Navigation\native-collision.json" LogicalName="WTT.Campaigns.Navigation.native-collision.json" />
     <EmbeddedResource Include="Customization\Assets\face.png" LogicalName="WTT.Campaigns.Customization.face.png" />
     <Reference
       Include="WTT-ClientCommonLib"
@@ -37,7 +38,9 @@
     <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedDir)UnityEngine.PhysicsModule.dll" Private="false" />
     <Reference Include="UnityEngine.AIModule" HintPath="$(ManagedDir)UnityEngine.AIModule.dll" Private="false" />
+    <Reference Include="Unity.AI.Navigation" HintPath="$(ManagedDir)Unity.AI.Navigation.dll" Private="false" />
     <Reference Include="UnityEngine.TerrainModule" HintPath="$(ManagedDir)UnityEngine.TerrainModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TerrainPhysicsModule" HintPath="$(ManagedDir)UnityEngine.TerrainPhysicsModule.dll" Private="false" />
     <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedDir)UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="UnityEngine.ParticleSystemModule" HintPath="$(ManagedDir)UnityEngine.ParticleSystemModule.dll" Private="false" />
     <Reference Include="UnityEngine.AnimationModule" HintPath="$(ManagedDir)UnityEngine.AnimationModule.dll" Private="false" />

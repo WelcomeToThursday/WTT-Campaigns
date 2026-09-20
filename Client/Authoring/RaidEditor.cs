@@ -212,6 +212,10 @@ public sealed partial class RaidEditor : MonoBehaviour
                 return;
             }
 
+            if (!AiPreviewBusy)
+                _navigationPaint?.Tick();
+            SettleNavigationStroke();
+            RefreshNavigationPanel();
             StartPendingEditorMissionTest();
 
             if (UpdateAiPreview())
@@ -253,7 +257,14 @@ public sealed partial class RaidEditor : MonoBehaviour
                 return;
             if (EditorMode.Ready && !_open && !_walking && !AiPreviewBusy && !OtherModal && _session.Definition != null)
                 Open();
-            _session.Hold = AiPreviewBusy || _walking || _view?.Typing == true || IsDragging || Splines.Busy || Catalog.Placing;
+            _session.Hold =
+                _navigationStroke != null
+                || AiPreviewBusy
+                || _walking
+                || _view?.Typing == true
+                || IsDragging
+                || Splines.Busy
+                || Catalog.Placing;
             if (!_session.Busy && Time.realtimeSinceStartup >= _nextPoll)
             {
                 _nextPoll = Time.realtimeSinceStartup + 1;
@@ -304,6 +315,13 @@ public sealed partial class RaidEditor : MonoBehaviour
                     EventSystem.current?.SetSelectedGameObject(null);
                     return;
                 }
+                if (_navigationBrush.Length > 0)
+                {
+                    _navigationBrush = "";
+                    _navigationStroke = null;
+                    _navigationPaintRevision++;
+                    return;
+                }
                 if (Catalog.Placing)
                 {
                     Catalog.CancelPlacement(inspectLast: true);
@@ -330,12 +348,16 @@ public sealed partial class RaidEditor : MonoBehaviour
                 if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Z))
                 {
                     CancelDrag();
+                    _navigationStroke = null;
+                    _navigationPaintRevision++;
                     _session.Undo(false);
                 }
 
                 if (Input.GetKey(KeyCode.LeftControl) && Input.GetKeyDown(KeyCode.Y))
                 {
                     CancelDrag();
+                    _navigationStroke = null;
+                    _navigationPaintRevision++;
                     _session.Undo(true);
                 }
 
@@ -375,7 +397,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     }
                 }
                 var navigating = CameraLooking;
-                if (!Catalog.PlacementInput(navigating) && !navigating)
+                if (!NavigationPaintInput() && !Catalog.PlacementInput(navigating) && !navigating)
                     GeometryInput();
             }
             if (Time.realtimeSinceStartup >= _nextRefresh)
@@ -534,6 +556,10 @@ public sealed partial class RaidEditor : MonoBehaviour
             _mapScene?.FlushVisuals();
             // Handles follow camera distance and pointer hover every frame, after scene poses reconcile.
             DrawGeometry();
+            // DrawGeometry is also called by handle refreshes. Submit the translucent
+            // surface only here so repeated refreshes cannot blend it twice per frame.
+            if (_view!.ViewportState.Shows(WTT.Campaigns.UI.Controls.EditorOverlays.Ai))
+                DrawNavigationPaint(_camera!);
         }
         catch (Exception e)
         {
@@ -545,6 +571,13 @@ public sealed partial class RaidEditor : MonoBehaviour
 
     private void Close()
     {
+        if (_aiPaintObservation != null)
+        {
+            EndAiPreview(false);
+            if (AiPreviewBusy)
+                return;
+        }
+        StopNavigationPainting();
         _walkRequested = false;
         if (!_open)
         {

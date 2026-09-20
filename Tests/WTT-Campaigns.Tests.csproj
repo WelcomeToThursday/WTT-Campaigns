@@ -12,6 +12,16 @@
     <Compile Include="..\Client\Authoring\Controllers\EditorMapRecords.cs" Link="Client\EditorMapRecords.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneCatalogRequestState.cs" Link="Client\SceneCatalogRequestState.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneOperationLifetime.cs" Link="Client\SceneOperationLifetime.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationPaintGeometry.cs" Link="Client\NavigationPaintGeometry.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationPaintFootprint.cs" Link="Client\NavigationPaintFootprint.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationHealthRules.cs" Link="Client\NavigationHealthRules.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationPaintContour.cs" Link="Client\NavigationPaintContour.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationBuildStamp.cs" Link="Client\NavigationBuildStamp.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationCollisionCatalog.cs" Link="Client\NavigationCollisionCatalog.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationRestrictionGeometry.cs" Link="Client\NavigationRestrictionGeometry.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationCommand.cs" Link="Client\NavigationCommand.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationMeshDecoder.cs" Link="Client\NavigationMeshDecoder.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationTreeGeometry.cs" Link="Client\NavigationTreeGeometry.cs" />
     <Compile Include="..\Client\Profiles\ProfileSaveGate.cs" Link="Client\ProfileSaveGate.cs" />
     <Compile Include="..\UI\Screens\EditorHomeComposition.cs" Link="UI\EditorHomeComposition.cs" />
     <EmbeddedResource Include="..\tools\unity\EditorToolkit\*.uxml" LogicalName="EditorToolkit.%(Filename).uxml" />

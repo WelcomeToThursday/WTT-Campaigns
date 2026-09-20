@@ -257,7 +257,7 @@ public static class SpatialRules
 
         if (
             (season.Zones.Count > 0 || season.Captures.Count > 0)
-            && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12)
+            && season.FormatVersion is not (2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13)
         )
         {
             errors.Add("Spatial content requires campaign format 2 or later.");
