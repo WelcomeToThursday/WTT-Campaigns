@@ -156,6 +156,7 @@ internal sealed partial class RaidEditorView
                 "SceneFilters",
                 "SceneInspector",
                 "MapInspector",
+                "SplineSection",
             }
         )
             Visible(id, false);

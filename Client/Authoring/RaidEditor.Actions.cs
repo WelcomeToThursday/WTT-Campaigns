@@ -382,6 +382,7 @@ public sealed partial class RaidEditor
             Maps.Bind(view);
             Catalog.Bind(view);
             Ai.Bind(view);
+            Splines.Bind(view);
             view.ToolContext = _mode == "Maps" ? "Layouts" : _mode;
             if (!view.Windows.LayoutRestored)
                 view.Windows.BrowseCategory();
@@ -1042,6 +1043,7 @@ public sealed partial class RaidEditor
         view.Caption("UseObject", point is SeasonZone && Binding != null ? "Bind selected zone" : "Use scene target");
         Maps.RefreshMaps(geometry);
         RefreshWorkspace();
+        Splines.Present();
         Ai.RefreshAiWorkspace();
         Catalog.PresentScene();
         RefreshOtherToolBrowsers();

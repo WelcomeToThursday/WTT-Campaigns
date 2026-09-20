@@ -111,6 +111,16 @@ public static class MapEncounterRules
                 }
             }
 
+            var splineError = RouteSpline.Error(route.Spline, route.Waypoints, route.Completion == MapPatrolRoute.Loop);
+            Need(splineError.Length == 0, path + ": " + splineError);
+            if (route.Spline != null && navigation != null && splineError.Length == 0)
+            {
+                var walkability = navigation is IEncounterSplineNavigation curves
+                    ? curves.SplineError(route)
+                    : "Spline navigation validation is unavailable.";
+                Need(walkability.Length == 0, path + ": " + walkability);
+            }
+
             var waypoints = new HashSet<string>(StringComparer.Ordinal);
             foreach (var waypoint in route.Waypoints)
             {
@@ -124,7 +134,7 @@ public static class MapEncounterRules
                 ValidateNavigation(waypoint, path, navigation, requireNavigation, errors);
             }
 
-            if (navigation != null && route.Waypoints.Count >= 2)
+            if (navigation != null && route.Spline == null && route.Waypoints.Count >= 2)
             {
                 for (var i = 0; i < route.Waypoints.Count - 1; i++)
                 {

@@ -891,6 +891,20 @@ public sealed class EncounterPatrolStateMachine
     }
 
     public MapPatrolRoute Route => _route;
+
+    public void SuspendNavigation(double now)
+    {
+        if (_status is PatrolRuntimeStatus.Completed or PatrolRuntimeStatus.Cancelled or PatrolRuntimeStatus.Failed)
+            return;
+        if (_waitUntil.HasValue)
+        {
+            _suspendedWait = Math.Max(0, _waitUntil.Value - now);
+            _waitUntil = null;
+        }
+        _status = PatrolRuntimeStatus.Suspended;
+        _reason = PatrolSuspensionReason.Unreachable;
+    }
+
     public PatrolRuntimeStatus Status => _status;
     public PatrolSuspensionReason SuspensionReason => _reason;
     public string LeaderId => _leaderId;
@@ -1112,6 +1126,11 @@ public sealed class EncounterPatrolStateMachine
         var target = _route.Waypoints[_targetWaypoint];
         if (target == null || survivors.AsValueEnumerable().Any(s => !navigation.CanReach(s.Position, target.Position)))
         {
+            if (_route.Spline != null)
+            {
+                SuspendNavigation(now);
+                return Snapshot(result, leaderChanged);
+            }
             if (!TryNearestReachable(leaderSnapshot.Position, survivors, navigation, out var reentry))
             {
                 _status = PatrolRuntimeStatus.Suspended;

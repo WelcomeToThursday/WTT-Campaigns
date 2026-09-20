@@ -11,7 +11,7 @@ using ZLinq;
 
 namespace WTT.Campaigns.Client.Encounters;
 
-internal sealed class EncounterPatrolRuntime
+internal sealed partial class EncounterPatrolRuntime
 {
     private sealed class Member
     {
@@ -47,18 +47,29 @@ internal sealed class EncounterPatrolRuntime
         internal int ContinuationWaypoint = -1;
         internal int ArrivalCorner = -1;
         internal bool PassedWaypoint;
-        internal readonly EncounterNavigation Navigation = new();
+        internal EncounterNavigation Navigation = null!;
         internal readonly EncounterMovementPath Path = new();
+        internal readonly SplineFollower Curve = new();
+        internal int CurveNativeStart = -1,
+            CurveSampleStart;
     }
 
-    private sealed class Squad(MapPatrolRoute route)
+    private sealed class Squad
     {
-        internal readonly EncounterPatrolStateMachine State = new(route);
+        internal Squad(MapPatrolRoute route)
+        {
+            State = new(route);
+            Navigation = new(PathNavigation, EncounterNavigationBudget.Plan);
+        }
+
+        internal readonly EncounterPatrolStateMachine State;
+        internal readonly EncounterNavigation PathNavigation = new();
         internal readonly List<Member> Members = new();
         internal readonly List<PatrolBotSnapshot> Snapshots = new();
-        internal readonly EncounterPlanningNavigation Navigation = new(new EncounterNavigation(), EncounterNavigationBudget.Plan);
+        internal readonly EncounterPlanningNavigation Navigation;
         internal bool Planning;
         internal bool Replan = true;
+        internal bool CurveBlocked;
         internal float NextUpdate;
     }
 
@@ -181,6 +192,7 @@ internal sealed class EncounterPatrolRuntime
             Health = bot.GetPlayer.ActiveHealthController,
             Id = bot.ProfileId,
             Squad = squad,
+            Navigation = squad.PathNavigation,
         };
         member.DeathConfirmed = !member.Health.IsAlive;
         member.Health.DiedEvent += member.OnDeath;
@@ -225,6 +237,26 @@ internal sealed class EncounterPatrolRuntime
 
     private static bool UpdateSquad(Squad squad)
     {
+        if (squad.CurveBlocked && SquadEligible(squad))
+        {
+            var route = squad.State.Route;
+            var to = squad.State.TargetWaypointIndex;
+            var from = to - squad.State.Capture(Time.time).Direction;
+            if (route.Completion == MapPatrolRoute.Loop)
+                from = (to + route.Waypoints.Count - 1) % route.Waypoints.Count;
+            if (from >= 0 && from < route.Waypoints.Count && to >= 0)
+            {
+                var result = squad.Members[0].Navigation.EvaluateRoute(route, from, to);
+                if (result.Status == EncounterPathStatus.Pending)
+                    return false;
+                if (result.Status == EncounterPathStatus.Failed)
+                {
+                    squad.NextUpdate = Time.time + 2;
+                    return true;
+                }
+            }
+            squad.CurveBlocked = false;
+        }
         // Do not allocate/replay a planning pass when no query can make progress this frame.
         // Combat still publishes its suspension immediately without needing a path query.
         if (!EncounterNavigationBudget.CanPlan && SquadEligible(squad))
@@ -281,6 +313,11 @@ internal sealed class EncounterPatrolRuntime
             {
                 if (!update.Rejoined && command.WaypointIndex == member.ContinuationWaypoint)
                 {
+                    // Arrival clears commands before replanning. The owned path retains
+                    // the departed waypoint even when that planning pass spans frames.
+                    member.Curve.BeginLeg(member.MovementWaypoint, command.WaypointIndex);
+                    member.CurveNativeStart = member.ArrivalCorner;
+                    member.CurveSampleStart = 0;
                     member.MovementWaypoint = command.WaypointIndex;
                     member.ArrivalCorner = member.Path.LastCorner;
                 }
@@ -383,6 +420,14 @@ internal sealed class EncounterPatrolRuntime
     {
         if (!Owners.TryGetValue(bot, out var member) || !Active(bot) || member.Command == null)
             return;
+        // Warm the next authored leg while the native cursor follows the current one.
+        // All squad members share this cache, so a large squad validates a curve only once.
+        if (member.Squad.State.Route.Spline != null && member.OwnsNavigation && !member.PassedWaypoint)
+        {
+            var next = NextWaypoint(member);
+            if (next >= 0)
+                member.Navigation.EvaluateRoute(member.Squad.State.Route, member.Command.WaypointIndex, next);
+        }
         if (UpdateSpacing(member) || Arrive(member))
             return;
         var command = member.Command!;
@@ -415,7 +460,15 @@ internal sealed class EncounterPatrolRuntime
                     {
                         var remaining = member.Path.RemainingCorners(bot);
                         if (remaining.Length >= 2 && TryContinuation(member, remaining, out var joined, out var next))
+                        {
+                            RememberCurveProgress(member);
+                            if (member.CurveNativeStart >= 0)
+                            {
+                                member.CurveSampleStart += Math.Max(0, member.Path.CurrentCorner - member.CurveNativeStart);
+                                member.CurveNativeStart = Math.Max(1, member.CurveNativeStart - member.Path.CurrentCorner + 1);
+                            }
                             SubmitPath(member, joined, remaining.Length - 1, next);
+                        }
                     }
                     return;
                 }
@@ -436,9 +489,26 @@ internal sealed class EncounterPatrolRuntime
                     }
                     // Use the same live carved mesh as validation. GoToPoint enters
                     // baked cover-graph routing and can invoke its teleport recovery.
-                    if (!member.Navigation.TryPatrolPath(bot.GetPlayer.Transform.position, target, out var corners, out var pathStatus))
+                    var pathResult = BuildMovementPath(member, target, out var corners, out var pathStatus);
+                    if (pathResult == EncounterPathStatus.Pending)
+                    {
+                        member.PathStatus = "Checking curve…";
+                        member.NextMove = Time.time;
+                        RememberCurveProgress(member);
+                        Release(member);
+                        return;
+                    }
+                    if (pathResult == EncounterPathStatus.Failed)
                     {
                         member.PathStatus = pathStatus;
+                        if (member.Squad.State.Route.Spline != null)
+                        {
+                            member.Squad.CurveBlocked = true;
+                            member.Squad.State.SuspendNavigation(Time.time);
+                            Release(member.Squad);
+                            member.Squad.NextUpdate = Time.time + 2;
+                            return;
+                        }
                         member.Squad.Replan = true;
                         member.Squad.NextUpdate = 0;
                         Release(member);
@@ -508,7 +578,17 @@ internal sealed class EncounterPatrolRuntime
             points[i] = new(approach[i].x, approach[i].y, approach[i].z);
         if (!EncounterMovementPolicy.CanJoin(points, new(target.x, target.y, target.z)) || !EncounterNavigationBudget.Move())
             return false;
-        if (!member.Navigation.TryPatrolPath(approach[approach.Length - 1], target, out var continuation, out _))
+        Vector3[] continuation;
+        if (member.Squad.State.Route.Spline != null)
+        {
+            var result = member.Navigation.EvaluateRoute(member.Squad.State.Route, member.Command!.WaypointIndex, next);
+            if (result.Status != EncounterPathStatus.Complete)
+                return false;
+            continuation = new Vector3[result.Corners.Length];
+            for (var i = 0; i < continuation.Length; i++)
+                continuation[i] = EncounterNavigation.ToVector3(result.Corners[i]);
+        }
+        else if (!member.Navigation.TryPatrolPath(approach[approach.Length - 1], target, out continuation, out _))
             return false;
         joined = EncounterMovementPolicy.JoinLegs(approach, continuation);
         return true;
@@ -613,8 +693,17 @@ internal sealed class EncounterPatrolRuntime
     // A zero-wait successor can replace the native path without an intervening Stop.
     private static bool Arrive(Member member)
     {
+        RememberCurveProgress(member);
         var command = member.Command!;
         var target = EncounterNavigation.ToVector3(command.Target);
+        if (
+            member.Squad.State.Route.Spline != null
+            && member.MovementWaypoint == command.WaypointIndex
+            && member.Path.Owns(member.Mover)
+            && member.ArrivalCorner >= 0
+            && member.Path.CurrentCorner < member.ArrivalCorner
+        )
+            return false;
         if (member.PassedWaypoint)
         {
             var continuationTarget = EncounterNavigation.ToVector3(
@@ -708,6 +797,7 @@ internal sealed class EncounterPatrolRuntime
 
     private static void Release(Member member)
     {
+        RememberCurveProgress(member);
         if (!member.OwnsNavigation)
             return;
         member.OwnsNavigation = false;

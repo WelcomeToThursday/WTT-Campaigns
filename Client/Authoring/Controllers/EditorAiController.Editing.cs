@@ -379,7 +379,17 @@ internal sealed partial class EditorAiController
                 copy.Id = id;
                 copy.Name = Display(copy.Name, "Patrol route") + " copy";
                 foreach (var waypoint in copy.Waypoints ?? new())
+                {
+                    var previous = waypoint.Id;
                     waypoint.Id = RaidEditorAiContracts.Id();
+                    if (copy.Spline != null)
+                        foreach (var knot in copy.Spline.Knots)
+                            if (knot.AnchorId == previous)
+                                knot.AnchorId = waypoint.Id;
+                }
+                if (copy.Spline != null)
+                    foreach (var knot in copy.Spline.Knots)
+                        knot.Id = RaidEditorAiContracts.Id();
                 layout.PatrolRoutes.Add(copy);
             }
             else if (kind == "enc" && selected.Encounter != null)

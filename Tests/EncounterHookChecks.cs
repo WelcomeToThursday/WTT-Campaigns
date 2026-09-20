@@ -996,6 +996,17 @@ internal static class EncounterHookChecks
             Calls(RequireMethod(runtime, "UpdateSquad"), "TryUpdateBudgeted"),
             "Immediate successors still use the shared planning budget"
         );
+        var updateSquad = RequireMethod(runtime, "UpdateSquad");
+        Require(
+            Calls(updateSquad, "BeginLeg")
+                && !updateSquad.Body.Instructions.Any(i =>
+                    i.OpCode == OpCodes.Ldfld && i.Operand is FieldReference f && f.Name == "Command"
+                )
+                && updateSquad.Body.Instructions.Any(i =>
+                    i.OpCode == OpCodes.Ldfld && i.Operand is FieldReference f && f.Name == "MovementWaypoint"
+                ),
+            "Curve handoff uses the owned movement waypoint after arrival has cleared commands, including budget-deferred replanning"
+        );
         Require(
             facingCalls.Length == 2 && facingCalls[0].Offset < dispatch.Offset && facingCalls[1].Offset > dispatch.Offset,
             "Patrol refreshes facing on both throttled ticks and freshly dispatched navigation"
@@ -1014,8 +1025,13 @@ internal static class EncounterHookChecks
         var submit = runtime.NestedTypes.SelectMany(t => t.Methods).Single(m => Calls(m, "TryRetain"));
         int Offset(string name) => submit.Body.Instructions.Last(i => i.Operand is MethodReference m && m.Name == name).Offset;
         Require(
-            Offset("TryPatrolPath") < Offset("TryRetain") && Offset("TryRetain") < Offset("SubmitPath"),
+            Offset("BuildMovementPath") < Offset("TryRetain") && Offset("TryRetain") < Offset("SubmitPath"),
             "Keeping an equivalent path requires full successful live validation before skipping native resubmission"
+        );
+        var movement = RequireMethod(runtime, "BuildMovementPath");
+        Require(
+            Calls(movement, "EvaluateRoute") && Calls(movement, "TryPatrolPath") && Calls(movement, "Select"),
+            "Spline following validates the authored leg and a separate rejoin connector, retaining its progress cursor"
         );
         Require(
             CallsAny(runtime, "GoToByWay", m => m.DeclaringType.Name == "BotMover"),
@@ -1023,7 +1039,10 @@ internal static class EncounterHookChecks
         );
         var continuation = RequireMethod(runtime, "TryContinuation");
         Require(
-            Calls(continuation, "Move") && Calls(continuation, "TryPatrolPath") && Calls(continuation, "JoinLegs"),
+            Calls(continuation, "Move")
+                && Calls(continuation, "TryPatrolPath")
+                && Calls(continuation, "EvaluateRoute")
+                && Calls(continuation, "JoinLegs"),
             "Continuous travel validates its extra leg under a separate movement-budget token"
         );
         Require(
@@ -1043,6 +1062,26 @@ internal static class EncounterHookChecks
             "Patrol must not reenter baked cover graph routing or its teleport recovery"
         );
         var navigation = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNavigation");
+        var curve = RequireMethod(navigation, "EvaluateRoute");
+        Require(
+            Calls(curve, "Leg")
+                && Calls(curve, "Advance")
+                && Calls(curve, "CreateCurveCheck")
+                && Calls(RequireMethod(navigation, "CheckCurve"), "CreateCurveCheck"),
+            "Inspection and movement share the resumable authored-curve validation pipeline"
+        );
+        var grounded = RequireMethod(navigation, "CreateCurveCheck");
+        Require(
+            grounded.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "ProjectGroundCurvePoint")
+                && grounded.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "CurveStandingClearance")
+                && grounded.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "ClearCurveSegment"),
+            "Editor smoothing, route inspection and runtime share ground following with standing and segment clearance checks"
+        );
+        Require(
+            Calls(RequireMethod(navigation, "ClearCurveSegment"), "Raycast")
+                && Calls(RequireMethod(navigation, "ClearCurveSegment"), "ClearSegment"),
+            "Spline chords require both NavMesh continuity and physical clearance"
+        );
         var path = RequireMethod(navigation, "TryPatrolPath");
         Require(Calls(path, "EvaluatePath"), "Native movement uses the same path evaluation as route inspection");
         path = navigation.Methods.Single(m => m.Name == "EvaluatePath" && m.Parameters[0].ParameterType.FullName == "UnityEngine.Vector3");

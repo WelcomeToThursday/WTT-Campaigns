@@ -16,6 +16,7 @@ internal sealed class EncounterMovementPath
     internal bool Owns(BotMover mover) => _path != null && ReferenceEquals(_path, mover.ActualPathController.CurPath);
 
     internal int LastCorner => (_path?.Length ?? 0) - 1;
+    internal int CurrentCorner => _path?.CurIndex ?? -1;
 
     internal bool PassedCorner(BotMover mover, int index) => Owns(mover) && index >= 0 && _path!.CurIndex > index;
 
@@ -55,11 +56,13 @@ internal sealed class EncounterMovementPath
         if (!_progress.Observe(Remaining(position), Time.time))
         {
             RepathReason = "No forward path progress for 3 seconds";
+            navigation.InvalidateCurves();
             return false;
         }
         if (navigation.RemainingPathClear(position, _path!))
             return true;
         RepathReason = "Remaining path needs validation";
+        navigation.InvalidateCurves();
         _canRetain = true;
         return false;
     }

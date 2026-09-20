@@ -57,8 +57,10 @@ internal static class RaidEditorAiContracts
     internal static string NavigationError(Vector3 position) =>
         TryNav(position, out _) ? "" : "Position is not on a clear NavMesh standing area.";
 
-    internal sealed class Navigation : IEncounterNavigation
+    internal sealed class Navigation : IEncounterNavigation, IEncounterSplineNavigation
     {
+        public string SplineError(MapPatrolRoute route) => NavigationAdapter.SplineError(route);
+
         public bool IsOnNavMesh(SpatialVector position) => TryNav(ToVector(position), out _);
 
         public bool HasStandingClearance(SpatialVector position) => NavigationAdapter.HasStandingClearance(position);
@@ -71,6 +73,8 @@ internal static class RaidEditorAiContracts
 
     internal static string RouteError(MapPatrolRoute route)
     {
+        if (route?.Spline != null)
+            return NavigationAdapter.SplineError(route);
         if (route?.Waypoints == null || route.Waypoints.Count < 2)
             return "";
 

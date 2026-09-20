@@ -194,7 +194,9 @@ internal sealed class EncounterNative
         if (CompatibilityError.Length > 0)
             throw new InvalidOperationException(CompatibilityError);
 
-        var navigationErrors = MapEncounterRules.Errors(layout, new EncounterNavigation(), requireNavigation: true, requireComplete: true);
+        var routeNavigation = new EncounterNavigation(() => layout);
+        await routeNavigation.ValidateSplines(layout, cancellationToken);
+        var navigationErrors = MapEncounterRules.Errors(layout, routeNavigation, requireNavigation: true, requireComplete: true);
         if (navigationErrors.Count > 0)
             throw new InvalidOperationException(string.Join("\n", navigationErrors));
         if (!_admission.CanActivate(context, out var admissionError))

@@ -253,7 +253,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 return;
             if (EditorMode.Ready && !_open && !_walking && !AiPreviewBusy && !OtherModal && _session.Definition != null)
                 Open();
-            _session.Hold = AiPreviewBusy || _walking || _view?.Typing == true || _drag != null || Catalog.Placing;
+            _session.Hold = AiPreviewBusy || _walking || _view?.Typing == true || IsDragging || Splines.Busy || Catalog.Placing;
             if (!_session.Busy && Time.realtimeSinceStartup >= _nextPoll)
             {
                 _nextPoll = Time.realtimeSinceStartup + 1;
@@ -273,7 +273,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 && _session.Conflict == null
                 && !_session.Busy
                 && !OtherModal
-                && (!_open ? !Cursor.visible : !_view!.Typing && _drag == null)
+                && (!_open ? !Cursor.visible : !_view!.Typing && !IsDragging)
             )
             {
                 var task = _session.Tasks.AsValueEnumerable().FirstOrDefault(t => t.Status == "Pending");
@@ -308,7 +308,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 {
                     Catalog.CancelPlacement(inspectLast: true);
                 }
-                else if (_drag != null)
+                else if (IsDragging)
                 {
                     CancelDrag();
                 }
@@ -339,7 +339,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     _session.Undo(true);
                 }
 
-                if (_drag == null && !CameraLooking && !_view.PointerOver)
+                if (!IsDragging && !CameraLooking && !_view.PointerOver)
                 {
                     if (Input.GetKeyDown(KeyCode.Space) && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift)))
                         _view.Windows.SetViewportMaximized(!_view.Windows.ViewportMaximized);
@@ -350,7 +350,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     FrameSceneSelection();
                 if (
                     !CameraLooking
-                    && _drag == null
+                    && !IsDragging
                     && !Catalog.Placing
                     && !Input.GetKey(KeyCode.LeftControl)
                     && !Input.GetKey(KeyCode.RightControl)

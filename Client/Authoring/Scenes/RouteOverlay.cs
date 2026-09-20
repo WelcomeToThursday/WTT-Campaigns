@@ -27,6 +27,7 @@ internal sealed class RouteOverlay : VisualElement
     private long _captionRevision = long.MinValue;
     private MapLayout? _aiDescriptorLayout;
     private long _aiDescriptorRevision = long.MinValue;
+    private MapPatrolRoute? _aiDescriptorSelectedRoute;
     private readonly NavigationInspection _navigation = new();
     private readonly PatrolRouteInspection _patrol = new();
     private readonly EncounterNavigation _pathNavigation;
@@ -36,13 +37,16 @@ internal sealed class RouteOverlay : VisualElement
     private string _pathSelection = "";
     private long _pathRevision = long.MinValue;
     private MapPatrolRoute? _selectedPatrol;
+    private MapLayout? _playerCurveLayout;
+    private long _playerCurveRevision = long.MinValue;
+    private List<SplineSample> _playerCurve = new();
     internal bool InspectNavigation;
     private readonly ScrollView _navigationPanel = EditorToolkitDocument.CloneTemplate<ScrollView>("RouteLegend");
     private readonly Label _navigationLegend;
 
     internal RouteOverlay()
     {
-        _pathNavigation = new EncounterNavigation(() => _pathLayout);
+        _pathNavigation = new EncounterNavigation(() => _pathLayout) { EditorPreview = true };
         _queryPath = _pathNavigation.EvaluatePath;
         pickingMode = PickingMode.Ignore;
         style.position = Position.Absolute;
@@ -68,7 +72,31 @@ internal sealed class RouteOverlay : VisualElement
         if (routes)
             RouteVisuals.Points(layout, _points);
         var near = camera.nearClipPlane + .001f;
-        for (var i = 1; i < _points.Count; i++)
+        if (routes && layout.PlayerRouteSpline != null)
+        {
+            try
+            {
+                if (!ReferenceEquals(layout, _playerCurveLayout) || layoutRevision != _playerCurveRevision)
+                {
+                    _playerCurveLayout = layout;
+                    _playerCurveRevision = layoutRevision;
+                    _playerCurve = new();
+                    _playerCurve = SplineGeometry.Sample(RouteSpline.Resolved(layout.PlayerRouteSpline, RouteSpline.PlayerAnchors(layout)));
+                }
+                for (var i = 1; i < _playerCurve.Count; i++)
+                    AddSegment(
+                        EncounterNavigation.ToVector3(SplineGeometry.Spatial(_playerCurve[i - 1].Position)),
+                        EncounterNavigation.ToVector3(SplineGeometry.Spatial(_playerCurve[i].Position)),
+                        camera,
+                        near,
+                        Color.white
+                    );
+            }
+            catch (ArgumentException)
+            { /* Invalid imported curves remain editable. */
+            }
+        }
+        for (var i = 1; layout.PlayerRouteSpline == null && i < _points.Count; i++)
         {
             var a = ZoneRuntime.Vector(_points[i - 1].Point.Position);
             var b = ZoneRuntime.Vector(_points[i].Point.Position);
@@ -88,7 +116,6 @@ internal sealed class RouteOverlay : VisualElement
         // outlines, and scenery-through visibility remain identical to player
         // checkpoints. Cache authored descriptors when the layout changes;
         // only their camera projection and clipping are performed per frame.
-        RefreshAiDescriptors(layout, layoutRevision);
         _pathLayout = layout;
         if (!ReferenceEquals(layout, _selectionLayout) || _pathSelection != selected || _pathRevision != layoutRevision)
         {
@@ -103,6 +130,7 @@ internal sealed class RouteOverlay : VisualElement
             }
         }
         var selectedRoute = ai ? _selectedPatrol : null;
+        RefreshAiDescriptors(layout, layoutRevision, selectedRoute);
         _patrol.Refresh(
             selectedRoute,
             selected,
@@ -111,7 +139,8 @@ internal sealed class RouteOverlay : VisualElement
             Time.frameCount,
             Time.realtimeSinceStartup,
             _queryPath,
-            Time.frameCount >= SceneNavigation.ReadyFrame
+            Time.frameCount >= SceneNavigation.ReadyFrame,
+            _pathNavigation.EvaluateRoute
         );
         if (ai)
             foreach (var segment in _aiSegments)
@@ -167,13 +196,18 @@ internal sealed class RouteOverlay : VisualElement
         MarkDirtyRepaint();
     }
 
-    private void RefreshAiDescriptors(MapLayout layout, long layoutRevision)
+    private void RefreshAiDescriptors(MapLayout layout, long layoutRevision, MapPatrolRoute? selectedRoute)
     {
-        if (ReferenceEquals(layout, _aiDescriptorLayout) && layoutRevision == _aiDescriptorRevision)
+        if (
+            ReferenceEquals(layout, _aiDescriptorLayout)
+            && layoutRevision == _aiDescriptorRevision
+            && ReferenceEquals(selectedRoute, _aiDescriptorSelectedRoute)
+        )
             return;
 
         _aiDescriptorLayout = layout;
         _aiDescriptorRevision = layoutRevision;
+        _aiDescriptorSelectedRoute = selectedRoute;
         _aiPoints.Clear();
         _aiSegments.Clear();
 
@@ -189,16 +223,36 @@ internal sealed class RouteOverlay : VisualElement
                 if (waypoint == null)
                     continue;
                 _aiPoints.Add((waypoint, RouteRole.Patrol, i + 1, caption + " · " + (i + 1), "waypoint:" + route.Id + ":" + waypoint.Id));
-                if (i > 0 && route.Waypoints[i - 1] != null)
+                if (route.Spline == null && i > 0 && route.Waypoints[i - 1] != null)
                     _aiSegments.Add((route.Waypoints[i - 1], waypoint, RoleColor(RouteRole.Patrol), route.Id));
             }
             if (
-                route.Completion == MapPatrolRoute.Loop
+                route.Spline == null
+                && route.Completion == MapPatrolRoute.Loop
                 && route.Waypoints.Count > 1
                 && route.Waypoints[0] != null
                 && route.Waypoints[^1] != null
             )
                 _aiSegments.Add((route.Waypoints[^1], route.Waypoints[0], RoleColor(RouteRole.Patrol), route.Id));
+            if (route.Spline != null && !ReferenceEquals(route, selectedRoute))
+            {
+                try
+                {
+                    var curve = SplineGeometry.Sample(RouteSpline.Resolved(route.Spline, route.Waypoints));
+                    for (var i = 1; i < curve.Count; i++)
+                        _aiSegments.Add(
+                            (
+                                new() { Position = SplineGeometry.Spatial(curve[i - 1].Position) },
+                                new() { Position = SplineGeometry.Spatial(curve[i].Position) },
+                                RoleColor(RouteRole.Patrol),
+                                route.Id
+                            )
+                        );
+                }
+                catch (ArgumentException)
+                { /* Selected-route diagnostics report malformed imported geometry. */
+                }
+            }
         }
         foreach (var spawn in (IEnumerable<SpatialCapture>?)layout.SpawnPoints ?? Array.Empty<SpatialCapture>())
             if (spawn != null)
@@ -248,23 +302,22 @@ internal sealed class RouteOverlay : VisualElement
         {
             var result = leg.Result;
             var good = result.Status == EncounterPathStatus.Complete;
-            var color =
-                good ? new Color(.35f, .85f, .45f)
-                : result.Status == EncounterPathStatus.Pending ? new Color(1f, .75f, .25f)
-                : new Color(1f, .35f, .3f);
+            var color = DiagnosticColor(result.DiagnosticColor);
             Vector2? captionAt = null;
             var longest = 0f;
-            if (good)
+            var arrowDistance = 0f;
+            if (good || result.Corners.Length > 1)
             {
                 for (var i = 1; i < result.Corners.Length; i++)
                 {
+                    var segmentColor = DiagnosticColor(result.SegmentColor(i));
                     var count = _segments.Count;
                     AddSegment(
                         EncounterNavigation.ToVector3(result.Corners[i - 1]),
                         EncounterNavigation.ToVector3(result.Corners[i]),
                         camera,
                         near,
-                        color
+                        segmentColor
                     );
                     if (_segments.Count == count)
                         continue;
@@ -275,7 +328,7 @@ internal sealed class RouteOverlay : VisualElement
                     var direction = delta.normalized;
                     var normal = new Vector2(-direction.y, direction.x);
                     var offset = route.Completion == MapPatrolRoute.PingPong ? normal * 3 : Vector2.zero;
-                    segment = (segment.A + offset, segment.B + offset, color);
+                    segment = (segment.A + offset, segment.B + offset, segmentColor);
                     _segments[count] = segment;
                     var middle = (segment.A + segment.B) * .5f;
                     if (delta.sqrMagnitude > longest)
@@ -283,8 +336,10 @@ internal sealed class RouteOverlay : VisualElement
                         longest = delta.sqrMagnitude;
                         captionAt = middle + normal * 12;
                     }
-                    if (delta.sqrMagnitude >= 24 * 24)
+                    arrowDistance += delta.magnitude;
+                    if (good && arrowDistance >= 60)
                     {
+                        arrowDistance %= 60;
                         var tip = middle + direction * 7;
                         _segments.Add((tip, middle - direction * 7 + normal * 6, color));
                         _segments.Add((tip, middle - direction * 7 - normal * 6, color));
@@ -316,17 +371,42 @@ internal sealed class RouteOverlay : VisualElement
                     }
                 }
             }
+            if (result.HasProblemLocation)
+            {
+                var world = EncounterNavigation.ToVector3(result.Corners[result.FailedSample]);
+                if (result.Failure == SplinePathFailure.BlockedSegment && result.FailedSample > 0)
+                    world = (world + EncounterNavigation.ToVector3(result.Corners[result.FailedSample - 1])) * .5f;
+                var screen = camera.EditorWorldToScreenPoint(world);
+                if (screen.z >= near && SceneViewport.ScreenRect(camera).Contains(screen) && Local(screen, out var at))
+                {
+                    // A white cross and colored diamond locate the first failing check.
+                    // The renderer's dark under-stroke keeps both readable over scenery.
+                    _segments.Add((at + new Vector2(-5, -5), at + new Vector2(5, 5), Color.white));
+                    _segments.Add((at + new Vector2(-5, 5), at + new Vector2(5, -5), Color.white));
+                    for (var side = 0; side < 4; side++)
+                    {
+                        var a = side * Mathf.PI / 2;
+                        var b = (side + 1) * Mathf.PI / 2;
+                        _segments.Add(
+                            (at + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * 13, at + new Vector2(Mathf.Cos(b), Mathf.Sin(b)) * 13, color)
+                        );
+                    }
+                    captionAt = at + new Vector2(18, -22);
+                }
+            }
             if (captionAt.HasValue)
             {
                 var label = Label(labelIndex++);
                 label.text = leg.Caption;
                 label.style.color = color;
-                label.style.left = Mathf.Clamp(captionAt.Value.x, 4, Mathf.Max(4, contentRect.width - 180));
-                label.style.top = Mathf.Clamp(captionAt.Value.y, 4, Mathf.Max(4, contentRect.height - 24));
+                label.style.left = Mathf.Clamp(captionAt.Value.x, 4, Mathf.Max(4, contentRect.width - 240));
+                label.style.top = Mathf.Clamp(captionAt.Value.y, 4, Mathf.Max(4, contentRect.height - 44));
                 label.style.display = DisplayStyle.Flex;
             }
         }
     }
+
+    private static Color DiagnosticColor(uint rgb) => new(((rgb >> 16) & 255) / 255f, ((rgb >> 8) & 255) / 255f, (rgb & 255) / 255f);
 
     private void AddSegment(SpatialCapture from, SpatialCapture to, Camera camera, float near, Color color)
     {

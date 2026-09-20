@@ -44,6 +44,18 @@ public static class MapPatrolRouteEditing
             throw new ArgumentNullException(nameof(route));
         route.Waypoints.Reverse();
         route.WaitSeconds?.Reverse();
+        if (route.Spline != null)
+        {
+            SplineGeometry.Reverse(route.Spline);
+            // A closed curve may begin with the old closing leg's shaping knots after reversal.
+            var first = route.Spline.Knots.FindIndex(k => k.AnchorId == route.Waypoints[0].Id);
+            if (first > 0)
+            {
+                var prefix = route.Spline.Knots.GetRange(0, first);
+                route.Spline.Knots.RemoveRange(0, first);
+                route.Spline.Knots.AddRange(prefix);
+            }
+        }
     }
 
     public static void Append(MapPatrolRoute route, SpatialCapture waypoint)

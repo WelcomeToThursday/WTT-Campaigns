@@ -177,6 +177,7 @@ WTT.Campaigns.Tests.EditorControllerChecks.Run(Check);
 WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
 WTT.Campaigns.Tests.EditorCameraBookmarkChecks.Run(Check);
 WTT.Campaigns.Tests.PlayerRouteChecks.Run(Check);
+WTT.Campaigns.Tests.SplineChecks.Run(Check);
 WTT.Campaigns.Tests.AiTreeChecks.Run(Check);
 WTT.Campaigns.Tests.EditorLibraryTreeChecks.Run(Check);
 WTT.Campaigns.Tests.RouteVisualChecks.Run(Check);

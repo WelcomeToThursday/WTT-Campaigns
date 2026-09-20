@@ -57,6 +57,10 @@ public sealed class MapPatrolRoute
     public string Id { get; set; } = "";
     public string Name { get; set; } = "New patrol route";
     public List<SpatialCapture> Waypoints { get; set; } = new();
+    public SpatialSpline? Spline { get; set; }
+
+    public bool ShouldSerializeSpline() => Spline != null;
+
     public string Pace { get; set; } = Walk;
     public string Completion { get; set; } = Loop;
 

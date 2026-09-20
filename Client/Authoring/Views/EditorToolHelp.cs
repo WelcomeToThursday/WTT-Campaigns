@@ -5,6 +5,17 @@ internal static class EditorToolHelp
     internal static string For(string id, string caption) =>
         id switch
         {
+            "SplineEdit" => "Enable curve editing for this route. Drag points or tangent handles; Escape cancels a drag.",
+            "SplineMode" => "Corner: sharp turn. Auto: smooth tangent. Aligned: linked handle directions. Free: independent handles.",
+            "SplinePart" =>
+                "Choose the point or handle to adjust. Patrol curves follow the ground; free/X/Z point drags snap to nearby ground. Use Y deliberately to select a different floor.",
+            "SplineStrength" => "Smoothing percentage, applied by Smooth selected or Smooth route. Tight passages may keep smaller curves.",
+            "SplineSmoothSelected" => "Smooth this point while preserving patrol clearance and fixed route markers.",
+            "SplineSmoothRoute" => "Smooth waypoint transitions and round navigation corners wherever clearance permits.",
+            "SplineInsert" => "Split the next curve segment without changing its shape. Ctrl-click a curve to insert there.",
+            "SplineDelete" => "Delete the selected shaping point. Gameplay waypoints use the existing route delete controls.",
+            "SplineCorner" => "Collapse both handles to make a deliberate sharp corner.",
+            "SplineX" or "SplineY" or "SplineZ" => "Selected point or handle position in world metres.",
             "Name" or "MapName" => "Display name of the selected record.",
             "Search" => "Filter this window by name or identifier.",
             "AddBox" => "Create a box-shaped zone. Adjust its dimensions in Properties.",

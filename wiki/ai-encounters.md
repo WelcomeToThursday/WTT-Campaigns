@@ -28,6 +28,26 @@ Waypoint drafts may temporarily be off the NavMesh, obstructed, or disconnected.
 
 BigBrain provides the patrol layer. SAIN keeps control during combat, search, and recovery. If any squad member becomes engaged, the entire squad suspends its authored patrol, preserving its target and direction and freezing any remaining waypoint wait. Once all survivors are eligible, the remaining wait resumes, followed by the saved target. If that target is unreachable, the squad rejoins at the waypoint nearest its leader that every survivor can reach, preserving its travel direction. Re-entry is logged. If no common waypoint is reachable, the squad remains suspended and retries without teleporting. The first surviving member in roster order replaces a dead leader without resetting patrol progress. Checkpoints retain target, direction, and the frozen wait.
 
+## Spline paths and smoother corners
+
+Select a patrol or waypoint, then choose **Edit Spline** in Properties. This captures the currently walkable path, including its navigation corners, as editable curve points. Existing routes keep their original behavior until you enable this tool.
+
+- Select a point in the viewport. Drag it freely in the camera plane, use the colored axes, or edit its world X/Y/Z coordinates. **Edit** selects the point, incoming handle, or outgoing handle. Snapping uses the editor grid; hold Alt to bypass it.
+- **Corner** keeps a sharp turn. **Auto** creates a smooth tangent. **Aligned** keeps the two handle directions linked; **Free** lets each handle move independently. Dragging an Auto handle changes it to Aligned.
+- **Insert point** splits the next curve segment without changing its shape. Ctrl-click a curve to split near the cursor. Added shaping points have no gameplay wait or checkpoint behavior. **Delete point** removes a shaping point; use the existing route tools to remove gameplay waypoints.
+- Set **Smoothing (%)** (initially 50), then choose **Smooth selected** or **Smooth route**. Authored waypoints remain fixed. Navigation corners round off only where clearance permits; tight corners keep a smaller radius or their original shape. **Make corner** collapses both handles.
+- Each drag or action supports undo/redo. Escape cancels a viewport drag. **Finish spline editing** hides the editing handles while retaining the saved curve.
+
+Patrol curves automatically follow the connected ground between waypoints. Smoothing or adjusting handle height no longer lifts the walking path off the floor. Free and X/Z point drags snap to nearby ground on the current floor; explicit Y edits remain available for deliberate floor changes. Waypoint positions and waits stay fixed during smoothing. Ground following preserves the horizontal curve and still rejects gaps, sideways snapping, disconnected floors, and insufficient clearance. Player route guides remain freely editable in 3D.
+
+Green patrol curves have passed walkable-ground and clearance checks. While dragging, the whole curve redraws immediately; navigation checks catch up quietly. Purple marks off-NavMesh ground or a floor mismatch, orange marks insufficient standing clearance, and red marks a blocked connection. A white cross inside a colored diamond locates the first failed check. The warning fades over the nearby three metres of curve into grey; grey portions are unconfirmed, not a guarantee of clearance. The label and legend identify the affected waypoint pair and reason. Amber is used for geometry awaiting its first check; routine background refresh keeps the settled display.
+
+A curve through a wall, across a floor edge, or outside walkable ground blocks preview and mission activation. Bots follow the validated samples, with a navigation connector when joining or resuming. They do not replace a blocked authored curve with an automatic detour. New obstructions suspend the patrol until the curve is clear again. Waypoint waits, patrol pace, loop closure, ping-pong return, and combat ownership still apply.
+
+The **Routes** tool uses the same spline controls for the player start/checkpoint/exit guide. Player curves are visual guides: progression still uses the existing checkpoint and exit volumes, and player movement is not constrained to the curve. Player guide curves do not require bot navigation clearance.
+
+Spline-bearing campaigns use format 12 and require matching updated Campaigns components. Saved data contains authored points and handles; evaluated samples are rebuilt locally.
+
 ## Observe, playtest, and reset
 
 Compatible **BigBrain 1.5.0** and **SAIN 4.5.1** are required for the initial **SPT 4.1.5** target. Preview remains unavailable when the installed integration cannot establish safe spawn admission and AI ownership. Ordinary raids keep their normal spawning and AI behavior. BigBrain, SAIN, MoreBotsAPI and Black Division are required for all campaign play; see the [requirements](../README.md#requirements) for minimum versions. The shipped `WTT-Campaigns.AI.dll` is loaded only when an authored encounter needs the integration and both dependencies pass compatibility checks; keep it alongside the matching client assembly when updating.

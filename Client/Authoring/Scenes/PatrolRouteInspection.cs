@@ -24,11 +24,11 @@ internal sealed class PatrolRouteInspection
         }
         internal string Caption =>
             _caption ??=
-                $"{From + 1} → {To + 1}: "
+                $"Waypoint {From + 1} → Waypoint {To + 1}"
                 + (
-                    Result.Status == EncounterPathStatus.Complete ? $"{Result.Distance:F1} m"
-                    : Result.Status == EncounterPathStatus.Pending ? "checking…"
-                    : Result.Reason
+                    Result.Status == EncounterPathStatus.Complete ? $"\nPath length: {Result.Distance:F1} m"
+                    : Result.Status == EncounterPathStatus.Pending ? ""
+                    : ": " + Result.Reason
                 );
     }
 
@@ -53,7 +53,8 @@ internal sealed class PatrolRouteInspection
         int frame,
         double now,
         Func<SpatialVector, SpatialVector, EncounterPathResult> query,
-        bool ready = true
+        bool ready = true,
+        Func<MapPatrolRoute, int, int, EncounterPathResult>? curveQuery = null
     )
     {
         if (frame != _frame)
@@ -69,23 +70,31 @@ internal sealed class PatrolRouteInspection
             || (!Pending && now >= _refreshAt)
         )
         {
+            // Refresh diagnostics in place. Background validation must not replace a
+            // settled route with pending geometry/status on every two-second pass.
+            var geometryChanged = !ReferenceEquals(Route, route) || _layoutRevision != layoutRevision;
             Route = route;
             _selection = selection;
             _layoutRevision = layoutRevision;
             _navigationRevision = navigationRevision;
             _cursor = 0;
             _summary = _details = null;
-            Segments.Clear();
-            if (route?.Waypoints != null)
+            if (geometryChanged)
             {
-                for (var i = 1; i < route.Waypoints.Count; i++)
+                Segments.Clear();
+                if (route?.Waypoints != null)
                 {
-                    Segments.Add(new(i - 1, i));
-                    if (route.Completion == MapPatrolRoute.PingPong)
-                        Segments.Add(new(i, i - 1));
+                    for (var i = 1; i < route.Waypoints.Count; i++)
+                    {
+                        Segments.Add(new(i - 1, i));
+                        if (route.Completion == MapPatrolRoute.PingPong)
+                            Segments.Add(new(i, i - 1));
+                    }
+                    if (route.Completion == MapPatrolRoute.Loop && route.Waypoints.Count > 1)
+                        Segments.Add(new(route.Waypoints.Count - 1, 0));
+                    if (route.Spline != null)
+                        PreviewCurve(route);
                 }
-                if (route.Completion == MapPatrolRoute.Loop && route.Waypoints.Count > 1)
-                    Segments.Add(new(route.Waypoints.Count - 1, 0));
             }
             _refreshAt = now + 2;
         }
@@ -96,12 +105,64 @@ internal sealed class PatrolRouteInspection
             _queries++;
             var from = route!.Waypoints[segment.From]?.Position;
             var to = route.Waypoints[segment.To]?.Position;
-            segment.Result =
+            var result =
                 from?.Finite == true && to?.Finite == true
-                    ? query(from, to)
+                    ? route.Spline != null && curveQuery != null
+                        ? curveQuery(route, segment.From, segment.To)
+                        : query(from, to)
                     : new(EncounterPathStatus.Failed, reason: "Invalid waypoint coordinates");
+            if (result.Status == EncounterPathStatus.Pending)
+            {
+                if (segment.Result.Status == EncounterPathStatus.Pending && result.Corners.Length > 1)
+                    segment.Result = result;
+                _cursor--;
+                break;
+            }
+            segment.Result = result;
             if (!Pending)
                 _refreshAt = now + 2;
+        }
+    }
+
+    private void PreviewCurve(MapPatrolRoute route)
+    {
+        // Draw every leg immediately, even while the first leg is waiting for navigation.
+        // Sample the whole curve once; adjacent legs share their exact anchor sample.
+        try
+        {
+            var error = RouteSpline.Error(route.Spline, route.Waypoints, route.Completion == MapPatrolRoute.Loop);
+            if (error.Length > 0)
+                throw new ArgumentException(error);
+            var spline = RouteSpline.Resolved(route.Spline!, route.Waypoints);
+            var samples = SplineGeometry.Sample(spline);
+            var anchors = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (samples.Count == 0)
+                return;
+            anchors[spline.Knots[0].AnchorId] = 0;
+            for (var i = 1; i < samples.Count; i++)
+            {
+                var knot = samples[i].Segment + 1;
+                if (samples[i].T == 1 && knot < spline.Knots.Count && spline.Knots[knot].AnchorId.Length > 0)
+                    anchors[spline.Knots[knot].AnchorId] = i;
+            }
+            foreach (var segment in Segments)
+            {
+                var from = anchors[route.Waypoints[segment.From].Id];
+                var to =
+                    route.Completion == MapPatrolRoute.Loop && segment.To == 0
+                        ? samples.Count - 1
+                        : anchors[route.Waypoints[segment.To].Id];
+                var points = new SpatialVector[Math.Abs(to - from) + 1];
+                var direction = to >= from ? 1 : -1;
+                for (var i = 0; i < points.Length; i++)
+                    points[i] = SplineGeometry.Spatial(samples[from + i * direction].Position);
+                segment.Result = new(EncounterPathStatus.Pending, points);
+            }
+        }
+        catch (ArgumentException e)
+        {
+            foreach (var segment in Segments)
+                segment.Result = new(EncounterPathStatus.Failed, reason: e.Message);
         }
     }
 
@@ -116,18 +177,22 @@ internal sealed class PatrolRouteInspection
             return text.Append("\nDraft incomplete: add at least two waypoints before playtesting.").ToString();
         var failed = 0;
         var distance = 0f;
+        var unsettled = false;
         foreach (var segment in Segments)
         {
             if (segment.Result.Status == EncounterPathStatus.Failed)
                 failed++;
             distance += segment.Result.Distance;
+            unsettled |= segment.Result.Status == EncounterPathStatus.Pending;
         }
         text.Append(
-            Pending ? "\nChecking paths…"
-            : failed > 0 ? $"\nDraft invalid: {failed} connection(s) blocked"
+            failed > 0 ? $"\nDraft invalid: {failed} connection(s) blocked"
+            : unsettled ? ""
             : $"\nComplete route · {distance:F1} m"
         );
-        text.Append("\nArrows: walkable path · Dashed: pending or failed connection");
+        text.Append(
+            "\nArrows: walkable path · Red: blocked connection\nPurple: off NavMesh · Orange: standing clearance\nBright cross: first problem · Fade: nearby curve · Grey: unconfirmed"
+        );
         foreach (var segment in Segments)
             if (details || segment.Result.Status == EncounterPathStatus.Failed)
                 text.Append('\n').Append(segment.Caption);

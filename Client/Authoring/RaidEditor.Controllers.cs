@@ -18,6 +18,8 @@ public sealed partial class RaidEditor : IEditorAiContext, IEditorCatalogContext
     private EditorCatalogController Catalog => _catalogController ??= new(this);
     private EditorMapController? _mapController;
     private EditorMapController Maps => _mapController ??= new(this);
+    private EditorSplineController? _splineController;
+    private EditorSplineController Splines => _splineController ??= new(this);
     string IEditorDocumentContext.LayoutId
     {
         get => _layoutId;

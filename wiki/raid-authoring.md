@@ -191,3 +191,7 @@ Configured containers require campaign format **9** and authoring protocol **6**
 The editor retains up to 64 container-run receipts per connected session without eviction, preventing retries from rerolling old results. Reconnect the editor session if that limit is reached. Scene-item eligibility is independent of trader prices/blacklists, but quest objects and inventory infrastructure remain excluded. Missing world models and malformed item assemblies report individual catalog errors.
 
 After installation, manually restart the client and server. Check a cross-map asset's placement, collision, save/reload and removal; then start a fresh walkthrough, search a container, transfer an item, reopen it to confirm no reroll, and return to editing to check cleanup. Offline validation does not establish live Unity visuals or other-mod compatibility.
+
+## Editing route curves
+
+Player routes and AI patrols share an **Edit Spline** inspector. Use draggable points and handles, shape-preserving point insertion, and **Smooth selected / Smooth route** to refine corners. Player checkpoints retain their trigger volumes; patrol curves must pass navigation clearance before playtesting. See [spline paths and smoother corners](ai-encounters.md#spline-paths-and-smoother-corners) for controls and validation behavior.

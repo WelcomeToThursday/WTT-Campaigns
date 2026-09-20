@@ -76,6 +76,8 @@ internal sealed class RaidEditorSession
         try
         {
             action(Definition);
+            foreach (var layout in Definition.MapLayouts)
+                WTT.Campaigns.Shared.Spatial.RouteSpline.Synchronize(layout);
             EditorContentRules.ValidateEdit(before, Definition);
         }
         catch

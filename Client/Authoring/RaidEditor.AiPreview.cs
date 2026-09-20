@@ -87,7 +87,9 @@ public sealed partial class RaidEditor
             if (_session != session || !MissionContent || !EditorMode.Ready || !player)
                 throw new OperationCanceledException();
             Physics.SyncTransforms();
-            var errors = MapEncounterRules.Errors(layout, new EncounterNavigation(), true, true);
+            var routeNavigation = new EncounterNavigation(() => layout);
+            await routeNavigation.ValidateSplines(layout, lifetime.Token);
+            var errors = MapEncounterRules.Errors(layout, routeNavigation, true, true);
             if (errors.Count > 0)
                 throw new InvalidOperationException(string.Join("\n", errors));
             if (playtest && (layout.Start == null || !ClearPosition(ZoneRuntime.Vector(layout.Start.Position), player)))

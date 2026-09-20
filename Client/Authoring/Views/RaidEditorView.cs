@@ -258,6 +258,7 @@ internal sealed partial class RaidEditorView : IDisposable
     }
 
     private readonly WTT.Campaigns.Shared.Spatial.MapLayout _levelRoute = new();
+    internal long RoutePreviewRevision;
 
     internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected, long layoutRevision = 0)
     {
@@ -282,7 +283,7 @@ internal sealed partial class RaidEditorView : IDisposable
             layout,
             camera!,
             selected,
-            layoutRevision,
+            unchecked(layoutRevision * 1000003 + RoutePreviewRevision),
             ViewportState.Shows(EditorOverlays.Routes),
             ViewportState.Shows(EditorOverlays.Ai)
         );

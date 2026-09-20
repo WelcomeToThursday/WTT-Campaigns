@@ -254,6 +254,24 @@ internal static class EditorLayoutSpec
                     )
                 ),
                 G(
+                    "SplineSection",
+                    T("SplineHeading", "CURVE EDITING"),
+                    B("SplineEdit", "Edit Spline"),
+                    T("SplineStatus", ""),
+                    G(
+                        "SplineDetails",
+                        C("SplineMode", "Handles"),
+                        C("SplinePart", "Edit"),
+                        F("SplineX", "World X"),
+                        F("SplineY", "World Y"),
+                        F("SplineZ", "World Z"),
+                        F("SplineStrength", "Smoothing (%)"),
+                        R("SplineSmoothRow", B("SplineSmoothSelected", "Smooth selected"), B("SplineSmoothRoute", "Smooth route")),
+                        R("SplinePointRow", B("SplineInsert", "Insert point"), B("SplineDelete", "Delete point")),
+                        B("SplineCorner", "Make corner")
+                    )
+                ),
+                G(
                     "MapInspector",
                     G("RouteGuideGroup", T("RouteGuide", "")),
                     F("MapName", "Name"),

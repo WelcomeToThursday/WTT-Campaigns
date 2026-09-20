@@ -28,7 +28,7 @@ public sealed partial class RaidEditor
     }
 
     private Drag? _drag;
-    internal bool IsDragging => _drag != null;
+    internal bool IsDragging => _drag != null || Splines.Dragging;
     private bool _picking;
     private readonly List<LineRenderer> _lines = new();
     private Material? _lineMaterial,
@@ -49,6 +49,10 @@ public sealed partial class RaidEditor
 
     private void GeometryInput()
     {
+        if (Splines.Busy)
+            return;
+        if (Splines.Input(_snap))
+            return;
         if (!_camera || _session?.Definition == null)
         {
             return;
@@ -84,6 +88,7 @@ public sealed partial class RaidEditor
                 return;
             }
             var before = _drag.Before;
+            var previousPosition = ZoneRuntime.Vector(point.Position);
             if (_tool == "Move")
             {
                 point.Position = ZoneRuntime.Vector(ZoneRuntime.Vector(before.Position) + Axis(_drag.Axis) * amount);
@@ -142,6 +147,8 @@ public sealed partial class RaidEditor
                 return;
             }
             KeepDragAnchor(point, _drag);
+            if (_view != null && previousPosition != ZoneRuntime.Vector(point.Position))
+                _view.RoutePreviewRevision++;
             Refresh();
             return;
         }
@@ -285,6 +292,7 @@ public sealed partial class RaidEditor
 
     private void CancelDrag()
     {
+        Splines.CancelDrag();
         if (_drag == null)
         {
             return;
@@ -293,6 +301,8 @@ public sealed partial class RaidEditor
         if (Selected != null)
         {
             RestorePoint(Selected, _drag.Before);
+            if (_view != null)
+                _view.RoutePreviewRevision++;
         }
 
         _drag = null;
@@ -380,10 +390,12 @@ public sealed partial class RaidEditor
             Line(new[] { center - Vector3.up * .15f, center + Vector3.up * .15f }, color);
         }
         _view?.DrawRoute(!_walking ? Layout : null, _camera, _selected, _session?.ContentVersion ?? 0);
+        Splines.Draw(Line);
         if (overlays.Shows(EditorOverlays.Bounds))
             DrawSelectionBounds();
         if (
-            Selected is { } selected
+            !Splines.Editing
+            && Selected is { } selected
             && CanUseHandle(selected)
             && _camera
             && _camera!.EditorWorldToScreenPoint(HandleOrigin(selected)).z > _camera!.nearClipPlane

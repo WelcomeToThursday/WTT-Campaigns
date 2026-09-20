@@ -8,7 +8,7 @@ namespace WTT.Campaigns.Client.Encounters;
 /// NavMesh adapter used by both draft validation and the encounter runtime.  The authored point is
 /// always passed to the native spawner; SamplePosition is used only to validate a small tolerance.
 /// </summary>
-public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigation
+public sealed partial class EncounterNavigation : IEncounterNavigation, IPatrolNavigation, IEncounterSplineNavigation
 {
     // Validation must reject a point that would cause the native creator to snap to a
     // different floor or room.  The authored position is never replaced at activation.
@@ -115,18 +115,26 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
                 !NavMesh.SamplePosition(from, out var start, PointTolerance, NavMeshAreaMask)
                 || (start.position - from).sqrMagnitude > PointTolerance * PointTolerance
             )
-                return new(EncounterPathStatus.Failed, reason: "Start waypoint is off NavMesh");
+                return new(EncounterPathStatus.Failed, reason: "Start waypoint is off NavMesh", failure: SplinePathFailure.OffNavMesh);
             if (
                 !NavMesh.SamplePosition(to, out var end, PointTolerance, NavMeshAreaMask)
                 || (end.position - to).sqrMagnitude > PointTolerance * PointTolerance
             )
-                return new(EncounterPathStatus.Failed, reason: "End waypoint is off NavMesh");
+                return new(EncounterPathStatus.Failed, reason: "End waypoint is off NavMesh", failure: SplinePathFailure.OffNavMesh);
             // Moving bots occupy their own origin and may share a target. Standing geometry
             // must be clear, but transient players are handled by native movement avoidance.
             if (!HasStandingClearance(from, null, true))
-                return new(EncounterPathStatus.Failed, reason: "Start waypoint is obstructed");
+                return new(
+                    EncounterPathStatus.Failed,
+                    reason: "Start waypoint has insufficient standing clearance",
+                    failure: SplinePathFailure.StandingClearance
+                );
             if (!HasStandingClearance(to, null, true))
-                return new(EncounterPathStatus.Failed, reason: "End waypoint is obstructed");
+                return new(
+                    EncounterPathStatus.Failed,
+                    reason: "End waypoint has insufficient standing clearance",
+                    failure: SplinePathFailure.StandingClearance
+                );
             if ((from - to).sqrMagnitude <= .0001f)
                 return new(EncounterPathStatus.Complete, new[] { Spatial(from), Spatial(to) });
             var path = new NavMeshPath();

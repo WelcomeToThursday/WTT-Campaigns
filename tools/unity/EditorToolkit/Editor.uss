@@ -372,3 +372,5 @@
 .editor-console-size-22 { --console-font-size: 22px; --console-time-width: 110px; }
 .editor-console-size-23 { --console-font-size: 23px; --console-time-width: 115px; }
 .editor-console-size-24 { --console-font-size: 24px; --console-time-width: 120px; }
+
+.editor-spline-card { margin-top: 6px; margin-bottom: 6px; padding: 6px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px; border-top-color: #465667; border-right-color: #465667; border-bottom-color: #465667; border-left-color: #465667; background-color: rgba(24, 32, 40, 0.94); }

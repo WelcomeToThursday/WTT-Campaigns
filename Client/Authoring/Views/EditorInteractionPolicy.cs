@@ -7,12 +7,13 @@ internal static class EditorInteractionPolicy
 {
     internal static (double Step, double Min, double Max, bool Integer) Numeric(string id)
     {
-        foreach (var prefix in new[] { "Position", "Rotation", "Size", "MapPosition", "MapRotation", "MapSize" })
+        foreach (var prefix in new[] { "Position", "Rotation", "Size", "MapPosition", "MapRotation", "MapSize", "Spline" })
             if (id.Length == prefix.Length + 1 && id.StartsWith(prefix, StringComparison.Ordinal) && "XYZ".IndexOf(id[id.Length - 1]) >= 0)
                 return (prefix.Contains("Rotation") ? 1 : .1, prefix.Contains("Size") ? .001 : -float.MaxValue, float.MaxValue, false);
         return id switch
         {
             "CameraSpeed" => (.1, .25, 96, false),
+            "SplineStrength" => (1, 0, 100, false),
             "ContainerChance" => (1, 0, 100, true),
             "ContainerQuantity" => (1, 1, 10000, true),
             "AiRosterCount" => (1, 1, 256, true),

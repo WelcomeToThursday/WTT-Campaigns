@@ -380,7 +380,8 @@ internal static class PatrolToolsChecks
             "Ping-pong inspection queries both directions within four checks per frame"
         );
         check(
-            inspection.Summary(false).Contains("2 → 1: Return blocked") && !inspection.Summary(false).Contains("Complete route"),
+            inspection.Summary(false).Contains("Waypoint 2 → Waypoint 1: Return blocked")
+                && !inspection.Summary(false).Contains("Complete route"),
             "Asymmetric failures identify the exact return segment outside detailed inspection"
         );
         inspection.Refresh(route, "route", 1, 1, 1, 1, Query);
