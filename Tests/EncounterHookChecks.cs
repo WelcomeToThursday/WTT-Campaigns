@@ -975,12 +975,18 @@ internal static class EncounterHookChecks
         var quota = calls.Single(i => ((MethodReference)i.Operand).Name == "Move");
         Require(arrival.Offset < quota.Offset, "Waypoint arrival runs before the navigation quota and movement throttle");
         var spacing = calls.Single(i => ((MethodReference)i.Operand).Name == "UpdateSpacing");
-        Require(spacing.Offset < quota.Offset && Calls(RequireMethod(runtime, "UpdateSpacing"), "Pace"),
-            "Squad following gaps update independently of the expensive navigation quota");
-        Require(Calls(RequireMethod(runtime, "UpdateSpacing"), "get_LeaderId"),
-            "Followers waiting at the endpoint cannot hold the elected leader outside arrival range");
-        Require(RequireMethod(runtime, "ApplyOwnedPace").Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "SpacingPace"),
-            "Owned native movement uses the tested following pace");
+        Require(
+            spacing.Offset < quota.Offset && Calls(RequireMethod(runtime, "UpdateSpacing"), "Pace"),
+            "Squad following gaps update independently of the expensive navigation quota"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "UpdateSpacing"), "get_LeaderId"),
+            "Followers waiting at the endpoint cannot hold the elected leader outside arrival range"
+        );
+        Require(
+            RequireMethod(runtime, "ApplyOwnedPace").Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "SpacingPace"),
+            "Owned native movement uses the tested following pace"
+        );
         var arrive = RequireMethod(runtime, "Arrive");
         Require(
             Calls(arrive, "AcknowledgeWaypoint") && Calls(arrive, "UpdateSquad"),
@@ -1016,14 +1022,22 @@ internal static class EncounterHookChecks
             "Patrol submits the validated live mesh corners to native movement"
         );
         var continuation = RequireMethod(runtime, "TryContinuation");
-        Require(Calls(continuation, "Move") && Calls(continuation, "TryPatrolPath") && Calls(continuation, "JoinLegs"),
-            "Continuous travel validates its extra leg under a separate movement-budget token");
-        Require(Calls(RequireMethod(runtime, "Tick"), "NeedsSquadPlan"),
-            "Healthy owned travel avoids duplicate squad-wide reachability planning");
-        Require(Calls(RequireMethod(runtime, "Arrive"), "NextWaypoint") && Calls(RequireMethod(runtime, "Arrive"), "PassedCorner"),
-            "Zero-wait follower arrivals can flow through and native corner passage counts as arrival");
-        Require(Calls(RequireMethod(runtime, "SubmitPath"), "SquadEligible") && Calls(RequireMethod(runtime, "SubmitPath"), "GetActiveLayer"),
-            "Lookahead path submission retains live combat and ownership guards");
+        Require(
+            Calls(continuation, "Move") && Calls(continuation, "TryPatrolPath") && Calls(continuation, "JoinLegs"),
+            "Continuous travel validates its extra leg under a separate movement-budget token"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "Tick"), "NeedsSquadPlan"),
+            "Healthy owned travel avoids duplicate squad-wide reachability planning"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "Arrive"), "NextWaypoint") && Calls(RequireMethod(runtime, "Arrive"), "PassedCorner"),
+            "Zero-wait follower arrivals can flow through and native corner passage counts as arrival"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "SubmitPath"), "SquadEligible") && Calls(RequireMethod(runtime, "SubmitPath"), "GetActiveLayer"),
+            "Lookahead path submission retains live combat and ownership guards"
+        );
         Require(
             !CallsAny(runtime, "GoToPoint", m => m.DeclaringType.Name == "BotMover"),
             "Patrol must not reenter baked cover graph routing or its teleport recovery"
@@ -1037,7 +1051,10 @@ internal static class EncounterHookChecks
         Require(Calls(path, "AddRouteClearance"), "Route inspection and native dispatch share the obstacle detours");
         Require(Calls(RequireMethod(navigation, "AddRouteClearance"), "Adjust"), "Live navigation uses the bounded tested detour planner");
         Require(Calls(RequireMethod(navigation, "SolidBlocker"), "WalkableContact"), "Obstacle tops use height-aware floor classification");
-        Require(Calls(RequireMethod(navigation, "ClearSegment"), "ClearAuthoredBarriers"), "Adjusted route connections still respect authored barriers");
+        Require(
+            Calls(RequireMethod(navigation, "ClearSegment"), "ClearAuthoredBarriers"),
+            "Adjusted route connections still respect authored barriers"
+        );
         Require(
             Calls(RequireMethod(runtime, "Describe"), "GetActiveLogic"),
             "Patrol diagnostics include the native action that owns movement"

@@ -397,14 +397,18 @@ internal sealed class EncounterPatrolRuntime
             () => SquadEligible(member.Squad),
             current =>
             {
-                var target = member.PassedWaypoint && member.ContinuationWaypoint >= 0
-                    ? EncounterNavigation.ToVector3(member.Squad.State.Route.Waypoints[member.ContinuationWaypoint].Position)
-                    : EncounterNavigation.ToVector3(current.Target);
+                var target =
+                    member.PassedWaypoint && member.ContinuationWaypoint >= 0
+                        ? EncounterNavigation.ToVector3(member.Squad.State.Route.Waypoints[member.ContinuationWaypoint].Position)
+                        : EncounterNavigation.ToVector3(current.Target);
                 // This logic is only invoked by our currently selected BigBrain layer.
                 if (BrainManager.GetActiveLayer(bot) is not CampaignPatrolLayer)
                     return;
-                if (member.MovementWaypoint == current.WaypointIndex && member.OwnsNavigation
-                    && member.Path.Keep(bot, member.Destination, member.Navigation))
+                if (
+                    member.MovementWaypoint == current.WaypointIndex
+                    && member.OwnsNavigation
+                    && member.Path.Keep(bot, member.Destination, member.Navigation)
+                )
                 {
                     member.PathStatus = "Following existing path";
                     if (!member.PassedWaypoint && member.ContinuationWaypoint < 0)
@@ -461,8 +465,12 @@ internal sealed class EncounterPatrolRuntime
                         corners = combined;
                         continuation = next;
                     }
-                    if (member.MovementWaypoint == current.WaypointIndex && member.ContinuationWaypoint == continuation
-                        && member.OwnsNavigation && member.Path.TryRetain(bot, corners[corners.Length - 1], corners))
+                    if (
+                        member.MovementWaypoint == current.WaypointIndex
+                        && member.ContinuationWaypoint == continuation
+                        && member.OwnsNavigation
+                        && member.Path.TryRetain(bot, corners[corners.Length - 1], corners)
+                    )
                     {
                         member.PathStatus = "Following revalidated path";
                         return;
@@ -479,8 +487,12 @@ internal sealed class EncounterPatrolRuntime
         FaceMovement(member);
     }
 
-    private static int NextWaypoint(Member member) => EncounterMovementPolicy.Continuation(
-        member.Squad.State.Route, member.Command!.WaypointIndex, member.Squad.State.Capture(Time.time).Direction);
+    private static int NextWaypoint(Member member) =>
+        EncounterMovementPolicy.Continuation(
+            member.Squad.State.Route,
+            member.Command!.WaypointIndex,
+            member.Squad.State.Capture(Time.time).Direction
+        );
 
     // The extra leg consumes its own query token. Deferral leaves the current
     // owned path intact, and a later movement refresh can extend it in place.
@@ -492,7 +504,8 @@ internal sealed class EncounterPatrolRuntime
             return false;
         var target = EncounterNavigation.ToVector3(member.Squad.State.Route.Waypoints[next].Position);
         var points = new System.Numerics.Vector3[approach.Length];
-        for (var i = 0; i < approach.Length; i++) points[i] = new(approach[i].x, approach[i].y, approach[i].z);
+        for (var i = 0; i < approach.Length; i++)
+            points[i] = new(approach[i].x, approach[i].y, approach[i].z);
         if (!EncounterMovementPolicy.CanJoin(points, new(target.x, target.y, target.z)) || !EncounterNavigationBudget.Move())
             return false;
         if (!member.Navigation.TryPatrolPath(approach[approach.Length - 1], target, out var continuation, out _))
@@ -536,7 +549,10 @@ internal sealed class EncounterPatrolRuntime
             return Vector3.zero;
         if (member.SpacingHeld && member.HeadingWaypoint == command.WaypointIndex)
             return member.Heading;
-        return member.Path.Direction(member.Bot, member.OwnsNavigation ? member.Destination : EncounterNavigation.ToVector3(command.Target));
+        return member.Path.Direction(
+            member.Bot,
+            member.OwnsNavigation ? member.Destination : EncounterNavigation.ToVector3(command.Target)
+        );
     }
 
     private static bool UpdateSpacing(Member member)
@@ -561,11 +577,22 @@ internal sealed class EncounterPatrolRuntime
             var otherPosition = other.Bot.GetPlayer.Transform.position;
             // A follower already waiting at the waypoint must not prevent the
             // elected leader from reaching it and advancing the whole squad.
-            if (member.Id == member.Squad.State.LeaderId
-                && EncounterMovementPolicy.AtWaypoint((otherPosition - EncounterNavigation.ToVector3(member.Command!.Target)).sqrMagnitude))
+            if (
+                member.Id == member.Squad.State.LeaderId
+                && EncounterMovementPolicy.AtWaypoint((otherPosition - EncounterNavigation.ToVector3(member.Command!.Target)).sqrMagnitude)
+            )
                 continue;
-            pace = Mathf.Min(pace, EncounterSquadSpacing.Pace(Numeric(position), Numeric(heading),
-                Numeric(otherPosition), Numeric(Heading(other)), !passedSelf, member.SpacingHeld));
+            pace = Mathf.Min(
+                pace,
+                EncounterSquadSpacing.Pace(
+                    Numeric(position),
+                    Numeric(heading),
+                    Numeric(otherPosition),
+                    Numeric(Heading(other)),
+                    !passedSelf,
+                    member.SpacingHeld
+                )
+            );
         }
         var wasHeld = member.SpacingHeld;
         member.Heading = heading;
@@ -590,7 +617,9 @@ internal sealed class EncounterPatrolRuntime
         var target = EncounterNavigation.ToVector3(command.Target);
         if (member.PassedWaypoint)
         {
-            var continuationTarget = EncounterNavigation.ToVector3(member.Squad.State.Route.Waypoints[member.ContinuationWaypoint].Position);
+            var continuationTarget = EncounterNavigation.ToVector3(
+                member.Squad.State.Route.Waypoints[member.ContinuationWaypoint].Position
+            );
             if (EncounterMovementPolicy.AtWaypoint((member.Bot.GetPlayer.Transform.position - continuationTarget).sqrMagnitude))
             {
                 member.PathStatus = "Waiting for squad progress";
@@ -599,8 +628,10 @@ internal sealed class EncounterPatrolRuntime
             }
             return false;
         }
-        if (!EncounterMovementPolicy.AtWaypoint((member.Bot.GetPlayer.Transform.position - target).sqrMagnitude)
-            && !(member.MovementWaypoint == command.WaypointIndex && member.Path.PassedCorner(member.Mover, member.ArrivalCorner)))
+        if (
+            !EncounterMovementPolicy.AtWaypoint((member.Bot.GetPlayer.Transform.position - target).sqrMagnitude)
+            && !(member.MovementWaypoint == command.WaypointIndex && member.Path.PassedCorner(member.Mover, member.ArrivalCorner))
+        )
             return false;
         var squad = member.Squad;
         if (!squad.State.AcknowledgeWaypoint(member.Id, command.WaypointIndex, Time.time))

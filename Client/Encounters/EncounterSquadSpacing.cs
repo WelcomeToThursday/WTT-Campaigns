@@ -4,8 +4,14 @@ namespace WTT.Campaigns.Client.Encounters;
 
 internal static class EncounterSquadSpacing
 {
-    internal static float Pace(Vector3 position, Vector3 heading, Vector3 otherPosition, Vector3 otherHeading,
-        bool yieldPriority, bool alreadyYielding)
+    internal static float Pace(
+        Vector3 position,
+        Vector3 heading,
+        Vector3 otherPosition,
+        Vector3 otherHeading,
+        bool yieldPriority,
+        bool alreadyYielding
+    )
     {
         var delta = otherPosition - position;
         if (MathF.Abs(delta.Y) > 1f)
@@ -19,8 +25,7 @@ internal static class EncounterSquadSpacing
         var lateral = MathF.Abs(delta.X * heading.Z - delta.Z * heading.X);
         if (lateral > 1.1f || ahead < -.2f)
             return 1;
-        var following = otherHeading.LengthSquared() > .001f
-            && Vector3.Dot(heading, Vector3.Normalize(otherHeading)) > .25f;
+        var following = otherHeading.LengthSquared() > .001f && Vector3.Dot(heading, Vector3.Normalize(otherHeading)) > .25f;
         // Following traffic yields to whoever is physically ahead. Crossing,
         // opposing and overlapping traffic uses stable roster priority so both
         // bots cannot decide to wait for each other.

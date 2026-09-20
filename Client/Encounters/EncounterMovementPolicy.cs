@@ -18,8 +18,9 @@ internal static class EncounterMovementPolicy
         {
             MapPatrolRoute.Loop => (waypoint + 1) % route.Waypoints.Count,
             MapPatrolRoute.Stop => waypoint + 1 < route.Waypoints.Count ? waypoint + 1 : -1,
-            MapPatrolRoute.PingPong when direction is 1 or -1 =>
-                waypoint + direction < 0 || waypoint + direction >= route.Waypoints.Count ? waypoint - direction : waypoint + direction,
+            MapPatrolRoute.PingPong when direction is 1 or -1 => waypoint + direction < 0 || waypoint + direction >= route.Waypoints.Count
+                ? waypoint - direction
+                : waypoint + direction,
             _ => -1,
         };
     }
@@ -41,8 +42,8 @@ internal static class EncounterMovementPolicy
         {
             var segment = approach[i] - approach[i - 1];
             var length = segment.LengthSquared();
-            var fraction = length > .0001f
-                ? Math.Clamp(System.Numerics.Vector3.Dot(destination - approach[i - 1], segment) / length, 0, 1) : 0;
+            var fraction =
+                length > .0001f ? Math.Clamp(System.Numerics.Vector3.Dot(destination - approach[i - 1], segment) / length, 0, 1) : 0;
             if (System.Numerics.Vector3.DistanceSquared(destination, approach[i - 1] + segment * fraction) <= 4f)
                 return false;
         }

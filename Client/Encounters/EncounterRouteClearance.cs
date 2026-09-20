@@ -9,6 +9,7 @@ internal static class EncounterRouteClearance
     internal const float Radius = .4f;
     internal const float PreferredRadius = .55f;
     internal const int CandidateLimit = 24;
+
     internal readonly struct Obstacle(Vector3 center, Vector3 extents)
     {
         internal Vector3 Center { get; } = center;
@@ -19,7 +20,8 @@ internal static class EncounterRouteClearance
         Vector3[] original,
         Func<Vector3, Vector3?> sample,
         Func<Vector3, Vector3, bool> clear,
-        Func<Vector3, Vector3, Obstacle?> obstacle)
+        Func<Vector3, Vector3, Obstacle?> obstacle
+    )
     {
         if (original.Length < 2)
             return original;
@@ -80,10 +82,16 @@ internal static class EncounterRouteClearance
                 var center = new Vector3(b.Center.X, from.Y, b.Center.Z);
                 var first = sample(center - travel * along + side * (across * sign));
                 var last = sample(center + travel * along + side * (across * sign));
-                if (!first.HasValue || !last.HasValue || !clear(from, first.Value)
-                    || !clear(first.Value, last.Value) || !clear(last.Value, to))
+                if (
+                    !first.HasValue
+                    || !last.HasValue
+                    || !clear(from, first.Value)
+                    || !clear(first.Value, last.Value)
+                    || !clear(last.Value, to)
+                )
                     continue;
-                var distance = Vector3.Distance(from, first.Value) + Vector3.Distance(first.Value, last.Value) + Vector3.Distance(last.Value, to);
+                var distance =
+                    Vector3.Distance(from, first.Value) + Vector3.Distance(first.Value, last.Value) + Vector3.Distance(last.Value, to);
                 if (distance >= cost)
                     continue;
                 best = new[] { first.Value, last.Value };

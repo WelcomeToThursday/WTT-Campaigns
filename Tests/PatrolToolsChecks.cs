@@ -175,36 +175,59 @@ internal static class PatrolToolsChecks
         var flow = Route();
         flow.WaitSeconds = [];
         flow.Completion = MapPatrolRoute.Loop;
-        check(EncounterMovementPolicy.Continuation(flow, 0, 1) == 1 && EncounterMovementPolicy.Continuation(flow, 2, 1) == 0,
-            "Zero-wait loop paths continue through the endpoint and closure");
+        check(
+            EncounterMovementPolicy.Continuation(flow, 0, 1) == 1 && EncounterMovementPolicy.Continuation(flow, 2, 1) == 0,
+            "Zero-wait loop paths continue through the endpoint and closure"
+        );
         flow.Completion = MapPatrolRoute.PingPong;
-        check(EncounterMovementPolicy.Continuation(flow, 1, -1) == 0
-            && EncounterMovementPolicy.Continuation(flow, 0, -1) == 1
-            && EncounterMovementPolicy.Continuation(flow, 2, 1) == 1,
-            "Lookahead preserves the return direction and reverses only at ping-pong endpoints");
+        check(
+            EncounterMovementPolicy.Continuation(flow, 1, -1) == 0
+                && EncounterMovementPolicy.Continuation(flow, 0, -1) == 1
+                && EncounterMovementPolicy.Continuation(flow, 2, 1) == 1,
+            "Lookahead preserves the return direction and reverses only at ping-pong endpoints"
+        );
         flow.Completion = MapPatrolRoute.Stop;
-        check(EncounterMovementPolicy.Continuation(flow, 1, 1) == 2 && EncounterMovementPolicy.Continuation(flow, 2, 1) == -1,
-            "Stop routes flow through interior points but never append beyond the terminal waypoint");
+        check(
+            EncounterMovementPolicy.Continuation(flow, 1, 1) == 2 && EncounterMovementPolicy.Continuation(flow, 2, 1) == -1,
+            "Stop routes flow through interior points but never append beyond the terminal waypoint"
+        );
         flow.WaitSeconds = [0, 2, 0];
-        check(EncounterMovementPolicy.Continuation(flow, 1, 1) == -1 && EncounterMovementPolicy.Continuation(flow, 0, 1) == 1,
-            "A nonzero wait blocks continuation at that point while the approach remains continuous");
+        check(
+            EncounterMovementPolicy.Continuation(flow, 1, 1) == -1 && EncounterMovementPolicy.Continuation(flow, 0, 1) == 1,
+            "A nonzero wait blocks continuation at that point while the approach remains continuous"
+        );
         var corners = EncounterMovementPolicy.JoinLegs(new[] { -2, -1, 0 }, new[] { 0, 1, 2 });
-        check(corners.SequenceEqual(new[] { -2, -1, 0, 1, 2 }) && corners[^1] != 0,
-            "A zero-wait waypoint becomes an intermediate native corner, avoiding native endpoint braking");
-        check(!EncounterMovementPolicy.CanJoin([new(0, 0, 0), new(10, 0, 0)], new(0, 0, 0)),
-            "Ping-pong lookahead cannot put the final native destination on the current departure point");
-        check(EncounterMovementPolicy.CanJoin([new(3, 0, 0), new(10, 0, 0)], new(0, 0, 0)),
-            "The return leg can be appended safely once the bot clears its departure point");
-        check(!EncounterMovementPolicy.CanJoin([new(0, 0, 0), new(10, 0, 0)], new(5, 0, 1)),
-            "A looping continuation endpoint cannot prematurely complete an earlier approach segment");
-        check(!EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, false, true),
-            "Healthy travel performs no duplicate squad reachability search");
+        check(
+            corners.SequenceEqual(new[] { -2, -1, 0, 1, 2 }) && corners[^1] != 0,
+            "A zero-wait waypoint becomes an intermediate native corner, avoiding native endpoint braking"
+        );
+        check(
+            !EncounterMovementPolicy.CanJoin([new(0, 0, 0), new(10, 0, 0)], new(0, 0, 0)),
+            "Ping-pong lookahead cannot put the final native destination on the current departure point"
+        );
+        check(
+            EncounterMovementPolicy.CanJoin([new(3, 0, 0), new(10, 0, 0)], new(0, 0, 0)),
+            "The return leg can be appended safely once the bot clears its departure point"
+        );
+        check(
+            !EncounterMovementPolicy.CanJoin([new(0, 0, 0), new(10, 0, 0)], new(5, 0, 1)),
+            "A looping continuation endpoint cannot prematurely complete an earlier approach segment"
+        );
+        check(
+            !EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, false, true),
+            "Healthy travel performs no duplicate squad reachability search"
+        );
         foreach (var status in new[] { PatrolRuntimeStatus.Inactive, PatrolRuntimeStatus.Waiting, PatrolRuntimeStatus.Suspended })
-            check(EncounterMovementPolicy.NeedsSquadPlan(status, false, false, true), "Initialization, waits and suspension still update patrol state");
-        check(EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, true, false, true)
-            && EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, true, true)
-            && EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, false, false),
-            "Deferred passes, membership or path changes, and combat always bypass the healthy-travel shortcut");
+            check(
+                EncounterMovementPolicy.NeedsSquadPlan(status, false, false, true),
+                "Initialization, waits and suspension still update patrol state"
+            );
+        check(
+            EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, true, false, true)
+                && EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, true, true)
+                && EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, false, false),
+            "Deferred passes, membership or path changes, and combat always bypass the healthy-travel shortcut"
+        );
         var nav = new Navigation((_, _) => true);
         var pair = new[] { Bot("leader"), Bot("wing", 1) };
         foreach (var mode in new[] { MapPatrolRoute.Loop, MapPatrolRoute.PingPong, MapPatrolRoute.Stop })

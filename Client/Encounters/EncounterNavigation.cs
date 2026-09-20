@@ -226,18 +226,23 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         static System.Numerics.Vector3 Numeric(Vector3 v) => new(v.x, v.y, v.z);
         static Vector3 World(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
         var input = new System.Numerics.Vector3[corners.Length];
-        for (var i = 0; i < corners.Length; i++) input[i] = Numeric(corners[i]);
-        var adjusted = EncounterRouteClearance.Adjust(input,
+        for (var i = 0; i < corners.Length; i++)
+            input[i] = Numeric(corners[i]);
+        var adjusted = EncounterRouteClearance.Adjust(
+            input,
             candidate =>
             {
                 var position = World(candidate);
-                if (!NavMesh.SamplePosition(position, out var hit, PointTolerance, NavMeshAreaMask)
+                if (
+                    !NavMesh.SamplePosition(position, out var hit, PointTolerance, NavMeshAreaMask)
                     || (hit.position - position).sqrMagnitude > PointTolerance * PointTolerance
-                    || !HasStandingClearance(hit.position, null, true, EncounterRouteClearance.PreferredRadius))
+                    || !HasStandingClearance(hit.position, null, true, EncounterRouteClearance.PreferredRadius)
+                )
                     return null;
                 return Numeric(hit.position);
             },
-            (from, to) => !NavMesh.Raycast(World(from), World(to), out _, NavMeshAreaMask)
+            (from, to) =>
+                !NavMesh.Raycast(World(from), World(to), out _, NavMeshAreaMask)
                 && ClearSegment(World(from), World(to), EncounterRouteClearance.PreferredRadius),
             (from, to) =>
             {
@@ -245,9 +250,11 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
                     return null;
                 var bounds = collider.bounds;
                 return new EncounterRouteClearance.Obstacle(Numeric(bounds.center), Numeric(bounds.extents));
-            });
+            }
+        );
         var result = new Vector3[adjusted.Length];
-        for (var i = 0; i < result.Length; i++) result[i] = World(adjusted[i]);
+        for (var i = 0; i < result.Length; i++)
+            result[i] = World(adjusted[i]);
         return result;
     }
 
@@ -271,8 +278,16 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
             return false;
         var bottom = from + Vector3.up * (radius + .05f);
         var top = from + Vector3.up * (AgentHeight - radius + .05f);
-        var count = Physics.CapsuleCastNonAlloc(bottom, top, radius, delta / distance, _pathHits,
-            distance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+        var count = Physics.CapsuleCastNonAlloc(
+            bottom,
+            top,
+            radius,
+            delta / distance,
+            _pathHits,
+            distance,
+            Physics.AllLayers,
+            QueryTriggerInteraction.Ignore
+        );
         if (count == _pathHits.Length)
             return true;
         var nearest = float.PositiveInfinity;
