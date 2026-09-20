@@ -22,6 +22,8 @@
     <Compile Include="..\Client\Authoring\Views\EditorLayoutSpec.cs" Link="Client\EditorLayoutSpec.cs" />
     <Compile Include="..\Client\Encounters\EncounterCorePlan.cs" Link="Client\EncounterCorePlan.cs" />
     <Compile Include="..\Client\Encounters\EncounterMovementPolicy.cs" Link="Client\EncounterMovementPolicy.cs" />
+    <Compile Include="..\Client\Encounters\EncounterRouteClearance.cs" Link="Client\EncounterRouteClearance.cs" />
+    <Compile Include="..\Client\Encounters\EncounterSquadSpacing.cs" Link="Client\EncounterSquadSpacing.cs" />
     <Compile Include="..\Client\Encounters\EncounterRecovery.cs" Link="Client\EncounterRecovery.cs" />
     <Compile Include="..\Client\Encounters\EncounterWorkBudget.cs" Link="Client\EncounterWorkBudget.cs" />
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />

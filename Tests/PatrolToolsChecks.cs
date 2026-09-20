@@ -40,6 +40,7 @@ internal static class PatrolToolsChecks
 
     internal static void Run(Action<bool, string> check)
     {
+        EncounterClearanceChecks.Run(check);
         var nav = new Navigation((_, _) => true);
         foreach (var direction in new[] { 1, -1 })
         foreach (var control in new[] { PatrolBotControlState.Combat, PatrolBotControlState.Searching, PatrolBotControlState.Recovery })
@@ -164,8 +165,117 @@ internal static class PatrolToolsChecks
                 );
         }
         check(complete && quotaState.TargetWaypointIndex == 1, "Budgeted common re-entry eventually finishes");
+        Arrival(check);
         Editing(check);
         Inspection(check);
+    }
+
+    private static void Arrival(Action<bool, string> check)
+    {
+        var flow = Route();
+        flow.WaitSeconds = [];
+        flow.Completion = MapPatrolRoute.Loop;
+        check(EncounterMovementPolicy.Continuation(flow, 0, 1) == 1 && EncounterMovementPolicy.Continuation(flow, 2, 1) == 0,
+            "Zero-wait loop paths continue through the endpoint and closure");
+        flow.Completion = MapPatrolRoute.PingPong;
+        check(EncounterMovementPolicy.Continuation(flow, 1, -1) == 0
+            && EncounterMovementPolicy.Continuation(flow, 0, -1) == 1
+            && EncounterMovementPolicy.Continuation(flow, 2, 1) == 1,
+            "Lookahead preserves the return direction and reverses only at ping-pong endpoints");
+        flow.Completion = MapPatrolRoute.Stop;
+        check(EncounterMovementPolicy.Continuation(flow, 1, 1) == 2 && EncounterMovementPolicy.Continuation(flow, 2, 1) == -1,
+            "Stop routes flow through interior points but never append beyond the terminal waypoint");
+        flow.WaitSeconds = [0, 2, 0];
+        check(EncounterMovementPolicy.Continuation(flow, 1, 1) == -1 && EncounterMovementPolicy.Continuation(flow, 0, 1) == 1,
+            "A nonzero wait blocks continuation at that point while the approach remains continuous");
+        var corners = EncounterMovementPolicy.JoinLegs(new[] { -2, -1, 0 }, new[] { 0, 1, 2 });
+        check(corners.SequenceEqual(new[] { -2, -1, 0, 1, 2 }) && corners[^1] != 0,
+            "A zero-wait waypoint becomes an intermediate native corner, avoiding native endpoint braking");
+        check(!EncounterMovementPolicy.CanJoin([new(0, 0, 0), new(10, 0, 0)], new(0, 0, 0)),
+            "Ping-pong lookahead cannot put the final native destination on the current departure point");
+        check(EncounterMovementPolicy.CanJoin([new(3, 0, 0), new(10, 0, 0)], new(0, 0, 0)),
+            "The return leg can be appended safely once the bot clears its departure point");
+        check(!EncounterMovementPolicy.CanJoin([new(0, 0, 0), new(10, 0, 0)], new(5, 0, 1)),
+            "A looping continuation endpoint cannot prematurely complete an earlier approach segment");
+        check(!EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, false, true),
+            "Healthy travel performs no duplicate squad reachability search");
+        foreach (var status in new[] { PatrolRuntimeStatus.Inactive, PatrolRuntimeStatus.Waiting, PatrolRuntimeStatus.Suspended })
+            check(EncounterMovementPolicy.NeedsSquadPlan(status, false, false, true), "Initialization, waits and suspension still update patrol state");
+        check(EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, true, false, true)
+            && EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, true, true)
+            && EncounterMovementPolicy.NeedsSquadPlan(PatrolRuntimeStatus.Moving, false, false, false),
+            "Deferred passes, membership or path changes, and combat always bypass the healthy-travel shortcut");
+        var nav = new Navigation((_, _) => true);
+        var pair = new[] { Bot("leader"), Bot("wing", 1) };
+        foreach (var mode in new[] { MapPatrolRoute.Loop, MapPatrolRoute.PingPong, MapPatrolRoute.Stop })
+        foreach (var explicitZeros in new[] { false, true })
+        {
+            var route = Route();
+            route.Completion = mode;
+            route.WaitSeconds = explicitZeros ? [0, 0, 0] : [];
+            var state = new EncounterPatrolStateMachine(route);
+            state.Start(["leader", "wing"]);
+            state.Update(pair, 10, nav);
+            check(!state.AcknowledgeWaypoint("wing", 0, 10), "An early follower cannot advance the squad route");
+            check(state.AcknowledgeWaypoint("leader", 0, 10), "Leader arrival advances a zero-wait route");
+            var next = state.Update(pair, 10, nav);
+            check(
+                next.Status == PatrolRuntimeStatus.Moving
+                    && next.Commands.Count == 2
+                    && next.Commands.All(c => c.WaypointIndex == 1)
+                    && state.Capture(10).WaitRemaining == null,
+                $"{mode} publishes the next waypoint at the same timestamp with {(explicitZeros ? "explicit" : "empty-list")} zero waits"
+            );
+            check(!state.AcknowledgeWaypoint("leader", 0, 10), "A stale arrival cannot advance the new target twice");
+            state.AcknowledgeWaypoint("leader", 1, 10);
+            state.Update(pair, 10, nav);
+            state.AcknowledgeWaypoint("leader", 2, 10);
+            var end = state.Update(pair, 10, nav);
+            check(
+                mode == MapPatrolRoute.Stop
+                    ? end.Status == PatrolRuntimeStatus.Completed && end.Commands.Count == 0
+                    : end.Status == PatrolRuntimeStatus.Moving && end.TargetWaypointIndex == (mode == MapPatrolRoute.Loop ? 0 : 1),
+                "Zero-wait endings immediately loop, reverse, or stop as configured"
+            );
+        }
+        var waited = new EncounterPatrolStateMachine(Route());
+        waited.Start(["leader", "wing"]);
+        waited.Update(pair, 0, nav);
+        waited.AcknowledgeWaypoint("leader", 0, 0);
+        check(
+            waited.Update(pair, 0, nav).Commands.Count == 0
+                && waited.Update(pair, 1.99, nav).Commands.Count == 0
+                && waited.Update(pair, 2, nav).Commands.Count == 2,
+            "Immediate arrival preserves authored nonzero waits"
+        );
+
+        var routeWithoutWaits = Route();
+        routeWithoutWaits.WaitSeconds = [];
+        var deferred = new EncounterPatrolStateMachine(routeWithoutWaits);
+        deferred.Start(["leader", "wing"]);
+        deferred.Update(pair, 0, nav);
+        deferred.AcknowledgeWaypoint("leader", 0, 0);
+        var admit = false;
+        var budget = new EncounterPlanningNavigation(nav, () => admit);
+        budget.BeginPass();
+        check(
+            !deferred.TryUpdateBudgeted(pair, 0, budget, out var pending)
+                && pending.Commands.Count == 0
+                && deferred.TargetWaypointIndex == 1
+                && deferred.Status == PatrolRuntimeStatus.Moving,
+            "Budget deferral after arrival preserves the successor without republishing the departed target"
+        );
+        admit = true;
+        budget.BeginPass();
+        check(
+            deferred.TryUpdateBudgeted(pair, .01, budget, out var ready) && ready.Commands.All(c => c.WaypointIndex == 1),
+            "Deferred zero-wait successor resumes when the navigation quota becomes available"
+        );
+        pair[0].ControlState = PatrolBotControlState.Combat;
+        check(
+            deferred.Update(pair, .01, nav).Commands.Count == 0 && deferred.Status == PatrolRuntimeStatus.Suspended,
+            "Combat still preempts a freshly issued zero-wait leg"
+        );
     }
 
     private static void Editing(Action<bool, string> check)

@@ -62,17 +62,17 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         return HasStandingClearance(world, ignoredPlayer);
     }
 
-    private bool HasStandingClearance(Vector3 world, EFT.Player? ignoredPlayer, bool ignorePlayers = false)
+    private bool HasStandingClearance(Vector3 world, EFT.Player? ignoredPlayer, bool ignorePlayers = false, float radius = AgentRadius)
     {
         try
         {
             // Capture positions are feet positions.  Lift the capsule a small amount so
             // touching the floor does not make a valid standing point look obstructed.
-            var bottom = world + Vector3.up * (AgentRadius + 0.05f);
-            var top = world + Vector3.up * (AgentHeight - AgentRadius + 0.05f);
-            if (!ClearAuthoredBarriers(world, world))
+            var bottom = world + Vector3.up * (radius + 0.05f);
+            var top = world + Vector3.up * (AgentHeight - radius + 0.05f);
+            if (!ClearAuthoredBarriers(world, world, radius))
                 return false;
-            var colliders = Physics.OverlapCapsule(bottom, top, AgentRadius, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+            var colliders = Physics.OverlapCapsule(bottom, top, radius, Physics.AllLayers, QueryTriggerInteraction.Ignore);
             foreach (var collider in colliders)
             {
                 if (!collider)
@@ -139,8 +139,12 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
                 return new(EncounterPathStatus.Failed, points, found ? path.status.ToString() : "No path");
             if (corners.Length < 2 || (corners[corners.Length - 1] - to).sqrMagnitude > PointTolerance * PointTolerance)
                 return new(EncounterPathStatus.Failed, points, "Path does not reach waypoint");
+            corners = AddRouteClearance(corners);
+            points = new SpatialVector[corners.Length];
+            for (var i = 0; i < corners.Length; i++)
+                points[i] = Spatial(corners[i]);
             if (!ClearSegments(corners))
-                return new(EncounterPathStatus.Failed, points, "Path blocked by solid scenery or authored barrier");
+                return new(EncounterPathStatus.Failed, points, "Path lacks clearance around scenery or an authored barrier");
             return new(EncounterPathStatus.Complete, points);
         }
         catch (Exception error)
@@ -217,46 +221,79 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         return Mathf.Abs(local.x) <= half.x && Mathf.Abs(local.y) <= half.y && Mathf.Abs(local.z) <= half.z;
     }
 
+    private Vector3[] AddRouteClearance(Vector3[] corners)
+    {
+        static System.Numerics.Vector3 Numeric(Vector3 v) => new(v.x, v.y, v.z);
+        static Vector3 World(System.Numerics.Vector3 v) => new(v.X, v.Y, v.Z);
+        var input = new System.Numerics.Vector3[corners.Length];
+        for (var i = 0; i < corners.Length; i++) input[i] = Numeric(corners[i]);
+        var adjusted = EncounterRouteClearance.Adjust(input,
+            candidate =>
+            {
+                var position = World(candidate);
+                if (!NavMesh.SamplePosition(position, out var hit, PointTolerance, NavMeshAreaMask)
+                    || (hit.position - position).sqrMagnitude > PointTolerance * PointTolerance
+                    || !HasStandingClearance(hit.position, null, true, EncounterRouteClearance.PreferredRadius))
+                    return null;
+                return Numeric(hit.position);
+            },
+            (from, to) => !NavMesh.Raycast(World(from), World(to), out _, NavMeshAreaMask)
+                && ClearSegment(World(from), World(to), EncounterRouteClearance.PreferredRadius),
+            (from, to) =>
+            {
+                if (!SolidBlocker(World(from), World(to), EncounterRouteClearance.PreferredRadius, out var collider) || !collider)
+                    return null;
+                var bounds = collider.bounds;
+                return new EncounterRouteClearance.Obstacle(Numeric(bounds.center), Numeric(bounds.extents));
+            });
+        var result = new Vector3[adjusted.Length];
+        for (var i = 0; i < result.Length; i++) result[i] = World(adjusted[i]);
+        return result;
+    }
+
     private bool ClearSegments(Vector3[] corners)
     {
-        // The baked NavMesh does not know about authored barriers or moved scenery.
-        // Sweep the standing capsule along its solution rather than accepting paths through them.
         for (var index = 1; index < corners.Length; index++)
-        {
-            if (!ClearAuthoredBarriers(corners[index - 1], corners[index]))
+            if (!ClearSegment(corners[index - 1], corners[index], EncounterRouteClearance.Radius))
                 return false;
-            var delta = corners[index] - corners[index - 1];
-            var distance = delta.magnitude;
-            if (distance <= .001f)
-                continue;
-            var bottom = corners[index - 1] + Vector3.up * (AgentRadius + .05f);
-            var top = corners[index - 1] + Vector3.up * (AgentHeight - AgentRadius + .05f);
-            var count = Physics.CapsuleCastNonAlloc(
-                bottom,
-                top,
-                AgentRadius,
-                delta / distance,
-                _pathHits,
-                distance,
-                Physics.AllLayers,
-                QueryTriggerInteraction.Ignore
-            );
-            if (count == _pathHits.Length)
-                return false;
-            for (var hit = 0; hit < count; hit++)
-            {
-                var collision = _pathHits[hit];
-                if (!collision.collider || collision.collider.GetComponentInParent<EFT.Player>())
-                    continue;
-                // Walkable floors and slopes are expected contacts; walls and ceilings are not.
-                if (collision.normal.y < .65f)
-                    return false;
-            }
-        }
         return true;
     }
 
-    private bool ClearAuthoredBarriers(Vector3 from, Vector3 to)
+    private bool ClearSegment(Vector3 from, Vector3 to, float radius) =>
+        ClearAuthoredBarriers(from, to, radius) && !SolidBlocker(from, to, radius, out _);
+
+    private bool SolidBlocker(Vector3 from, Vector3 to, float radius, out Collider? blocker)
+    {
+        blocker = null;
+        var delta = to - from;
+        var distance = delta.magnitude;
+        if (distance <= .001f)
+            return false;
+        var bottom = from + Vector3.up * (radius + .05f);
+        var top = from + Vector3.up * (AgentHeight - radius + .05f);
+        var count = Physics.CapsuleCastNonAlloc(bottom, top, radius, delta / distance, _pathHits,
+            distance, Physics.AllLayers, QueryTriggerInteraction.Ignore);
+        if (count == _pathHits.Length)
+            return true;
+        var nearest = float.PositiveInfinity;
+        for (var index = 0; index < count; index++)
+        {
+            var hit = _pathHits[index];
+            if (!hit.collider || hit.collider.GetComponentInParent<EFT.Player>())
+                continue;
+            var feetHeight = from.y + delta.y * Mathf.Clamp01(hit.distance / distance);
+            // An upward normal on the top of a bollard is not a walkable floor.
+            if (EncounterObstaclePolicy.WalkableContact(hit.normal.y, hit.point.y - feetHeight))
+                continue;
+            if (hit.distance >= nearest)
+                continue;
+            nearest = hit.distance;
+            blocker = hit.collider;
+        }
+        return blocker != null;
+    }
+
+    private bool ClearAuthoredBarriers(Vector3 from, Vector3 to, float radius = AgentRadius)
     {
         var barriers = _layout?.Invoke()?.Barriers;
         if (barriers == null)
@@ -264,7 +301,7 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         // Editing barriers are render-only ghosts. Test the swept standing bounds against
         // their authored volumes as well as the live scene, without creating colliders.
         var centerOffset = Vector3.up * (AgentHeight * .5f + .05f);
-        var capsuleHalf = Vector3.up * (AgentHeight * .5f - AgentRadius);
+        var capsuleHalf = Vector3.up * (AgentHeight * .5f - radius);
         foreach (var barrier in barriers)
         {
             if (barrier.Position?.Finite != true || barrier.Rotation?.Finite != true)
@@ -282,7 +319,7 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
                 return false;
             // Conservatively enclose the capsule, including rotated barriers. A blocked
             // bound is rejected; authoring never silently shifts a bot around the barrier.
-            half += new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z)) + Vector3.one * AgentRadius;
+            half += new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z)) + Vector3.one * radius;
             var delta = finish - start;
             var minimum = 0f;
             var maximum = 1f;
