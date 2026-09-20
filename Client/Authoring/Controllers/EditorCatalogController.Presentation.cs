@@ -224,11 +224,13 @@ internal sealed partial class EditorCatalogController
             return;
         var selectedKey = _sceneFilter + ":" + _catalogSelection;
         SetThumbnail(view.Get<RawImage>("ScenePreview"), selectedKey);
-        var failed =
-            _previews.Error(selectedKey).Length > 0 || (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0);
+        var failed = _previews.Error(selectedKey).Length > 0;
         view.Visible("ScenePreviewStatus", catalog && _previews.Get(selectedKey) == null);
         view.Text("ScenePreviewStatus", failed ? "Preview unavailable" : "Loading preview…");
-        view.Visible("ScenePreviewRetryGroup", catalog && failed);
+        view.Visible(
+            "ScenePreviewRetryGroup",
+            catalog && (failed || (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0))
+        );
     }
 
     private void RetryThumbnail()
@@ -258,9 +260,11 @@ internal sealed partial class EditorCatalogController
         if (!_previews.Request(key))
             return;
         var job = new ThumbnailJob { Id = id, Key = key };
-        if ((_sceneFilter == "Props" || _sceneFilter == "Doors") && !AssetCatalog)
+        if (id.StartsWith("scene:", StringComparison.Ordinal))
+            _sceneRoots.TryGetValue(id.Substring("scene:".Length), out job.Source);
+        else if ((_sceneFilter == "Props" || _sceneFilter == "Doors") && !AssetCatalog)
             _sceneRoots.TryGetValue(id, out job.Source);
-        else
+        if (!job.Source)
         {
             var entry =
                 _selectedCatalogEntry?.Id == id
@@ -310,9 +314,7 @@ internal sealed partial class EditorCatalogController
                     }
                     else if (job.Entry?.AssetTarget != null)
                     {
-                        if (job.Entry.Error.Length > 0)
-                            throw new InvalidOperationException(job.Entry.Error);
-                        using var model = await SceneAssetCatalog.Load(job.Entry.AssetTarget, token);
+                        using var model = await SceneAssetCatalog.Load(job.Entry.AssetTarget, token, previewOnly: true);
                         texture = RenderPropThumbnail(model.Object.transform, model.Object);
                         owned = true;
                     }
@@ -373,7 +375,7 @@ internal sealed partial class EditorCatalogController
 
     private Texture RenderPropThumbnail(Transform source, GameObject? prepared = null)
     {
-        var model = prepared ?? (_context.MapScene ??= new()).CopyForPlacement(source);
+        var model = prepared ?? ScenePreviewModel.Copy(source);
         var rig = new GameObject("CampaignEditor thumbnail camera");
         var rt = new RenderTexture(192, 192, 24);
         var materials = new List<Material>();
@@ -382,17 +384,8 @@ internal sealed partial class EditorCatalogController
         var previous = RenderTexture.active;
         try
         {
-            if (model.GetComponentInChildren<LootableContainer>(true) is { } container)
-                container.enabled = false;
             model.SetActive(true);
-            model.transform.SetPositionAndRotation(new Vector3(0, -10000, 0), Quaternion.identity);
-            foreach (var lod in model.GetComponentsInChildren<LODGroup>(true))
-                if (lod && lod.enabled && lod.gameObject.activeInHierarchy)
-                {
-                    lod.fadeMode = LODFadeMode.None;
-                    lod.animateCrossFading = false;
-                    lod.ForceLOD(0);
-                }
+            model.transform.position = new Vector3(0, -10000, 0);
             foreach (var t in model.GetComponentsInChildren<Transform>(true))
                 t.gameObject.layer = 31;
             if (!SceneBounds.TryGet(model.transform, out var bounds))
@@ -469,7 +462,8 @@ internal sealed partial class EditorCatalogController
             RenderTexture.active = previous;
             model.SetActive(false);
             rig.SetActive(false);
-            UnityEngine.Object.Destroy(model);
+            if (prepared == null)
+                UnityEngine.Object.Destroy(model);
             UnityEngine.Object.Destroy(rig);
             foreach (var material in materials)
                 UnityEngine.Object.Destroy(material);

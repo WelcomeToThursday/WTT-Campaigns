@@ -191,6 +191,7 @@ internal static class UiCompatibilityChecks
         if (clientPath != null)
         {
             using var client = AssemblyDefinition.ReadAssembly(clientPath);
+            ScenePreviewChecks.Client(client.MainModule, Check);
             PreviewNativeChecks.CheckEscape(assembly.MainModule, client.MainModule);
             EditorOpenChecks.Client(client, Check);
             AiControlsChecks.Run(client, Check);

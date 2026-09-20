@@ -1,9 +1,51 @@
+using Mono.Cecil;
 using WTT.Campaigns.Client.Authoring.Scenes;
 
 namespace WTT.Campaigns.Tests;
 
 internal static class ScenePreviewChecks
 {
+    internal static void Client(ModuleDefinition client, Action<bool, string> check)
+    {
+        var preview = client.GetType("WTT.Campaigns.Client.Authoring.Scenes.ScenePreviewModel");
+        var calls = preview
+            .Methods.Concat(preview.NestedTypes.SelectMany(t => t.Methods))
+            .Where(m => m.HasBody)
+            .SelectMany(m => m.Body.Instructions)
+            .Select(i => i.Operand)
+            .OfType<MethodReference>()
+            .ToArray();
+        check(
+            !calls.Any(m => m.Name == "Instantiate" || m.Name is "Supported" or "Restriction"),
+            "Visual previews do not clone native behaviours or require gameplay placement support"
+        );
+        var added = calls
+            .OfType<GenericInstanceMethod>()
+            .Where(m => m.Name == "AddComponent")
+            .SelectMany(m => m.GenericArguments)
+            .Select(t => t.FullName)
+            .ToArray();
+        check(
+            added.Length == 2 && added.All(t => t is "UnityEngine.MeshFilter" or "UnityEngine.MeshRenderer"),
+            "Preview copies can only add mesh geometry, never colliders, scripts or native interactions"
+        );
+        foreach (var property in new[] { "rotation", "lossyScale", "localPosition", "localRotation", "localScale" })
+            check(calls.Any(m => m.Name == "get_" + property), "Thumbnail geometry preserves source " + property);
+        check(calls.Any(m => m.Name == "GetLODs"), "Thumbnail mesh selection accounts for native LOD groups");
+        var render = client
+            .GetType("WTT.Campaigns.Client.Authoring.Controllers.EditorCatalogController")
+            .Methods.Single(m => m.Name == "RenderPropThumbnail");
+        var renderCalls = render.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().ToArray();
+        check(
+            !renderCalls.Any(m => m.Name is "SetPositionAndRotation" or "set_rotation" or "set_localRotation" or "CopyForPlacement"),
+            "Thumbnail rendering never discards the preserved orientation or uses the placement copy path"
+        );
+        check(
+            renderCalls.Any(m => m.DeclaringType.Name == "ScenePreviewModel" && m.Name == "Copy"),
+            "Current-map thumbnails use the geometry-only preview path"
+        );
+    }
+
     internal static void Run(Action<bool, string> check)
     {
         check(

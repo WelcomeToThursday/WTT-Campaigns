@@ -13,7 +13,8 @@ internal static class CatalogGridLayout
         if (!float.IsFinite(width) || !float.IsFinite(height) || width <= 0 || height <= 0)
             return 10;
         var columns = Math.Clamp((int)(width / TileWidth), 1, MaximumItems);
-        var rows = Math.Clamp((int)(height / TileHeight), 1, MaximumItems);
+        // Include the row intersecting the viewport; the scroll view reveals its remainder.
+        var rows = (int)Math.Clamp(Math.Ceiling(height / TileHeight), 1, MaximumItems);
         return Math.Min(MaximumItems, columns * rows);
     }
 

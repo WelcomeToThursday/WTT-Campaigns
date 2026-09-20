@@ -279,6 +279,9 @@ internal sealed partial class MapSceneAdapter : IDisposable
         return native.Length > 0 ? native : SceneAssetCatalog.Restriction(source.gameObject, true);
     }
 
+    internal static SceneAssetCatalog.Model LoadScenePreview(MapTarget target) =>
+        new() { Object = ScenePreviewModel.Copy(Resolve(target, target.Kind == "Door")) };
+
     internal static SceneAssetCatalog.Model LoadSceneCopy(MapTarget target)
     {
         var source = Resolve(target, false);

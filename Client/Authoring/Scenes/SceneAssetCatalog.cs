@@ -380,12 +380,12 @@ internal sealed class SceneAssetCatalog : IDisposable
         }
     }
 
-    internal static async Task<Model> Load(MapTarget target, CancellationToken token)
+    internal static async Task<Model> Load(MapTarget target, CancellationToken token, bool previewOnly = false)
     {
         if (target.Bundle == NativeContainerLibrary.BundleKey)
-            return await NativeContainerLibrary.Load(target, token);
+            return await NativeContainerLibrary.Load(target, token, previewOnly);
         if (!target.IsAsset)
-            return MapSceneAdapter.LoadSceneCopy(target);
+            return previewOnly ? MapSceneAdapter.LoadScenePreview(target) : MapSceneAdapter.LoadSceneCopy(target);
         if (!SceneAssetRules.Valid(target))
             throw new InvalidOperationException("Invalid saved asset reference.");
         var assets = Singleton<ObjectsFactory>.Instance.EasyAssets;
@@ -409,6 +409,11 @@ internal sealed class SceneAssetCatalog : IDisposable
             var prefab = request.asset as GameObject;
             if (!prefab)
                 throw new InvalidOperationException("The saved asset is missing: " + target.Asset);
+            if (previewOnly)
+            {
+                result.Object = ScenePreviewModel.Copy(prefab.transform);
+                return result;
+            }
             var error = Restriction(prefab, target.Kind == "AssetContainer");
             if (error.Length > 0)
                 throw new InvalidOperationException(error);

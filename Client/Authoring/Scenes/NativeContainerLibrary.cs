@@ -67,7 +67,7 @@ internal static class NativeContainerLibrary
             };
     }
 
-    internal static async Task<SceneAssetCatalog.Model> Load(MapTarget target, CancellationToken token)
+    internal static async Task<SceneAssetCatalog.Model> Load(MapTarget target, CancellationToken token, bool previewOnly = false)
     {
         if (
             !SceneAssetRules.Valid(target)
@@ -88,6 +88,11 @@ internal static class NativeContainerLibrary
             var prefab = request.asset as GameObject;
             if (!prefab)
                 throw new InvalidOperationException("Native container model is missing.");
+            if (previewOnly)
+            {
+                model.Object = ScenePreviewModel.Copy(prefab.transform);
+                return model;
+            }
             var wrapper = new GameObject("CampaignEditor native container");
             wrapper.SetActive(false);
             model.Object = wrapper;
