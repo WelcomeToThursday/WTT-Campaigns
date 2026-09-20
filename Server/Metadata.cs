@@ -21,7 +21,8 @@ public sealed record Metadata : IModMetadata, SPTarkov.Server.Web.IModBlazorMeta
     public SemanticVersioning.Version Version { get; init; } = new("0.10.1");
     public Range SptVersion { get; init; } = new("4.1.x");
     public bool HasPrepatcher { get; init; }
-    public List<string>? Incompatibilities { get; init; }
+
+    public List<string>? Incompatibilities { get; init; } = ["com.lennoxp90.mapvariants"];
 
     public Dictionary<string, Range>? ModDependencies { get; init; } =
         new()
