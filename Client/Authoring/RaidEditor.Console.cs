@@ -64,7 +64,15 @@ public sealed partial class RaidEditor
         {
             get
             {
-                var names = new List<string> { "Console", "Navigation", "Properties", "Environment", "Editor controls", "Loot configuration" };
+                var names = new List<string>
+                {
+                    "Console",
+                    "Navigation",
+                    "Properties",
+                    "Environment",
+                    "Editor controls",
+                    "Loot configuration",
+                };
                 names.AddRange(Tools);
                 return names.ToArray();
             }
