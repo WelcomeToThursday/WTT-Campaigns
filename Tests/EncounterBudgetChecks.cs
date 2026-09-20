@@ -110,8 +110,10 @@ internal static class EncounterBudgetChecks
             navigation.BeginPass();
             completed = state.TryUpdateBudgeted(snapshots, currentFrame, navigation, out update);
             if (!completed)
-                check(state.Status == PatrolRuntimeStatus.Moving && state.TargetWaypointIndex == 1,
-                    "Deferred blocked-route re-entry preserves the existing patrol until all alternatives are checked");
+                check(
+                    state.Status == PatrolRuntimeStatus.Moving && state.TargetWaypointIndex == 1,
+                    "Deferred blocked-route re-entry preserves the existing patrol until all alternatives are checked"
+                );
         }
         check(
             completed && state.Status == PatrolRuntimeStatus.Suspended && state.SuspensionReason == PatrolSuspensionReason.Unreachable,

@@ -10,11 +10,13 @@ internal sealed class SceneNavigation : IDisposable
 {
     internal static long Revision { get; private set; }
     internal static int ReadyFrame { get; private set; }
+
     internal static void Changed()
     {
         Revision++;
         ReadyFrame = Time.frameCount + 2;
     }
+
     private static readonly HashSet<SceneNavigation> Active = new();
     private readonly List<GameObject> _proxies = new();
     private readonly List<Collider> _coverColliders = new();
@@ -71,7 +73,8 @@ internal sealed class SceneNavigation : IDisposable
                 proxy.SetActive(true);
             }
             Active.Add(this);
-            if (_proxies.Count > 0) Changed();
+            if (_proxies.Count > 0)
+                Changed();
         }
         catch
         {
@@ -82,7 +85,8 @@ internal sealed class SceneNavigation : IDisposable
 
     public void Dispose()
     {
-        if (_proxies.Count > 0) Changed();
+        if (_proxies.Count > 0)
+            Changed();
         Active.Remove(this);
         foreach (var proxy in _proxies)
             if (proxy)
@@ -118,10 +122,19 @@ internal sealed class SceneNavigationFollower : MonoBehaviour
     internal void Sync()
     {
         var enabled = Source && Source.enabled && !Source.isTrigger && Source.gameObject.activeInHierarchy;
-        var changed = Obstacle.enabled != enabled || (Source &&
-            (transform.position != Source.transform.position || transform.rotation != Source.transform.rotation || transform.localScale != Source.transform.lossyScale));
+        var changed =
+            Obstacle.enabled != enabled
+            || (
+                Source
+                && (
+                    transform.position != Source.transform.position
+                    || transform.rotation != Source.transform.rotation
+                    || transform.localScale != Source.transform.lossyScale
+                )
+            );
         Obstacle.enabled = enabled;
-        if (changed) SceneNavigation.Changed();
+        if (changed)
+            SceneNavigation.Changed();
         if (!Source)
             return;
         transform.SetPositionAndRotation(Source.transform.position, Source.transform.rotation);

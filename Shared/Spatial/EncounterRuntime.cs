@@ -978,7 +978,11 @@ public sealed class EncounterPatrolStateMachine
     public void UpdateMembers(IEnumerable<string> orderedBotIds)
     {
         var ids = orderedBotIds.AsValueEnumerable().ToArray();
-        if (ids.Length == 0 || ids.AsValueEnumerable().Any(string.IsNullOrWhiteSpace) || ids.AsValueEnumerable().Distinct(StringComparer.Ordinal).Count() != ids.Length)
+        if (
+            ids.Length == 0
+            || ids.AsValueEnumerable().Any(string.IsNullOrWhiteSpace)
+            || ids.AsValueEnumerable().Distinct(StringComparer.Ordinal).Count() != ids.Length
+        )
             throw new ArgumentException("Patrol bot identities must be nonempty and unique.", nameof(orderedBotIds));
         _orderedBotIds.Clear();
         _orderedBotIds.AddRange(ids);
@@ -1215,7 +1219,10 @@ public sealed class EncounterPatrolStateMachine
         for (var i = 0; i < _route.Waypoints.Count; i++)
         {
             var candidate = _route.Waypoints[i];
-            if (candidate?.Position?.Finite != true || survivors.AsValueEnumerable().Any(s => !navigation.CanReach(s.Position, candidate.Position)))
+            if (
+                candidate?.Position?.Finite != true
+                || survivors.AsValueEnumerable().Any(s => !navigation.CanReach(s.Position, candidate.Position))
+            )
             {
                 continue;
             }

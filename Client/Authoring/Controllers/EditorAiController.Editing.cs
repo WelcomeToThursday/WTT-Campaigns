@@ -73,7 +73,6 @@ internal sealed partial class EditorAiController
         return MapEncounterRules.Errors(layout, new RaidEditorAiContracts.Navigation(), true, true);
     }
 
-
     private void AddAiEncounter()
     {
         if (_context.Layout == null)
@@ -249,10 +248,14 @@ internal sealed partial class EditorAiController
             kind == "route" ? selected.Route
             : kind == "waypoint" ? selected.Route
             : null;
-        if (insert && selected.Waypoint == null) return;
+        if (insert && selected.Waypoint == null)
+            return;
         if (route == null || !TryAiPlacement(out var position, out var scene, true))
         {
-            _context.ReportFeedback("Select a patrol route and move the camera above a floor to place its waypoint.", ConsoleSeverity.Warning);
+            _context.ReportFeedback(
+                "Select a patrol route and move the camera above a floor to place its waypoint.",
+                ConsoleSeverity.Warning
+            );
             return;
         }
         var routeId = route.Id;
@@ -281,11 +284,13 @@ internal sealed partial class EditorAiController
     private void MoveAiWaypoint(int offset)
     {
         var selected = AiSelected(out var kind);
-        if (kind != "waypoint" || selected.Route == null || selected.Waypoint == null) return;
+        if (kind != "waypoint" || selected.Route == null || selected.Waypoint == null)
+            return;
         var routeId = selected.Route.Id;
         var pointId = selected.Waypoint.Id;
         var index = selected.Route.Waypoints.FindIndex(p => p.Id == pointId);
-        if (index < 0 || index + offset < 0 || index + offset >= selected.Route.Waypoints.Count) return;
+        if (index < 0 || index + offset < 0 || index + offset >= selected.Route.Waypoints.Count)
+            return;
         EditAi(layout =>
         {
             var route = layout.PatrolRoutes.Find(r => r.Id == routeId)!;
@@ -297,7 +302,8 @@ internal sealed partial class EditorAiController
     private void ReverseAiRoute()
     {
         var selected = AiSelected(out _);
-        if (selected.Route == null || selected.Route.Waypoints.Count < 2) return;
+        if (selected.Route == null || selected.Route.Waypoints.Count < 2)
+            return;
         var routeId = selected.Route.Id;
         EditAi(layout => MapPatrolRouteEditing.Reverse(layout.PatrolRoutes.Find(r => r.Id == routeId)!));
     }
@@ -319,11 +325,14 @@ internal sealed partial class EditorAiController
         var draftWaypoint = selectedId.StartsWith("waypoint:", StringComparison.Ordinal);
         if (point.Position?.Finite != true || point.Rotation?.Finite != true)
             return;
-        if (!draftWaypoint && (
-            point.Position == null
-            || !RaidEditorAiContracts.TryNav(ZoneRuntime.Vector(point.Position), out var safe)
-            || (safe - ZoneRuntime.Vector(point.Position)).sqrMagnitude > .001f
-        ))
+        if (
+            !draftWaypoint
+            && (
+                point.Position == null
+                || !RaidEditorAiContracts.TryNav(ZoneRuntime.Vector(point.Position), out var safe)
+                || (safe - ZoneRuntime.Vector(point.Position)).sqrMagnitude > .001f
+            )
+        )
         {
             _context.ReportFeedback("Position rejected: it is not on a clear NavMesh standing area.", ConsoleSeverity.Warning);
             return;
@@ -395,7 +404,8 @@ internal sealed partial class EditorAiController
 
     internal void EditAiVector(string group, int axis, float value)
     {
-        if (!float.IsFinite(value)) return;
+        if (!float.IsFinite(value))
+            return;
         var selectedId = _context.SelectionId;
         if (
             !selectedId.StartsWith("waypoint:", StringComparison.Ordinal)
@@ -518,7 +528,8 @@ internal sealed partial class EditorAiController
             return true;
         if (_context.SelectionId.StartsWith("waypoint:", StringComparison.Ordinal))
         {
-            if (point.Position.Finite && point.Rotation?.Finite == true) return true;
+            if (point.Position.Finite && point.Rotation?.Finite == true)
+                return true;
             _context.RestorePoint(point, before);
             return false;
         }

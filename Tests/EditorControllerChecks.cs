@@ -184,15 +184,30 @@ internal static class EditorControllerChecks
             var definition = new SeasonDefinition
             {
                 Missions = [new() { LayoutId = "layout" }],
-                MapLayouts = [new()
-                {
-                    Id = "layout",
-                    PatrolRoutes = [new() { Id = "route", Waypoints = [new() { Id = "point" }] }],
-                    SpawnPoints = [new() { Id = "spawn" }],
-                    Encounters = [new() { Id = "encounter", Trigger = new() { Volume = new() { Id = "volume" } } }],
-                }],
+                MapLayouts =
+                [
+                    new()
+                    {
+                        Id = "layout",
+                        PatrolRoutes = [new() { Id = "route", Waypoints = [new() { Id = "point" }] }],
+                        SpawnPoints = [new() { Id = "spawn" }],
+                        Encounters =
+                        [
+                            new()
+                            {
+                                Id = "encounter",
+                                Trigger = new() { Volume = new() { Id = "volume" } },
+                            },
+                        ],
+                    },
+                ],
             };
-            var session = new RaidEditorSession("woods") { Definition = definition, Baseline = SeasonCompiler.Copy(definition), Hold = true };
+            var session = new RaidEditorSession("woods")
+            {
+                Definition = definition,
+                Baseline = SeasonCompiler.Copy(definition),
+                Hold = true,
+            };
             SpatialCapture Resolve(SeasonDefinition document)
             {
                 EditorAiSelection.TryResolve(document.MapLayouts[0], id, out var selection);
@@ -200,27 +215,40 @@ internal static class EditorControllerChecks
             }
             var before = SeasonCompiler.Copy(Resolve(session.Definition!));
             var revision = session.ContentVersion;
-            Resolve(session.Definition!).Position = new() { X = 2, Y = 3, Z = 4 };
-            check(Resolve(session.Definition!).Position.Y == 3 && !session.CanUndo && session.ContentVersion == revision,
-                "Gizmo preview survives resolving the AI selection on the next frame: " + id);
+            Resolve(session.Definition!).Position = new()
+            {
+                X = 2,
+                Y = 3,
+                Z = 4,
+            };
+            check(
+                Resolve(session.Definition!).Position.Y == 3 && !session.CanUndo && session.ContentVersion == revision,
+                "Gizmo preview survives resolving the AI selection on the next frame: " + id
+            );
             var after = SeasonCompiler.Copy(Resolve(session.Definition!));
             // FinishDrag restores the live before-pose before EditPoint takes a detached
             // copy and commits it, keeping the drag out of the undo snapshot.
             Resolve(session.Definition!).Position = SeasonCompiler.Copy(before.Position);
             session.Edit(d => Resolve(d).Position = SeasonCompiler.Copy(after.Position));
-            check(session.ContentVersion == revision + 1 && Resolve(session.Definition!).Position.Z == 4,
-                "Releasing the AI gizmo commits exactly one position edit: " + id);
+            check(
+                session.ContentVersion == revision + 1 && Resolve(session.Definition!).Position.Z == 4,
+                "Releasing the AI gizmo commits exactly one position edit: " + id
+            );
             session.Undo(false);
-            check(Resolve(session.Definition!).Position.X == before.Position.X && !session.CanUndo,
-                "One undo restores the pre-drag point: " + id);
+            check(
+                Resolve(session.Definition!).Position.X == before.Position.X && !session.CanUndo,
+                "One undo restores the pre-drag point: " + id
+            );
             session.Undo(true);
             check(Resolve(session.Definition!).Position.Y == 3, "Redo restores the released drag: " + id);
             revision = session.ContentVersion;
             var cancelBefore = SeasonCompiler.Copy(Resolve(session.Definition!).Position);
             Resolve(session.Definition!).Position = new() { X = 20 };
             Resolve(session.Definition!).Position = cancelBefore;
-            check(session.ContentVersion == revision && Resolve(session.Definition!).Position.Y == 3,
-                "Cancelling an AI gizmo restores the live point without a committed edit: " + id);
+            check(
+                session.ContentVersion == revision && Resolve(session.Definition!).Position.Y == 3,
+                "Cancelling an AI gizmo restores the live point without a committed edit: " + id
+            );
         }
     }
 }

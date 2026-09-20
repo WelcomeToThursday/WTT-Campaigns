@@ -5,10 +5,13 @@ public static class MapPatrolRouteEditing
 {
     public static void Insert(MapPatrolRoute route, int index, SpatialCapture waypoint)
     {
-        if (route == null) throw new ArgumentNullException(nameof(route));
-        if (waypoint == null) throw new ArgumentNullException(nameof(waypoint));
+        if (route == null)
+            throw new ArgumentNullException(nameof(route));
+        if (waypoint == null)
+            throw new ArgumentNullException(nameof(waypoint));
         route.Waypoints ??= new();
-        if (index < 0 || index > route.Waypoints.Count) throw new ArgumentOutOfRangeException(nameof(index));
+        if (index < 0 || index > route.Waypoints.Count)
+            throw new ArgumentOutOfRangeException(nameof(index));
         var count = route.Waypoints.Count;
         route.Waypoints.Insert(index, waypoint);
         route.WaitSeconds ??= new();
@@ -18,7 +21,8 @@ public static class MapPatrolRouteEditing
 
     public static bool Move(MapPatrolRoute route, int from, int to)
     {
-        if (route == null) throw new ArgumentNullException(nameof(route));
+        if (route == null)
+            throw new ArgumentNullException(nameof(route));
         var points = route.Waypoints;
         if (points == null || from < 0 || to < 0 || from >= points.Count || to >= points.Count || from == to)
             return false;
@@ -36,7 +40,8 @@ public static class MapPatrolRouteEditing
 
     public static void Reverse(MapPatrolRoute route)
     {
-        if (route == null) throw new ArgumentNullException(nameof(route));
+        if (route == null)
+            throw new ArgumentNullException(nameof(route));
         route.Waypoints.Reverse();
         route.WaitSeconds?.Reverse();
     }

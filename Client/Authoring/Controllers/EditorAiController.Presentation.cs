@@ -238,9 +238,13 @@ internal sealed partial class EditorAiController
         var waypointIndex = isWaypoint ? route!.Waypoints.FindIndex(p => p.Id == selected.Waypoint?.Id) : -1;
         _context.View.Get<Button>("AiWaypointInsert").interactable = editable && waypointIndex >= 0;
         _context.View.Get<Button>("AiWaypointEarlier").interactable = editable && waypointIndex > 0;
-        _context.View.Get<Button>("AiWaypointLater").interactable = editable && waypointIndex >= 0 && waypointIndex < route!.Waypoints.Count - 1;
+        _context.View.Get<Button>("AiWaypointLater").interactable =
+            editable && waypointIndex >= 0 && waypointIndex < route!.Waypoints.Count - 1;
         _context.View.Get<Button>("AiRouteReverse").interactable = editable && route?.Waypoints.Count > 1;
-        _context.View.Windows.SetTooltip("AiWaypointInsert", "Insert a zero-wait waypoint after the selection, at the floor beneath the camera.");
+        _context.View.Windows.SetTooltip(
+            "AiWaypointInsert",
+            "Insert a zero-wait waypoint after the selection, at the floor beneath the camera."
+        );
         _context.View.Windows.SetTooltip("AiWaypointEarlier", "Move this waypoint earlier, keeping its wait and identity.");
         _context.View.Windows.SetTooltip("AiWaypointLater", "Move this waypoint later, keeping its wait and identity.");
         _context.View.Windows.SetTooltip("AiRouteReverse", "Reverse waypoint order and their waits. Completion mode stays unchanged.");

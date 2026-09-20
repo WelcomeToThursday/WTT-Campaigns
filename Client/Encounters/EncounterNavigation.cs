@@ -104,17 +104,22 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
 
     internal EncounterPathResult EvaluatePath(SpatialVector from, SpatialVector to) =>
         TryToVector(from, out var start) && TryToVector(to, out var end)
-            ? EvaluatePath(start, end) : new(EncounterPathStatus.Failed, reason: "Invalid waypoint coordinates");
+            ? EvaluatePath(start, end)
+            : new(EncounterPathStatus.Failed, reason: "Invalid waypoint coordinates");
 
     private EncounterPathResult EvaluatePath(Vector3 from, Vector3 to)
     {
         try
         {
-            if (!NavMesh.SamplePosition(from, out var start, PointTolerance, NavMeshAreaMask)
-                || (start.position - from).sqrMagnitude > PointTolerance * PointTolerance)
+            if (
+                !NavMesh.SamplePosition(from, out var start, PointTolerance, NavMeshAreaMask)
+                || (start.position - from).sqrMagnitude > PointTolerance * PointTolerance
+            )
                 return new(EncounterPathStatus.Failed, reason: "Start waypoint is off NavMesh");
-            if (!NavMesh.SamplePosition(to, out var end, PointTolerance, NavMeshAreaMask)
-                || (end.position - to).sqrMagnitude > PointTolerance * PointTolerance)
+            if (
+                !NavMesh.SamplePosition(to, out var end, PointTolerance, NavMeshAreaMask)
+                || (end.position - to).sqrMagnitude > PointTolerance * PointTolerance
+            )
                 return new(EncounterPathStatus.Failed, reason: "End waypoint is off NavMesh");
             // Moving bots occupy their own origin and may share a target. Standing geometry
             // must be clear, but transient players are handled by native movement avoidance.
@@ -128,7 +133,8 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
             var found = NavMesh.CalculatePath(from, to, NavMeshAreaMask, path);
             var corners = path.corners;
             var points = new SpatialVector[corners.Length];
-            for (var i = 0; i < corners.Length; i++) points[i] = Spatial(corners[i]);
+            for (var i = 0; i < corners.Length; i++)
+                points[i] = Spatial(corners[i]);
             if (!found || path.status != NavMeshPathStatus.PathComplete)
                 return new(EncounterPathStatus.Failed, points, found ? path.status.ToString() : "No path");
             if (corners.Length < 2 || (corners[corners.Length - 1] - to).sqrMagnitude > PointTolerance * PointTolerance)
@@ -143,7 +149,13 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         }
     }
 
-    private static SpatialVector Spatial(Vector3 point) => new() { X = point.x, Y = point.y, Z = point.z };
+    private static SpatialVector Spatial(Vector3 point) =>
+        new()
+        {
+            X = point.x,
+            Y = point.y,
+            Z = point.z,
+        };
 
     internal static Vector3 ToVector3(SpatialVector value)
     {
@@ -155,9 +167,11 @@ public sealed class EncounterNavigation : IEncounterNavigation, IPatrolNavigatio
         var result = EvaluatePath(from, to);
         status = result.Status == EncounterPathStatus.Complete ? "PathComplete" : result.Reason;
         corners = Array.Empty<Vector3>();
-        if (result.Status != EncounterPathStatus.Complete) return false;
+        if (result.Status != EncounterPathStatus.Complete)
+            return false;
         corners = new Vector3[result.Corners.Length];
-        for (var i = 0; i < corners.Length; i++) corners[i] = ToVector3(result.Corners[i]);
+        for (var i = 0; i < corners.Length; i++)
+            corners[i] = ToVector3(result.Corners[i]);
         return true;
     }
 

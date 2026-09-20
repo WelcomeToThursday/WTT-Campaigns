@@ -103,8 +103,16 @@ internal sealed class RouteOverlay : VisualElement
             }
         }
         var selectedRoute = ai ? _selectedPatrol : null;
-        _patrol.Refresh(selectedRoute, selected, layoutRevision, SceneNavigation.Revision,
-            Time.frameCount, Time.realtimeSinceStartup, _queryPath, Time.frameCount >= SceneNavigation.ReadyFrame);
+        _patrol.Refresh(
+            selectedRoute,
+            selected,
+            layoutRevision,
+            SceneNavigation.Revision,
+            Time.frameCount,
+            Time.realtimeSinceStartup,
+            _queryPath,
+            Time.frameCount >= SceneNavigation.ReadyFrame
+        );
         if (ai)
             foreach (var segment in _aiSegments)
                 if (segment.Route != selectedRoute?.Id)
@@ -240,8 +248,10 @@ internal sealed class RouteOverlay : VisualElement
         {
             var result = leg.Result;
             var good = result.Status == EncounterPathStatus.Complete;
-            var color = good ? new Color(.35f, .85f, .45f) : result.Status == EncounterPathStatus.Pending
-                ? new Color(1f, .75f, .25f) : new Color(1f, .35f, .3f);
+            var color =
+                good ? new Color(.35f, .85f, .45f)
+                : result.Status == EncounterPathStatus.Pending ? new Color(1f, .75f, .25f)
+                : new Color(1f, .35f, .3f);
             Vector2? captionAt = null;
             var longest = 0f;
             if (good)
@@ -249,18 +259,30 @@ internal sealed class RouteOverlay : VisualElement
                 for (var i = 1; i < result.Corners.Length; i++)
                 {
                     var count = _segments.Count;
-                    AddSegment(EncounterNavigation.ToVector3(result.Corners[i - 1]), EncounterNavigation.ToVector3(result.Corners[i]), camera, near, color);
-                    if (_segments.Count == count) continue;
+                    AddSegment(
+                        EncounterNavigation.ToVector3(result.Corners[i - 1]),
+                        EncounterNavigation.ToVector3(result.Corners[i]),
+                        camera,
+                        near,
+                        color
+                    );
+                    if (_segments.Count == count)
+                        continue;
                     var segment = _segments[count];
                     var delta = segment.B - segment.A;
-                    if (delta.sqrMagnitude < 1) continue;
+                    if (delta.sqrMagnitude < 1)
+                        continue;
                     var direction = delta.normalized;
                     var normal = new Vector2(-direction.y, direction.x);
                     var offset = route.Completion == MapPatrolRoute.PingPong ? normal * 3 : Vector2.zero;
                     segment = (segment.A + offset, segment.B + offset, color);
                     _segments[count] = segment;
                     var middle = (segment.A + segment.B) * .5f;
-                    if (delta.sqrMagnitude > longest) { longest = delta.sqrMagnitude; captionAt = middle + normal * 12; }
+                    if (delta.sqrMagnitude > longest)
+                    {
+                        longest = delta.sqrMagnitude;
+                        captionAt = middle + normal * 12;
+                    }
                     if (delta.sqrMagnitude >= 24 * 24)
                     {
                         var tip = middle + direction * 7;
@@ -284,8 +306,13 @@ internal sealed class RouteOverlay : VisualElement
                         captionAt = (segment.A + segment.B) * .5f;
                         var steps = Mathf.Clamp(Mathf.CeilToInt(Vector2.Distance(segment.A, segment.B) / 16), 1, 200);
                         for (var i = 0; i < steps; i++)
-                            _segments.Add((Vector2.Lerp(segment.A, segment.B, (float)i / steps),
-                                Vector2.Lerp(segment.A, segment.B, (i + .55f) / steps), color));
+                            _segments.Add(
+                                (
+                                    Vector2.Lerp(segment.A, segment.B, (float)i / steps),
+                                    Vector2.Lerp(segment.A, segment.B, (i + .55f) / steps),
+                                    color
+                                )
+                            );
                     }
                 }
             }
