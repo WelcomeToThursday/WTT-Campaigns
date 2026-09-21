@@ -22,10 +22,17 @@ internal sealed class EncounterMovementPath
 
     internal Vector3[] RemainingCorners(BotOwner bot)
     {
-        if (!Owns(bot.Mover) || _path!.CurIndex < 0 || _path.CurIndex >= _path.Length)
+        return Owns(bot.Mover) ? SavedCorners(bot.GetPlayer.Transform.position) : Array.Empty<Vector3>();
+    }
+
+    // A stopped patrol can revalidate its saved approach without selecting a new
+    // shortest path around different sides of scenery. This does not grant ownership.
+    internal Vector3[] SavedCorners(Vector3 position)
+    {
+        if (_path == null || _path.CurIndex < 0 || _path.CurIndex >= _path.Length)
             return Array.Empty<Vector3>();
         var result = new Vector3[_path.Length - _path.CurIndex + 1];
-        result[0] = bot.GetPlayer.Transform.position;
+        result[0] = position;
         for (var i = _path.CurIndex; i < _path.Length; i++)
             result[i - _path.CurIndex + 1] = _path.GetPoint(i);
         return result;

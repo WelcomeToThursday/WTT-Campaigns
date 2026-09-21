@@ -195,6 +195,13 @@ public sealed partial class EncounterNavigation : IEncounterNavigation, IPatrolN
         corners[0] = position;
         for (var i = path.CurIndex; i < path.Length; i++)
             corners[i - path.CurIndex + 1] = path.GetPoint(i);
+        return PatrolPathClear(corners);
+    }
+
+    internal bool PatrolPathClear(Vector3[] corners)
+    {
+        if (corners.Length < 2)
+            return false;
         for (var i = 1; i < corners.Length; i++)
             if (NavMesh.Raycast(corners[i - 1], corners[i], out _, NavMeshAreaMask))
                 return false;

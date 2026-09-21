@@ -959,8 +959,12 @@ internal static class EncounterHookChecks
         var hold = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterHoldRuntime");
         Require(Calls(RequireMethod(hold, "Move"), "Keep"), "Hold returns preserve corner progress too");
         var navigation = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNavigation");
-        Require(Calls(RequireMethod(navigation, "RemainingPathClear"), "Raycast"), "Retained corners respect new NavMesh cuts");
-        Require(Calls(RequireMethod(navigation, "RemainingPathClear"), "ClearSegments"), "Retained corners respect solid scenery");
+        Require(
+            Calls(RequireMethod(navigation, "RemainingPathClear"), "PatrolPathClear"),
+            "Retained movement uses the shared path validator"
+        );
+        Require(Calls(RequireMethod(navigation, "PatrolPathClear"), "Raycast"), "Retained corners respect new NavMesh cuts");
+        Require(Calls(RequireMethod(navigation, "PatrolPathClear"), "ClearSegments"), "Retained corners respect solid scenery");
         RequireMethod(RequireType(native, "AbstractBotPath"), "get_CurIndex", "System.Int32");
         RequireMethod(RequireType(native, "AbstractBotPath"), "GetPoint", "UnityEngine.Vector3", "System.Int32");
         Require(
@@ -1029,6 +1033,14 @@ internal static class EncounterHookChecks
             "Keeping an equivalent path requires full successful live validation before skipping native resubmission"
         );
         var movement = RequireMethod(runtime, "BuildMovementPath");
+        var planning = RequireMethod(runtime, "CheckMovementPath");
+        Require(
+            Calls(planning, "SavedCorners")
+                && Calls(planning, "PatrolPathClear")
+                && Calls(planning, "EvaluateRoute")
+                && Calls(planning, "TryPatrolPath"),
+            "Squad planning validates the retained authored remainder, successor curve and recovery connector"
+        );
         Require(
             Calls(movement, "EvaluateRoute") && Calls(movement, "TryPatrolPath") && Calls(movement, "Select"),
             "Spline following validates the authored leg and a separate rejoin connector, retaining its progress cursor"

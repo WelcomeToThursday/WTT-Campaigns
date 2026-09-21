@@ -7,6 +7,7 @@ internal static class EncounterBudgetChecks
 {
     internal static void Run(Action<bool, string> check)
     {
+        PatrolCurvePlanningChecks.Run(check);
         var budget = new EncounterSpawnBudget(8, 2);
         check(budget.TryReserve("first", 5, 0), "First wave reserves its complete population before generation");
         check(!budget.TryReserve("first", 1, 0) && budget.Reserved == 5, "Repeated scheduling cannot reserve the same wave twice");

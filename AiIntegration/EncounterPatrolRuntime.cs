@@ -44,6 +44,7 @@ internal sealed partial class EncounterPatrolRuntime
         internal Vector3 Heading;
         internal int HeadingWaypoint = -1;
         internal int MovementWaypoint = -1;
+        internal int PathEndpointWaypoint = -1;
         internal int ContinuationWaypoint = -1;
         internal int ArrivalCorner = -1;
         internal bool PassedWaypoint;
@@ -59,7 +60,11 @@ internal sealed partial class EncounterPatrolRuntime
         internal Squad(MapPatrolRoute route)
         {
             State = new(route);
-            Navigation = new(PathNavigation, EncounterNavigationBudget.Plan);
+            Navigation = new(
+                PathNavigation,
+                EncounterNavigationBudget.Plan,
+                (bot, _, waypoint, direction) => CheckMovementPath(this, bot, waypoint, direction)
+            );
         }
 
         internal readonly EncounterPatrolStateMachine State;
@@ -608,6 +613,7 @@ internal sealed partial class EncounterPatrolRuntime
             member.LastRepath = member.OwnsNavigation ? member.Path.RepathReason : "Native path not owned";
             member.PathSubmissions++;
             member.Destination = corners[corners.Length - 1];
+            member.PathEndpointWaypoint = continuation >= 0 ? continuation : member.Command!.WaypointIndex;
             member.Path.Submitted(bot, member.Destination);
             member.MovementWaypoint = member.Command!.WaypointIndex;
             member.ContinuationWaypoint = continuation;

@@ -831,6 +831,12 @@ public interface IPatrolNavigationBudget : IPatrolNavigation
     bool Deferred { get; }
 }
 
+/// <summary>Checks the authored route and the member's remaining approach instead of an unrelated shortest path.</summary>
+public interface IPatrolRouteNavigation : IPatrolNavigation
+{
+    bool CanReachRoute(PatrolBotSnapshot bot, MapPatrolRoute route, int waypoint, int direction);
+}
+
 public enum PatrolRuntimeStatus
 {
     Inactive,
@@ -1124,7 +1130,18 @@ public sealed class EncounterPatrolStateMachine
         }
 
         var target = _route.Waypoints[_targetWaypoint];
-        if (target == null || survivors.AsValueEnumerable().Any(s => !navigation.CanReach(s.Position, target.Position)))
+        if (
+            target == null
+            || survivors
+                .AsValueEnumerable()
+                .Any(s =>
+                    !(
+                        _route.Spline != null && navigation is IPatrolRouteNavigation authored
+                            ? authored.CanReachRoute(s, _route, _targetWaypoint, _direction)
+                            : navigation.CanReach(s.Position, target.Position)
+                    )
+                )
+        )
         {
             if (_route.Spline != null)
             {
