@@ -62,6 +62,7 @@ internal static class EditorToolHelp
             "SceneFilter" => "Filter by object type. Each Scene tab remembers its own filter.",
             "CatalogGrid" => "Browse catalog items as thumbnail tiles.",
             "CatalogList" => "Browse catalog items in a compact list.",
+            "SceneHideUnavailable" => "Hide assets that cannot currently be placed. Preview failures do not affect placement availability.",
             "ScenePreviewRetry" => "Retry loading the selected object's preview.",
             "SceneAnchor" => "Cycle the placement anchor for the selected object.",
             "ScenePlace" => "Begin placing the selected catalog object in the world.",

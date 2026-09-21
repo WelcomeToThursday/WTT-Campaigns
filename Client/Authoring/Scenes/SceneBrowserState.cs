@@ -4,6 +4,10 @@ internal sealed class SceneBrowserState
 {
     internal static readonly string[] Filters = { "All", "Props", "Containers", "Doors", "Loot", "Presets", "Barriers" };
     private readonly Dictionary<string, string> _filters = new();
+    internal bool HideUnavailable { get; set; } = true;
+
+    internal bool ShowCatalogEntry(string error) => !HideUnavailable || error.Length == 0;
+
     internal string Tab { get; set; } = "Catalog";
     internal string Filter
     {

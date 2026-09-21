@@ -84,7 +84,10 @@
     <Compile Include="..\Client\Authoring\Scenes\RouteVisuals.cs" Link="Client\RouteVisuals.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePropSupport.cs" Link="Client\ScenePropSupport.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneSelectionEdit.cs" Link="Client\SceneSelectionEdit.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneCatalogPage.cs" Link="Client\SceneCatalogPage.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneBrowserState.cs" Link="Client\SceneBrowserState.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneBundleArchive.cs" Link="Client\SceneBundleArchive.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneThumbnailSchedule.cs" Link="Client\SceneThumbnailSchedule.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />
     <Compile Include="..\Client\Authoring\Scenes\PreviewMaterialPolicy.cs" Link="Client\PreviewMaterialPolicy.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorTooltipPlacement.cs" Link="Client\EditorTooltipPlacement.cs" />

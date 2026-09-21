@@ -308,6 +308,9 @@ internal sealed partial class MapSceneAdapter
         return null;
     }
 
+    internal Transform? SelectionGeometryFor(string id) =>
+        _spawns.TryGetValue(id, out var spawn) ? spawn.AssetLease?.Model?.SelectionGeometry : null;
+
     internal IEnumerable<(string Id, WorldInteractiveObject Object)> MissionInteractions(MapLayout layout)
     {
         foreach (var edit in layout.Doors)

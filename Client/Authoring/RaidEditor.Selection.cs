@@ -20,7 +20,7 @@ public sealed partial class RaidEditor
 
     private bool CanTransformScene(string tool) =>
         Catalog.CanSceneEdit
-        && Catalog.SceneTab != "Catalog"
+        && Catalog.InspectingScene
         && ScenePoint != null
         && (ScenePoint is MapVolume || SceneSelectionTarget)
         && _sceneSelectionError.Length == 0
@@ -158,7 +158,6 @@ public sealed partial class RaidEditor
         previous.Page = _page;
         previous.Picked = _picked;
         _mode = "Scene";
-        Catalog.SceneTab = "Existing";
         if (_view != null)
         {
             _view.ToolContext = "Scene";
@@ -195,7 +194,7 @@ public sealed partial class RaidEditor
 
     private void PresentPickedProperties()
     {
-        if (!Catalog.SceneWorkspace || Catalog.SceneTab == "Catalog")
+        if (!Catalog.SceneWorkspace || !Catalog.InspectingScene)
             return;
         var point = ScenePoint;
         if (point == null)

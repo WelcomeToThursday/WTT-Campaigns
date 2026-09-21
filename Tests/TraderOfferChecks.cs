@@ -310,7 +310,21 @@ internal static class TraderOfferChecks
                 && ammoCatalogue.SceneCatalog(new SceneCatalogRequest { Id = ammoId }).Entries.Single().Error.Length == 0,
             "A malformed asset reports an entry error without breaking healthy catalog items"
         );
+        var hiddenBox = ammoCatalogue.SceneCatalog(new SceneCatalogRequest { Id = boxId, HideUnavailable = true });
+        check(
+            hiddenBox.Total == 0 && hiddenBox.Entries.Count == 0,
+            "Unavailable catalog entries are filtered before totals and pagination"
+        );
+        check(
+            ammoCatalogue.SceneCatalog(new SceneCatalogRequest { Id = ammoId, HideUnavailable = true }).Total == 1,
+            "Availability filter retains healthy items"
+        );
+        check(!new SceneCatalogRequest().HideUnavailable, "Older catalog callers retain inclusive results without a protocol change");
         templates[new MongoId(boxId)].Properties!.StackSlots!.First().MaxCount = nativeCapacity;
+        check(
+            ammoCatalogue.SceneCatalog(new SceneCatalogRequest { Id = boxId, HideUnavailable = true }).Total == 1,
+            "Explicit asset retry revalidates an unavailable entry"
+        );
         var filledValidation = new SeasonValidationResult();
         SeasonValidator.ItemTree(filledBox, "Ammo box", filledValidation);
         check(filledValidation.CanPublish, "Filled catalog ammo boxes remain valid serializable item trees");

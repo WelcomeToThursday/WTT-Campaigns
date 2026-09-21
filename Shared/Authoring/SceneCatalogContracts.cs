@@ -11,6 +11,9 @@ public class SceneCatalogRequest
     public string Id { get; set; } = "";
     public List<string>? TemplateIds { get; set; }
     public int Page { get; set; }
+
+    // Optional: older callers retain inclusive results and the existing ten-entry paging contract.
+    public bool HideUnavailable { get; set; }
 }
 
 public sealed class SceneCatalogEntry

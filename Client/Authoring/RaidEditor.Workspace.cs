@@ -17,7 +17,7 @@ public sealed partial class RaidEditor
         if (_view?.Valid != true || _session == null)
             return;
         var state =
-            $"{Catalog.AssetRevision}|{_session.ContentVersion}|{_session.Status}|{LastFeedback}|{_aiPreviewStatus}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{Catalog.Placing}|{_view.Windows.HasMenu}";
+            $"{Catalog.ViewRevision}|{Catalog.SceneRevision}|{_session.ContentVersion}|{_session.Status}|{LastFeedback}|{_aiPreviewStatus}|{_mapScene?.Loading}|{_session.Conflict != null}|{_view.Typing}|{_drag != null}|{Catalog.Placing}|{_view.Windows.HasMenu}";
         if (_presentedIndexCount != _sceneIndex.Count || state != _passiveState)
         {
             _presentedIndexCount = _sceneIndex.Count;

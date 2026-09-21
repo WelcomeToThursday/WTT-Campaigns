@@ -23,6 +23,9 @@ public sealed class TraderOfferCatalogue(
     ItemHelper itemHelper
 )
 {
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, (DateTime Expires, bool Available)> _sceneAvailability =
+        new();
+
     // Keep native price, quest-item, blacklist and inventory-category rules.
     // Hideout area containers are not included in SPT's default invalid bases.
     public bool IsInventoryItem(string id) =>
@@ -219,29 +222,45 @@ public sealed class TraderOfferCatalogue(
         if (request.Id.Length > 0)
             entries = entries.Where(e => e.Id == request.Id);
         var sorted = entries.OrderBy(e => e.Name, StringComparer.OrdinalIgnoreCase).ThenBy(e => e.Id, StringComparer.Ordinal).ToList();
+        if (request.HideUnavailable)
+        {
+            // Cache only validation state; never retain generated native item assemblies.
+            var now = DateTime.UtcNow;
+            sorted.RemoveAll(entry =>
+            {
+                var key = request.Category + ":" + entry.Id;
+                if (request.Id.Length == 0 && _sceneAvailability.TryGetValue(key, out var cached) && cached.Expires > now)
+                    return !cached.Available;
+                FillSceneEntry(entry, request.Category == "Presets");
+                var available = entry.Error.Length == 0;
+                _sceneAvailability[key] = (now.AddSeconds(30), available);
+                entry.Items = new();
+                return !available;
+            });
+        }
         var response = new SceneCatalogResponse { Total = sorted.Count, Entries = sorted.Skip(request.Page * 10).Take(10).ToList() };
         foreach (var entry in response.Entries)
-        {
-            try
-            {
-                entry.Items =
-                    request.Category == "Presets"
-                        ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id))
-                        : SceneItem(entry.Id);
-                if (entry.Items.Any(i => !IsSceneItem(i.Template)))
-                    throw new InvalidOperationException("This preset contains unavailable inventory items.");
-                var validation = new SeasonValidationResult();
-                SeasonValidator.ItemTree(entry.Items, "Catalog item", validation);
-                if (!validation.CanPublish)
-                    throw new InvalidOperationException(validation.Issues[0].Message);
-            }
-            catch (Exception e)
-            {
-                entry.Items = new();
-                entry.Error = e.Message;
-            }
-        }
+            FillSceneEntry(entry, request.Category == "Presets");
         return response;
+    }
+
+    private void FillSceneEntry(SceneCatalogEntry entry, bool presets)
+    {
+        try
+        {
+            entry.Items = presets ? Web.Authoring.TraderOfferAuthoring.PreviewAssembly(Preset(entry.Id)) : SceneItem(entry.Id);
+            if (entry.Items.Any(i => !IsSceneItem(i.Template)))
+                throw new InvalidOperationException("This preset contains unavailable inventory items.");
+            var validation = new SeasonValidationResult();
+            SeasonValidator.ItemTree(entry.Items, "Catalog item", validation);
+            if (!validation.CanPublish)
+                throw new InvalidOperationException(validation.Issues[0].Message);
+        }
+        catch (Exception e)
+        {
+            entry.Items = new();
+            entry.Error = e.Message;
+        }
     }
 
     internal List<NativeItem> SceneItem(string templateId)

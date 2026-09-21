@@ -2,9 +2,15 @@
   <PropertyGroup>
     <RootNamespace>WTT.Campaigns.Client</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.10.1</Version>
+    <Version>0.11.0</Version>
   </PropertyGroup>
   <ItemGroup>
+    <None
+      Include="Resources\LevelPropLibrary\catalog.json;Resources\LevelPropLibrary\*.bundle"
+      Condition="Exists('Resources\LevelPropLibrary\catalog.json')"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="LevelPropLibrary\%(Filename)%(Extension)"
+    />
     <None
       Include="Resources\ContainerLibrary\catalog.json;Resources\ContainerLibrary\native-containers.bundle"
       CopyToOutputDirectory="PreserveNewest"

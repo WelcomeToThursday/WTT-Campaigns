@@ -128,8 +128,6 @@ public sealed partial class RaidEditor
                         continue;
                     var child = frame.Node.GetChild(frame.Next++);
                     stack.Push(frame);
-                    if (stack.Count >= 128)
-                        throw new InvalidOperationException("Scene hierarchy exceeds the editor depth limit.");
                     stack.Push((child, -1));
                 }
             }
@@ -156,6 +154,7 @@ public sealed partial class RaidEditor
         if (_sceneWalk == null)
             return;
         _sceneClock.Restart();
+        Action<Transform> discover = Catalog.DiscoverSceneNode;
         try
         {
             for (var count = 0; count < 128 && _sceneClock.Elapsed.TotalMilliseconds < 2; count++)
@@ -172,13 +171,8 @@ public sealed partial class RaidEditor
                     var renderer = node.GetComponent<Renderer>();
                     if (renderer && renderer is MeshRenderer or SkinnedMeshRenderer)
                         _sceneRenderers.Add(renderer);
-                    Catalog.DiscoverSceneNode(node);
-                }
-                if (node && !_sceneIndex.Add(node, node.name))
-                {
-                    _sceneIndex.Limit();
-                    FinishSceneIndex();
-                    break;
+                    // Catalog discovery continues even when binding storage is full.
+                    _sceneIndex.Observe(node, node.name, discover);
                 }
             }
         }

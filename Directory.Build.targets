@@ -17,6 +17,8 @@
       <_CampaignsRuntimeFile Include="$(TargetPath)" />
     </ItemGroup>
     <ItemGroup Condition="'$(MSBuildProjectName)' == 'WTT-Campaigns.Client'">
+      <_LevelPropSource Include="$(MSBuildProjectDirectory)\Resources\LevelPropLibrary\*.bundle" />
+      <_CampaignsRuntimeFile Include="$(TargetDir)LevelPropLibrary\catalog.json;@(_LevelPropSource->'$(TargetDir)LevelPropLibrary\%(Filename)%(Extension)')" />
       <_CampaignsRuntimeFile Include="$(TargetDir)HazardLibrary\catalog.json;$(TargetDir)HazardLibrary\native-hazards.bundle" />
       <_CampaignsRuntimeFile Include="$(TargetDir)ContainerLibrary\catalog.json;$(TargetDir)ContainerLibrary\native-containers.bundle" />
       <_CampaignsRuntimeFile Include="$(TargetPath);$(TargetDir)WTT-Campaigns.UI.dll;$(TargetDir)WTT-Campaigns.Shared.dll;$(TargetDir)wtt_campaigns_ui.bundle;$(TargetDir)wtt_campaigns_editor_toolkit.bundle;$(TargetDir)wtt_campaigns_story_notifications.bundle;$(TargetDir)StoryMedia\**\*" />

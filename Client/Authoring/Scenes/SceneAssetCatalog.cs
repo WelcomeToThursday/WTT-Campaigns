@@ -1,4 +1,3 @@
-using System.IO;
 using System.Threading;
 using Comfort.Common;
 using Cysharp.Threading.Tasks;
@@ -6,7 +5,6 @@ using Diz.DependencyManager;
 using Diz.Resources;
 using EFT;
 using EFT.Interactive;
-using Newtonsoft.Json;
 using UnityEngine;
 using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Spatial;
@@ -15,257 +13,69 @@ using Object = UnityEngine.Object;
 
 namespace WTT.Campaigns.Client.Authoring.Scenes;
 
-// Metadata survives catalog browsing; Unity assets are held only by native dependency tokens.
-internal sealed class SceneAssetCatalog : IDisposable
+// Loads only explicitly requested assets; there is no runtime catalog-wide bundle scan.
+internal static class SceneAssetCatalog
 {
-    private sealed class CachedBundle
-    {
-        public string Stamp = "";
-        public List<SceneCatalogEntry> Entries = new();
-    }
+    private sealed class SceneArchiveException(string message) : InvalidOperationException(message);
 
-    private readonly Dictionary<string, CachedBundle> _cache = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, CachedBundle> _stored = new(StringComparer.Ordinal);
-    private bool _rescan;
-    private Func<bool>? _active;
-    private readonly CancellationTokenSource _lifetime = new();
-    private readonly string _path = Path.Combine(BepInEx.Paths.CachePath, "wtt-scene-assets-v1.json");
-    private bool _running;
-    private int _scanned;
-    internal int Revision { get; private set; }
-    internal string Status { get; private set; } = "";
-    private SceneCatalogEntry[] _entries = Array.Empty<SceneCatalogEntry>();
-    private int _entriesRevision = -1;
-    internal IEnumerable<SceneCatalogEntry> Entries
+    private static async UniTask InspectArchives(
+        IEasyAssets assets,
+        string key,
+        Dictionary<string, SceneBundleArchive.Contents> archives,
+        Func<UniTask> budget
+    )
     {
-        get
-        {
-            if (_entriesRevision != Revision)
-            {
-                _entries = _cache.Values.AsValueEnumerable().SelectMany(v => v.Entries).ToArray();
-                _entriesRevision = Revision;
-            }
-            return _entries;
-        }
-    }
-
-    internal SceneAssetCatalog()
-    {
-        try
-        {
-            if (File.Exists(_path))
-                foreach (var pair in JsonConvert.DeserializeObject<Dictionary<string, CachedBundle>>(File.ReadAllText(_path)) ?? new())
-                    if (
-                        pair.Value?.Entries != null
-                        && pair.Value.Entries.AsValueEnumerable()
-                            .All(e =>
-                                e != null
-                                && e.AssetTarget != null
-                                && SceneAssetRules.SafePath(e.AssetTarget.Bundle)
-                                && SceneAssetRules.SafePath(e.AssetTarget.Asset)
-                            )
-                    )
-                        _stored[pair.Key] = pair.Value;
-        }
-        catch (Exception e)
-        {
-            Plugin.LogInfo("Scene asset cache: " + e.Message);
-        }
-    }
-
-    internal void Start(Action changed, Func<bool>? active = null)
-    {
-        _active = active ?? _active;
-        if (!_running && !_lifetime.IsCancellationRequested)
-            _ = Scan(changed);
-    }
-
-    internal void Retry(string id, Action changed)
-    {
-        foreach (
-            var key in _cache
-                .AsValueEnumerable()
-                .Where(p => p.Value.Entries.AsValueEnumerable().Any(e => e.Id == id))
-                .Select(p => p.Key)
-                .ToArray()
-        )
-        {
-            _cache.Remove(key);
-            _stored.Remove(key);
-        }
-        Revision++;
-        _rescan = true;
-        Start(changed);
-    }
-
-    private async Task Scan(Action changed)
-    {
-        _running = true;
-        _rescan = false;
-        var token = _lifetime.Token;
-        try
-        {
-            var assets = Singleton<ObjectsFactory>.Instance.EasyAssets;
-            var nodes = assets.System.Nodes;
-            var keys = nodes
-                .Keys.AsValueEnumerable()
-                .OrderBy(k => k.IndexOf("location_objects", StringComparison.OrdinalIgnoreCase) >= 0 ? 0 : 1)
-                .ThenBy(k => k, StringComparer.Ordinal)
-                .ToArray();
-            // Inventory resources have their own native placement path, including attachments and presets.
-            var inventory = new HashSet<string>(StringComparer.Ordinal);
-            foreach (var template in Singleton<ItemFactory>.Instance.ItemTemplates.Values)
-            {
-                if (template.Prefab != null)
-                    inventory.Add(template.Prefab.path);
-                if (template.UsePrefab != null)
-                    inventory.Add(template.UsePrefab.path);
-            }
-            foreach (var obsolete in _cache.Keys.AsValueEnumerable().Where(k => !nodes.ContainsKey(k) || inventory.Contains(k)).ToArray())
-                _cache.Remove(obsolete);
-            _scanned = 0;
-            foreach (var key in keys)
-            {
-                token.ThrowIfCancellationRequested();
-                while (_active?.Invoke() == false)
-                    await UniTask.NextFrame(cancellationToken: token);
-                _scanned++;
-                if (inventory.Contains(key) || !SceneAssetRules.SafePath(key))
-                    continue;
-                var bundle = nodes[key].Data as EasyBundle;
-                if (bundle == null)
-                    continue;
-                var stamp = Stamp(assets, key);
-                if (_cache.TryGetValue(key, out var cached) && cached.Stamp == stamp)
-                    continue;
-                if (_stored.TryGetValue(key, out cached) && cached.Stamp == stamp)
-                {
-                    _cache[key] = cached;
-                    _stored.Remove(key);
-                    Revision++;
-                    await UniTask.NextFrame(cancellationToken: token);
-                    continue;
-                }
-                Status = "Inspecting game assets " + _scanned + " / " + keys.Length;
-                await UniTask.NextFrame(cancellationToken: token);
-                var found = new CachedBundle { Stamp = stamp };
-                if (key.StartsWith("maps/", StringComparison.OrdinalIgnoreCase))
-                    found.Entries.Add(Unavailable(key, "Map configuration and scene resources cannot be placed as independent props."));
-                else
-                {
-                    DependencyGraph<IEasyBundle>.Token? lease = null;
-                    try
-                    {
-                        lease = assets.Retain(new[] { key }, ct: token);
-                        await lease.LoadingJob;
-                        token.ThrowIfCancellationRequested();
-                        if (!bundle._bundle)
-                            throw new InvalidOperationException("Bundle is missing or could not load.");
-                        if (bundle._bundle.isStreamedSceneAssetBundle)
-                            found.Entries.Add(Unavailable(key, "This asset is embedded in a map scene."));
-                        else
-                            foreach (var path in bundle._bundle.GetAllAssetNames())
-                            {
-                                token.ThrowIfCancellationRequested();
-                                // The native bundle already holds these objects. Classify the actual resource, including imported model assets.
-                                var model = bundle._bundle.LoadAsset<Object>(path) as GameObject;
-                                if (!model)
-                                    continue;
-                                var container = model.GetComponentInChildren<LootableContainer>(true);
-                                var target = new MapTarget
-                                {
-                                    Kind = container ? "AssetContainer" : "AssetProp",
-                                    Bundle = key,
-                                    Asset = path,
-                                    Fingerprint = SceneAssetRules.Identity(key, path),
-                                    Template = container ? container.Template ?? "" : "",
-                                };
-                                found.Entries.Add(
-                                    new SceneCatalogEntry
-                                    {
-                                        Id = target.Fingerprint,
-                                        Name = model.name,
-                                        AssetTarget = target,
-                                        Error = Restriction(model, target.Kind == "AssetContainer"),
-                                    }
-                                );
-                                await UniTask.NextFrame(cancellationToken: token);
-                            }
-                    }
-                    catch (OperationCanceledException)
-                    {
-                        throw;
-                    }
-                    catch (Exception e)
-                    {
-                        found.Entries.Add(Unavailable(key, e.Message));
-                    }
-                    finally
-                    {
-                        lease?.Release();
-                    }
-                }
-                _cache[key] = found;
-                Revision++;
-                changed();
-                if (_scanned % 100 == 0)
-                    Save();
-            }
-            Status = "Game asset index ready";
-            Save();
-            changed();
-        }
-        catch (OperationCanceledException) { }
-        catch (Exception e)
-        {
-            Status = "Asset indexing: " + e.Message;
-        }
-        finally
-        {
-            _running = false;
-            if (_rescan && !token.IsCancellationRequested)
-                Start(changed);
-        }
-    }
-
-    private static string Stamp(IEasyAssets assets, string key)
-    {
-        var seen = new HashSet<string>();
+        var seen = new HashSet<string>(StringComparer.Ordinal);
         var pending = new Stack<string>();
-        var evidence = new List<string>();
         pending.Push(key);
         while (pending.Count > 0)
         {
+            await budget();
             var next = pending.Pop();
             if (!seen.Add(next))
                 continue;
-            if (!assets.System.Nodes.TryGetValue(next, out var node) || node.Data is not EasyBundle b)
+            if (!assets.System.Nodes.TryGetValue(next, out var node) || node.Data is not EasyBundle bundle)
+                throw new InvalidOperationException("A required asset bundle is missing: " + next);
+            if (!archives.TryGetValue(next, out var contents))
             {
-                evidence.Add(next + ":missing");
-                continue;
+                contents = bundle._bundle
+                    ? bundle._bundle.isStreamedSceneAssetBundle
+                        ? SceneBundleArchive.Contents.Scene
+                        : SceneBundleArchive.Contents.Assets
+                    : SceneBundleArchive.Read(bundle._path);
+                archives[next] = contents;
             }
-            var file = new FileInfo(b._path);
-            evidence.Add(next + ":" + (file.Exists ? file.Length + ":" + file.LastWriteTimeUtc.Ticks : "missing"));
-            foreach (var dependency in b.DependencyKeys)
+            if (contents == SceneBundleArchive.Contents.Scene)
+                throw new SceneArchiveException("This asset requires a streamed map scene: " + next);
+            foreach (var dependency in bundle.DependencyKeys)
                 pending.Push(dependency);
         }
-        return SceneAssetRules.CacheFingerprint(evidence);
     }
 
-    private static SceneCatalogEntry Unavailable(string key, string reason) =>
-        new()
+    private static async UniTask WaitForBundle(DependencyGraph<IEasyBundle>.Token lease, Action<int>? progress = null)
+    {
+        var watch = System.Diagnostics.Stopwatch.StartNew();
+        Exception? failure = null;
+        while (!lease.LoadingJob.IsCompleted)
         {
-            Id = SceneAssetRules.Identity(key, "unavailable"),
-            Name = Path.GetFileNameWithoutExtension(key),
-            Error = reason,
-            AssetTarget = new MapTarget
+            // A native loader fault does not always complete the dependency graph's token.
+            // Observe that fault, but let every already-started native request finish before release.
+            var loading = false;
+            foreach (var node in lease.Nodes)
             {
-                Kind = "AssetProp",
-                Bundle = key,
-                Asset = "unavailable",
-                Fingerprint = SceneAssetRules.Identity(key, "unavailable"),
-            },
-        };
+                if (node.Data is not EasyBundle bundle || bundle._loadingJob == null)
+                    continue;
+                loading |= !bundle._loadingJob.IsCompleted;
+                if (bundle._loadingJob.IsFaulted)
+                    failure ??= bundle._loadingJob.Exception;
+            }
+            if (failure != null && !loading)
+                throw new InvalidOperationException("Native asset loading failed.", failure);
+            progress?.Invoke((int)watch.Elapsed.TotalSeconds);
+            await UniTask.NextFrame();
+        }
+        await lease.LoadingJob;
+    }
 
     internal static string Restriction(GameObject model, bool container)
     {
@@ -338,31 +148,10 @@ internal sealed class SceneAssetCatalog : IDisposable
         return "";
     }
 
-    private void Save()
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
-            File.WriteAllText(_path + ".tmp", JsonConvert.SerializeObject(_cache));
-            if (File.Exists(_path))
-                File.Delete(_path);
-            File.Move(_path + ".tmp", _path);
-        }
-        catch (Exception e)
-        {
-            Plugin.LogInfo("Scene asset cache: " + e.Message);
-        }
-    }
-
-    public void Dispose()
-    {
-        _lifetime.Cancel();
-        Save();
-    }
-
     internal sealed class Model : IDisposable
     {
         internal GameObject Object = null!;
+        internal Transform? SelectionGeometry;
         internal DependencyGraph<IEasyBundle>.Token? Lease;
         internal Action? ReleaseLibrary;
 
@@ -382,6 +171,8 @@ internal sealed class SceneAssetCatalog : IDisposable
 
     internal static async Task<Model> Load(MapTarget target, CancellationToken token, bool previewOnly = false)
     {
+        if (target.Bundle.StartsWith(NativeLevelPropLibrary.Prefix, StringComparison.Ordinal))
+            return await NativeLevelPropLibrary.Load(target, token, previewOnly);
         if (target.Bundle == NativeContainerLibrary.BundleKey)
             return await NativeContainerLibrary.Load(target, token, previewOnly);
         if (!target.IsAsset)
@@ -391,13 +182,26 @@ internal sealed class SceneAssetCatalog : IDisposable
         var assets = Singleton<ObjectsFactory>.Instance.EasyAssets;
         if (!assets.System.Nodes.TryGetValue(target.Bundle, out var node) || node.Data is not EasyBundle bundle)
             throw new InvalidOperationException("The installed asset bundle is missing: " + target.Bundle);
-        if (target.Bundle.StartsWith("maps/", StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Scene-only asset cannot be placed independently.");
         var result = new Model();
         try
         {
+            var slice = System.Diagnostics.Stopwatch.StartNew();
+            await InspectArchives(
+                assets,
+                target.Bundle,
+                new Dictionary<string, SceneBundleArchive.Contents>(StringComparer.Ordinal),
+                async () =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (slice.Elapsed.TotalMilliseconds < 2)
+                        return;
+                    await UniTask.NextFrame(cancellationToken: token);
+                    slice.Restart();
+                }
+            );
+            token.ThrowIfCancellationRequested();
             result.Lease = assets.Retain(new[] { target.Bundle }, ct: token);
-            await result.Lease.LoadingJob;
+            await WaitForBundle(result.Lease);
             token.ThrowIfCancellationRequested();
             if (!bundle._bundle || bundle._bundle.isStreamedSceneAssetBundle)
                 throw new InvalidOperationException("Independent asset bundle is unavailable.");

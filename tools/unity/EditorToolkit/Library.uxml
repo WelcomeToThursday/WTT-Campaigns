@@ -10,6 +10,7 @@
             <ui:VisualElement name="SceneFilters" class="editor-actions editor-action-row">
                 <ui:Button name="SceneSource" class="editor-action editor-choice" text="Source" />
                 <ui:Button name="SceneFilter" class="editor-action editor-choice" text="Filter" />
+                <ui:Button name="SceneHideUnavailable" class="editor-action" text="Hide unavailable" />
             </ui:VisualElement>
             <ui:VisualElement name="CatalogViews" class="editor-actions editor-action-row">
                 <ui:Button name="CatalogGrid" class="editor-action" text="Grid" />

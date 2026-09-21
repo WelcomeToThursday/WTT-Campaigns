@@ -2,7 +2,7 @@
 
 The Campaign Editor uses Unity UI Toolkit throughout: home, campaign-test controls, browsers, inspectors, tool windows, search, scope dropdowns, menus, conflicts and route/AI overlays. The old uGUI Editor controls and fallback have been removed. EFT's screen manager still handles native navigation, environment and input ownership.
 
-All workspaces share one style sheet and reusable controls. Hierarchical browsers use virtualized Toolkit lists, while the Scene catalog retains its ten-record pages and thumbnail cache. Window positions and sizes retain the existing saved layout format. Route authoring remains a separate tool.
+All workspaces share one style sheet and reusable controls. Hierarchical browsers use virtualized Toolkit lists, while the Scene catalog uses responsive thumbnail pages and a bounded session cache (remote catalog requests still use ten-record batches). Window positions and sizes retain the existing saved layout format. Route authoring remains a separate tool.
 
 ## Console
 

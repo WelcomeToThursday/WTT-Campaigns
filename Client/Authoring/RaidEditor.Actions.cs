@@ -1065,7 +1065,7 @@ public sealed partial class RaidEditor
         var doorTree = Catalog.SceneWorkspace && Catalog.SceneFilter == "Doors";
         var treeMode = doorTree || _mode == "AI" || EditorMode.Ready && (_mode == "Routes" && MissionContent || _mode == "Zones");
         var libraryKey =
-            $"{_mode}|{Catalog.SceneTab}|{Catalog.SceneFilter}|{Catalog.CatalogSource}|{Catalog.AssetRevision}|{search}|{_layoutId}|{_session.ContentVersion}|{_sceneIndex.Count}|{Catalog.CatalogGeneration}|{Catalog.CatalogLoading}|{(Catalog.RemoteCatalog ? _page : 0)}";
+            $"{_mode}|{Catalog.SceneTab}|{Catalog.SceneFilter}|{Catalog.CatalogSource}|{Catalog.ViewRevision}|{search}|{_layoutId}|{_session.ContentVersion}|{(Catalog.SceneWorkspace ? Catalog.SceneRevision : _sceneIndex.Count)}|{Catalog.CatalogGeneration}|{Catalog.CatalogLoading}|{(Catalog.PagedCatalog ? _page : 0)}";
         if (_libraryKey != libraryKey)
         {
             _libraryKey = libraryKey;
@@ -1122,7 +1122,7 @@ public sealed partial class RaidEditor
                 _rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
             }
 
-            if (_mode == "Scene")
+            if (_mode == "Scene" && !Catalog.PagedCatalog)
                 _rows.Sort(
                     (a, b) =>
                     {
@@ -1139,7 +1139,7 @@ public sealed partial class RaidEditor
                 : "Zones:" + _layoutId;
             if (doorTree)
             {
-                var doorContext = "Doors:" + Catalog.SceneTab + ":" + _layoutId;
+                var doorContext = "Doors:" + Catalog.SceneTab + ":" + _layoutId + ":" + Catalog.HideUnavailable;
                 var entries = _rows
                     .AsValueEnumerable()
                     .Select(r =>
@@ -1204,7 +1204,7 @@ public sealed partial class RaidEditor
         {
             view.HideTree();
         }
-        if (!Catalog.RemoteCatalog)
+        if (!Catalog.PagedCatalog)
             _page = Math.Min(_page, Math.Max(0, (_rows.Count - 1) / Catalog.LibraryPageSize));
         for (var i = 0; i < view.RowCapacity && !treeMode; i++)
         {

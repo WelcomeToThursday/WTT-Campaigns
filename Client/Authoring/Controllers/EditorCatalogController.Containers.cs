@@ -30,9 +30,7 @@ internal sealed partial class EditorCatalogController
     private readonly Dictionary<string, string> _containerItemNames = new();
 
     private MapObjectEdit? ConfiguredContainer =>
-        SceneWorkspace && _sceneTab != "Catalog" && _context.MapPoint is MapObjectEdit edit && SceneAssetRules.IsContainer(edit)
-            ? edit
-            : null;
+        InspectingScene && _context.MapPoint is MapObjectEdit edit && SceneAssetRules.IsContainer(edit) ? edit : null;
 
     private void EditContainer(Action<ContainerSettings> change)
     {

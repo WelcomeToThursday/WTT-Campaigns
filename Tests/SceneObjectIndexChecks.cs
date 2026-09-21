@@ -86,9 +86,13 @@ internal static class SceneObjectIndexChecks
             "Path cache stops within its 8M character budget"
         );
         var entries = new SceneObjectIndex<Node>(n => n.Path, n => true);
+        var discovered = 0;
         for (var i = 0; i < SceneObjectIndex<Node>.MaxEntries + 5; i++)
-            entries.Add(new Node(""), "same");
+            entries.Observe(new Node(""), "same", _ => discovered++);
         check(entries.Count == SceneObjectIndex<Node>.MaxEntries && entries.Limited, "Node cap bounds giant scene indexes");
+        check(discovered == SceneObjectIndex<Node>.MaxEntries + 5, "Catalog discovery visits objects beyond the binding-index limit");
+        entries.Complete = true;
+        check(entries.Unique("same") == null, "Finishing full discovery does not authorize incomplete unique bindings");
         var deep = new SceneObjectIndex<Node>(n => n.Path, n => true);
         var oversized = new Node(new string('x', SceneObjectIndex<Node>.MaxPathLength + 1));
         deep.Add(oversized, "large");

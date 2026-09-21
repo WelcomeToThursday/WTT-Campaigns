@@ -275,6 +275,8 @@ public sealed partial class RaidEditor : IEditorAiContext, IEditorCatalogContext
         get => _sceneSelectionPose;
         set => _sceneSelectionPose = value;
     }
+    bool IEditorMapContext.InspectingScene => Catalog.InspectingScene;
+
     string IEditorMapContext.SceneTab
     {
         get => Catalog.SceneTab;

@@ -85,7 +85,12 @@ internal static class EditorLayoutSpec
             "Library",
             I("Search", "Search"),
             R("SceneTabs", B("SceneCatalog", "Catalog"), B("SceneExisting", "In scene"), B("SceneChanges", "Changes")),
-            R("SceneFilters", new Node("choice", "SceneSource", "Source"), new Node("choice", "SceneFilter", "Filter")),
+            R(
+                "SceneFilters",
+                new Node("choice", "SceneSource", "Source"),
+                new Node("choice", "SceneFilter", "Filter"),
+                B("SceneHideUnavailable", "Hide unavailable")
+            ),
             R("CatalogViews", B("CatalogGrid", "Grid"), B("CatalogList", "List")),
             new Node("browser", "LibraryScroll", ""),
             T("LibraryCount", "No records"),

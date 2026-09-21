@@ -66,7 +66,7 @@ internal sealed partial class EditorMapController
 
     internal void PresentDoorControls()
     {
-        var visible = _context.SceneWorkspace && _context.SceneTab != "Catalog" && (MapDoor != null || PickedDoor);
+        var visible = _context.InspectingScene && (MapDoor != null || PickedDoor);
         var view = _context.View!;
         view.Visible("DoorInspectorGroup", visible);
         if (!visible)

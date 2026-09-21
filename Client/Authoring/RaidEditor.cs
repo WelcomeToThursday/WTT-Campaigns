@@ -66,7 +66,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                 // once on release. Discrete actions still use AiSelectedPoint's copy.
                 return Ai.AiSelected(out _).Point;
             if (MapWorkspace || Catalog.SceneWorkspace)
-                return Maps.MapPoint ?? (Catalog.SceneWorkspace && Catalog.SceneTab != "Catalog" ? _sceneSelectionPose : null);
+                return Maps.MapPoint ?? (Catalog.SceneWorkspace && Catalog.InspectingScene ? _sceneSelectionPose : null);
             return _session
                 ?.Definition?.Zones.AsValueEnumerable()
                 .Cast<SpatialCapture>()

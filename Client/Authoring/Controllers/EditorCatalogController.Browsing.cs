@@ -43,9 +43,62 @@ internal sealed partial class EditorCatalogController
 
     private readonly Dictionary<string, string> _propShapes = new();
 
+    private readonly Dictionary<string, string> _sceneSourcePaths = new();
+    private List<SceneCatalogEntry> _localMatches = new();
+    private string _localMatchesKey = "";
+    private bool _sceneDirty;
+    private int _sceneRevision;
+    private float _nextScenePublish;
+    internal int SceneRevision
+    {
+        get
+        {
+            if (_sceneDirty && Time.realtimeSinceStartup >= _nextScenePublish)
+            {
+                _sceneDirty = false;
+                _nextScenePublish = Time.realtimeSinceStartup + .25f;
+                _sceneRevision++;
+            }
+            return _sceneRevision;
+        }
+    }
+
+    private int _pendingCatalogEntries;
+    private int _catalogViewRevision;
+    private string _levelQueryKey = "";
+    private int _levelQueryGeneration;
+    private bool _levelQueryLoading;
+    private SceneCatalogEntry[] _levelMatches = Array.Empty<SceneCatalogEntry>();
+    private CancellationTokenSource _levelSearchLifetime = new();
+
+    private async Task FindLevelEntries(string search, bool hideUnavailable, int generation)
+    {
+        try
+        {
+            var found = await NativeLevelPropLibrary.Search(search, hideUnavailable, _levelSearchLifetime.Token);
+            if (_disposed || generation != _levelQueryGeneration)
+                return;
+            _levelMatches = found;
+        }
+        catch (Exception error)
+        {
+            if (!_disposed && generation == _levelQueryGeneration)
+                _context.ReportFeedback(error.Message, ConsoleSeverity.Error);
+        }
+        finally
+        {
+            if (!_disposed && generation == _levelQueryGeneration)
+            {
+                _levelQueryLoading = false;
+                _catalogViewRevision++;
+                _context.LibraryKey = "";
+            }
+        }
+    }
+
     private string _catalogSource = "All game";
 
-    private SceneAssetCatalog? _assetCatalog;
+    private bool _containerTemplatesRequested;
 
     private HashSet<string>? _containerTemplates;
 
@@ -68,17 +121,20 @@ internal sealed partial class EditorCatalogController
     }
 
     private readonly ScenePreviewCache<ThumbnailImage> _previews = new(
-        64,
+        128,
         image =>
         {
             if (image.Owned && image.Texture)
-                UnityEngine.Object.Destroy(image.Texture);
+                SceneThumbnailRenderer.Release(image.Texture);
         }
     );
 
     private readonly List<ThumbnailJob> _thumbnailQueue = new();
 
     private bool _thumbnailWorker;
+    private SceneThumbnailSchedule _thumbnailSchedule = new();
+    private SceneThumbnailRenderer? _thumbnailRenderer;
+    private int _thumbnailRenderFrame = -1;
 
     private CancellationTokenSource _thumbnailLifetime = new();
 
@@ -90,16 +146,18 @@ internal sealed partial class EditorCatalogController
 
     internal int LibraryPageSize => SceneWorkspace && _sceneTab == "Catalog" ? _catalogPageSize : 10;
 
-    internal int LibraryOffset => RemoteCatalog ? 0 : _context.Page * LibraryPageSize;
+    internal bool PagedCatalog => RemoteCatalog || AssetCatalog;
 
-    internal int LibraryTotal => RemoteCatalog ? _catalog?.Total ?? 0 : _context.Rows.Count;
+    internal int LibraryOffset => PagedCatalog ? 0 : _context.Page * LibraryPageSize;
+
+    internal int LibraryTotal => PagedCatalog ? _catalog?.Total ?? 0 : _context.Rows.Count;
 
     internal void DiscoverSceneNode(Transform node)
     {
         if (node.GetComponent<Door>() is { } nativeDoor && nativeDoor.GetType() == typeof(Door))
         {
             _sceneRoots[node.GetInstanceID().ToString()] = node;
-            _context.LibraryKey = "";
+            _sceneDirty = true;
             return;
         }
         if (
@@ -118,7 +176,7 @@ internal sealed partial class EditorCatalogController
         if (!root || _sceneRoots.ContainsKey(root!.GetInstanceID().ToString()))
             return;
         _sceneRoots[root!.GetInstanceID().ToString()] = root;
-        _context.LibraryKey = "";
+        _sceneDirty = true;
         if (MapSceneAdapter.Supported(root).Length > 0)
         {
             _unsupportedSceneIds.Add(root.GetInstanceID().ToString());
@@ -136,6 +194,7 @@ internal sealed partial class EditorCatalogController
         var signature =
             root.GetComponentsInChildren<MeshFilter>(true)
                 .AsValueEnumerable()
+                .Where(m => m.sharedMesh)
                 .Select(m =>
                     m.sharedMesh.GetInstanceID()
                     + ":"
@@ -188,11 +247,31 @@ internal sealed partial class EditorCatalogController
                 {
                     CancelPlacement();
                     _sceneTab = value;
+                    if (value == "Catalog")
+                    {
+                        _context.Picked = null;
+                        _context.SelectionId = "";
+                        _context.SceneSelectionPose = null;
+                        _context.SceneSelectionError = "";
+                    }
                     _context.Page = 0;
                 }
             );
         }
         Button("ScenePreviewRetry", RetryThumbnail);
+        Button(
+            "SceneHideUnavailable",
+            () =>
+            {
+                _sceneBrowser.HideUnavailable = !_sceneBrowser.HideUnavailable;
+                _catalogViewRevision++;
+                _context.Page = 0;
+                _catalogRequests.Reset();
+                _context.LibraryKey = "";
+                if (_sceneBrowser.HideUnavailable && SelectedCatalogUnavailable())
+                    ClearCatalogSelection();
+            }
+        );
         // These actions must not cancel an active transform or placement.
         view.Button("SceneFrame", _context.FrameSceneSelection);
         view.Button(
@@ -284,8 +363,50 @@ internal sealed partial class EditorCatalogController
         );
     }
 
+    private bool SelectedCatalogUnavailable() =>
+        _selectedCatalogEntry != null
+            ? CatalogError(_selectedCatalogEntry).Length > 0
+            : _sceneFilter == "Doors"
+                && _catalogSelection.Length > 0
+                && (
+                    !_sceneRoots.TryGetValue(_catalogSelection, out var source)
+                    || !source
+                    || SceneDoorPlacement.Restriction(source).Length > 0
+                );
+
+    private void ClearCatalogSelection()
+    {
+        CancelPlacement();
+        _catalogSelection = "";
+        _selectedCatalogEntry = null;
+    }
+
+    private bool CatalogPending(SceneCatalogEntry entry) =>
+        entry.Error.Length == 0
+        && entry.AssetTarget?.Bundle != NativeContainerLibrary.BundleKey
+        && entry.AssetTarget?.Kind is "AssetContainer" or "Container"
+        && _containerTemplates == null;
+
+    private static bool CatalogMatches(SceneCatalogEntry entry, string search) =>
+        entry.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+        || (entry.AssetTarget?.Bundle ?? "").IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+        || (entry.AssetTarget?.Asset ?? "").IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
+        || (entry.AssetTarget?.Path ?? "").IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
+
+    private bool SceneMatches(string id, string label, string search)
+    {
+        if (label.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+            return true;
+        if (!_sceneRoots.TryGetValue(id, out var source) || !source)
+            return false;
+        if (!_sceneSourcePaths.TryGetValue(id, out var path))
+            _sceneSourcePaths[id] = path = source.gameObject.scene.name + ":/" + MapSceneAdapter.PathOf(source);
+        return path.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
+    }
+
     internal void SceneRows(string search)
     {
+        _pendingCatalogEntries = 0;
         if (_sceneTab != "Catalog")
         {
             void Add(string id, string label, string kind)
@@ -330,108 +451,149 @@ internal sealed partial class EditorCatalogController
         {
             foreach (var pair in _sceneRoots)
                 if (pair.Value && pair.Value.GetComponent<Door>() && _context.MapScene?.RecordAt(pair.Value) == null)
-                    _context.Rows.Add((pair.Key, pair.Value.name + " · Door"));
+                {
+                    var error = SceneDoorPlacement.Restriction(pair.Value);
+                    if (_sceneBrowser.ShowCatalogEntry(error))
+                        _context.Rows.Add((pair.Key, pair.Value.name + " · Door" + (error.Length > 0 ? " · Unavailable: " + error : "")));
+                }
+            if (_sceneBrowser.HideUnavailable && SelectedCatalogUnavailable())
+                ClearCatalogSelection();
         }
         else if (AssetCatalog)
         {
-            if (_assetCatalog == null)
+            var levels = _sceneFilter == "Props" && _catalogSource == "All game";
+            var levelKey = search + "\n" + _sceneBrowser.HideUnavailable;
+            if (levels && _levelQueryKey != levelKey)
             {
-                _assetCatalog = new SceneAssetCatalog();
+                _levelSearchLifetime.Cancel();
+                _levelSearchLifetime.Dispose();
+                _levelSearchLifetime = new();
+                _levelQueryKey = levelKey;
+                _levelMatches = Array.Empty<SceneCatalogEntry>();
+                _levelQueryLoading = true;
+                _ = FindLevelEntries(search, _sceneBrowser.HideUnavailable, ++_levelQueryGeneration);
+            }
+            if (!_containerTemplatesRequested)
+            {
+                _containerTemplatesRequested = true;
                 _ = LoadContainerTemplates();
-                _assetCatalog.Start(
-                    () =>
+            }
+            var localKey =
+                $"{search}|{_sceneFilter}|{_catalogSource}|{_sceneBrowser.HideUnavailable}|{SceneRevision}|{_containerTemplates?.Count}";
+            if (_localMatchesKey != localKey)
+            {
+                var entries = new List<SceneCatalogEntry>();
+                var nativeEntries = NativeContainerLibrary.Entries().AsValueEnumerable().ToArray();
+                var nativeTemplates = new HashSet<string>(nativeEntries.AsValueEnumerable().Select(e => e.AssetTarget!.Template).ToArray());
+                foreach (var entry in nativeEntries)
+                {
+                    if ((_sceneFilter == "Containers") != (entry.AssetTarget?.Kind == "AssetContainer"))
+                        continue;
+                    if (
+                        _catalogSource == "Current map"
+                        && !_sceneRoots
+                            .Values.AsValueEnumerable()
+                            .Any(t => t && t.GetComponent<LootableContainer>()?.Template == entry.AssetTarget?.Template)
+                    )
+                        continue;
+                    if (!CatalogMatches(entry, search))
+                        continue;
+                    entries.Add(entry);
+                }
+                var sourceIds =
+                    _sceneFilter == "Containers"
+                        ? _sceneRoots.Keys.AsValueEnumerable().ToArray()
+                        : _propShapes.Values.AsValueEnumerable().Concat(_unsupportedSceneIds.AsValueEnumerable()).Distinct().ToArray();
+                foreach (var id in sourceIds)
+                {
+                    if (!_sceneRoots.TryGetValue(id, out var source) || !source)
+                        continue;
+                    var container = source.GetComponent<LootableContainer>();
+                    if (container && nativeTemplates.Contains(container.Template))
+                        continue;
+                    if ((_sceneFilter == "Containers") != (container != null))
+                        continue;
+                    if (_localCatalogEntries.TryGetValue(id, out var localEntry))
                     {
-                        _context.LibraryKey = "";
-                    },
-                    () => AssetCatalog && _context.IsOpen
-                );
+                        entries.Add(localEntry);
+                        continue;
+                    }
+                    try
+                    {
+                        var binding = (_context.MapScene ??= new()).CaptureOriginal(source);
+                        entries.Add(
+                            new SceneCatalogEntry
+                            {
+                                Id = "scene:" + id,
+                                Name = source.name + " � Current map",
+                                AssetTarget = binding,
+                                Error = container
+                                    ? MapSceneAdapter.ContainerCopyRestriction(source)
+                                    : MapSceneAdapter.Supported(source, copy: true),
+                            }
+                        );
+                    }
+                    catch (Exception e)
+                    {
+                        entries.Add(
+                            new SceneCatalogEntry
+                            {
+                                Id = "scene:" + id,
+                                Name = source.name,
+                                Error = e.Message,
+                            }
+                        );
+                    }
+                    _localCatalogEntries[id] = entries[entries.Count - 1];
+                }
+                var ids = new HashSet<string>(StringComparer.Ordinal);
+                entries.RemoveAll(e => !ids.Add(e.Id) || !CatalogMatches(e, search));
+                _pendingCatalogEntries = entries.AsValueEnumerable().Count(e => CatalogPending(e));
+                entries.RemoveAll(e => !_sceneBrowser.ShowCatalogEntry(CatalogError(e)));
+                entries.Sort(NativeLevelPropLibrary.Compare);
+                _localMatches = entries;
+                _localMatchesKey = localKey;
             }
-            var entries = new List<SceneCatalogEntry>();
-            var nativeEntries = NativeContainerLibrary.Entries().AsValueEnumerable().ToArray();
-            var nativeTemplates = new HashSet<string>(nativeEntries.AsValueEnumerable().Select(e => e.AssetTarget!.Template).ToArray());
-            foreach (var entry in nativeEntries.AsValueEnumerable().Concat(_assetCatalog.Entries.AsValueEnumerable()))
-            {
-                if ((_sceneFilter == "Containers") != (entry.AssetTarget?.Kind == "AssetContainer"))
-                    continue;
-                if (
-                    _catalogSource == "Current map"
-                    && !_sceneRoots
-                        .Values.AsValueEnumerable()
-                        .Any(t => t && t.GetComponent<LootableContainer>()?.Template == entry.AssetTarget?.Template)
-                )
-                    continue;
-                if (
-                    entry.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
-                    && entry.AssetTarget!.Bundle.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0
-                )
-                    continue;
-                entries.Add(entry);
-            }
-            var sourceIds =
-                _sceneFilter == "Containers"
-                    ? _sceneRoots.Keys.AsValueEnumerable().ToArray()
-                    : _propShapes.Values.AsValueEnumerable().Concat(_unsupportedSceneIds.AsValueEnumerable()).Distinct().ToArray();
-            foreach (var id in sourceIds)
-            {
-                if (!_sceneRoots.TryGetValue(id, out var source) || !source)
-                    continue;
-                var container = source.GetComponent<LootableContainer>();
-                if (container && nativeTemplates.Contains(container.Template))
-                    continue;
-                if ((_sceneFilter == "Containers") != (container != null))
-                    continue;
-                if (source.name.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0)
-                    continue;
-                if (_localCatalogEntries.TryGetValue(id, out var localEntry))
-                {
-                    entries.Add(localEntry);
-                    continue;
-                }
-                try
-                {
-                    var binding = (_context.MapScene ??= new()).CaptureOriginal(source);
-                    entries.Add(
-                        new SceneCatalogEntry
-                        {
-                            Id = "scene:" + id,
-                            Name = source.name + " � Current map",
-                            AssetTarget = binding,
-                            Error = container
-                                ? MapSceneAdapter.ContainerCopyRestriction(source)
-                                : MapSceneAdapter.Supported(source, copy: true),
-                        }
-                    );
-                }
-                catch (Exception e)
-                {
-                    entries.Add(
-                        new SceneCatalogEntry
-                        {
-                            Id = "scene:" + id,
-                            Name = source.name,
-                            Error = e.Message,
-                        }
-                    );
-                }
-                _localCatalogEntries[id] = entries[entries.Count - 1];
-            }
-            entries.Sort(
-                (a, b) =>
-                {
-                    var order = string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
-                    return order != 0 ? order : string.CompareOrdinal(a.Id, b.Id);
-                }
+            var levelEntries = levels ? _levelMatches : Array.Empty<SceneCatalogEntry>();
+            var total = _localMatches.Count + levelEntries.Length;
+            _context.Page = Math.Min(_context.Page, Math.Max(0, (total - 1) / LibraryPageSize));
+            var page = SceneCatalogPage.Merge(
+                _localMatches,
+                levelEntries,
+                _context.Page * LibraryPageSize,
+                LibraryPageSize,
+                NativeLevelPropLibrary.Compare
             );
-            _catalog = new SceneCatalogResponse { Entries = entries, Total = entries.Count };
+            if (
+                _sceneBrowser.HideUnavailable
+                && !_levelQueryLoading
+                && _catalogSelection.Length > 0
+                && _selectedCatalogEntry != null
+                && !SceneCatalogPage.Contains(_localMatches, _selectedCatalogEntry, NativeLevelPropLibrary.Compare)
+                && !SceneCatalogPage.Contains(levelEntries, _selectedCatalogEntry, NativeLevelPropLibrary.Compare)
+            )
+                ClearCatalogSelection();
+            _catalog = new SceneCatalogResponse { Entries = page, Total = total };
             if (_catalogSelection.Length > 0)
-                _selectedCatalogEntry = entries.AsValueEnumerable().FirstOrDefault(e => e.Id == _catalogSelection) ?? _selectedCatalogEntry;
-            foreach (var entry in entries)
+                _selectedCatalogEntry = page.AsValueEnumerable().FirstOrDefault(e => e.Id == _catalogSelection) ?? _selectedCatalogEntry;
+            foreach (var entry in page)
                 _context.Rows.Add((entry.Id, entry.Name + (CatalogError(entry).Length > 0 ? " � Unavailable" : "")));
             return;
         }
         else if (RemoteCatalog)
         {
-            var key = _catalogSource + ":" + _sceneFilter + ":" + search + ":" + _context.Page + ":" + LibraryPageSize;
+            var key =
+                _catalogSource
+                + ":"
+                + _sceneFilter
+                + ":"
+                + search
+                + ":"
+                + _context.Page
+                + ":"
+                + LibraryPageSize
+                + ":"
+                + _sceneBrowser.HideUnavailable;
             if (_catalogRequests.Key != key)
             {
                 _catalog = null;
@@ -460,7 +622,7 @@ internal sealed partial class EditorCatalogController
                     );
         }
         if (_sceneFilter != "Doors")
-            _context.Rows.RemoveAll(r => r.Label.IndexOf(search, StringComparison.OrdinalIgnoreCase) < 0);
+            _context.Rows.RemoveAll(r => !SceneMatches(r.Id, r.Label, search));
     }
 
     private async Task FetchCatalog(string key, string search, int page, int pageSize, int generation)
@@ -469,6 +631,7 @@ internal sealed partial class EditorCatalogController
         {
             var result = new SceneCatalogResponse();
             var category = _sceneFilter == "Presets" ? "Presets" : "Items";
+            var hideUnavailable = _sceneBrowser.HideUnavailable;
             var sessionId = EditorMode.SessionId;
             // The installed server serves ten records per request. Assemble the
             // visible range without changing that contract or publishing partial pages.
@@ -484,6 +647,7 @@ internal sealed partial class EditorCatalogController
                                 Search = search,
                                 Page = request.Page,
                                 Category = category,
+                                HideUnavailable = hideUnavailable,
                                 TemplateIds =
                                     _catalogSource == "Current map"
                                         ? _sceneRoots
@@ -534,6 +698,9 @@ internal sealed partial class EditorCatalogController
     {
         if (_sceneTab == "Catalog")
         {
+            _context.Picked = null;
+            _context.SceneSelectionPose = null;
+            _context.SceneSelectionError = "";
             _catalogSelection = id;
             _selectedCatalogEntry = _catalog?.Entries.AsValueEnumerable().FirstOrDefault(e => e.Id == id);
             _context.SelectionId = "";
@@ -554,6 +721,7 @@ internal sealed partial class EditorCatalogController
 
     internal void SelectSceneTarget(Transform hit)
     {
+        ClearCatalogSelection();
         var authored = _context.MapScene?.RecordAt(hit);
         if (_sceneRebindId.Length > 0 && authored != null)
         {
@@ -566,7 +734,6 @@ internal sealed partial class EditorCatalogController
             _context.SceneSelectionError = "";
             _context.SelectionId = authored;
             _context.Picked = null;
-            _sceneTab = "Existing";
             if (_context.TransformTool == "Scale" && !_context.CanTransformScene("Scale"))
                 _context.TransformTool = "Move";
             _context.Refresh();
@@ -586,7 +753,6 @@ internal sealed partial class EditorCatalogController
                     .FirstOrDefault(d => !d.PlaceNew && d.Target.Path == doorBinding.Path && d.Target.Scene == doorBinding.Scene)
                     ?.Id
                 ?? "";
-            _sceneTab = "Existing";
             _context.Refresh();
             _context.View?.Windows.ShowPanel("Inspector", true);
             return;
@@ -624,7 +790,6 @@ internal sealed partial class EditorCatalogController
             _context.SceneSelectionPose = null;
             _context.SelectionId = id;
             _context.Picked = root;
-            _sceneTab = "Changes";
             _context.Refresh();
             return;
         }
@@ -642,7 +807,6 @@ internal sealed partial class EditorCatalogController
             );
         if (record != null)
             _context.SelectionId = record.Id;
-        _sceneTab = "Existing";
         _context.SetSceneSelectionPose(root!, binding, error);
         _context.ReportFeedback(
             error.Length > 0 ? "Selected for inspection. " + error : "Selected " + root!.name,
@@ -702,11 +866,12 @@ internal sealed partial class EditorCatalogController
                     JsonConvert.SerializeObject(new SceneContainerRequest { SessionId = EditorMode.SessionId })
                 )
             );
-            if (sessionId != EditorMode.SessionId || _assetCatalog == null)
+            if (sessionId != EditorMode.SessionId || !_containerTemplatesRequested)
                 return;
             if (response == null || response.Error != null)
                 throw new InvalidOperationException(response?.Error ?? "No container response.");
             _containerTemplates = new HashSet<string>(response.Templates);
+            _catalogViewRevision++;
             _context.LibraryKey = "";
         }
         catch (Exception e)
@@ -720,8 +885,7 @@ internal sealed partial class EditorCatalogController
         if (_disposed)
             return;
         ClearContainerControls();
-        _assetCatalog?.Dispose();
-        _assetCatalog = null;
+        _containerTemplatesRequested = false;
         _containerTemplates = null;
         _context.ClearSceneSelection();
         _context.LibraryKey = "";
@@ -736,13 +900,30 @@ internal sealed partial class EditorCatalogController
         _repeatPlacement = false;
         _unsupportedSceneIds.Clear();
         _localCatalogEntries.Clear();
+        _localMatches.Clear();
+        _localMatchesKey = "";
+        _sceneDirty = false;
+        _sceneRevision++;
+        _nextScenePublish = 0;
+        _levelQueryKey = "";
+        _levelSearchLifetime.Cancel();
+        _levelSearchLifetime.Dispose();
+        _levelSearchLifetime = new();
+        _levelQueryGeneration++;
+        _levelQueryLoading = false;
+        _levelMatches = Array.Empty<SceneCatalogEntry>();
         _sceneRoots.Clear();
+        _sceneSourcePaths.Clear();
         _discoveredRoots.Clear();
         _propShapes.Clear();
         _thumbnailLifetime.Cancel();
         _thumbnailLifetime.Dispose();
         _thumbnailLifetime = new();
         _previews.Clear();
+        _thumbnailSchedule.Want(Array.Empty<string>());
+        _thumbnailSchedule = new();
+        _thumbnailRenderer?.Dispose();
+        _thumbnailRenderer = null;
         _thumbnailWorker = false;
         _thumbnailQueue.Clear();
     }
