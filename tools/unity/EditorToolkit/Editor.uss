@@ -244,6 +244,7 @@
 .editor-inspector-section > .unity-foldout__content { margin-left: 0; }
 .editor-inspector-section .editor-section { margin-top: 0; padding-top: 0; }
 #BrowserFilters #Search { flex-basis: 100%; width: 100%; max-width: none; align-self: stretch; margin-bottom: 3px; }
+.editor-root .editor-scene-tool #BrowserFilters #Search { flex-basis: auto; width: 300px; max-width: 100%; min-width: 0; flex-grow: 0; flex-shrink: 1; align-self: flex-start; }
 .editor-root .editor-narrow #BrowserFilters #SceneSource, .editor-root .editor-narrow #BrowserFilters #SceneFilter { width: 100%; }
 .editor-root .editor-narrow #BrowserFilters #SceneFilters { padding-bottom: 2px; margin-bottom: 2px; }
 .editor-root .editor-narrow .editor-choice-field { width: 100%; }

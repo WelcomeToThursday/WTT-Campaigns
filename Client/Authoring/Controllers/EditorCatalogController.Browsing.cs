@@ -387,25 +387,24 @@ internal sealed partial class EditorCatalogController
         && entry.AssetTarget?.Kind is "AssetContainer" or "Container"
         && _containerTemplates == null;
 
-    private static bool CatalogMatches(SceneCatalogEntry entry, string search) =>
-        entry.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-        || (entry.AssetTarget?.Bundle ?? "").IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-        || (entry.AssetTarget?.Asset ?? "").IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-        || (entry.AssetTarget?.Path ?? "").IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
+    private static bool CatalogMatches(SceneCatalogEntry entry, SceneSearchQuery search) =>
+        search.Matches(entry.Name, entry.Id, entry.AssetTarget?.Path, entry.AssetTarget?.Bundle, entry.AssetTarget?.Asset);
 
-    private bool SceneMatches(string id, string label, string search)
+    private bool SceneMatches(string id, string label, SceneSearchQuery search)
     {
-        if (label.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+        if (search.Matches(label, id))
             return true;
         if (!_sceneRoots.TryGetValue(id, out var source) || !source)
             return false;
         if (!_sceneSourcePaths.TryGetValue(id, out var path))
             _sceneSourcePaths[id] = path = source.gameObject.scene.name + ":/" + MapSceneAdapter.PathOf(source);
-        return path.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0;
+        return search.Matches(label, id, path);
     }
 
     internal void SceneRows(string search)
     {
+        search = search.Trim();
+        var query = new SceneSearchQuery(search);
         _pendingCatalogEntries = 0;
         if (_sceneTab != "Catalog")
         {
@@ -496,7 +495,7 @@ internal sealed partial class EditorCatalogController
                             .Any(t => t && t.GetComponent<LootableContainer>()?.Template == entry.AssetTarget?.Template)
                     )
                         continue;
-                    if (!CatalogMatches(entry, search))
+                    if (!CatalogMatches(entry, query))
                         continue;
                     entries.Add(entry);
                 }
@@ -547,10 +546,10 @@ internal sealed partial class EditorCatalogController
                     _localCatalogEntries[id] = entries[entries.Count - 1];
                 }
                 var ids = new HashSet<string>(StringComparer.Ordinal);
-                entries.RemoveAll(e => !ids.Add(e.Id) || !CatalogMatches(e, search));
+                entries.RemoveAll(e => !ids.Add(e.Id) || !CatalogMatches(e, query));
                 _pendingCatalogEntries = entries.AsValueEnumerable().Count(e => CatalogPending(e));
                 entries.RemoveAll(e => !_sceneBrowser.ShowCatalogEntry(CatalogError(e)));
-                entries.Sort(NativeLevelPropLibrary.Compare);
+                entries.Sort(query.Compare);
                 _localMatches = entries;
                 _localMatchesKey = localKey;
             }
@@ -562,15 +561,15 @@ internal sealed partial class EditorCatalogController
                 levelEntries,
                 _context.Page * LibraryPageSize,
                 LibraryPageSize,
-                NativeLevelPropLibrary.Compare
+                query.Compare
             );
             if (
                 _sceneBrowser.HideUnavailable
                 && !_levelQueryLoading
                 && _catalogSelection.Length > 0
                 && _selectedCatalogEntry != null
-                && !SceneCatalogPage.Contains(_localMatches, _selectedCatalogEntry, NativeLevelPropLibrary.Compare)
-                && !SceneCatalogPage.Contains(levelEntries, _selectedCatalogEntry, NativeLevelPropLibrary.Compare)
+                && !SceneCatalogPage.Contains(_localMatches, _selectedCatalogEntry, query.Compare)
+                && !SceneCatalogPage.Contains(levelEntries, _selectedCatalogEntry, query.Compare)
             )
                 ClearCatalogSelection();
             _catalog = new SceneCatalogResponse { Entries = page, Total = total };
@@ -622,7 +621,7 @@ internal sealed partial class EditorCatalogController
                     );
         }
         if (_sceneFilter != "Doors")
-            _context.Rows.RemoveAll(r => !SceneMatches(r.Id, r.Label, search));
+            _context.Rows.RemoveAll(r => !SceneMatches(r.Id, r.Label, query));
     }
 
     private async Task FetchCatalog(string key, string search, int page, int pageSize, int generation)

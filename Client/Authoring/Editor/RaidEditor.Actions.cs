@@ -1061,7 +1061,7 @@ public sealed partial class RaidEditor
             Catalog.CatalogPageSize = capacity;
             _libraryKey = "";
         }
-        var search = view.Get<InputField>("Search").text;
+        var search = view.Get<InputField>("Search").text.Trim();
         var doorTree = Catalog.SceneWorkspace && Catalog.SceneFilter == "Doors";
         var treeMode = doorTree || _mode == "AI" || EditorMode.Ready && (_mode == "Routes" && MissionContent || _mode == "Zones");
         var libraryKey =

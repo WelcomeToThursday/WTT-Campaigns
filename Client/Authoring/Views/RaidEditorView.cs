@@ -241,8 +241,11 @@ internal sealed partial class RaidEditorView : IDisposable
     {
         if (_context == context)
             return;
+        // Filtering can clear the selected record. Keep the browser query focused
+        // while resetting edits that belong to the previous inspector selection.
         foreach (var input in _inputs)
-            input.CancelEdit();
+            if (input.Element.name != "Search")
+                input.CancelEdit();
         DismissDropdowns();
         _context = context;
     }

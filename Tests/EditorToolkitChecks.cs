@@ -288,6 +288,17 @@ internal static class EditorToolkitChecks
         // argument rather than a literal inside Get. Check the scene and container callers
         // against the actual layout, including captions chosen by a branch.
         var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Controllers.EditorCatalogController");
+        var placementCompletion = editor.Methods.Single(m => m.Name == "CancelPlacement").Body.Instructions;
+        if (
+            placementCompletion.Any(i =>
+                i.Operand is MethodReference m
+                && (
+                    m.Name is "set__sceneTab" or "set__sceneFilter" or "set_Page"
+                    || m.DeclaringType.Name == "RaidEditorView" && m.Name == "Value"
+                )
+            )
+        )
+            throw new InvalidOperationException("Finishing scene placement must preserve the browser tab, filter, page and search.");
         foreach (var name in new[] { "PresentScene", "PresentContainerControls", "BindContainerControls" })
         {
             string? control = null;

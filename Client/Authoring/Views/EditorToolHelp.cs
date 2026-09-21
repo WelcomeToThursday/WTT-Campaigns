@@ -67,7 +67,7 @@ internal static class EditorToolHelp
             "SceneAnchor" => "Cycle the placement anchor for the selected object.",
             "ScenePlace" => "Begin placing the selected catalog object in the world.",
             "SceneRepeat" =>
-                "Keep placing copies until Escape, then inspect the last placed object. Each placement can be undone separately.",
+                "Keep placing copies until Escape. Inspect the last copy while keeping your catalog position. Each placement can be undone separately.",
             "SceneMove" => "Activate the movement handles for this object (W).",
             "SceneRotate" => "Activate the rotation handles for this object (E).",
             "SceneScale" => "Activate scale handles when the selected object supports scaling (R).",

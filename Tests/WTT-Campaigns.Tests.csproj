@@ -86,6 +86,7 @@
     <Compile Include="..\Client\Authoring\Scenes\SceneSelectionEdit.cs" Link="Client\SceneSelectionEdit.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneCatalogPage.cs" Link="Client\SceneCatalogPage.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneBrowserState.cs" Link="Client\SceneBrowserState.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneSearchQuery.cs" Link="Client\SceneSearchQuery.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneBundleArchive.cs" Link="Client\SceneBundleArchive.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneThumbnailSchedule.cs" Link="Client\SceneThumbnailSchedule.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />

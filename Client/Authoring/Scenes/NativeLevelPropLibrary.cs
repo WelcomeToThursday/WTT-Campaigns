@@ -139,16 +139,11 @@ internal static class NativeLevelPropLibrary
     private static bool SafeName(string value) =>
         value.Length > 0 && value.Length <= 100 && value.AsValueEnumerable().All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '-');
 
-    internal static int Compare(SceneCatalogEntry a, SceneCatalogEntry b)
-    {
-        var order = string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
-        return order != 0 ? order : string.CompareOrdinal(a.Id, b.Id);
-    }
-
     internal static async Task<SceneCatalogEntry[]> Search(string search, bool hideUnavailable, CancellationToken token)
     {
         var entries = await Entries();
         var manifest = _manifest!;
+        var query = new SceneSearchQuery(search);
         return await Task.Run(() =>
         {
             var found = new List<SceneCatalogEntry>();
@@ -159,15 +154,19 @@ internal static class NativeLevelPropLibrary
                     continue;
                 var source = manifest.ByAsset[entry.AssetTarget!.Asset];
                 if (
-                    search.Length == 0
-                    || entry.Name.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-                    || source.Source.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0
-                    || source.Sources.Exists(s => s.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
-                    || source.Aliases.Exists(s => s.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0)
+                    query.Matches(
+                        entry.Name,
+                        entry.Id,
+                        entry.AssetTarget.Path,
+                        source.Source,
+                        entry.AssetTarget.Asset,
+                        source.Aliases,
+                        source.Sources
+                    )
                 )
                     found.Add(entry);
             }
-            found.Sort(Compare);
+            found.Sort(query.Compare);
             token.ThrowIfCancellationRequested();
             return found.ToArray();
         });
