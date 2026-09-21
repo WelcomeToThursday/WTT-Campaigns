@@ -48,8 +48,7 @@ internal static class EditorLayoutSpec
             T("Connection", "Connecting…"),
             B("ContextToggle", "Session"),
             B("WindowsToggle", "Windows"),
-            B("HelpToggle", "Help"),
-            B("CloseEditor", "Close")
+            B("HelpToggle", "Help")
         ),
         R(
             "TransformToolbar",
@@ -79,13 +78,19 @@ internal static class EditorLayoutSpec
             B("Captures", "Captures"),
             B("Scene", "Scene"),
             B("LootTool", "Loot"),
+            B("TerrainTool", "Terrain"),
             B("AI", "AI")
         ),
         G(
             "Library",
             I("Search", "Search"),
             R("SceneTabs", B("SceneCatalog", "Catalog"), B("SceneExisting", "In scene"), B("SceneChanges", "Changes")),
-            R("SceneFilters", new Node("choice", "SceneSource", "Source"), new Node("choice", "SceneFilter", "Filter")),
+            R(
+                "SceneFilters",
+                new Node("choice", "SceneSource", "Source"),
+                new Node("choice", "SceneFilter", "Filter"),
+                B("SceneHideUnavailable", "Hide unavailable")
+            ),
             R("CatalogViews", B("CatalogGrid", "Grid"), B("CatalogList", "List")),
             new Node("browser", "LibraryScroll", ""),
             T("LibraryCount", "No records"),
@@ -244,9 +249,31 @@ internal static class EditorLayoutSpec
                     G(
                         "AiPatrolSection",
                         T("AiPatrolHeading", "PATROL MOVEMENT"),
+                        B("AiWaypointInsert", "Insert after selected"),
+                        B("AiRouteReverse", "Reverse route"),
+                        B("AiWaypointEarlier", "Move earlier"),
+                        B("AiWaypointLater", "Move later"),
                         C("AiPace", "Pace"),
                         C("AiCompletion", "Route end"),
                         F("AiWaypointWaitSeconds", "Wait (seconds)")
+                    )
+                ),
+                G(
+                    "SplineSection",
+                    T("SplineHeading", "CURVE EDITING"),
+                    B("SplineEdit", "Edit Spline"),
+                    T("SplineStatus", ""),
+                    G(
+                        "SplineDetails",
+                        C("SplineMode", "Handles"),
+                        C("SplinePart", "Edit"),
+                        F("SplineX", "World X"),
+                        F("SplineY", "World Y"),
+                        F("SplineZ", "World Z"),
+                        F("SplineStrength", "Smoothing (%)"),
+                        R("SplineSmoothRow", B("SplineSmoothSelected", "Smooth selected"), B("SplineSmoothRoute", "Smooth route")),
+                        R("SplinePointRow", B("SplineInsert", "Insert point"), B("SplineDelete", "Delete point")),
+                        B("SplineCorner", "Make corner")
                     )
                 ),
                 G(
@@ -336,8 +363,101 @@ internal static class EditorLayoutSpec
                 "",
                 T(
                     "Help",
-                    "RMB + WASD: fly · Q / E: elevation\nFly m/s: speed · Shift: 4× · Ctrl: precision\nDrag handles · Alt: bypass snap · Ctrl+Z/Y: undo/redo\nDrag titles or dock tabs to float, split or group tools. Drag dividers to resize docks.\nThe left rail opens tools. Drag a floating corner to resize. Reset layout restores defaults.\nEscape dismisses menus, releases a field, cancels a tool, then closes."
+                    "RMB + WASD: fly · Q / E: elevation\nFly m/s: speed · Shift: 4× · Ctrl: precision\nDrag handles · Alt: bypass snap · Ctrl+Z/Y: undo/redo\nDrag titles or dock tabs to float, split or group tools. Drag dividers to resize docks.\nThe left rail opens tools. Drag a floating corner to resize. Reset layout restores defaults.\nEscape dismisses menus, releases a field or cancels a tool. Use Session to unload the map."
                 )
+            )
+        ),
+        G(
+            "Terrain",
+            T("TerrainState", "Point at terrain to choose a palette"),
+            R("TerrainTabs", B("TerrainTextures", "Textures"), B("TerrainGrass", "Grass")),
+            new Node(
+                "scroll",
+                "TerrainScroll",
+                "",
+                G("TerrainPalette"),
+                I("TerrainRadius", "Radius (m)"),
+                I("TerrainStrength", "Strength (%)"),
+                I("TerrainFalloff", "Falloff (%)"),
+                I("TerrainDensity", "Target density"),
+                R("TerrainTextureActions", B("TerrainPaint", "Paint")),
+                R("TerrainTextureRestoreActions", B("TerrainRestoreTexture", "Restore original")),
+                R("TerrainGrassActions", B("TerrainAddGrass", "Add"), B("TerrainRemoveGrass", "Remove selected")),
+                R("TerrainGrassRestoreActions", B("TerrainClearGrass", "Clear all"), B("TerrainRestoreGrass", "Restore original")),
+                B("TerrainOff", "Stop brush"),
+                B("TerrainClearEdits", "Remove layout paint"),
+                T("TerrainFeedback", ""),
+                T("TerrainHelp", "")
+            )
+        ),
+        G(
+            "Navigation",
+            T("NavLayout", "Choose a layout"),
+            T("NavState", "Native navigation · manual editing"),
+            R("NavActions", B("NavBuild", "Build Preview"), B("NavCancel", "Cancel"), B("NavRestore", "Clear Preview")),
+            new Node(
+                "scroll",
+                "NavigationScroll",
+                "",
+                G(
+                    "NavPaintCard",
+                    T("NavPaintHeading", "MANUAL NAVIGATION"),
+                    R(
+                        "NavBrushActions",
+                        B("NavPaintAdd", "Add"),
+                        B("NavPaintBlock", "Block"),
+                        B("NavPaintErase", "Erase Edits"),
+                        B("NavPaintOff", "Off")
+                    ),
+                    I("NavBrushSize", "Brush radius (m)"),
+                    Check("NavFloorLock", "Lock to first painted floor"),
+                    T("NavPaintState", "Tool: Off"),
+                    T("NavPaintHelp", "Drag to paint. Each stroke supports undo."),
+                    R(
+                        "NavConnectionActions",
+                        B("NavPaintConnect", "Connect"),
+                        B("NavPaintPath", "Check Path"),
+                        B("NavClearConnections", "Erase Connections")
+                    )
+                ),
+                G("NavStatusCard", T("NavStatus", "Paint Add or Block, then build a preview."), T("NavFeedback", "")),
+                G(
+                    "NavDisplayCard",
+                    T("NavDisplayHeading", "SURFACE DISPLAY"),
+                    R("NavViewActions", B("NavViewAll", "All floors"), B("NavViewFloor", "This floor"), B("NavHide", "Hide")),
+                    Check("NavProjectOntoGround", "Project onto ground"),
+                    T("NavLegend", "Blue: navigation. Green: additions. Red: blocks. Yellow: connections.")
+                ),
+                G(
+                    "NavHealthCard",
+                    T("NavHealthHeading", "NAVIGATION CHECKS"),
+                    R("NavHealthActions", B("NavHealthScan", "Scan Nearby"), B("NavHealthClear", "Clear Checks")),
+                    R(
+                        "NavHealthFilters",
+                        B("NavHealthAll", "All"),
+                        B("NavHealthSupport", "Support"),
+                        B("NavHealthClearance", "Clearance"),
+                        B("NavHealthDisconnected", "Connectivity"),
+                        B("NavHealthSlope", "Slope"),
+                        B("NavHealthNarrow", "Width"),
+                        B("NavHealthHeight", "Height")
+                    ),
+                    T("NavHealthStatus", "No nearby scan yet."),
+                    T(
+                        "NavHealthLegend",
+                        "Red: support / clearance. Amber: slope / width / height. Purple: connectivity. Grey hatching: stale or unverified."
+                    )
+                ),
+                Check("NavAdvanced", "Show source diagnostics"),
+                G(
+                    "NavDiagnosticsCard",
+                    T("NavDiagnosticsHeading", "PAINTED-REGION SOURCES"),
+                    R("NavDiagnosticActions", B("NavScan", "Scan Paint"), B("NavReport", "Save Report")),
+                    T("NavIssueCount", "No painted-region scan yet"),
+                    T("NavIssue", ""),
+                    R("NavIssueActions", B("NavIssuePrevious", "Previous"), B("NavIssueNext", "Next"), B("NavIssueSelect", "Select Source"))
+                ),
+                T("NavLimitations", "Saved paint; editor preview only. No automatic expansion or full-map replacement.")
             )
         ),
         G(
@@ -382,6 +502,8 @@ internal static class EditorLayoutSpec
             B("EnvironmentWindowToggle", "Environment"),
             B("HelpWindowToggle", "Editor controls"),
             B("ConsoleWindowToggle", "Console"),
+            B("NavigationWindowToggle", "Navigation"),
+            B("TerrainWindowToggle", "Terrain"),
             T("UiSizeLabel", "UI size: 85%"),
             R("UiSizeActions", B("UiSizeSmaller", "Smaller"), B("UiSizeLarger", "Larger")),
             B("UiSizeReset", "Reset UI size"),

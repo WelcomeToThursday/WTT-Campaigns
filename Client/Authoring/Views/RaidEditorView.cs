@@ -241,8 +241,11 @@ internal sealed partial class RaidEditorView : IDisposable
     {
         if (_context == context)
             return;
+        // Filtering can clear the selected record. Keep the browser query focused
+        // while resetting edits that belong to the previous inspector selection.
         foreach (var input in _inputs)
-            input.CancelEdit();
+            if (input.Element.name != "Search")
+                input.CancelEdit();
         DismissDropdowns();
         _context = context;
     }
@@ -258,6 +261,7 @@ internal sealed partial class RaidEditorView : IDisposable
     }
 
     private readonly WTT.Campaigns.Shared.Spatial.MapLayout _levelRoute = new();
+    internal long RoutePreviewRevision;
 
     internal void DrawRoute(WTT.Campaigns.Shared.Spatial.MapLayout? layout, Camera? camera, string selected, long layoutRevision = 0)
     {
@@ -273,6 +277,7 @@ internal sealed partial class RaidEditorView : IDisposable
             _levelRoute.Location = layout.Location;
             _levelRoute.Exit = layout.Exit;
             _levelRoute.SpawnPoints = layout.SpawnPoints;
+            _levelRoute.Barriers = layout.Barriers;
             _levelRoute.PatrolRoutes = layout.PatrolRoutes;
             _levelRoute.Encounters = layout.Encounters;
             layout = _levelRoute;
@@ -281,7 +286,7 @@ internal sealed partial class RaidEditorView : IDisposable
             layout,
             camera!,
             selected,
-            layoutRevision,
+            unchecked(layoutRevision * 1000003 + RoutePreviewRevision),
             ViewportState.Shows(EditorOverlays.Routes),
             ViewportState.Shows(EditorOverlays.Ai)
         );
@@ -293,6 +298,7 @@ internal sealed partial class RaidEditorView : IDisposable
 
     public void Dispose()
     {
+        ClearTerrainPalette();
         if (_disposed)
             return;
         _disposed = true;

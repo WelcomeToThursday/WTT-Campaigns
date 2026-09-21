@@ -6,6 +6,6 @@ In the quest editor, add a **Salvage** objective to a story quest, or add it ins
 
 You can also enter an existing CommonLib salvage zone ID in the objective's zone ID field. The mod that owns that zone remains responsible for loading and configuring it.
 
-Captured drafts can be saved before selecting items. Publishing requires a valid required item, positive duration and valid reward counts. Salvage and item placement use separate zones because placement takes priority over the salvage interaction. Campaign copies repair salvage references to their copied zones. Campaign salvage zones are loaded only for the active campaign character on their authored map and scene.
+Captured drafts can be saved before selecting items. Publishing requires a valid required item, positive duration and valid reward counts. Salvage and item placement use separate zones because placement takes priority over the salvage interaction. Campaign copies repair salvage references to their copied zones. Shared campaign salvage zones load for the active campaign character on their authored map and scene. Layout-owned salvage zones also load with enabled ordinary-raid levels, including for regular characters; native quest checks use the active PMC profile. See [map layers](map-layers.md).
 
 Publish the campaign and restart SPT to load the updated pack. Runtime behavior uses CommonLib's salvage trigger, item handling and condition progress tracking.

@@ -128,6 +128,13 @@ internal static class AiTreeChecks
         );
 
         var search = new HashSet<string>(StringComparer.Ordinal);
+        MapPatrolRouteEditing.Reverse(layout.PatrolRoutes[0]);
+        var reordered = RaidEditorAiTree.Build(layout, "", expanded);
+        check(
+            reordered.Visible.Single(n => n.Id == "waypoint:patrol-a:waypoint-b").Label == "WAYPOINT 1 · South",
+            "Reordering refreshes displayed waypoint numbers while preserving names and selection IDs"
+        );
+        MapPatrolRouteEditing.Reverse(layout.PatrolRoutes[0]);
         var searchModel = RaidEditorAiTree.Build(layout, "roster-a", search);
         check(
             searchModel

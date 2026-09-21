@@ -73,39 +73,6 @@ internal sealed partial class EditorAiController
         return MapEncounterRules.Errors(layout, new RaidEditorAiContracts.Navigation(), true, true);
     }
 
-    private bool TryValidateAiRoute(MapPatrolRoute route, Action<MapPatrolRoute> edit)
-    {
-        var candidate = RaidEditorSession.Copy(route);
-        edit(candidate);
-        var error = RaidEditorAiContracts.RouteError(candidate);
-        if (error.Length == 0)
-            return true;
-        _context.ReportFeedback("Edit rejected: " + error, ConsoleSeverity.Warning);
-        return false;
-    }
-
-    private bool TryValidateSelectedAiWaypoint(string selectedId, Action<SpatialCapture> edit)
-    {
-        if (
-            _context.Layout == null
-            || !EditorAiSelection.TryResolve(_context.Layout, selectedId, out var selected)
-            || selected.Kind != "waypoint"
-            || selected.Route == null
-            || selected.Waypoint == null
-        )
-            return true;
-
-        return TryValidateAiRoute(
-            selected.Route,
-            route =>
-            {
-                var waypoint = Items(route.Waypoints).AsValueEnumerable().FirstOrDefault(point => point?.Id == selected.Waypoint.Id);
-                if (waypoint != null)
-                    edit(waypoint);
-            }
-        );
-    }
-
     private void AddAiEncounter()
     {
         if (_context.Layout == null)
@@ -205,7 +172,7 @@ internal sealed partial class EditorAiController
         _context.Refresh();
     }
 
-    internal bool TryAiPlacement(out Vector3 position, out string scene)
+    internal bool TryAiPlacement(out Vector3 position, out string scene, bool draftWaypoint = false)
     {
         position = default;
         scene = "";
@@ -216,6 +183,8 @@ internal sealed partial class EditorAiController
         }
         position = floor.point;
         scene = floor.transform.gameObject.scene.name;
+        if (draftWaypoint)
+            return true;
         if (!RaidEditorAiContracts.TryNav(position, out var safe) || (safe - position).sqrMagnitude > .2f * .2f)
         {
             _context.ReportFeedback("Placement rejected: choose a clear NavMesh standing area.", ConsoleSeverity.Warning);
@@ -270,16 +239,23 @@ internal sealed partial class EditorAiController
         _context.Refresh();
     }
 
-    private void AddAiWaypoint()
+    private void AddAiWaypoint() => AddAiWaypoint(false);
+
+    private void AddAiWaypoint(bool insert)
     {
         var selected = AiSelected(out var kind);
         var route =
             kind == "route" ? selected.Route
             : kind == "waypoint" ? selected.Route
             : null;
-        if (route == null || !TryAiPlacement(out var position, out var scene))
+        if (insert && selected.Waypoint == null)
+            return;
+        if (route == null || !TryAiPlacement(out var position, out var scene, true))
         {
-            _context.ReportFeedback("Select a patrol route, then place its waypoint on the NavMesh.", ConsoleSeverity.Warning);
+            _context.ReportFeedback(
+                "Select a patrol route and move the camera above a floor to place its waypoint.",
+                ConsoleSeverity.Warning
+            );
             return;
         }
         var routeId = route.Id;
@@ -293,26 +269,43 @@ internal sealed partial class EditorAiController
             Position = ZoneRuntime.Vector(position),
             Rotation = new SpatialVector { Y = _context.CameraRotation.eulerAngles.y },
         };
-        if (
-            !TryValidateAiRoute(
-                route,
-                candidate =>
-                {
-                    candidate.Waypoints ??= new();
-                    MapPatrolRouteEditing.Append(candidate, RaidEditorSession.Copy(waypoint));
-                }
-            )
-        )
-            return;
+        var insertion = insert ? route.Waypoints.FindIndex(p => p.Id == selected.Waypoint?.Id) + 1 : route.Waypoints.Count;
         EditAi(layout =>
         {
             var target = layout.PatrolRoutes.AsValueEnumerable().FirstOrDefault(r => r.Id == routeId);
             if (target == null)
                 throw new InvalidOperationException("The selected patrol route no longer exists.");
-            MapPatrolRouteEditing.Append(target, RaidEditorSession.Copy(waypoint));
+            MapPatrolRouteEditing.Insert(target, insertion, RaidEditorSession.Copy(waypoint));
         });
         _context.SelectionId = "waypoint:" + routeId + ":" + id;
         _context.Refresh();
+    }
+
+    private void MoveAiWaypoint(int offset)
+    {
+        var selected = AiSelected(out var kind);
+        if (kind != "waypoint" || selected.Route == null || selected.Waypoint == null)
+            return;
+        var routeId = selected.Route.Id;
+        var pointId = selected.Waypoint.Id;
+        var index = selected.Route.Waypoints.FindIndex(p => p.Id == pointId);
+        if (index < 0 || index + offset < 0 || index + offset >= selected.Route.Waypoints.Count)
+            return;
+        EditAi(layout =>
+        {
+            var route = layout.PatrolRoutes.Find(r => r.Id == routeId)!;
+            var from = route.Waypoints.FindIndex(p => p.Id == pointId);
+            MapPatrolRouteEditing.Move(route, from, from + offset);
+        });
+    }
+
+    private void ReverseAiRoute()
+    {
+        var selected = AiSelected(out _);
+        if (selected.Route == null || selected.Route.Waypoints.Count < 2)
+            return;
+        var routeId = selected.Route.Id;
+        EditAi(layout => MapPatrolRouteEditing.Reverse(layout.PatrolRoutes.Find(r => r.Id == routeId)!));
     }
 
     internal void EditAiName(string value)
@@ -329,28 +322,21 @@ internal sealed partial class EditorAiController
     internal void EditAiPoint(SpatialCapture point)
     {
         var selectedId = _context.SelectionId;
+        var draftWaypoint = selectedId.StartsWith("waypoint:", StringComparison.Ordinal);
+        if (point.Position?.Finite != true || point.Rotation?.Finite != true)
+            return;
         if (
-            point.Position == null
-            || !RaidEditorAiContracts.TryNav(ZoneRuntime.Vector(point.Position), out var safe)
-            || (safe - ZoneRuntime.Vector(point.Position)).sqrMagnitude > .001f
+            !draftWaypoint
+            && (
+                point.Position == null
+                || !RaidEditorAiContracts.TryNav(ZoneRuntime.Vector(point.Position), out var safe)
+                || (safe - ZoneRuntime.Vector(point.Position)).sqrMagnitude > .001f
+            )
         )
         {
             _context.ReportFeedback("Position rejected: it is not on a clear NavMesh standing area.", ConsoleSeverity.Warning);
             return;
         }
-        if (
-            !TryValidateSelectedAiWaypoint(
-                selectedId,
-                waypoint =>
-                {
-                    waypoint.Name = point.Name;
-                    waypoint.Scene = point.Scene;
-                    waypoint.Position = RaidEditorSession.Copy(point.Position);
-                    waypoint.Rotation = RaidEditorSession.Copy(point.Rotation);
-                }
-            )
-        )
-            return;
         EditAi(layout =>
         {
             if (!EditorAiSelection.TryResolve(layout, selectedId, out var selected) || selected.Point == null)
@@ -393,7 +379,17 @@ internal sealed partial class EditorAiController
                 copy.Id = id;
                 copy.Name = Display(copy.Name, "Patrol route") + " copy";
                 foreach (var waypoint in copy.Waypoints ?? new())
+                {
+                    var previous = waypoint.Id;
                     waypoint.Id = RaidEditorAiContracts.Id();
+                    if (copy.Spline != null)
+                        foreach (var knot in copy.Spline.Knots)
+                            if (knot.AnchorId == previous)
+                                knot.AnchorId = waypoint.Id;
+                }
+                if (copy.Spline != null)
+                    foreach (var knot in copy.Spline.Knots)
+                        knot.Id = RaidEditorAiContracts.Id();
                 layout.PatrolRoutes.Add(copy);
             }
             else if (kind == "enc" && selected.Encounter != null)
@@ -418,9 +414,12 @@ internal sealed partial class EditorAiController
 
     internal void EditAiVector(string group, int axis, float value)
     {
+        if (!float.IsFinite(value))
+            return;
         var selectedId = _context.SelectionId;
         if (
-            group == "Position"
+            !selectedId.StartsWith("waypoint:", StringComparison.Ordinal)
+            && group == "Position"
             && _context.Layout != null
             && EditorAiSelection.TryResolve(_context.Layout, selectedId, out var selected)
             && selected.Point != null
@@ -435,17 +434,6 @@ internal sealed partial class EditorAiController
                 _context.ReportFeedback("Position rejected: it is not on a clear NavMesh standing area.", ConsoleSeverity.Warning);
                 return;
             }
-            if (
-                !TryValidateSelectedAiWaypoint(
-                    selectedId,
-                    waypoint =>
-                    {
-                        if (waypoint.Position != null)
-                            SetAxis(waypoint.Position, axis, value);
-                    }
-                )
-            )
-                return;
         }
         EditAi(layout =>
         {
@@ -465,7 +453,7 @@ internal sealed partial class EditorAiController
                 return;
             var vector = group == "Position" ? RaidEditorSession.Copy(target.Position) : RaidEditorSession.Copy(target.Rotation);
             SetAxis(vector, axis, value);
-            if (group == "Position")
+            if (group == "Position" && selected.Kind != "waypoint")
             {
                 var proposed = ZoneRuntime.Vector(vector);
                 if (!RaidEditorAiContracts.TryNav(proposed, out var safe) || (safe - proposed).sqrMagnitude > .001f)
@@ -548,6 +536,13 @@ internal sealed partial class EditorAiController
     {
         if (!AiWorkspace || point.Position == null)
             return true;
+        if (_context.SelectionId.StartsWith("waypoint:", StringComparison.Ordinal))
+        {
+            if (point.Position.Finite && point.Rotation?.Finite == true)
+                return true;
+            _context.RestorePoint(point, before);
+            return false;
+        }
         var proposed = ZoneRuntime.Vector(point.Position);
         if (!RaidEditorAiContracts.TryNav(proposed, out var safe) || (safe - proposed).sqrMagnitude > .001f)
         {
@@ -557,21 +552,6 @@ internal sealed partial class EditorAiController
                 ConsoleSeverity.Warning
             );
             return false;
-        }
-        if (
-            _context.Layout != null
-            && EditorAiSelection.TryResolve(_context.Layout, _context.SelectionId, out var selected)
-            && selected.Kind == "waypoint"
-            && selected.Route != null
-        )
-        {
-            var error = RaidEditorAiContracts.RouteError(selected.Route);
-            if (error.Length > 0)
-            {
-                _context.RestorePoint(point, before);
-                _context.ReportFeedback("Drag rejected: " + error, ConsoleSeverity.Warning);
-                return false;
-            }
         }
         return true;
     }
@@ -971,8 +951,6 @@ internal sealed partial class EditorAiController
             return;
         var id = selected.Route.Id;
         var next = AiCompletionValues[index];
-        if (!TryValidateAiRoute(selected.Route, route => route.Completion = next))
-            return;
         EditAi(layout =>
         {
             var route = layout.PatrolRoutes.AsValueEnumerable().FirstOrDefault(r => r.Id == id);

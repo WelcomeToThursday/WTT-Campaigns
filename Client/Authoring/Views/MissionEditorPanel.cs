@@ -11,13 +11,16 @@ internal sealed class MissionEditorPanel
 {
     private readonly Foldout _root;
     private readonly EditorToolkitDocument _document;
+    private readonly RaidEditorView _view;
     private readonly Func<RaidEditorSession?> _session;
     private string _missionId = "";
     private long _version = -1;
+    internal string SelectedMissionId => _missionId;
 
     internal MissionEditorPanel(RaidEditorView view, VisualElement parent, Func<RaidEditorSession?> session)
     {
         _document = view.Document;
+        _view = view;
         _root = _document.Clone<Foldout>("InspectorSection");
         _root.text = "Mission events and objectives";
         _root.value = false;
@@ -77,9 +80,58 @@ internal sealed class MissionEditorPanel
         );
         var layout = session.Definition.MapLayouts.AsValueEnumerable().First(l => l.Id == mission.LayoutId);
         Toggle(_root, "Allow checkpoint retries", mission.CheckpointRetries, value => mission.CheckpointRetries = value);
+        Choice(
+            _root,
+            "Mission timer",
+            mission.TimeLimitMinutes == null ? "Map"
+                : mission.TimeLimitMinutes == 0 ? "Infinite"
+                : "Timed",
+            new[] { ("Map", "Map default"), ("Timed", "Timed"), ("Infinite", "Infinite") },
+            value =>
+                mission.TimeLimitMinutes =
+                    value == "Map" ? null
+                    : value == "Infinite" ? 0
+                    : 30
+        );
+        if (mission.TimeLimitMinutes is > 0)
+        {
+            var minutes = new IntegerField("Time limit (minutes)") { value = mission.TimeLimitMinutes.Value, isDelayed = true };
+            minutes.AddToClassList("editor-field");
+            minutes.tooltip = "Whole minutes from 1 to 1440. Choose Infinite to disable time expiry.";
+            var timerError = _document.Clone<Label>("FieldMessage");
+            timerError.style.display = DisplayStyle.None;
+            minutes.RegisterValueChangedCallback(e =>
+            {
+                if (e.newValue is < 1 or > 1440)
+                {
+                    minutes.SetValueWithoutNotify(mission.TimeLimitMinutes!.Value);
+                    timerError.text = "Enter a whole number from 1 to 1440 minutes.";
+                    timerError.style.display = DisplayStyle.Flex;
+                    return;
+                }
+                Change(() => mission.TimeLimitMinutes = e.newValue);
+            });
+            _root.Add(minutes);
+            _root.Add(timerError);
+        }
+        Message(_root, "Infinite shows ∞ and disables time expiry. Checkpoint retries restore the saved remaining time.");
+        IconChoice(
+            _root,
+            "Default objective icon",
+            mission.NotificationIcon,
+            "Completion (default)",
+            value => mission.NotificationIcon = value
+        );
+        IconChoice(
+            _root,
+            "Checkpoint icon",
+            mission.CheckpointNotificationIcon,
+            "Exploration (default)",
+            value => mission.CheckpointNotificationIcon = value
+        );
         Message(
             _root,
-            "Test checkpoints beside Playtest rehearses the selected layout with retries enabled. Use Test mission to include mission objectives and events."
+            "Playtest includes this layout's selected mission objectives and events. Test checkpoints rehearses the route with retries enabled."
         );
         foreach (var error in MissionLogicRules.Errors(mission, layout))
             Message(_root, error);
@@ -107,6 +159,7 @@ internal sealed class MissionEditorPanel
             group.value = true;
             scroll.Add(group);
             Text(group, "Name", o.Name, value => o.Name = value);
+            IconChoice(group, "Notification icon", o.NotificationIcon, "Use mission default", value => o.NotificationIcon = value);
             Choice(
                 group,
                 "Goal",
@@ -303,6 +356,16 @@ internal sealed class MissionEditorPanel
         }
     }
 
+    private void IconChoice(VisualElement parent, string label, string value, string defaultLabel, Action<string> update)
+    {
+        var choices = new List<(string, string)> { ("", defaultLabel) };
+        foreach (var icon in MissionNotificationIcons.Choices)
+            choices.Add((icon.Key, icon.Value));
+        if (SeasonValidator.IsId(value))
+            choices.Add((value, "Custom PNG (set in Creator)"));
+        Choice(parent, label, value, choices, update);
+    }
+
     private static (string, string)[] Names(IEnumerable<string> values) =>
         values.AsValueEnumerable().Select(v => (v, MissionAuthoring.Label(v))).ToArray();
 
@@ -316,6 +379,7 @@ internal sealed class MissionEditorPanel
     private void Button(VisualElement parent, string title, Action action)
     {
         var button = _document.Clone<Button>("Action");
+        button.AddToClassList("editor-action-full");
         button.text = title;
         button.clicked += () => Change(action);
         parent.Add(button);
@@ -335,6 +399,7 @@ internal sealed class MissionEditorPanel
     private void Number(VisualElement parent, string title, double value, Action<double> update)
     {
         var field = new DoubleField(title) { value = value, isDelayed = true };
+        field.AddToClassList("editor-field");
         field.RegisterValueChangedCallback(e => Change(() => update(e.newValue)));
         parent.Add(field);
     }
@@ -342,6 +407,7 @@ internal sealed class MissionEditorPanel
     private void Toggle(VisualElement parent, string title, bool value, Action<bool> update)
     {
         var field = new Toggle(title) { value = value };
+        field.AddToClassList("editor-setting");
         field.RegisterValueChangedCallback(e => Change(() => update(e.newValue)));
         parent.Add(field);
     }
@@ -359,15 +425,27 @@ internal sealed class MissionEditorPanel
         if (!entries.AsValueEnumerable().Any(e => e.Id == value))
             entries.Insert(0, (value, value.Length == 0 ? "Choose…" : "Missing selection"));
         var index = entries.FindIndex(e => e.Id == value);
-        var field = new DropdownField(title, entries.AsValueEnumerable().Select(e => e.Name).ToList(), index);
-        field.RegisterValueChangedCallback(_ =>
-        {
-            var id = entries[field.index].Id;
-            if (edit)
-                Change(() => update(id));
-            else
-                update(id);
-        });
+        var field = _document.Clone<Button>("Action");
+        field.text = entries[index].Name;
+        field.AddToClassList("editor-mission-choice");
+        var choice = new EditorChoice(field, _ => { });
+        choice.AddFieldLabel(title);
+        field.tooltip = title + ": " + entries[index].Name;
+        field.clicked += () =>
+            _view.ShowChoices(
+                field,
+                entries.AsValueEnumerable().Select(e => e.Name).ToArray(),
+                index,
+                _ => true,
+                selected =>
+                {
+                    var id = entries[selected].Id;
+                    if (edit)
+                        Change(() => update(id));
+                    else
+                        update(id);
+                }
+            );
         parent.Add(field);
     }
 }

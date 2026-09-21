@@ -96,14 +96,16 @@ internal static class RaidEditorAiTree
             if (route == null)
                 continue;
             var routeNode = Node(group, "route:" + route.Id, "PATROL · " + Display(route.Name, route.Id), "route:" + route.Id, true);
+            var number = 0;
             foreach (var waypoint in route.Waypoints ?? new())
             {
+                number++;
                 if (waypoint == null)
                     continue;
                 Node(
                     routeNode,
                     "waypoint:" + route.Id + ":" + waypoint.Id,
-                    "WAYPOINT · " + Display(waypoint.Name, "Waypoint"),
+                    "WAYPOINT " + number + " · " + Display(waypoint.Name, "Waypoint"),
                     "waypoint:" + route.Id + ":" + waypoint.Id,
                     true
                 );

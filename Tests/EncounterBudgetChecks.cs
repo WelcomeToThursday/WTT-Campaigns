@@ -7,6 +7,7 @@ internal static class EncounterBudgetChecks
 {
     internal static void Run(Action<bool, string> check)
     {
+        PatrolCurvePlanningChecks.Run(check);
         var budget = new EncounterSpawnBudget(8, 2);
         check(budget.TryReserve("first", 5, 0), "First wave reserves its complete population before generation");
         check(!budget.TryReserve("first", 1, 0) && budget.Reserved == 5, "Repeated scheduling cannot reserve the same wave twice");
@@ -103,9 +104,20 @@ internal static class EncounterBudgetChecks
         navigation.Clear();
         navigation.BeginPass();
         native.Reachable = false;
-        state.TryUpdateBudgeted(snapshots, ++currentFrame, navigation, out update);
+        completed = false;
+        for (var retry = 0; retry < 10 && !completed; retry++)
+        {
+            currentFrame++;
+            navigation.BeginPass();
+            completed = state.TryUpdateBudgeted(snapshots, currentFrame, navigation, out update);
+            if (!completed)
+                check(
+                    state.Status == PatrolRuntimeStatus.Moving && state.TargetWaypointIndex == 1,
+                    "Deferred blocked-route re-entry preserves the existing patrol until all alternatives are checked"
+                );
+        }
         check(
-            state.Status == PatrolRuntimeStatus.Suspended && state.SuspensionReason == PatrolSuspensionReason.Unreachable,
+            completed && state.Status == PatrolRuntimeStatus.Suspended && state.SuspensionReason == PatrolSuspensionReason.Unreachable,
             "A fresh planning pass rechecks changed geometry instead of reusing an old reachable result"
         );
         navigation.Clear();

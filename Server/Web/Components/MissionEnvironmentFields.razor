@@ -1,0 +1,108 @@
+@using System.Globalization
+@using WTT.Campaigns.Shared.Missions
+
+<EditorSection Title="Mission timer" Description="Saved on the server and shown beside Complete the mission during raids and mission playtests.">
+    <label>Timer mode<select value="@TimerMode" @onchange="SetTimerMode">
+        <option value="Map">Map default</option><option value="Timed">Timed</option><option value="Infinite">Infinite</option>
+    </select></label>
+    @if (Mission.TimeLimitMinutes is > 0)
+    {
+        <label>Time limit (minutes)<input type="number" min="1" max="1440" step="1" value="@Mission.TimeLimitMinutes" @onchange="SetDuration" /></label>
+    }
+    <p>Infinite displays ∞ and disables time expiry. Checkpoint retries restore the saved remaining time. Playtest expiry returns to editing.</p>
+    @if (_timerError.Length > 0) { <p class="validation-warning">@_timerError</p> }
+</EditorSection>
+
+<EditorSection Title="Time of day and weather" Description="Saved with this mission on the server and applied in mission raids and playtests. Checkpoint retries rewind world time to the saved checkpoint.">
+    <label class="check"><input type="checkbox" checked="@(Mission.Environment?.StartMinutes != null)" @onchange="ToggleTime" /> Set mission start time</label>
+    @if (Mission.Environment?.StartMinutes is { } minutes)
+    {
+        <div class="form-grid">
+            <label>Start time<input type="time" step="60" value="@TimeSpan.FromMinutes(minutes).ToString(@"hh\:mm")" @onchange="SetTime" /></label>
+            <label class="check"><input type="checkbox" @bind="Mission.Environment.FreezeTime" @bind:after="Notify" /> Hold time fixed</label>
+        </div>
+        <p>With Hold time fixed disabled, time advances at the normal raid rate.</p>
+    }
+    else
+    {
+        <p>Use the raid's normal start time.</p>
+    }
+    <label class="check"><input type="checkbox" checked="@(Mission.Environment?.Weather != null)" @onchange="ToggleWeather" /> Set mission weather</label>
+    @if (Mission.Environment?.Weather is { } weather)
+    {
+        <div class="form-grid">
+            <label>Clouds (%)<input type="number" min="0" max="100" step="1" @bind="weather.Clouds" @bind:after="Notify" /></label>
+            <label>Rain (%)<input type="number" min="0" max="100" step="1" @bind="weather.Rain" @bind:after="Notify" /></label>
+            <label>Fog (%)<input type="number" min="0" max="100" step="1" @bind="weather.Fog" @bind:after="Notify" /></label>
+            <label>Wind (%)<input type="number" min="0" max="100" step="1" @bind="weather.Wind" @bind:after="Notify" /></label>
+            <label>Thunder (%)<input type="number" min="0" max="100" step="1" @bind="weather.Thunder" @bind:after="Notify" /></label>
+            <label>Wind direction<select @bind="weather.Direction" @bind:after="Notify">
+                <option value="1">East</option><option value="2">North</option><option value="3">West</option><option value="4">South</option>
+                <option value="5">South-east</option><option value="6">South-west</option><option value="7">North-west</option><option value="8">North-east</option>
+            </select></label>
+        </div>
+        <p>These conditions remain fixed for the mission. Maps without a sky or weather controller keep their native indoor environment.</p>
+    }
+    else
+    {
+        <p>Use the raid's normal changing weather.</p>
+    }
+    @if (_timeError.Length > 0) { <p class="validation-warning">@_timeError</p> }
+    @foreach (var error in MissionEnvironmentSettings.Errors(Mission.Environment)) { <p class="validation-warning">@error</p> }
+</EditorSection>
+
+@code {
+    [Parameter, EditorRequired] public MissionDefinition Mission { get; set; } = null!;
+    [Parameter] public EventCallback Changed { get; set; }
+    private string _timeError = "";
+    private string _timerError = "";
+    private string TimerMode => Mission.TimeLimitMinutes == null ? "Map" : Mission.TimeLimitMinutes == 0 ? "Infinite" : "Timed";
+
+    private Task SetTimerMode(ChangeEventArgs args)
+    {
+        Mission.TimeLimitMinutes = args.Value?.ToString() switch { "Timed" => 30, "Infinite" => 0, _ => null };
+        _timerError = "";
+        return Notify();
+    }
+
+    private Task SetDuration(ChangeEventArgs args)
+    {
+        if (!int.TryParse(args.Value?.ToString(), out var minutes) || minutes is < 1 or > 1440)
+        {
+            _timerError = "Enter a whole number from 1 to 1440 minutes.";
+            return Task.CompletedTask;
+        }
+        Mission.TimeLimitMinutes = minutes;
+        _timerError = "";
+        return Notify();
+    }
+
+    private Task ToggleTime(ChangeEventArgs args)
+    {
+        var settings = Mission.Environment ??= new();
+        settings.StartMinutes = args.Value is true ? 12 * 60 : null;
+        settings.FreezeTime = false;
+        _timeError = "";
+        return Notify();
+    }
+
+    private Task SetTime(ChangeEventArgs args)
+    {
+        if (!TimeSpan.TryParseExact(args.Value?.ToString(), @"hh\:mm", CultureInfo.InvariantCulture, out var time) || time.TotalMinutes is < 0 or >= 1440)
+        {
+            _timeError = "Enter a time from 00:00 to 23:59.";
+            return Task.CompletedTask;
+        }
+        (Mission.Environment ??= new()).StartMinutes = (int)time.TotalMinutes;
+        _timeError = "";
+        return Notify();
+    }
+
+    private Task ToggleWeather(ChangeEventArgs args)
+    {
+        (Mission.Environment ??= new()).Weather = args.Value is true ? new() : null;
+        return Notify();
+    }
+
+    private Task Notify() => Changed.InvokeAsync();
+}

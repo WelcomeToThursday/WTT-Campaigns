@@ -36,7 +36,7 @@
             var local = relative.Substring(separator + 1).Replace('\\', '/');
             // Only shipped runtime files are eligible. Never deploy user configuration or saves.
             var runtime = local.StartsWith("WTT-Campaigns.", StringComparison.Ordinal) && (local.EndsWith(".dll", StringComparison.Ordinal) || local == "WTT-Campaigns.Server.deps.json");
-            var allowed = runtime || (component == "client" && (local == "wtt_campaigns_ui.bundle" || local == "wtt_campaigns_editor_toolkit.bundle" || local == "wtt_campaigns_story_notifications.bundle" || local.StartsWith("StoryMedia/", StringComparison.Ordinal) || local is "ContainerLibrary/catalog.json" or "ContainerLibrary/native-containers.bundle" or "HazardLibrary/catalog.json" or "HazardLibrary/native-hazards.bundle"))
+            var allowed = runtime || (component == "client" && (local == "wtt_campaigns_ui.bundle" || local == "wtt_campaigns_editor_toolkit.bundle" || local == "wtt_campaigns_story_notifications.bundle" || local.StartsWith("StoryMedia/", StringComparison.Ordinal) || local == "LevelPropLibrary/catalog.json" || (local.StartsWith("LevelPropLibrary/", StringComparison.Ordinal) && local.EndsWith(".bundle", StringComparison.Ordinal)) || local is "ContainerLibrary/catalog.json" or "ContainerLibrary/native-containers.bundle" or "HazardLibrary/catalog.json" or "HazardLibrary/native-hazards.bundle"))
                 || (component == "server" && (local == "Markdig.dll" || local == "Newtonsoft.Json.dll" || local.StartsWith("data/", StringComparison.Ordinal) || local.StartsWith("icons/", StringComparison.Ordinal) || local.StartsWith("hub-images/", StringComparison.Ordinal) || local.StartsWith("wwwroot/", StringComparison.Ordinal)));
             if (!allowed || local.Contains("../")) { Log.LogError("Not a shipped runtime file: " + relative); continue; }
             var item = new Microsoft.Build.Utilities.TaskItem(file);
@@ -66,7 +66,30 @@
       </Code>
     </Task>
   </UsingTask>
-  <Target Name="PrepareCampaignsFiles">
+  <!-- Keep the complete payload when staging a package. Normal installs omit only
+       Scene library files already verified at this exact destination. -->
+  <Target Name="PlanLevelPropDeployment" Condition="'$(PackageDir)' == ''">
+    <ItemGroup>
+      <_LevelPropDeployCatalog Include="@(CampaignsDeployFile)" Condition="'%(InstallPath)' == 'client\LevelPropLibrary\catalog.json'" />
+    </ItemGroup>
+    <PropertyGroup Condition="'@(_LevelPropDeployCatalog)' != ''">
+      <_LevelPropDeployOutput>@(_LevelPropDeployCatalog->'%(RootDir)%(Directory).')</_LevelPropDeployOutput>
+      <_LevelPropUnchanged>$(LevelPropReceiptsDir)\unchanged-$([System.Guid]::NewGuid()).txt</_LevelPropUnchanged>
+      <_LevelPropDeployArguments>--game &quot;$(TarkovDir).&quot; --output &quot;$(_LevelPropDeployOutput)&quot; --destination &quot;$(CampaignsClientDir)LevelPropLibrary&quot; --receipts &quot;$(LevelPropReceiptsDir)&quot;</_LevelPropDeployArguments>
+    </PropertyGroup>
+    <Exec
+      Condition="'@(_LevelPropDeployCatalog)' != ''"
+      Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\level_prop_workflow.py&quot; plan $(_LevelPropDeployArguments) --unchanged &quot;$(_LevelPropUnchanged)&quot; $(_ForceVerifyLevelProps)"
+    />
+    <ReadLinesFromFile Condition="'@(_LevelPropDeployCatalog)' != ''" File="$(_LevelPropUnchanged)">
+      <Output TaskParameter="Lines" ItemName="_UnchangedLevelPropFiles" />
+    </ReadLinesFromFile>
+    <ItemGroup>
+      <CampaignsDeployFile Remove="@(_UnchangedLevelPropFiles)" MatchOnMetadata="FullPath" MatchOnMetadataOptions="PathLike" />
+    </ItemGroup>
+    <Delete Condition="'@(_LevelPropDeployCatalog)' != ''" Files="$(_LevelPropUnchanged)" />
+  </Target>
+  <Target Name="PrepareCampaignsFiles" DependsOnTargets="PlanLevelPropDeployment">
     <Error Condition="'@(CampaignsDeployFile)' == ''" Text="No runtime files were selected for deployment." />
     <PropertyGroup>
       <_BackupDir>$(CampaignsBackupDir)$([System.DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss-fffffff'))\</_BackupDir>
@@ -125,6 +148,10 @@
     />
     <Copy SourceFiles="@(_ChangedFiles)" DestinationFiles="@(_ChangedFiles->'%(Destination)')" Retries="0" />
     <VerifyFileHash File="%(_PlannedFiles.Destination)" Hash="%(_PlannedFiles.FileHash)" />
+    <Exec
+      Condition="'@(_LevelPropDeployCatalog)' != ''"
+      Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\level_prop_workflow.py&quot; complete $(_LevelPropDeployArguments)"
+    />
     <Message
       Importance="high"
       Text="Installed @(_ChangedFiles->Count()) changed files; SHA-256 verified @(_PlannedFiles->Count()). Backup: $(_BackupDir)"

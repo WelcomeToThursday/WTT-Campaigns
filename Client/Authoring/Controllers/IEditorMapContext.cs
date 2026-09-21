@@ -14,6 +14,7 @@ internal interface IEditorMapContext : IEditorDocumentContext
     string SceneSelectionError { get; set; }
     MapObjectEdit? SceneSelectionPose { get; set; }
     string SceneTab { get; set; }
+    bool InspectingScene { get; }
     bool WalkFromStart { get; set; }
     bool Walking { get; }
     bool AiPreviewBusy { get; }

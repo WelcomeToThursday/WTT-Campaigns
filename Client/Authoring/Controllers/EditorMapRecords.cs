@@ -15,6 +15,13 @@ internal static class EditorMapRecords
         var copy = SeasonCompiler.Copy(source);
         var ids = MapLayoutRules.OwnedIds(copy).AsValueEnumerable().ToDictionary(id => id, _ => NewId());
         ModelGraph.Rewrite(copy, value => ids.TryGetValue(value, out var fresh) ? fresh : value);
+        if (copy.PlayerRouteSpline != null)
+            foreach (var knot in copy.PlayerRouteSpline.Knots)
+                knot.Id = NewId();
+        foreach (var route in copy.PatrolRoutes)
+            if (route.Spline != null)
+                foreach (var knot in route.Spline.Knots)
+                    knot.Id = NewId();
         copy.Name += " copy";
         return copy;
     }

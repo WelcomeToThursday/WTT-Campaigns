@@ -5,10 +5,27 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Missions\MissionPresentation.cs" Link="Client\MissionPresentation.cs" />
+    <Compile Include="..\Client\Missions\MissionCountdown.cs" Link="Client\MissionCountdown.cs" />
+    <Compile Include="..\Client\Missions\MissionRaidTimer.cs" Link="Client\MissionRaidTimer.cs" />
+    <Compile Include="..\Client\Missions\MissionTimeSnapshot.cs" Link="Client\MissionTimeSnapshot.cs" />
+    <Compile Include="..\Client\Encounters\EncounterPathResult.cs" Link="Client\EncounterPathResult.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\PatrolRouteInspection.cs" Link="Client\PatrolRouteInspection.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\EditorCurveBudget.cs" Link="Client\EditorCurveBudget.cs" />
     <Compile Include="..\Client\Authoring\Controllers\EditorAiSelection.cs" Link="Client\EditorAiSelection.cs" />
     <Compile Include="..\Client\Authoring\Controllers\EditorMapRecords.cs" Link="Client\EditorMapRecords.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneCatalogRequestState.cs" Link="Client\SceneCatalogRequestState.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneOperationLifetime.cs" Link="Client\SceneOperationLifetime.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationPaintGeometry.cs" Link="Client\NavigationPaintGeometry.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationPaintFootprint.cs" Link="Client\NavigationPaintFootprint.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationHealthRules.cs" Link="Client\NavigationHealthRules.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationPaintContour.cs" Link="Client\NavigationPaintContour.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationBuildStamp.cs" Link="Client\NavigationBuildStamp.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationCollisionCatalog.cs" Link="Client\NavigationCollisionCatalog.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationRestrictionGeometry.cs" Link="Client\NavigationRestrictionGeometry.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationCommand.cs" Link="Client\NavigationCommand.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationMeshDecoder.cs" Link="Client\NavigationMeshDecoder.cs" />
+    <Compile Include="..\Client\Authoring\Navigation\NavigationTreeGeometry.cs" Link="Client\NavigationTreeGeometry.cs" />
     <Compile Include="..\Client\Profiles\ProfileSaveGate.cs" Link="Client\ProfileSaveGate.cs" />
     <Compile Include="..\UI\Screens\EditorHomeComposition.cs" Link="UI\EditorHomeComposition.cs" />
     <EmbeddedResource Include="..\tools\unity\EditorToolkit\*.uxml" LogicalName="EditorToolkit.%(Filename).uxml" />
@@ -18,8 +35,11 @@
     <Compile Include="..\Client\Authoring\EditorStartupRecovery.cs" Link="Client\EditorStartupRecovery.cs" />
     <Compile Include="..\Client\Authoring\Preview\PreviewLoadGuard.cs" Link="Client\PreviewLoadGuard.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorLayoutSpec.cs" Link="Client\EditorLayoutSpec.cs" />
+    <Compile Include="..\Client\Authoring\Views\EditorActionGridLayout.cs" Link="Client\EditorActionGridLayout.cs" />
     <Compile Include="..\Client\Encounters\EncounterCorePlan.cs" Link="Client\EncounterCorePlan.cs" />
     <Compile Include="..\Client\Encounters\EncounterMovementPolicy.cs" Link="Client\EncounterMovementPolicy.cs" />
+    <Compile Include="..\Client\Encounters\EncounterRouteClearance.cs" Link="Client\EncounterRouteClearance.cs" />
+    <Compile Include="..\Client\Encounters\EncounterSquadSpacing.cs" Link="Client\EncounterSquadSpacing.cs" />
     <Compile Include="..\Client\Encounters\EncounterRecovery.cs" Link="Client\EncounterRecovery.cs" />
     <Compile Include="..\Client\Encounters\EncounterWorkBudget.cs" Link="Client\EncounterWorkBudget.cs" />
     <ProjectReference Include="..\Shared\WTT-Campaigns.Shared.csproj" />
@@ -69,7 +89,11 @@
     <Compile Include="..\Client\Authoring\Scenes\RouteVisuals.cs" Link="Client\RouteVisuals.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePropSupport.cs" Link="Client\ScenePropSupport.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneSelectionEdit.cs" Link="Client\SceneSelectionEdit.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneCatalogPage.cs" Link="Client\SceneCatalogPage.cs" />
     <Compile Include="..\Client\Authoring\Scenes\SceneBrowserState.cs" Link="Client\SceneBrowserState.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneSearchQuery.cs" Link="Client\SceneSearchQuery.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneBundleArchive.cs" Link="Client\SceneBundleArchive.cs" />
+    <Compile Include="..\Client\Authoring\Scenes\SceneThumbnailSchedule.cs" Link="Client\SceneThumbnailSchedule.cs" />
     <Compile Include="..\Client\Authoring\Scenes\ScenePreviewCache.cs" Link="Client\ScenePreviewCache.cs" />
     <Compile Include="..\Client\Authoring\Scenes\PreviewMaterialPolicy.cs" Link="Client\PreviewMaterialPolicy.cs" />
     <Compile Include="..\Client\Authoring\Views\EditorTooltipPlacement.cs" Link="Client\EditorTooltipPlacement.cs" />

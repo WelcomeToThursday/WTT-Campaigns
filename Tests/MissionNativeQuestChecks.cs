@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Utils.Json;
+using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Native;
 using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Spatial;
@@ -16,6 +17,17 @@ internal static class MissionNativeQuestChecks
     {
         using var native = AssemblyDefinition.ReadAssembly(nativePath);
         var types = native.MainModule.GetTypes().ToDictionary(t => t.FullName);
+        foreach (var icon in MissionNotificationIcons.Choices.Keys)
+            check(
+                types["EFT.Quests.EQuestIconType"].Fields.Any(f => f.Name == icon.Substring("quest:".Length)),
+                "Notification choice exists in the installed native quest icon enum: " + icon
+            );
+        check(
+            types["EFT.UI.QuestListItem"]
+                .Methods.Single(m => m.Name == "UpdateView")
+                .Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "QuestIconTypeSprites"),
+            "Mission icon catalogue targets the actual native side-quest list sprite collection"
+        );
         check(
             types.ContainsKey("EFT.Quests.ConditionGlobalVariableValue"),
             "Installed client supports mission completion variable condition"
@@ -94,6 +106,35 @@ internal static class MissionNativeQuestChecks
         var pointType = types["EFT.Interactive.ExfiltrationPoint"];
         var scenario = types["CommonAssets.Scripts.Game.EndByExitTrigerScenario"];
         var timers = types["EFT.UI.ExtractionTimersPanel"];
+        var gameTimer = types["EFT.GameTimer"];
+        check(
+            gameTimer.Properties.Single(p => p.Name == "SessionTime").SetMethod.IsPublic
+                && gameTimer.Fields.Any(f => f.Name == "_escapeDateTime" && f.IsPublic),
+            "Mission timer can pause or clear the actual native deadline"
+        );
+        check(
+            gameTimer
+                .Methods.Single(m => m.Name == "ChangeSessionTime")
+                .Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "_escapeDateTime"),
+            "Native duration changes update the same escape deadline used by the mission clock"
+        );
+        check(
+            types["EFT.EndByTimerScenario"]
+                .Methods.Single(m => m.Name == "Update")
+                .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "get_HasValue"),
+            "Native timeout checks for a finite duration so infinite missions cannot time out"
+        );
+        foreach (var name in new[] { "_mainDescription", "_mainTimerPanel", "_timerPanelTemplate", "_container" })
+            check(timers.Fields.Any(f => f.Name == name && f.IsPublic), "Mission presentation borrows native extraction field " + name);
+        check(
+            types["EFT.UI.BattleTimer.MainTimerPanel"].Fields.Any(f => f.Name == "_currentState" && f.IsPublic),
+            "Mission banner replaces the native state label while retaining the raid clock"
+        );
+        var nativeNotification = types["EFT.Communications.NotificationManager"].Methods.Single(m => m.Name == "AddNotification");
+        check(
+            !nativeNotification.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "get_Activated"),
+            "Local mission banners remain available while the raid notification network connection is deactivated"
+        );
         check(
             timers.Fields.Any(f =>
                 f.Name == "_timers" && f.FieldType.FullName.Contains("Dictionary`2<System.String,EFT.UI.BattleTimer.ExitTimerPanel>")

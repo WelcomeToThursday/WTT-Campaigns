@@ -28,6 +28,8 @@ internal static class EditorToolkitChecks
 
     internal static void Run(string game, string clientPath)
     {
+        SceneBundleArchiveChecks.Installed(game);
+        LevelPropLibraryChecks.Run(game, clientPath);
         // Bind the runtime inventory to the actual UXML shipped through the asset
         // builder. A missing/renamed/wrong-type control would otherwise fail on open.
         foreach (var name in EditorLayoutSpec.Sections.Select(n => n.Id))
@@ -279,14 +281,30 @@ internal static class EditorToolkitChecks
                 if (!inventory.TryGetValue(id, out var actual) || actual != expected && !(actual == "toggle" && expected == "button"))
                     throw new InvalidOperationException("Missing or wrong Toolkit control: " + id + " in " + method.FullName);
             }
-        foreach (var id in new[] { "KeepLocal", "KeepRemote", "Cancel", "Complete", "CloseEditor" })
+        foreach (var id in new[] { "KeepLocal", "KeepRemote", "Cancel", "Complete" })
             if (!nodes.Any(n => n.Id == id && n.Kind == "button"))
                 throw new InvalidOperationException("Missing Editor action: " + id);
+        if (nodes.Any(n => n.Id == "CloseEditor"))
+            throw new InvalidOperationException("The editor workspace must not expose a global close button.");
+        var sizeActions = nodes.Single(n => n.Id == "UiSizeActions");
+        if (!sizeActions.Children.Any(n => n.Id == "UiSizeSmaller") || !sizeActions.Children.Any(n => n.Id == "UiSizeLarger"))
+            throw new InvalidOperationException("Both UI size controls must remain in the same action row.");
         // The typed wrappers also call Get<T>, but their control name is an
-        // argument rather than a literal inside Get. Check the container caller
+        // argument rather than a literal inside Get. Check the scene and container callers
         // against the actual layout, including captions chosen by a branch.
         var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Controllers.EditorCatalogController");
-        foreach (var name in new[] { "PresentContainerControls", "BindContainerControls" })
+        var placementCompletion = editor.Methods.Single(m => m.Name == "CancelPlacement").Body.Instructions;
+        if (
+            placementCompletion.Any(i =>
+                i.Operand is MethodReference m
+                && (
+                    m.Name is "set__sceneTab" or "set__sceneFilter" or "set_Page"
+                    || m.DeclaringType.Name == "RaidEditorView" && m.Name == "Value"
+                )
+            )
+        )
+            throw new InvalidOperationException("Finishing scene placement must preserve the browser tab, filter, page and search.");
+        foreach (var name in new[] { "PresentScene", "PresentContainerControls", "BindContainerControls" })
         {
             string? control = null;
             foreach (var instruction in editor.Methods.Single(m => m.Name == name).Body.Instructions)
@@ -311,7 +329,7 @@ internal static class EditorToolkitChecks
                     && !(call.Name == "Button" && inventory[control] == "toggle")
                 )
                     throw new InvalidOperationException(
-                        $"Wrong container control: {control} is {inventory[control]}, but {name} calls {call.Name}."
+                        $"Wrong editor control: {control} is {inventory[control]}, but {name} calls {call.Name}."
                     );
                 control = null;
             }

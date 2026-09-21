@@ -1,4 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <Style src="Editor.uss" />
-    <ui:VisualElement name="ScopedCreationActions" class="editor-action-row editor-divider editor-scoped-actions" />
+    <ui:VisualElement name="ScopedCreationActions" class="editor-action-row editor-divider editor-scoped-actions editor-action-grid" />
 </ui:UXML>

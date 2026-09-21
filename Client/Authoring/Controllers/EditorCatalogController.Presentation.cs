@@ -14,7 +14,7 @@ namespace WTT.Campaigns.Client.Authoring.Controllers;
 internal sealed partial class EditorCatalogController
 {
     internal string ToolkitSelection =>
-        _sceneTab == "Catalog"
+        !InspectingScene
             ? _catalogSelection
             : _context.MapPoint?.Id ?? _context.MapDoor?.Id ?? (_context.Picked ? _context.Picked!.GetInstanceID().ToString() : "");
 
@@ -39,16 +39,16 @@ internal sealed partial class EditorCatalogController
             scene,
             _sceneTab,
             sceneKind,
-            _sceneTab == "Catalog"
-                ? _catalogSelection.Length > 0
-                : _context.MapPoint != null || _context.MapDoor != null || _context.Picked,
+            !InspectingScene ? _catalogSelection.Length > 0 : _context.MapPoint != null || _context.MapDoor != null || _context.Picked,
             _context.ScenePoint != null || _context.MapDoor != null,
             CanSceneEdit,
             _context.Picked,
-            _context.MapPoint != null
+            _context.MapPoint != null,
+            InspectingScene
         );
         if (!scene)
         {
+            _thumbnailSchedule.Want(Array.Empty<string>());
             for (var i = 0; i < view.RowCapacity; i++)
             {
                 view.Visible("SceneIcon" + i, false);
@@ -70,7 +70,10 @@ internal sealed partial class EditorCatalogController
             _catalogSource == "All game" ? 0 : 1
         );
         var point = _context.ScenePoint;
-        var catalog = _sceneTab == "Catalog";
+        var catalog = _sceneTab == "Catalog" && !InspectingScene;
+        view.Highlight("SceneHideUnavailable", _sceneBrowser.HideUnavailable);
+        view.Caption("SceneHideUnavailable", _sceneBrowser.HideUnavailable ? "Hide unavailable: On" : "Hide unavailable: Off");
+        view.Visible("SceneHideUnavailable", _sceneTab == "Catalog");
         view.Checked("SceneRepeat", _repeatPlacement);
         view.Get<Button>("SceneRepeat").interactable = CanSceneEdit;
         var removed = sceneKind == "Hide";
@@ -124,8 +127,34 @@ internal sealed partial class EditorCatalogController
                 : LibraryTotal == 0 ? "No matching objects"
                 : LibraryTotal + " objects · " + (_context.Page + 1) + " / " + ((LibraryTotal + LibraryPageSize - 1) / LibraryPageSize)
         );
+        if (
+            catalog
+            && _selectedCatalogEntry?.AssetTarget is { } levelTarget
+            && levelTarget.Bundle.StartsWith(NativeLevelPropLibrary.Prefix, StringComparison.Ordinal)
+            && !_placementRequests.Active
+            && _context.Layout != null
+        )
+        {
+            var error = CatalogError(_selectedCatalogEntry);
+            view.Text(
+                "SceneInfo",
+                "Source: "
+                    + NativeLevelPropLibrary.SourceDescription(levelTarget)
+                    + "\n"
+                    + (error.Length > 0 ? error : "Place or double-click to begin placement.")
+            );
+        }
         if (AssetCatalog)
-            view.Text("LibraryCount", LibraryTotal + " objects � " + _assetCatalog?.Status);
+            view.Text(
+                "LibraryCount",
+                LibraryTotal
+                    + " objects · "
+                    + _pendingCatalogEntries
+                    + " pending · "
+                    + (_levelQueryLoading ? "Searching level scenery… · " : "")
+                    + NativeLevelPropLibrary.LevelCount
+                    + " level files indexed"
+            );
         view.Windows.Select(
             "Scene/" + _sceneTab,
             selected
@@ -175,14 +204,19 @@ internal sealed partial class EditorCatalogController
     {
         internal string Id = "",
             Key = "";
+        internal float QueuedAt;
+        internal bool Native => !Source && Entry?.AssetTarget == null;
         internal Transform? Source;
         internal WTT.Campaigns.Shared.Authoring.SceneCatalogEntry? Entry;
     }
 
     internal void PresentSceneThumbnails(bool inspector = true)
     {
-        if (_context.View?.Valid != true || !SceneWorkspace)
+        if (_context.View?.Valid != true || !SceneWorkspace || !_context.IsOpen)
+        {
+            _thumbnailSchedule.Want(Array.Empty<string>());
             return;
+        }
         var view = _context.View;
         var catalog = _sceneTab == "Catalog";
         var wanted = new HashSet<string> { _sceneFilter + ":" + _catalogSelection };
@@ -190,6 +224,11 @@ internal sealed partial class EditorCatalogController
         if (catalog && _sceneFilter != "Doors")
             for (var i = LibraryOffset; i < Math.Min(_context.Rows.Count, LibraryOffset + LibraryPageSize); i++)
                 wanted.Add(_sceneFilter + ":" + _context.Rows[i].Id);
+        if (!catalog)
+            wanted.Clear();
+        _thumbnailSchedule.Want(wanted);
+        _previews.Protect(wanted);
+        EditorDiagnostics.ThumbnailCache(_previews.Hits, _previews.Misses, _previews.Count, _thumbnailQueue.Count);
         for (var i = _thumbnailQueue.Count - 1; i >= 0; i--)
             if (!catalog || !wanted.Contains(_thumbnailQueue[i].Key))
             {
@@ -224,11 +263,13 @@ internal sealed partial class EditorCatalogController
             return;
         var selectedKey = _sceneFilter + ":" + _catalogSelection;
         SetThumbnail(view.Get<RawImage>("ScenePreview"), selectedKey);
-        var failed =
-            _previews.Error(selectedKey).Length > 0 || (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0);
+        var failed = _previews.Error(selectedKey).Length > 0;
         view.Visible("ScenePreviewStatus", catalog && _previews.Get(selectedKey) == null);
         view.Text("ScenePreviewStatus", failed ? "Preview unavailable" : "Loading preview…");
-        view.Visible("ScenePreviewRetryGroup", catalog && failed);
+        view.Visible(
+            "ScenePreviewRetryGroup",
+            catalog && (failed || (_selectedCatalogEntry != null && CatalogError(_selectedCatalogEntry).Length > 0))
+        );
     }
 
     private void RetryThumbnail()
@@ -236,14 +277,6 @@ internal sealed partial class EditorCatalogController
         var key = _sceneFilter + ":" + _catalogSelection;
         if (AssetCatalog)
         {
-            _selectedCatalogEntry = null;
-            _assetCatalog?.Retry(
-                _catalogSelection,
-                () =>
-                {
-                    _context.LibraryKey = "";
-                }
-            );
             _ = LoadContainerTemplates();
         }
         if (_previews.Error(key).Length == 0)
@@ -257,10 +290,17 @@ internal sealed partial class EditorCatalogController
     {
         if (!_previews.Request(key))
             return;
-        var job = new ThumbnailJob { Id = id, Key = key };
-        if ((_sceneFilter == "Props" || _sceneFilter == "Doors") && !AssetCatalog)
+        var job = new ThumbnailJob
+        {
+            Id = id,
+            Key = key,
+            QueuedAt = Time.realtimeSinceStartup,
+        };
+        if (id.StartsWith("scene:", StringComparison.Ordinal))
+            _sceneRoots.TryGetValue(id.Substring("scene:".Length), out job.Source);
+        else if ((_sceneFilter == "Props" || _sceneFilter == "Doors") && !AssetCatalog)
             _sceneRoots.TryGetValue(id, out job.Source);
-        else
+        if (!job.Source)
         {
             var entry =
                 _selectedCatalogEntry?.Id == id
@@ -284,83 +324,30 @@ internal sealed partial class EditorCatalogController
         _thumbnailWorker = true;
         var epoch = _previews.Generation;
         var token = _thumbnailLifetime.Token;
+        var schedule = _thumbnailSchedule;
         try
         {
-            while (_thumbnailQueue.Count > 0 && !token.IsCancellationRequested)
+            while ((_thumbnailQueue.Count > 0 || schedule.Active > 0) && !token.IsCancellationRequested)
             {
-                // At most one prop render in a frame, regardless of how many rows requested it.
                 await UniTask.NextFrame(cancellationToken: token);
-                if (_thumbnailQueue.Count == 0)
-                    break;
+                if (!_context.IsOpen || !SceneWorkspace || _sceneTab != "Catalog")
+                    schedule.Want(Array.Empty<string>());
                 var selected = _sceneFilter + ":" + _catalogSelection;
-                var index = _thumbnailQueue.FindIndex(j => j.Key == selected);
-                if (index < 0)
-                    index = 0;
-                var job = _thumbnailQueue[index];
-                _thumbnailQueue.RemoveAt(index);
-                Texture? texture = null;
-                var owned = false;
-                var uv = new Rect(0, 0, 1, 1);
-                try
+                for (var dispatched = 0; dispatched < 5; dispatched++)
                 {
-                    if (job.Source)
+                    var index = schedule.Next(_thumbnailQueue, selected, j => j.Key, j => j.Native);
+                    if (index < 0)
+                        break;
+                    var job = _thumbnailQueue[index];
+                    _thumbnailQueue.RemoveAt(index);
+                    if (!schedule.Wanted(job.Key))
                     {
-                        texture = RenderPropThumbnail(job.Source!);
-                        owned = true;
+                        _previews.Abandon(job.Key);
+                        continue;
                     }
-                    else if (job.Entry?.AssetTarget != null)
-                    {
-                        if (job.Entry.Error.Length > 0)
-                            throw new InvalidOperationException(job.Entry.Error);
-                        using var model = await SceneAssetCatalog.Load(job.Entry.AssetTarget, token);
-                        texture = RenderPropThumbnail(model.Object.transform, model.Object);
-                        owned = true;
-                    }
-                    else if (job.Entry != null)
-                    {
-                        var icon = ItemViewFactory.LoadItemIcon(SceneLootModel.Item(job.Entry.Items));
-                        var deadline = Time.realtimeSinceStartup + 15;
-                        while (!icon.Sprite && Time.realtimeSinceStartup < deadline)
-                            await UniTask.NextFrame(cancellationToken: token);
-                        if (icon.Sprite)
-                        {
-                            // Native icons can live in a shared, reused render target.
-                            // Retain an owned snapshot, not that mutable backing texture.
-                            texture = SnapshotThumbnail(icon.Sprite);
-                            owned = true;
-                        }
-                    }
-                    token.ThrowIfCancellationRequested();
-                    if (!texture)
-                        throw new InvalidOperationException("No visible image was returned. Retry when the object is loaded.");
-                    _previews.Complete(
-                        epoch,
-                        job.Key,
-                        new ThumbnailImage
-                        {
-                            Texture = texture!,
-                            Uv = uv,
-                            Owned = owned,
-                        },
-                        selected
-                    );
-                    owned = false;
+                    schedule.Start(job.Native);
+                    _ = RunThumbnail(job, epoch, token, schedule);
                 }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception e)
-                {
-                    _previews.Fail(epoch, job.Key, e.Message);
-                }
-                finally
-                {
-                    if (owned && texture)
-                        UnityEngine.Object.Destroy(texture);
-                }
-                if (epoch == _previews.Generation)
-                    PresentSceneThumbnails();
             }
         }
         catch (OperationCanceledException) { }
@@ -371,187 +358,120 @@ internal sealed partial class EditorCatalogController
         }
     }
 
+    private async Task RunThumbnail(ThumbnailJob job, int epoch, CancellationToken token, SceneThumbnailSchedule schedule)
+    {
+        var native = job.Native;
+        Texture? texture = null;
+        Action? unsubscribeIcon = null;
+        SceneAssetCatalog.Model? loaded = null;
+        try
+        {
+            EditorDiagnostics.ThumbnailWait((Time.realtimeSinceStartup - job.QueuedAt) * 1000);
+            if (native && job.Entry != null)
+            {
+                var start = Time.realtimeSinceStartup;
+                var icon = ItemViewFactory.LoadItemIcon(SceneLootModel.Item(job.Entry.Items));
+                Exception? snapshotError = null;
+                void CaptureIcon()
+                {
+                    if (texture || snapshotError != null || token.IsCancellationRequested || !schedule.Wanted(job.Key) || !icon.Sprite)
+                        return;
+                    try
+                    {
+                        texture = SceneThumbnailRenderer.Snapshot(icon.Sprite);
+                    }
+                    catch (Exception error)
+                    {
+                        snapshotError = error;
+                    }
+                }
+                // Native generation can finish several icons in one frame using a shared target.
+                // Snapshot in its notification, before the next icon reuses that texture.
+                unsubscribeIcon = icon.Changed.Subscribe(CaptureIcon);
+                CaptureIcon();
+                while (!texture && snapshotError == null && Time.realtimeSinceStartup - start < 15)
+                {
+                    await UniTask.NextFrame(cancellationToken: token);
+                    if (!schedule.Wanted(job.Key))
+                        return;
+                }
+                if (snapshotError != null)
+                    throw snapshotError;
+                EditorDiagnostics.ThumbnailLoad((Time.realtimeSinceStartup - start) * 1000);
+            }
+            else
+            {
+                if (!job.Source && job.Entry?.AssetTarget != null)
+                {
+                    var start = Time.realtimeSinceStartup;
+                    loaded = await SceneAssetCatalog.Load(job.Entry.AssetTarget, token, previewOnly: true);
+                    EditorDiagnostics.ThumbnailLoad((Time.realtimeSinceStartup - start) * 1000);
+                }
+                token.ThrowIfCancellationRequested();
+                // The loader can finish in the same frame as another synchronous scene preview.
+                while (_thumbnailRenderFrame == Time.frameCount)
+                    await UniTask.NextFrame(cancellationToken: token);
+                if (!schedule.Wanted(job.Key))
+                    return;
+                _thumbnailRenderFrame = Time.frameCount;
+                if (loaded != null)
+                    texture = RenderPropThumbnail(loaded.Object.transform, loaded.Object);
+                else if (job.Source)
+                    texture = RenderPropThumbnail(job.Source!);
+            }
+            token.ThrowIfCancellationRequested();
+            if (!schedule.Wanted(job.Key))
+                return;
+            if (!texture)
+                throw new InvalidOperationException("No visible image was returned. Retry when the object is loaded.");
+            _previews.Complete(
+                epoch,
+                job.Key,
+                new ThumbnailImage
+                {
+                    Texture = texture!,
+                    Uv = new Rect(0, 0, 1, 1),
+                    Owned = true,
+                },
+                _sceneFilter + ":" + _catalogSelection
+            );
+            texture = null;
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception e)
+        {
+            if (schedule.Wanted(job.Key))
+                _previews.Fail(epoch, job.Key, e.Message);
+        }
+        finally
+        {
+            unsubscribeIcon?.Invoke();
+            loaded?.Dispose();
+            if (texture)
+                SceneThumbnailRenderer.Release(texture!);
+            schedule.Finish(native);
+            if (epoch == _previews.Generation)
+            {
+                _previews.Abandon(job.Key);
+                PresentSceneThumbnails();
+            }
+        }
+    }
+
     private Texture RenderPropThumbnail(Transform source, GameObject? prepared = null)
     {
-        var model = prepared ?? (_context.MapScene ??= new()).CopyForPlacement(source);
-        var rig = new GameObject("CampaignEditor thumbnail camera");
-        var rt = new RenderTexture(192, 192, 24);
-        var materials = new List<Material>();
-        var opaqueTextures = new Dictionary<Texture, Texture2D>();
-        Texture2D? texture = null;
-        var previous = RenderTexture.active;
+        GameObject model;
+        using (EditorDiagnostics.Measure(EditorDiagnostics.Area.ThumbnailPrepare))
+            model = prepared ?? ScenePreviewModel.Copy(source);
         try
         {
-            if (model.GetComponentInChildren<LootableContainer>(true) is { } container)
-                container.enabled = false;
-            model.SetActive(true);
-            model.transform.SetPositionAndRotation(new Vector3(0, -10000, 0), Quaternion.identity);
-            foreach (var lod in model.GetComponentsInChildren<LODGroup>(true))
-                if (lod && lod.enabled && lod.gameObject.activeInHierarchy)
-                {
-                    lod.fadeMode = LODFadeMode.None;
-                    lod.animateCrossFading = false;
-                    lod.ForceLOD(0);
-                }
-            foreach (var t in model.GetComponentsInChildren<Transform>(true))
-                t.gameObject.layer = 31;
-            if (!SceneBounds.TryGet(model.transform, out var bounds))
-                throw new InvalidOperationException("Prop has no visible mesh.");
-            foreach (var renderer in model.GetComponentsInChildren<Renderer>())
-            {
-                var originals = renderer.sharedMaterials;
-                var preview = new Material[originals.Length];
-                for (var i = 0; i < originals.Length; i++)
-                {
-                    var original = originals[i];
-                    var material = new Material(_context.View!.PreviewShader);
-                    materials.Add(material);
-                    var opacity =
-                        original
-                        && PreviewMaterialPolicy.UsesOpacity(
-                            original.GetTag("RenderType", false, ""),
-                            original.shader ? original.shader.name : "",
-                            original.IsKeywordEnabled("_ALPHATEST_ON"),
-                            original.IsKeywordEnabled("_ALPHABLEND_ON") || original.IsKeywordEnabled("_ALPHAPREMULTIPLY_ON")
-                        );
-                    if (original && original.HasProperty("_MainTex"))
-                    {
-                        var diffuse = original.GetTexture("_MainTex");
-                        if (diffuse && !opacity)
-                        {
-                            if (!opaqueTextures.TryGetValue(diffuse, out var opaque))
-                            {
-                                opaque = SnapshotOpaqueDiffuse(diffuse);
-                                opaqueTextures.Add(diffuse, opaque);
-                            }
-                            diffuse = opaque;
-                        }
-                        material.SetTexture("_MainTex", diffuse);
-                        material.SetTextureScale("_MainTex", original.GetTextureScale("_MainTex"));
-                        material.SetTextureOffset("_MainTex", original.GetTextureOffset("_MainTex"));
-                    }
-                    var tint = original && original.HasProperty("_Color") ? original.GetColor("_Color") : Color.white;
-                    if (!opacity)
-                        tint.a = 1;
-                    material.SetColor("_Color", tint);
-                    preview[i] = material;
-                }
-                renderer.sharedMaterials = preview;
-            }
-            var camera = rig.AddComponent<Camera>();
-            camera.enabled = false;
-            camera.cullingMask = 1 << 31;
-            camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(.09f, .095f, .09f, 1);
-            camera.orthographic = true;
-            camera.orthographicSize = Mathf.Max(.1f, bounds.extents.magnitude * 1.1f);
-            camera.nearClipPlane = .01f;
-            camera.farClipPlane = Mathf.Max(20, bounds.size.magnitude * 6);
-            camera.transform.position = bounds.center + new Vector3(1, .7f, -1).normalized * Mathf.Max(2, bounds.size.magnitude * 2);
-            camera.transform.LookAt(bounds.center);
-            camera.targetTexture = rt;
-            rt.Create();
-            camera.Render();
-            RenderTexture.active = rt;
-            texture = new Texture2D(192, 192, TextureFormat.RGBA32, false);
-            texture.ReadPixels(new Rect(0, 0, 192, 192), 0, 0);
-            texture.Apply();
-            return texture;
-        }
-        catch
-        {
-            if (texture)
-                UnityEngine.Object.Destroy(texture);
-            throw;
+            _thumbnailRenderer ??= new SceneThumbnailRenderer(_context.View!.PreviewShader);
+            return _thumbnailRenderer.Render(model);
         }
         finally
         {
-            RenderTexture.active = previous;
-            model.SetActive(false);
-            rig.SetActive(false);
-            UnityEngine.Object.Destroy(model);
-            UnityEngine.Object.Destroy(rig);
-            foreach (var material in materials)
-                UnityEngine.Object.Destroy(material);
-            foreach (var opaque in opaqueTextures.Values)
-                UnityEngine.Object.Destroy(opaque);
-            rt.Release();
-            UnityEngine.Object.Destroy(rt);
-        }
-    }
-
-    // Opaque EFT diffuse alpha can contain surface masks rather than opacity.
-    // RGB24 drops that channel before the bundled preview shader's alpha test.
-    // Blitting also supports source textures that cannot be read by the CPU.
-    private static Texture2D SnapshotOpaqueDiffuse(Texture source)
-    {
-        var factor = Mathf.Min(1, 512f / Mathf.Max(source.width, source.height));
-        var width = Mathf.Max(1, Mathf.RoundToInt(source.width * factor));
-        var height = Mathf.Max(1, Mathf.RoundToInt(source.height * factor));
-        var previous = RenderTexture.active;
-        var target = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
-        Texture2D? result = null;
-        try
-        {
-            Graphics.Blit(source, target);
-            RenderTexture.active = target;
-            result = new Texture2D(width, height, TextureFormat.RGB24, false)
-            {
-                wrapModeU = source.wrapModeU,
-                wrapModeV = source.wrapModeV,
-                filterMode = source.filterMode,
-            };
-            result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            result.Apply(false, true);
-            return result;
-        }
-        catch
-        {
-            if (result)
-                UnityEngine.Object.Destroy(result);
-            throw;
-        }
-        finally
-        {
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(target);
-        }
-    }
-
-    private static Texture2D SnapshotThumbnail(Sprite sprite)
-    {
-        var source = sprite.texture;
-        var rect = sprite.textureRect;
-        var scale = Mathf.Min(1, 192f / Mathf.Max(rect.width, rect.height));
-        var width = Mathf.Max(1, Mathf.RoundToInt(rect.width * scale));
-        var height = Mathf.Max(1, Mathf.RoundToInt(rect.height * scale));
-        var previous = RenderTexture.active;
-        var target = RenderTexture.GetTemporary(width, height, 0, RenderTextureFormat.ARGB32);
-        Texture2D? result = null;
-        try
-        {
-            Graphics.Blit(
-                source,
-                target,
-                new Vector2(rect.width / source.width, rect.height / source.height),
-                new Vector2(rect.x / source.width, rect.y / source.height)
-            );
-            RenderTexture.active = target;
-            result = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            result.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            result.Apply();
-            return result;
-        }
-        catch
-        {
-            if (result)
-                UnityEngine.Object.Destroy(result);
-            throw;
-        }
-        finally
-        {
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(target);
+            if (prepared == null)
+                UnityEngine.Object.Destroy(model);
         }
     }
 }

@@ -1,6 +1,8 @@
 using EFT.Communications;
 using EFT.UI;
 using UnityEngine;
+using WTT.Campaigns.Shared.Missions;
+using WTT.Campaigns.Shared.Seasons;
 using WTT.Campaigns.Shared.Story;
 
 namespace WTT.Campaigns.Client.Story;
@@ -12,6 +14,18 @@ internal sealed class StoryChapterNotification : Notification
     internal readonly string Status;
     internal readonly string Title;
     internal readonly string Artwork;
+    internal readonly string MissionIcon = "";
+
+    internal StoryChapterNotification(string title, string description, string status, string icon)
+    {
+        Title = title;
+        _description = description;
+        Status = status;
+        Artwork = SeasonValidator.IsId(icon) ? icon : "";
+        MissionIcon = MissionNotificationIcons.Choices.ContainsKey(icon) ? icon : MissionNotificationIcons.Default;
+        Duration = ENotificationDurationType.Long;
+        SoundType = null;
+    }
 
     internal StoryChapterNotification(StoryChapter chapter, string status)
     {

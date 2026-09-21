@@ -7,7 +7,7 @@ internal static class EditorRouteChecks
 {
     internal static void Native(AssemblyDefinition native, AssemblyDefinition client)
     {
-        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         var capture = editor.Methods.Single(m => m.Name == "CapturePoint");
         Require(
             Reads(capture, "_flyPosition") && Reads(capture, "_flyRotation") && !Reads(capture, "_player"),

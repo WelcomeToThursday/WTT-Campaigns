@@ -12,6 +12,8 @@ internal sealed partial class EditorCatalogController : IDisposable
         get => _sceneTab;
         set => _sceneTab = value;
     }
+    internal bool InspectingScene =>
+        SceneWorkspace && (_sceneTab != "Catalog" || _context.Picked || _context.MapPoint != null || _context.MapDoor != null);
     internal string SceneFilter => _sceneFilter;
     internal string CatalogSource => _catalogSource;
     internal string CatalogSelection => _catalogSelection;
@@ -26,9 +28,10 @@ internal sealed partial class EditorCatalogController : IDisposable
         get => _catalogPageSize;
         set => _catalogPageSize = value;
     }
+    internal bool HideUnavailable => _sceneBrowser.HideUnavailable;
+    internal int ViewRevision => _catalogViewRevision;
     internal int CatalogGeneration => _catalogRequests.Generation;
     internal bool CatalogLoading => _catalogRequests.Loading;
-    internal int? AssetRevision => _assetCatalog?.Revision;
     internal IReadOnlyDictionary<string, UnityEngine.Transform> SceneRoots => _sceneRoots;
 
     internal void RememberSceneTarget(UnityEngine.Transform target) => _sceneRoots[target.GetInstanceID().ToString()] = target;
@@ -41,5 +44,6 @@ internal sealed partial class EditorCatalogController : IDisposable
         _disposed = true;
         _thumbnailLifetime.Cancel();
         _thumbnailLifetime.Dispose();
+        _levelSearchLifetime.Dispose();
     }
 }

@@ -7,6 +7,61 @@ namespace WTT.Campaigns.Client.Authoring.Views;
 internal sealed class EditorToolkitDocument : IDisposable
 {
     private static AssetBundle? _bundle;
+    private static readonly string[] TemplateNames =
+    {
+        "Action",
+        "BrowserRow",
+        "CampaignTest",
+        "CaptureTask",
+        "CategoryRail",
+        "ChoiceField",
+        "ChoiceOption",
+        "ChoicePopup",
+        "FieldMessage",
+        "InspectorSection",
+        "InspectorHeader",
+        "ConflictRow",
+        "ConflictShield",
+        "ContextMenu",
+        "Console",
+        "ConsoleRow",
+        "Navigation",
+        "Terrain",
+        "TerrainPaletteItem",
+        "Controls",
+        "DockDivider",
+        "DockTab",
+        "DockTabs",
+        "DropPreview",
+        "EditorWalkStatus",
+        "EnvironmentMenu",
+        "Field",
+        "Home",
+        "HomePicker",
+        "Inspector",
+        "Library",
+        "LootConfiguration",
+        "MenuShield",
+        "PickerRow",
+        "RouteCaption",
+        "RouteLegend",
+        "Row",
+        "SceneActionGroup",
+        "ScopedActions",
+        "StatusBar",
+        "ToolbarIcon",
+        "ToolbarScroll",
+        "ToolbarSeparator",
+        "Tooltip",
+        "TransformToolbar",
+        "TreeRow",
+        "Window",
+        "WindowsMenu",
+        "Workspace",
+        "WorkspaceTitleBar",
+        "GameViewport",
+        "ViewportToolbar",
+    };
 
     // Shared assets live for the client session. Never synchronously unload them
     // from a screen's OnDestroy while Unity is changing scenes.
@@ -16,6 +71,7 @@ internal sealed class EditorToolkitDocument : IDisposable
     private static Font? _font;
     private static Shader? _previewShader;
     private static Shader? _viewportShader;
+    private static Shader? _navigationShader;
     private bool _disposed;
     internal readonly GameObject Host;
     internal readonly PanelSettings Settings;
@@ -96,6 +152,14 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     internal Shader PreviewShader => _previewShader!;
     internal Shader ViewportShader => _viewportShader!;
+    internal static Shader NavigationShader
+    {
+        get
+        {
+            EnsureAssets();
+            return _navigationShader!;
+        }
+    }
 
     // Detach the authored root: a TemplateContainer would change the existing
     // docking and direct-child layout contracts.
@@ -110,12 +174,23 @@ internal sealed class EditorToolkitDocument : IDisposable
         if (container.childCount != 1 || container[0] is not T root)
             throw new InvalidOperationException("Invalid Editor Toolkit template: " + template);
         root.RemoveFromHierarchy();
+        EditorActionGrid.Bind(root);
+        foreach (var scroll in root.Query<ScrollView>(className: "editor-menu-scroll").ToList())
+            EditorScrollStyle.Apply(scroll);
         return root;
     }
 
     private static void EnsureAssets()
     {
-        if (_template && _tree && _font && _previewShader && _viewportShader && Templates.Count == 49)
+        if (
+            _template
+            && _tree
+            && _font
+            && _previewShader
+            && _viewportShader
+            && _navigationShader
+            && Templates.Count == TemplateNames.Length
+        )
             return;
         Plugin.LogInfo("Editor Toolkit: loading shared assets");
         const string path = "assets/mods/wtt-campaigns.assets/editortoolkit/";
@@ -134,63 +209,11 @@ internal sealed class EditorToolkitDocument : IDisposable
         _font = _bundle.LoadAsset<Font>("assets/mods/wtt-campaigns.assets/fonts/bender.ttf");
         _previewShader = _bundle.LoadAsset<Shader>("assets/mods/wtt-campaigns.assets/raideditor/campaignscenepreview.shader");
         _viewportShader = _bundle.LoadAsset<Shader>(path + "viewportcopy.shader");
-        if (!_template || !_tree || !_font || !_previewShader || !_viewportShader)
+        _navigationShader = _bundle.LoadAsset<Shader>(path + "navigationsurface.shader");
+        if (!_template || !_tree || !_font || !_previewShader || !_viewportShader || !_navigationShader)
             throw new InvalidOperationException("Editor Toolkit assets are incomplete.");
         Templates.Clear();
-        foreach (
-            var name in new[]
-            {
-                "Action",
-                "BrowserRow",
-                "CampaignTest",
-                "CaptureTask",
-                "CategoryRail",
-                "ChoiceField",
-                "ChoiceOption",
-                "ChoicePopup",
-                "FieldMessage",
-                "InspectorSection",
-                "InspectorHeader",
-                "ConflictRow",
-                "ConflictShield",
-                "ContextMenu",
-                "Console",
-                "ConsoleRow",
-                "Controls",
-                "DockDivider",
-                "DockTab",
-                "DockTabs",
-                "DropPreview",
-                "EditorWalkStatus",
-                "EnvironmentMenu",
-                "Field",
-                "Home",
-                "HomePicker",
-                "Inspector",
-                "Library",
-                "LootConfiguration",
-                "MenuShield",
-                "PickerRow",
-                "RouteCaption",
-                "RouteLegend",
-                "Row",
-                "SceneActionGroup",
-                "ScopedActions",
-                "StatusBar",
-                "ToolbarIcon",
-                "ToolbarScroll",
-                "ToolbarSeparator",
-                "Tooltip",
-                "TransformToolbar",
-                "TreeRow",
-                "Window",
-                "WindowsMenu",
-                "Workspace",
-                "WorkspaceTitleBar",
-                "GameViewport",
-                "ViewportToolbar",
-            }
-        )
+        foreach (var name in TemplateNames)
         {
             var tree = _bundle.LoadAsset<VisualTreeAsset>(path + name.ToLowerInvariant() + ".uxml");
             if (!tree)

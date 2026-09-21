@@ -41,7 +41,7 @@ internal sealed class NavigationInspection
         try
         {
             var position = EncounterNavigation.ToVector3(spawn.Position);
-            var navigation = new EncounterNavigation();
+            var navigation = new EncounterNavigation(() => layout);
             var valid = navigation.IsOnNavMesh(spawn.Position) && navigation.HasStandingClearance(spawn.Position);
             var cores = AICorePointHolder.GetAllTestObjects(false);
             var connected = EncounterCorePoints.ConnectedCore(cores, position);

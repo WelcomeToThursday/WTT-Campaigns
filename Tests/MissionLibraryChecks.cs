@@ -22,9 +22,20 @@ internal static class MissionLibraryChecks
             validation.CanPublish,
             "Mission without a campaign or quest validates: " + string.Join("; ", validation.Issues.Select(i => i.Message))
         );
+        package.MapLayouts[0].Navigation = new();
+        package.FormatVersion = 13;
+        validation = SeasonValidator.Validate(package);
+        check(validation.CanPublish, "Independent mission package accepts a saved navigation recipe in format 13");
+        var future = SeasonCompiler.Copy(package);
+        future.FormatVersion = 15;
+        check(!SeasonValidator.Validate(future).CanPublish, "Independent mission package rejects unknown future formats");
         draft = store.Save(draft);
         var key = store.Publish(draft, validation);
         var published = store.Pack(key);
+        check(
+            published.FormatVersion == 13 && published.MapLayouts[0].Navigation != null,
+            "Publication retains navigation recipes and their required format"
+        );
         check(published.Revision == 1 && published.MissionPackage != null, "Mission publication creates a versioned package");
         var campaign = store.Create(false);
         var image = store.AddImage(

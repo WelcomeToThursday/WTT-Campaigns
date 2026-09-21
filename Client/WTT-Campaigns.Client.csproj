@@ -2,9 +2,15 @@
   <PropertyGroup>
     <RootNamespace>WTT.Campaigns.Client</RootNamespace>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <Version>0.10.1</Version>
+    <Version>0.11.0</Version>
   </PropertyGroup>
   <ItemGroup>
+    <None
+      Include="Resources\LevelPropLibrary\catalog.json;Resources\LevelPropLibrary\*.bundle"
+      Condition="Exists('Resources\LevelPropLibrary\catalog.json')"
+      CopyToOutputDirectory="PreserveNewest"
+      TargetPath="LevelPropLibrary\%(Filename)%(Extension)"
+    />
     <None
       Include="Resources\ContainerLibrary\catalog.json;Resources\ContainerLibrary\native-containers.bundle"
       CopyToOutputDirectory="PreserveNewest"
@@ -16,6 +22,7 @@
       TargetPath="HazardLibrary\%(Filename)%(Extension)"
     />
     <Using Remove="System.Linq" />
+    <EmbeddedResource Include="Resources\Navigation\native-collision.json" LogicalName="WTT.Campaigns.Navigation.native-collision.json" />
     <EmbeddedResource Include="Customization\Assets\face.png" LogicalName="WTT.Campaigns.Customization.face.png" />
     <Reference
       Include="WTT-ClientCommonLib"
@@ -33,11 +40,14 @@
     <Reference Include="Sirenix.Serialization" HintPath="$(ManagedDir)Sirenix.Serialization.dll" Private="false" />
     <Reference Include="ItemComponent.Types" HintPath="$(ManagedDir)ItemComponent.Types.dll" Private="false" />
     <Reference Include="DissonanceVoip" HintPath="$(ManagedDir)DissonanceVoip.dll" Private="false" />
+    <Reference Include="JBooth.MicroSplat.Core" HintPath="$(ManagedDir)JBooth.MicroSplat.Core.dll" Private="false" />
     <Reference Include="Assembly-CSharp" HintPath="$(ManagedDir)Assembly-CSharp.dll" Private="false" />
     <Reference Include="UnityEngine" HintPath="$(ManagedDir)UnityEngine.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(ManagedDir)UnityEngine.PhysicsModule.dll" Private="false" />
     <Reference Include="UnityEngine.AIModule" HintPath="$(ManagedDir)UnityEngine.AIModule.dll" Private="false" />
+    <Reference Include="Unity.AI.Navigation" HintPath="$(ManagedDir)Unity.AI.Navigation.dll" Private="false" />
     <Reference Include="UnityEngine.TerrainModule" HintPath="$(ManagedDir)UnityEngine.TerrainModule.dll" Private="false" />
+    <Reference Include="UnityEngine.TerrainPhysicsModule" HintPath="$(ManagedDir)UnityEngine.TerrainPhysicsModule.dll" Private="false" />
     <Reference Include="UnityEngine.AudioModule" HintPath="$(ManagedDir)UnityEngine.AudioModule.dll" Private="false" />
     <Reference Include="UnityEngine.ParticleSystemModule" HintPath="$(ManagedDir)UnityEngine.ParticleSystemModule.dll" Private="false" />
     <Reference Include="UnityEngine.AnimationModule" HintPath="$(ManagedDir)UnityEngine.AnimationModule.dll" Private="false" />

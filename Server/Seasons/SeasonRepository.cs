@@ -761,7 +761,7 @@ public sealed partial class SeasonRepository
         var folder = Path.Combine(_root, "packs", CheckId(key));
         var manifest = Read<SeasonManifest>(Path.Combine(folder, "manifest.json"));
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
         )
@@ -1052,7 +1052,7 @@ public sealed partial class SeasonRepository
         }
         var manifest = JsonConvert.DeserializeObject<SeasonManifest>(Encoding.UTF8.GetString(Entry("manifest.json")))!;
         if (
-            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11)
+            manifest.FormatVersion is not (1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14)
             || manifest.ProtocolVersion != 2
             || !manifest.Files.ContainsKey("definition.json")
             || manifest.Files.Count != zip.Entries.Count - 1

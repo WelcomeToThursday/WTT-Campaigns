@@ -13,7 +13,7 @@ from UnityPy.helpers.TypeTreeNode import TypeTreeNode
 def referenced_ids(value):
     if isinstance(value, dict):
         if 'm_FileID' in value and 'm_PathID' in value:
-            if value['m_PathID']:
+            if value['m_PathID'] and not value['m_FileID']:
                 yield value['m_PathID']
         else:
             for child in value.values():
@@ -60,7 +60,7 @@ class Stream:
 
 class Library:
 
-    def __init__(self, game, name="wtt-native-containers"):
+    def __init__(self, game, name="wtt-native-containers", generator=None):
         self.name = name
         self.cab = "CAB-" + name
         self.game = game
@@ -70,9 +70,10 @@ class Library:
         self.ids = {}
         self.pending = []
         self.stream = bytearray()
-        self.gen = Generator('2022.3.43f1')
-        for p in (self.data / 'Managed').glob('*.dll'):
-            self.gen.load_dll(p.read_bytes())
+        self.gen = generator or Generator('2022.3.43f1')
+        if generator is None:
+            for p in (self.data / 'Managed').glob('*.dll'):
+                self.gen.load_dll(p.read_bytes())
         env = UnityPy.load(str(self.data / 'StreamingAssets/Windows/assets/content/location_objects/lootable/prefab/scontainer_crate.bundle'))
         self.bundle = next(iter(env.files.values()))
         self.asset = next((f for f in self.bundle.files.values() if hasattr(f, 'objects')))
@@ -427,5 +428,3 @@ def verify_library(directory, game):
     print('PASS native container library:', len(containers), 'templates,', len(objects), 'self-contained serialized objects')
 if __name__ == '__main__':
     main()
-
-

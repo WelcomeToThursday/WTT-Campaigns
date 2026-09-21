@@ -21,7 +21,7 @@ internal sealed partial class RaidEditorView
     }
 
     private static bool IsWindow(string id) =>
-        id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration" or "Console";
+        id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration" or "Console" or "Navigation" or "Terrain";
 
     private VisualElement BindAuthored(EditorLayoutSpec.Node section, VisualElement parent)
     {
@@ -110,7 +110,17 @@ internal sealed partial class RaidEditorView
         {
             var parent = section.Id == "EditorWalkStatus" || section.Id == "ConflictShield" ? Document.Content : workspace;
             var element = BindAuthored(section, parent);
-            if (section.Id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration" or "Console")
+            if (
+                section.Id
+                is "Library"
+                    or "Inspector"
+                    or "EnvironmentMenu"
+                    or "Controls"
+                    or "LootConfiguration"
+                    or "Console"
+                    or "Navigation"
+                    or "Terrain"
+            )
             {
                 BindWindowChrome(
                     element,
@@ -118,12 +128,16 @@ internal sealed partial class RaidEditorView
                     section.Id == "Library" ? "BROWSER"
                         : section.Id == "Inspector" ? "PROPERTIES"
                         : section.Id == "LootConfiguration" ? "LOOT CONFIGURATION"
+                        : section.Id == "Terrain" ? "TERRAIN"
+                        : section.Id == "Navigation" ? "NAVIGATION"
                         : section.Id == "Console" ? "CONSOLE"
                         : section.Id == "Controls" ? "EDITOR CONTROLS"
                         : "ENVIRONMENT",
                     section.Id == "Library" ? "LibraryCollapse"
                         : section.Id == "Inspector" ? "InspectorCollapse"
                         : section.Id == "LootConfiguration" ? "LootClose"
+                        : section.Id == "Terrain" ? "TerrainClose"
+                        : section.Id == "Navigation" ? "NavigationClose"
                         : section.Id == "Console" ? "ConsoleClose"
                         : section.Id == "Controls" ? "HelpClose"
                         : "EnvironmentClose"
@@ -156,6 +170,7 @@ internal sealed partial class RaidEditorView
                 "SceneFilters",
                 "SceneInspector",
                 "MapInspector",
+                "SplineSection",
             }
         )
             Visible(id, false);

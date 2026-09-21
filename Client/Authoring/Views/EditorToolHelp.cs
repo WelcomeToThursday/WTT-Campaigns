@@ -5,6 +5,17 @@ internal static class EditorToolHelp
     internal static string For(string id, string caption) =>
         id switch
         {
+            "SplineEdit" => "Enable curve editing for this route. Drag points or tangent handles; Escape cancels a drag.",
+            "SplineMode" => "Corner: sharp turn. Auto: smooth tangent. Aligned: linked handle directions. Free: independent handles.",
+            "SplinePart" =>
+                "Choose the point or handle to adjust. Patrol curves follow the ground; free/X/Z point drags snap to nearby ground. Use Y deliberately to select a different floor.",
+            "SplineStrength" => "Smoothing percentage, applied by Smooth selected or Smooth route. Tight passages may keep smaller curves.",
+            "SplineSmoothSelected" => "Smooth this point while preserving patrol clearance and fixed route markers.",
+            "SplineSmoothRoute" => "Smooth waypoint transitions and round navigation corners wherever clearance permits.",
+            "SplineInsert" => "Split the next curve segment without changing its shape. Ctrl-click a curve to insert there.",
+            "SplineDelete" => "Delete the selected shaping point. Gameplay waypoints use the existing route delete controls.",
+            "SplineCorner" => "Collapse both handles to make a deliberate sharp corner.",
+            "SplineX" or "SplineY" or "SplineZ" => "Selected point or handle position in world metres.",
             "Name" or "MapName" => "Display name of the selected record.",
             "Search" => "Filter this window by name or identifier.",
             "AddBox" => "Create a box-shaped zone. Adjust its dimensions in Properties.",
@@ -51,11 +62,12 @@ internal static class EditorToolHelp
             "SceneFilter" => "Filter by object type. Each Scene tab remembers its own filter.",
             "CatalogGrid" => "Browse catalog items as thumbnail tiles.",
             "CatalogList" => "Browse catalog items in a compact list.",
+            "SceneHideUnavailable" => "Hide assets that cannot currently be placed. Preview failures do not affect placement availability.",
             "ScenePreviewRetry" => "Retry loading the selected object's preview.",
             "SceneAnchor" => "Cycle the placement anchor for the selected object.",
             "ScenePlace" => "Begin placing the selected catalog object in the world.",
             "SceneRepeat" =>
-                "Keep placing copies until Escape, then inspect the last placed object. Each placement can be undone separately.",
+                "Keep placing copies until Escape. Inspect the last copy while keeping your catalog position. Each placement can be undone separately.",
             "SceneMove" => "Activate the movement handles for this object (W).",
             "SceneRotate" => "Activate the rotation handles for this object (E).",
             "SceneScale" => "Activate scale handles when the selected object supports scaling (R).",

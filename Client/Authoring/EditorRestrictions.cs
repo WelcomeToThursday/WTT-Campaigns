@@ -4,6 +4,7 @@ using EFT.HealthSystem;
 using EFT.InputSystem;
 using EFT.UI.BattleTimer;
 using HarmonyLib;
+using WTT.Campaigns.Client.Authoring.Editor;
 
 namespace WTT.Campaigns.Client.Authoring;
 

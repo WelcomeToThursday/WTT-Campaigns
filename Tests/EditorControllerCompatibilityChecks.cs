@@ -6,7 +6,7 @@ internal static class EditorControllerCompatibilityChecks
 {
     internal static void Run(AssemblyDefinition assembly, Action<bool, string> check)
     {
-        var coordinator = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var coordinator = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         var controllers = new[] { "Ai", "Catalog", "Map" }
             .Select(name => assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Controllers.Editor" + name + "Controller"))
             .ToArray();

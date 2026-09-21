@@ -104,8 +104,59 @@ internal static class EditorEnvironmentChecks
                 ),
             "Weather preview must not mutate native backend/debug state."
         );
-        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         Require(Calls(editor.Methods.Single(m => m.Name == "Close"), "Dispose"), "Editor close releases its preview.");
+        Require(
+            Calls(environment.Methods.Single(m => m.Name == "Sync"), "ApplyPreferences"),
+            "Saved settings apply even when the native sky is attached late."
+        );
+        Require(
+            Calls(environment.Methods.Single(m => m.Name == "RememberTime"), "SavePreferences")
+                && Calls(environment.Methods.Single(m => m.Name == "RememberWeather"), "SavePreferences"),
+            "Time, weather and wind edits persist independently of disposal."
+        );
+        var clock = types["EFT.GameDateTime"];
+        Require(
+            clock.Methods.Any(m =>
+                m.Name == "ResetForce"
+                && m.IsPublic
+                && m.Parameters.Count == 1
+                && m.Parameters[0].ParameterType.FullName == "System.DateTime"
+            ),
+            "Checkpoint restoration requires the native forced clock rebase."
+        );
+        Require(
+            clock.Properties.Any(p => p.Name == "TimeFactor" && p.SetMethod.IsPublic)
+                && clock.Fields.Any(f => f.Name == "TimeFactorMod" && f.IsPublic),
+            "Mission freeze and retry preserve native time factors."
+        );
+        var snapshot = client.MainModule.GetType("WTT.Campaigns.Client.Missions.MissionTimeSnapshot");
+        Require(
+            Calls(snapshot.Methods.Single(m => m.Name == "Restore"), "ResetForce"),
+            "Checkpoint restoration rewinds the source clock as well as the sky."
+        );
+        foreach (
+            var (owner, stateMachine) in new[]
+            {
+                ("WTT.Campaigns.Client.Missions.MissionRaidRuntime", "<RetryCheckpoint>"),
+                ("WTT.Campaigns.Client.Authoring.Editor.RaidEditor", "<RestoreTestCheckpoint>"),
+            }
+        )
+        {
+            var move = client
+                .MainModule.GetType(owner)
+                .NestedTypes.Single(t => t.Name.StartsWith(stateMachine))
+                .Methods.Single(m => m.Name == "MoveNext");
+            var calls = move
+                .Body.Instructions.Where(i => i.Operand is MethodReference)
+                .Select(i => ((MethodReference)i.Operand).Name)
+                .ToList();
+            Require(
+                calls.IndexOf("RestoreTime") >= 0
+                    && calls.IndexOf("RestoreTime") < calls.FindIndex(n => n is "ReleaseRetryHold" or "ReleaseTestHold"),
+                "Both retry paths restore time before releasing the player."
+            );
+        }
         Console.WriteLine("Editor environment: native culling, sky clock, weather overlay and restoration contracts passed offline.");
     }
 

@@ -4,6 +4,11 @@ namespace WTT.Campaigns.Client.Authoring.Scenes;
 
 internal static class SceneBounds
 {
+    // Generated props retain their native rotation below an authored placement root.
+    // Use that geometry's axes for the outline without changing the saved root pose.
+    internal static Transform? SelectionFrame(Transform? target, Transform? geometry) =>
+        target && geometry && geometry!.IsChildOf(target) ? geometry : target;
+
     internal static bool TryGet(Transform? target, out Bounds bounds) => TryGet(target, out bounds, out _);
 
     internal static bool TryGet(Transform? target, out Bounds bounds, out Bounds localBounds)

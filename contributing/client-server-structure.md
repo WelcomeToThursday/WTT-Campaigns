@@ -11,7 +11,8 @@ Namespaces match folders beneath each project, such as `WTT.Campaigns.Client.Pro
 | `UI` | `SeasonUi` and the native skills-tab adapter |
 | `Hub` | Hub presentation and transactions, document tracking, banner sound and video lifecycle |
 | `Patches` | Explicit patch registration and hooks grouped by game feature |
-| `Authoring` | Editor entry points, session and transport state, diagnostics, and the `RaidEditor` coordinator |
+| `Authoring` | Editor entry points, session and transport state, and diagnostics |
+| `Authoring.Editor` | The `RaidEditor` coordinator and all its partial class files |
 | `Authoring.Controllers` | AI editing, scene catalog/placement, map/door editing, and their internal context interfaces |
 | `Authoring.Views` | Toolkit documents, controls, windows, layout, tree models, and editor screens |
 | `Authoring.Scenes` | Scene discovery, selection, model ownership, navigation, and route overlays |
@@ -26,7 +27,7 @@ Namespaces match folders beneath each project, such as `WTT.Campaigns.Client.Pro
 
 The `UI` namespace here contains EFT integration. Game-independent Unity views remain in the separate [UI project](ui-structure.md). Client components are added at runtime; their namespace changes do not require rebuilding the artwork bundle.
 
-Keep the authoring root for coordination. Put new helpers in the area that owns their behavior and import that namespace explicitly; avoid project-wide global imports. All `RaidEditor` partial declarations stay in the root because they are one type. Its remaining responsibilities include Unity lifecycle, sessions, camera/input, tool selection, refresh scheduling, walkthroughs and AI/mission playtests.
+Keep the authoring root for entry points and shared session services. Put new helpers in the area that owns their behavior and import that namespace explicitly; avoid project-wide global imports. All `RaidEditor` partial declarations stay together in `Client/Authoring/Editor`, under `WTT.Campaigns.Client.Authoring.Editor`. Its responsibilities include Unity lifecycle, sessions, camera/input, tool selection, refresh scheduling, walkthroughs and AI/mission playtests. `RaidEditorSession` remains in `Authoring` as the shared document/session service used by the coordinator and controllers.
 
 `Authoring.Controllers` contains `EditorAiController`, `EditorCatalogController`, and `EditorMapController`. They bind controls and own their feature's editing state. They receive internal context interfaces, not a concrete `RaidEditor` reference. `IEditorDocumentContext` exposes current document/view coordination; each controller's additional interface exposes only its required editor services. `RaidEditor.Controllers.cs` implements these interfaces explicitly without making coordinator fields public. Cross-tool actions go through these interfaces.
 

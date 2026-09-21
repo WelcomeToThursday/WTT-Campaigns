@@ -536,6 +536,16 @@ public sealed class MissionService(
             throw new InvalidOperationException("The selected raid map does not match the prepared mission.");
         VerifyCurrentContent(active, run);
         run.RaidId = response.ServerId.ToString()!;
+        if (mission.TimeLimitMinutes is { } minutes)
+        {
+            // This response belongs to this authenticated run. Never mutate the
+            // cached map definition shared with ordinary raids.
+            response.LocationLoot =
+                cloner.Clone(response.LocationLoot) ?? throw new InvalidDataException("Mission raid response has no location settings.");
+            response.LocationLoot.EscapeTimeLimit = minutes;
+            response.LocationLoot.EscapeTimeLimitCoop = minutes;
+            response.LocationLoot.EscapeTimeLimitPVE = minutes;
+        }
         run.Status = MissionRunStatuses.Active;
         run.StartedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
         state.Revision++;

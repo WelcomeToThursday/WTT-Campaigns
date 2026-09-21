@@ -13,12 +13,16 @@ internal sealed class MissionRaidCheckpoint
     private readonly MissionAccountingSnapshot _accounting;
     private readonly MissionAudioSnapshot _audio;
     private readonly string _heldItem;
+    private readonly MissionTimeSnapshot _time;
+    private readonly MissionRaidTimer.Snapshot? _raidTime;
     internal EncounterPreviewRuntime.Checkpoint Encounters { get; }
     internal string Id { get; }
 
     internal MissionRaidCheckpoint(string id, Player player, EncounterPreviewRuntime encounters)
     {
         Id = id;
+        _time = new MissionTimeSnapshot();
+        _raidTime = MissionRaidTimer.Current?.Capture();
         _heldItem = player.HandsController?.Item?.Id.ToString() ?? "";
         Encounters = encounters.Capture();
         _inventory = new(player);
@@ -45,6 +49,12 @@ internal sealed class MissionRaidCheckpoint
     }
 
     internal void RestoreAccounting(Player player) => _accounting.Restore(player);
+
+    internal void RestoreTime()
+    {
+        _time.Restore();
+        _raidTime?.Restore();
+    }
 
     internal Task RestoreAudioAsync(CancellationToken token) => _audio.RestoreAsync(token);
 }

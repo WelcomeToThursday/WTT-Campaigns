@@ -132,22 +132,25 @@ internal sealed partial class EditorToolkitWindows
         bool hasPoint,
         bool canEdit,
         bool picked,
-        bool hasSavedPoint = true
+        bool hasSavedPoint = true,
+        bool inspectWorld = false
     )
     {
         if (enabled)
-            _view.InspectorContext("Scene", tab + "/" + kind);
+            _view.InspectorContext("Scene", (inspectWorld ? "Existing" : tab) + "/" + kind);
         var catalog = tab == "Catalog";
         var removed = kind == "Hide";
         Visible("SceneTabs", enabled);
         Visible("SceneFilters", enabled);
         Visible("SceneSource", enabled && catalog);
+        Visible("SceneHideUnavailable", enabled && catalog);
         Visible("SceneInspector", enabled);
         if (enabled)
             Visible("MapWalkGroup", false);
         FitContents();
         if (!enabled)
             return;
+        catalog = catalog && !inspectWorld;
         Visible("RecordInspector", false);
         Visible("MapInspector", !catalog && hasPoint);
         Visible("MapRecordActions", false);

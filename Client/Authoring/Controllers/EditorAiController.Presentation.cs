@@ -9,9 +9,12 @@ namespace WTT.Campaigns.Client.Authoring.Controllers;
 
 internal sealed partial class EditorAiController
 {
+    private MissionEditorPanel? _missionEditor;
+    internal string SelectedMissionId => _missionEditor?.SelectedMissionId ?? "";
+
     internal void Bind(RaidEditorView view)
     {
-        _ = new MissionEditorPanel(view, view.ElementForTool("AI", "AiTools"), () => _context.Session);
+        _missionEditor = new MissionEditorPanel(view, view.ElementForTool("AI", "AiTools"), () => _context.Session);
         RaidEditorAiContracts.LayoutProvider = _layoutProvider;
         view.Button("AiEncounter", AddAiEncounter);
         view.Button("AiWave", AddAiWave);
@@ -19,6 +22,10 @@ internal sealed partial class EditorAiController
         view.Button("AiSpawn", AddAiSpawn);
         view.Button("AiPatrol", AddAiPatrol);
         view.Button("AiWaypoint", AddAiWaypoint);
+        view.Button("AiWaypointInsert", () => AddAiWaypoint(true));
+        view.Button("AiWaypointEarlier", () => MoveAiWaypoint(-1));
+        view.Button("AiWaypointLater", () => MoveAiWaypoint(1));
+        view.Button("AiRouteReverse", ReverseAiRoute);
         view.Button("AiTrigger", CycleAiTrigger);
         view.Button("AiObserve", () => _context.BeginAiPreview(false));
         view.Dropdown(
@@ -102,7 +109,7 @@ internal sealed partial class EditorAiController
         _context.View.Caption("AiNavigation", "Inspect navigation: " + (_inspectAiNavigation ? "on" : "off"));
         _context.View.Windows.SetTooltip(
             "AiNavigation",
-            "Select a spawn to see nearby navigation samples, authored cuts, and its core connection. Local cores are created when preview starts."
+            "Select a patrol or waypoint for directed path details, or a spawn for nearby navigation samples, authored cuts, and its core connection."
         );
         foreach (var name in RaidEditorAiView.CreationControls)
             _context.View.Visible(name, visible);
@@ -231,6 +238,19 @@ internal sealed partial class EditorAiController
         _context.View.Get<Button>("AiWave").interactable = editable && selected.Encounter != null;
         _context.View.Get<Button>("AiRoster").interactable = editable && selected.Wave != null;
         _context.View.Get<Button>("AiWaypoint").interactable = editable && selected.Route != null;
+        var waypointIndex = isWaypoint ? route!.Waypoints.FindIndex(p => p.Id == selected.Waypoint?.Id) : -1;
+        _context.View.Get<Button>("AiWaypointInsert").interactable = editable && waypointIndex >= 0;
+        _context.View.Get<Button>("AiWaypointEarlier").interactable = editable && waypointIndex > 0;
+        _context.View.Get<Button>("AiWaypointLater").interactable =
+            editable && waypointIndex >= 0 && waypointIndex < route!.Waypoints.Count - 1;
+        _context.View.Get<Button>("AiRouteReverse").interactable = editable && route?.Waypoints.Count > 1;
+        _context.View.Windows.SetTooltip(
+            "AiWaypointInsert",
+            "Insert a zero-wait waypoint after the selection, at the floor beneath the camera."
+        );
+        _context.View.Windows.SetTooltip("AiWaypointEarlier", "Move this waypoint earlier, keeping its wait and identity.");
+        _context.View.Windows.SetTooltip("AiWaypointLater", "Move this waypoint later, keeping its wait and identity.");
+        _context.View.Windows.SetTooltip("AiRouteReverse", "Reverse waypoint order and their waits. Completion mode stays unchanged.");
         _context.View.Windows.SetTooltip("AiWave", "Select an encounter in the tree, then add a wave.");
         _context.View.Windows.SetTooltip("AiRoster", "Select a wave in the tree, then add its bot roster.");
         _context.View.Windows.SetTooltip("AiWaypoint", "Select a patrol route in the tree, then place a waypoint.");

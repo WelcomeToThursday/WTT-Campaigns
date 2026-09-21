@@ -38,6 +38,7 @@ internal sealed partial class EditorEnvironment : IDisposable
         _active = this;
         try
         {
+            LoadPreferences();
             if (EditorMode.Ready)
                 _sceneVisibility = new EditorSceneVisibility(hidden);
             Sync();
@@ -118,6 +119,7 @@ internal sealed partial class EditorEnvironment : IDisposable
     private void Sync()
     {
         using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.Environment);
+        ApplyPreferences();
         if (!_camera)
             return;
         _camera.transform.SetPositionAndRotation(_position, _rotation);
@@ -180,10 +182,6 @@ internal sealed partial class EditorEnvironment : IDisposable
         var harmony = new Harmony("com.wtt.campaigns.editor.environment");
         var before = new HarmonyMethod(typeof(EditorEnvironment), nameof(BeforeSampling));
         var after = new HarmonyMethod(typeof(EditorEnvironment), nameof(AfterSampling));
-        harmony.Patch(
-            AccessTools.PropertyGetter(typeof(EFT.Weather.WeatherController), nameof(EFT.Weather.WeatherController.WeatherCurve)),
-            prefix: new HarmonyMethod(typeof(EditorEnvironment), nameof(WeatherCurve))
-        );
         harmony.Patch(
             AccessTools.Method(typeof(PerfectCullingCrossSceneSampler), nameof(PerfectCullingCrossSceneSampler.Update)),
             prefix: before,

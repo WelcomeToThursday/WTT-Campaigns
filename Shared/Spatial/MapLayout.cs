@@ -13,6 +13,14 @@ public sealed class MapLayout
 
     public bool ShouldSerializeApplyInNormalRaids() => ApplyInNormalRaids;
 
+    public List<MapTerrainRecipe>? Terrain { get; set; }
+
+    public bool ShouldSerializeTerrain() => Terrain is { Count: > 0 };
+
+    public MapNavigationRecipe? Navigation { get; set; }
+
+    public bool ShouldSerializeNavigation() => Navigation != null;
+
     public List<MapObjectEdit> Objects { get; set; } = new();
     public List<MapLootPlacement> Loot { get; set; } = new();
     public List<MapDoorEdit> Doors { get; set; } = new();
@@ -20,6 +28,9 @@ public sealed class MapLayout
     public SpatialCapture? Start { get; set; }
     public List<MapVolume> Checkpoints { get; set; } = new();
     public MapVolume? Exit { get; set; }
+    public SpatialSpline? PlayerRouteSpline { get; set; }
+
+    public bool ShouldSerializePlayerRouteSpline() => PlayerRouteSpline != null;
 
     // AI authoring is layout-owned and intentionally separate from player route checkpoints.
     public List<SpatialCapture> SpawnPoints { get; set; } = new();
@@ -196,7 +207,11 @@ public static class MapLayoutRules
         layout.SpawnPoints?.Count > 0 || layout.Encounters?.Count > 0 || layout.PatrolRoutes?.Count > 0;
 
     public static int Format(IEnumerable<MapLayout> layouts) =>
-        layouts.AsValueEnumerable().Any(NeedsFormat9) ? 9
+        layouts.AsValueEnumerable().Any(l => l.Terrain is { Count: > 0 }) ? MapTerrainPainting.Format
+        : layouts.AsValueEnumerable().Any(l => l.Navigation != null) ? MapNavigationRules.Format
+        : layouts.AsValueEnumerable().Any(l => l.PlayerRouteSpline != null || l.PatrolRoutes.AsValueEnumerable().Any(r => r.Spline != null))
+            ? 12
+        : layouts.AsValueEnumerable().Any(NeedsFormat9) ? 9
         : layouts.AsValueEnumerable().Any(NeedsFormat8) ? 8
         : layouts.AsValueEnumerable().Any(NeedsFormat6) ? 6
         : layouts.AsValueEnumerable().Any(NeedsFormat5) ? 5
@@ -265,6 +280,8 @@ public static class MapLayoutRules
     public static List<string> Errors(MapLayout layout, bool walkthrough = false)
     {
         var errors = new List<string>();
+        errors.AddRange(MapNavigationRules.Errors(layout.Navigation));
+        errors.AddRange(MapTerrainPainting.Errors(layout.Terrain));
         void Need(bool valid, string error)
         {
             if (!valid)
@@ -295,6 +312,8 @@ public static class MapLayoutRules
             errors.Add("Layout collections cannot contain null records.");
             return errors;
         }
+        var splineError = RouteSpline.Error(layout.PlayerRouteSpline, RouteSpline.PlayerAnchors(layout), false);
+        Need(splineError.Length == 0, splineError);
         var ids = OwnedIds(layout).AsValueEnumerable().ToArray();
         Need(
             ids.Length <= 2000

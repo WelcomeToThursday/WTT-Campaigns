@@ -48,7 +48,7 @@ internal static class EditorOpenChecks
             cleanup.Any(m => m.DeclaringType.Name == "EditorToolkitDocument" && m.Name == "Dispose"),
             "Failed construction disposes its partial Toolkit document"
         );
-        var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         var cameraOpenCalls = editor
             .Methods.Single(m => m.Name == "Open")
             .Body.Instructions.Where(i => i.Operand is MethodReference)

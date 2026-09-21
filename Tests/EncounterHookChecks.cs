@@ -94,7 +94,7 @@ internal static class EncounterHookChecks
         );
         var patrol = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
         Require(
-            Calls(RequireMethod(patrol, "Tick"), "TryUpdateBudgeted"),
+            Calls(RequireMethod(patrol, "Tick"), "UpdateSquad") && Calls(RequireMethod(patrol, "UpdateSquad"), "TryUpdateBudgeted"),
             "Patrol planner distinguishes deferred navigation from unreachable paths"
         );
         var hold = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterHoldRuntime");
@@ -942,7 +942,16 @@ internal static class EncounterHookChecks
             "Movement ownership compares the exact native path reference"
         );
         Require(Calls(RequireMethod(ownership, "Keep"), "RemainingPathClear"), "Retained paths must be checked against current scenery");
-        Require(Calls(RequireMethod(ownership, "Keep"), "KeepPath"), "Retained paths must allow stalled movement to retry");
+        Require(Calls(RequireMethod(ownership, "Keep"), "Observe"), "Retained paths measure forward progress before deciding to retry");
+        Require(
+            Calls(RequireMethod(RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPathProgress"), "Observe"), "KeepPath"),
+            "Forward-progress watchdog preserves the bounded retry interval"
+        );
+        var retain = RequireMethod(ownership, "TryRetain");
+        Require(
+            Calls(retain, "Owns") && Calls(retain, "SameRemainingCorners"),
+            "Revalidation retains only the owned, matching native remainder"
+        );
         Require(
             CallsAny(runtime, "Keep", m => m.DeclaringType.Name == "EncounterMovementPath"),
             "Patrol refresh preserves corner progress"
@@ -950,8 +959,12 @@ internal static class EncounterHookChecks
         var hold = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterHoldRuntime");
         Require(Calls(RequireMethod(hold, "Move"), "Keep"), "Hold returns preserve corner progress too");
         var navigation = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNavigation");
-        Require(Calls(RequireMethod(navigation, "RemainingPathClear"), "Raycast"), "Retained corners respect new NavMesh cuts");
-        Require(Calls(RequireMethod(navigation, "RemainingPathClear"), "ClearSegments"), "Retained corners respect solid scenery");
+        Require(
+            Calls(RequireMethod(navigation, "RemainingPathClear"), "PatrolPathClear"),
+            "Retained movement uses the shared path validator"
+        );
+        Require(Calls(RequireMethod(navigation, "PatrolPathClear"), "Raycast"), "Retained corners respect new NavMesh cuts");
+        Require(Calls(RequireMethod(navigation, "PatrolPathClear"), "ClearSegments"), "Retained corners respect solid scenery");
         RequireMethod(RequireType(native, "AbstractBotPath"), "get_CurIndex", "System.Int32");
         RequireMethod(RequireType(native, "AbstractBotPath"), "GetPoint", "UnityEngine.Vector3", "System.Int32");
         Require(
@@ -962,6 +975,42 @@ internal static class EncounterHookChecks
         var calls = move.Body.Instructions.Where(i => i.Operand is MethodReference).ToArray();
         var facingCalls = calls.Where(i => ((MethodReference)i.Operand).Name == "FaceMovement").ToArray();
         var dispatch = calls.Single(i => ((MethodReference)i.Operand).Name == "Apply");
+        var arrival = calls.Single(i => ((MethodReference)i.Operand).Name == "Arrive");
+        var quota = calls.Single(i => ((MethodReference)i.Operand).Name == "Move");
+        Require(arrival.Offset < quota.Offset, "Waypoint arrival runs before the navigation quota and movement throttle");
+        var spacing = calls.Single(i => ((MethodReference)i.Operand).Name == "UpdateSpacing");
+        Require(
+            spacing.Offset < quota.Offset && Calls(RequireMethod(runtime, "UpdateSpacing"), "Pace"),
+            "Squad following gaps update independently of the expensive navigation quota"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "UpdateSpacing"), "get_LeaderId"),
+            "Followers waiting at the endpoint cannot hold the elected leader outside arrival range"
+        );
+        Require(
+            RequireMethod(runtime, "ApplyOwnedPace").Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "SpacingPace"),
+            "Owned native movement uses the tested following pace"
+        );
+        var arrive = RequireMethod(runtime, "Arrive");
+        Require(
+            Calls(arrive, "AcknowledgeWaypoint") && Calls(arrive, "UpdateSquad"),
+            "Leader arrival requests its successor in the same action tick"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "UpdateSquad"), "TryUpdateBudgeted"),
+            "Immediate successors still use the shared planning budget"
+        );
+        var updateSquad = RequireMethod(runtime, "UpdateSquad");
+        Require(
+            Calls(updateSquad, "BeginLeg")
+                && !updateSquad.Body.Instructions.Any(i =>
+                    i.OpCode == OpCodes.Ldfld && i.Operand is FieldReference f && f.Name == "Command"
+                )
+                && updateSquad.Body.Instructions.Any(i =>
+                    i.OpCode == OpCodes.Ldfld && i.Operand is FieldReference f && f.Name == "MovementWaypoint"
+                ),
+            "Curve handoff uses the owned movement waypoint after arrival has cleared commands, including budget-deferred replanning"
+        );
         Require(
             facingCalls.Length == 2 && facingCalls[0].Offset < dispatch.Offset && facingCalls[1].Offset > dispatch.Offset,
             "Patrol refreshes facing on both throttled ticks and freshly dispatched navigation"
@@ -971,19 +1020,92 @@ internal static class EncounterHookChecks
     private static void CheckPatrolPathDispatch(AssemblyDefinition native, AssemblyDefinition client)
     {
         RequireMethod(RequireType(native, "BotMover"), "GoToByWay", "System.Void", "UnityEngine.Vector3[]", "System.Single");
+        var cornerAdvance = RequireMethod(RequireType(native, "BotMoverSimple"), "CheckCornerIndexByReachDist");
+        Require(
+            Calls(cornerAdvance, "get_ReachDist") && Calls(cornerAdvance, "IncCornerIndex"),
+            "Native simple movement uses the submitted reach distance for intermediate bends"
+        );
         var runtime = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPatrolRuntime");
+        var submit = runtime.NestedTypes.SelectMany(t => t.Methods).Single(m => Calls(m, "TryRetain"));
+        int Offset(string name) => submit.Body.Instructions.Last(i => i.Operand is MethodReference m && m.Name == name).Offset;
+        Require(
+            Offset("BuildMovementPath") < Offset("TryRetain") && Offset("TryRetain") < Offset("SubmitPath"),
+            "Keeping an equivalent path requires full successful live validation before skipping native resubmission"
+        );
+        var movement = RequireMethod(runtime, "BuildMovementPath");
+        var planning = RequireMethod(runtime, "CheckMovementPath");
+        Require(
+            Calls(planning, "SavedCorners")
+                && Calls(planning, "PatrolPathClear")
+                && Calls(planning, "EvaluateRoute")
+                && Calls(planning, "TryPatrolPath"),
+            "Squad planning validates the retained authored remainder, successor curve and recovery connector"
+        );
+        Require(
+            Calls(movement, "EvaluateRoute") && Calls(movement, "TryPatrolPath") && Calls(movement, "Select"),
+            "Spline following validates the authored leg and a separate rejoin connector, retaining its progress cursor"
+        );
         Require(
             CallsAny(runtime, "GoToByWay", m => m.DeclaringType.Name == "BotMover"),
             "Patrol submits the validated live mesh corners to native movement"
+        );
+        var continuation = RequireMethod(runtime, "TryContinuation");
+        Require(
+            Calls(continuation, "Move")
+                && Calls(continuation, "TryPatrolPath")
+                && Calls(continuation, "EvaluateRoute")
+                && Calls(continuation, "JoinLegs"),
+            "Continuous travel validates its extra leg under a separate movement-budget token"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "Tick"), "NeedsSquadPlan"),
+            "Healthy owned travel avoids duplicate squad-wide reachability planning"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "Arrive"), "NextWaypoint") && Calls(RequireMethod(runtime, "Arrive"), "PassedCorner"),
+            "Zero-wait follower arrivals can flow through and native corner passage counts as arrival"
+        );
+        Require(
+            Calls(RequireMethod(runtime, "SubmitPath"), "SquadEligible") && Calls(RequireMethod(runtime, "SubmitPath"), "GetActiveLayer"),
+            "Lookahead path submission retains live combat and ownership guards"
         );
         Require(
             !CallsAny(runtime, "GoToPoint", m => m.DeclaringType.Name == "BotMover"),
             "Patrol must not reenter baked cover graph routing or its teleport recovery"
         );
         var navigation = RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterNavigation");
+        var curve = RequireMethod(navigation, "EvaluateRoute");
+        Require(
+            Calls(curve, "Leg")
+                && Calls(curve, "Advance")
+                && Calls(curve, "CreateCurveCheck")
+                && Calls(RequireMethod(navigation, "CheckCurve"), "CreateCurveCheck"),
+            "Inspection and movement share the resumable authored-curve validation pipeline"
+        );
+        var grounded = RequireMethod(navigation, "CreateCurveCheck");
+        Require(
+            grounded.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "ProjectGroundCurvePoint")
+                && grounded.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "CurveStandingClearance")
+                && grounded.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "ClearCurveSegment"),
+            "Editor smoothing, route inspection and runtime share ground following with standing and segment clearance checks"
+        );
+        Require(
+            Calls(RequireMethod(navigation, "ClearCurveSegment"), "Raycast")
+                && Calls(RequireMethod(navigation, "ClearCurveSegment"), "ClearSegment"),
+            "Spline chords require both NavMesh continuity and physical clearance"
+        );
         var path = RequireMethod(navigation, "TryPatrolPath");
+        Require(Calls(path, "EvaluatePath"), "Native movement uses the same path evaluation as route inspection");
+        path = navigation.Methods.Single(m => m.Name == "EvaluatePath" && m.Parameters[0].ParameterType.FullName == "UnityEngine.Vector3");
         foreach (var call in new[] { "CalculatePath", "get_status", "get_corners", "ClearSegments" })
             Require(Calls(path, call), "Live patrol paths validate " + call);
+        Require(Calls(path, "AddRouteClearance"), "Route inspection and native dispatch share the obstacle detours");
+        Require(Calls(RequireMethod(navigation, "AddRouteClearance"), "Adjust"), "Live navigation uses the bounded tested detour planner");
+        Require(Calls(RequireMethod(navigation, "SolidBlocker"), "WalkableContact"), "Obstacle tops use height-aware floor classification");
+        Require(
+            Calls(RequireMethod(navigation, "ClearSegment"), "ClearAuthoredBarriers"),
+            "Adjusted route connections still respect authored barriers"
+        );
         Require(
             Calls(RequireMethod(runtime, "Describe"), "GetActiveLogic"),
             "Patrol diagnostics include the native action that owns movement"
@@ -1011,7 +1133,7 @@ internal static class EncounterHookChecks
         );
         Require(vitalCalls >= 2, "PreviewHealthChanged checks both Head and Chest with GetBodyPartHealth");
         Require(
-            CallsAny(healthHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.RaidEditor"),
+            CallsAny(healthHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.Editor.RaidEditor"),
             "PreviewHealthChanged reports lethal damage through RaidEditor.AiDefeated"
         );
 
@@ -1029,7 +1151,7 @@ internal static class EncounterHookChecks
             "EFT.EDamageType"
         );
         Require(
-            CallsAny(killHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.RaidEditor"),
+            CallsAny(killHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.Editor.RaidEditor"),
             "PreviewKill reports direct lethal transitions through RaidEditor.AiDefeated"
         );
     }
@@ -1085,7 +1207,7 @@ internal static class EncounterHookChecks
             hands.Methods.Any(m => m.Name == "SettleHands") && hands.Methods.Any(m => m.Name == "RestoreHands"),
             "Checkpoint hands settle without holstering and restore through native equipment activation"
         );
-        var startSave = RequireType(client, "WTT.Campaigns.Client.Authoring.RaidEditor")
+        var startSave = RequireType(client, "WTT.Campaigns.Client.Authoring.Editor.RaidEditor")
             .NestedTypes.Single(t => t.Name.StartsWith("<CaptureTestStart>"));
         Require(
             !Calls(RequireMethod(startSave, "MoveNext"), "EmptyHands") && Calls(RequireMethod(startSave, "MoveNext"), "SettleHands"),

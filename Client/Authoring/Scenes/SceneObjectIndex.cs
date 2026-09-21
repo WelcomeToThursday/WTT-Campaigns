@@ -64,6 +64,13 @@ internal sealed class SceneObjectIndex<T>
         return true;
     }
 
+    internal void Observe(T target, string name, Action<T> discover)
+    {
+        discover(target);
+        if (!Limited)
+            Add(target, name);
+    }
+
     internal void Limit()
     {
         Limited = true;

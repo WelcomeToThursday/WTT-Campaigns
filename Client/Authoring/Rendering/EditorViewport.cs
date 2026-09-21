@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UIElements;
 using WTT.Campaigns.UI.Controls;
 
@@ -12,7 +13,10 @@ internal sealed class EditorViewport : MonoBehaviour
     private Image? _image;
     private RenderTexture? _texture;
     private Material? _copy;
+    private CommandBuffer? _navigationCommands;
     private bool _reported;
+    private bool _navigationReported;
+    private DepthTextureMode _savedDepthMode;
     private float _savedAspect;
     private bool _automaticAspect;
     private Rect _pixels;
@@ -25,6 +29,10 @@ internal sealed class EditorViewport : MonoBehaviour
         _savedAspect = camera.aspect;
         _automaticAspect = Mathf.Approximately(_savedAspect, camera.pixelWidth / (float)Mathf.Max(1, camera.pixelHeight));
         _copy = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
+        _savedDepthMode = camera.depthTextureMode;
+        camera.depthTextureMode |= DepthTextureMode.Depth;
+        _navigationCommands = new CommandBuffer { name = "Campaign editor navigation layer" };
+        camera.AddCommandBuffer(CameraEvent.BeforeForwardAlpha, _navigationCommands);
     }
 
     internal void Resize(Rect pixels)
@@ -41,6 +49,34 @@ internal sealed class EditorViewport : MonoBehaviour
             return;
         _camera!.aspect = _pixels.width / _pixels.height;
         SceneViewport.Set(_camera, _pixels);
+    }
+
+    private void OnPreRender()
+    {
+        if (!_camera || !_copy || _navigationCommands == null)
+            return;
+        _navigationCommands.Clear();
+        if (!Navigation.NavigationSurfaceRenderer.ProjectOntoGround || _pixels.width < 1 || _pixels.height < 1)
+            return;
+        try
+        {
+            // Draw into the active native camera target. Coverage and scene colour
+            // must share SSAA/post-processing orientation, jitter and scaling; a
+            // separate layer composited after those effects can float over the scene.
+            var triangles = Navigation.NavigationSurfaceRenderer.RecordOverlay(_camera!, _navigationCommands);
+            if (triangles > 0 && !_navigationReported)
+            {
+                _navigationReported = true;
+                Plugin.LogInfo(
+                    $"Navigation renderer: native-frame ground projection v2; {triangles} source triangles; camera={_camera.name}; path={_camera.actualRenderingPath}; client={typeof(EditorViewport).Assembly.ManifestModule.ModuleVersionId}."
+                );
+            }
+        }
+        catch (Exception error)
+        {
+            _navigationCommands.Clear();
+            _failure = error;
+        }
     }
 
     private void OnRenderImage(RenderTexture source, RenderTexture destination)
@@ -112,10 +148,19 @@ internal sealed class EditorViewport : MonoBehaviour
 
     private void OnDisable()
     {
+        if (_navigationCommands != null)
+        {
+            if (_camera)
+                _camera!.RemoveCommandBuffer(CameraEvent.BeforeForwardAlpha, _navigationCommands);
+            _navigationCommands.Release();
+            _navigationCommands = null;
+        }
         if (!ReferenceEquals(_camera, null))
             SceneViewport.Clear(_camera!);
         if (_camera)
         {
+            // Preserve any other depth modes requested while the editor was open.
+            _camera!.depthTextureMode = (_camera.depthTextureMode & ~DepthTextureMode.Depth) | _savedDepthMode;
             if (_automaticAspect)
                 _camera!.ResetAspect();
             else

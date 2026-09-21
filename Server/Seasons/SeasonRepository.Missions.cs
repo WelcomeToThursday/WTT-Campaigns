@@ -26,13 +26,29 @@ public sealed partial class SeasonRepository
         return output;
     }
 
-    public DraftEnvelope CreateMission()
+    public DraftEnvelope CreateMission() => CreateMissionDraft("New mission", "");
+
+    public DraftEnvelope CreateMission(string name, string location)
     {
-        var layout = new WTT.Campaigns.Shared.Spatial.MapLayout { Id = NewId(), Name = "Mission layout" };
+        name = (name ?? "").Trim();
+        location = (location ?? "").Trim();
+        if (name.Length is < 1 or > 120 || location.Length is < 1 or > 120 || location == "hideout")
+            throw new InvalidOperationException("Enter a mission name (up to 120 characters) and choose a raid location.");
+        return CreateMissionDraft(name, location);
+    }
+
+    private DraftEnvelope CreateMissionDraft(string name, string location)
+    {
+        var layout = new WTT.Campaigns.Shared.Spatial.MapLayout
+        {
+            Id = NewId(),
+            Name = location.Length == 0 ? "Mission layout" : name,
+            Location = location,
+        };
         var mission = new MissionDefinition
         {
             Id = NewId(),
-            Name = "New mission",
+            Name = name,
             Briefing = "Complete the route and extract.",
             LayoutId = layout.Id,
             CheckpointRetries = true,
@@ -46,7 +62,10 @@ public sealed partial class SeasonRepository
                     Id = mission.Id,
                     BattlePassId = NewId(),
                     Name = mission.Name,
-                    FormatVersion = MissionLibrary.FormatVersion,
+                    FormatVersion = Math.Max(
+                        MissionLibrary.FormatVersion,
+                        WTT.Campaigns.Shared.Spatial.MapLayoutRules.Format(new[] { layout })
+                    ),
                     MissionPackage = new(),
                     Missions = [mission],
                     MapLayouts = [layout],
@@ -69,7 +88,7 @@ public sealed partial class SeasonRepository
             BattlePassId = NewId(),
             Name = mission.Name,
             Author = campaign.Definition.Author,
-            FormatVersion = MissionLibrary.FormatVersion,
+            FormatVersion = Math.Max(MissionLibrary.FormatVersion, WTT.Campaigns.Shared.Spatial.MapLayoutRules.Format(new[] { layout })),
             MissionPackage = new(),
             Missions = [mission],
             MapLayouts = [layout],

@@ -6,7 +6,7 @@ Map layouts can also provide reusable level content for ordinary raids. They do 
 
 Open **Editor** (automatically shown as **Level Editor** for ordinary layouts), choose a draft and map, and create a named layout in **Layouts**. Use the existing scenery, door, barrier, loot, zone, hazard, and extract tools. **Apply in normal raids** sets its default enabled state. The same switch appears in the Creator's map layouts page.
 
-Publish the campaign to make its layouts available outside the editor. Unsaved edits and unpublished drafts do not change ordinary raids.
+Publish the level's backing draft to make its layouts available outside the editor. For legacy layouts in a shared campaign draft, publishing includes the entire saved draft. Unsaved edits and unpublished drafts do not change ordinary raids.
 
 ## Regular characters
 
@@ -20,9 +20,13 @@ Enabled layers on the matching map apply together. Conflicting edits to the same
 
 Ordinary raids use the enabled defaults from that character's own campaign. Regular-character selections do not change campaign behavior. Mission raids use their mission layout separately.
 
+Saved navigation recipes are currently editor previews only and do not activate in ordinary raids. See [manual navigation tools](editor-toolkit.md#manual-navigation-tools).
+
+Saved navigation recipes are currently editor previews only and do not activate in ordinary raids. See [manual navigation tools](editor-toolkit.md#manual-navigation-tools).
+
 ## Included content
 
-Layers apply supported scenery movement, hiding and copies, asset props, doors, barriers, placed loot, and loot containers. Generated container contents are fixed for the raid so repeated requests cannot reroll them.
+Layers apply supported scenery movement, hiding and copies, asset props, doors, barriers, placed loot, loot containers, and terrain texture/grass recipes. Terrain recipes compose in campaign/layout order; later strokes operate on the accumulated result. Disabling a layer removes its contribution on the next raid. Generated container contents are fixed for the raid so repeated requests cannot reroll them.
 
 Enabled levels also apply their layout-owned zones, hazards and native quest/salvage interactions. Quest eligibility uses the active PMC profile. In a campaign, existing story bindings can use enabled level zones; regular PMCs do not gain campaign story progression. Publishing quest/story references to a level zone requires that level to be enabled by default.
 

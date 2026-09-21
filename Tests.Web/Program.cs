@@ -280,10 +280,12 @@ Check(
     "Creator stylesheet URL fingerprints the deployed content rather than a fixed release label"
 );
 await MissionLogicUiChecks.Run(services, Check);
+await MissionEnvironmentUiChecks.Run(services, Check);
 await MapLayoutUiChecks.Run(services, Check);
 await TraderOfferUiChecks.Run(Check);
 WTT.Campaigns.Web.Tests.EncounterChecks.Run(Check);
 WTT.Campaigns.Web.Tests.AuthoringMapSessionChecks.Run(Check);
+WTT.Campaigns.Web.Tests.EditorMissionCreationChecks.Run(Check);
 WTT.Campaigns.Web.Tests.CharacterRecoveryChecks.Run(Check);
 await WTT.Campaigns.Web.Tests.CharacterRecoveryChecks.CheckDeniedAction(Check);
 Console.WriteLine($"PASS {count} Creator component assertions");

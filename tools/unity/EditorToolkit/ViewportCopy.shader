@@ -1,6 +1,9 @@
 Shader "Hidden/WTT/Campaigns/ViewportCopy"
 {
-    Properties { _MainTex ("Native frame", 2D) = "black" {} }
+    Properties
+    {
+        _MainTex ("Native frame", 2D) = "black" {}
+    }
     SubShader
     {
         Cull Off ZWrite Off ZTest Always
@@ -20,7 +23,8 @@ Shader "Hidden/WTT/Campaigns/ViewportCopy"
                     uv.y = 1.0 - uv.y;
                 #endif
                 // Native post-processing alpha is effect data, not UI opacity.
-                return float4(tex2D(_MainTex, uv).rgb, 1.0);
+                float3 color = tex2D(_MainTex, uv).rgb;
+                return float4(color, 1.0);
             }
             ENDCG
         }

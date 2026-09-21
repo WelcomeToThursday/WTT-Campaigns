@@ -1,6 +1,6 @@
 # WTT-Campaigns
 
-**0.10.1 — Editor console, viewport and AI recovery**
+**0.11.0 — Scenery, terrain and mission authoring**
 
 [Campaign Editor and mission map layouts](wiki/editor-mode.md): open a disposable editor character, reshape supported scenery, author AI encounters and patrols, and build [playable missions](wiki/missions.md).
 
@@ -24,6 +24,7 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 - **SPT 4.1.x / EFT 0.16.9.40743** is the target build for this beta.
 - **UnityToolkit 2.0.2 or later**, including its plugin libraries and prepatcher.
 - **BigBrain 1.5.0 or later**.
+- **Waypoints 1.9.0 or later**.
 - **SAIN 4.5.1 or later**, with matching client and server components.
 - **MoreBotsAPI 2.1.1 or later**, with matching client and server components.
 - **Black Division 1.3.1 or later**, with matching client and server components.
@@ -32,7 +33,7 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 
 AI encounters and patrol previews target **SPT 4.1.5** with compatible **BigBrain 1.5.0** and **SAIN 4.5.1**. See the [AI guide](wiki/ai-encounters.md).
 
-Install the dependencies separately. They are not bundled with WTT-Campaigns. Use matching client and server components from the same release.
+Install the dependencies separately. They are not bundled with WTT-Campaigns. The Map Variants mod (`com.lennoxp90.mapvariants`) is incompatible. The Map Variants mod (`com.lennoxp90.mapvariants`) is incompatible. Use matching client and server components from the same release.
 
 ## Installation
 

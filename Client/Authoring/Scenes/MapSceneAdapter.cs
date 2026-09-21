@@ -13,6 +13,7 @@ namespace WTT.Campaigns.Client.Authoring.Scenes;
 
 internal sealed partial class MapSceneAdapter : IDisposable
 {
+    internal readonly WTT.Campaigns.Client.Authoring.TerrainEditing.MapTerrainAdapter Terrain = new();
     private readonly SceneEditTransaction _transaction = new();
     private readonly List<GameObject> _ghosts = new();
     private Material? _ghostMaterial;
@@ -203,7 +204,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
         token.ThrowIfCancellationRequested();
         Reconcile(layout, runtime: runtime);
         var timer = System.Diagnostics.Stopwatch.StartNew();
-        while (Loading)
+        while (Loading || Terrain.Busy)
         {
             if (_disposed)
                 throw new OperationCanceledException("The scene preview was closed.");
@@ -233,6 +234,10 @@ internal sealed partial class MapSceneAdapter : IDisposable
         FlushVisuals();
         var errors = MapLayoutRules.Errors(layout, requirePlayerRoute);
         errors.AddRange(TargetErrors);
+        if (Terrain.Error.Length > 0)
+            errors.Add(Terrain.Error);
+        if (Terrain.Busy)
+            errors.Add("Wait for terrain paint to finish applying.");
         if (Loading)
             errors.Add("Wait for item models to finish loading.");
         if (errors.Count > 0)
@@ -278,6 +283,9 @@ internal sealed partial class MapSceneAdapter : IDisposable
         var native = NativeSupported(source);
         return native.Length > 0 ? native : SceneAssetCatalog.Restriction(source.gameObject, true);
     }
+
+    internal static SceneAssetCatalog.Model LoadScenePreview(MapTarget target) =>
+        new() { Object = ScenePreviewModel.Copy(Resolve(target, target.Kind == "Door")) };
 
     internal static SceneAssetCatalog.Model LoadSceneCopy(MapTarget target)
     {
@@ -572,6 +580,7 @@ internal sealed partial class MapSceneAdapter : IDisposable
 
     public void Dispose()
     {
+        Terrain.Dispose();
         try
         {
             try

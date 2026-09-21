@@ -26,7 +26,7 @@ internal static class EditorToolWindowStyle
         foreach (var section in window.Query<VisualElement>().ToList())
             if (section.name.EndsWith("Section"))
                 section.AddToClassList("editor-section");
-        foreach (var id in new[] { "BrowserFilters", "SceneTabs", "SceneFilters", "CatalogViews", "CreationTools", "Paging" })
+        foreach (var id in new[] { "BrowserFilters", "SceneTabs", "SceneFilters", "CatalogViews", "Paging" })
             window.Q<VisualElement>(id)?.AddToClassList("editor-compact-strip");
     }
 

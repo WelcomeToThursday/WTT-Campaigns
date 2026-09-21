@@ -75,7 +75,7 @@ internal static class PreviewNativeChecks
         )
             throw new InvalidOperationException("Every playable AI preview must allow native inventory and interaction commands.");
 
-        var editor = client.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = client.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         var reset = editor.Methods.Single(m => m.Name == "EndAiPreview" && m.Parameters.Count == 1);
         var closeInventory = reset.Body.Instructions.Single(i => i.Operand is MethodReference m && m.Name == "ToggleScreen");
         var cleanup = reset.Body.Instructions.First(i => i.Operand is MethodReference m && m.Name == "EndEditorMissionRoute");
@@ -93,7 +93,7 @@ internal static class PreviewNativeChecks
         )
             throw new InvalidOperationException("Native inventory screen close contract changed.");
 
-        var update = client.GetType("WTT.Campaigns.Client.Authoring.RaidEditor").Methods.Single(m => m.Name == "UpdateAiPreview");
+        var update = client.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor").Methods.Single(m => m.Name == "UpdateAiPreview");
         var failure = update.Body.Instructions.Single(i => i.Operand is MethodReference m && m.Name == "get_Failure");
         var handler = update.Body.ExceptionHandlers.Single(h => h.CatchType?.FullName == "System.Exception");
         if (

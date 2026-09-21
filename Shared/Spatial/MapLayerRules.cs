@@ -79,11 +79,20 @@ public static class MapLayerRules
         var enabled = layouts.AsValueEnumerable().Where(l => l.ApplyInNormalRaids && l.Location == location).ToArray();
         if (enabled.Length == 0)
             return null;
+        var recipes = enabled.AsValueEnumerable().Where(l => l.Navigation != null).ToArray();
+        if (recipes.Length > 1)
+            throw new InvalidOperationException(
+                "Enabled layers on " + location + " contain more than one navigation recipe. Choose one recipe for the combined map."
+            );
         var combined = new MapLayout
         {
             Id = enabled[0].Id,
             Name = "Normal raid map layers",
             Location = location,
+            Navigation = recipes.Length == 1 ? Seasons.SeasonCompiler.Copy(recipes[0].Navigation) : null,
+            Terrain = Seasons.SeasonCompiler.Copy(
+                enabled.AsValueEnumerable().SelectMany(l => l.Terrain ?? new List<MapTerrainRecipe>()).ToList()
+            ),
             Objects = enabled.AsValueEnumerable().SelectMany(l => l.Objects).ToList(),
             Doors = enabled.AsValueEnumerable().SelectMany(l => l.Doors).ToList(),
             Barriers = enabled.AsValueEnumerable().SelectMany(l => l.Barriers).ToList(),

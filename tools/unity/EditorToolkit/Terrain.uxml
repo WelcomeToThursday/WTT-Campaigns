@@ -1,0 +1,54 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:VisualElement name="Terrain" class="editor-group editor-terrain">
+        <ui:Label name="TerrainState" class="editor-label editor-terrain-state" text="Point at terrain to choose a palette" picking-mode="Ignore" />
+        <ui:VisualElement name="TerrainTabs" class="editor-actions editor-action-row editor-action-grid">
+            <ui:Button name="TerrainTextures" class="editor-action" text="Textures" />
+            <ui:Button name="TerrainGrass" class="editor-action" text="Grass" />
+        </ui:VisualElement>
+        <ui:ScrollView name="TerrainScroll" class="editor-content-scroll">
+            <ui:VisualElement class="editor-card">
+                <ui:Label text="PALETTE" class="editor-heading" picking-mode="Ignore" />
+                <ui:VisualElement name="TerrainPalette" class="editor-terrain-palette" />
+            </ui:VisualElement>
+            <ui:VisualElement class="editor-card">
+                <ui:Label text="BRUSH" class="editor-heading" picking-mode="Ignore" />
+                <ui:TextField name="TerrainRadius" class="editor-field" label="Radius (m)" value="2" tooltip="Soft circular brush, 0.5–20 metres. Each stroke stays on its starting tile." />
+                <ui:TextField name="TerrainStrength" class="editor-field" label="Strength (%)" value="50" tooltip="Blend strength per brush stamp, 1–100%." />
+                <ui:TextField name="TerrainFalloff" class="editor-field" label="Falloff (%)" value="50" tooltip="Soft edge width, 0–100% of the radius." />
+                <ui:TextField name="TerrainDensity" class="editor-field" label="Target density" value="8" tooltip="Grass density target, 0–16. Native grass settings still control rendering." />
+            </ui:VisualElement>
+            <ui:VisualElement class="editor-card">
+                <ui:Label text="PAINT ACTIONS" class="editor-heading" picking-mode="Ignore" />
+                <ui:VisualElement name="TerrainTextureActions" class="editor-actions editor-action-row editor-action-grid">
+                    <ui:Button name="TerrainPaint" class="editor-action" text="Paint" />
+                </ui:VisualElement>
+                <ui:VisualElement name="TerrainGrassActions" class="editor-actions editor-action-row editor-action-grid">
+                    <ui:Button name="TerrainAddGrass" class="editor-action" text="Add" />
+                    <ui:Button name="TerrainRemoveGrass" class="editor-action" text="Remove selected" />
+                </ui:VisualElement>
+                <ui:VisualElement class="editor-action-row editor-action-grid">
+                    <ui:Button name="TerrainOff" class="editor-action" text="Stop brush" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="editor-card">
+                <ui:Label text="RESTORE / CLEAR" class="editor-heading" picking-mode="Ignore" />
+                <ui:VisualElement class="editor-action-row editor-action-grid" name="TerrainTextureRestoreActions">
+                    <ui:Button name="TerrainRestoreTexture" class="editor-action" text="Restore original" />
+                </ui:VisualElement>
+                <ui:VisualElement name="TerrainGrassRestoreActions" class="editor-actions editor-action-row editor-action-grid">
+                    <ui:Button name="TerrainClearGrass" class="editor-action" text="Clear all" />
+                    <ui:Button name="TerrainRestoreGrass" class="editor-action" text="Restore original" />
+                </ui:VisualElement>
+                <ui:VisualElement class="editor-action-row editor-action-grid">
+                    <ui:Button name="TerrainClearEdits" class="editor-action" text="Remove layout paint" tooltip="Remove all saved texture and grass strokes from this layout. Supports undo." />
+                </ui:VisualElement>
+            </ui:VisualElement>
+            <ui:VisualElement class="editor-card">
+                <ui:Label text="BRUSH FEEDBACK" class="editor-heading" picking-mode="Ignore" />
+                <ui:Label name="TerrainFeedback" class="editor-label editor-terrain-state" picking-mode="Ignore" />
+                <ui:Label name="TerrainHelp" class="editor-label" text="Point at a terrain tile to browse its native palette. Choose a surface and brush, then drag LMB. Escape cancels a stroke; Ctrl+Z/Y undo/redo. Grass rebuilds after release. Textures and grass are independent." picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

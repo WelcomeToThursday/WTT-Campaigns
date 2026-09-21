@@ -9,6 +9,8 @@
     <_NativeAssembly>$(ManagedDir)Assembly-CSharp.dll</_NativeAssembly>
     <CampaignsPython Condition="'$(CampaignsPython)' == '' and Exists('$(MSBuildProjectDirectory)\.tools\Scripts\python.exe')">$(MSBuildProjectDirectory)\.tools\Scripts\python.exe</CampaignsPython>
     <CampaignsPython Condition="'$(CampaignsPython)' == ''">python</CampaignsPython>
+    <LevelPropReceiptsDir>$(MSBuildProjectDirectory)\artifacts\level-props-workflow</LevelPropReceiptsDir>
+    <_ForceVerifyLevelProps Condition="'$(ForceVerifyLevelProps)' == 'true'">--force</_ForceVerifyLevelProps>
   </PropertyGroup>
   <ItemGroup>
     <_DeployProject Include="Client\WTT-Campaigns.Client.csproj" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Client'" />
@@ -29,6 +31,20 @@
     <MakeDir Directories="artifacts" />
     <Exec Command="&quot;$(UnityEditorExe)&quot; -batchmode $(UnityGraphicsArguments) -quit -projectPath &quot;$(_ToolkitSdk).&quot; -executeMethod CampaignsEditorToolkitBuilder.Build -logFile &quot;$(MSBuildProjectDirectory)\artifacts\editor-toolkit-unity.log&quot;" />
   </Target>
+  <Target Name="BuildLevelPropLibrary" BeforeTargets="Build" Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Client'">
+    <PropertyGroup>
+      <_RebuildLevelProps Condition="'$(RebuildLevelProps)' == 'true'">--rebuild</_RebuildLevelProps>
+    </PropertyGroup>
+    <Exec Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\level_prop_workflow.py&quot; build --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\Resources\LevelPropLibrary&quot; --index &quot;$(MSBuildProjectDirectory)\artifacts\level-props-index.json&quot; --receipts &quot;$(LevelPropReceiptsDir)&quot; $(_RebuildLevelProps)" />
+  </Target>
+  <Target Name="ValidateLevelPropAssets">
+    <Error Condition="!Exists('$(UnityEditorExe)') or !Exists('$(LevelPropValidationInput)')" Text="Set UnityEditorExe and LevelPropValidationInput for SDK asset validation." />
+    <PropertyGroup>
+      <_LevelPropSdk>$([System.IO.Path]::GetFullPath('$(CampaignsAssetsDir)..\..\..\'))</_LevelPropSdk>
+    </PropertyGroup>
+    <Copy SourceFiles="tools\unity\CampaignsLevelPropValidator.cs" DestinationFolder="$(CampaignsAssetsDir)Editor\" />
+    <Exec Command="&quot;$(UnityEditorExe)&quot; -batchmode -nographics -quit -projectPath &quot;$(_LevelPropSdk).&quot; -executeMethod CampaignsLevelPropValidator.Validate -levelPropValidation &quot;$(LevelPropValidationInput)&quot; -logFile &quot;$(MSBuildProjectDirectory)\artifacts\level-props-unity.log&quot;" />
+  </Target>
   <Target Name="Build">
     <Error Condition="'@(_DeployProject)' == ''" Text="DeploymentScope must be All, Client, Server or UI." />
     <MSBuild Projects="@(_DeployProject);@(_TestProject);@(_WebTestProject)" Targets="Restore" Properties="$(_BuildProperties)" />
@@ -43,6 +59,8 @@
     </MSBuild>
   </Target>
   <Target Name="Validate" DependsOnTargets="Build">
+    <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Client'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\test_level_props.py&quot;" />
+    <Exec Condition="'$(DeploymentScope)' == 'All' or '$(DeploymentScope)' == 'Client'" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\test_level_prop_workflow.py&quot;" />
     <Error Condition="!Exists('$(_NativeAssembly)')" Text="Missing game reference: $(_NativeAssembly)" />
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; &quot;$(_NativeAssembly)&quot;" />
     <Exec Command="dotnet &quot;@(_TestAssembly)&quot; --shared-zlinq &quot;@(_TestAssembly->'%(RootDir)%(Directory)')WTT-Campaigns.Shared.dll&quot; &quot;$(TarkovDir)BepInEx\plugins\UnityToolkit\ZLinq.dll&quot; &quot;$(ServerDir)ZLinq.dll&quot;" />
@@ -69,12 +87,15 @@
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --bush-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --experience-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --unity-toolkit &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --terrain-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-toolkit &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --raid-startup-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --encounter-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --recovery-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_container_library.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\bin\$(Configuration)\netstandard2.1\ContainerLibrary&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_hazard_library.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\bin\$(Configuration)\netstandard2.1\HazardLibrary&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\level_prop_workflow.py&quot; verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\bin\$(Configuration)\netstandard2.1\LevelPropLibrary&quot; --receipts &quot;$(LevelPropReceiptsDir)&quot; $(_ForceVerifyLevelProps)" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="&quot;$(CampaignsPython)&quot; &quot;$(MSBuildProjectDirectory)\tools\export_navigation_collision.py&quot; --verify --game &quot;$(TarkovDir).&quot; --output &quot;$(MSBuildProjectDirectory)\Client\Resources\Navigation\native-collision.json&quot;" />
     <Exec Condition="'@(_UiAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-artwork &quot;@(_UiAssembly)&quot;" />
     <GetFileHash Files="@(_SharedAssembly)" Condition="'$(DeploymentScope)' == 'Client' or '$(DeploymentScope)' == 'Server'">
       <Output TaskParameter="Hash" PropertyName="_SharedHash" />

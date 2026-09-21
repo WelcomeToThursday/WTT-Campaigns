@@ -36,6 +36,7 @@ internal sealed class MissionRetryGuard : IDisposable
 
     internal void Freeze()
     {
+        MissionRaidTimer.Current?.Pause();
         Frozen = true;
         MissionStartupGuard.Begin(_player);
         _player.SetInventoryOpened(false);
@@ -49,6 +50,7 @@ internal sealed class MissionRetryGuard : IDisposable
 
     internal void Release()
     {
+        MissionRaidTimer.Current?.Resume();
         _defeatRaised = false;
         MissionStartupGuard.End(_player);
         Frozen = false;

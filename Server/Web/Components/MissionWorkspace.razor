@@ -69,6 +69,7 @@
                     }
                     }
                 </EditorSection>
+                <MissionEnvironmentFields @key="mission.Id" Mission="mission" Changed="NotifyChanged" />
                 @if (Layout(mission) is { } logicLayout)
                 {
                     <MissionLogicFields Mission="mission" Layout="logicLayout" Changed="NotifyChanged" />

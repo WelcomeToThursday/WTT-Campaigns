@@ -7,6 +7,7 @@ using EFT.UI.Screens;
 using Newtonsoft.Json;
 using SPT.Common.Http;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Editor;
 using WTT.Campaigns.Client.Authoring.Rendering;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Authoring;
@@ -42,7 +43,7 @@ public sealed class EditorMode : MonoBehaviour
     private EditorSessionResponse? _session;
     private EditorHomeScreen? _home;
     private EditorContentMode _homeTab = EditorContentMode.Mission;
-    private bool _newLevel;
+    private bool _newContent;
     private readonly Dictionary<EditorContentMode, (string Draft, string Layout)> _homeSelections = new();
     private MenuScreen? _pendingMenu;
     private bool _openingHome;
@@ -366,15 +367,8 @@ public sealed class EditorMode : MonoBehaviour
         _homeTab = _session?.Mode == EditorContentMode.Level ? EditorContentMode.Level : EditorContentMode.Mission;
         _home.Button("EditorMissionsTab", () => Run(() => SelectHomeTab(EditorContentMode.Mission)));
         _home.Button("EditorLevelsTab", () => Run(() => SelectHomeTab(EditorContentMode.Level)));
-        _home.Button(
-            "EditorNewLevel",
-            () =>
-            {
-                _newLevel = true;
-                _home.ResetLevelName();
-                _status = "Name your level and choose its map.";
-            }
-        );
+        _home.Button("EditorNewLevel", BeginNewContent);
+        _home.Button("EditorNewMission", BeginNewContent);
         _home.Button(
             "EditorDraft",
             () =>
@@ -501,7 +495,7 @@ public sealed class EditorMode : MonoBehaviour
                             _homeTab == EditorContentMode.Level
                                 ? "/wtt-campaigns/creator/levels"
                                     + (
-                                        !_newLevel && SelectedLayout.Length > 0
+                                        !_newContent && SelectedLayout.Length > 0
                                             ? "?draft=" + Uri.EscapeDataString(DraftId) + "&layout=" + Uri.EscapeDataString(SelectedLayout)
                                             : ""
                                     )
@@ -509,6 +503,15 @@ public sealed class EditorMode : MonoBehaviour
                         )
                 )
         );
+    }
+
+    private void BeginNewContent()
+    {
+        _home!.DismissPicker();
+        _newContent = true;
+        var kind = _homeTab == EditorContentMode.Mission ? "mission" : "level";
+        _home.ResetContentName("New " + kind);
+        _status = "Name your " + kind + " and choose its map.";
     }
 
     private static string MapName(string id) => Plugin.Localized(id + " Name", id);
@@ -538,13 +541,13 @@ public sealed class EditorMode : MonoBehaviour
         _home!.Choose(
             "LEVEL LIBRARY",
             choices,
-            _newLevel ? "" : DraftId + "/" + SelectedLayout,
+            _newContent ? "" : DraftId + "/" + SelectedLayout,
             key =>
                 Run(async () =>
                 {
                     var selected = levels.Find(l => l.DraftId + "/" + l.Id == key)!;
                     await Call("select", selected.DraftId, layout: selected.Id);
-                    _newLevel = false;
+                    _newContent = false;
                     _map = selected.Location;
                     _status = "";
                 })
@@ -559,7 +562,7 @@ public sealed class EditorMode : MonoBehaviour
             _homeSelections[_homeTab] = (DraftId, SelectedLayout);
         _home!.DismissPicker();
         _homeTab = mode;
-        _newLevel = false;
+        _newContent = false;
         _status = "";
         _homeSelections.TryGetValue(mode, out var saved);
         if (mode == EditorContentMode.Level)
@@ -588,6 +591,7 @@ public sealed class EditorMode : MonoBehaviour
             ?? (_homeTab == EditorContentMode.Mission ? _session.Layouts.Find(l => l.Mode == _homeTab) : null);
         if (layout != null && SelectedLayout != layout.Id)
             await Call("select", id, layout: layout.Id);
+        _newContent = false;
     }
 
     private void RefreshHome()
@@ -600,7 +604,7 @@ public sealed class EditorMode : MonoBehaviour
         var missionTab = _homeTab == EditorContentMode.Mission;
         var draft = _session?.Drafts.AsValueEnumerable().FirstOrDefault(d => d.Id == DraftId && EditorContentRules.Includes(d, _homeTab));
         var layout =
-            draft == null || (!missionTab && _newLevel)
+            draft == null || _newContent
                 ? null
                 : _session?.Layouts.AsValueEnumerable().FirstOrDefault(l => l.Id == SelectedLayout && l.Mode == _homeTab);
         if (layout != null)
@@ -617,20 +621,16 @@ public sealed class EditorMode : MonoBehaviour
         _home.Text("DraftHeading", missionTab ? "MISSION CONTENT" : "LEVEL LIBRARY");
         _home.Text(
             "DraftHelp",
-            missionTab
-                ? "Choose a standalone mission or campaign with mission layouts."
-                : "Select a saved level, or create one with New Level."
+            missionTab ? "Choose existing content or select New Mission." : "Select a saved level, or create one with New Level."
         );
         _home.Text("MapHeading", missionTab ? "MISSION WORKSPACE" : "LEVEL WORKSPACE");
-        _home.Text("LayoutHeading", missionTab ? "MISSION LAYOUT" : "LEVEL NAME");
+        _home.Text("LayoutHeading", missionTab ? (_newContent ? "MISSION NAME" : "MISSION LAYOUT") : "LEVEL NAME");
         _home.Text(
             "CreatorHelp",
-            missionTab
-                ? "Create missions, link campaigns and edit story content."
-                : "Publish and manage your selected level in Creator. New levels start disabled."
+            missionTab ? "Link campaigns and edit mission story content." : "Publish and enable your level in Creator."
         );
-        _home.Visible("EditorMissionTest", missionTab);
-        _home.Visible("EditorCampaignTest", missionTab && draft != null && _session?.HasStory == true);
+        _home.Visible("EditorMissionTest", missionTab && !_newContent);
+        _home.Visible("EditorCampaignTest", missionTab && !_newContent && draft != null && _session?.HasStory == true);
         _home.Text(
             "WorkspaceHelp",
             missionTab
@@ -640,7 +640,7 @@ public sealed class EditorMode : MonoBehaviour
         var hasDrafts = missionTab
             ? _session?.Drafts.Exists(d => EditorContentRules.Includes(d, _homeTab)) == true
             : _session?.Levels.Count > 0;
-        var hasDraft = missionTab ? draft != null : layout != null;
+        var hasDraft = !_newContent && (missionTab ? draft != null : layout != null);
         var available = Ready && !_busy && !_returning;
         _home.Visible("EditorWeb", missionTab || hasDraft);
         _home.Visible("CreatorHelp", missionTab || hasDraft);
@@ -655,25 +655,29 @@ public sealed class EditorMode : MonoBehaviour
         );
         _home.Text(
             "EditorSelection",
-            (missionTab ? draft?.Name : layout?.Name)
-                ?? (
-                    missionTab ? "Select mission content to begin"
-                    : _newLevel ? "Create a new level"
-                    : "Choose a level or select New Level"
-                )
+            _newContent
+                ? (missionTab ? "Create a new mission" : "Create a new level")
+                : (missionTab ? draft?.Name : layout?.Name)
+                    ?? (missionTab ? "Choose content or select New Mission" : "Choose a level or select New Level")
         );
         _home.Visible("EditorNewLevel", !missionTab);
-        _home.Visible("CreatorHeading", missionTab);
-        _home.Visible("EditorLevelName", !missionTab && _newLevel);
-        _home.Visible("EditorLayout", missionTab || !_newLevel);
+        _home.Visible("EditorNewMission", missionTab);
+        _home.Visible("CreatorHeading", missionTab || hasDraft);
+        _home.Visible("EditorContentName", _newContent);
+        _home.Visible("EditorLayout", !_newContent);
         _home.Interactable("EditorNewLevel", available);
+        _home.Interactable("EditorNewMission", available);
         _home.Caption("EditorRefresh", missionTab ? "REFRESH DRAFTS" : "REFRESH LEVELS");
         _home.Caption("EditorLayout", (layout?.Name ?? (missionTab ? "Select a mission layout" : "Create a new level layout")) + "  ›");
         _home.Caption("EditorMap", (_map.Length == 0 ? "SELECT LOCATION" : MapName(_map)) + (layout == null ? "  ›" : ""));
         _home.Text(
             "EditorMapHelp",
             layout == null
-                ? (missionTab ? "Select a mission layout to use its location." : "Choose a location for a new level layout.")
+                ? (
+                    _newContent
+                        ? "Choose the location for your new " + (missionTab ? "mission." : "level.")
+                        : "Select a layout to use its location."
+                )
                 : "This location is set by the selected layout."
         );
         _home.Caption("EditorStartup", "STARTUP: " + _startup.Value.ToString().ToUpperInvariant());
@@ -681,11 +685,11 @@ public sealed class EditorMode : MonoBehaviour
             _busy ? (_mapLoading ? "Loading " + MapName(_map) + "…" : "Working…")
             : _status.Length > 0 ? _status
             : !Ready ? "Connecting to editor…"
-            : !missionTab && _newLevel ? "Enter a name and map, then create your level."
+            : _newContent ? "Enter a name and map, then create your " + (missionTab ? "mission." : "level.")
             : !hasDrafts
                 ? (
                     missionTab
-                        ? "No missions yet. Create a mission in Creator, then refresh."
+                        ? "No missions yet. Select New Mission to create one here."
                         : "No levels yet. Select New Level to create one here."
                 )
             : !hasDraft ? (missionTab ? "Select mission content." : "Select a level from the library.")
@@ -695,20 +699,20 @@ public sealed class EditorMode : MonoBehaviour
         _home.Interactable("EditorMissionsTab", available);
         _home.Interactable("EditorLevelsTab", available);
         _home.Interactable("EditorLayout", available && hasDraft && missionTab);
-        _home.Interactable("EditorMap", available && _newLevel && !missionTab);
+        _home.Interactable("EditorMap", available && _newContent);
         _home.Interactable(
             "EditorOpen",
             available
                 && _map.Length > 0
                 && (
-                    (!missionTab && _newLevel && !string.IsNullOrWhiteSpace(_home.LevelName))
+                    (_newContent && !string.IsNullOrWhiteSpace(_home.ContentName))
                     || (hasDraft && _session?.Mode == _homeTab && layout != null)
                 )
         );
         _home.Caption(
             "EditorOpen",
-            missionTab ? "OPEN MISSION EDITOR"
-                : _newLevel ? "CREATE & OPEN LEVEL"
+            _newContent ? (missionTab ? "CREATE & OPEN MISSION" : "CREATE & OPEN LEVEL")
+                : missionTab ? "OPEN MISSION EDITOR"
                 : "OPEN LEVEL EDITOR"
         );
         _home.Interactable("EditorCampaignTest", available && hasDraft);
@@ -720,8 +724,8 @@ public sealed class EditorMode : MonoBehaviour
         _home.Visible("EditorOpen", !_connectionFailed && (Authenticated || _busy));
         if (_busy || !Ready)
             _home.DismissPicker();
-        if (!_busy && !_returning && Input.GetKeyDown(KeyCode.Escape) && !_home.DismissPicker())
-            Run(ReturnToGame);
+        if (!_busy && !_returning && Input.GetKeyDown(KeyCode.Escape))
+            _home.DismissPicker();
     }
 
     private void SelectMap()
@@ -742,10 +746,10 @@ public sealed class EditorMode : MonoBehaviour
     {
         if (!Ready || Plugin.InRaid)
             return;
-        if (_homeTab == EditorContentMode.Level && _newLevel)
+        if (_newContent)
         {
-            await Call("create-level", name: _home!.LevelName.Trim());
-            _newLevel = false;
+            await Call(_homeTab == EditorContentMode.Mission ? "create-mission" : "create-level", name: _home!.ContentName.Trim());
+            _newContent = false;
         }
         if (_session?.Mode != _homeTab)
             throw new InvalidOperationException("Select content from the current editor tab before opening its map.");

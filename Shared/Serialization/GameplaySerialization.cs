@@ -71,7 +71,14 @@ internal static class GameplaySerialization
                 nameof(SeasonDocument.Image),
                 nameof(SeasonDocument.UnavailableImage),
             },
-            [typeof(MissionDefinition)] = new() { nameof(MissionDefinition.Name), nameof(MissionDefinition.Briefing) },
+            [typeof(MissionDefinition)] = new()
+            {
+                nameof(MissionDefinition.Name),
+                nameof(MissionDefinition.Briefing),
+                nameof(MissionDefinition.NotificationIcon),
+                nameof(MissionDefinition.CheckpointNotificationIcon),
+            },
+            [typeof(MissionObjective)] = new() { nameof(MissionObjective.NotificationIcon) },
             [typeof(SeasonReward)] = new()
             {
                 nameof(SeasonReward.Name),

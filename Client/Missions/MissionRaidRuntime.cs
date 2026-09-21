@@ -62,6 +62,8 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
     private readonly Dictionary<string, string> _progressOperations = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _progressGate = new(1, 1);
     private MissionDescriptor? _descriptor;
+    private MissionEnvironment? _missionEnvironment;
+    private MissionRaidTimer? _missionTimer;
     private MissionRun? _run;
     private MissionHud? _hud;
     private MissionLoot? _loot;
@@ -150,6 +152,8 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
         Instance = this;
         MissionStartupGuard.Install();
     }
+
+    private void LateUpdate() => _hud?.Tick();
 
     private void Update()
     {
@@ -284,6 +288,8 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             var run = response.Run ?? throw new InvalidOperationException("The mission run state is unavailable.");
             ValidateDescriptor(descriptor, run);
             _descriptor = descriptor;
+            _missionTimer = new MissionRaidTimer(descriptor.Definition.TimeLimitMinutes, rehearsal: false);
+            _missionEnvironment = new MissionEnvironment(descriptor.Definition.Environment);
             _run = run;
             _revision = response.Revision;
             _missionContext = new EncounterRuntimeContext
@@ -337,17 +343,17 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             // then place the player at the authored start in the same frame.
             _player!.Teleport(startPosition);
             _player.Rotation = new Vector2(descriptor.Layout.Start.Rotation.Y, descriptor.Layout.Start.Rotation.X);
-            _hud = new MissionHud(descriptor.Definition.Name);
+            _hud = new MissionHud(descriptor.Definition, descriptor.Layout, run);
             _active = true;
             _ending = false;
             _successfulExitRequested = false;
-            _hud.SetRoute(run.NextCheckpointIndex, descriptor.Layout.Checkpoints.Count, run.ExitReached, "Mission active");
             if (descriptor.Definition.CheckpointRetries)
                 await CaptureStartCheckpoint(lifetime.Token);
             _encounters.MissionStart();
             _director?.Observe(new MissionSignal { Kind = MissionSignals.Start });
             _pending = null;
             MissionStartupGuard.End(_player);
+            _missionTimer?.Resume();
         }
         catch (OperationCanceledException) when (lifetime.IsCancellationRequested)
         {
@@ -627,7 +633,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
                 _revision = response.Revision;
                 _run = response.Run ?? throw new InvalidDataException("Mission observations returned no run state.");
                 director.Accept(_run.Logic);
-                _hud?.SetObjectives(_descriptor!.Definition, _descriptor.Layout, _run.Logic);
+                _hud?.Accept(_run);
                 CheckObjectiveFailure();
             }
         }
@@ -730,14 +736,11 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             _director?.Accept(_run.Logic);
             if (saveCheckpoint)
                 ReleaseRetryHold();
-            if (kind == "Checkpoint")
-            {
-                _hud?.SetRoute(_run.NextCheckpointIndex, descriptor.Layout.Checkpoints.Count, _run.ExitReached, "Checkpoint secured");
-            }
-            else
+            _hud?.Accept(_run);
+            if (kind != "Checkpoint")
             {
                 _run.ExitReached = true;
-                _hud?.SetRoute(_run.NextCheckpointIndex, descriptor.Layout.Checkpoints.Count, true, "Extracting…");
+                _hud?.SetStatus("Extracting…");
                 if (response.Committed)
                     RequestNativeExit();
             }
@@ -857,8 +860,12 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
 
     private void EndRuntime()
     {
+        _missionEnvironment?.Dispose();
+        _missionEnvironment = null;
         _retryGuard?.Dispose();
         _retryGuard = null;
+        _missionTimer?.Dispose();
+        _missionTimer = null;
         _checkpoint = null;
         _retryBusy = _retryBroken = _retryShown = false;
         _retryFailure = "";

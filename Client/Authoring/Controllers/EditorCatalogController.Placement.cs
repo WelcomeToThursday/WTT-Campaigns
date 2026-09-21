@@ -271,12 +271,8 @@ internal sealed partial class EditorCatalogController
         _placementPooled = false;
         if (inspectLast && lastId.Length > 0)
         {
-            _sceneTab = "Existing";
-            _sceneFilter = "All";
+            // Inspect the copy without navigating away from the catalog page.
             _context.SelectionId = lastId;
-            _context.Page = 0;
-            _context.LibraryKey = "";
-            _context.View?.Value("Search", "");
             _context.Refresh();
             _context.View?.Windows.ShowPanel("Inspector", true);
         }

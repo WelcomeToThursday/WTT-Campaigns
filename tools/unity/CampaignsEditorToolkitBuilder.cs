@@ -26,6 +26,9 @@ public static class CampaignsEditorToolkitBuilder
         "ContextMenu",
         "Console",
         "ConsoleRow",
+        "Navigation",
+        "Terrain",
+        "TerrainPaletteItem",
         "Controls",
         "DockDivider",
         "DockTab",
@@ -111,6 +114,36 @@ public static class CampaignsEditorToolkitBuilder
                         "OverlayBounds:Toggle",
                         "OverlayHandles:Toggle",
                     }
+                : name == "Terrain"
+                    ? new[]
+                    {
+                        "TerrainPalette:VisualElement",
+                        "TerrainScroll:ScrollView",
+                        "TerrainRadius:TextField",
+                        "TerrainPaint:Button",
+                        "TerrainGrass:Button",
+                        "TerrainFeedback:Label",
+                    }
+                : name == "TerrainPaletteItem" ? new[] { "Thumbnail:Image", "Caption:Label" }
+                : name == "Navigation"
+                    ? new[]
+                    {
+                        "NavBuild:Button",
+                        "NavCancel:Button",
+                        "NavRestore:Button",
+                        "NavState:Label",
+                        "NavStatus:Label",
+                        "NavFloorLock:Toggle",
+                        "NavAdvanced:Toggle",
+                        "NavBrushSize:TextField",
+                        "NavPaintAdd:Button",
+                        "NavPaintBlock:Button",
+                        "NavPaintErase:Button",
+                        "NavPaintConnect:Button",
+                        "NavPaintPath:Button",
+                        "NavigationScroll:ScrollView",
+                        "NavIssueSelect:Button",
+                    }
                 : name == "Console"
                     ? new[]
                     {
@@ -167,6 +200,8 @@ public static class CampaignsEditorToolkitBuilder
                 throw new InvalidOperationException("Wrong editor control template type: " + name);
             if (name == "GameViewport" && (!(first[0] is Image) || first[0].pickingMode != PickingMode.Ignore))
                 throw new InvalidOperationException("Viewport must be an image that leaves input to the editor.");
+            if (name == "RouteLegend" && (!(first[0] is ScrollView) || first.Q<Label>("RouteLegendText") == null))
+                throw new InvalidOperationException("Route diagnostics require a scrollable legend with a text label.");
             if (name == "Library")
             {
                 var search = first.Q<TextField>("Search");
@@ -206,6 +241,9 @@ public static class CampaignsEditorToolkitBuilder
             }
             if (name == "Inspector")
             {
+                foreach (var id in new[] { "AiWaypointInsert", "AiWaypointEarlier", "AiWaypointLater", "AiRouteReverse" })
+                    if (first.Q<Button>(id) == null || second.Q<Button>(id) == null)
+                        throw new InvalidOperationException("Missing patrol editing control: " + id);
                 foreach (
                     var id in new[]
                     {
@@ -303,6 +341,768 @@ public static class CampaignsEditorToolkitBuilder
                 if (help == null || help.text.Split('\n').Length != 6)
                     throw new InvalidOperationException("Help template must preserve the six instruction lines in its scroll view.");
             }
+        }
+    }
+
+    private static void ValidateNavigationShader(Shader shader)
+    {
+        if (!shader || ShaderUtil.ShaderHasError(shader) || !shader.isSupported)
+            throw new InvalidOperationException("Navigation surface shader failed to compile or reload.");
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+        {
+            Debug.Log(
+                "Navigation shader compiled; GPU pixel checks skipped on the headless device. Use UnityGraphicsArguments=-force-d3d11 for pixel checks."
+            );
+            return;
+        }
+        var previous = RenderTexture.active;
+        var host = new GameObject("Navigation shader validation camera");
+        var surface = new GameObject("Navigation shader validation surface");
+        var blocker = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        var target = new RenderTexture(32, 32, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+        var readback = new Texture2D(32, 32, TextureFormat.RGBA32, false, true);
+        var material = new Material(shader);
+        var opaque = new Material(Shader.Find("Unlit/Color")) { color = Color.black };
+        var mesh = new Mesh();
+        try
+        {
+            target.Create();
+            var camera = host.AddComponent<Camera>();
+            camera.enabled = false;
+            camera.orthographic = true;
+            camera.orthographicSize = 1;
+            camera.nearClipPlane = .1f;
+            camera.farClipPlane = 10;
+            camera.transform.position = new Vector3(0, 0, -3);
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.cullingMask = 1 << 31;
+            camera.targetTexture = target;
+            camera.allowHDR = camera.allowMSAA = false;
+            camera.renderingPath = RenderingPath.Forward;
+            surface.layer = blocker.layer = 31;
+            mesh.vertices = new[] { new Vector3(-1, -1, 0), new Vector3(-1, 1, 0), new Vector3(1, 1, 0), new Vector3(1, -1, 0) };
+            mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+            mesh.RecalculateBounds();
+            surface.AddComponent<MeshFilter>().sharedMesh = mesh;
+            surface.AddComponent<MeshRenderer>().sharedMaterial = material;
+            blocker.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            blocker.transform.localScale = Vector3.one * 2;
+            blocker.transform.position = Vector3.forward;
+            material.SetFloat("_Diagnostic", 1);
+            Color Render(float issues)
+            {
+                mesh.uv = new[] { new Vector2(issues, 0), new Vector2(issues, 0), new Vector2(issues, 0), new Vector2(issues, 0) };
+                camera.Render();
+                RenderTexture.active = target;
+                readback.ReadPixels(new Rect(0, 0, 32, 32), 0, 0);
+                readback.Apply();
+                return readback.GetPixel(16, 16);
+            }
+            var clear = Render(0);
+            if (clear.b <= clear.r * 2 || clear.b < .02f)
+                throw new InvalidOperationException("Navigation shader lost clear-sample tint.");
+            var visible = Render(6);
+            if (visible.r < .1f || visible.r <= visible.b * 2)
+                throw new InvalidOperationException("Navigation shader lost overlapping issue severity.");
+            material.SetFloat("_IssueFilter", 4);
+            var purple = Render(6);
+            if (purple.b < .1f || purple.r <= purple.g)
+                throw new InvalidOperationException("Navigation shader cannot filter overlapping connectivity issues.");
+            material.SetFloat("_IssueFilter", 8);
+            var filtered = Render(6);
+            if (filtered.maxColorComponent > .02f)
+                throw new InvalidOperationException("Navigation shader does not hide nonmatching issues.");
+            material.SetFloat("_IssueFilter", 0);
+            blocker.transform.position = -Vector3.forward;
+            if (Render(6).r > .02f)
+                throw new InvalidOperationException("Raw navigation should retain normal world occlusion.");
+            blocker.transform.position = Vector3.forward;
+            material.SetFloat("_Stale", 1);
+            var stale = Render(6);
+            if (stale.b < .005f || stale.r > stale.b * 1.2f)
+                throw new InvalidOperationException("Stale navigation diagnostics retain a false issue color.");
+            material.SetFloat("_Stale", 0);
+            material.SetFloat("_Diagnostic", 0);
+            material.color = new Color(.2f, .65f, 1, .3f);
+            foreach (var rendering in new[] { RenderingPath.Forward, RenderingPath.DeferredShading })
+            {
+                camera.renderingPath = rendering;
+                blocker.transform.position = Vector3.forward;
+                var nativeVisible = Render(0);
+                blocker.transform.position = -Vector3.forward;
+                var nativeBuried = Render(0);
+                if (nativeVisible.b < .1f || nativeBuried.b > .02f)
+                    throw new InvalidOperationException("Native navigation terrain occlusion regression in " + rendering);
+            }
+            Debug.Log("Navigation GPU regression: exposed/occluded surfaces, overlapping diagnostic filters and stale tint passed.");
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            UnityEngine.Object.DestroyImmediate(host);
+            UnityEngine.Object.DestroyImmediate(surface);
+            UnityEngine.Object.DestroyImmediate(blocker);
+            UnityEngine.Object.DestroyImmediate(mesh);
+            UnityEngine.Object.DestroyImmediate(material);
+            UnityEngine.Object.DestroyImmediate(opaque);
+            UnityEngine.Object.DestroyImmediate(readback);
+            target.Release();
+            UnityEngine.Object.DestroyImmediate(target);
+        }
+    }
+
+    private static void ValidateGroundProjection(Shader shader)
+    {
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            return;
+        var previous = RenderTexture.active;
+        var host = new GameObject("Navigation projection validation camera");
+        var ground = new GameObject("Navigation projection curved ground") { layer = 31 };
+        var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var upper = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var pipe = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        var foliage = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        var grass = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        var terrainData = new TerrainData { heightmapResolution = 33, size = new Vector3(8, 4, 8) };
+        var hill = new Mesh();
+        var footprint = new Mesh();
+        var floorFootprint = new Mesh();
+        var floorMaterial = new Material(shader) { color = new Color(.2f, .65f, 1, .3f) };
+        var opaque = new Material(
+            AssetDatabase.LoadAssetAtPath<Shader>("Assets/Mods/WTT-Campaigns.Assets/EditorToolkit/NavigationProjectionTest.shader")
+        );
+        var material = new Material(shader) { color = new Color(.2f, .65f, 1, .3f) };
+        var commands = new UnityEngine.Rendering.CommandBuffer();
+        var source = new RenderTexture(256, 192, 24);
+        var copy = new Material(
+            AssetDatabase.LoadAssetAtPath<Shader>("Assets/Mods/WTT-Campaigns.Assets/EditorToolkit/ViewportCopy.shader")
+        );
+        var processed = new RenderTexture(256, 192, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+        var layer = new RenderTexture(128, 96, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+        var readback = new Texture2D(128, 96, TextureFormat.RGBA32, false, true);
+        try
+        {
+            material.SetFloat("_ProjectGround", 1);
+            floorMaterial.SetFloat("_ProjectGround", 1);
+            floorFootprint.vertices = new[]
+            {
+                new Vector3(1, 3.6f, 2.5f),
+                new Vector3(1, 3.6f, 3.5f),
+                new Vector3(2, 3.6f, 3.5f),
+                new Vector3(2, 3.6f, 2.5f),
+            };
+            floorFootprint.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+            floorFootprint.RecalculateBounds();
+            var vertices = new List<Vector3>();
+            var indices = new List<int>();
+            for (var z = 0; z <= 32; z++)
+            for (var x = 0; x <= 32; x++)
+                vertices.Add(new Vector3(x * .25f, 1.2f * Mathf.Sin(x * Mathf.PI / 32) * Mathf.Sin(z * Mathf.PI / 32), z * .25f));
+            for (var z = 0; z < 32; z++)
+            for (var x = 0; x < 32; x++)
+            {
+                var a = z * 33 + x;
+                indices.AddRange(new[] { a, a + 33, a + 34, a, a + 34, a + 1 });
+            }
+            var heights = new float[33, 33];
+            for (var z = 0; z <= 32; z++)
+            for (var x = 0; x <= 32; x++)
+                heights[z, x] = vertices[z * 33 + x].y / 4;
+            terrainData.SetHeights(0, 0, heights);
+            material.SetFloat("_TerrainReceiver", 1);
+            material.SetTexture("_TerrainHeightmap", terrainData.heightmapTexture);
+            material.SetVector("_TerrainRegion", new Vector4(0, 0, 1f / 8, 1f / 8));
+            material.SetVector("_TerrainHeight", new Vector4(0, 4 * (65535f / 32766f), 32f / 33, .5f / 33));
+            hill.SetVertices(vertices);
+            hill.SetTriangles(indices, 0);
+            hill.RecalculateNormals();
+            hill.RecalculateBounds();
+            ground.AddComponent<MeshFilter>().sharedMesh = hill;
+            ground.AddComponent<MeshRenderer>().sharedMaterial = opaque;
+            var groundCollider = ground.AddComponent<MeshCollider>();
+            groundCollider.sharedMesh = hill;
+            wall.layer = upper.layer = pipe.layer = foliage.layer = grass.layer = 31;
+            pipe.transform.position = new Vector3(4, 1.6f, 6);
+            pipe.transform.rotation = Quaternion.Euler(0, 0, 90);
+            pipe.transform.localScale = new Vector3(.4f, 2, .4f);
+            foliage.transform.position = new Vector3(1.5f, 1.2f, 2);
+            foliage.transform.localScale = new Vector3(1.2f, .8f, 1.2f);
+            grass.transform.position = new Vector3(6.8f, .55f, 1);
+            grass.transform.rotation = Quaternion.Euler(60, 0, 0);
+            grass.transform.localScale = new Vector3(1, .7f, 1);
+            pipe.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            foliage.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            grass.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            // Primitive sphere/capsule colliders do not match nonuniformly scaled
+            // rendered meshes. The pixel oracle must use the visible geometry.
+            UnityEngine.Object.DestroyImmediate(foliage.GetComponent<Collider>());
+            foliage.AddComponent<MeshCollider>().sharedMesh = foliage.GetComponent<MeshFilter>().sharedMesh;
+            UnityEngine.Object.DestroyImmediate(pipe.GetComponent<Collider>());
+            pipe.AddComponent<MeshCollider>().sharedMesh = pipe.GetComponent<MeshFilter>().sharedMesh;
+            wall.transform.position = new Vector3(6, 1.5f, 3);
+            wall.transform.localScale = new Vector3(.3f, 3, 2);
+            upper.transform.position = new Vector3(1.5f, 3.5f, 3);
+            upper.transform.localScale = new Vector3(1, .2f, 1);
+            wall.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            upper.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            vertices.Clear();
+            indices.Clear();
+            void Rect(float x0, float z0, float x1, float z1)
+            {
+                var a = vertices.Count;
+                vertices.AddRange(new[] { new Vector3(x0, 0, z0), new Vector3(x0, 0, z1), new Vector3(x1, 0, z1), new Vector3(x1, 0, z0) });
+                indices.AddRange(new[] { a, a + 1, a + 2, a, a + 2, a + 3 });
+            }
+            Rect(0, 0, 3, 8);
+            Rect(5, 0, 8, 8);
+            Rect(3, 0, 5, 3);
+            Rect(3, 5, 5, 8);
+            footprint.SetVertices(vertices);
+            footprint.SetTriangles(indices, 0);
+            footprint.RecalculateBounds();
+            var camera = host.AddComponent<Camera>();
+            camera.enabled = false;
+            camera.cullingMask = 1 << 31;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.nearClipPlane = .05f;
+            camera.farClipPlane = 100;
+            camera.allowHDR = camera.allowMSAA = false;
+            camera.depthTextureMode = DepthTextureMode.Depth;
+            camera.targetTexture = source;
+            camera.aspect = 128f / 96;
+            source.Create();
+            layer.Create();
+            processed.Create();
+            var colliders = new[]
+            {
+                (Collider)groundCollider,
+                wall.GetComponent<Collider>(),
+                upper.GetComponent<Collider>(),
+                pipe.GetComponent<Collider>(),
+                foliage.GetComponent<Collider>(),
+                grass.GetComponent<Collider>(),
+            };
+            Physics.SyncTransforms();
+            camera.AddCommandBuffer(UnityEngine.Rendering.CameraEvent.BeforeForwardAlpha, commands);
+            foreach (var rendering in new[] { RenderingPath.Forward, RenderingPath.DeferredShading })
+            foreach (var pose in new[] { new Vector3(4, 8, -6), new Vector3(2, 1, -1) })
+            foreach (var floor in new[] { false, true })
+            foreach (var nativeFlip in new[] { false, true })
+            {
+                camera.renderingPath = rendering;
+                camera.transform.position = pose;
+                camera.transform.LookAt(new Vector3(4, .6f, 4));
+                camera.ResetProjectionMatrix();
+                material.SetVector("_FloorBand", floor ? new Vector4(.5f, 1.1f, 0, 0) : new Vector4(-100000, 100000, 0, 0));
+                floorMaterial.SetVector("_FloorBand", floor ? new Vector4(.5f, 1.1f, 0, 0) : new Vector4(-100000, 100000, 0, 0));
+                commands.Clear();
+                commands.DrawMesh(footprint, Matrix4x4.identity, material, 0, material.FindPass("GroundProjection"));
+                commands.DrawMesh(floorFootprint, Matrix4x4.identity, floorMaterial, 0, floorMaterial.FindPass("GroundProjection"));
+                camera.Render();
+                // Exercise the final composition, including a native image-effect
+                // Y flip and a 2x -> docked viewport resize. Coverage must follow
+                // the same pixels as the physical scene through both operations.
+                if (nativeFlip)
+                    Graphics.Blit(source, processed, copy);
+                else
+                    Graphics.Blit(source, processed);
+                Graphics.Blit(processed, layer, copy);
+                RenderTexture.active = layer;
+                readback.ReadPixels(new Rect(0, 0, 128, 96), 0, 0);
+                readback.Apply();
+                var pixels = readback.GetPixels();
+                int raisedSamples = 0,
+                    raisedTint = 0,
+                    floorSamples = 0,
+                    floorMisses = 0;
+                int expected = 0,
+                    missed = 0,
+                    forbidden = 0,
+                    leaked = 0;
+                for (var y = 1; y < 95; y++)
+                for (var x = 1; x < 127; x++)
+                {
+                    var ray = camera.ViewportPointToRay(new Vector3((x + .5f) / 128, (y + .5f) / 96, 0));
+                    RaycastHit closest = default;
+                    var distance = float.PositiveInfinity;
+                    foreach (var collider in colliders)
+                        if (collider.Raycast(ray, out var hit, 100) && hit.distance < distance)
+                        {
+                            closest = hit;
+                            distance = hit.distance;
+                        }
+                    var presentedY = SystemInfo.graphicsUVStartsAtTop && !nativeFlip ? 95 - y : y;
+                    var pixel = pixels[presentedY * 128 + x];
+                    var painted = pixel.b - pixel.r > .15f;
+                    if (float.IsPositiveInfinity(distance))
+                    {
+                        forbidden++;
+                        if (painted)
+                            leaked++;
+                        continue;
+                    }
+                    var p = closest.point;
+                    // Ignore raster boundaries in the comparison, not whole missing areas.
+                    if (Mathf.Min(Mathf.Abs(p.x - 3), Mathf.Abs(p.x - 5), Mathf.Abs(p.z - 3), Mathf.Abs(p.z - 5)) < .12f)
+                        continue;
+                    if (p.x < .12f || p.x > 7.88f || p.z < .12f || p.z > 7.88f)
+                        continue;
+                    if (floor && (Mathf.Abs(p.y - .5f) < .08f || Mathf.Abs(p.y - 1.1f) < .08f))
+                        continue;
+                    var raisedObject =
+                        closest.collider.gameObject == pipe
+                        || closest.collider.gameObject == foliage
+                        || closest.collider.gameObject == grass;
+                    if (raisedObject)
+                    {
+                        raisedSamples++;
+                        if (painted)
+                            raisedTint++;
+                    }
+                    var floorTop = closest.collider.gameObject == upper && closest.normal.y > .9f && !floor;
+                    if (floorTop && p.x > 1.1f && p.x < 1.9f && p.z > 2.6f && p.z < 3.4f)
+                    {
+                        floorSamples++;
+                        if (!painted)
+                            floorMisses++;
+                    }
+                    var wanted =
+                        (floorTop || (closest.collider == groundCollider && !(p.x > 3 && p.x < 5 && p.z > 3 && p.z < 5) && p.y < 2))
+                        && Mathf.Abs(closest.normal.y) > .45f
+                        && (!floor || (p.y >= .5f && p.y <= 1.1f));
+                    if (wanted)
+                    {
+                        expected++;
+                        if (!painted)
+                            missed++;
+                    }
+                    else
+                    {
+                        forbidden++;
+                        if (painted)
+                        {
+                            leaked++;
+                        }
+                    }
+                }
+                Debug.Log(
+                    $"Receiver rejection: {raisedTint}/{raisedSamples} raised-object pixels tinted; {floorSamples - floorMisses}/{floorSamples} elevated floor pixels covered."
+                );
+                if (raisedTint > 3 || floorMisses > 2 || (pose.y > 5 && (raisedSamples < 10 || (!floor && floorSamples < 2))))
+                    throw new InvalidOperationException("Surface receiver regression: foliage/pipe tint or missing elevated floor.");
+                if (expected < 30 || missed > expected * .03f || leaked > forbidden * .01f + 5)
+                    throw new InvalidOperationException(
+                        $"Ground projection failed {rendering}/{pose}/floor={floor}/nativeFlip={nativeFlip}: expected={expected}, missed={missed}, forbidden={forbidden}, leaked={leaked}."
+                    );
+                Debug.Log(
+                    $"Ground projection GPU: {rendering}, camera={pose}, floor={floor}, nativeFlip={nativeFlip}, covered={expected - missed}/{expected}, leaks={leaked}/{forbidden}; curved ground, real hole, wall, upper floor, foliage, grass, pipe and final viewport composition from a 2x native target."
+                );
+            }
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            commands.Release();
+            UnityEngine.Object.DestroyImmediate(host);
+            UnityEngine.Object.DestroyImmediate(ground);
+            UnityEngine.Object.DestroyImmediate(wall);
+            UnityEngine.Object.DestroyImmediate(upper);
+            UnityEngine.Object.DestroyImmediate(pipe);
+            UnityEngine.Object.DestroyImmediate(foliage);
+            UnityEngine.Object.DestroyImmediate(grass);
+            UnityEngine.Object.DestroyImmediate(terrainData);
+            UnityEngine.Object.DestroyImmediate(hill);
+            UnityEngine.Object.DestroyImmediate(footprint);
+            UnityEngine.Object.DestroyImmediate(floorFootprint);
+            UnityEngine.Object.DestroyImmediate(floorMaterial);
+            UnityEngine.Object.DestroyImmediate(opaque);
+            UnityEngine.Object.DestroyImmediate(material);
+            UnityEngine.Object.DestroyImmediate(copy);
+            processed.Release();
+            UnityEngine.Object.DestroyImmediate(processed);
+            UnityEngine.Object.DestroyImmediate(readback);
+            source.Release();
+            layer.Release();
+            UnityEngine.Object.DestroyImmediate(source);
+            UnityEngine.Object.DestroyImmediate(layer);
+        }
+    }
+
+    private static void ValidateNavigationFloors(Shader shader)
+    {
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            return;
+        var previous = RenderTexture.active;
+        var objects = new List<GameObject>();
+        var meshes = new List<Mesh>();
+        var receivers = new HashSet<Collider>();
+        var colliders = new List<Collider>();
+        var opaque = new Material(
+            AssetDatabase.LoadAssetAtPath<Shader>("Assets/Mods/WTT-Campaigns.Assets/EditorToolkit/NavigationProjectionTest.shader")
+        );
+        var surface = new Material(shader) { color = new Color(.2f, .65f, 1, .3f) };
+        var commands = new UnityEngine.Rendering.CommandBuffer();
+        var target = new RenderTexture(512, 384, 24);
+        var readback = new Texture2D(512, 384, TextureFormat.RGBA32, false, true);
+        var vertices = new List<Vector3>();
+        var indices = new List<int>();
+        GameObject Box(string name, Vector3 center, Vector3 size, bool receiver)
+        {
+            var obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            objects.Add(obj);
+            obj.name = name;
+            obj.layer = 31;
+            obj.transform.position = center;
+            obj.transform.localScale = size;
+            obj.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            var collider = obj.GetComponent<Collider>();
+            colliders.Add(collider);
+            if (receiver)
+                receivers.Add(collider);
+            return obj;
+        }
+        void Coverage(float x0, float x1, float z0, float z1, float y0, float y1)
+        {
+            var first = vertices.Count;
+            vertices.AddRange(new[] { new Vector3(x0, y0, z0), new Vector3(x0, y1, z1), new Vector3(x1, y1, z1), new Vector3(x1, y0, z0) });
+            indices.AddRange(new[] { first, first + 1, first + 2, first, first + 2, first + 3 });
+        }
+        try
+        {
+            var floor = Box("Offset indoor floor", new Vector3(0, -.1f, 6), new Vector3(18, .2f, 16), true);
+            Coverage(-9, 9, -2, 14, .18f, .18f);
+            // Two triangle ramp, with the baked navigation surface lifted by a voxel.
+            var ramp = new GameObject("Sloping ramp") { layer = 31 };
+            objects.Add(ramp);
+            var rampMesh = new Mesh();
+            meshes.Add(rampMesh);
+            rampMesh.vertices = new[] { new Vector3(-3, 0, 2), new Vector3(-3, 3, 8), new Vector3(0, 3, 8), new Vector3(0, 0, 2) };
+            rampMesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+            rampMesh.RecalculateNormals();
+            rampMesh.RecalculateBounds();
+            ramp.AddComponent<MeshFilter>().sharedMesh = rampMesh;
+            ramp.AddComponent<MeshRenderer>().sharedMaterial = opaque;
+            var rampCollider = ramp.AddComponent<MeshCollider>();
+            rampCollider.sharedMesh = rampMesh;
+            colliders.Add(rampCollider);
+            receivers.Add(rampCollider);
+            Coverage(-3, 0, 2, 8, .18f, 3.18f);
+            // Twelve discrete treads represented by one smooth navigation ramp.
+            for (var step = 0; step < 12; step++)
+                Box(
+                    "Stair tread",
+                    new Vector3(3.5f, (step + 1) * .125f, 2 + (step + .5f) * .5f),
+                    new Vector3(3, (step + 1) * .25f, .5f),
+                    true
+                );
+            Coverage(2, 5, 2, 8, .15f, 3.15f);
+            var upper = Box("Upper storey", new Vector3(-5, 3.9f, 5), new Vector3(3, .2f, 4), true);
+            Coverage(-6.5f, -3.5f, 3, 7, 4.18f, 4.18f);
+            Box("Furniture", new Vector3(7, .5f, 5), new Vector3(1.5f, 1, 2), false);
+            Box("Unmapped overhead slab", new Vector3(0, 1.1f, 11), new Vector3(3, .2f, 2), false);
+            Box("Wall", new Vector3(-7, 1.5f, 10), new Vector3(.3f, 3, 3), false);
+            var footprint = new Mesh();
+            meshes.Add(footprint);
+            footprint.SetVertices(vertices);
+            footprint.SetTriangles(indices, 0);
+            footprint.RecalculateBounds();
+            var host = new GameObject("Indoor navigation validation camera");
+            objects.Add(host);
+            var camera = host.AddComponent<Camera>();
+            camera.enabled = false;
+            camera.cullingMask = 1 << 31;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.nearClipPlane = .05f;
+            camera.farClipPlane = 200;
+            camera.allowHDR = camera.allowMSAA = false;
+            camera.depthTextureMode = DepthTextureMode.Depth;
+            camera.targetTexture = target;
+            target.Create();
+            Physics.SyncTransforms();
+            surface.SetFloat("_ProjectGround", 1);
+            camera.AddCommandBuffer(UnityEngine.Rendering.CameraEvent.BeforeForwardAlpha, commands);
+            foreach (var path in new[] { RenderingPath.Forward, RenderingPath.DeferredShading })
+            foreach (var pose in new[] { new Vector3(12, 14, -8), new Vector3(-11, 9, 16) })
+            foreach (var strict in new[] { false, true })
+            {
+                camera.renderingPath = path;
+                camera.transform.position = pose;
+                camera.transform.LookAt(new Vector3(0, 1, 6));
+                surface.SetVector("_MeshContactRange", strict ? new Vector4(.06f, .06f, 0, .45f) : new Vector4(.64f, .16f, .38f, .6428f));
+                commands.Clear();
+                commands.DrawMesh(footprint, Matrix4x4.identity, surface, 0, surface.FindPass("GroundProjection"));
+                camera.Render();
+                RenderTexture.active = target;
+                readback.ReadPixels(new Rect(0, 0, 512, 384), 0, 0);
+                readback.Apply();
+                var pixels = readback.GetPixels();
+                int expected = 0,
+                    painted = 0,
+                    forbidden = 0,
+                    leaked = 0,
+                    stairSamples = 0,
+                    stairPainted = 0,
+                    rampSamples = 0,
+                    rampPainted = 0;
+                for (var y = 1; y < 383; y++)
+                for (var x = 1; x < 511; x++)
+                {
+                    var ray = camera.ViewportPointToRay(new Vector3((x + .5f) / 512, (y + .5f) / 384, 0));
+                    RaycastHit closest = default;
+                    var distance = float.PositiveInfinity;
+                    foreach (var collider in colliders)
+                        if (collider.Raycast(ray, out var hit, 200) && hit.distance < distance)
+                        {
+                            closest = hit;
+                            distance = hit.distance;
+                        }
+                    if (float.IsPositiveInfinity(distance))
+                        continue;
+                    var p = closest.point;
+                    // Omit geometry silhouettes and tread lips, where pixel coverage is mixed.
+                    var b = closest.collider.bounds;
+                    if (
+                        Mathf.Min(Mathf.Abs(p.x - b.min.x), Mathf.Abs(p.x - b.max.x), Mathf.Abs(p.z - b.min.z), Mathf.Abs(p.z - b.max.z))
+                        < .06f
+                    )
+                        continue;
+                    if (closest.collider == rampCollider || closest.collider.gameObject.name == "Stair tread")
+                    {
+                        // A world-space margin alone is insufficient at grazing
+                        // angles. Exclude pixels whose immediate screen neighbors
+                        // see a different surface or a riser instead of this tread.
+                        var interior = true;
+                        for (var side = 0; side < 4 && interior; side++)
+                        {
+                            var nx =
+                                x
+                                + (
+                                    side == 0 ? -1
+                                    : side == 1 ? 1
+                                    : 0
+                                );
+                            var ny =
+                                y
+                                + (
+                                    side == 2 ? -1
+                                    : side == 3 ? 1
+                                    : 0
+                                );
+                            var neighborRay = camera.ViewportPointToRay(new Vector3((nx + .5f) / 512, (ny + .5f) / 384, 0));
+                            RaycastHit neighbor = default;
+                            var neighborDistance = float.PositiveInfinity;
+                            foreach (var collider in colliders)
+                                if (collider.Raycast(neighborRay, out var hit, 200) && hit.distance < neighborDistance)
+                                {
+                                    neighbor = hit;
+                                    neighborDistance = hit.distance;
+                                }
+                            interior = neighbor.collider == closest.collider && Vector3.Dot(neighbor.normal, closest.normal) > .98f;
+                        }
+                        if (!interior)
+                            continue;
+                    }
+                    var color = pixels[y * 512 + x];
+                    var tinted = color.b - color.r > .15f;
+                    var wanted = receivers.Contains(closest.collider) && closest.normal.y > .64f;
+                    if (wanted)
+                    {
+                        expected++;
+                        if (tinted)
+                            painted++;
+                    }
+                    else
+                    {
+                        forbidden++;
+                        if (tinted)
+                            leaked++;
+                    }
+                    if (closest.collider.gameObject.name == "Stair tread" && closest.normal.y > .9f)
+                    {
+                        stairSamples++;
+                        if (tinted)
+                            stairPainted++;
+                    }
+                    if (closest.collider == rampCollider)
+                    {
+                        rampSamples++;
+                        if (tinted)
+                            rampPainted++;
+                    }
+                }
+                Debug.Log(
+                    $"Indoor navigation GPU: {path}, camera={pose}, strict={strict}, floor coverage={painted}/{expected}, stair treads={stairPainted}/{stairSamples}, ramp={rampPainted}/{rampSamples}, forbidden tint={leaked}/{forbidden}."
+                );
+                if (
+                    expected < 100
+                    || stairSamples < 40
+                    || rampSamples < 40
+                    || (
+                        strict
+                            ? painted > expected * .7f
+                            : painted < expected * .97f || stairPainted < stairSamples * .97f || rampPainted < rampSamples * .97f
+                    )
+                    || leaked > forbidden * .01f + 3
+                )
+                    throw new InvalidOperationException("Indoor floor/ramp/stair receiver regression.");
+            }
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            commands.Release();
+            foreach (var obj in objects)
+                UnityEngine.Object.DestroyImmediate(obj);
+            foreach (var mesh in meshes)
+                UnityEngine.Object.DestroyImmediate(mesh);
+            UnityEngine.Object.DestroyImmediate(opaque);
+            UnityEngine.Object.DestroyImmediate(surface);
+            UnityEngine.Object.DestroyImmediate(readback);
+            target.Release();
+            UnityEngine.Object.DestroyImmediate(target);
+        }
+    }
+
+    private static void ValidateNavigationDistance(Shader shader)
+    {
+        if (SystemInfo.graphicsDeviceType == UnityEngine.Rendering.GraphicsDeviceType.Null)
+            return;
+        var previous = RenderTexture.active;
+        var host = new GameObject("Navigation distance camera");
+        var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        var terrain = new TerrainData { heightmapResolution = 33, size = new Vector3(600, 4, 600) };
+        var footprint = new Mesh();
+        var surface = new Material(shader) { color = new Color(.2f, .65f, 1, .3f) };
+        var opaque = new Material(
+            AssetDatabase.LoadAssetAtPath<Shader>("Assets/Mods/WTT-Campaigns.Assets/EditorToolkit/NavigationProjectionTest.shader")
+        );
+        var commands = new UnityEngine.Rendering.CommandBuffer();
+        var target = new RenderTexture(512, 384, 24);
+        var readback = new Texture2D(512, 384, TextureFormat.RGBA32, false, true);
+        try
+        {
+            ground.layer = obstacle.layer = 31;
+            ground.transform.position = new Vector3(0, -.05f, 0);
+            ground.transform.localScale = new Vector3(600, .1f, 600);
+            obstacle.transform.position = new Vector3(40, .4f, 40);
+            obstacle.transform.localScale = new Vector3(40, .8f, 40);
+            ground.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            obstacle.GetComponent<MeshRenderer>().sharedMaterial = opaque;
+            // A coarse distant terrain patch omits height detail retained by its
+            // native height texture. The old fixed 6cm gate rejects this patch.
+            var heights = new float[33, 33];
+            for (var z = 0; z < 33; z++)
+            for (var x = 0; x < 33; x++)
+                heights[z, x] = (.16f + .08f * Mathf.Sin(x * .4f) * Mathf.Sin(z * .4f)) / 4;
+            terrain.SetHeights(0, 0, heights);
+            surface.SetFloat("_ProjectGround", 1);
+            surface.SetFloat("_TerrainReceiver", 1);
+            surface.SetTexture("_TerrainHeightmap", terrain.heightmapTexture);
+            surface.SetVector("_TerrainRegion", new Vector4(-300, -300, 1f / 600, 1f / 600));
+            surface.SetVector("_TerrainHeight", new Vector4(0, 4 * (65535f / 32766f), 32f / 33, .5f / 33));
+            footprint.vertices = new[]
+            {
+                new Vector3(-300, 0, -300),
+                new Vector3(-300, 0, 300),
+                new Vector3(300, 0, 300),
+                new Vector3(300, 0, -300),
+            };
+            footprint.triangles = new[] { 0, 1, 2, 0, 2, 3 };
+            footprint.RecalculateBounds();
+            var camera = host.AddComponent<Camera>();
+            camera.enabled = false;
+            camera.cullingMask = 1 << 31;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.nearClipPlane = .03f;
+            camera.farClipPlane = 3000;
+            camera.allowHDR = camera.allowMSAA = false;
+            camera.depthTextureMode = DepthTextureMode.Depth;
+            camera.targetTexture = target;
+            target.Create();
+            camera.AddCommandBuffer(UnityEngine.Rendering.CameraEvent.BeforeForwardAlpha, commands);
+            var groundCollider = ground.GetComponent<Collider>();
+            var obstacleCollider = obstacle.GetComponent<Collider>();
+            Physics.SyncTransforms();
+            foreach (var rendering in new[] { RenderingPath.Forward, RenderingPath.DeferredShading })
+            foreach (var pixelError in new[] { 5f, 40f })
+            foreach (var distance in new[] { 10f, 20f, 25f, 35f, 50f, 250f, 750f, 1500f })
+            foreach (var fixedGate in new[] { false, true })
+            {
+                if (pixelError == 5 && distance < 50)
+                    continue;
+                if (fixedGate && distance != 250 && distance != 20)
+                    continue;
+                camera.renderingPath = rendering;
+                camera.transform.position = new Vector3(0, distance, -distance * .5f);
+                camera.transform.LookAt(Vector3.zero);
+                surface.SetFloat("_TerrainPixelError", fixedGate ? 0 : pixelError);
+                surface.SetFloat("_ReceiverDepthPrecision", fixedGate ? 0 : 1);
+                var obstacleHeight = distance >= 750 ? 12f : .8f;
+                obstacle.transform.position = new Vector3(40, obstacleHeight / 2, 40);
+                obstacle.transform.localScale = new Vector3(40, obstacleHeight, 40);
+                Physics.SyncTransforms();
+                commands.Clear();
+                commands.DrawMesh(footprint, Matrix4x4.identity, surface, 0, surface.FindPass("GroundProjection"));
+                camera.Render();
+                RenderTexture.active = target;
+                readback.ReadPixels(new Rect(0, 0, 512, 384), 0, 0);
+                readback.Apply();
+                var pixels = readback.GetPixels();
+                int expected = 0,
+                    painted = 0,
+                    propPixels = 0,
+                    propTint = 0;
+                for (var y = 1; y < 383; y++)
+                for (var x = 1; x < 511; x++)
+                {
+                    var ray = camera.ViewportPointToRay(new Vector3((x + .5f) / 512, (y + .5f) / 384, 0));
+                    if (!groundCollider.Raycast(ray, out var hit, 3000))
+                        continue;
+                    if (Mathf.Abs(hit.point.x) > 298 || Mathf.Abs(hit.point.z) > 298)
+                        continue;
+                    var color = pixels[y * 512 + x];
+                    var tinted = color.b - color.r > .15f;
+                    if (obstacleCollider.Raycast(ray, out var obstacleHit, hit.distance))
+                    {
+                        // Exclude a one-world-unit silhouette band from raster checks.
+                        if (obstacleHit.point.x > 21 && obstacleHit.point.x < 59 && obstacleHit.point.z > 21 && obstacleHit.point.z < 59)
+                        {
+                            propPixels++;
+                            if (tinted)
+                                propTint++;
+                        }
+                        continue;
+                    }
+                    expected++;
+                    if (tinted)
+                        painted++;
+                }
+                Debug.Log(
+                    $"Navigation distance GPU: {rendering}, height={distance}m, pixelError={pixelError}, fixedGate={fixedGate}, coverage={painted}/{expected}, prop tint={propTint}/{propPixels}."
+                );
+                if (expected < 100 || (fixedGate ? painted > expected * .9f : painted < expected * .97f) || propTint > 2)
+                    throw new InvalidOperationException("Navigation distance/terrain LOD regression.");
+            }
+        }
+        finally
+        {
+            RenderTexture.active = previous;
+            commands.Release();
+            UnityEngine.Object.DestroyImmediate(host);
+            UnityEngine.Object.DestroyImmediate(ground);
+            UnityEngine.Object.DestroyImmediate(obstacle);
+            UnityEngine.Object.DestroyImmediate(terrain);
+            UnityEngine.Object.DestroyImmediate(footprint);
+            UnityEngine.Object.DestroyImmediate(surface);
+            UnityEngine.Object.DestroyImmediate(opaque);
+            UnityEngine.Object.DestroyImmediate(readback);
+            target.Release();
+            UnityEngine.Object.DestroyImmediate(target);
         }
     }
 
@@ -445,6 +1245,7 @@ public static class CampaignsEditorToolkitBuilder
             folder + "/Editor.uxml",
             folder + "/Editor.uss",
             folder + "/ViewportCopy.shader",
+            folder + "/NavigationSurface.shader",
             folder + "/m_RuntimeShader.asset",
             folder + "/m_RuntimeWorldShader.asset",
             folder + "/m_AtlasBlitShader.asset",
@@ -470,7 +1271,11 @@ public static class CampaignsEditorToolkitBuilder
         if (bundle.LoadAllAssets<Shader>().Length < 3)
             throw new InvalidOperationException("Runtime UI Toolkit shaders were not embedded in the bundle.");
         ValidateTemplates(name => bundle.LoadAsset<VisualTreeAsset>(folder + "/" + name + ".uxml"));
+        ValidateGroundProjection(bundle.LoadAsset<Shader>(folder + "/NavigationSurface.shader"));
+        ValidateNavigationDistance(bundle.LoadAsset<Shader>(folder + "/NavigationSurface.shader"));
+        ValidateNavigationFloors(bundle.LoadAsset<Shader>(folder + "/NavigationSurface.shader"));
         ValidateViewportCopy(bundle.LoadAsset<Shader>(folder + "/ViewportCopy.shader"));
+        ValidateNavigationShader(bundle.LoadAsset<Shader>(folder + "/NavigationSurface.shader"));
         bundle.Unload(true);
         File.WriteAllText(
             Path.Combine(output, "editor-toolkit-validation.json"),

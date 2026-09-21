@@ -14,11 +14,12 @@ using WTT.Campaigns.Shared.Profiles;
 
 namespace WTT.Campaigns.Client;
 
-[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.10.1")]
+[BepInPlugin("com.wtt.campaigns", "WTT-Campaigns", "0.11.0")]
 [BepInDependency("com.SPT.custom", "4.1.0")]
 [BepInDependency("com.arys.unitytoolkit", "2.0.2")]
 [BepInDependency("com.wtt.commonlib", "3.0.6")]
 [BepInDependency("xyz.drakia.bigbrain", "1.5.0")]
+[BepInDependency("xyz.drakia.waypoints", "1.9.0")]
 [BepInDependency("me.sol.sain", "4.5.1")]
 [BepInDependency("com.morebotsapi.tacticaltoaster", "2.1.1")]
 [BepInDependency("com.blackdiv.tacticaltoaster", "1.3.1")]
@@ -66,6 +67,7 @@ public sealed class Plugin : BaseUnityPlugin
     {
         Instance = this;
         gameObject.AddComponent<Authoring.EditorMode>();
+        Authoring.Navigation.NavigationTerrainEvidence.Enable();
         gameObject.AddComponent<Authoring.CampaignTestMode>();
         Patches.PatchRegistration.EnableAll();
         gameObject.AddComponent<SeasonUi>();
@@ -77,7 +79,7 @@ public sealed class Plugin : BaseUnityPlugin
         gameObject.AddComponent<Missions.MissionRaidRuntime>();
         gameObject.AddComponent<Spatial.MapLayerRuntime>();
         gameObject.AddComponent<Spatial.MapLayerUi>();
-        gameObject.AddComponent<Authoring.RaidEditor>();
+        gameObject.AddComponent<Authoring.Editor.RaidEditor>();
         gameObject.AddComponent<ItemPreviewClient>();
         gameObject.AddComponent<Story.StoryRaidRuntime>();
         gameObject.AddComponent<Story.StoryVisitRuntime>();
@@ -215,5 +217,10 @@ public sealed class Plugin : BaseUnityPlugin
     internal static void LogInfo(string message)
     {
         Instance.Logger.LogInfo(message);
+    }
+
+    internal static void LogWarning(string message)
+    {
+        Instance.Logger.LogWarning(message);
     }
 }

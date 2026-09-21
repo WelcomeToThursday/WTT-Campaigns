@@ -831,6 +831,12 @@ public interface IPatrolNavigationBudget : IPatrolNavigation
     bool Deferred { get; }
 }
 
+/// <summary>Checks the authored route and the member's remaining approach instead of an unrelated shortest path.</summary>
+public interface IPatrolRouteNavigation : IPatrolNavigation
+{
+    bool CanReachRoute(PatrolBotSnapshot bot, MapPatrolRoute route, int waypoint, int direction);
+}
+
 public enum PatrolRuntimeStatus
 {
     Inactive,
@@ -867,6 +873,7 @@ public sealed class PatrolUpdate
     public PatrolSuspensionReason SuspensionReason { get; internal set; }
     public string LeaderId { get; internal set; } = "";
     public bool LeaderChanged { get; internal set; }
+    public bool Rejoined { get; internal set; }
     public int TargetWaypointIndex { get; internal set; } = -1;
     public IReadOnlyList<PatrolMovementCommand> Commands { get; internal set; } = Array.Empty<PatrolMovementCommand>();
 }
@@ -879,6 +886,7 @@ public sealed class EncounterPatrolStateMachine
     private int _targetWaypoint = -1;
     private int _direction = 1;
     private double? _waitUntil;
+    private double? _suspendedWait;
     private string _leaderId = "";
     private PatrolRuntimeStatus _status = PatrolRuntimeStatus.Inactive;
     private PatrolSuspensionReason _reason;
@@ -889,6 +897,20 @@ public sealed class EncounterPatrolStateMachine
     }
 
     public MapPatrolRoute Route => _route;
+
+    public void SuspendNavigation(double now)
+    {
+        if (_status is PatrolRuntimeStatus.Completed or PatrolRuntimeStatus.Cancelled or PatrolRuntimeStatus.Failed)
+            return;
+        if (_waitUntil.HasValue)
+        {
+            _suspendedWait = Math.Max(0, _waitUntil.Value - now);
+            _waitUntil = null;
+        }
+        _status = PatrolRuntimeStatus.Suspended;
+        _reason = PatrolSuspensionReason.Unreachable;
+    }
+
     public PatrolRuntimeStatus Status => _status;
     public PatrolSuspensionReason SuspensionReason => _reason;
     public string LeaderId => _leaderId;
@@ -900,7 +922,7 @@ public sealed class EncounterPatrolStateMachine
             RouteId = _route.Id,
             Waypoint = _targetWaypoint,
             Direction = _direction,
-            WaitRemaining = _waitUntil.HasValue ? Math.Max(0, _waitUntil.Value - now) : null,
+            WaitRemaining = _suspendedWait ?? (_waitUntil.HasValue ? Math.Max(0, _waitUntil.Value - now) : null),
             Completed = _status == PatrolRuntimeStatus.Completed,
         };
 
@@ -916,6 +938,7 @@ public sealed class EncounterPatrolStateMachine
         )
             throw new InvalidOperationException("The checkpoint patrol assignment is invalid.");
         _targetWaypoint = checkpoint.Waypoint;
+        _suspendedWait = null;
         _direction = checkpoint.Direction;
         _waitUntil = checkpoint.WaitRemaining.HasValue ? now + checkpoint.WaitRemaining.Value : null;
         _status =
@@ -959,6 +982,7 @@ public sealed class EncounterPatrolStateMachine
         _targetWaypoint = -1;
         _direction = 1;
         _waitUntil = null;
+        _suspendedWait = null;
         _leaderId = "";
         _status = PatrolRuntimeStatus.Inactive;
         _reason = PatrolSuspensionReason.None;
@@ -970,6 +994,20 @@ public sealed class EncounterPatrolStateMachine
         return Start(orderedBotIds, out _);
     }
 
+    /// <summary>Update the roster without restarting an existing patrol.</summary>
+    public void UpdateMembers(IEnumerable<string> orderedBotIds)
+    {
+        var ids = orderedBotIds.AsValueEnumerable().ToArray();
+        if (
+            ids.Length == 0
+            || ids.AsValueEnumerable().Any(string.IsNullOrWhiteSpace)
+            || ids.AsValueEnumerable().Distinct(StringComparer.Ordinal).Count() != ids.Length
+        )
+            throw new ArgumentException("Patrol bot identities must be nonempty and unique.", nameof(orderedBotIds));
+        _orderedBotIds.Clear();
+        _orderedBotIds.AddRange(ids);
+    }
+
     public bool TryUpdateBudgeted(
         IEnumerable<PatrolBotSnapshot> snapshots,
         double now,
@@ -977,11 +1015,11 @@ public sealed class EncounterPatrolStateMachine
         out PatrolUpdate update
     )
     {
-        var saved = (_targetWaypoint, _direction, _waitUntil, _leaderId, _status, _reason);
+        var saved = (_targetWaypoint, _direction, _waitUntil, _suspendedWait, _leaderId, _status, _reason);
         update = Update(snapshots, now, navigation);
         if (navigation is IPatrolNavigationBudget { Deferred: true })
         {
-            (_targetWaypoint, _direction, _waitUntil, _leaderId, _status, _reason) = saved;
+            (_targetWaypoint, _direction, _waitUntil, _suspendedWait, _leaderId, _status, _reason) = saved;
             update = new PatrolUpdate
             {
                 Status = _status,
@@ -1043,23 +1081,34 @@ public sealed class EncounterPatrolStateMachine
             : PatrolSuspensionReason.None;
         if (blocker != PatrolSuspensionReason.None)
         {
+            if (_waitUntil.HasValue)
+            {
+                _suspendedWait = Math.Max(0, _waitUntil.Value - now);
+                _waitUntil = null;
+            }
             _status = PatrolRuntimeStatus.Suspended;
             _reason = blocker;
             return Snapshot(result, leaderChanged);
         }
 
         var leaderSnapshot = byId[_leaderId];
-        if (_status == PatrolRuntimeStatus.Suspended || _status == PatrolRuntimeStatus.Inactive || _targetWaypoint < 0)
+        if (_status == PatrolRuntimeStatus.Suspended)
         {
-            if (!TryNearestReachable(leaderSnapshot.Position, navigation, out _targetWaypoint))
+            _waitUntil = _suspendedWait.HasValue ? now + _suspendedWait.Value : null;
+            _suspendedWait = null;
+            _status = _waitUntil.HasValue ? PatrolRuntimeStatus.Waiting : PatrolRuntimeStatus.Moving;
+            _reason = PatrolSuspensionReason.None;
+        }
+        if (_status == PatrolRuntimeStatus.Inactive || _targetWaypoint < 0)
+        {
+            if (!TryNearestReachable(leaderSnapshot.Position, survivors, navigation, out var initial))
             {
                 _status = PatrolRuntimeStatus.Suspended;
                 _reason = PatrolSuspensionReason.Unreachable;
                 return Snapshot(result, leaderChanged);
             }
 
-            _direction = 1;
-            _waitUntil = null;
+            _targetWaypoint = initial;
             _status = PatrolRuntimeStatus.Moving;
             _reason = PatrolSuspensionReason.None;
         }
@@ -1081,11 +1130,33 @@ public sealed class EncounterPatrolStateMachine
         }
 
         var target = _route.Waypoints[_targetWaypoint];
-        if (target == null || survivors.AsValueEnumerable().Any(s => !navigation.CanReach(s.Position, target.Position)))
+        if (
+            target == null
+            || survivors
+                .AsValueEnumerable()
+                .Any(s =>
+                    !(
+                        _route.Spline != null && navigation is IPatrolRouteNavigation authored
+                            ? authored.CanReachRoute(s, _route, _targetWaypoint, _direction)
+                            : navigation.CanReach(s.Position, target.Position)
+                    )
+                )
+        )
         {
-            _status = PatrolRuntimeStatus.Suspended;
-            _reason = PatrolSuspensionReason.Unreachable;
-            return Snapshot(result, leaderChanged);
+            if (_route.Spline != null)
+            {
+                SuspendNavigation(now);
+                return Snapshot(result, leaderChanged);
+            }
+            if (!TryNearestReachable(leaderSnapshot.Position, survivors, navigation, out var reentry))
+            {
+                _status = PatrolRuntimeStatus.Suspended;
+                _reason = PatrolSuspensionReason.Unreachable;
+                return Snapshot(result, leaderChanged);
+            }
+            _targetWaypoint = reentry;
+            target = _route.Waypoints[reentry];
+            result.Rejoined = true;
         }
 
         _reason = PatrolSuspensionReason.None;
@@ -1166,12 +1237,13 @@ public sealed class EncounterPatrolStateMachine
         _targetWaypoint = -1;
         _direction = 1;
         _waitUntil = null;
+        _suspendedWait = null;
         _leaderId = "";
         _status = PatrolRuntimeStatus.Inactive;
         _reason = PatrolSuspensionReason.None;
     }
 
-    private bool TryNearestReachable(SpatialVector position, IPatrolNavigation navigation, out int waypoint)
+    private bool TryNearestReachable(SpatialVector position, PatrolBotSnapshot[] survivors, IPatrolNavigation navigation, out int waypoint)
     {
         waypoint = -1;
         if (position?.Finite != true || _route.Waypoints == null)
@@ -1183,7 +1255,10 @@ public sealed class EncounterPatrolStateMachine
         for (var i = 0; i < _route.Waypoints.Count; i++)
         {
             var candidate = _route.Waypoints[i];
-            if (candidate?.Position?.Finite != true || !navigation.CanReach(position, candidate.Position))
+            if (
+                candidate?.Position?.Finite != true
+                || survivors.AsValueEnumerable().Any(s => !navigation.CanReach(s.Position, candidate.Position))
+            )
             {
                 continue;
             }

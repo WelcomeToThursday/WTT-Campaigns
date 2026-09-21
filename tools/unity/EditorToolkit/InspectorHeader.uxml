@@ -1,4 +1,4 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <Style src="Editor.uss" />
-<ui:VisualElement class="editor-inspector-header" />
+<ui:VisualElement class="editor-inspector-header editor-card" />
 </ui:UXML>

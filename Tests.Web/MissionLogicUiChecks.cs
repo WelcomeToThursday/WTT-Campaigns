@@ -44,6 +44,27 @@ internal static class MissionLogicUiChecks
         {
             await renderer.Mount(new Host(mission, layout));
             MissionChoice Choice(string label) => renderer.Components<MissionChoice>().Single(c => c.Component.Label == label).Component;
+            check(
+                Choice("Notification icon").Choices.Count() == 15,
+                "Objective picker offers all fourteen Tarkov quest icons and custom PNGs"
+            );
+            await Choice("Default objective icon").ValueChanged.InvokeAsync("quest:Elimination");
+            await Choice("Checkpoint icon").ValueChanged.InvokeAsync("quest:Exploration");
+            await Choice("Notification icon").ValueChanged.InvokeAsync("quest:WeaponAssembly");
+            check(
+                mission.NotificationIcon == "quest:Elimination"
+                    && mission.CheckpointNotificationIcon == "quest:Exploration"
+                    && objective.NotificationIcon == "quest:WeaponAssembly",
+                "Creator writes selected native icons onto mission and objective records"
+            );
+            await Choice("Notification icon").ValueChanged.InvokeAsync("");
+            check(objective.NotificationIcon == "", "Objective can return to the mission default");
+            await Choice("Notification icon").ValueChanged.InvokeAsync("Custom");
+            var artwork = renderer.Components<AssetPicker>().Single().Component;
+            await artwork.ValueChanged.InvokeAsync("1234567890abcdef12345678");
+            check(objective.NotificationIcon == "1234567890abcdef12345678", "Uploaded artwork selection is saved on the objective");
+            await Choice("Notification icon").ValueChanged.InvokeAsync("quest:Elimination");
+            check(!renderer.Components<AssetPicker>().Any(), "Choosing a built-in icon removes the custom artwork selector");
             check(!Choice("Goal").AllowEmpty, "Goal cannot be cleared to an unsupported value");
             await Choice("Goal").ValueChanged.InvokeAsync(MissionObjective.Target);
             check(objective.TargetIds.SequenceEqual(new[] { "single" }), "Individual goal retains only compatible existing actors");

@@ -20,8 +20,30 @@ internal static class AiControlsChecks
     internal static void Run(AssemblyDefinition assembly, Action<bool, string> check)
     {
         var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.RaidEditorAiView");
-        var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         var controller = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Controllers.EditorAiController");
+
+        static bool Calls(MethodDefinition method, string name) =>
+            method.Body.Instructions.Any(i => i.Operand is MethodReference called && called.Name == name);
+        var selection = Method(editor, "get_Selected");
+        check(
+            Calls(selection, "AiSelected") && Calls(selection, "get_Point") && !Calls(selection, "AiSelectedPoint"),
+            "AI gizmos resolve the live draft point rather than discarding each frame's edits in a copied selection"
+        );
+        check(
+            Calls(Method(controller, "AiSelectedPoint"), "Copy") && Calls(Method(editor, "EditPoint"), "AiSelectedPoint"),
+            "Discrete AI edits retain their detached copy so session history captures the original point"
+        );
+        var finish = Method(editor, "FinishDrag").Body.Instructions.ToList();
+        check(
+            finish.FindIndex(i => i.Operand is MethodReference { Name: "RestorePoint" })
+                < finish.FindIndex(i => i.Operand is MethodReference { Name: "EditPoint" }),
+            "Finishing a gizmo drag restores the before-pose before committing one undoable edit"
+        );
+        check(
+            Calls(Method(editor, "CancelDrag"), "RestorePoint") && !Calls(Method(editor, "CancelDrag"), "EditPoint"),
+            "Cancelling a gizmo drag restores the draft without adding history"
+        );
 
         var refresh = Method(controller, "RefreshAiWorkspace");
         var bind = Method(controller, "Bind");

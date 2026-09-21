@@ -21,10 +21,46 @@ internal static class EditorDiagnostics
         Presentation,
         Geometry,
         Index,
+        AssetIndex,
+        ThumbnailPrepare,
+        ThumbnailRender,
         OtherEditor,
         NativeCulling,
         NativeEffects,
         Count,
+    }
+
+    private static long _thumbnailHits,
+        _thumbnailMisses;
+    private static int _thumbnailTextures,
+        _thumbnailQueued,
+        _thumbnailLoads,
+        _thumbnailWaits;
+    private static double _thumbnailLoadMs,
+        _thumbnailWaitMs;
+
+    internal static void ThumbnailCache(long hits, long misses, int textures, int queued)
+    {
+        _thumbnailHits = hits;
+        _thumbnailMisses = misses;
+        _thumbnailTextures = textures;
+        _thumbnailQueued = queued;
+    }
+
+    internal static void ThumbnailLoad(double milliseconds)
+    {
+        if (!_capturing)
+            return;
+        _thumbnailLoads++;
+        _thumbnailLoadMs += milliseconds;
+    }
+
+    internal static void ThumbnailWait(double milliseconds)
+    {
+        if (!_capturing)
+            return;
+        _thumbnailWaits++;
+        _thumbnailWaitMs += milliseconds;
     }
 
     private static readonly EditorTiming[] Timings = new EditorTiming[(int)Area.Count];
@@ -204,6 +240,20 @@ internal static class EditorDiagnostics
                 timing.MaxTicks * 1000d / Stopwatch.Frequency
             );
         }
+        text.AppendFormat(
+            System.Globalization.CultureInfo.InvariantCulture,
+            " | thumbnails: hits={0} misses={1} textures={2} queued={3} loads={4}/{5:F1}ms waits={6}/{7:F1}ms",
+            _thumbnailHits,
+            _thumbnailMisses,
+            _thumbnailTextures,
+            _thumbnailQueued,
+            _thumbnailLoads,
+            _thumbnailLoadMs,
+            _thumbnailWaits,
+            _thumbnailWaitMs
+        );
+        _thumbnailLoads = _thumbnailWaits = 0;
+        _thumbnailLoadMs = _thumbnailWaitMs = 0;
         Plugin.LogInfo(text.ToString());
         _lastSample = now;
         _mainAllocated = allocated;

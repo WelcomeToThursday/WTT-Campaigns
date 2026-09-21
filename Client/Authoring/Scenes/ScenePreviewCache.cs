@@ -14,7 +14,11 @@ internal sealed class ScenePreviewCache<T>
     private readonly List<string> _readyOrder = new();
     private readonly List<string> _errorOrder = new();
     private readonly HashSet<string> _requested = new();
+    private readonly HashSet<string> _protected = new();
     internal int Generation { get; private set; }
+    internal int Count => _ready.Count;
+    internal long Hits { get; private set; }
+    internal long Misses { get; private set; }
 
     internal ScenePreviewCache(int limit, Action<T> release)
     {
@@ -22,11 +26,36 @@ internal sealed class ScenePreviewCache<T>
         _release = release;
     }
 
-    internal T? Get(string key) => _ready.TryGetValue(key, out var value) ? value : null;
+    internal T? Get(string key)
+    {
+        if (!_ready.TryGetValue(key, out var value))
+            return null;
+        _readyOrder.Remove(key);
+        _readyOrder.Add(key);
+        return value;
+    }
+
+    internal void Protect(IEnumerable<string> keys)
+    {
+        _protected.Clear();
+        foreach (var key in keys)
+            _protected.Add(key);
+    }
 
     internal string Error(string key) => _errors.TryGetValue(key, out var value) ? value : "";
 
-    internal bool Request(string key) => !_ready.ContainsKey(key) && !_errors.ContainsKey(key) && _requested.Add(key);
+    internal bool Request(string key)
+    {
+        if (Get(key) != null)
+        {
+            Hits++;
+            return false;
+        }
+        if (_errors.ContainsKey(key) || !_requested.Add(key))
+            return false;
+        Misses++;
+        return true;
+    }
 
     internal void Abandon(string key) => _requested.Remove(key);
 
@@ -54,7 +83,7 @@ internal sealed class ScenePreviewCache<T>
         {
             string? victim = null;
             foreach (var candidate in _readyOrder)
-                if (candidate != protectedKey)
+                if (candidate != protectedKey && !_protected.Contains(candidate))
                 {
                     victim = candidate;
                     break;
@@ -104,5 +133,7 @@ internal sealed class ScenePreviewCache<T>
         _errors.Clear();
         _errorOrder.Clear();
         _requested.Clear();
+        _protected.Clear();
+        Hits = Misses = 0;
     }
 }

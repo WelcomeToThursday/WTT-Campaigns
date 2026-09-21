@@ -1,3 +1,55 @@
+# WTT-Campaigns 0.11.0 — Scenery, terrain and mission authoring
+
+Changes since **0.10.1**. This release expands the scenery library, adds terrain painting and editable route curves, and improves mission creation, presentation and playtesting.
+
+## Scene catalog and editor workspace
+
+- **Expanded level scenery library.** Browse exported scenery from the installed game's level files, including supported inactive objects. Shared meshes and textures reduce duplication; source orientation, LOD groups and supported colliders are preserved. Selecting a prop loads its resources without opening another map.
+- **More useful catalog results.** Search names, alternate names, source levels and asset paths. **Hide unavailable** filters unsupported entries, with reasons available when the filter is disabled. Responsive thumbnail pages use the available panel space, and a bounded preview cache reuses rendering resources.
+- **Improved selection and layouts.** Picking scenery updates its inspector without changing the current browser tab. Selection outlines respect source model orientation. Editor layouts, toolbars, inspectors and action groups have received spacing and usability improvements.
+- **Create missions in game.** Choose **New Mission** from editor home to create and open a mission draft. Mission and Level workspaces retain their separate tools and content.
+
+## Terrain and navigation tools
+
+- **Paint native terrain textures and grass.** Choose a tile's texture palette, paint with adjustable radius, strength and falloff, or add/remove native grass. Restore brushes blend back toward the original map. Strokes support undo/redo, and recipes travel with mission packages and enabled ordinary-raid layouts. Texture painting also changes the native footstep and impact surface.
+- **Manual navigation previews.** Paint Add and Block footprints, erase edits, and create explicit short ground connections. Build Preview creates bounded additions while retaining native navigation. Check Path and nearby diagnostics help inspect support, clearance and connectivity; floor filters and ground-projected overlays help inspect stacked areas.
+- **Navigation remains an editor preview feature.** Observe can test authored bots against an active preview. Clear it before player playtests, walkthroughs or mission rehearsals. Saved navigation recipes do not activate in deployed missions or ordinary raids. Terrain painting does not change terrain height or add new terrain.
+
+## Route curves and authored AI
+
+- **Editable splines for patrols and player routes.** Edit points and handles, insert points without changing the curve shape, and smooth selected corners or entire routes. Corner, Auto, Aligned and Free handle modes support precise shaping, with snapping and undo/redo.
+- **Grounded patrol curves.** Patrol curves follow connected ground while preserving their horizontal shape. Invalid ground, blocked connections and insufficient standing clearance are marked on the curve with the affected waypoint pair. Preview and mission activation reject invalid patrol curves; player-route curves remain visual guides.
+- **Better patrol tools and continuity.** Insert, reorder and reverse waypoints, inspect directed paths and distances, and repair invalid waypoint drafts. Patrols preserve targets, travel direction and remaining waits across combat interruptions and leader changes. Improvements to clearance, squad spacing and bounded retries reduce repeated planning and help squads resume their authored routes.
+
+## Mission settings and presentation
+
+- **Mission timers.** Choose the map default, a timed mission from 1–1440 minutes, or Infinite. The mission banner and objective rows remain visible in playtests and deployed missions. Checkpoint retries restore the saved remaining time; the countdown pauses during checkpoint operations and the retry menu.
+- **Time of day and weather.** Set a mission start time, optionally hold it fixed, and configure clouds, rain, fog, wind, thunder and wind direction. Settings are included in published revisions, exports and playtests. Checkpoint retries restore the saved world time, and leaving a playtest restores the underlying raid environment. Local editor preview preferences are saved separately.
+- **Objective and checkpoint notifications.** Choose default and per-objective icons from native quest sprites or custom PNG artwork. Custom mission artwork is included in exports.
+- **Full mission playtests from the editor.** Playtest runs the selected layout's mission with objectives, events, timer and checkpoint notifications. Layouts without a mission retain the AI-only playtest; Observe remains an AI preview.
+
+## Requirements and updating
+
+Targets **SPT 4.1.x / EFT 0.16.9.40743**, with AI integration targeting **SPT 4.1.x**. **Waypoints 1.9.0+ is now required.** Other dependencies are **UnityToolkit 2.0.2+** with its prepatcher, **WTT-CommonLib 3.0.6+**, **WTT-ContentBackport 2.0.1+** and its dependencies, **BigBrain 1.5.0+**, **SAIN 4.5.1+**, **MoreBotsAPI 2.1.1+**, and **Black Division 1.3.1+**. Install dependencies separately.
+
+Close the game and server and back up profiles before updating. Extract `BepInEx` and `SPT_Runtime` into your SPT installation and install the **full matching 0.11.0 package**, including the expanded scenery library and UI bundles. Preserve configuration, profiles and the server mod's entire `creator` folder. Restart the server and client manually.
+
+Older supported content remains loadable; use matching updated components to author or load the new features. The Map Variants mod (`com.lennoxp90.mapvariants`) is now declared incompatible.
+
+The full wiki is embedded in the server for Creator's Documentation pages and included as readable files in the archive. Offline checks cover contracts, component compatibility and assets; live rendering, input, terrain presentation and third-party AI behavior still require in-game verification. Fika remains unsupported, and this beta does not include a complete authored story campaign.
+
+## Guides
+
+- [Installation and overview](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.11.0/README.md)
+- [Terrain painting and editor workflows](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.11.0/wiki/editor-mode.md)
+- [Navigation previews](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.11.0/wiki/editor-toolkit.md#manual-navigation-tools)
+- [Splines and patrols](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.11.0/wiki/ai-encounters.md#spline-paths-and-smoother-corners)
+- [Mission settings and playtests](https://github.com/WelcomeToThursday/WTT-Campaigns/blob/V0.11.0/wiki/missions.md)
+
+[Full changes since 0.10.1](https://github.com/WelcomeToThursday/WTT-Campaigns/compare/V0.10.1...V0.11.0)
+
+---
+
 # WTT-Campaigns 0.10.1 — Editor console, viewport and AI recovery
 
 Changes since **0.10.0**. This update adds an in-game editor console, improves the scene viewport and camera controls, and adds workload limits and recovery handling for authored AI encounters.
