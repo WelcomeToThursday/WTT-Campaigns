@@ -370,17 +370,21 @@ internal sealed class MissionEditorPanel
         var choice = new EditorChoice(field, _ => { });
         choice.AddFieldLabel(title);
         field.tooltip = title + ": " + entries[index].Name;
-        field.clicked += () => _view.ShowChoices(
-            field, entries.AsValueEnumerable().Select(e => e.Name).ToArray(), index, _ => true,
-            selected =>
-            {
-                var id = entries[selected].Id;
-                if (edit)
-                    Change(() => update(id));
-                else
-                    update(id);
-            }
-        );
+        field.clicked += () =>
+            _view.ShowChoices(
+                field,
+                entries.AsValueEnumerable().Select(e => e.Name).ToArray(),
+                index,
+                _ => true,
+                selected =>
+                {
+                    var id = entries[selected].Id;
+                    if (edit)
+                        Change(() => update(id));
+                    else
+                        update(id);
+                }
+            );
         parent.Add(field);
     }
 }

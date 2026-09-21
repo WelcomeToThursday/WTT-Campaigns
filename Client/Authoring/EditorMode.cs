@@ -621,17 +621,13 @@ public sealed class EditorMode : MonoBehaviour
         _home.Text("DraftHeading", missionTab ? "MISSION CONTENT" : "LEVEL LIBRARY");
         _home.Text(
             "DraftHelp",
-            missionTab
-                ? "Choose existing content or select New Mission."
-                : "Select a saved level, or create one with New Level."
+            missionTab ? "Choose existing content or select New Mission." : "Select a saved level, or create one with New Level."
         );
         _home.Text("MapHeading", missionTab ? "MISSION WORKSPACE" : "LEVEL WORKSPACE");
         _home.Text("LayoutHeading", missionTab ? (_newContent ? "MISSION NAME" : "MISSION LAYOUT") : "LEVEL NAME");
         _home.Text(
             "CreatorHelp",
-            missionTab
-                ? "Link campaigns and edit mission story content."
-                : "Publish and enable your level in Creator."
+            missionTab ? "Link campaigns and edit mission story content." : "Publish and enable your level in Creator."
         );
         _home.Visible("EditorMissionTest", missionTab && !_newContent);
         _home.Visible("EditorCampaignTest", missionTab && !_newContent && draft != null && _session?.HasStory == true);
@@ -659,7 +655,8 @@ public sealed class EditorMode : MonoBehaviour
         );
         _home.Text(
             "EditorSelection",
-            _newContent ? (missionTab ? "Create a new mission" : "Create a new level")
+            _newContent
+                ? (missionTab ? "Create a new mission" : "Create a new level")
                 : (missionTab ? draft?.Name : layout?.Name)
                     ?? (missionTab ? "Choose content or select New Mission" : "Choose a level or select New Level")
         );
@@ -677,8 +674,9 @@ public sealed class EditorMode : MonoBehaviour
             "EditorMapHelp",
             layout == null
                 ? (
-                    _newContent ? "Choose the location for your new " + (missionTab ? "mission." : "level.")
-                    : "Select a layout to use its location."
+                    _newContent
+                        ? "Choose the location for your new " + (missionTab ? "mission." : "level.")
+                        : "Select a layout to use its location."
                 )
                 : "This location is set by the selected layout."
         );
