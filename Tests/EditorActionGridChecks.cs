@@ -15,13 +15,13 @@ internal static class EditorActionGridChecks
         check(EditorActionGridLayout.Columns(0, 600, 88, 4) == 0, "Hidden groups have no columns");
         check(EditorActionGridLayout.Columns(3, float.NaN, 88, 4) == 1, "Unresolved geometry has a stable fallback");
         foreach (var width in new[] { 176f, 180f, 220f, 280f, 340f, 400f, 701.25f })
-        for (var count = 1; count <= 8; count++)
-        {
-            var columns = EditorActionGridLayout.Columns(count, width, 88, 4);
-            var cell = EditorActionGridLayout.CellWidth(width, columns, 4);
-            var used = columns * cell + (columns - 1) * 4;
-            check(used <= width && width - used < .15f, "Equal columns fill the row without fractional overflow");
-            check(columns == count || (columns + 1) * 88 + columns * 4 > width, "Column count is maximal for the available width");
-        }
+            for (var count = 1; count <= 8; count++)
+            {
+                var columns = EditorActionGridLayout.Columns(count, width, 88, 4);
+                var cell = EditorActionGridLayout.CellWidth(width, columns, 4);
+                var used = columns * cell + (columns - 1) * 4;
+                check(used <= width && width - used < .15f, "Equal columns fill the row without fractional overflow");
+                check(columns == count || (columns + 1) * 88 + columns * 4 > width, "Column count is maximal for the available width");
+            }
     }
 }

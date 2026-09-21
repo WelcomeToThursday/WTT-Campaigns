@@ -137,7 +137,13 @@ internal static class EditorActionGrid
             var preferred = minimum;
             foreach (var button in _buttons)
             {
-                var text = button.MeasureTextSize(button.text, 0, VisualElement.MeasureMode.Undefined, 0, VisualElement.MeasureMode.Undefined);
+                var text = button.MeasureTextSize(
+                    button.text,
+                    0,
+                    VisualElement.MeasureMode.Undefined,
+                    0,
+                    VisualElement.MeasureMode.Undefined
+                );
                 preferred = Math.Max(preferred, text.x + HorizontalInset(button) + 4);
             }
             var columns = EditorActionGridLayout.Columns(_buttons.Count, width, preferred, gap);
@@ -145,10 +151,18 @@ internal static class EditorActionGrid
             var height = 26f;
             foreach (var button in _buttons)
             {
-                var text = button.MeasureTextSize(button.text, Math.Max(1, cellWidth - HorizontalInset(button) - 4),
-                    VisualElement.MeasureMode.Exactly, 0, VisualElement.MeasureMode.Undefined);
+                var text = button.MeasureTextSize(
+                    button.text,
+                    Math.Max(1, cellWidth - HorizontalInset(button) - 4),
+                    VisualElement.MeasureMode.Exactly,
+                    0,
+                    VisualElement.MeasureMode.Undefined
+                );
                 var style = button.resolvedStyle;
-                height = Math.Max(height, text.y + style.paddingTop + style.paddingBottom + style.borderTopWidth + style.borderBottomWidth + 4);
+                height = Math.Max(
+                    height,
+                    text.y + style.paddingTop + style.paddingBottom + style.borderTopWidth + style.borderBottomWidth + 4
+                );
             }
             height = (float)Math.Ceiling(height);
             for (var index = 0; index < _buttons.Count; index++)
