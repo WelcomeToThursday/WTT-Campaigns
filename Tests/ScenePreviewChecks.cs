@@ -93,7 +93,9 @@ internal static class ScenePreviewChecks
             controllerCalls.Any(m => m.DeclaringType.Name == "SceneCatalogPage" && m.Name == "Merge"),
             "The shipped browser seeks into sorted catalogs and creates only the visible page"
         );
-        var browser = client.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor").Methods.Single(m => m.Name == "RefreshToolBrowser");
+        var browser = client
+            .GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor")
+            .Methods.Single(m => m.Name == "RefreshToolBrowser");
         check(
             browser.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().Count(m => m.Name == "get_PagedCatalog") >= 3,
             "Paged scene catalogs refresh on page changes and bypass full-catalog sorting and local row-count clamping"
