@@ -62,6 +62,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
     private readonly Dictionary<string, string> _progressOperations = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _progressGate = new(1, 1);
     private MissionDescriptor? _descriptor;
+    private MissionEnvironment? _missionEnvironment;
     private MissionRun? _run;
     private MissionHud? _hud;
     private MissionLoot? _loot;
@@ -284,6 +285,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             var run = response.Run ?? throw new InvalidOperationException("The mission run state is unavailable.");
             ValidateDescriptor(descriptor, run);
             _descriptor = descriptor;
+            _missionEnvironment = new MissionEnvironment(descriptor.Definition.Environment);
             _run = run;
             _revision = response.Revision;
             _missionContext = new EncounterRuntimeContext
@@ -857,6 +859,8 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
 
     private void EndRuntime()
     {
+        _missionEnvironment?.Dispose();
+        _missionEnvironment = null;
         _retryGuard?.Dispose();
         _retryGuard = null;
         _checkpoint = null;

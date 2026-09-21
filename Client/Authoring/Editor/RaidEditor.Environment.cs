@@ -43,6 +43,7 @@ public sealed partial class RaidEditor
         void Set(float hour)
         {
             _environment?.SetHour(hour);
+            _environment?.RememberTime();
             _environmentError = "";
             RefreshEnvironment();
         }
@@ -71,6 +72,7 @@ public sealed partial class RaidEditor
             () =>
             {
                 _environment?.RestoreTime();
+                _environment?.RememberTime();
                 _environmentError = "";
                 RefreshEnvironment();
             }
@@ -78,6 +80,7 @@ public sealed partial class RaidEditor
         void Weather(float clouds, float rain, float fog, float wind, float thunder)
         {
             _environment?.SetWeather(clouds, rain, fog, wind, thunder);
+            _environment?.RememberWeather();
             _weatherError = "";
             RefreshWeather();
         }
@@ -130,6 +133,7 @@ public sealed partial class RaidEditor
             () =>
             {
                 _environment?.CycleWind();
+                _environment?.RememberWeather();
                 RefreshWeather(false);
             }
         );
@@ -138,6 +142,7 @@ public sealed partial class RaidEditor
             () =>
             {
                 _environment?.RestoreWeather();
+                _environment?.RememberWeather();
                 _weatherError = "";
                 RefreshWeather();
             }
@@ -159,7 +164,7 @@ public sealed partial class RaidEditor
             "EnvironmentStatus",
             _environmentError.Length > 0 ? _environmentError
                 : !available ? "This map has no adjustable sky clock."
-                : _environment!.Previewing ? "Preview time held. Closing restores raid time."
+                : _environment!.Previewing ? "Time saved for editing. Closing restores raid time."
                 : "Using raid time. Visibility follows the free camera."
         );
     }
@@ -193,7 +198,7 @@ public sealed partial class RaidEditor
             "WeatherStatus",
             _weatherError.Length > 0 ? _weatherError
                 : !available ? "This map has no weather controller."
-                : _environment!.WeatherPreviewing ? "Weather preview active. Closing restores raid weather."
+                : _environment!.WeatherPreviewing ? "Weather saved for editing. Closing restores raid weather."
                 : "Using raid weather. Values are percentages."
         );
     }

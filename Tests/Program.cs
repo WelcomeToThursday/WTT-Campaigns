@@ -202,6 +202,7 @@ WTT.Campaigns.Tests.DoorAuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.ScenePickingChecks.Run(Check);
 WTT.Campaigns.Tests.EditorRenderChecks.Sizes(Check);
 WTT.Campaigns.Tests.EditorEnvironmentChecks.Values(Check);
+WTT.Campaigns.Tests.MissionEnvironmentChecks.Run(Check);
 WTT.Campaigns.Tests.EditorDiagnosticChecks.Run(Check);
 WTT.Campaigns.Tests.EditorMemoryChecks.Run(Check);
 WTT.Campaigns.Tests.EditorPreviewGearChecks.Run();

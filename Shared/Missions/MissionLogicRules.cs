@@ -8,7 +8,7 @@ public static class MissionLogicRules
     // Structural bounds remain enforced on every save; publication and playtests use Errors.
     public static List<string> DraftErrors(MissionDefinition mission)
     {
-        var errors = new List<string>();
+        var errors = MissionEnvironmentSettings.Errors(mission.Environment);
         void Need(bool condition, string message)
         {
             if (!condition)

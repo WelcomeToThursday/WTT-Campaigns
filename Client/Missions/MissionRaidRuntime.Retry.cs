@@ -279,6 +279,7 @@ internal sealed partial class MissionRaidRuntime
             _retryShown = false;
             _retryBusy = false;
             _hud?.SetRoute(_run.NextCheckpointIndex, _descriptor.Layout.Checkpoints.Count, false, "Checkpoint restored");
+            _checkpoint.RestoreTime();
             ReleaseRetryHold();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }

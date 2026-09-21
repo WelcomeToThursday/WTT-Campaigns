@@ -24,6 +24,14 @@ Open **Mission library** from Campaign Creator, or visit `/wtt-campaigns/creator
 
 Each package contains one mission and one layout. **Allow standalone play** defaults off; enable it to offer the published mission to normal characters. Save, validate and publish, then manually restart SPT to load the new content. Publishing creates an immutable revision; editing a draft does not change published runs. Export the mission pack to share it, or import one as an editable draft.
 
+## Mission time and weather
+
+In the server web mission editor, open **Missions → Time of day and weather**. Enable **Set mission start time** and choose a clock time. Time advances at the native raid rate unless **Hold time fixed** is enabled. Enable **Set mission weather** to configure clouds, rain, fog, wind, thunder and wind direction. Authored weather remains fixed throughout the mission; disabled overrides use normal raid conditions. Maps without a sky or weather controller retain their native indoor environment.
+
+These settings are saved with the mission and included in published revisions, exports and playtest snapshots. They are separate from the local in-game editor preview preferences. Restart a playtest after saving changes to use the updated settings.
+
+When checkpoint retries are enabled, retrying after death or failure restores both the visible sky time and its native clock source to the saved checkpoint, including retries from mission start and across midnight. Advancing time resumes at its original rate; frozen time remains frozen. Leaving a playtest restores the underlying raid clock and weather.
+
 ### Link a mission to a campaign
 
 In the campaign's **Missions** section, select a published mission revision and choose **Link mission**. Availability can be **Available from start**, **Quest accepted**, **Quest completed**, **Chapter reached**, or **Unlocked by story action**. Chapter gates use the chapter's existing visibility condition. Add an **Unlock mission** action to a conversation or raid event for an explicit story gate. Once earned, access stays unlocked.

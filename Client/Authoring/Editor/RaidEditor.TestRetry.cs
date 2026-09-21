@@ -197,6 +197,7 @@ public sealed partial class RaidEditor
             _testFailure = "";
             _testFailureShown = false;
             _aiPreviewStatus = "Mission test · checkpoint restored";
+            _testCheckpoint.RestoreTime();
             ReleaseTestHold();
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }

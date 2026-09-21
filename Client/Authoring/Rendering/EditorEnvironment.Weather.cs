@@ -1,5 +1,6 @@
 using EFT.Weather;
 using UnityEngine;
+using WTT.Campaigns.Client.Missions;
 
 namespace WTT.Campaigns.Client.Authoring.Rendering;
 
@@ -7,6 +8,7 @@ internal sealed partial class EditorEnvironment
 {
     private WeatherController? _weather;
     private WeatherDebug? _previewWeather;
+    private MissionWeatherOverride? _weatherOverride;
     internal bool WeatherAvailable =>
         WeatherController.Instance && WeatherController.Instance.WeatherDebug != null && WeatherController.Instance.WeatherCurve != null;
     internal bool WeatherPreviewing => _weather && _weather == WeatherController.Instance && _previewWeather != null;
@@ -41,6 +43,7 @@ internal sealed partial class EditorEnvironment
             preview.IsDynamicSunWeatherDebug = false;
             _weather = controller;
             _previewWeather = preview;
+            _weatherOverride = new MissionWeatherOverride(controller, preview);
         }
         return _previewWeather;
     }
@@ -66,15 +69,9 @@ internal sealed partial class EditorEnvironment
 
     internal void RestoreWeather()
     {
+        _weatherOverride?.Dispose();
+        _weatherOverride = null;
         _weather = null;
         _previewWeather = null;
-    }
-
-    private static bool WeatherCurve(WeatherController __instance, ref IWeatherCurve __result)
-    {
-        if (_active == null || _active._weather != __instance || _active._previewWeather == null)
-            return true;
-        __result = _active._previewWeather;
-        return false;
     }
 }

@@ -44,6 +44,7 @@ public sealed partial class RaidEditor
     private EditorTestMissionResponse? _editorMissionPending;
     private MapLayout? _editorMissionLayout;
     private MissionLoot? _editorMissionLoot;
+    private MissionEnvironment? _testEnvironment;
     private readonly List<GameObject> _editorMissionVolumes = new();
     private CancellationTokenSource? _editorMissionLifetime;
     private long _editorMissionGeneration;
@@ -286,6 +287,8 @@ public sealed partial class RaidEditor
             throw new InvalidOperationException("The mission test layout needs a start, checkpoints and an exit.");
         var generation = _editorMissionGeneration;
         var runId = _editorMissionTest.RunId;
+        _testEnvironment?.Dispose();
+        _testEnvironment = new MissionEnvironment(_editorMissionTest.Descriptor!.Definition.Environment);
         _editorMissionLayout = RaidEditorSession.Copy(route);
         _editorMissionCheckpoint = 0;
         _editorMissionCompleted = false;
@@ -553,6 +556,8 @@ public sealed partial class RaidEditor
 
     private void EndEditorMissionRoute(bool keepRequest = false)
     {
+        _testEnvironment?.Dispose();
+        _testEnvironment = null;
         EndTestRetry();
         _editorDirector?.Dispose();
         _editorDirector = null;
