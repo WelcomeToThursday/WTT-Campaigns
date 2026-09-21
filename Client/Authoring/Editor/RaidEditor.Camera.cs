@@ -5,7 +5,7 @@ using UnityEngine;
 using WTT.Campaigns.Client.Authoring.Console;
 using WTT.Campaigns.Client.Authoring.Views;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Editor;
 
 public sealed partial class RaidEditor
 {

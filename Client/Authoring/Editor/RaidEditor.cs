@@ -11,7 +11,7 @@ using WTT.Campaigns.Shared.Authoring;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Editor;
 
 [DefaultExecutionOrder(32000)]
 public sealed partial class RaidEditor : MonoBehaviour

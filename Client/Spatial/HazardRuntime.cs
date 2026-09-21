@@ -9,6 +9,7 @@ using EFT.Interactive;
 using Systems.Effects;
 using UnityEngine;
 using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Editor;
 using WTT.Campaigns.Shared.Spatial;
 using ZLinq;
 

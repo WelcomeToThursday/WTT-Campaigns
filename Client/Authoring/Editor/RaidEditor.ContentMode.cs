@@ -1,7 +1,7 @@
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Authoring;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Editor;
 
 public sealed partial class RaidEditor
 {

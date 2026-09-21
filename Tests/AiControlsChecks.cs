@@ -20,7 +20,7 @@ internal static class AiControlsChecks
     internal static void Run(AssemblyDefinition assembly, Action<bool, string> check)
     {
         var view = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Views.RaidEditorAiView");
-        var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         var controller = assembly.MainModule.GetType("WTT.Campaigns.Client.Authoring.Controllers.EditorAiController");
 
         static bool Calls(MethodDefinition method, string name) =>

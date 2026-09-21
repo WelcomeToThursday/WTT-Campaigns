@@ -12,7 +12,7 @@ using Button = WTT.Campaigns.Client.Authoring.Views.EditorButton;
 using Dropdown = WTT.Campaigns.Client.Authoring.Views.EditorChoice;
 using InputField = WTT.Campaigns.Client.Authoring.Views.EditorInput;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Editor;
 
 public sealed partial class RaidEditor
 {

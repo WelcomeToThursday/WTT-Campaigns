@@ -28,7 +28,7 @@ internal sealed class CampaignUiInputPatch : ModulePatch
         if (Authoring.EditorMode.Active)
             Authoring.EditorRestrictions.Filter(commands);
         var editorHome = Authoring.EditorMode.Active && !Plugin.InRaid;
-        var editorBlocked = Authoring.RaidEditor.Instance && Authoring.RaidEditor.Instance!.InputBlocked;
+        var editorBlocked = Authoring.Editor.RaidEditor.Instance && Authoring.Editor.RaidEditor.Instance!.InputBlocked;
         var storyBlocked =
             (Story.StoryVisitRuntime.Instance && Story.StoryVisitRuntime.Instance.InputBlocked)
             || (Story.StoryCinematicRuntime.Instance && Story.StoryCinematicRuntime.Instance.InputBlocked);
@@ -57,7 +57,7 @@ internal sealed class CampaignUiInputPatch : ModulePatch
         // Unity's input fields and buttons continue receiving their own EventSystem input.
         commands.Clear();
         shouldLockCursor =
-            editorBlocked && !storyBlocked && !missionBlocked && !layersBlocked && Authoring.RaidEditor.Instance!.CameraLooking
+            editorBlocked && !storyBlocked && !missionBlocked && !layersBlocked && Authoring.Editor.RaidEditor.Instance!.CameraLooking
                 ? ECursorResult.LockCursor
                 : ECursorResult.ShowCursor;
         if (axes != null)

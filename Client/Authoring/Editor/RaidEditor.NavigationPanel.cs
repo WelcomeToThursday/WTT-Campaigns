@@ -2,7 +2,7 @@ using System.Globalization;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Spatial;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Editor;
 
 public sealed partial class RaidEditor
 {

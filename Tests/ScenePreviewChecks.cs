@@ -72,7 +72,7 @@ internal static class ScenePreviewChecks
             !worldSelectionCalls.Any(m => m.Name is "set__sceneTab" or "set_SceneTab"),
             "Picking world props, placed assets and doors preserves the browser tab"
         );
-        var editor = client.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = client.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         check(
             !editor
                 .Methods.Single(m => m.Name == "EnterSceneSelection")
@@ -93,7 +93,7 @@ internal static class ScenePreviewChecks
             controllerCalls.Any(m => m.DeclaringType.Name == "SceneCatalogPage" && m.Name == "Merge"),
             "The shipped browser seeks into sorted catalogs and creates only the visible page"
         );
-        var browser = client.GetType("WTT.Campaigns.Client.Authoring.RaidEditor").Methods.Single(m => m.Name == "RefreshToolBrowser");
+        var browser = client.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor").Methods.Single(m => m.Name == "RefreshToolBrowser");
         check(
             browser.Body.Instructions.Select(i => i.Operand).OfType<MethodReference>().Count(m => m.Name == "get_PagedCatalog") >= 3,
             "Paged scene catalogs refresh on page changes and bypass full-catalog sorting and local row-count clamping"
@@ -152,7 +152,7 @@ internal static class ScenePreviewChecks
             );
             check(methodCalls.Any(m => m.Name == "WaitForBundle"), "Native load faults are observed in " + method.DeclaringType.Name);
         }
-        var advance = client.GetType("WTT.Campaigns.Client.Authoring.RaidEditor").Methods.Single(m => m.Name == "AdvanceSceneIndex");
+        var advance = client.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor").Methods.Single(m => m.Name == "AdvanceSceneIndex");
         var levelLibrary = client.GetType("WTT.Campaigns.Client.Authoring.Scenes.NativeLevelPropLibrary");
         var levelCalls = Calls(levelLibrary);
         check(

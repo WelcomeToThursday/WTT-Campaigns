@@ -104,7 +104,7 @@ internal static class EditorEnvironmentChecks
                 ),
             "Weather preview must not mutate native backend/debug state."
         );
-        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         Require(Calls(editor.Methods.Single(m => m.Name == "Close"), "Dispose"), "Editor close releases its preview.");
         Console.WriteLine("Editor environment: native culling, sky clock, weather overlay and restoration contracts passed offline.");
     }

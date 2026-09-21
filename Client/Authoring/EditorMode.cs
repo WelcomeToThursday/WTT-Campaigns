@@ -7,6 +7,7 @@ using EFT.UI.Screens;
 using Newtonsoft.Json;
 using SPT.Common.Http;
 using UnityEngine;
+using WTT.Campaigns.Client.Authoring.Editor;
 using WTT.Campaigns.Client.Authoring.Rendering;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Shared.Authoring;

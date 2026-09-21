@@ -1121,7 +1121,7 @@ internal static class EncounterHookChecks
         );
         Require(vitalCalls >= 2, "PreviewHealthChanged checks both Head and Chest with GetBodyPartHealth");
         Require(
-            CallsAny(healthHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.RaidEditor"),
+            CallsAny(healthHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.Editor.RaidEditor"),
             "PreviewHealthChanged reports lethal damage through RaidEditor.AiDefeated"
         );
 
@@ -1139,7 +1139,7 @@ internal static class EncounterHookChecks
             "EFT.EDamageType"
         );
         Require(
-            CallsAny(killHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.RaidEditor"),
+            CallsAny(killHook, "AiDefeated", call => call.DeclaringType.FullName == "WTT.Campaigns.Client.Authoring.Editor.RaidEditor"),
             "PreviewKill reports direct lethal transitions through RaidEditor.AiDefeated"
         );
     }
@@ -1195,7 +1195,7 @@ internal static class EncounterHookChecks
             hands.Methods.Any(m => m.Name == "SettleHands") && hands.Methods.Any(m => m.Name == "RestoreHands"),
             "Checkpoint hands settle without holstering and restore through native equipment activation"
         );
-        var startSave = RequireType(client, "WTT.Campaigns.Client.Authoring.RaidEditor")
+        var startSave = RequireType(client, "WTT.Campaigns.Client.Authoring.Editor.RaidEditor")
             .NestedTypes.Single(t => t.Name.StartsWith("<CaptureTestStart>"));
         Require(
             !Calls(RequireMethod(startSave, "MoveNext"), "EmptyHands") && Calls(RequireMethod(startSave, "MoveNext"), "SettleHands"),

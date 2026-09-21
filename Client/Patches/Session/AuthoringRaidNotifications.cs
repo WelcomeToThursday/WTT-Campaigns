@@ -6,6 +6,7 @@ using EFT.Communications;
 using HarmonyLib;
 using SPT.Reflection.Patching;
 using WTT.Campaigns.Client.Authoring;
+using WTT.Campaigns.Client.Authoring.Editor;
 
 namespace WTT.Campaigns.Client.Patches.Session;
 

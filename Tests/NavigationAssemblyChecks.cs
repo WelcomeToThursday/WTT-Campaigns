@@ -58,7 +58,7 @@ internal static class NavigationAssemblyChecks
         )
             Require(call.Resolve() != null, "Installed Unity navigation API resolves: " + call.FullName);
 
-        var editor = types.Single(t => t.FullName == "WTT.Campaigns.Client.Authoring.RaidEditor");
+        var editor = types.Single(t => t.FullName == "WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
         bool Calls(MethodDefinition method, string name) =>
             method.Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == name);
         var navigationFeedback = editor.Methods.Single(m => m.Name == "LogNavigationFeedback");

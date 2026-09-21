@@ -4,7 +4,7 @@ using WTT.Campaigns.Client.Missions;
 using WTT.Campaigns.Shared.Missions;
 using WTT.Campaigns.Shared.Spatial;
 
-namespace WTT.Campaigns.Client.Authoring;
+namespace WTT.Campaigns.Client.Authoring.Editor;
 
 public sealed partial class RaidEditor
 {
