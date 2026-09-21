@@ -27,7 +27,10 @@ internal static class SceneBrowserChecks
         check(tent.Matches("military_tent_01"), "Tent still matches part of an object name");
         check(tent.Matches("shelter", aliases: new[] { "military_tent_01" }), "Tent still finds alternate object names");
         check(tent.Matches("pole", path: "Assets/Content/Props/Tent/pole"), "A real tent path matches after skipping Content");
-        check(tent.Matches("pole", sources: new[] { "Assets/Content/Locations/woods_tents.unity" }), "Source-map words retain prefix matching");
+        check(
+            tent.Matches("pole", sources: new[] { "Assets/Content/Locations/woods_tents.unity" }),
+            "Source-map words retain prefix matching"
+        );
         check(new SceneSearchQuery("factory").Matches("Cube", sources: new[] { contentPath }), "Map-name searches still work");
         var tentEntries = new[]
         {
@@ -36,11 +39,23 @@ internal static class SceneBrowserChecks
             new SceneCatalogEntry { Id = "a", Name = "military_tent_01" },
         };
         Array.Sort(tentEntries, tent.Compare);
-        check(tentEntries.Select(e => e.Id).SequenceEqual(new[] { "a", "b", "c" }), "Object-name matches rank before metadata matches with stable ID ties");
-        var localTentEntries = new[] { new SceneCatalogEntry { Id = "d", Name = "tent_local" } };
+        check(
+            tentEntries.Select(e => e.Id).SequenceEqual(new[] { "a", "b", "c" }),
+            "Object-name matches rank before metadata matches with stable ID ties"
+        );
+        var localTentEntries = new[]
+        {
+            new SceneCatalogEntry { Id = "d", Name = "tent_local" },
+        };
         var tentPage = SceneCatalogPage.Merge(localTentEntries, tentEntries, 0, 3, tent.Compare);
-        check(tentPage.Select(e => e.Id).SequenceEqual(new[] { "a", "b", "d" }), "Merged catalog pages keep name matches ahead of metadata matches");
-        check(SceneCatalogPage.Contains(tentEntries, tentEntries[2], tent.Compare), "Selection lookup uses the same relevance order as catalog pages");
+        check(
+            tentPage.Select(e => e.Id).SequenceEqual(new[] { "a", "b", "d" }),
+            "Merged catalog pages keep name matches ahead of metadata matches"
+        );
+        check(
+            SceneCatalogPage.Contains(tentEntries, tentEntries[2], tent.Compare),
+            "Selection lookup uses the same relevance order as catalog pages"
+        );
         Array.Sort(tentEntries, new SceneSearchQuery("").Compare);
         check(tentEntries[0].Id == "c", "An empty search retains alphabetical browsing");
         var random = new Random(731);

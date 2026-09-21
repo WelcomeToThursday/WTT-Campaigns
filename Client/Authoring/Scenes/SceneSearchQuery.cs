@@ -40,7 +40,7 @@ internal sealed class SceneSearchQuery
     {
         if (value == null)
             return false;
-        for (var start = 0; start < value.Length;)
+        for (var start = 0; start < value.Length; )
         {
             var index = value.IndexOf(term, start, StringComparison.OrdinalIgnoreCase);
             if (index < 0)

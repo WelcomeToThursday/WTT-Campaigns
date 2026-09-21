@@ -556,13 +556,7 @@ internal sealed partial class EditorCatalogController
             var levelEntries = levels ? _levelMatches : Array.Empty<SceneCatalogEntry>();
             var total = _localMatches.Count + levelEntries.Length;
             _context.Page = Math.Min(_context.Page, Math.Max(0, (total - 1) / LibraryPageSize));
-            var page = SceneCatalogPage.Merge(
-                _localMatches,
-                levelEntries,
-                _context.Page * LibraryPageSize,
-                LibraryPageSize,
-                query.Compare
-            );
+            var page = SceneCatalogPage.Merge(_localMatches, levelEntries, _context.Page * LibraryPageSize, LibraryPageSize, query.Compare);
             if (
                 _sceneBrowser.HideUnavailable
                 && !_levelQueryLoading
