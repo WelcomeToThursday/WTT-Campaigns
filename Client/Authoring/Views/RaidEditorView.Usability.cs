@@ -40,6 +40,8 @@ internal sealed partial class RaidEditorView
         Element("Inspector").RegisterCallback<GeometryChangedEvent>(_ => AfterLayout(fitInspector));
         Section("Preview", false, "ScenePreviewGroup", "ScenePreviewRetryGroup");
         Section("Scene details", false, "SceneRestoreGroup", "SceneInfoGroup");
+        Section("Event settings", true, "EventKindGroup");
+        Section("Scene target", true, "SceneActionsGroup");
         Section("Transform", true, "PositionGroup", "RotationGroup", "SizeGroup", "RadiusGroup", "PlacementGroup");
         Section("Zone settings", true, "ZoneUsesGroup", "ZoneScopeGroup", "HazardInfoGroup", "SniperSoundGroup");
         Section("Trigger", true, "AiTriggerSection");
@@ -49,6 +51,8 @@ internal sealed partial class RaidEditorView
         Section("Patrol", true, "AiPatrolSection");
         Section("Map transform", true, "MapPositionGroup", "MapRotationGroup", "MapSizeGroup", "MapShapeGroup", "MapPlacementGroup");
         Section("Door settings", true, "DoorInspectorGroup");
+        Section("Layer settings", true, "MapNormalRaidGroup", "MapLayerHelpGroup");
+        Section("Route waypoint", true, "RouteGuideGroup", "RouteFrameGroup");
 
         foreach (var tool in ToolIds)
         {

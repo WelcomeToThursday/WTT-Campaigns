@@ -253,8 +253,8 @@ public sealed partial class RaidEditor : MonoBehaviour
                 ReportFeedback("Walkthrough restored while the editor connection recovers.");
                 return;
             }
-            // Escape belongs to the walkthrough for this entire frame. Reopening
-            // here would let the same key close the editor and consume its bookmark.
+            // Escape belongs to the walkthrough for this entire frame; do not
+            // also process it as an editor cancellation after restoring the view.
             if (UpdateWalkthrough())
                 return;
             if (EditorMode.Ready && !_open && !_walking && !AiPreviewBusy && !OtherModal && _session.Definition != null)
@@ -343,12 +343,6 @@ public sealed partial class RaidEditor : MonoBehaviour
                 {
                     _picking = false;
                     Catalog.RebindId = "";
-                }
-                else if (_view.Windows.ViewportMaximized)
-                    _view.Windows.SetViewportMaximized(false);
-                else
-                {
-                    Close();
                 }
                 return;
             }

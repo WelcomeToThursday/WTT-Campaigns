@@ -100,7 +100,7 @@ internal sealed partial class RaidEditorView
             }
         }
 
-        foreach (var id in new[] { "Inspector", "EnvironmentMenu", "LootConfiguration", "Controls", "Console" })
+        foreach (var id in new[] { "Inspector", "EnvironmentMenu", "LootConfiguration", "Controls", "Console", "Terrain", "Navigation" })
             EditorToolWindowStyle.Apply(Element(id));
     }
 
@@ -108,6 +108,9 @@ internal sealed partial class RaidEditorView
     {
         controls["Library"].Element.AddToClassList("editor-scene-tool");
         var creation = controls["CreationTools"].Element;
+        creation.RemoveFromClassList("editor-card");
+        EditorActionGrid.Remove(creation);
+        creation.AddToClassList("editor-compact-strip");
         var scroll = (ScrollView)controls["ToolActionsScroll"].Element;
         scroll.mode = ScrollViewMode.Horizontal;
         scroll.horizontalScrollerVisibility = ScrollerVisibility.Auto;

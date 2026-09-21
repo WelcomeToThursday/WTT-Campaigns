@@ -174,6 +174,9 @@ internal sealed class EditorToolkitDocument : IDisposable
         if (container.childCount != 1 || container[0] is not T root)
             throw new InvalidOperationException("Invalid Editor Toolkit template: " + template);
         root.RemoveFromHierarchy();
+        EditorActionGrid.Bind(root);
+        foreach (var scroll in root.Query<ScrollView>(className: "editor-menu-scroll").ToList())
+            EditorScrollStyle.Apply(scroll);
         return root;
     }
 

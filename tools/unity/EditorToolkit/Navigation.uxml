@@ -1,96 +1,53 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
-
     <Style src="Editor.uss" />
-
     <ui:VisualElement name="Navigation" class="editor-group editor-navigation">
-
         <ui:Label name="NavLayout" class="editor-label" text="Choose a layout" picking-mode="Ignore" />
-
         <ui:Label name="NavState" class="editor-label editor-navigation-state" text="Native navigation · manual editing" picking-mode="Ignore" />
-
-        <ui:VisualElement name="NavActions" class="editor-actions editor-action-row">
-
+        <ui:VisualElement name="NavActions" class="editor-actions editor-action-row editor-action-grid">
             <ui:Button name="NavBuild" class="editor-action" text="Build Preview" tooltip="Build only your painted additions and apply your blocks. Existing navigation stays loaded." />
-
             <ui:Button name="NavCancel" class="editor-action" text="Cancel" />
-
             <ui:Button name="NavRestore" class="editor-action" text="Clear Preview" tooltip="Remove owned additions, connections and blocks. Keep saved paint." />
-
         </ui:VisualElement>
-
         <ui:ScrollView name="NavigationScroll" class="editor-content-scroll">
-
-            <ui:VisualElement name="NavPaintCard" class="editor-navigation-card">
-
+            <ui:VisualElement name="NavPaintCard" class="editor-card">
                 <ui:Label name="NavPaintHeading" class="editor-label" text="MANUAL NAVIGATION" picking-mode="Ignore" />
-
-                <ui:VisualElement name="NavBrushActions" class="editor-actions editor-action-row">
-
+                <ui:VisualElement name="NavBrushActions" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="NavPaintAdd" class="editor-action" text="Add" tooltip="Paint new navigation on physical surfaces. Native navigation is not duplicated." />
-
                     <ui:Button name="NavPaintBlock" class="editor-action" text="Block" tooltip="Remove existing or painted navigation with an owned cut on the selected floor." />
-
                     <ui:Button name="NavPaintErase" class="editor-action" text="Erase Edits" tooltip="Erase saved Add or Block paint. Erasing a block restores native navigation on the next preview." />
-
                     <ui:Button name="NavPaintOff" class="editor-action" text="Off" />
-
                 </ui:VisualElement>
-
                 <ui:TextField name="NavBrushSize" class="editor-field" label="Brush radius (m)" value="2" tooltip="0.75–8 metres. Paint records visible one-metre cells." />
-
                 <ui:Toggle name="NavFloorLock" class="editor-setting" label="Lock to first painted floor" tooltip="Only paint within 0.6 m of the first stroke height. Toggle off for ramps." />
-
                 <ui:Label name="NavPaintState" class="editor-label" text="Tool: Off" picking-mode="Ignore" />
-
                 <ui:Label name="NavPaintHelp" class="editor-label" text="Drag LMB to paint · Ctrl+Z/Y undo/redo · Escape stops the brush. Each stroke is one undo step. Nothing fills outside your paint. Clear Preview before editing." picking-mode="Ignore" />
-
-                <ui:VisualElement name="NavConnectionActions" class="editor-actions editor-action-row">
-
+                <ui:VisualElement name="NavConnectionActions" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="NavPaintConnect" class="editor-action" text="Connect" tooltip="Click two supported endpoints, at most 5 m apart. Short ground-level walks only; no jumping or vaulting." />
-
                     <ui:Button name="NavPaintPath" class="editor-action" text="Check Path" tooltip="Click start and destination to check the active navigation in both directions." />
-
                     <ui:Button name="NavClearConnections" class="editor-action" text="Erase Connections" tooltip="Remove saved connections; supports undo." />
-
                 </ui:VisualElement>
-
             </ui:VisualElement>
-
-            <ui:VisualElement name="NavStatusCard" class="editor-navigation-card">
-
+            <ui:VisualElement name="NavStatusCard" class="editor-card">
                 <ui:Label name="NavStatus" class="editor-label" text="Paint Add or Block, then build a preview." picking-mode="Ignore" />
-
                 <ui:Label name="NavFeedback" class="editor-label editor-navigation-feedback" picking-mode="Ignore" />
-
             </ui:VisualElement>
-
-            <ui:VisualElement name="NavDisplayCard" class="editor-navigation-card">
-
+            <ui:VisualElement name="NavDisplayCard" class="editor-card">
                 <ui:Label name="NavDisplayHeading" class="editor-label" text="SURFACE DISPLAY" picking-mode="Ignore" />
-
-                <ui:VisualElement name="NavViewActions" class="editor-actions editor-action-row">
-
+                <ui:VisualElement name="NavViewActions" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="NavViewAll" class="editor-action" text="All floors" />
-
                     <ui:Button name="NavViewFloor" class="editor-action" text="This floor" />
-
                     <ui:Button name="NavHide" class="editor-action" text="Hide" />
-
                 </ui:VisualElement>
-
                 <ui:Toggle name="NavProjectOntoGround" class="editor-setting" label="Project onto ground" value="true" tooltip="Colour visible ground within the navigation footprint and two metres of its height. Holes remain empty. Disable to inspect the raw navigation triangles." />
-
                 <ui:Label name="NavLegend" class="editor-label" text="Blue: active navigation snapshot · green: Add paint / brighter baked additions · red: Block footprint · yellow: explicit connections. Native agent clearance can widen carved edges." picking-mode="Ignore" />
-
             </ui:VisualElement>
-
-            <ui:VisualElement name="NavHealthCard" class="editor-navigation-card">
+            <ui:VisualElement name="NavHealthCard" class="editor-card">
                 <ui:Label name="NavHealthHeading" class="editor-label" text="NAVIGATION CHECKS" picking-mode="Ignore" />
-                <ui:VisualElement name="NavHealthActions" class="editor-actions editor-action-row">
+                <ui:VisualElement name="NavHealthActions" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="NavHealthScan" class="editor-action" text="Scan Nearby" tooltip="Read-only scan of active navigation within 24 m of the camera ground point. Uses the current floor filter. Maximum 4096 sampled triangles; no automatic repair." />
                     <ui:Button name="NavHealthClear" class="editor-action" text="Clear Checks" />
                 </ui:VisualElement>
-                <ui:VisualElement name="NavHealthFilters" class="editor-actions editor-action-row">
+                <ui:VisualElement name="NavHealthFilters" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="NavHealthAll" class="editor-action" text="All" />
                     <ui:Button name="NavHealthSupport" class="editor-action" text="Support" />
                     <ui:Button name="NavHealthClearance" class="editor-action" text="Clearance" />
@@ -102,42 +59,22 @@
                 <ui:Label name="NavHealthStatus" class="editor-label" text="No nearby scan yet." picking-mode="Ignore" />
                 <ui:Label name="NavHealthLegend" class="editor-label" text="Red: support / clearance · amber: slope / width / height · purple: no two-way route to scan origin · cyan: no sampled issue · grey hatching: stale or unverified. Ordinary blue navigation outside the scan is unchecked. No automatic changes." picking-mode="Ignore" />
             </ui:VisualElement>
-
             <ui:Toggle name="NavAdvanced" class="editor-setting" label="Show source diagnostics" />
-
-            <ui:VisualElement name="NavDiagnosticsCard" class="editor-navigation-card">
-
+            <ui:VisualElement name="NavDiagnosticsCard" class="editor-card">
                 <ui:Label name="NavDiagnosticsHeading" class="editor-label" text="PAINTED-REGION SOURCES" picking-mode="Ignore" />
-
-                <ui:VisualElement name="NavDiagnosticActions" class="editor-actions editor-action-row">
-
+                <ui:VisualElement name="NavDiagnosticActions" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="NavScan" class="editor-action" text="Scan Paint" />
-
                     <ui:Button name="NavReport" class="editor-action" text="Save Report" />
-
                 </ui:VisualElement>
-
                 <ui:Label name="NavIssueCount" class="editor-label" text="No painted-region scan yet" picking-mode="Ignore" />
-
                 <ui:Label name="NavIssue" class="editor-label" picking-mode="Ignore" />
-
-                <ui:VisualElement name="NavIssueActions" class="editor-actions editor-action-row">
-
+                <ui:VisualElement name="NavIssueActions" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="NavIssuePrevious" class="editor-action" text="Previous" />
-
                     <ui:Button name="NavIssueNext" class="editor-action" text="Next" />
-
                     <ui:Button name="NavIssueSelect" class="editor-action" text="Select Source" />
-
                 </ui:VisualElement>
-
             </ui:VisualElement>
-
             <ui:Label name="NavLimitations" class="editor-label" text="Saved paint; editor preview only. Use Observe to test bots. No automatic expansion, full-map replacement or generated connections. Tactical cover is unchanged." picking-mode="Ignore" />
-
         </ui:ScrollView>
-
     </ui:VisualElement>
-
 </ui:UXML>
-

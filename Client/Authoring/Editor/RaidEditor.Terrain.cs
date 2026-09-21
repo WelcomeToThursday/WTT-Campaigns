@@ -243,6 +243,7 @@ public sealed partial class RaidEditor
         _view.Highlight("TerrainGrass", _terrainGrass);
         _view.Visible("TerrainDensity", _terrainGrass);
         _view.Visible("TerrainTextureActions", !_terrainGrass);
+        _view.Visible("TerrainTextureRestoreActions", !_terrainGrass);
         _view.Visible("TerrainGrassActions", _terrainGrass);
         _view.Visible("TerrainGrassRestoreActions", _terrainGrass);
         _view.Element("TerrainPalette").SetEnabled(CanPaintTerrain && _terrainStroke == null);

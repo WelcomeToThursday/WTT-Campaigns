@@ -181,6 +181,7 @@ WTT.Campaigns.Tests.EditorTooltipChecks.Run(Check);
 WTT.Campaigns.Tests.EditorUiScaleChecks.Run(Check);
 WTT.Campaigns.Tests.EditorInteractionChecks.Run(Check);
 WTT.Campaigns.Tests.CatalogGridLayoutChecks.Run(Check);
+WTT.Campaigns.Tests.EditorActionGridChecks.Run(Check);
 WTT.Campaigns.Tests.EditorControllerChecks.Run(Check);
 WTT.Campaigns.Tests.EditorOpenChecks.Run(Check);
 WTT.Campaigns.Tests.EditorCameraBookmarkChecks.Run(Check);

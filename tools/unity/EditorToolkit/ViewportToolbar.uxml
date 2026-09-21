@@ -15,7 +15,7 @@
             <ui:Button name="ViewportClean" text="Clean" tooltip="Temporarily hide editor overlays; click again to restore your choices. Shortcut: G over the viewport." />
         </ui:ScrollView>
         <ui:Button name="ViewportMaximize" text="Maximize" tooltip="Maximize or restore the viewport (Shift+Space)" />
-        <ui:VisualElement name="ViewportOverlayMenu" class="editor-viewport-overlay-menu">
+        <ui:VisualElement name="ViewportOverlayMenu" class="editor-viewport-overlay-menu editor-card">
             <ui:Toggle name="OverlayZones" label="Zones and hazards" value="true" class="editor-setting" />
             <ui:Toggle name="OverlayRoutes" label="Player routes" value="true" class="editor-setting" />
             <ui:Toggle name="OverlayAi" label="AI markers and navigation" value="true" class="editor-setting" />

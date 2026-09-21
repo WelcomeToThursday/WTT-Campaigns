@@ -24,7 +24,6 @@ public static class EditorToolkitIcons
         ["TerrainTool"] = "map-outline-rounded",
         ["LootTool"] = "inventory-2-outline-rounded",
         ["AI"] = "psychology-rounded",
-        ["CloseEditor"] = "close-rounded",
         ["HelpToggle"] = "help-outline-rounded",
         ["WindowsToggle"] = "view-sidebar-outline-rounded",
         ["ContextToggle"] = "tune-rounded",

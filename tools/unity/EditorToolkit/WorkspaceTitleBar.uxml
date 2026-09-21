@@ -6,6 +6,5 @@
         <ui:Button name="ContextToggle" text="Session" class="editor-action" />
         <ui:Button name="WindowsToggle" text="Windows" class="editor-action" />
         <ui:Button name="HelpToggle" text="Help" class="editor-action" />
-        <ui:Button name="CloseEditor" text="Close" class="editor-action" />
     </ui:VisualElement>
 </ui:UXML>

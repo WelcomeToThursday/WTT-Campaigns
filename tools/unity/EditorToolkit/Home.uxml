@@ -13,9 +13,10 @@
         <ui:Label name="DraftHelp" style="position: absolute; left: 124px; top: 260px; width: 292px; height: 44px; font-size: 17px; white-space: normal;" text="Choose the campaign you want to edit." picking-mode="Ignore" enable-rich-text="false" />
         <ui:Button name="EditorRefresh" style="position: absolute; left: 124px; top: 322px; width: 292px; height: 32px;" text="REFRESH DRAFTS" />
         <ui:Button name="EditorNewLevel" style="position: absolute; left: 124px; top: 364px; width: 292px; height: 34px;" text="NEW LEVEL" />
-        <ui:TextField name="EditorLevelName" class="editor-field" max-length="120" style="position: absolute; left: 460px; top: 302px; width: 692px; height: 38px;" value="New level" />
-        <ui:Label name="CreatorHeading" style="position: absolute; left: 124px; top: 364px; width: 292px; height: 28px; font-size: 20px; white-space: normal;" text="WEB CREATOR" picking-mode="Ignore" enable-rich-text="false" />
-        <ui:Label name="CreatorHelp" style="position: absolute; left: 124px; top: 406px; width: 292px; height: 60px; font-size: 17px; white-space: normal;" text="Create drafts and edit quests, dialogue, traders and rewards." picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Button name="EditorNewMission" style="position: absolute; left: 124px; top: 364px; width: 292px; height: 34px;" text="NEW MISSION" />
+        <ui:TextField name="EditorContentName" class="editor-field" max-length="120" style="position: absolute; left: 460px; top: 302px; width: 692px; height: 38px;" value="New mission" />
+        <ui:Label name="CreatorHeading" style="position: absolute; left: 124px; top: 406px; width: 292px; height: 28px; font-size: 20px; white-space: normal;" text="WEB CREATOR" picking-mode="Ignore" enable-rich-text="false" />
+        <ui:Label name="CreatorHelp" style="position: absolute; left: 124px; top: 438px; width: 292px; height: 34px; font-size: 17px; white-space: normal;" text="Manage missions, levels and story in Creator." picking-mode="Ignore" enable-rich-text="false" />
         <ui:Button name="EditorWeb" style="position: absolute; left: 124px; top: 480px; width: 292px; height: 34px;" text="OPEN CREATOR" />
         <ui:Label name="MapHeading" style="position: absolute; left: 460px; top: 174px; width: 692px; height: 28px; font-size: 20px; white-space: normal;" text="MAP WORKSPACE" picking-mode="Ignore" enable-rich-text="false" />
         <ui:Label name="EditorSelection" style="position: absolute; left: 460px; top: 208px; width: 692px; height: 54px; font-size: 23px; white-space: normal;" text="Select a content draft to begin" picking-mode="Ignore" enable-rich-text="false" />

@@ -47,7 +47,7 @@ internal sealed partial class RaidEditorView
         );
     }
 
-    private void ShowChoices(VisualElement anchor, string[] labels, int selected, Func<int, bool> enabled, Action<int> choose)
+    internal void ShowChoices(VisualElement anchor, string[] labels, int selected, Func<int, bool> enabled, Action<int> choose)
     {
         DismissDropdowns();
         Windows.DismissMenus();

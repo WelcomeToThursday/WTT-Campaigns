@@ -281,9 +281,14 @@ internal static class EditorToolkitChecks
                 if (!inventory.TryGetValue(id, out var actual) || actual != expected && !(actual == "toggle" && expected == "button"))
                     throw new InvalidOperationException("Missing or wrong Toolkit control: " + id + " in " + method.FullName);
             }
-        foreach (var id in new[] { "KeepLocal", "KeepRemote", "Cancel", "Complete", "CloseEditor" })
+        foreach (var id in new[] { "KeepLocal", "KeepRemote", "Cancel", "Complete" })
             if (!nodes.Any(n => n.Id == id && n.Kind == "button"))
                 throw new InvalidOperationException("Missing Editor action: " + id);
+        if (nodes.Any(n => n.Id == "CloseEditor"))
+            throw new InvalidOperationException("The editor workspace must not expose a global close button.");
+        var sizeActions = nodes.Single(n => n.Id == "UiSizeActions");
+        if (!sizeActions.Children.Any(n => n.Id == "UiSizeSmaller") || !sizeActions.Children.Any(n => n.Id == "UiSizeLarger"))
+            throw new InvalidOperationException("Both UI size controls must remain in the same action row.");
         // The typed wrappers also call Get<T>, but their control name is an
         // argument rather than a literal inside Get. Check the scene and container callers
         // against the actual layout, including captions chosen by a branch.

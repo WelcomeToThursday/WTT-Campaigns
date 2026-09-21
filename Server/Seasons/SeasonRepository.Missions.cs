@@ -26,13 +26,29 @@ public sealed partial class SeasonRepository
         return output;
     }
 
-    public DraftEnvelope CreateMission()
+    public DraftEnvelope CreateMission() => CreateMissionDraft("New mission", "");
+
+    public DraftEnvelope CreateMission(string name, string location)
     {
-        var layout = new WTT.Campaigns.Shared.Spatial.MapLayout { Id = NewId(), Name = "Mission layout" };
+        name = (name ?? "").Trim();
+        location = (location ?? "").Trim();
+        if (name.Length is < 1 or > 120 || location.Length is < 1 or > 120 || location == "hideout")
+            throw new InvalidOperationException("Enter a mission name (up to 120 characters) and choose a raid location.");
+        return CreateMissionDraft(name, location);
+    }
+
+    private DraftEnvelope CreateMissionDraft(string name, string location)
+    {
+        var layout = new WTT.Campaigns.Shared.Spatial.MapLayout
+        {
+            Id = NewId(),
+            Name = location.Length == 0 ? "Mission layout" : name,
+            Location = location,
+        };
         var mission = new MissionDefinition
         {
             Id = NewId(),
-            Name = "New mission",
+            Name = name,
             Briefing = "Complete the route and extract.",
             LayoutId = layout.Id,
             CheckpointRetries = true,

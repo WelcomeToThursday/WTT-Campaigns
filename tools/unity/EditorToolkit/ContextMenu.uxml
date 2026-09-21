@@ -1,7 +1,16 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <Style src="Editor.uss" />
     <ui:VisualElement name="ContextMenu" class="editor-menu editor-session-menu">
-        <ui:Button name="EditorUnload" class="editor-action" text="Unload map / return home" />
-        <ui:Button name="EnvironmentToggle" class="editor-action" text="Environment / time and weather" />
+        <ui:ScrollView class="editor-menu-scroll" horizontal-scroller-visibility="Hidden">
+            <ui:VisualElement class="editor-card">
+                <ui:Label text="SESSION" class="editor-heading" picking-mode="Ignore" />
+                <ui:VisualElement class="editor-action-row editor-action-grid">
+                    <ui:Button name="EditorUnload" class="editor-action" text="Unload map / return home" />
+                </ui:VisualElement>
+                <ui:VisualElement class="editor-action-row editor-action-grid">
+                    <ui:Button name="EnvironmentToggle" class="editor-action" text="Environment / time and weather" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>

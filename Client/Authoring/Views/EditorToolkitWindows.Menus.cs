@@ -68,10 +68,11 @@ internal sealed partial class EditorToolkitWindows
         var menu = _view.Element(_openMenu);
         var anchor = _view.Element(_openMenu == "WindowsMenu" ? "WindowsToggle" : "ContextToggle").worldBound;
         var local = menu.parent.WorldToLocal(new Vector2(anchor.xMax, anchor.yMax));
-        var width = Math.Min(300, _view.Document.Width - 16);
+        var width = Math.Min(220, _view.Document.Width - 16);
         menu.style.width = width;
         menu.style.left = Mathf.Clamp(local.x - width, 8, Math.Max(8, _view.Document.Width - width - 8));
         menu.style.top = local.y + 2;
+        menu.style.maxHeight = Math.Max(0, _view.Document.Height - local.y - 10);
     }
 
     private void MenuKey(KeyDownEvent evt)

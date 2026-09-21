@@ -48,8 +48,7 @@ internal static class EditorLayoutSpec
             T("Connection", "Connecting…"),
             B("ContextToggle", "Session"),
             B("WindowsToggle", "Windows"),
-            B("HelpToggle", "Help"),
-            B("CloseEditor", "Close")
+            B("HelpToggle", "Help")
         ),
         R(
             "TransformToolbar",
@@ -364,7 +363,7 @@ internal static class EditorLayoutSpec
                 "",
                 T(
                     "Help",
-                    "RMB + WASD: fly · Q / E: elevation\nFly m/s: speed · Shift: 4× · Ctrl: precision\nDrag handles · Alt: bypass snap · Ctrl+Z/Y: undo/redo\nDrag titles or dock tabs to float, split or group tools. Drag dividers to resize docks.\nThe left rail opens tools. Drag a floating corner to resize. Reset layout restores defaults.\nEscape dismisses menus, releases a field, cancels a tool, then closes."
+                    "RMB + WASD: fly · Q / E: elevation\nFly m/s: speed · Shift: 4× · Ctrl: precision\nDrag handles · Alt: bypass snap · Ctrl+Z/Y: undo/redo\nDrag titles or dock tabs to float, split or group tools. Drag dividers to resize docks.\nThe left rail opens tools. Drag a floating corner to resize. Reset layout restores defaults.\nEscape dismisses menus, releases a field or cancels a tool. Use Session to unload the map."
                 )
             )
         ),
@@ -381,7 +380,8 @@ internal static class EditorLayoutSpec
                 I("TerrainStrength", "Strength (%)"),
                 I("TerrainFalloff", "Falloff (%)"),
                 I("TerrainDensity", "Target density"),
-                R("TerrainTextureActions", B("TerrainPaint", "Paint"), B("TerrainRestoreTexture", "Restore original")),
+                R("TerrainTextureActions", B("TerrainPaint", "Paint")),
+                R("TerrainTextureRestoreActions", B("TerrainRestoreTexture", "Restore original")),
                 R("TerrainGrassActions", B("TerrainAddGrass", "Add"), B("TerrainRemoveGrass", "Remove selected")),
                 R("TerrainGrassRestoreActions", B("TerrainClearGrass", "Clear all"), B("TerrainRestoreGrass", "Restore original")),
                 B("TerrainOff", "Stop brush"),

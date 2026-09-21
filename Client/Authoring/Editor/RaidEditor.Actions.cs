@@ -47,7 +47,6 @@ public sealed partial class RaidEditor
             BindEnvironment(view);
             BindHazards(view);
             BindCameraControls(view);
-            view.Button("CloseEditor", Close);
             void Button(string name, Action action)
             {
                 view.Button(

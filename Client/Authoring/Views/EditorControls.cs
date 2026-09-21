@@ -14,7 +14,14 @@ internal class EditorControl
     internal bool Visible
     {
         get => Element.style.display.value != DisplayStyle.None;
-        set => Element.style.display = value ? DisplayStyle.Flex : DisplayStyle.None;
+        set
+        {
+            var display = value ? DisplayStyle.Flex : DisplayStyle.None;
+            if (Element.style.display.keyword != StyleKeyword.Null && Element.style.display.value == display)
+                return;
+            Element.style.display = display;
+            EditorActionGrid.Refresh(Element.parent);
+        }
     }
     internal bool interactable
     {
@@ -88,10 +95,13 @@ internal sealed class EditorButton : EditorControl
         set
         {
             if (text != value)
+            {
                 if (Element is Toggle toggle)
                     toggle.label = value;
                 else
                     ((Button)Element).text = value;
+                EditorActionGrid.Refresh(Element.parent);
+            }
         }
     }
 
@@ -278,6 +288,7 @@ internal sealed class EditorChoice : EditorControl
         button.EnableInClassList("editor-choice-compact", compact);
         while (content.childCount > 0)
             button.Add(content[0]);
+        EditorActionGrid.Refresh(button.parent);
     }
 
     internal sealed class OptionData

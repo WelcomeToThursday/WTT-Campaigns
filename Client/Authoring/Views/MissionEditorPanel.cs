@@ -11,6 +11,7 @@ internal sealed class MissionEditorPanel
 {
     private readonly Foldout _root;
     private readonly EditorToolkitDocument _document;
+    private readonly RaidEditorView _view;
     private readonly Func<RaidEditorSession?> _session;
     private string _missionId = "";
     private long _version = -1;
@@ -18,6 +19,7 @@ internal sealed class MissionEditorPanel
     internal MissionEditorPanel(RaidEditorView view, VisualElement parent, Func<RaidEditorSession?> session)
     {
         _document = view.Document;
+        _view = view;
         _root = _document.Clone<Foldout>("InspectorSection");
         _root.text = "Mission events and objectives";
         _root.value = false;
@@ -316,6 +318,7 @@ internal sealed class MissionEditorPanel
     private void Button(VisualElement parent, string title, Action action)
     {
         var button = _document.Clone<Button>("Action");
+        button.AddToClassList("editor-action-full");
         button.text = title;
         button.clicked += () => Change(action);
         parent.Add(button);
@@ -335,6 +338,7 @@ internal sealed class MissionEditorPanel
     private void Number(VisualElement parent, string title, double value, Action<double> update)
     {
         var field = new DoubleField(title) { value = value, isDelayed = true };
+        field.AddToClassList("editor-field");
         field.RegisterValueChangedCallback(e => Change(() => update(e.newValue)));
         parent.Add(field);
     }
@@ -342,6 +346,7 @@ internal sealed class MissionEditorPanel
     private void Toggle(VisualElement parent, string title, bool value, Action<bool> update)
     {
         var field = new Toggle(title) { value = value };
+        field.AddToClassList("editor-setting");
         field.RegisterValueChangedCallback(e => Change(() => update(e.newValue)));
         parent.Add(field);
     }
@@ -359,15 +364,23 @@ internal sealed class MissionEditorPanel
         if (!entries.AsValueEnumerable().Any(e => e.Id == value))
             entries.Insert(0, (value, value.Length == 0 ? "Choose…" : "Missing selection"));
         var index = entries.FindIndex(e => e.Id == value);
-        var field = new DropdownField(title, entries.AsValueEnumerable().Select(e => e.Name).ToList(), index);
-        field.RegisterValueChangedCallback(_ =>
-        {
-            var id = entries[field.index].Id;
-            if (edit)
-                Change(() => update(id));
-            else
-                update(id);
-        });
+        var field = _document.Clone<Button>("Action");
+        field.text = entries[index].Name;
+        field.AddToClassList("editor-mission-choice");
+        var choice = new EditorChoice(field, _ => { });
+        choice.AddFieldLabel(title);
+        field.tooltip = title + ": " + entries[index].Name;
+        field.clicked += () => _view.ShowChoices(
+            field, entries.AsValueEnumerable().Select(e => e.Name).ToArray(), index, _ => true,
+            selected =>
+            {
+                var id = entries[selected].Id;
+                if (edit)
+                    Change(() => update(id));
+                else
+                    update(id);
+            }
+        );
         parent.Add(field);
     }
 }

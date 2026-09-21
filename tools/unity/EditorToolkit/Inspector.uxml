@@ -10,24 +10,24 @@
                     <ui:Image name="ScenePreview" class="editor-preview" />
                     <ui:Label name="ScenePreviewStatus" class="editor-label" text="Loading preview…" picking-mode="Ignore" />
                 </ui:VisualElement>
-                <ui:VisualElement name="ScenePreviewRetryGroup" class="editor-actions editor-action-row">
+                <ui:VisualElement name="ScenePreviewRetryGroup" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="ScenePreviewRetry" class="editor-action" text="Retry preview" />
                 </ui:VisualElement>
-                <ui:VisualElement name="SceneFocusGroup" class="editor-actions editor-action-row editor-divider">
+                <ui:VisualElement name="SceneFocusGroup" class="editor-actions editor-action-row editor-divider editor-action-grid">
                     <ui:Button name="SceneFrame" class="editor-action" text="Frame (F)" />
                     <ui:Button name="SceneAnchor" class="editor-action" text="Anchor: Center" />
                 </ui:VisualElement>
-                <ui:VisualElement name="ScenePlaceGroup" class="editor-actions editor-action-row editor-divider">
+                <ui:VisualElement name="ScenePlaceGroup" class="editor-actions editor-action-row editor-divider editor-action-grid">
                     <ui:Button name="ScenePlace" class="editor-action" text="Place" />
                     <ui:Toggle name="SceneRepeat" class="editor-setting" label="Repeat placement" />
                 </ui:VisualElement>
-                <ui:VisualElement name="SceneEditGroup" class="editor-actions editor-action-row editor-divider">
+                <ui:VisualElement name="SceneEditGroup" class="editor-actions editor-action-row editor-divider editor-action-grid">
                     <ui:Button name="SceneMove" class="editor-action" text="Move (W)" />
                     <ui:Button name="SceneRotate" class="editor-action" text="Rotate (E)" />
                     <ui:Button name="SceneScale" class="editor-action" text="Scale (R)" />
                     <ui:Button name="SceneRemove" class="editor-action" text="Remove" />
                 </ui:VisualElement>
-                <ui:VisualElement name="SceneRestoreGroup" class="editor-actions editor-action-row editor-divider">
+                <ui:VisualElement name="SceneRestoreGroup" class="editor-actions editor-action-row editor-divider editor-action-grid">
                     <ui:Label text="RESTORE / REBIND" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                     <ui:Button name="SceneRestore" class="editor-action" text="Restore original" />
                     <ui:Button name="SceneRebind" class="editor-action" text="Rebind to picked" />
@@ -40,7 +40,7 @@
                 <ui:VisualElement name="NameGroup" class="editor-group">
                     <ui:TextField name="Name" class="editor-field" label="Name" />
                 </ui:VisualElement>
-                <ui:VisualElement name="EventKindGroup" class="editor-actions editor-action-row">
+                <ui:VisualElement name="EventKindGroup" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Label text="Event type" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                     <ui:Button name="EventKind" class="editor-action" text="Event kind" />
                 </ui:VisualElement>
@@ -71,7 +71,7 @@
                 <ui:VisualElement name="RadiusGroup" class="editor-group">
                     <ui:TextField name="Radius" class="editor-field" label="SPHERE RADIUS · metres" />
                 </ui:VisualElement>
-                <ui:VisualElement name="PlacementGroup" class="editor-actions editor-action-row editor-separated-group">
+                <ui:VisualElement name="PlacementGroup" class="editor-actions editor-action-row editor-separated-group editor-action-grid">
                     <ui:Label text="PLACEMENT" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                     <ui:Button name="AtAim" class="editor-action" text="At aim point" />
                 </ui:VisualElement>
@@ -93,14 +93,14 @@
                         <ui:Toggle name="SniperSuppressed" class="editor-setting" label="Suppressed shots" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="SceneActionsGroup" class="editor-actions editor-action-row editor-separated-group">
+                <ui:VisualElement name="SceneActionsGroup" class="editor-actions editor-action-row editor-separated-group editor-action-grid">
                     <ui:Label text="SCENE TARGET" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                     <ui:Button name="Parent" class="editor-action" text="Select parent" />
                     <ui:Button name="UseObject" class="editor-action" text="Use scene target" />
                 </ui:VisualElement>
-                <ui:VisualElement name="AiTriggerSection" class="editor-group">
+                <ui:VisualElement name="AiTriggerSection" class="editor-group editor-card">
                     <ui:Label name="AiTriggerHeading" class="editor-label" text="ACTIVATION" picking-mode="Ignore" />
-                    <ui:VisualElement name="AiTriggerGroup" class="editor-actions editor-action-row">
+                    <ui:VisualElement name="AiTriggerGroup" class="editor-actions editor-action-row editor-action-grid">
                         <ui:Label text="Trigger type" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                         <ui:Button name="AiTrigger" class="editor-action" text="Trigger" />
                     </ui:VisualElement>
@@ -111,7 +111,7 @@
                         <ui:TextField name="AiTriggerZoneId" class="editor-field" label="Trigger zone" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="AiWaveSection" class="editor-group">
+                <ui:VisualElement name="AiWaveSection" class="editor-group editor-card">
                     <ui:Label name="AiWaveHeading" class="editor-label" text="WAVE TIMING" picking-mode="Ignore" />
                     <ui:VisualElement name="AiWaveDelaySecondsGroup" class="editor-group">
                         <ui:TextField name="AiWaveDelaySeconds" class="editor-field" label="Delay (seconds)" />
@@ -121,13 +121,13 @@
                         <ui:Toggle name="AiWaveWaitPrevious" class="editor-setting" label="Wait for previous wave defeat" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="AiRosterSection" class="editor-group">
+                <ui:VisualElement name="AiRosterSection" class="editor-group editor-card">
                     <ui:Label name="AiRosterHeading" class="editor-label" text="BOT ROSTER" picking-mode="Ignore" />
-                    <ui:VisualElement name="AiRosterRoleGroup" class="editor-actions editor-action-row">
+                    <ui:VisualElement name="AiRosterRoleGroup" class="editor-actions editor-action-row editor-action-grid">
                         <ui:Label text="Bot role" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                         <ui:Button name="AiRosterRole" class="editor-choice" text="Roster role" />
                     </ui:VisualElement>
-                    <ui:VisualElement name="AiRosterDifficultyGroup" class="editor-actions editor-action-row">
+                    <ui:VisualElement name="AiRosterDifficultyGroup" class="editor-actions editor-action-row editor-action-grid">
                         <ui:Label text="Roster difficulty" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                         <ui:Button name="AiRosterDifficulty" class="editor-choice" text="Roster difficulty" />
                     </ui:VisualElement>
@@ -138,7 +138,7 @@
                         <ui:TextField name="AiRosterSquadId" class="editor-field" label="Squad name" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="AiAssignmentSection" class="editor-group">
+                <ui:VisualElement name="AiAssignmentSection" class="editor-group editor-card">
                     <ui:Label name="AiAssignmentHeading" class="editor-label" text="SPAWN &amp; PATROL ASSIGNMENTS" picking-mode="Ignore" />
                     <ui:VisualElement name="AiRosterSpawnNextGroup" class="editor-group">
                         <ui:Button name="AiRosterSpawnNext" class="editor-action editor-choice" text="Choose spawn points" />
@@ -154,21 +154,21 @@
                         <ui:TextField name="AiRosterPatrolRoute" class="editor-field" label="Patrol route id" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="AiPatrolSection" class="editor-group">
+                <ui:VisualElement name="AiPatrolSection" class="editor-group editor-card">
                     <ui:Label name="AiPatrolHeading" class="editor-label" text="PATROL MOVEMENT" picking-mode="Ignore" />
-                    <ui:VisualElement class="editor-actions editor-action-row">
+                    <ui:VisualElement class="editor-actions editor-action-row editor-action-grid">
                         <ui:Button name="AiWaypointInsert" class="editor-action" text="Insert after selected" />
                         <ui:Button name="AiRouteReverse" class="editor-action" text="Reverse route" />
                     </ui:VisualElement>
-                    <ui:VisualElement class="editor-actions editor-action-row">
+                    <ui:VisualElement class="editor-actions editor-action-row editor-action-grid">
                         <ui:Button name="AiWaypointEarlier" class="editor-action" text="Move earlier" />
                         <ui:Button name="AiWaypointLater" class="editor-action" text="Move later" />
                     </ui:VisualElement>
-                    <ui:VisualElement name="AiPaceGroup" class="editor-actions editor-action-row">
+                    <ui:VisualElement name="AiPaceGroup" class="editor-actions editor-action-row editor-action-grid">
                         <ui:Label text="Movement pace" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                         <ui:Button name="AiPace" class="editor-choice" text="Patrol pace" />
                     </ui:VisualElement>
-                    <ui:VisualElement name="AiCompletionGroup" class="editor-actions editor-action-row">
+                    <ui:VisualElement name="AiCompletionGroup" class="editor-actions editor-action-row editor-action-grid">
                         <ui:Label text="At route end" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                         <ui:Button name="AiCompletion" class="editor-choice" text="Patrol completion" />
                     </ui:VisualElement>
@@ -176,12 +176,12 @@
                         <ui:TextField name="AiWaypointWaitSeconds" class="editor-field" label="Wait (seconds)" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="RecordActionsGroup" class="editor-actions editor-action-row editor-separated-group">
+                <ui:VisualElement name="RecordActionsGroup" class="editor-actions editor-action-row editor-separated-group editor-action-grid">
                     <ui:Label text="SELECTION" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                     <ui:Button name="Duplicate" class="editor-action" text="Duplicate" />
                     <ui:Button name="Delete" class="editor-action" text="Delete" />
                 </ui:VisualElement>
-                <ui:VisualElement name="RecordDetailsToggleGroup" class="editor-actions editor-action-row">
+                <ui:VisualElement name="RecordDetailsToggleGroup" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="RecordDetailsToggle" class="editor-action" text="Details +" />
                 </ui:VisualElement>
                 <ui:VisualElement name="IdentityGroup" class="editor-group">
@@ -191,29 +191,45 @@
                     <ui:Label name="Details" class="editor-label" picking-mode="Ignore" />
                 </ui:VisualElement>
             </ui:VisualElement>
-                <ui:VisualElement name="SplineSection" class="editor-group editor-spline-card">
-                    <ui:Label name="SplineHeading" class="editor-label" text="CURVE EDITING" />
+            <ui:VisualElement name="SplineSection" class="editor-group editor-card">
+                <ui:Label name="SplineHeading" class="editor-label" text="CURVE EDITING" />
+                <ui:VisualElement class="editor-action-row editor-action-grid">
                     <ui:Button name="SplineEdit" class="editor-action" text="Edit Spline" tooltip="Enable reusable curve editing for this route. Existing markers keep their gameplay meaning." />
-                    <ui:Label name="SplineStatus" class="editor-label" />
-                    <ui:VisualElement name="SplineDetails" class="editor-group">
-                        <ui:VisualElement name="SplineModeGroup" class="editor-group"><ui:Button name="SplineMode" class="editor-choice" text="Handles" tooltip="Corner: sharp turn. Auto: smooth tangent. Aligned: linked directions. Free: independent handles." /></ui:VisualElement>
-                        <ui:VisualElement name="SplinePartGroup" class="editor-group"><ui:Button name="SplinePart" class="editor-choice" text="Edit" tooltip="Choose the point or handle to adjust with the axes and world coordinates." /></ui:VisualElement>
-                        <ui:VisualElement name="SplineXGroup" class="editor-group"><ui:TextField name="SplineX" class="editor-field" label="World X" /></ui:VisualElement>
-                        <ui:VisualElement name="SplineYGroup" class="editor-group"><ui:TextField name="SplineY" class="editor-field" label="World Y" /></ui:VisualElement>
-                        <ui:VisualElement name="SplineZGroup" class="editor-group"><ui:TextField name="SplineZ" class="editor-field" label="World Z" /></ui:VisualElement>
-                        <ui:VisualElement name="SplineStrengthGroup" class="editor-group"><ui:TextField name="SplineStrength" class="editor-field" label="Smoothing (%)" tooltip="0–100. Applied by Smooth selected or Smooth route. Tight passages may need less rounding." /></ui:VisualElement>
-                        <ui:VisualElement name="SplineSmoothRow" class="editor-actions editor-action-row">
-                            <ui:Button name="SplineSmoothSelected" class="editor-action" text="Smooth selected" tooltip="Smooth this point; reduce rounding when patrol clearance requires it." />
-                            <ui:Button name="SplineSmoothRoute" class="editor-action" text="Smooth route" tooltip="Smooth anchors and round navigation corners without moving route markers." />
-                        </ui:VisualElement>
-                        <ui:VisualElement name="SplinePointRow" class="editor-actions editor-action-row">
-                            <ui:Button name="SplineInsert" class="editor-action" text="Insert point" tooltip="Split after the selected point without changing the curve. Ctrl-click a curve to split there." />
-                            <ui:Button name="SplineDelete" class="editor-action" text="Delete point" tooltip="Remove a shaping point. Delete gameplay markers with the route tools." />
-                        </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Label name="SplineStatus" class="editor-label" />
+                <ui:VisualElement name="SplineDetails" class="editor-group">
+                    <ui:VisualElement name="SplineModeGroup" class="editor-group">
+                        <ui:Button name="SplineMode" class="editor-choice" text="Handles" tooltip="Corner: sharp turn. Auto: smooth tangent. Aligned: linked directions. Free: independent handles." />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="SplinePartGroup" class="editor-group">
+                        <ui:Button name="SplinePart" class="editor-choice" text="Edit" tooltip="Choose the point or handle to adjust with the axes and world coordinates." />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="SplineXGroup" class="editor-group">
+                        <ui:TextField name="SplineX" class="editor-field" label="World X" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="SplineYGroup" class="editor-group">
+                        <ui:TextField name="SplineY" class="editor-field" label="World Y" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="SplineZGroup" class="editor-group">
+                        <ui:TextField name="SplineZ" class="editor-field" label="World Z" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="SplineStrengthGroup" class="editor-group">
+                        <ui:TextField name="SplineStrength" class="editor-field" label="Smoothing (%)" tooltip="0–100. Applied by Smooth selected or Smooth route. Tight passages may need less rounding." />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="SplineSmoothRow" class="editor-actions editor-action-row editor-action-grid">
+                        <ui:Button name="SplineSmoothSelected" class="editor-action" text="Smooth selected" tooltip="Smooth this point; reduce rounding when patrol clearance requires it." />
+                        <ui:Button name="SplineSmoothRoute" class="editor-action" text="Smooth route" tooltip="Smooth anchors and round navigation corners without moving route markers." />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="SplinePointRow" class="editor-actions editor-action-row editor-action-grid">
+                        <ui:Button name="SplineInsert" class="editor-action" text="Insert point" tooltip="Split after the selected point without changing the curve. Ctrl-click a curve to split there." />
+                        <ui:Button name="SplineDelete" class="editor-action" text="Delete point" tooltip="Remove a shaping point. Delete gameplay markers with the route tools." />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="editor-action-row editor-action-grid">
                         <ui:Button name="SplineCorner" class="editor-action" text="Make corner" tooltip="Collapse both handles for a deliberate sharp corner. Ctrl+Z undoes an edit; Escape cancels a drag." />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="MapInspector" class="editor-group">
+            </ui:VisualElement>
+            <ui:VisualElement name="MapInspector" class="editor-group">
                 <ui:VisualElement name="RouteGuideGroup" class="editor-group">
                     <ui:Label name="RouteGuide" class="editor-label" picking-mode="Ignore" />
                 </ui:VisualElement>
@@ -233,8 +249,12 @@
                     <ui:VisualElement name="DoorKeyResultsGroup" class="editor-group">
                         <ui:Button name="DoorKeyResults" class="editor-action editor-choice" text="Matching keys" />
                     </ui:VisualElement>
-                    <ui:Button name="DoorUseKey" class="editor-action" text="Use selected key" />
-                    <ui:Button name="DoorOriginalKey" class="editor-action" text="Use original key" />
+                    <ui:VisualElement class="editor-action-row editor-action-grid">
+                        <ui:Button name="DoorUseKey" class="editor-action" text="Use selected key" />
+                    </ui:VisualElement>
+                    <ui:VisualElement class="editor-action-row editor-action-grid">
+                        <ui:Button name="DoorOriginalKey" class="editor-action" text="Use original key" />
+                    </ui:VisualElement>
                     <ui:VisualElement name="DoorBreachGroup" class="editor-group">
                         <ui:Button name="DoorBreach" class="editor-action editor-choice" text="Breaching" />
                     </ui:VisualElement>
@@ -273,15 +293,15 @@
                         <ui:TextField name="MapSizeZ" class="editor-field" label="Z" />
                     </ui:VisualElement>
                 </ui:VisualElement>
-                <ui:VisualElement name="MapShapeGroup" class="editor-actions editor-action-row">
+                <ui:VisualElement name="MapShapeGroup" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Label text="Volume shape" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                     <ui:Button name="MapShape" class="editor-action" text="Shape: box" />
                 </ui:VisualElement>
-                <ui:VisualElement name="MapPlacementGroup" class="editor-actions editor-action-row">
+                <ui:VisualElement name="MapPlacementGroup" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="MapRebind" class="editor-action" text="Rebind to picked" />
                     <ui:Button name="MapAtPlayer" class="editor-action" text="At player" />
                 </ui:VisualElement>
-                <ui:VisualElement name="MapOrderGroup" class="editor-actions editor-action-row">
+                <ui:VisualElement name="MapOrderGroup" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Label text="CHECKPOINT ORDER" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                     <ui:Button name="MapEarlier" class="editor-action" text="Earlier checkpoint" />
                     <ui:Button name="MapLater" class="editor-action" text="Later checkpoint" />
@@ -289,15 +309,15 @@
                 <ui:VisualElement name="MapWalkGroup" class="editor-actions editor-action-row">
                     <ui:Toggle name="MapWalkStart" class="editor-setting" label="Start walkthrough at marker" />
                 </ui:VisualElement>
-                <ui:VisualElement name="MapRecordActions" class="editor-actions editor-action-row">
+                <ui:VisualElement name="MapRecordActions" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Label text="SELECTION" class="editor-heading editor-inspector-heading" picking-mode="Ignore" />
                     <ui:Button name="MapCopy" class="editor-action" text="Duplicate" />
                     <ui:Button name="MapDelete" class="editor-action" text="Delete" />
                 </ui:VisualElement>
-                <ui:VisualElement name="MapDetailsToggleGroup" class="editor-actions editor-action-row">
+                <ui:VisualElement name="MapDetailsToggleGroup" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="MapDetailsToggle" class="editor-action" text="Details +" />
                 </ui:VisualElement>
-                <ui:VisualElement name="RouteFrameGroup" class="editor-actions editor-action-row">
+                <ui:VisualElement name="RouteFrameGroup" class="editor-actions editor-action-row editor-action-grid">
                     <ui:Button name="RouteFrame" class="editor-action" text="Frame waypoint" />
                 </ui:VisualElement>
                 <ui:VisualElement name="MapDetailsGroup" class="editor-group">

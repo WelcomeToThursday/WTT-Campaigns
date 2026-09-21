@@ -158,6 +158,16 @@ public sealed class EditorSessions(
         return Response(session);
     }
 
+    public EditorSessionResponse CreateMission(string owner, EditorSessionRequest request)
+    {
+        var session = Require(owner, request.SessionId);
+        if (session.Location.Length > 0)
+            throw new InvalidOperationException("Unload the map before creating a mission.");
+        var draft = repository.CreateMission(request.Name, request.Location);
+        session.Select(draft.Id, draft.Definition.MapLayouts.Single().Id);
+        return Response(session);
+    }
+
     public EditorSessionResponse Unload(string owner, EditorSessionRequest request)
     {
         var session = ForOwner(owner);
