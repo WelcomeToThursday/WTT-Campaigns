@@ -1,6 +1,6 @@
 # WTT-Campaigns
 
-**0.11.0 — Scene catalog and level scenery**
+**0.11.0 — Scenery, terrain and mission authoring**
 
 [Campaign Editor and mission map layouts](wiki/editor-mode.md): open a disposable editor character, reshape supported scenery, author AI encounters and patrols, and build [playable missions](wiki/missions.md).
 
@@ -33,7 +33,7 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 
 AI encounters and patrol previews target **SPT 4.1.5** with compatible **BigBrain 1.5.0** and **SAIN 4.5.1**. See the [AI guide](wiki/ai-encounters.md).
 
-Install the dependencies separately. They are not bundled with WTT-Campaigns. Use matching client and server components from the same release.
+Install the dependencies separately. They are not bundled with WTT-Campaigns. The Map Variants mod (`com.lennoxp90.mapvariants`) is incompatible. The Map Variants mod (`com.lennoxp90.mapvariants`) is incompatible. Use matching client and server components from the same release.
 
 ## Installation
 

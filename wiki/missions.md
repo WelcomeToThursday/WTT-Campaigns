@@ -20,7 +20,7 @@ If an authored encounter cannot recover from a technical failure, the mission pa
 
 ## Author a mission
 
-Open **Mission library** from Campaign Creator, or visit `/wtt-campaigns/creator/missions`. Choose **Create mission**, select its map, and save. Open Campaign Editor in the game, select that mission draft and map, and author its start, checkpoints, exit, scene edits and encounters. The dedicated web editor provides objectives, events and container loot. No campaign or quest is required.
+Choose **New Mission** on the in-game editor home to create and open an independent draft from its name and map. You can also open **Mission library** from Campaign Creator, or visit `/wtt-campaigns/creator/missions`, choose **Create mission**, select its map, and save. Open Campaign Editor in the game, select that mission draft and map, and author its start, checkpoints, exit, scene edits and encounters. The dedicated web editor provides objectives, events and container loot. No campaign or quest is required.
 
 Each package contains one mission and one layout. **Allow standalone play** defaults off; enable it to offer the published mission to normal characters. Save, validate and publish, then manually restart SPT to load the new content. Publishing creates an immutable revision; editing a draft does not change published runs. Export the mission pack to share it, or import one as an editable draft.
 
@@ -96,4 +96,4 @@ Under a mission's **Container loot** section, select a container placed in its l
 
 For fixed contents, search the paged item catalogue, add items, edit quantities, and remove entries. Select an **Image provider** to use the same client-rendered thumbnails as Assorts. The selected client must have authoring enabled and be at the main menu for new images. Cached thumbnails work without a connected client; some items may not have a supported preview. Images do not verify whether the whole loot list fits the container. Native stack limits and capacity are checked when preparing the mission.
 
-Container settings belong to the layout. Every mission referencing that layout, and its enabled normal-raid layer, shares these changes. Place containers with the in-game Scene editor first; this page edits their loot and access settings. Save before returning to Campaign Creator to edit the linked story quest.
+Container settings belong to the layout, so every mission referencing it shares those changes. Mission-owned layouts are excluded from ordinary-raid layers. Containers authored on a separate ordinary level use that level's saved settings. Place containers with the in-game Scene editor first; this page edits their loot and access settings. Save before returning to Campaign Creator to edit the linked story quest.

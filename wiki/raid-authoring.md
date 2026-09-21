@@ -1,6 +1,6 @@
 # Connected raid authoring
 
-The Campaign Creator and the in-raid editor share a recoverable draft. Publishing a pack is still a separate action. A preview never registers quest triggers, runs story actions, or spawns gameplay objects.
+The Campaign Creator and the in-raid editor share a recoverable draft. Publishing a pack is still a separate action. Ordinary connected-raid capture previews never register quest triggers or run story actions. The separate dedicated editor supports scenery, containers, authored AI and mission playtests on disposable state.
 
 ## Connect a raid
 
@@ -30,7 +30,7 @@ The **×** button hides a window without clearing its session state. The rail re
 
 Browser layout follows the Unity Editor's compact toolbar and hierarchy pattern. Action buttons fit their labels, search stays together in a bounded field, and Scene tabs and filters share a wrapping toolbar. Record counts and paging share a footer. Record selection spans the list width, with borderless rows instead of outlined action buttons.
 
-The Scene **Catalog** defaults to a thumbnail grid for Props, Loot, and Presets. **Grid / List** switches presentation while preserving the selected record and keeping the first visible record on the new page; the choice lasts for the editor session. Grid pages fill the available columns and rows, up to 60 previews. Resizing recalculates the page capacity. Hover for the full name or preview error. **Previous / Next** navigates the results; list mode uses ten records per page. **In scene** and **Changes** retain list views.
+The Scene **Catalog** defaults to a thumbnail grid for Props, Containers, Loot, and Presets. **Grid / List** switches presentation while preserving the selected record and keeping the first visible record on the new page; the choice lasts for the editor session. Grid pages fill the available columns and rows, up to 60 previews. Resizing recalculates the page capacity. Hover for the full name or preview error. **Previous / Next** navigates the results; list mode uses ten records per page. **In scene** and **Changes** retain list views.
 
 Window positions, preferred sizes, visibility, dock splits, and tab order are saved locally between game launches. They survive map transitions and walkthroughs. **Windows → Reset layout** restores Layouts on the left and Properties on the right when a record is selected. On smaller displays, dock groups can combine as tabs to keep the scene and tools usable. Search and selection state last for the editor session. Preferences remain under **Campaign editor → Tool window layout**, independently of campaign drafts and profiles. Older browser layouts migrate to the Layouts window.
 
@@ -134,11 +134,11 @@ Zones belong to a map and scene and can support:
 | LeaveItemAtLocation | Supplies a native quest-item placement area. |
 | Story Trigger/Cinematic | Runs the published binding through the existing story event rules. |
 
-Published zones load for the active campaign character on the matching map. Native quest zones work even when the campaign has no story definition. Draft previews stay separate from these published objects. Publish, then restart the server and game before entering a new raid to test published gameplay. Campaigns already used by characters retain the existing gameplay-lock rule; duplicate them to change gameplay.
+Shared published zones load for the active campaign character on the matching map. Layout-owned zones also load with enabled ordinary-raid levels, including for regular characters; native quest and salvage checks use the active profile, while campaign story progression remains campaign-only. Native quest zones work even when the campaign has no story definition. Draft previews stay separate from these published objects. Publish, then restart the server and game before entering a new raid to test published gameplay. Campaigns already used by characters retain the existing gameplay-lock rule; duplicate them to change gameplay.
 
 Zone references must be reassigned before deletion. Scene paths must resolve uniquely. Shoot targets require a ballistic collider; interaction targets require a raycastable collider. IDs colliding with native map zones are rejected during connected editing and skipped with a diagnostic at runtime.
 
-NPC/item spawning, cinematic camera paths, and specialized native triggers beyond the types listed above are outside this version.
+The ordinary connected-raid tools do not author NPC spawning or cinematic camera paths. Use the dedicated editor for [AI encounters](ai-encounters.md), scenery and loot, and [hazards](editor-mode.md#hazard-areas); [salvage zones](salvage-zones.md) use CommonLib.
 
 ---
 
@@ -153,9 +153,9 @@ Click an object in the Scene workspace to select it, highlight its bounds, and o
 
 Live acceptance: click an original prop without capturing it first, rotate/resize it, cancel a second drag, and undo/redo the first edit. Check a collider-free placed item, a prop behind a trigger, an LOD prop, and a restricted object. Each click should expose the matching properties without changing the draft.
 
-In dedicated editor mode, clicking scenery from **Maps** opens the selected object in **Scene** with its highlight and transform properties. **Pick scenery** and choosing a prop or loot record in the Maps library use the same object inspector. Layouts, doors, start/exit markers, checkpoints, barriers, and ordinary raid capture tools retain their existing workflows.
+In dedicated editor mode, clicking scenery from any tool updates the object inspector, highlight and transform controls while preserving the current browser tab. **Pick scenery** and selecting an object in the Scene library use the same inspector. Layout, route and ordinary raid capture tools retain their own record workflows.
 
-Regression acceptance: start in **Maps** with an existing copied container selected (as in the reported recording), then click a different original container, a crate, and the copy again. Each click must select the corresponding object and show its Scene properties. Repeat with **Pick scenery**, and by choosing a prop row in Maps. Verify clicks on editor panels do not select scenery, handles still drag, and returning to Maps retains the selected layout.
+Manual acceptance: start in a tool other than Scene with a copied container selected, then click another original container, a crate, and the copy again. Each click should update the object properties without switching the browser tab. Repeat with **Pick scenery** and Scene library rows. Verify that panel clicks do not select scenery and that handles still drag.
 
 Original props with rigid bodies, audio sources, lights, base/composite ballistic components, thermal effects (`HotObject`), static decals, or stencil shadows can now be transformed while retaining those components. Thermal positions, decal registration, and shadow bounds are refreshed after movement and restoration. Original physics is held during editing and restored on undo, removal, or unload. These extra components do not become copyable: the Catalog contains reproducible props, and the inspector explains when an original can move but cannot be copied.
 
@@ -180,14 +180,11 @@ Picking a prop in the world preserves the current browser tab and updates the in
 
 Icons use a session cache of up to 128 GPU thumbnails, protecting the visible page and selected preview. Rendering resources are reused, and slow native item icons do not hold up prop thumbnails. The editor memory capture includes thumbnail preparation/rendering timings, load and queue wait times, cache hits/misses and retained texture counts. GPU rendering time and first-time bundle loading still require in-game performance checks.
 
-
-The first visit starts incremental inspection of native bundles. Its progress appears below the results. Metadata is cached locally and checked against bundle/dependency file changes on the next session; models use EFT dependency leases and thumbnails use the existing bounded preview cache. Indexing continues across catalog categories while the editor is open. Cached results do not imply every object is placeable: map scene/configuration resources, missing components, linked gameplay systems and unavailable native container mappings show an explanation when **Hide unavailable** is off. Select an unavailable entry and use **Retry preview** to retry its discovery/mapping. The catalog never launches or loads another playable map.
-
 Asset placements save their bundle and asset identity in campaign format **8**, and require authoring protocol **5**. Existing map-bound copies and edits retain their original identities and formats. Creator shows saved asset references and container roles; absent resources remain saved and report an unresolved placement when applied. Updated clients and servers must be installed together.
 
 **Containers** preserve native opening, searching and item transfer. Supported current-map containers can be copied on that map; independently loadable container prefabs can be placed elsewhere when they have a supported native loot template. Containers retain their original size. Linked map triggers/glass, special event components and unsupported external references remain unavailable. Editing shows inert previews. Walkthroughs and playable tests obtain random native contents from the server, using the target map's mapping when present or a deterministic source-map mapping for that container type. Repeated requests in a run return the same generated items. Mission contents are persisted with the prepared run, including across server reloads. Each fresh run generates its own contents; catalog browsing never generates takeable loot.
 
-The locally generated **native container library** adds map-embedded containers to **All game → Containers**, independently of the loaded map or background prop scan. The installed game scan currently supplies 45 native container templates, including weapon boxes, sports bags, wooden supply crates, jackets, safes and caches. Current map filters that library to templates discovered in the loaded map. Models retain native bodies, lids, collision and interaction components; no other map is loaded for placement.
+The locally generated **native container library** adds map-embedded containers to **All game → Containers**, independently of the loaded map. The installed game scan currently supplies 45 native container templates, including weapon boxes, sports bags, wooden supply crates, jackets, safes and caches. Current map filters that library to templates discovered in the loaded map. Models retain native bodies, lids, collision and interaction components; no other map is loaded for placement.
 
 Click a placed container in the scene, or select it in **Changes** or **In scene**, to open its dedicated **Loot configuration** tool. Move, resize, dock or close this window, and reopen it with **Loot** on the tool rail or **Windows > Loot configuration**. Selecting another object clears the tool. It provides:
 

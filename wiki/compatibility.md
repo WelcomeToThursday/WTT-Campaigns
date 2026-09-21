@@ -15,7 +15,7 @@ Use **SPT 4.1.x / EFT 0.16.9.40743**, with:
 
 Dependencies are separate downloads. Install matching WTT-Campaigns client, UI and server components from the same release. See [installation](../README.md#installation).
 
-**Fika is not supported.** Compatibility with other mods can vary, especially when they also change profiles, perks, trader progression or the same menus.
+**Fika is not supported.** The Map Variants mod (`com.lennoxp90.mapvariants`) is declared incompatible in the server metadata. The Map Variants mod (`com.lennoxp90.mapvariants`) is declared incompatible in the server metadata. Compatibility with other mods can vary, especially when they also change profiles, perks, trader progression or the same menus.
 
 ## Available perks
 
@@ -44,7 +44,7 @@ See the [perk guides](Home.md#perk-details) for resource rounding, prices, sympt
 
 ## Campaign and reward limits
 
-- A complete live EFT story campaign and the built-in Kord Breach quest campaign are not included.
+- A complete live EFT story campaign is not included. The [built-in KORD copy template](built-in-campaign-copy.md) provides 12 released quests; create and publish a copy to use it. Existing drafts retain their edits.
 - Online purchases, leaderboards, cross-mode synchronization and automatic campaign wipes are unavailable.
 - Missing quests, customization definitions, models or crate contents can lock individual rewards. Check the reward's requirement message.
 - Story dialogue does not support paid services or compound-item handovers such as assembled weapons and armor. Use ordinary trader/task screens where applicable.

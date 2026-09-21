@@ -14,7 +14,7 @@ The default filter shows Campaigns messages and command output. Enable **All cli
 
 Rows show aligned timestamps to the second; message details and copied text retain milliseconds. Info is blue, Debug is muted purple, Warnings are amber, and Errors are coral red. Each row also has a matching severity stripe and a written level label.
 
-Use **A− / A+** to adjust console text from 10 to 24, or **Reset** to restore 16. This setting is saved separately from the overall editor UI size and applies to output, expanded details and text fields. Changing it keeps your messages and command history. The window title and toolbar retain their normal size; use the separate overall editor UI-size setting to resize those controls. The window title and toolbar retain their normal size; use the separate overall editor UI-size setting to resize those controls.
+Use **A− / A+** to adjust console text from 10 to 24, or **Reset** to restore 16. This setting is saved separately from the overall editor UI size and applies to output, expanded details and text fields. Changing it keeps your messages and command history. The window title and toolbar retain their normal size; use the separate overall editor UI-size setting to resize those controls.
 
 Logs and command history last for the editor session. The console captures messages even when hidden, retains up to 2,000 messages and 2 MiB of text, and reports how many older messages were discarded. Individual messages longer than 16,384 characters are truncated. Clear only empties the console; it does not change log files. Server log streaming is not included.
 
@@ -73,8 +73,8 @@ Live acceptance: paint a platform and ramp, connect a ground-level entrance, blo
 
 Manually restart the game client after installing. If server assemblies also changed, manually restart the server before reconnecting.
 
-1. Open Editor home, choose a campaign and map, then enter the map. Check returning home and the disposable campaign test's reset/return controls.
-2. Check Layouts, Routes, Zones, Events, Captures, Scene and AI: search, tree expansion, paging, selection, creation and deletion, property edits and undo/redo. Verify scope changes refresh their dependent lists.
+1. Open Editor home, select an existing mission or level (or create one), then enter its map. Check returning home and the disposable campaign test's reset/return controls.
+2. Check Layouts, Routes, Zones, Events, Captures, Scene, AI, Hazards, Terrain and Navigation: search, tree expansion, paging, selection, creation and deletion, property edits and undo/redo. Verify scope changes refresh their dependent lists.
 3. Inspect original scenery before editing; inspection must not create a saved change. Verify previews, placement, restore and rebind, including native-object restrictions.
 4. Type in fields while pressing movement keys. The camera must stay still. Escape releases focus before cancelling a tool or closing. Changing selection must not apply unfinished text to another record.
 5. Move, resize, overlap, hide and reopen windows; check tooltips, dropdowns and conflict dialogs. Clicking or scrolling controls must not manipulate the world behind them.

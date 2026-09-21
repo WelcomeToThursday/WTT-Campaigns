@@ -26,7 +26,7 @@ These guides cover **0.11.0 beta**, targeting **SPT 4.1.x / EFT 0.16.9.40743**. 
 | [Battle Pass controls](battle-pass-ui.md) | Browse rewards, use the tutorial and make exchanges. |
 | [Documents and rewards](battle-pass-gameplay.md) | Collection limits, claims, Classified documents and reward locks. |
 | [Story and quests](story-system.md) | Chapters, dialogue, objectives and cinematics. |
-| [Missions](missions.md) | Quest-unlocked mission raids, replay, and disposable draft tests. |
+| [Missions](missions.md) | Independent and campaign-linked missions, timers, weather, notifications and disposable tests. |
 | [Trader visits](trader-media-and-visit.md) | Open rooms, choose replies and hand over items. |
 | [Chapter notifications](story-notifications.md) | Understand chapter availability and status banners. |
 | [Trader progression](trader-progression.md) | Loyalty requirements and grouped task lists. |
@@ -49,9 +49,9 @@ These guides cover **0.11.0 beta**, targeting **SPT 4.1.x / EFT 0.16.9.40743**. 
 - [Story authoring](story-authoring.md): conversations, conditions, media and raid events.
 - [Dialogue and interaction authoring](dialogue-and-interactions.md): build phases and branches, choose actions, configure handovers and connect raid interactions.
 - [Custom story media bundles](story-media-bundles.md): add Visit rooms to custom traders and package images, audio, video and cinematics.
-- [Editor mode and map layouts](editor-mode.md): open maps with a disposable character, reshape scenery and preview routes.
-- [AI encounters and patrol previews](ai-encounters.md): author finite waves, spawn positions and patrols, then observe or playtest them.
-- [Editor console and UI Toolkit](editor-toolkit.md): logs, commands, text-size controls and in-game acceptance checks.
+- [Mission and Level Editor](editor-mode.md): create missions and levels, place scenery, paint terrain and grass, and preview routes.
+- [AI encounters and patrol previews](ai-encounters.md): author waves, spawn positions and grounded spline patrols, then observe or playtest them.
+- [Editor console and UI Toolkit](editor-toolkit.md): logs, commands, manual navigation previews and in-game acceptance checks.
 - [Map layers](map-layers.md): enable authored scenery and level content in ordinary raids.
 - [Connected raid authoring](raid-authoring.md): capture scene targets and place quest zones.
 - [Story Sandbox](story-sandbox.md): a small example campaign.
