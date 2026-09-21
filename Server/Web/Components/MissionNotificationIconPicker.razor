@@ -1,0 +1,32 @@
+@using WTT.Campaigns.Shared.Missions
+@using WTT.Campaigns.Shared.Seasons
+<div class="mission-logic-block">
+    <MissionChoice Label="@Label" Value="@Selection" Empty="@DefaultLabel" Choices="Options" ValueChanged="Select" />
+    @if (Selection == "Custom")
+    {
+        <AssetPicker Label="Notification PNG" Value="@(SeasonValidator.IsId(Value) ? Value : string.Empty)" ValueChanged="SetArtwork"
+                     HelpText="Shown on the left of the story notification. Choose existing artwork or upload a PNG up to 8 MB and 4096 × 4096 pixels. Transparent square icons work best." />
+    }
+</div>
+@code {
+    [Parameter] public string Label { get; set; } = "Notification icon";
+    [Parameter] public string DefaultLabel { get; set; } = "Use mission default";
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    private bool _custom;
+    private string Selection => _custom || SeasonValidator.IsId(Value) ? "Custom" : Value;
+    private static IEnumerable<(string Id, string Name)> Options => MissionNotificationIcons.Choices.Select(c => (c.Key, c.Value)).Append(("Custom", "Custom PNG…"));
+    private async Task Select(string value)
+    {
+        if (value == "Custom") { _custom = true; return; }
+        if (!MissionNotificationIcons.IsValid(value)) return;
+        _custom = false;
+        await ValueChanged.InvokeAsync(value);
+    }
+    private async Task SetArtwork(string value)
+    {
+        if (value.Length > 0 && !SeasonValidator.IsId(value)) return;
+        _custom = value.Length > 0;
+        await ValueChanged.InvokeAsync(value);
+    }
+}

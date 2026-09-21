@@ -9,9 +9,12 @@ namespace WTT.Campaigns.Client.Authoring.Controllers;
 
 internal sealed partial class EditorAiController
 {
+    private MissionEditorPanel? _missionEditor;
+    internal string SelectedMissionId => _missionEditor?.SelectedMissionId ?? "";
+
     internal void Bind(RaidEditorView view)
     {
-        _ = new MissionEditorPanel(view, view.ElementForTool("AI", "AiTools"), () => _context.Session);
+        _missionEditor = new MissionEditorPanel(view, view.ElementForTool("AI", "AiTools"), () => _context.Session);
         RaidEditorAiContracts.LayoutProvider = _layoutProvider;
         view.Button("AiEncounter", AddAiEncounter);
         view.Button("AiWave", AddAiWave);

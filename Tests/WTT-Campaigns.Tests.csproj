@@ -5,6 +5,9 @@
     <OutputType>Exe</OutputType>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\Client\Missions\MissionPresentation.cs" Link="Client\MissionPresentation.cs" />
+    <Compile Include="..\Client\Missions\MissionCountdown.cs" Link="Client\MissionCountdown.cs" />
+    <Compile Include="..\Client\Missions\MissionRaidTimer.cs" Link="Client\MissionRaidTimer.cs" />
     <Compile Include="..\Client\Missions\MissionTimeSnapshot.cs" Link="Client\MissionTimeSnapshot.cs" />
     <Compile Include="..\Client\Encounters\EncounterPathResult.cs" Link="Client\EncounterPathResult.cs" />
     <Compile Include="..\Client\Authoring\Scenes\PatrolRouteInspection.cs" Link="Client\PatrolRouteInspection.cs" />

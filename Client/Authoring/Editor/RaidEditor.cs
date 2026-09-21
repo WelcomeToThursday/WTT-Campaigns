@@ -539,6 +539,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
     private void LateUpdate()
     {
+        _testHud?.Tick();
         using var diagnostic = EditorDiagnostics.Measure(EditorDiagnostics.Area.LateUpdate);
         if (!_open || !_camera)
         {

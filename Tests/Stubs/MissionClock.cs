@@ -10,6 +10,26 @@ namespace UnityEngine
 
 namespace EFT
 {
+    internal sealed class AbstractGame
+    {
+        public GameTimer GameTimer = new();
+    }
+
+    internal sealed class GameTimer
+    {
+        public TimeSpan? SessionTime = TimeSpan.FromMinutes(45);
+        public DateTime? _escapeDateTime = DateTimeExtensions.UtcNow.AddMinutes(45);
+        public DateTime? EscapeDateTime => _escapeDateTime;
+        private readonly DateTime _started = DateTimeExtensions.UtcNow;
+        public TimeSpan PastTime => DateTimeExtensions.UtcNow - _started;
+
+        public void ChangeSessionTime(TimeSpan sessionTime)
+        {
+            SessionTime = sessionTime;
+            _escapeDateTime = _started + sessionTime;
+        }
+    }
+
     internal sealed class GameDateTime
     {
         private DateTime _date;
@@ -26,6 +46,21 @@ namespace EFT
             _started = UnityEngine.Time.realtimeSinceStartup;
         }
     }
+}
+
+namespace Comfort.Common
+{
+    internal static class Singleton<T>
+        where T : class
+    {
+        public static T Instance = null!;
+        public static bool Instantiated => Instance != null;
+    }
+}
+
+internal static class DateTimeExtensions
+{
+    public static DateTime UtcNow => new DateTime(2026, 9, 21, 0, 0, 0, DateTimeKind.Utc).AddSeconds(UnityEngine.Time.realtimeSinceStartup);
 }
 
 internal sealed class TOD_Time : UnityEngine.Object

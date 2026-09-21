@@ -64,7 +64,14 @@ public sealed partial class RaidEditor
         var director = _editorDirector;
         var test = _editorMissionTest;
         var lifetime = _editorMissionLifetime;
-        if (director == null || test == null || lifetime == null || _editorMissionProgressPending)
+        if (
+            director == null
+            || test == null
+            || lifetime == null
+            || _editorMissionProgressPending
+            || _editorMissionCompleted
+            || test.Run is not { Status: MissionRunStatuses.Active, ExitReached: false }
+        )
             return;
         _editorMissionProgressPending = true;
         try
@@ -90,6 +97,7 @@ public sealed partial class RaidEditor
             if (response.Run != null)
             {
                 director.Accept(response.Run.Logic);
+                _testHud?.Accept(response.Run);
                 CheckTestFailure();
                 var progress = response.Run.Logic;
                 _aiPreviewStatus =
@@ -236,6 +244,47 @@ public sealed partial class RaidEditor
         _editorMissionPending = response;
         ReportFeedback("Mission test will start when the editor workspace is ready…");
         StartPendingEditorMissionTest();
+    }
+
+    private async Task PrepareMissionPlaytest()
+    {
+        var session = _session!;
+        var layout = Layout!;
+        var version = session.ContentVersion;
+        var draft = session.DraftId;
+        var missions = session.Definition.Missions.AsValueEnumerable().Where(m => m.LayoutId == layout.Id).ToArray();
+        var mission = missions.AsValueEnumerable().FirstOrDefault(m => m.Id == Ai.SelectedMissionId) ?? missions[0];
+        _checkpointTestPreparing = true;
+        session.Hold = true;
+        ReportFeedback("Preparing mission playtest: " + mission.Name);
+        try
+        {
+            var response = await EditorMissionTestClient.PrepareAsync(draft, layout.Id, mission.Id);
+            if (_session != session || session.Retired || !this)
+                return;
+            if (
+                session.ContentVersion != version
+                || session.DraftId != draft
+                || Layout?.Id != layout.Id
+                || session.Dirty
+                || session.Conflict != null
+            )
+                throw new InvalidOperationException("The draft changed while preparing the playtest. Save it and try again.");
+            _checkpointTestPreparing = false;
+            session.Hold = false;
+            StartEditorMissionTest(response);
+        }
+        catch (Exception error)
+        {
+            Plugin.Error(error);
+            ReportFeedback("Mission playtest unavailable: " + error.Message, ConsoleSeverity.Error);
+        }
+        finally
+        {
+            if (!session.Previewing)
+                session.Hold = false;
+            _checkpointTestPreparing = false;
+        }
     }
 
     private void StartPendingEditorMissionTest()
@@ -461,7 +510,10 @@ public sealed partial class RaidEditor
             if (save)
                 _testCheckpoint = new MissionRaidCheckpoint(id, _player!, _aiRuntime!);
             if (response.Run != null)
+            {
                 _editorDirector?.Accept(response.Run.Logic);
+                _testHud?.Accept(response.Run);
+            }
             if (save)
                 ReleaseTestHold();
             var nextCheckpoint = response.Run?.NextCheckpointIndex ?? -1;
@@ -484,8 +536,9 @@ public sealed partial class RaidEditor
                 if (!IsCurrentEditorMission(generation, runId, lifetime))
                     return;
                 _editorMissionCompleted = true;
-                EndTestRetry();
-                _aiPreviewStatus = "Mission test complete · R to retry · Esc to return to editing";
+                ReportFeedback("Mission complete. Returning to editing…");
+                EndAiPreview();
+                return;
             }
             if (_view?.Valid == true)
                 _view.Text("EditorWalkStatus", _aiPreviewStatus);

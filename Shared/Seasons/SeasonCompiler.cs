@@ -239,6 +239,16 @@ public static class SeasonCompiler
             foreach (var link in season.MissionLinks)
             foreach (var asset in Assets(link.Package))
                 yield return asset;
+            foreach (var mission in season.Missions)
+            {
+                if (SeasonValidator.IsId(mission.NotificationIcon))
+                    yield return mission.NotificationIcon;
+                if (SeasonValidator.IsId(mission.CheckpointNotificationIcon))
+                    yield return mission.CheckpointNotificationIcon;
+                foreach (var objective in mission.Objectives)
+                    if (SeasonValidator.IsId(objective.NotificationIcon))
+                        yield return objective.NotificationIcon;
+            }
         }
     }
 

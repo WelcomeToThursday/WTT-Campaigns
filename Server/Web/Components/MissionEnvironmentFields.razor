@@ -1,6 +1,18 @@
 @using System.Globalization
 @using WTT.Campaigns.Shared.Missions
 
+<EditorSection Title="Mission timer" Description="Saved on the server and shown beside Complete the mission during raids and mission playtests.">
+    <label>Timer mode<select value="@TimerMode" @onchange="SetTimerMode">
+        <option value="Map">Map default</option><option value="Timed">Timed</option><option value="Infinite">Infinite</option>
+    </select></label>
+    @if (Mission.TimeLimitMinutes is > 0)
+    {
+        <label>Time limit (minutes)<input type="number" min="1" max="1440" step="1" value="@Mission.TimeLimitMinutes" @onchange="SetDuration" /></label>
+    }
+    <p>Infinite displays ∞ and disables time expiry. Checkpoint retries restore the saved remaining time. Playtest expiry returns to editing.</p>
+    @if (_timerError.Length > 0) { <p class="validation-warning">@_timerError</p> }
+</EditorSection>
+
 <EditorSection Title="Time of day and weather" Description="Saved with this mission on the server and applied in mission raids and playtests. Checkpoint retries rewind world time to the saved checkpoint.">
     <label class="check"><input type="checkbox" checked="@(Mission.Environment?.StartMinutes != null)" @onchange="ToggleTime" /> Set mission start time</label>
     @if (Mission.Environment?.StartMinutes is { } minutes)
@@ -43,6 +55,27 @@
     [Parameter, EditorRequired] public MissionDefinition Mission { get; set; } = null!;
     [Parameter] public EventCallback Changed { get; set; }
     private string _timeError = "";
+    private string _timerError = "";
+    private string TimerMode => Mission.TimeLimitMinutes == null ? "Map" : Mission.TimeLimitMinutes == 0 ? "Infinite" : "Timed";
+
+    private Task SetTimerMode(ChangeEventArgs args)
+    {
+        Mission.TimeLimitMinutes = args.Value?.ToString() switch { "Timed" => 30, "Infinite" => 0, _ => null };
+        _timerError = "";
+        return Notify();
+    }
+
+    private Task SetDuration(ChangeEventArgs args)
+    {
+        if (!int.TryParse(args.Value?.ToString(), out var minutes) || minutes is < 1 or > 1440)
+        {
+            _timerError = "Enter a whole number from 1 to 1440 minutes.";
+            return Task.CompletedTask;
+        }
+        Mission.TimeLimitMinutes = minutes;
+        _timerError = "";
+        return Notify();
+    }
 
     private Task ToggleTime(ChangeEventArgs args)
     {

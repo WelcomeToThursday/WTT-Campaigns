@@ -1,7 +1,9 @@
+using EFT.Quests;
 using EFT.UI;
 using UnityEngine;
 using UnityEngine.UI;
 using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.Shared.Missions;
 
 namespace WTT.Campaigns.Client.Story;
 
@@ -43,6 +45,15 @@ public sealed class StoryChapterNotificationView : BaseNotificationView
         LayoutRebuilder.ForceRebuildLayoutImmediate((RectTransform)root.transform);
         view.Init(notification);
         view._icon.sprite = fallback;
+        if (MissionNotificationIcons.Choices.ContainsKey(notification.MissionIcon))
+        {
+            var icon = (EQuestIconType)Enum.Parse(typeof(EQuestIconType), notification.MissionIcon.Substring("quest:".Length));
+            view._icon.sprite = EFTHardSettings.Instance.StaticIcons.QuestIconTypeSprites[icon];
+            view._icon.gameObject.SetActive(true);
+            view._icon.enabled = true;
+            view._icon.color = Color.white;
+            view._icon.preserveAspect = true;
+        }
         var sound = root.GetComponent<AudioSource>();
         StoryAudio.Configure(sound);
         sound.Play();

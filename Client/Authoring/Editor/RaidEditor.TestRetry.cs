@@ -11,6 +11,7 @@ public sealed partial class RaidEditor
     private MissionRetryGuard? _testRetryGuard;
     private MissionRaidCheckpoint? _testCheckpoint;
     private MissionHud? _testHud;
+    private MissionRaidTimer? _testTimer;
     private EDamageType? _testDeath;
     private string _testFailure = "";
     private bool _testRestoreBroken,
@@ -18,8 +19,16 @@ public sealed partial class RaidEditor
 
     private async Task CaptureTestStart(CancellationToken token)
     {
-        if (_editorMissionTest?.Descriptor?.Definition.CheckpointRetries != true)
+        if (_editorMissionTest?.Descriptor == null || _editorMissionTest.Run == null)
             return;
+        _testTimer = new MissionRaidTimer(_editorMissionTest.Descriptor.Definition.TimeLimitMinutes, rehearsal: true);
+        _testHud = new MissionHud(_editorMissionTest.Descriptor.Definition, _editorMissionLayout!, _editorMissionTest.Run);
+        RefreshTestHud();
+        if (!_editorMissionTest.Descriptor.Definition.CheckpointRetries)
+        {
+            _testTimer.Resume();
+            return;
+        }
         _testRetryGuard = new MissionRetryGuard(
             _player!,
             damage =>
@@ -30,8 +39,6 @@ public sealed partial class RaidEditor
                 _editorDirector?.Pause();
             }
         );
-        _testHud = new MissionHud(_editorMissionTest.Descriptor.Definition.Name);
-        RefreshTestHud();
         _aiRuntime!.RetryGuard = _testRetryGuard;
         _testRetryGuard.Freeze();
         _editorDirector!.Pause();
@@ -100,12 +107,9 @@ public sealed partial class RaidEditor
     {
         if (_editorMissionTest?.Run == null || _editorMissionLayout == null)
             return;
-        _testHud?.SetRoute(
-            _editorMissionTest.Run.NextCheckpointIndex,
-            _editorMissionLayout.Checkpoints.Count,
-            _editorMissionCompleted,
-            _testFailure.Length > 0 ? _testFailure : _aiPreviewStatus
-        );
+        if (!_editorMissionTest.Run.Restoring)
+            _testHud?.Accept(_editorMissionTest.Run);
+        _testHud?.Tick();
     }
 
     private async Task DrainTestObservations(CancellationToken token)
@@ -229,6 +233,8 @@ public sealed partial class RaidEditor
         _testRetryGuard = null;
         _testHud?.Dispose();
         _testHud = null;
+        _testTimer?.Dispose();
+        _testTimer = null;
         _testCheckpoint = null;
         _testDeath = null;
         _testFailure = "";

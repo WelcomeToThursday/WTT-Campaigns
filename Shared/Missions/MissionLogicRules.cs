@@ -9,6 +9,13 @@ public static class MissionLogicRules
     public static List<string> DraftErrors(MissionDefinition mission)
     {
         var errors = MissionEnvironmentSettings.Errors(mission.Environment);
+        if (
+            !MissionNotificationIcons.IsValid(mission.NotificationIcon)
+            || !MissionNotificationIcons.IsValid(mission.CheckpointNotificationIcon)
+        )
+            errors.Add("Choose a supported mission notification icon or uploaded PNG.");
+        if (mission.TimeLimitMinutes is < 0 or > 1440)
+            errors.Add("Mission time limit must be 1–1440 minutes, or Infinite (0).");
         void Need(bool condition, string message)
         {
             if (!condition)
@@ -44,6 +51,10 @@ public static class MissionLogicRules
                 && mission.Objectives.AsValueEnumerable().All(o => o.TargetIds.Count <= 128)
                 && mission.Requirements.AsValueEnumerable().All(r => r.ObjectiveIds.Count <= 128),
             "Mission action and reference collections exceed their limits."
+        );
+        Need(
+            mission.Objectives.AsValueEnumerable().All(o => MissionNotificationIcons.IsValid(o.NotificationIcon)),
+            "Choose a supported objective notification icon or uploaded PNG."
         );
         return errors;
     }

@@ -58,6 +58,11 @@ public sealed partial class RaidEditor
             return;
         }
         var session = _session;
+        if (playtest && !_editorMissionRequested && session.Definition.Missions.AsValueEnumerable().Any(m => m.LayoutId == Layout.Id))
+        {
+            await PrepareMissionPlaytest();
+            return;
+        }
         var player = _player!;
         _aiPaintObservation = _navigationPaint?.Active == true ? _navigationPaint : null;
         _navigationBrush = "";
@@ -363,6 +368,12 @@ public sealed partial class RaidEditor
             return false;
         if (HoldTestFailure())
             return true;
+        if (_testTimer?.Expired == true)
+        {
+            EndAiPreview();
+            ReportFeedback("Mission time expired. Playtest ended.");
+            return true;
+        }
         if (_editorMissionCompleted && Input.GetKeyDown(KeyCode.R))
         {
             _ = RetryEditorMissionTest();

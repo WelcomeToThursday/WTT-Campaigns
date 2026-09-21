@@ -47,6 +47,28 @@ internal static class MissionEnvironmentUiChecks
             );
             await Change(" Set mission weather", false);
             check(mission.Environment.Weather == null && changes == 8, "Weather reset notifies the mission save workflow");
+            int TimerSection() => renderer.Components<EditorSection>().Single(c => c.Component.Title == "Mission timer").Id;
+            Task ChangeTimer(string label, object value) =>
+                renderer.DispatchEventAsync(
+                    renderer.Event(TimerSection(), "label", label, "onchange"),
+                    null,
+                    new ChangeEventArgs { Value = value }
+                );
+            await ChangeTimer("Timer mode", "Infinite");
+            check(
+                mission.TimeLimitMinutes == 0 && renderer.Text(TimerSection()).Contains("∞"),
+                "Creator infinite mode saves the explicit no-expiry option"
+            );
+            await ChangeTimer("Timer mode", "Timed");
+            await ChangeTimer("Time limit (minutes)", "25");
+            check(mission.TimeLimitMinutes == 25, "Creator duration saves server mission minutes");
+            await ChangeTimer("Time limit (minutes)", "0");
+            check(
+                mission.TimeLimitMinutes == 25 && renderer.Text(TimerSection()).Contains("whole number"),
+                "Invalid timed duration preserves the last valid setting"
+            );
+            await ChangeTimer("Timer mode", "Map");
+            check(mission.TimeLimitMinutes == null && changes == 12, "Map default clears the override and timer edits notify save");
         });
     }
 

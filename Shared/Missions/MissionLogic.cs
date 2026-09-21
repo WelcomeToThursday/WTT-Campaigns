@@ -49,6 +49,10 @@ public sealed class MissionObjective
         Protect = "ProtectActor";
     public string Id { get; set; } = "";
     public string Name { get; set; } = "New objective";
+    public string NotificationIcon { get; set; } = "";
+
+    public bool ShouldSerializeNotificationIcon() => !string.IsNullOrEmpty(NotificationIcon);
+
     public string Type { get; set; } = Eliminate;
     public bool OnStart { get; set; } = true;
     public bool Required { get; set; } = true;

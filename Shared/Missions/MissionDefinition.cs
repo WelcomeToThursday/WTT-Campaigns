@@ -15,6 +15,18 @@ public sealed class MissionDefinition : ExtensibleJsonModel
     public string QuestId { get; set; } = "";
     public string CompletionConditionId { get; set; } = "";
     public bool CheckpointRetries { get; set; }
+    public string NotificationIcon { get; set; } = "";
+    public string CheckpointNotificationIcon { get; set; } = "";
+
+    public bool ShouldSerializeNotificationIcon() => !string.IsNullOrEmpty(NotificationIcon);
+
+    public bool ShouldSerializeCheckpointNotificationIcon() => !string.IsNullOrEmpty(CheckpointNotificationIcon);
+
+    /// <summary>Null inherits the map, zero is infinite, otherwise a duration in minutes.</summary>
+    public int? TimeLimitMinutes { get; set; }
+
+    public bool ShouldSerializeTimeLimitMinutes() => TimeLimitMinutes.HasValue;
+
     public MissionEnvironmentSettings? Environment { get; set; }
 
     public bool ShouldSerializeEnvironment() => Environment != null;

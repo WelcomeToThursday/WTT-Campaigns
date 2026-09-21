@@ -26,6 +26,14 @@ Each package contains one mission and one layout. **Allow standalone play** defa
 
 ## Mission time and weather
 
+**Mission timer** offers **Map default**, **Timed** (1–1440 minutes), and **Infinite**. The server saves this setting with the mission and sends it to raids and mission playtests. Infinite shows **∞** beside **Complete the mission** and has no time-based expiry. Timed missions start counting down when mission setup is ready; expiry ends a deployed raid using the normal timeout result. In a playtest, expiry returns to editing instead of closing the editor raid.
+
+The gold mission banner and objective rows remain visible during mission playtests and deployed missions. Checkpoint retries restore the time remaining at the saved checkpoint. The countdown pauses while saving/restoring checkpoints and while the retry menu is open. World time and event timers remain separate from this countdown.
+
+In **Mission events and objectives**, choose a **Default objective icon** and **Checkpoint icon** for the left side of story notifications. Each objective also has a **Notification icon** override. The built-in choices use Tarkov's actual side-quest list sprites (including Elimination, Pick up, Exploration and Weapon assembly). Creator also supports custom PNGs through the artwork picker; these are included when exporting the mission. Unconfigured objectives use Completion, and checkpoints use Exploration.
+
+In Mission Editor, **Playtest** starts the selected layout's mission, including its objectives, events, timer and checkpoint notifications. If several missions share that layout, choose the mission in **Mission events and objectives** first. Layouts without a mission still use the AI-only playtest; **Observe** remains an AI preview.
+
 In the server web mission editor, open **Missions → Time of day and weather**. Enable **Set mission start time** and choose a clock time. Time advances at the native raid rate unless **Hold time fixed** is enabled. Enable **Set mission weather** to configure clouds, rain, fog, wind, thunder and wind direction. Authored weather remains fixed throughout the mission; disabled overrides use normal raid conditions. Maps without a sky or weather controller retain their native indoor environment.
 
 These settings are saved with the mission and included in published revisions, exports and playtest snapshots. They are separate from the local in-game editor preview preferences. Restart a playtest after saving changes to use the updated settings.
@@ -52,7 +60,7 @@ Fix validation errors before deployment. Missing scene targets require rebinding
 
 **Test mission** runs the saved draft on disposable editor state with copied equipment. Use it to check route traversal, scene changes, and combat, then retry or return to editing. Test loot, damage, ammunition use, and results do not transfer to your real character.
 
-From editor home, select **New campaign** and its **Test** layout, then choose **Test mission**. The map loads and the rehearsal starts with the editor character's placeholder starting kit. Complete both checkpoints and enter the authored exit; press **R** to retry after completion or **Esc** to return to editing. Unload the map to return to editor home.
+From editor home, select **New campaign** and its **Test** layout, then choose **Test mission**. The map loads and the rehearsal starts with the editor character's placeholder starting kit. Complete both checkpoints and enter the authored exit to finish the mission and return automatically to editing. Start another playtest from the editor to replay it, or press **Esc** during a test to return early. Unload the map to return to editor home.
 
 **Test campaign flow** creates an isolated campaign snapshot and a disposable character. Use this path to accept the quest, select and complete the mission, turn in the quest, and replay. Resetting the test starts a fresh test character. The source draft and normal characters remain separate from the test snapshot.
 

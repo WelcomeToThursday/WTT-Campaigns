@@ -15,6 +15,7 @@ internal sealed class MissionEditorPanel
     private readonly Func<RaidEditorSession?> _session;
     private string _missionId = "";
     private long _version = -1;
+    internal string SelectedMissionId => _missionId;
 
     internal MissionEditorPanel(RaidEditorView view, VisualElement parent, Func<RaidEditorSession?> session)
     {
@@ -79,9 +80,58 @@ internal sealed class MissionEditorPanel
         );
         var layout = session.Definition.MapLayouts.AsValueEnumerable().First(l => l.Id == mission.LayoutId);
         Toggle(_root, "Allow checkpoint retries", mission.CheckpointRetries, value => mission.CheckpointRetries = value);
+        Choice(
+            _root,
+            "Mission timer",
+            mission.TimeLimitMinutes == null ? "Map"
+                : mission.TimeLimitMinutes == 0 ? "Infinite"
+                : "Timed",
+            new[] { ("Map", "Map default"), ("Timed", "Timed"), ("Infinite", "Infinite") },
+            value =>
+                mission.TimeLimitMinutes =
+                    value == "Map" ? null
+                    : value == "Infinite" ? 0
+                    : 30
+        );
+        if (mission.TimeLimitMinutes is > 0)
+        {
+            var minutes = new IntegerField("Time limit (minutes)") { value = mission.TimeLimitMinutes.Value, isDelayed = true };
+            minutes.AddToClassList("editor-field");
+            minutes.tooltip = "Whole minutes from 1 to 1440. Choose Infinite to disable time expiry.";
+            var timerError = _document.Clone<Label>("FieldMessage");
+            timerError.style.display = DisplayStyle.None;
+            minutes.RegisterValueChangedCallback(e =>
+            {
+                if (e.newValue is < 1 or > 1440)
+                {
+                    minutes.SetValueWithoutNotify(mission.TimeLimitMinutes!.Value);
+                    timerError.text = "Enter a whole number from 1 to 1440 minutes.";
+                    timerError.style.display = DisplayStyle.Flex;
+                    return;
+                }
+                Change(() => mission.TimeLimitMinutes = e.newValue);
+            });
+            _root.Add(minutes);
+            _root.Add(timerError);
+        }
+        Message(_root, "Infinite shows ∞ and disables time expiry. Checkpoint retries restore the saved remaining time.");
+        IconChoice(
+            _root,
+            "Default objective icon",
+            mission.NotificationIcon,
+            "Completion (default)",
+            value => mission.NotificationIcon = value
+        );
+        IconChoice(
+            _root,
+            "Checkpoint icon",
+            mission.CheckpointNotificationIcon,
+            "Exploration (default)",
+            value => mission.CheckpointNotificationIcon = value
+        );
         Message(
             _root,
-            "Test checkpoints beside Playtest rehearses the selected layout with retries enabled. Use Test mission to include mission objectives and events."
+            "Playtest includes this layout's selected mission objectives and events. Test checkpoints rehearses the route with retries enabled."
         );
         foreach (var error in MissionLogicRules.Errors(mission, layout))
             Message(_root, error);
@@ -109,6 +159,7 @@ internal sealed class MissionEditorPanel
             group.value = true;
             scroll.Add(group);
             Text(group, "Name", o.Name, value => o.Name = value);
+            IconChoice(group, "Notification icon", o.NotificationIcon, "Use mission default", value => o.NotificationIcon = value);
             Choice(
                 group,
                 "Goal",
@@ -303,6 +354,16 @@ internal sealed class MissionEditorPanel
             );
             Button(group, "Remove event", () => mission.Events.Remove(rule));
         }
+    }
+
+    private void IconChoice(VisualElement parent, string label, string value, string defaultLabel, Action<string> update)
+    {
+        var choices = new List<(string, string)> { ("", defaultLabel) };
+        foreach (var icon in MissionNotificationIcons.Choices)
+            choices.Add((icon.Key, icon.Value));
+        if (SeasonValidator.IsId(value))
+            choices.Add((value, "Custom PNG (set in Creator)"));
+        Choice(parent, label, value, choices, update);
     }
 
     private static (string, string)[] Names(IEnumerable<string> values) =>

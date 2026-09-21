@@ -148,6 +148,7 @@ internal sealed partial class MissionRaidRuntime
             AcceptTransition(response);
             _unacknowledgedSignals = null;
             _director.Accept(_run!.Logic);
+            _hud?.Accept(_run);
         }
     }
 
@@ -278,7 +279,7 @@ internal sealed partial class MissionRaidRuntime
             _technicalFailureOperation = "";
             _retryShown = false;
             _retryBusy = false;
-            _hud?.SetRoute(_run.NextCheckpointIndex, _descriptor.Layout.Checkpoints.Count, false, "Checkpoint restored");
+            _hud?.Accept(_run, restored: true);
             _checkpoint.RestoreTime();
             ReleaseRetryHold();
         }

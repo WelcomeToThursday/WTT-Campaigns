@@ -1,23 +1,29 @@
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.Story;
 using WTT.Campaigns.Client.UI;
+using WTT.Campaigns.Shared.Missions;
+using WTT.Campaigns.Shared.Spatial;
 using WTT.Campaigns.UI.Controls;
 using ZLinq;
 
 namespace WTT.Campaigns.Client.Missions;
 
-/// <summary>Small non-interactive objective panel shown only while a mission run is active.</summary>
+/// <summary>Native mission objectives, story notifications, and the checkpoint retry dialog.</summary>
 internal sealed class MissionHud : IDisposable
 {
     private readonly GameObject _canvas;
-    private readonly Text _title;
-    private readonly Text _objective;
-    private readonly Text _status;
+    private readonly MissionExtractionPanel _objectives;
+    private readonly MissionPresentation _presentation = new();
+    private readonly MissionDefinition _mission;
+    private readonly MapLayout _layout;
+    private MissionRun? _presentedRun;
+    private long _attempt;
     private bool _disposed;
     private GameObject? _failure;
     private MissionRetryMenuInput? _failureInput;
 
-    internal MissionHud(string missionName)
+    internal MissionHud(MissionDefinition mission, MapLayout layout, MissionRun run)
     {
         _canvas = new GameObject("MissionHud", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster));
         UnityEngine.Object.DontDestroyOnLoad(_canvas);
@@ -29,39 +35,48 @@ internal sealed class MissionHud : IDisposable
         scaler.referenceResolution = new Vector2(1800, 980);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
 
-        var font = ResolveFont();
-        var panel = UiElements.Rect("MissionObjectivePanel", _canvas.transform, 470, 156, 26, 26);
-        panel.anchorMin = new Vector2(0, 1);
-        panel.anchorMax = new Vector2(0, 1);
-        panel.pivot = new Vector2(0, 1);
-        panel.anchoredPosition = new Vector2(26, -26);
-        UiElements.Fill(panel, new Color(.025f, .03f, .027f, .84f));
-        var ui = new UiElements(font);
-        _title = ui.Label(panel, "MissionTitle", missionName, 20, 430, 32, 0, 44);
-        _title.color = UiElements.Ink;
-        _objective = ui.Label(panel, "MissionObjective", "Preparing route…", 17, 430, 42, 0, 2);
-        _objective.color = UiElements.Accent;
-        _status = ui.Label(panel, "MissionStatus", "", 15, 430, 34, 0, -42);
-        _status.color = UiElements.Muted;
-        SetRoute(0, 0, false, "Preparing mission…");
+        _mission = mission;
+        _layout = layout;
+        _objectives = new MissionExtractionPanel();
+        _presentation.Reset(run);
+        Accept(run, reveal: true);
     }
 
-    internal void SetRoute(int completed, int total, bool exitReached, string status)
+    internal void Tick() => _objectives.Tick();
+
+    internal void Accept(MissionRun run, bool restored = false, bool reveal = false)
     {
         if (_disposed)
             return;
-        _objective.text =
-            total <= 0 ? "Preparing route…"
-            : exitReached ? "Exit reached · completing mission"
-            : completed >= total ? "Route checkpoints: " + total + "/" + total + " · reach the exit"
-            : "Route checkpoints: " + Math.Max(0, completed) + "/" + total + " · next: " + (Math.Max(0, completed) + 1);
-        _status.text = status ?? "";
+        restored |= _attempt != 0 && _attempt != run.AttemptGeneration;
+        if (!restored && !reveal && ReferenceEquals(_presentedRun, run))
+            return;
+        _presentedRun = run;
+        _attempt = run.AttemptGeneration;
+        if (restored)
+            _presentation.Reset(run);
+        var notices = _presentation.Accept(_mission, _layout, run);
+        _objectives.Set("Complete the mission", MissionPresentation.Rows(_mission, _layout, run), reveal || restored || notices.Count > 0);
+        foreach (var notice in notices)
+        {
+            try
+            {
+                EFT.Communications.NotificationManager.DisplayNotification(
+                    new StoryChapterNotification(notice.Title, notice.Description, notice.Status, notice.Icon)
+                );
+            }
+            catch (Exception exception)
+            {
+                // A presentation failure must never fail an acknowledged mission transition.
+                Plugin.LogInfo("Mission notification unavailable: " + exception.Message);
+            }
+        }
     }
 
     internal void SetStatus(string status)
     {
         if (!_disposed)
-            _status.text = status ?? "";
+            _objectives.Status(status);
     }
 
     internal void ShowFailure(string reason, string checkpoint, Action? retry, Action end)
@@ -111,40 +126,6 @@ internal sealed class MissionHud : IDisposable
         _failure = null;
     }
 
-    internal void SetObjectives(
-        WTT.Campaigns.Shared.Missions.MissionDefinition mission,
-        WTT.Campaigns.Shared.Spatial.MapLayout layout,
-        WTT.Campaigns.Shared.Missions.MissionLogicState state
-    )
-    {
-        if (_disposed || mission.Objectives.Count == 0)
-            return;
-        var current =
-            mission
-                .Objectives.AsValueEnumerable()
-                .FirstOrDefault(o => state.Objectives.TryGetValue(o.Id, out var p) && p.Status == "Failed")
-            ?? mission
-                .Objectives.AsValueEnumerable()
-                .FirstOrDefault(o => state.Objectives.TryGetValue(o.Id, out var p) && p.Status == "Active")
-            ?? mission
-                .Objectives.AsValueEnumerable()
-                .FirstOrDefault(o => !state.Objectives.TryGetValue(o.Id, out var p) || p.Status == "Pending");
-        if (current == null)
-            return;
-        var progress = WTT.Campaigns.Shared.Missions.MissionLogic.Progress(state, current.Id);
-        _objective.text =
-            current.Name
-            + (
-                current.Type == WTT.Campaigns.Shared.Missions.MissionObjective.Defend ? $" · {progress.Seconds:0}/{current.Seconds:0}s"
-                : current.Type
-                    is WTT.Campaigns.Shared.Missions.MissionObjective.Eliminate
-                        or WTT.Campaigns.Shared.Missions.MissionObjective.Target
-                    ? $" · {progress.Count}/{WTT.Campaigns.Shared.Missions.MissionLogic.Expected(layout, current)}"
-                : " · " + progress.Status
-            );
-        _status.text = progress.Status == "Pending" ? "Waiting for activation event" : progress.Detail;
-    }
-
     private static Font ResolveFont()
     {
         try
@@ -170,6 +151,7 @@ internal sealed class MissionHud : IDisposable
             return;
         _disposed = true;
         HideFailure();
+        _objectives.Dispose();
         if (_canvas)
             UnityEngine.Object.Destroy(_canvas);
     }

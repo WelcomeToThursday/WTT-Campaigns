@@ -2,6 +2,11 @@
 @using WTT.Campaigns.Shared.Spatial
 <EditorSection Title="Mission events and objectives" Description="Required objectives gate extraction. Events activate encounters, objectives and timers.">
     <label class="check"><input type="checkbox" @bind="Mission.CheckpointRetries" @bind:after="Notify" /> Allow checkpoint retries</label>
+    <div class="mission-logic-fields">
+        <MissionNotificationIconPicker Label="Default objective icon" DefaultLabel="Completion (default)" Value="@Mission.NotificationIcon" ValueChanged="v => Change(() => Mission.NotificationIcon = v)" />
+        <MissionNotificationIconPicker Label="Checkpoint icon" DefaultLabel="Exploration (default)" Value="@Mission.CheckpointNotificationIcon" ValueChanged="v => Change(() => Mission.CheckpointNotificationIcon = v)" />
+    </div>
+    <p>Uses Tarkov's side-quest list icons on the left of story notifications. Each objective can override the mission default.</p>
     @foreach (var error in MissionLogicRules.Errors(Mission, Layout)) { <p class="validation-warning">@error</p> }
     <section class="mission-logic-group" aria-label="Objectives">
     <header class="mission-logic-heading"><div><h4>Objectives <span>(@Mission.Objectives.Count)</span></h4><p>Define what the player needs to accomplish.</p></div><button @onclick="AddObjective">Add objective</button></header>
@@ -13,6 +18,7 @@
             <label>Name<input maxlength="120" @bind="o.Name" @bind:after="Notify" /></label>
             <MissionChoice Label="Goal" AllowEmpty="false" Value="@o.Type" Choices="Names(MissionAuthoring.ObjectiveTypes)" ValueChanged="v => ChangeGoal(o, v)" />
             </div>
+            <MissionNotificationIconPicker Value="@o.NotificationIcon" ValueChanged="v => Change(() => o.NotificationIcon = v)" />
             <div class="mission-logic-options">
             <label class="check"><input type="checkbox" @bind="o.OnStart" @bind:after="Notify" /> Active at mission start</label>
             <label class="check"><input type="checkbox" @bind="o.Required" @bind:after="Notify" /> Required for extraction</label>

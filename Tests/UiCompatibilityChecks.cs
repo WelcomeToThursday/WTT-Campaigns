@@ -520,6 +520,24 @@ internal static class UiCompatibilityChecks
                 "Chapter notifications bind the installed native notification queue"
             );
             var chapterNotification = client.MainModule.GetType("WTT.Campaigns.Client.Story.StoryChapterNotification");
+            var missionPanel = client.MainModule.GetType("WTT.Campaigns.Client.Missions.MissionExtractionPanel");
+            Check(
+                missionPanel
+                    .Methods.Single(m => m.IsConstructor)
+                    .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "add_willRenderCanvases")
+                    && missionPanel
+                        .Methods.Single(m => m.Name == "Dispose")
+                        .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "remove_willRenderCanvases"),
+                "Mission HUD owns a scoped render callback after editor visibility suppression"
+            );
+            var editorType = client.MainModule.GetType("WTT.Campaigns.Client.Authoring.Editor.RaidEditor");
+            var previewState = editorType.NestedTypes.Single(t => t.Name.StartsWith("<BeginAiPreview>"));
+            Check(
+                previewState
+                    .Methods.Single(m => m.Name == "MoveNext")
+                    .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "PrepareMissionPlaytest"),
+                "The ordinary Playtest button enters server-backed mission preparation for mission layouts"
+            );
             Check(
                 chapterNotification
                     .Methods.Single(m => m.Name == "CreateView")
@@ -531,6 +549,32 @@ internal static class UiCompatibilityChecks
                 "Story chapters use a dedicated notification view rather than the generic toast"
             );
             var chapterView = client.MainModule.GetType("WTT.Campaigns.Client.Story.StoryChapterNotificationView");
+            Check(
+                chapterView
+                    .Methods.Single(m => m.Name == "Create")
+                    .Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "QuestIconTypeSprites"),
+                "Mission story notifications render the native side-quest list icons"
+            );
+            var progressState = editorType.NestedTypes.Single(t => t.Name.StartsWith("<ReportEditorMissionProgress>"));
+            Check(
+                progressState
+                    .Methods.Single(m => m.Name == "MoveNext")
+                    .Body.Instructions.Any(i => i.Operand is MethodReference m && m.Name == "EndAiPreview"),
+                "Accepted playtest exit returns through the existing editor cleanup lifecycle"
+            );
+            var observationsState = editorType.NestedTypes.Single(t => t.Name.StartsWith("<ReportEditorObservations>"));
+            var observationCalls = observationsState
+                .Methods.Single(m => m.Name == "MoveNext")
+                .Body.Instructions.Select(i => i.Operand)
+                .OfType<MethodReference>()
+                .Select(m => m.Name)
+                .ToArray();
+            Check(
+                Array.IndexOf(observationCalls, "get_ExitReached") >= 0
+                    && Array.IndexOf(observationCalls, "get_Status") >= 0
+                    && Array.IndexOf(observationCalls, "get_ExitReached") < Array.IndexOf(observationCalls, "ObserveAsync"),
+                "Playtest observations reject exited and terminal runs before sending another server request"
+            );
             Check(
                 chapterView.BaseType.FullName == "EFT.UI.BaseNotificationView"
                     && chapterView
