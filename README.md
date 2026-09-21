@@ -33,7 +33,7 @@ WTT-Campaigns brings campaign characters, configurable perks, local Battle Pass 
 
 AI encounters and patrol previews target **SPT 4.1.5** with compatible **BigBrain 1.5.0** and **SAIN 4.5.1**. See the [AI guide](wiki/ai-encounters.md).
 
-Install the dependencies separately. They are not bundled with WTT-Campaigns. The Map Variants mod (`com.lennoxp90.mapvariants`) is incompatible. The Map Variants mod (`com.lennoxp90.mapvariants`) is incompatible. Use matching client and server components from the same release.
+Install the dependencies separately. They are not bundled with WTT-Campaigns. The Map Variants mod (`com.lennoxp90.mapvariants`) is incompatible. Use matching client and server components from the same release.
 
 ## Installation
 

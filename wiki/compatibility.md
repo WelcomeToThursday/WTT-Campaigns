@@ -15,7 +15,7 @@ Use **SPT 4.1.x / EFT 0.16.9.40743**, with:
 
 Dependencies are separate downloads. Install matching WTT-Campaigns client, UI and server components from the same release. See [installation](../README.md#installation).
 
-**Fika is not supported.** The Map Variants mod (`com.lennoxp90.mapvariants`) is declared incompatible in the server metadata. The Map Variants mod (`com.lennoxp90.mapvariants`) is declared incompatible in the server metadata. Compatibility with other mods can vary, especially when they also change profiles, perks, trader progression or the same menus.
+**Fika is not supported.** The Map Variants mod (`com.lennoxp90.mapvariants`) is declared incompatible in the server metadata. Compatibility with other mods can vary, especially when they also change profiles, perks, trader progression or the same menus.
 
 ## Available perks
 

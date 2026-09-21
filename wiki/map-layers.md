@@ -22,8 +22,6 @@ Ordinary raids use the enabled defaults from that character's own campaign. Regu
 
 Saved navigation recipes are currently editor previews only and do not activate in ordinary raids. See [manual navigation tools](editor-toolkit.md#manual-navigation-tools).
 
-Saved navigation recipes are currently editor previews only and do not activate in ordinary raids. See [manual navigation tools](editor-toolkit.md#manual-navigation-tools).
-
 ## Included content
 
 Layers apply supported scenery movement, hiding and copies, asset props, doors, barriers, placed loot, loot containers, and terrain texture/grass recipes. Terrain recipes compose in campaign/layout order; later strokes operate on the accumulated result. Disabling a layer removes its contribution on the next raid. Generated container contents are fixed for the raid so repeated requests cannot reroll them.

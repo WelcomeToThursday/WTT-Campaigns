@@ -102,7 +102,6 @@ Actions on a line run from top to bottom. Put state and quest mutations before a
 | `SelectSubService` | Opens the trader's native Services screen. It does not select or purchase a paid service. |
 | `StartCinematic` | Closes the conversation presentation and plays the registered Video or Cinematic in `Target` after the story choice commits. |
 | `UnlockMission` | Unlocks the campaign mission link in `Target` for this character. It does not start a raid or accept/complete a quest; see [mission links](missions.md#link-a-mission-to-a-campaign). |
-| `UnlockMission` | Unlocks the campaign mission link in `Target` for this character. It does not start a raid or accept/complete a quest; see [mission links](missions.md#link-a-mission-to-a-campaign). |
 | `PurchaseService` | Unsupported. Use the trader's native Services screen. |
 
 Only quests owned by this story can be changed. External quests declared through `quest:<id>` dependencies may be used in conditions, but dialogue actions cannot accept, hand over, finish or reward them.
