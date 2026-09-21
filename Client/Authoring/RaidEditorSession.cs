@@ -79,6 +79,43 @@ internal sealed class RaidEditorSession
             foreach (var layout in Definition.MapLayouts)
                 WTT.Campaigns.Shared.Spatial.RouteSpline.Synchronize(layout);
             EditorContentRules.ValidateEdit(before, Definition);
+            foreach (var layout in Definition.MapLayouts)
+            {
+                var errors = WTT.Campaigns.Shared.Spatial.MapTerrainPainting.Errors(layout.Terrain);
+                if (errors.Count > 0)
+                    throw new InvalidOperationException(string.Join("\n", errors));
+            }
+            var request = Request();
+            request.Definition = Definition;
+            var message = new AuthoringSocketMessage
+            {
+                RequestId = new string('0', 32),
+                Operation = "submit",
+                Request = request,
+            };
+            var reply = JsonConvert.SerializeObject(
+                new AuthoringSocketReply
+                {
+                    RequestId = new string('0', 32),
+                    Response = new AuthoringResponse
+                    {
+                        Definition = Definition,
+                        Candidate = Definition,
+                        RemoteCandidate = Definition,
+                        Grant = Grant,
+                        DraftId = DraftId,
+                        Revision = Revision,
+                        Tasks = Tasks,
+                    },
+                }
+            );
+            if (
+                System.Text.Encoding.UTF8.GetByteCount(JsonConvert.SerializeObject(message)) > AuthoringSocketMessage.MaxBytes - 65536
+                || System.Text.Encoding.UTF8.GetByteCount(JsonConvert.SerializeObject(reply)) > AuthoringSocketMessage.MaxBytes - 65536
+            )
+                throw new InvalidOperationException(
+                    "This edit would exceed the authoring message limit. Remove unused paint or split the content into separate drafts."
+                );
         }
         catch
         {

@@ -27,7 +27,7 @@ internal static class MissionLibraryChecks
         validation = SeasonValidator.Validate(package);
         check(validation.CanPublish, "Independent mission package accepts a saved navigation recipe in format 13");
         var future = SeasonCompiler.Copy(package);
-        future.FormatVersion = 14;
+        future.FormatVersion = 15;
         check(!SeasonValidator.Validate(future).CanPublish, "Independent mission package rejects unknown future formats");
         draft = store.Save(draft);
         var key = store.Publish(draft, validation);

@@ -22,7 +22,7 @@ Ordinary raids use the enabled defaults from that character's own campaign. Regu
 
 ## Included content
 
-Layers apply supported scenery movement, hiding and copies, asset props, doors, barriers, placed loot, and loot containers. Generated container contents are fixed for the raid so repeated requests cannot reroll them.
+Layers apply supported scenery movement, hiding and copies, asset props, doors, barriers, placed loot, loot containers, and terrain texture/grass recipes. Terrain recipes compose in campaign/layout order; later strokes operate on the accumulated result. Disabling a layer removes its contribution on the next raid. Generated container contents are fixed for the raid so repeated requests cannot reroll them.
 
 Enabled levels also apply their layout-owned zones, hazards and native quest/salvage interactions. Quest eligibility uses the active PMC profile. In a campaign, existing story bindings can use enabled level zones; regular PMCs do not gain campaign story progression. Publishing quest/story references to a level zone requires that level to be enabled by default.
 

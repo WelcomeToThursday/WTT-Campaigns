@@ -9,6 +9,7 @@
             <ui:Button name="Bindings" class="editor-action" text="Events" />
             <ui:Button name="Captures" class="editor-action" text="Captures" />
             <ui:Button name="Scene" class="editor-action" text="Scene" />
+            <ui:Button name="TerrainTool" class="editor-action" text="Terrain" tooltip="Paint terrain textures and grass" />
             <ui:Button name="LootTool" class="editor-action" text="Loot" />
             <ui:Button name="AI" class="editor-action" text="AI" />
         </ui:ScrollView>

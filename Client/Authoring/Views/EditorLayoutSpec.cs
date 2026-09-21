@@ -79,6 +79,7 @@ internal static class EditorLayoutSpec
             B("Captures", "Captures"),
             B("Scene", "Scene"),
             B("LootTool", "Loot"),
+            B("TerrainTool", "Terrain"),
             B("AI", "AI")
         ),
         G(
@@ -368,6 +369,28 @@ internal static class EditorLayoutSpec
             )
         ),
         G(
+            "Terrain",
+            T("TerrainState", "Point at terrain to choose a palette"),
+            R("TerrainTabs", B("TerrainTextures", "Textures"), B("TerrainGrass", "Grass")),
+            new Node(
+                "scroll",
+                "TerrainScroll",
+                "",
+                G("TerrainPalette"),
+                I("TerrainRadius", "Radius (m)"),
+                I("TerrainStrength", "Strength (%)"),
+                I("TerrainFalloff", "Falloff (%)"),
+                I("TerrainDensity", "Target density"),
+                R("TerrainTextureActions", B("TerrainPaint", "Paint"), B("TerrainRestoreTexture", "Restore original")),
+                R("TerrainGrassActions", B("TerrainAddGrass", "Add"), B("TerrainRemoveGrass", "Remove selected")),
+                R("TerrainGrassRestoreActions", B("TerrainClearGrass", "Clear all"), B("TerrainRestoreGrass", "Restore original")),
+                B("TerrainOff", "Stop brush"),
+                B("TerrainClearEdits", "Remove layout paint"),
+                T("TerrainFeedback", ""),
+                T("TerrainHelp", "")
+            )
+        ),
+        G(
             "Navigation",
             T("NavLayout", "Choose a layout"),
             T("NavState", "Native navigation · manual editing"),
@@ -480,6 +503,7 @@ internal static class EditorLayoutSpec
             B("HelpWindowToggle", "Editor controls"),
             B("ConsoleWindowToggle", "Console"),
             B("NavigationWindowToggle", "Navigation"),
+            B("TerrainWindowToggle", "Terrain"),
             T("UiSizeLabel", "UI size: 85%"),
             R("UiSizeActions", B("UiSizeSmaller", "Smaller"), B("UiSizeLarger", "Larger")),
             B("UiSizeReset", "Reset UI size"),

@@ -62,7 +62,7 @@ public static class SeasonValidator
             }
         }
         Need(
-            s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13,
+            s.FormatVersion is 1 or 2 or 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14,
             "Overview",
             "Unsupported campaign format version."
         );
@@ -88,7 +88,7 @@ public static class SeasonValidator
         if (s.MapLayouts.Count > 0 && s.FormatVersion < Spatial.MapLayoutRules.Format(s.MapLayouts))
             r.Add(
                 "Maps",
-                "Map layouts require format 4; loot and container edits require format 5; AI encounters require format 6; game asset placements require format 8; route splines require format 12."
+                "Map layouts require format 4; loot and container edits require format 5; AI encounters require format 6; game asset placements require format 8; route splines require format 12; navigation recipes require format 13; terrain painting requires format 14."
             );
         if (s.Missions.Count > 0 && s.FormatVersion < 7)
             r.Add("Missions", "Mission definitions require campaign format 7.");

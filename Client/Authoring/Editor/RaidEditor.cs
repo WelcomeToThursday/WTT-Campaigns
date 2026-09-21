@@ -214,6 +214,8 @@ public sealed partial class RaidEditor : MonoBehaviour
 
             if (!AiPreviewBusy)
                 _navigationPaint?.Tick();
+            SettleTerrainStroke();
+            RefreshTerrainPanel();
             SettleNavigationStroke();
             RefreshNavigationPanel();
             StartPendingEditorMissionTest();
@@ -258,7 +260,9 @@ public sealed partial class RaidEditor : MonoBehaviour
             if (EditorMode.Ready && !_open && !_walking && !AiPreviewBusy && !OtherModal && _session.Definition != null)
                 Open();
             _session.Hold =
-                _navigationStroke != null
+                _terrainStroke != null
+                || TerrainBusy
+                || _navigationStroke != null
                 || AiPreviewBusy
                 || _walking
                 || _view?.Typing == true
@@ -315,6 +319,11 @@ public sealed partial class RaidEditor : MonoBehaviour
                     EventSystem.current?.SetSelectedGameObject(null);
                     return;
                 }
+                if (_terrainBrush.Length > 0)
+                {
+                    StopTerrainBrush();
+                    return;
+                }
                 if (_navigationBrush.Length > 0)
                 {
                     _navigationBrush = "";
@@ -350,6 +359,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     CancelDrag();
                     _navigationStroke = null;
                     _navigationPaintRevision++;
+                    CancelTerrainStroke();
                     _session.Undo(false);
                 }
 
@@ -358,6 +368,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     CancelDrag();
                     _navigationStroke = null;
                     _navigationPaintRevision++;
+                    CancelTerrainStroke();
                     _session.Undo(true);
                 }
 
@@ -397,7 +408,7 @@ public sealed partial class RaidEditor : MonoBehaviour
                     }
                 }
                 var navigating = CameraLooking;
-                if (!NavigationPaintInput() && !Catalog.PlacementInput(navigating) && !navigating)
+                if (!TerrainPaintInput() && !NavigationPaintInput() && !Catalog.PlacementInput(navigating) && !navigating)
                     GeometryInput();
             }
             if (Time.realtimeSinceStartup >= _nextRefresh)
@@ -571,6 +582,7 @@ public sealed partial class RaidEditor : MonoBehaviour
 
     private void Close()
     {
+        StopTerrainBrush();
         if (_aiPaintObservation != null)
         {
             EndAiPreview(false);
@@ -612,6 +624,7 @@ public sealed partial class RaidEditor : MonoBehaviour
             }
             _environment?.Dispose();
             _environment = null;
+            _mapScene?.Terrain.RefreshVisibility();
 
             foreach (var entry in _renderers)
             {

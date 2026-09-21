@@ -43,6 +43,7 @@ public sealed partial class RaidEditor
         {
             BindConsole(view);
             BindNavigationPanel(view);
+            BindTerrainPanel(view);
             BindEnvironment(view);
             BindHazards(view);
             BindCameraControls(view);
@@ -181,6 +182,7 @@ public sealed partial class RaidEditor
                 () =>
                 {
                     CancelDrag();
+                    CancelTerrainStroke();
                     _session?.Undo(false);
                 }
             );
@@ -189,6 +191,7 @@ public sealed partial class RaidEditor
                 () =>
                 {
                     CancelDrag();
+                    CancelTerrainStroke();
                     _session?.Undo(true);
                 }
             );

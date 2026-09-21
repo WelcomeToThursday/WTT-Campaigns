@@ -81,6 +81,7 @@ public sealed partial class RaidEditor
                     {
                         if (tool is not ("Off" or "Path") && !CanPaintNavigation)
                             throw new InvalidOperationException("Clear the preview before editing navigation paint.");
+                        StopTerrainBrush();
                         _navigationStroke = null;
                         _navigationBrush = tool == "Off" ? "" : tool;
                         _navigationLinkStart = _navigationPathStart = null;

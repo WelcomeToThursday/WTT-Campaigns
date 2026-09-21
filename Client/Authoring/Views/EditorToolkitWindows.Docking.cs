@@ -38,6 +38,7 @@ internal sealed partial class EditorToolkitWindows
                         id == "Tool:Routes" && _view.ContentMode == WTT.Campaigns.Shared.Authoring.EditorContentMode.Level ? "Extracts"
                         : id.StartsWith("Tool:") ? RaidEditorView.ToolTitle(id.Substring(5))
                         : id == "LootConfiguration" ? "Loot configuration"
+                        : id == "Terrain" ? "Terrain"
                         : id == "Navigation" ? "Navigation"
                         : id == "Console" ? "Console"
                         : id == "Inspector" ? "Properties"

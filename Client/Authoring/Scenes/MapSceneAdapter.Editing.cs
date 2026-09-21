@@ -334,6 +334,9 @@ internal sealed partial class MapSceneAdapter
         if (_disposed || (!EditorMode.Ready && !runtime))
             return;
         TargetErrors.Clear();
+        Terrain.Reconcile(layout?.Terrain);
+        if (Terrain.Error.Length > 0)
+            TargetErrors.Add(Terrain.Error);
         var edits = layout?.Objects.AsValueEnumerable().ToList() ?? new List<MapObjectEdit>();
         if (preview != null)
             edits.Add(preview);

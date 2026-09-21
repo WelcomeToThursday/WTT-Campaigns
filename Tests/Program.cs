@@ -9,6 +9,12 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 3 && args[0] == "--terrain-hooks")
+{
+    WTT.Campaigns.Tests.TerrainAssemblyChecks.Run(args[1], args[2]);
+    return;
+}
+
 if (args.Length == 4 && args[0] == "--shared-zlinq")
 {
     WTT.Campaigns.Tests.SharedZLinqChecks.Run(args[1], args[2], args[3]);
@@ -208,6 +214,7 @@ WTT.Campaigns.Tests.PatrolDirectionChecks.Run(Check);
 WTT.Campaigns.Tests.PatrolToolsChecks.Run(Check);
 WTT.Campaigns.Tests.EditorHudChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTerrainChecks.Run(Check);
+WTT.Campaigns.Tests.TerrainPaintingChecks.Run(Check);
 WTT.Campaigns.Tests.EditorTriggerChecks.Run(Check);
 WTT.Campaigns.Tests.AuthoringSocketChecks.Run(Check).GetAwaiter().GetResult();
 WTT.Campaigns.Tests.EditorLayoutChecks.Run(Check);

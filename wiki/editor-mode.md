@@ -14,6 +14,14 @@ Editor home has separate **Missions** and **Levels** tabs. Missions selects miss
 
 Use the **Campaigns**, **Missions**, and **Levels** navigation in Creator. The Level library lists individual ordinary layouts and creates new levels from a name and map. Its editor shows only the selected layout and its owned zones, without mission AI or checkpoint controls. Mission layouts cannot be opened by a Level editor link. The in-game **Open Creator** button links directly to the selected level. Legacy shared drafts retain all other content; publishing a shared draft still publishes that entire saved draft.
 
+## Paint terrain and grass
+
+Open **Terrain** from the tool rail or Windows menu, then point at exposed terrain to load that tile's native palette. Select a texture thumbnail and **Paint**, or switch to **Grass** and choose **Add**, **Remove selected**, or **Clear all**. **Restore original** brushes blend back toward the map's original texture weights or grass density. Texture paint changes the native footstep and impact surface; it does not automatically remove grass.
+
+Adjust radius (0.5-20 metres), strength, and falloff; grass also has a target density. Drag the left mouse button to paint. Each stroke stays on its starting tile and creates one undo step. **Escape** cancels an unfinished stroke; **Ctrl+Z/Y** undo/redo. Buildings and other solid surfaces block terrain selection. Grass rebuilds after release for both the main view and scopes; wait for the progress message to finish before painting again. **Remove layout paint** removes all saved terrain strokes from the current layout and supports undo.
+
+Recipes travel with the layout through draft synchronization, recovery, mission packages, and enabled ordinary-raid map layers. Terrain content uses format 14 and needs matching client/server components. Missing or changed terrain bindings are reported; the editor does not substitute another tile. Edited texture tiles use Unity's terrain LOD renderer instead of EFT's baked proxy mesh so distant paint remains visible. Native palette availability and memory limits are shown in the panel. Terrain height, trees, mesh floors, imported textures, and new terrain creation are outside this tool.
+
 ## Build a route
 
 The workspace includes **Layouts**, **Routes**, **Scene**, **AI**, **Zones**, **Hazards**, **Events** and **Captures**. Library and properties panels can pop out and dock again. Changing modules preserves the panel arrangement and selected map layout.

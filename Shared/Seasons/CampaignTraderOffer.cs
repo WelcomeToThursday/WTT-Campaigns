@@ -85,7 +85,7 @@ public static class TraderOfferRules
         {
             var path = "Trader offers/" + assort.TraderId;
             if (
-                definition.FormatVersion is not (3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13)
+                definition.FormatVersion is not (3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14)
                 || !SeasonValidator.IsId(assort.TraderId)
                 || assort.TraderId == Fence
                 || !traders.Add(assort.TraderId)
@@ -118,7 +118,7 @@ public static class TraderOfferRules
                     result.Add(path, message);
             }
             Need(
-                definition.FormatVersion is 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13,
+                definition.FormatVersion is 3 or 4 or 5 or 6 or 7 or 8 or 9 or 10 or 11 or 12 or 13 or 14,
                 "Trader offers require campaign format 3."
             );
             Need(

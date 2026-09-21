@@ -298,6 +298,7 @@ internal sealed partial class RaidEditorView : IDisposable
 
     public void Dispose()
     {
+        ClearTerrainPalette();
         if (_disposed)
             return;
         _disposed = true;

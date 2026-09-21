@@ -21,7 +21,7 @@ internal sealed partial class RaidEditorView
     }
 
     private static bool IsWindow(string id) =>
-        id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration" or "Console" or "Navigation";
+        id is "Library" or "Inspector" or "EnvironmentMenu" or "Controls" or "LootConfiguration" or "Console" or "Navigation" or "Terrain";
 
     private VisualElement BindAuthored(EditorLayoutSpec.Node section, VisualElement parent)
     {
@@ -119,6 +119,7 @@ internal sealed partial class RaidEditorView
                     or "LootConfiguration"
                     or "Console"
                     or "Navigation"
+                    or "Terrain"
             )
             {
                 BindWindowChrome(
@@ -127,6 +128,7 @@ internal sealed partial class RaidEditorView
                     section.Id == "Library" ? "BROWSER"
                         : section.Id == "Inspector" ? "PROPERTIES"
                         : section.Id == "LootConfiguration" ? "LOOT CONFIGURATION"
+                        : section.Id == "Terrain" ? "TERRAIN"
                         : section.Id == "Navigation" ? "NAVIGATION"
                         : section.Id == "Console" ? "CONSOLE"
                         : section.Id == "Controls" ? "EDITOR CONTROLS"
@@ -134,6 +136,7 @@ internal sealed partial class RaidEditorView
                     section.Id == "Library" ? "LibraryCollapse"
                         : section.Id == "Inspector" ? "InspectorCollapse"
                         : section.Id == "LootConfiguration" ? "LootClose"
+                        : section.Id == "Terrain" ? "TerrainClose"
                         : section.Id == "Navigation" ? "NavigationClose"
                         : section.Id == "Console" ? "ConsoleClose"
                         : section.Id == "Controls" ? "HelpClose"

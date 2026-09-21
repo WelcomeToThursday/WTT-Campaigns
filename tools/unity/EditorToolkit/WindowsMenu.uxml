@@ -7,6 +7,7 @@
         <ui:Button name="EnvironmentWindowToggle" class="editor-action" text="Environment" />
         <ui:Button name="HelpWindowToggle" class="editor-action" text="Editor controls" />
         <ui:Button name="ConsoleWindowToggle" class="editor-action" text="Console" />
+        <ui:Button name="TerrainWindowToggle" class="editor-action" text="Terrain" />
         <ui:Button name="NavigationWindowToggle" class="editor-action" text="Navigation" />
         <ui:Label name="UiSizeLabel" class="editor-label" text="UI size: 85%" picking-mode="Ignore" />
         <ui:VisualElement name="UiSizeActions" class="editor-actions editor-action-row">

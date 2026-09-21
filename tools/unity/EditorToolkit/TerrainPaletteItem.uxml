@@ -1,0 +1,7 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="Editor.uss" />
+    <ui:Button name="TerrainPaletteItem" class="editor-terrain-item">
+        <ui:Image name="Thumbnail" class="editor-terrain-thumbnail" picking-mode="Ignore" />
+        <ui:Label name="Caption" class="editor-terrain-caption" picking-mode="Ignore" />
+    </ui:Button>
+</ui:UXML>

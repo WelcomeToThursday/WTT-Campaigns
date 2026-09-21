@@ -69,7 +69,7 @@ internal sealed partial class EditorToolkitWindows
             var id in RaidEditorView
                 .ToolIds.AsValueEnumerable()
                 .Select(t => "Tool:" + t)
-                .Concat(new[] { "Inspector", "EnvironmentMenu", "Controls", "LootConfiguration", "Console", "Navigation" })
+                .Concat(new[] { "Inspector", "EnvironmentMenu", "Controls", "LootConfiguration", "Console", "Navigation", "Terrain" })
         )
         {
             _panels.Add(id, new() { Id = id });
@@ -103,6 +103,9 @@ internal sealed partial class EditorToolkitWindows
                 ShowPanel("Navigation", false);
             }
         );
+        Bind("TerrainWindowToggle", () => ToggleWindow("Terrain"));
+        Bind("TerrainTool", () => ToggleWindow("Terrain"));
+        Bind("TerrainClose", () => ShowPanel("Terrain", false));
         Bind("NavigationWindowToggle", () => ToggleWindow("Navigation"));
         Bind("ConsoleWindowToggle", () => ToggleWindow("Console"));
         Bind("LootClose", () => ShowPanel("LootConfiguration", false));
@@ -435,12 +438,12 @@ internal sealed partial class EditorToolkitWindows
                 Id = id,
                 Width =
                     id == "Console" ? 760
-                    : id == "Navigation" ? 420
+                    : id is "Navigation" or "Terrain" ? 420
                     : id == "LootConfiguration" ? 460
                     : id is "Tool:Scene" or "Tool:AI" ? 420
                     : 360,
                 Height =
-                    id == "Navigation" ? 580
+                    id is "Navigation" or "Terrain" ? 580
                     : id == "LootConfiguration" ? 620
                     : 400,
                 X = -.15f,

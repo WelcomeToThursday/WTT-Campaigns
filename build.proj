@@ -87,6 +87,7 @@
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --bush-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --experience-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --unity-toolkit &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
+    <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --terrain-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --editor-toolkit &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --raid-startup-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />
     <Exec Condition="'@(_ClientAssembly)' != ''" Command="dotnet &quot;@(_TestAssembly)&quot; --encounter-hooks &quot;$(TarkovDir).&quot; &quot;@(_ClientAssembly)&quot;" />

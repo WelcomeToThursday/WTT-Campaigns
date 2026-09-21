@@ -381,3 +381,10 @@
 .editor-navigation-card { margin: 4px 0; padding: 8px; border-width: 1px; border-color: #465667; background-color: rgba(24, 32, 40, 0.94); flex-shrink: 0; }
 .editor-navigation-feedback { color: #f5d070; }
 .editor-navigation .editor-setting { flex-shrink: 0; min-width: 0; }
+.editor-terrain { min-width: 280px; }
+.editor-terrain-state { white-space: normal; padding: 6px; background-color: rgba(30, 38, 43, 0.85); margin-bottom: 5px; }
+.editor-terrain-palette { flex-direction: row; flex-wrap: wrap; margin-bottom: 8px; }
+.editor-terrain-item { width: 92px; min-height: 96px; margin: 3px; padding: 4px; background-color: rgb(37, 42, 46); border-width: 1px; border-color: rgb(83, 90, 95); }
+.editor-terrain-item.editor-selected { border-color: rgb(213, 193, 138); background-color: rgb(62, 61, 49); }
+.editor-terrain-thumbnail { height: 58px; width: 80px; -unity-background-scale-mode: scale-to-fit; }
+.editor-terrain-caption { white-space: normal; font-size: 11px; -unity-text-align: middle-center; }

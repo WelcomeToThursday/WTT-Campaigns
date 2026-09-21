@@ -27,6 +27,8 @@ public static class CampaignsEditorToolkitBuilder
         "Console",
         "ConsoleRow",
         "Navigation",
+        "Terrain",
+        "TerrainPaletteItem",
         "Controls",
         "DockDivider",
         "DockTab",
@@ -112,6 +114,17 @@ public static class CampaignsEditorToolkitBuilder
                         "OverlayBounds:Toggle",
                         "OverlayHandles:Toggle",
                     }
+                : name == "Terrain"
+                    ? new[]
+                    {
+                        "TerrainPalette:VisualElement",
+                        "TerrainScroll:ScrollView",
+                        "TerrainRadius:TextField",
+                        "TerrainPaint:Button",
+                        "TerrainGrass:Button",
+                        "TerrainFeedback:Label",
+                    }
+                : name == "TerrainPaletteItem" ? new[] { "Thumbnail:Image", "Caption:Label" }
                 : name == "Navigation"
                     ? new[]
                     {

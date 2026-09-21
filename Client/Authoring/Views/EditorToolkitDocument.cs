@@ -7,6 +7,61 @@ namespace WTT.Campaigns.Client.Authoring.Views;
 internal sealed class EditorToolkitDocument : IDisposable
 {
     private static AssetBundle? _bundle;
+    private static readonly string[] TemplateNames =
+    {
+        "Action",
+        "BrowserRow",
+        "CampaignTest",
+        "CaptureTask",
+        "CategoryRail",
+        "ChoiceField",
+        "ChoiceOption",
+        "ChoicePopup",
+        "FieldMessage",
+        "InspectorSection",
+        "InspectorHeader",
+        "ConflictRow",
+        "ConflictShield",
+        "ContextMenu",
+        "Console",
+        "ConsoleRow",
+        "Navigation",
+        "Terrain",
+        "TerrainPaletteItem",
+        "Controls",
+        "DockDivider",
+        "DockTab",
+        "DockTabs",
+        "DropPreview",
+        "EditorWalkStatus",
+        "EnvironmentMenu",
+        "Field",
+        "Home",
+        "HomePicker",
+        "Inspector",
+        "Library",
+        "LootConfiguration",
+        "MenuShield",
+        "PickerRow",
+        "RouteCaption",
+        "RouteLegend",
+        "Row",
+        "SceneActionGroup",
+        "ScopedActions",
+        "StatusBar",
+        "ToolbarIcon",
+        "ToolbarScroll",
+        "ToolbarSeparator",
+        "Tooltip",
+        "TransformToolbar",
+        "TreeRow",
+        "Window",
+        "WindowsMenu",
+        "Workspace",
+        "WorkspaceTitleBar",
+        "GameViewport",
+        "ViewportToolbar",
+    };
 
     // Shared assets live for the client session. Never synchronously unload them
     // from a screen's OnDestroy while Unity is changing scenes.
@@ -124,7 +179,15 @@ internal sealed class EditorToolkitDocument : IDisposable
 
     private static void EnsureAssets()
     {
-        if (_template && _tree && _font && _previewShader && _viewportShader && _navigationShader && Templates.Count == 50)
+        if (
+            _template
+            && _tree
+            && _font
+            && _previewShader
+            && _viewportShader
+            && _navigationShader
+            && Templates.Count == TemplateNames.Length
+        )
             return;
         Plugin.LogInfo("Editor Toolkit: loading shared assets");
         const string path = "assets/mods/wtt-campaigns.assets/editortoolkit/";
@@ -147,61 +210,7 @@ internal sealed class EditorToolkitDocument : IDisposable
         if (!_template || !_tree || !_font || !_previewShader || !_viewportShader || !_navigationShader)
             throw new InvalidOperationException("Editor Toolkit assets are incomplete.");
         Templates.Clear();
-        foreach (
-            var name in new[]
-            {
-                "Action",
-                "BrowserRow",
-                "CampaignTest",
-                "CaptureTask",
-                "CategoryRail",
-                "ChoiceField",
-                "ChoiceOption",
-                "ChoicePopup",
-                "FieldMessage",
-                "InspectorSection",
-                "InspectorHeader",
-                "ConflictRow",
-                "ConflictShield",
-                "ContextMenu",
-                "Console",
-                "ConsoleRow",
-                "Navigation",
-                "Controls",
-                "DockDivider",
-                "DockTab",
-                "DockTabs",
-                "DropPreview",
-                "EditorWalkStatus",
-                "EnvironmentMenu",
-                "Field",
-                "Home",
-                "HomePicker",
-                "Inspector",
-                "Library",
-                "LootConfiguration",
-                "MenuShield",
-                "PickerRow",
-                "RouteCaption",
-                "RouteLegend",
-                "Row",
-                "SceneActionGroup",
-                "ScopedActions",
-                "StatusBar",
-                "ToolbarIcon",
-                "ToolbarScroll",
-                "ToolbarSeparator",
-                "Tooltip",
-                "TransformToolbar",
-                "TreeRow",
-                "Window",
-                "WindowsMenu",
-                "Workspace",
-                "WorkspaceTitleBar",
-                "GameViewport",
-                "ViewportToolbar",
-            }
-        )
+        foreach (var name in TemplateNames)
         {
             var tree = _bundle.LoadAsset<VisualTreeAsset>(path + name.ToLowerInvariant() + ".uxml");
             if (!tree)

@@ -13,6 +13,10 @@ public sealed class MapLayout
 
     public bool ShouldSerializeApplyInNormalRaids() => ApplyInNormalRaids;
 
+    public List<MapTerrainRecipe>? Terrain { get; set; }
+
+    public bool ShouldSerializeTerrain() => Terrain is { Count: > 0 };
+
     public MapNavigationRecipe? Navigation { get; set; }
 
     public bool ShouldSerializeNavigation() => Navigation != null;
@@ -203,7 +207,8 @@ public static class MapLayoutRules
         layout.SpawnPoints?.Count > 0 || layout.Encounters?.Count > 0 || layout.PatrolRoutes?.Count > 0;
 
     public static int Format(IEnumerable<MapLayout> layouts) =>
-        layouts.AsValueEnumerable().Any(l => l.Navigation != null) ? MapNavigationRules.Format
+        layouts.AsValueEnumerable().Any(l => l.Terrain is { Count: > 0 }) ? MapTerrainPainting.Format
+        : layouts.AsValueEnumerable().Any(l => l.Navigation != null) ? MapNavigationRules.Format
         : layouts.AsValueEnumerable().Any(l => l.PlayerRouteSpline != null || l.PatrolRoutes.AsValueEnumerable().Any(r => r.Spline != null))
             ? 12
         : layouts.AsValueEnumerable().Any(NeedsFormat9) ? 9
@@ -276,6 +281,7 @@ public static class MapLayoutRules
     {
         var errors = new List<string>();
         errors.AddRange(MapNavigationRules.Errors(layout.Navigation));
+        errors.AddRange(MapTerrainPainting.Errors(layout.Terrain));
         void Need(bool valid, string error)
         {
             if (!valid)

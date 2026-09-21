@@ -90,6 +90,9 @@ public static class MapLayerRules
             Name = "Normal raid map layers",
             Location = location,
             Navigation = recipes.Length == 1 ? Seasons.SeasonCompiler.Copy(recipes[0].Navigation) : null,
+            Terrain = Seasons.SeasonCompiler.Copy(
+                enabled.AsValueEnumerable().SelectMany(l => l.Terrain ?? new List<MapTerrainRecipe>()).ToList()
+            ),
             Objects = enabled.AsValueEnumerable().SelectMany(l => l.Objects).ToList(),
             Doors = enabled.AsValueEnumerable().SelectMany(l => l.Doors).ToList(),
             Barriers = enabled.AsValueEnumerable().SelectMany(l => l.Barriers).ToList(),
