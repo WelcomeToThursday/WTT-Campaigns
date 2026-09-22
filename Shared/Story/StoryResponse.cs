@@ -24,4 +24,7 @@ public sealed class StoryResponse
     public string EventMediaId { get; set; } = "";
     public string CinematicBindingId { get; set; } = "";
     public List<string> RaidConditionIds { get; set; } = new();
+
+    // Mission entry quests remain actionable at traders even when also tracked by the journal.
+    public List<string> MissionQuestIds { get; set; } = new();
 }

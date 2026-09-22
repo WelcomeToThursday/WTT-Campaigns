@@ -200,6 +200,15 @@ internal static class ProgressionChecks
         using var assembly = AssemblyDefinition.ReadAssembly(game);
         var types = assembly.MainModule.GetTypes().ToDictionary(t => t.FullName);
         var list = types["EFT.UI.QuestsListView"];
+        check(
+            list.Methods.Any(m =>
+                m.Name == "UpdateSingleQuestVisibility"
+                && m.Parameters.Count == 1
+                && m.Parameters[0].Name == "questView"
+                && m.Parameters[0].ParameterType.FullName == "EFT.UI.QuestListItem"
+            ),
+            "Story trader filtering binds the native row visibility hook"
+        );
         foreach (var name in new[] { "Show", "UpdateVisibility", "QuestAddedHandler", "AutoSelectQuest" })
         {
             check(list.Methods.Count(m => m.Name == name) == 1, "Unique native task list hook " + name);

@@ -9,6 +9,7 @@ using SPT.Reflection.Patching;
 using TMPro;
 using UnityEngine;
 using WTT.Campaigns.Client.Progression;
+using WTT.Campaigns.Client.Story;
 
 namespace WTT.Campaigns.Client.Patches.UI;
 
@@ -36,6 +37,7 @@ internal sealed class TaskGroupingShowPatch : ModulePatch
     [PatchPostfix]
     private static void Postfix(QuestsListView __instance, IEftSession backendSession, QuestController questController, Trader trader)
     {
+        (__instance.GetComponent<StoryQuestListHost>() ?? __instance.gameObject.AddComponent<StoryQuestListHost>()).Open(__instance);
         try
         {
             if (ProgressionClient.Metadata == null)

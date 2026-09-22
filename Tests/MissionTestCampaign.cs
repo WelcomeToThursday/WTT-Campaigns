@@ -305,6 +305,26 @@ internal static class MissionTestCampaign
             !prepared.Story!.Quests.Single().AutoStart && !prepared.Story.Quests.Single().AutoComplete,
             "Test quest requires acceptance and turn-in"
         );
+        var storyResponse = JsonConvert.DeserializeObject<StoryResponse>(
+            JsonConvert.SerializeObject(
+                new StoryResponse
+                {
+                    CharacterId = "character",
+                    SeasonId = prepared.Id,
+                    Definition = prepared.Story,
+                    MissionQuestIds = prepared.Missions.Select(m => m.QuestId).Distinct(StringComparer.Ordinal).ToList(),
+                }
+            )
+        )!;
+        check(
+            WTT.Campaigns.Client.Story.StoryQuestVisibility.Allows(storyResponse, "character", prepared.Id, mission.QuestId),
+            "The authored field exercise remains actionable at its trader despite story membership"
+        );
+        storyResponse.MissionQuestIds.Clear();
+        check(
+            !WTT.Campaigns.Client.Story.StoryQuestVisibility.Allows(storyResponse, "character", prepared.Id, mission.QuestId),
+            "Story membership without a mission link is excluded from trader tasks"
+        );
         check(
             JToken.DeepEquals(JToken.FromObject(prepared), JToken.FromObject(AddMission(prepared, layout.Id))),
             "Mission setup is idempotent"

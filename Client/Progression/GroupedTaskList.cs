@@ -9,6 +9,7 @@ using HarmonyLib;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using WTT.Campaigns.Client.Story;
 using ZLinq;
 
 namespace WTT.Campaigns.Client.Progression;
@@ -66,6 +67,7 @@ internal sealed class GroupedTaskList : MonoBehaviour
     {
         var state = row.Quest.QuestStatus;
         return row.Quest.IsVisible
+            && StoryQuestListHost.Allows(row.Quest.Id)
             && (_list!._toggleShowLocked.isOn || state != EQuestStatus.Locked)
             && (_list._toggleShowCompleted.isOn || state is not (EQuestStatus.Success or EQuestStatus.Fail));
     }

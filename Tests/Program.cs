@@ -180,6 +180,7 @@ WTT.Campaigns.Tests.SeasonItemBundleChecks.Run(Check);
 WTT.Campaigns.Tests.StoryChecks.Run(Check);
 WTT.Campaigns.Tests.StoryEnumCompatibilityChecks.Run(Check);
 WTT.Campaigns.Tests.StoryChapterNotificationChecks.Run(Check);
+WTT.Campaigns.Tests.StoryQuestVisibilityChecks.Run(Check);
 WTT.Campaigns.Tests.MissionPresentationChecks.Run(Check);
 WTT.Campaigns.Tests.StoryEngineChecks.Run(Check);
 WTT.Campaigns.Tests.StoryV2Checks.Run(Check);

@@ -83,6 +83,12 @@ public sealed partial class StoryService(
             Choices = StoryRules.EligibleLines(definition, state, facts).Where(l => l.Side == "Player").ToList(),
             Line = definition.Dialogs.SelectMany(d => d.Lines).FirstOrDefault(l => l.Id == state.Conversation?.CurrentLineId),
             Objectives = Objectives(profile.CharacterData.PmcData!, definition, state, facts),
+            MissionQuestIds = repository
+                .Runtime(seasonId)
+                .Definition.Missions.Where(m => !string.IsNullOrEmpty(m.QuestId))
+                .Select(m => m.QuestId)
+                .Distinct(StringComparer.Ordinal)
+                .ToList(),
             RaidConditionIds = repository
                 .Runtime(seasonId)
                 .Definition.Quests.SelectMany(q => q.AllConditions())

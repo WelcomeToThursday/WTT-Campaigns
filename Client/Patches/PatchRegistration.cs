@@ -112,6 +112,7 @@ internal static class PatchRegistration
         new CustomizationPreviewPatch(nameof(HeadSelectionState.UpdatePreview)).Enable();
         new CustomizationPreviewPatch(nameof(HeadSelectionState.PlayVoice)).Enable();
         new WTT.Campaigns.Client.Story.StoryTasksPatch().Enable();
+        new WTT.Campaigns.Client.Story.StoryQuestVisibilityPatch().Enable();
         new TaskGroupingShowPatch().Enable();
         new TaskGroupingRefreshPatch(nameof(QuestsListView.UpdateVisibility)).Enable();
         new TaskGroupingRefreshPatch(nameof(QuestsListView.QuestAddedHandler)).Enable();
