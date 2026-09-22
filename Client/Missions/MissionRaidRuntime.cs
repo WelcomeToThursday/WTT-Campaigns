@@ -129,7 +129,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
 
     internal static void ClearPending() => _pending = null;
 
-    internal static void AbortPendingRaid(string reason)
+    internal static async Task AbortPendingRaid(string reason)
     {
         ClearPending();
         if (!Plugin.InRaid || Plugin.Player == null || Singleton<AbstractGame>.Instance is not LocalGame game)
@@ -139,7 +139,9 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             // This path is only used when local mission launch itself failed
             // before the authored runtime became active. Preserve native gear
             // while the server records the cancelled/failed prepared run.
-            game.Stop(Plugin.Player.Profile.Id, ExitStatus.Survived, reason, 0);
+            var world = Singleton<GameWorld>.Instantiated ? Singleton<GameWorld>.Instance : null;
+            if (world != null)
+                await StopFailedStartupAsync(game, Plugin.Player, world, reason);
         }
         catch (Exception exception)
         {
@@ -361,7 +363,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
                 pending.Run = latestResponse.Run;
             await CancelFailedStart(pending, "Mission launch cancelled.");
             if (IsStartupWorldCurrent())
-                RequestNativeStartupFailure("Mission launch cancelled");
+                await RequestNativeStartupFailure("Mission launch cancelled");
             EndRuntime();
         }
         catch (Exception exception)
@@ -372,7 +374,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
             _hud?.SetStatus("Mission unavailable: " + exception.Message);
             await CancelFailedStart(pending, exception.Message);
             if (IsStartupWorldCurrent())
-                RequestNativeStartupFailure("Mission startup failed");
+                await RequestNativeStartupFailure("Mission startup failed");
             EndRuntime();
         }
         finally
@@ -837,7 +839,7 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
         }
     }
 
-    private void RequestNativeStartupFailure(string reason)
+    private async Task RequestNativeStartupFailure(string reason)
     {
         if (_ending || _player == null)
             return;
@@ -848,13 +850,41 @@ internal sealed partial class MissionRaidRuntime : MonoBehaviour
                 throw new InvalidOperationException("The local raid lifecycle is unavailable.");
             // Startup protection is a preflight failure. Preserve native gear and
             // inventory reconciliation while the server records a failed attempt.
-            game.Stop(_player.Profile.Id, ExitStatus.Survived, reason, 0);
+            if (_startupWorld != null)
+                await StopFailedStartupAsync(game, _player, _startupWorld, reason);
         }
         catch (Exception exception)
         {
             _ending = false;
             Plugin.Error(exception);
             _hud?.SetStatus("The failed mission raid could not close: " + exception.Message);
+        }
+    }
+
+    private static async Task StopFailedStartupAsync(LocalGame game, Player player, GameWorld world, string reason)
+    {
+        // A player exists well before BotsController.Init finishes. Native Stop
+        // assumes that initialization is complete, so retain startup protection
+        // until the same raid reaches Started or is torn down by another path.
+        while (
+            game
+            && player
+            && world
+            && Singleton<AbstractGame>.Instantiated
+            && ReferenceEquals(Singleton<AbstractGame>.Instance, game)
+            && Singleton<GameWorld>.Instantiated
+            && ReferenceEquals(Singleton<GameWorld>.Instance, world)
+            && ReferenceEquals(Plugin.Player, player)
+        )
+        {
+            if (game.Status is GameStatus.Stopped or GameStatus.Stopping or GameStatus.SoftStopping)
+                return;
+            if (game.Status == GameStatus.Started)
+            {
+                game.Stop(player.Profile.Id, ExitStatus.Survived, reason, 0);
+                return;
+            }
+            await UniTask.Yield(PlayerLoopTiming.Update);
         }
     }
 

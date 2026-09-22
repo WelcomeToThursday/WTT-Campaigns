@@ -33,6 +33,7 @@ internal static class PatchRegistration
     {
         new BackendIdentity().Enable();
         new SptRequestIdentity().Enable();
+        new NativeMissionLaunchPatch().Enable();
         new AuthoringNotificationSocket().Enable();
         new AuthoringNotificationReply().Enable();
         new AuthoringRaidNotifications(nameof(TarkovApplication.LocalGameCreate)).Enable();

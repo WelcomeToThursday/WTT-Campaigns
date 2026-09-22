@@ -2,6 +2,22 @@ namespace WTT.Campaigns.Client.Patches.Session;
 
 internal static class RequestIdentity
 {
+    internal const string MissionRunHeader = "X-WTT-Mission-Run";
+
+    internal static void ApplyNativeMissionMarker(string path, string? characterId, IDictionary<string, string> headers, string runId)
+    {
+        if (path != "/client/match/local/start")
+            return;
+        headers.Remove(MissionRunHeader);
+        if (string.IsNullOrWhiteSpace(runId) || string.IsNullOrWhiteSpace(characterId))
+            return;
+        // Keep the native request's authentication. A pending run must never
+        // authorize a request belonging to another backend session.
+        if (!headers.TryGetValue("Cookie", out var cookie) || cookie != "PHPSESSID=" + characterId)
+            throw new InvalidOperationException("The mission launch request belongs to another backend character.");
+        headers[MissionRunHeader] = runId;
+    }
+
     internal static void Apply(
         bool sharedClient,
         string path,

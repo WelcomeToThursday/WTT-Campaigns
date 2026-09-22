@@ -334,6 +334,10 @@ internal sealed partial class MapSceneAdapter
         if (_disposed || (!EditorMode.Ready && !runtime))
             return;
         TargetErrors.Clear();
+        if (layout != null)
+            ResolveDoorSources(layout);
+        else
+            _doorSources.Clear();
         Terrain.Reconcile(layout?.Terrain);
         if (Terrain.Error.Length > 0)
             TargetErrors.Add(Terrain.Error);
@@ -549,6 +553,8 @@ internal sealed partial class MapSceneAdapter
             foreach (var edit in layout.Doors)
                 try
                 {
+                    if (!_doorSources.TryGetValue(Key(edit.Target), out var source) || !source)
+                        continue; // The source preflight already reports the binding error.
                     if (edit.PlaceNew)
                     {
                         var signature = JsonConvert.SerializeObject(edit.Target);
@@ -558,7 +564,7 @@ internal sealed partial class MapSceneAdapter
                             _placedDoors.Remove(edit.Id);
                         }
                         if (!_placedDoors.TryGetValue(edit.Id, out var placed))
-                            _placedDoors.Add(edit.Id, placed = new SceneDoorPlacement(Resolve(edit.Target, true), edit));
+                            _placedDoors.Add(edit.Id, placed = new SceneDoorPlacement(source, edit));
                         placed.Pose(edit);
                         placed.State.Apply(edit);
                         continue;
@@ -567,7 +573,7 @@ internal sealed partial class MapSceneAdapter
                     doorIds.Add(key);
                     if (!_doors.TryGetValue(key, out var state))
                     {
-                        var door = Resolve(edit.Target, true).GetComponent<Door>();
+                        var door = source.GetComponent<Door>();
                         _doors.Add(key, state = new SceneDoorState(door));
                     }
                     state.Apply(edit);
@@ -663,6 +669,7 @@ internal sealed partial class MapSceneAdapter
         foreach (var door in _placedDoors.Values)
             cleanup.Apply(() => { }, door.Dispose);
         _placedDoors.Clear();
+        _doorSources.Clear();
         cleanup.Dispose();
     }
 }

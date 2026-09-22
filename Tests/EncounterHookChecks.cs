@@ -183,6 +183,22 @@ internal static class EncounterHookChecks
     private static void CheckPlayerPoolCleanup(AssemblyDefinition native, AssemblyDefinition client)
     {
         var cleanup = RequireMethod(RequireType(client, "WTT.Campaigns.Client.Encounters.EncounterPlayerCleanup"), "Dispose");
+        var nativeGame = RequireType(native, "EFT.LocalGame");
+        Require(
+            nativeGame.Fields.Any(f =>
+                f.Name == "_bots" && f.FieldType.FullName == "System.Collections.Generic.Dictionary`2<System.String,EFT.Player>"
+            ) && RequireMethod(nativeGame, "CleanUp").Body.Instructions.Any(i => i.Operand is FieldReference f && f.Name == "_bots"),
+            "Encounter cleanup targets the bot dictionary actually consumed by native final raid cleanup"
+        );
+        var detach = RequireMethod(cleanup.DeclaringType, "DetachFromRaid");
+        Require(Calls(detach, "TryGetValue") && Calls(detach, "Remove"), "Owned bots leave the native raid registry before pooling");
+        Require(
+            detach.Body.Instructions.Any(i => i.OpCode == OpCodes.Beq_S || i.OpCode == OpCodes.Bne_Un_S || i.OpCode == OpCodes.Ceq),
+            "Bot deregistration checks instance identity so late cleanup preserves replacements"
+        );
+        var detachCall = cleanup.Body.Instructions.Single(i => i.Operand is MethodReference m && m.Name == "DetachFromRaid");
+        var disposeCall = cleanup.Body.Instructions.First(i => i.Operand is MethodReference m && m.Name == "Dispose");
+        Require(detachCall.Offset < disposeCall.Offset, "Native registration is removed while the player identity is still alive");
         foreach (var call in new[] { "get_IsInPool", "GetComponent", "Dispose", "DestroyLoot", "ReturnToPool" })
             Require(Calls(cleanup, call), "Encounter cleanup preserves native pool ownership: " + call);
         Require(!Calls(cleanup, "Destroy") && !Calls(cleanup, "DestroyImmediate"), "Cleanup must never destroy a reusable player root");
@@ -1203,6 +1219,31 @@ internal static class EncounterHookChecks
         );
         Require(Calls(RequireMethod(brainChoice, "Dispose"), "Remove"), "Brain override scope is removed after activation");
         var hands = RequireType(client, "WTT.Campaigns.Client.Missions.MissionInventorySnapshot");
+        var nativePlayer = RequireType(native, "EFT.Player");
+        Require(
+            Calls(RequireMethod(nativePlayer, "FastForwardCurrentOperations"), "FastForwardCurrentState")
+                && Calls(RequireMethod(nativePlayer, "OnDead"), "FastForwardCurrentOperations"),
+            "Checkpoint recovery uses EFT's native death-time hands completion seam"
+        );
+        var finishHands = hands.NestedTypes.Single(t => t.Name.StartsWith("<FinishHands>"));
+        Require(
+            Calls(RequireMethod(finishHands, "MoveNext"), "FastForwardCurrentOperations")
+                && Calls(RequireMethod(finishHands, "MoveNext"), "ThrowIfCancellationRequested")
+                && Calls(RequireMethod(finishHands, "MoveNext"), "get_realtimeSinceStartup"),
+            "Frozen retry completes native hands callbacks with cancellation and a real-time deadline"
+        );
+        foreach (var transition in new[] { "EmptyHands", "RestoreHands" })
+            Require(
+                Calls(RequireMethod(hands.NestedTypes.Single(t => t.Name.StartsWith("<" + transition + ">")), "MoveNext"), "FinishHands"),
+                "Checkpoint " + transition + " drives native completion before changing inventory ownership"
+            );
+        Require(
+            !Calls(
+                RequireMethod(hands.NestedTypes.Single(t => t.Name.StartsWith("<SettleHands>")), "MoveNext"),
+                "FastForwardCurrentOperations"
+            ),
+            "Normal checkpoint capture preserves the player's hands animation"
+        );
         Require(
             hands.Methods.Any(m => m.Name == "SettleHands") && hands.Methods.Any(m => m.Name == "RestoreHands"),
             "Checkpoint hands settle without holstering and restore through native equipment activation"

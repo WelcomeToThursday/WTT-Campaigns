@@ -95,5 +95,44 @@ internal static class RequestIdentityChecks
         using var otherRoute = new HttpRequestMessage();
         RequestIdentity.Apply(true, "/client/items", character, otherRoute, missionRunId: "mission-run");
         check(!otherRoute.Headers.Contains("X-WTT-Mission-Run"), "Mission launch identity is not sent on unrelated requests");
+
+        var native = new Dictionary<string, string> { ["Cookie"] = "PHPSESSID=" + character, ["GClient-RequestId"] = "42" };
+        RequestIdentity.ApplyNativeMissionMarker("/client/match/local/start", character, native, "mission-run");
+        check(native["X-WTT-Mission-Run"] == "mission-run", "Native EFT transport carries the prepared mission marker");
+        check(
+            native["Cookie"] == "PHPSESSID=" + character && native["GClient-RequestId"] == "42",
+            "Mission marker preserves native authentication and request headers"
+        );
+        // Feed the header emitted by the native client path into the server's
+        // per-request context rather than authorizing a separate test marker.
+        var scope = WTT.Campaigns.Server.Missions.MissionLaunchContext.Push(
+            character,
+            native.ContainsKey(WTT.Campaigns.Server.Missions.MissionLaunchContext.HeaderName),
+            native[WTT.Campaigns.Server.Missions.MissionLaunchContext.HeaderName]
+        );
+        check(
+            WTT.Campaigns.Server.Missions.MissionLaunchContext.Current?.RunId == "mission-run"
+                && WTT.Campaigns.Server.Missions.MissionLaunchContext.Current.SessionId == character,
+            "Native launch header agrees with the server marker and character"
+        );
+        scope.Restore();
+        RequestIdentity.ApplyNativeMissionMarker("/client/match/local/start", character, native, "");
+        check(!native.ContainsKey("X-WTT-Mission-Run"), "Ordinary native launch cannot reuse a stale mission marker");
+        RequestIdentity.ApplyNativeMissionMarker("/client/match/local/end", character, native, "mission-run");
+        check(!native.ContainsKey("X-WTT-Mission-Run"), "Native mission marker is restricted to raid start");
+        native["Cookie"] = "PHPSESSID=" + otherCharacter;
+        var rejected = false;
+        try
+        {
+            RequestIdentity.ApplyNativeMissionMarker("/client/match/local/start", character, native, "mission-run");
+        }
+        catch (InvalidOperationException)
+        {
+            rejected = true;
+        }
+        check(
+            rejected && !native.ContainsKey("X-WTT-Mission-Run") && native["Cookie"] == "PHPSESSID=" + otherCharacter,
+            "Native launch fails closed when its authentication belongs to another character"
+        );
     }
 }

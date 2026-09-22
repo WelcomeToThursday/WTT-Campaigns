@@ -46,18 +46,18 @@ internal sealed class MissionInventorySnapshot
 
     internal static async Task EmptyHands(Player player, CancellationToken token)
     {
+        token.ThrowIfCancellationRequested();
         foreach (var operation in player.SearchController.SearchOperations.AsValueEnumerable().ToArray())
             player.SearchController.StopSearching(operation.Item.Id);
+        // Defeat is deferred before native OnDead, which normally finishes the
+        // active hands operation. Complete it through that same native seam.
+        player.FastForwardCurrentOperations();
         if (player.HandsIsEmpty)
             return;
         var ready = new TaskCompletionSource<bool>();
         player.SetEmptyHands(result => ready.TrySetResult(result.Succeed));
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
-        var timeout = UniTask.Delay(5000, delayType: DelayType.Realtime, cancellationToken: deadline.Token).AsTask();
-        var completed = await Task.WhenAny(ready.Task, timeout);
-        deadline.Cancel();
-        token.ThrowIfCancellationRequested();
-        if (completed != ready.Task || !await ready.Task)
+        await FinishHands(player, ready.Task, token);
+        if (!await ready.Task || !player.HandsIsEmpty)
             throw new InvalidOperationException("The native hands operation did not finish during checkpoint restoration.");
     }
 
@@ -90,13 +90,31 @@ internal sealed class MissionInventorySnapshot
             ?? throw new InvalidOperationException("The checkpoint's held item was not restored.");
         var ready = new TaskCompletionSource<bool>();
         player.SetInHands(item, result => ready.TrySetResult(result.Succeed));
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
-        var timeout = UniTask.Delay(8000, delayType: DelayType.Realtime, cancellationToken: deadline.Token).AsTask();
-        var completed = await Task.WhenAny(ready.Task, timeout);
-        deadline.Cancel();
-        token.ThrowIfCancellationRequested();
-        if (completed != ready.Task || !await ready.Task || player.HandsController?.Item?.Id.ToString() != itemId)
+        await FinishHands(player, ready.Task, token);
+        if (!await ready.Task || player.HandsController?.Item?.Id.ToString() != itemId)
             throw new InvalidOperationException("The checkpoint's held item could not be equipped.");
+    }
+
+    private static async Task FinishHands(Player player, Task<bool> ready, CancellationToken token)
+    {
+        var until = Time.realtimeSinceStartup + 8f;
+        while (!ready.IsCompleted)
+        {
+            token.ThrowIfCancellationRequested();
+            if (!player)
+                throw new InvalidOperationException("The checkpoint player was removed during the hands transition.");
+            // Holstering can replace the controller with a spawning controller.
+            // EFT advances both and retains its normal callbacks/item ownership.
+            player.FastForwardCurrentOperations();
+            if (ready.IsCompleted)
+                break;
+            if (Time.realtimeSinceStartup >= until)
+                throw new TimeoutException(
+                    $"Checkpoint hands transition timed out: controller={player.HandsController?.GetType().Name}, process={player.ProcessStatus}."
+                );
+            await UniTask.Delay(25, delayType: DelayType.Realtime, cancellationToken: token);
+        }
+        token.ThrowIfCancellationRequested();
     }
 
     internal void Clear(Player player)

@@ -15,6 +15,33 @@ internal static class DoorAuthoringChecks
 
     internal static void Run(Action<bool, string> check)
     {
+        const string shape = "UnityEngine.Transform:door|EFT.Interactive.Door:door|UnityEngine.Transform:handle";
+        var inspected =
+            "UnityEngine.Transform:door|EFT.Interactive.Door:door|DebugPlus.Utils.OverlayProvider:door|UnityEngine.Transform:handle";
+        var variants = SceneDoorFingerprint.LegacyComponents(shape, shape, 2, "door").ToArray();
+        check(variants.Contains(inspected), "Legacy door hashes can reproduce the inspection-only root component without creating it");
+        var savedOpen = SceneDoorFingerprint.Legacy(inspected, "hinge", "open", "scale", "mesh:100");
+        check(
+            variants.Select(v => SceneDoorFingerprint.Legacy(v, "hinge", "open", "scale", "mesh:100")).Contains(savedOpen),
+            "Legacy open-door binding retains its complete geometry hash when the inspection overlay is absent"
+        );
+        check(
+            !variants.Select(v => SceneDoorFingerprint.Legacy(v, "other hinge", "open", "scale", "mesh:100")).Contains(savedOpen),
+            "Legacy compatibility rejects a moved door"
+        );
+        check(
+            !variants.Select(v => SceneDoorFingerprint.Legacy(v, "hinge", "open", "scale", "mesh:101")).Contains(savedOpen),
+            "Legacy compatibility rejects changed door meshes"
+        );
+        var stable = SceneDoorFingerprint.Stable(shape, "hinge", "closed", "scale", "mesh:100", "Y|0|90");
+        check(
+            stable.Length == 64 && stable != savedOpen,
+            "Stable door identity fits the existing format and is distinct from legacy pose hashes"
+        );
+        check(
+            stable != SceneDoorFingerprint.Stable(shape, "hinge", "closed", "scale", "mesh:100", "Y|0|45"),
+            "Stable door identity detects changed native hinge geometry"
+        );
         var registryField = typeof(RegistryOwner).GetField(nameof(RegistryOwner.Entries))!;
         var localRegistry = new SceneDoorRegistry(null, registryField, true);
         localRegistry.Remove("door", new object());

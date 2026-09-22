@@ -123,6 +123,8 @@ internal sealed partial class MapSceneAdapter : IDisposable
             throw new InvalidOperationException(error);
         if (!door && (target.GetComponent<LootItem>() || target.GetComponent<LootableContainer>()))
             return CaptureNative(target);
+        if (door)
+            return CaptureDoor(target);
         var shape = target
             .GetComponentsInChildren<Component>(true)
             .AsValueEnumerable()
@@ -154,6 +156,19 @@ internal sealed partial class MapSceneAdapter : IDisposable
         var matches = FindTargetPath(target);
         if (matches.Count != 1)
             throw new InvalidOperationException("Missing or ambiguous target; rebind " + target.Path);
+        if (door)
+        {
+            var nativeDoor = matches[0].GetComponent<Door>();
+            if (
+                Supported(matches[0], true).Length > 0
+                || !nativeDoor
+                || nativeDoor.Id != target.NativeId
+                || string.IsNullOrWhiteSpace(target.NativeId)
+                || !MatchesDoorFingerprint(matches[0], target.Fingerprint)
+            )
+                throw new InvalidOperationException("Scene door identity or geometry changed; rebind " + target.Path);
+            return matches[0];
+        }
         var captured = Capture(matches[0], door);
         if (captured.Fingerprint != target.Fingerprint || captured.NativeId != target.NativeId)
             throw new InvalidOperationException("Scene target changed; rebind " + target.Path);

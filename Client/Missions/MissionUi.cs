@@ -1,3 +1,4 @@
+using Cysharp.Threading.Tasks;
 using EFT;
 using EFT.UI;
 using UnityEngine;
@@ -21,6 +22,7 @@ internal sealed class MissionUi : MonoBehaviour
     private MissionsScreen? _screen;
     private bool _opening;
     private bool _destroyed;
+    private bool _nativeLoadingStarted;
     private int _blockedThrough = -1;
     private long _revision;
     private string _prepareMissionId = "";
@@ -223,7 +225,7 @@ internal sealed class MissionUi : MonoBehaviour
                     Plugin.Error(cancelError);
                 }
             }
-            MissionRaidRuntime.AbortPendingRaid("Mission launch failed");
+            await RecoverFailedLaunch("Mission launch failed");
             _screen?.Open();
             _screen?.SetBusy(false);
             if (!await ShowAuthoritativeRunAsync(missionId, exception.Message))
@@ -257,10 +259,34 @@ internal sealed class MissionUi : MonoBehaviour
         app.Matchmaker.MatchingStartTime = DateTimeExtensions.Now;
         _screen?.Close();
         _blockedThrough = Time.frameCount + 1;
+        _nativeLoadingStarted = true;
         using (UI.NativeLoadingStatus.Begin("Deploying campaign mission…"))
             await app.LocalGameMatching(app.CurrentRaidSettings.TimeAndWeatherSettings);
         if (!Plugin.InRaid)
             throw new InvalidOperationException("Mission loading did not create a local raid.");
+        _nativeLoadingStarted = false;
+    }
+
+    private async Task RecoverFailedLaunch(string reason)
+    {
+        await MissionRaidRuntime.AbortPendingRaid(reason);
+        if (!_nativeLoadingStarted)
+            return;
+        _nativeLoadingStarted = false;
+        if (Plugin.InRaid || Plugin.App is not { } app)
+            return; // An existing raid retains its native stop/return owner.
+        try
+        {
+            // Let native cancellation callbacks unwind before unloading scenes.
+            // Direct mission entry bypasses OnReadyToStartMatchingAsync and its
+            // HandleError -> ComebackToMainMenu recovery.
+            await UniTask.Yield(PlayerLoopTiming.Update);
+            await app.ComebackToMainMenu();
+        }
+        catch (Exception recoveryError)
+        {
+            Plugin.Error(recoveryError);
+        }
     }
 
     private async Task<bool> ShowAuthoritativeRunAsync(string missionId, string failure)
@@ -357,7 +383,7 @@ internal sealed class MissionUi : MonoBehaviour
                     Plugin.Error(cancelError);
                 }
             }
-            MissionRaidRuntime.AbortPendingRaid("Mission resume failed");
+            await RecoverFailedLaunch("Mission resume failed");
             _screen?.Open();
             _screen?.SetBusy(false);
             if (!await ShowAuthoritativeRunAsync(missionId, exception.Message))
