@@ -9,6 +9,21 @@ using WTT.Campaigns.Shared.Effects.Trading;
 using WTT.Campaigns.Shared.Perks;
 using WTT.Campaigns.Shared.Profiles;
 
+if (args.Length == 1 && args[0] == "--campaign-authoring")
+{
+    var authoringCount = 0;
+    void Verify(bool value, string message)
+    {
+        if (!value)
+            throw new Exception(message);
+        authoringCount++;
+    }
+    WTT.Campaigns.Tests.CreatorChecks.Run(Verify);
+    WTT.Campaigns.Tests.CampaignAuthoringChecks.Run(Verify);
+    Console.WriteLine($"PASS {authoringCount} campaign authoring assertions");
+    return;
+}
+
 if (args.Length == 3 && args[0] == "--terrain-hooks")
 {
     WTT.Campaigns.Tests.TerrainAssemblyChecks.Run(args[1], args[2]);
@@ -233,6 +248,7 @@ if (args.Length > 0 && File.Exists(args[0]))
     WTT.Campaigns.Tests.MissionNativeQuestChecks.Run(args[0], Check);
 }
 WTT.Campaigns.Tests.CreatorChecks.Run(Check);
+WTT.Campaigns.Tests.CampaignAuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.MissionTestCampaign.Run(Check);
 WTT.Campaigns.Tests.MissionAuthoringChecks.Run(Check);
 WTT.Campaigns.Tests.MapLayerChecks.Run(Check);

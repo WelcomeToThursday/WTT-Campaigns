@@ -10,7 +10,7 @@ Text-only automatic NPC lines use Continue between lines, and closing text stays
 
 ## Advanced: compose a pack from JSON
 
-1. In the Campaign Creator, create or duplicate an unused campaign, configure its normal rules and publish/export a base ZIP. Gameplay changes to a used campaign require a new campaign identity.
+1. In the Campaign Creator, create a campaign or edit a published one, configure its rules, and save. Use Test draft in the in-game campaign menu before publishing. Gameplay updates keep the same campaign identity and preserve compatible progress.
 2. Edit an overlay JSON with `Story` and, when needed, additional `Quests`, `Locales` and `Dependencies`. Native quest definitions remain in top-level `Quests`; `Story.Quests` supplies chapter membership. Added native quest IDs must not collide with base quests. Overlay Story replaces the base Story extension, so carry forward existing memberships when editing a story pack.
 3. From the project root, compose and validate it:
 

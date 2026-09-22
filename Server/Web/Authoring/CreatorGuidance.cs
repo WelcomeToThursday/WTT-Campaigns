@@ -34,7 +34,7 @@ public static class CreatorGuidance
                 "Enter a name, author, version and description. Choose badge/banner artwork and add introductory slides.",
                 "Use Save changes to keep the draft. Editing does not change published packs or characters.",
             ],
-            "Practice in a separate draft. A campaign already used by characters needs a new identity for gameplay changes."
+            "Use Test draft in the in-game campaign menu. Published campaigns can be edited and updated without changing their identity."
         ),
         new(
             "Starting character",
@@ -222,7 +222,7 @@ public static class CreatorGuidance
             [
                 "Save changes, then Validate. Follow each issue back to the relevant editor section and fix it.",
                 "Simulate reward eligibility and perk budgets; use Story rehearsal for dialogue progression.",
-                "Save and validate again after changes. Publish pack creates an immutable revision; Download campaign pack exports it.",
+                "Save and test changes in-game before publishing. Publish update creates a new release; Download campaign pack exports it.",
                 "Restart SPT to load new packs, then choose the campaign when creating a campaign character.",
             ],
             "Each campaign character chooses its own campaign. Missing installed dependencies may allow export but prevent a pack from being playable. Keep practice packs separate from the campaign you play."

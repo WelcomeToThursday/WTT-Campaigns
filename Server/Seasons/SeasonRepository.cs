@@ -513,9 +513,10 @@ public sealed partial class SeasonRepository
         return Save(new DraftEnvelope { Id = NewId(), Definition = definition });
     }
 
-    public static SeasonDefinition Duplicate(SeasonDefinition source)
+    public static SeasonDefinition Duplicate(SeasonDefinition source, Dictionary<string, string>? identities = null)
     {
-        source = BuiltInCampaignCopy.Prepare(source);
+        if (identities == null)
+            source = BuiltInCampaignCopy.Prepare(source);
         var owned = new HashSet<string>(
             source
                 .Perks.All.Select(p => p.Id)
@@ -545,7 +546,9 @@ public sealed partial class SeasonRepository
         owned.UnionWith(source.Crafts.Select(c => c.Id));
         owned.UnionWith(source.Captures.Select(c => c.Id));
         owned.UnionWith(source.MapLayouts.SelectMany(WTT.Campaigns.Shared.Spatial.MapLayoutRules.OwnedIds));
-        var replacements = owned.ToDictionary(id => id, _ => NewId());
+        var replacements = identities ?? new Dictionary<string, string>();
+        foreach (var id in owned)
+            replacements.TryAdd(id, NewId());
         string Replace(string text)
         {
             if (replacements.TryGetValue(text, out var replacement))
@@ -568,6 +571,20 @@ public sealed partial class SeasonRepository
         ModelGraph.Rewrite(copy, Replace);
         for (var i = 0; i < copy.MissionLinks.Count; i++)
             copy.MissionLinks[i].Package = linkedPackages[i];
+        if (identities != null)
+        {
+            // Test identities survive refreshes. Linked packages are isolated too,
+            // including identities shared by their parent campaign.
+            foreach (var link in copy.MissionLinks)
+            {
+                link.Package = Duplicate(link.Package, identities);
+                link.ContentHash = WTT.Campaigns.Shared.Missions.MissionLibrary.PackageHash(link.Package);
+            }
+            ModelGraph.Rewrite(copy, Replace);
+            foreach (var link in copy.MissionLinks)
+                link.ContentHash = WTT.Campaigns.Shared.Missions.MissionLibrary.PackageHash(link.Package);
+            return copy;
+        }
         copy.Name = source.Name + " copy";
         copy.Revision = 0;
         copy.Version = "1.0.0";
@@ -673,11 +690,37 @@ public sealed partial class SeasonRepository
 
     public void CheckGameplay(SeasonDefinition definition)
     {
-        var path = Path.Combine(_root, "used", CheckId(definition.Id) + ".json");
-        if (File.Exists(path) && Read<UsedSeason>(path).Hash != GameplayHash(definition))
+        // Used markers record history; they no longer prohibit authoring updates.
+        CheckId(definition.Id);
+    }
+
+    public DraftEnvelope EditPublished(string key)
+    {
+        lock (_gate)
         {
-            throw new InvalidOperationException("This campaign has been used. Duplicate it as a new campaign to change gameplay.");
+            var definition = Pack(key);
+            return Drafts()
+                    .Where(d => d.Definition.Id == definition.Id)
+                    .OrderByDescending(d => d.LastEditedUtc)
+                    .ThenBy(d => d.Id)
+                    .FirstOrDefault()
+                ?? Save(new DraftEnvelope { Id = NewId(), Definition = definition });
         }
+    }
+
+    public IEnumerable<string> RevisionCandidates(string key)
+    {
+        if (key == "legacy")
+            return new[] { key };
+        var id =
+            Packs().FirstOrDefault(p => p.Key == key).Manifest?.SeasonId
+            ?? throw new InvalidDataException("The selected campaign manifest is unavailable.");
+        return Packs()
+            .Where(p => p.Manifest.SeasonId == id)
+            .OrderByDescending(p => p.Manifest.Revision)
+            .ThenBy(p => p.Key)
+            .Select(p => p.Key)
+            .ToArray();
     }
 
     public Action<SeasonDefinition>? VerifyTraderOfferPublication { get; set; }

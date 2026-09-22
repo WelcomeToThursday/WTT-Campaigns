@@ -46,7 +46,7 @@ In the campaign's **Missions** section, select a published mission revision and 
 
 An optional completion binding selects a story quest and a completion objective backed by a zero-initialized profile variable. An earlier completion by the same campaign character counts when that quest is accepted. This does not accept or hand in quests automatically. Completion by a normal character or another campaign character never grants story credit.
 
-Links pin a revision until the author explicitly updates it. Campaign exports include those pinned packages and referenced artwork; installing a campaign does not add its missions to the normal character's standalone library. Existing restrictions on changing gameplay in used campaigns still apply.
+Links pin a revision until the author explicitly updates it. Campaign exports include those pinned packages and referenced artwork; installing a campaign does not add its missions to the normal character's standalone library. Published campaigns remain editable. Publish an update and restart SPT to apply it while preserving compatible character progress.
 
 ### Existing embedded missions
 
@@ -62,7 +62,7 @@ Fix validation errors before deployment. Missing scene targets require rebinding
 
 From editor home, select **New campaign** and its **Test** layout, then choose **Test mission**. The map loads and the rehearsal starts with the editor character's placeholder starting kit. Complete both checkpoints and enter the authored exit to finish the mission and return automatically to editing. Start another playtest from the editor to replay it, or press **Esc** during a test to return early. Unload the map to return to editor home.
 
-**Test campaign flow** creates an isolated campaign snapshot and a disposable character. Use this path to accept the quest, select and complete the mission, turn in the quest, and replay. Resetting the test starts a fresh test character. The source draft and normal characters remain separate from the test snapshot.
+**Test campaign flow**, or **Test draft** in the campaign menu, opens a persistent isolated test character. Test the authored quest, mission and reward progression. Return preserves progress across editor visits and restarts; Apply saved changes refreshes content between raids; Reset test character starts fresh after confirmation. The source draft and normal characters remain separate.
 
 To start the full flow, unload the editor map and select **Test campaign flow** on editor home. Use the trader's normal task screen to accept the quest, then choose **Missions** from the main menu. **Reset test** starts over; **Return to editor** disposes of the test and returns to the selected draft.
 
@@ -78,7 +78,7 @@ The accompanying Prapor field-exercise quest unlocks the mission on acceptance a
 
 After installing matching components, manually restart the server and client. No automated validation starts or stops either application.
 
-- Test both the editor shortcut and the full disposable campaign flow.
+- Test both the editor shortcut and the persistent campaign test flow.
 - Confirm the three Scavs spawn, the second checkpoint cannot skip the first, and the exit is unavailable before both checkpoints.
 - Complete and extract, turn in the quest, then replay without receiving a second quest reward.
 - Try death, quitting, and retrying. Check that each retry resets route and encounter progress.

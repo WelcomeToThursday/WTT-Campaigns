@@ -6,6 +6,7 @@ public sealed class SeasonItemBundles
 {
     private const string LegacyPrefix = "wtt-campaigns/";
     private readonly HashSet<string> _keys = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, (string Path, long Length, long Modified)> _files = new(StringComparer.Ordinal);
 
     public SeasonItemBundles(IEnumerable<string> modDirectories)
     {
@@ -30,6 +31,8 @@ public sealed class SeasonItemBundles
                 if (path.StartsWith(root, StringComparison.OrdinalIgnoreCase) && File.Exists(path))
                 {
                     _keys.Add(key);
+                    var file = new FileInfo(path);
+                    _files[key] = (path, file.Length, file.LastWriteTimeUtc.Ticks);
                 }
             }
         }
@@ -45,5 +48,14 @@ public sealed class SeasonItemBundles
         }
 
         return _keys.Contains(path) ? path : null;
+    }
+
+    public bool ChangedSinceStartup(string path)
+    {
+        var key = Resolve(path);
+        if (key == null || !_files.TryGetValue(key, out var saved))
+            return false;
+        var file = new FileInfo(saved.Path);
+        return !file.Exists || file.Length != saved.Length || file.LastWriteTimeUtc.Ticks != saved.Modified;
     }
 }

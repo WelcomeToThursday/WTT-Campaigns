@@ -158,7 +158,7 @@ internal static class MissionLibraryChecks
         {
             used = true;
         }
-        check(used, "Used campaigns cannot change mission availability");
+        check(!used, "Used campaigns can update mission availability");
 
         var quest = SeasonRepository.NewId();
         var chapter = SeasonRepository.NewId();

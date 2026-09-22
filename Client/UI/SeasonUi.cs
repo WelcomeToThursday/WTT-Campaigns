@@ -170,6 +170,7 @@ public sealed partial class SeasonUi : MonoBehaviour
         scaler.referenceResolution = new Vector2(1800, 980);
         scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
         _screen = CreateView(_canvas.transform);
+        _screen.TestDraftRequested = ChooseTestDraft;
         _screen.CloseRequested = Close;
         _screen.SaveRequested = Save;
         _screen.SwitchRequested = Switch;
@@ -593,6 +594,12 @@ public sealed partial class SeasonUi : MonoBehaviour
     internal async void LoadIcon(string id, Image target)
     {
         var path = SeasonImageLoader.PathFor("icons", id);
+        if (Authoring.CampaignTestMode.Active)
+        {
+            var asset = Plugin.Current?.Catalogue.All.AsValueEnumerable().FirstOrDefault(p => p.Id == id)?.ImageUrl;
+            if (asset != null && WTT.Campaigns.Shared.Seasons.SeasonValidator.IsId(asset))
+                path = SeasonImageLoader.PathFor("hub-images", asset);
+        }
         try
         {
             if (!_images.TryGetValue(path, out var task))

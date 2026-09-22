@@ -127,7 +127,9 @@ internal static class CreatorChecks
             store.CheckGameplay(cosmetic);
             check(true, "Cosmetic updates preserve used-campaign gameplay");
             cosmetic.Collection.DocumentLimit++;
-            Reject(() => store.CheckGameplay(cosmetic), "Used-campaign gameplay changes rejected");
+            store.CheckGameplay(cosmetic);
+            check(true, "Used-campaign gameplay remains editable");
+            CampaignAuthoringChecks.Repository(store, first, key, check);
             store.Queue(key);
             check(
                 store.Current.Definition.Id == store.Legacy.Id && store.Selection.Pending == key,

@@ -9,9 +9,8 @@ using SPTarkov.Server.Core.Servers;
 namespace WTT.Campaigns.Server.Editor;
 
 /// <summary>
-/// Full campaign tests use SaveServer's live profile dictionary for native
-/// gameplay, but their save callback must never reach user/profiles. Tombstones
-/// remain recognized after teardown so late callbacks are no-ops too.
+/// Route active test saves to the durable test envelope. Unloaded and retired
+/// test identities remain no-ops, so late callbacks cannot create native files.
 /// </summary>
 [Injectable]
 public sealed class CampaignTestSavePatch : AbstractPatch
@@ -23,7 +22,7 @@ public sealed class CampaignTestSavePatch : AbstractPatch
     {
         if (!CampaignTestSessions.IsTest(sessionID.ToString()))
             return true;
-        __result = Task.FromResult(0L);
+        __result = CampaignTestSessions.SaveTest(sessionID.ToString());
         return false;
     }
 }

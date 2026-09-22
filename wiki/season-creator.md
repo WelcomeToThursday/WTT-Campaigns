@@ -51,7 +51,7 @@ Images are cached on the server, so drafts remain editable after the client disc
 
 The preview worker creates detached items and never changes a player inventory or performs a purchase. It pauses outside the main menu and shares the existing SPT notification connection with raid authoring. Each job is limited to 256 items, and previews to 1024 pixels and 1 MiB. The server keeps a bounded local cache in the mod's `user/item-preview-cache` folder; cached images and trusted verification receipts are not included in exported packs. A receiving author's installation must verify imported assemblies locally before republishing them.
 
-Campaigns containing these offers use format 3 and need a release that supports trader authoring. Existing format-1 and format-2 packs remain supported. As with other gameplay changes, duplicate a campaign already used by characters before changing its offers.
+Campaigns containing these offers use format 3 and need a release that supports trader authoring. Existing format-1 and format-2 packs remain supported. Offers can be updated in a used campaign. Publish an update under the same identity and restart SPT to load it.
 
 ## Manage drafts
 
@@ -72,7 +72,7 @@ Archived and trashed drafts must be restored before editing or publishing. Publi
 7. Create quest chains with Level, Quest, TraderLoyalty, FindItem and HandoverItem conditions. Item objectives use ordinary inventory items. Installed quests can also be chosen directly in reward requirements. Quest objectives, messages, item rewards, XP, skills and trader rewards use SPT’s native contracts.
 8. Upload PNG artwork (8 MB maximum, at most 4096×4096), or reuse available images. Edit English text or add translations. Empty/missing translations fall back to the authoritative English fields. Language codes must match the installed game’s locales for the translation to appear in-game.
 9. **Save changes**, then **Validate**. Issues link to the relevant section or reward. Simulate level, faction, completed quests, claimed tiles, document balances and perk combinations; preview never reads or changes a player profile.
-10. **Publish pack** creates an immutable revision. Download its ZIP to share it. Restart SPT to load new packs, then choose the campaign when creating a campaign character. Each character has its own campaign; there is no global activation step in the Creator.
+10. **Publish pack** or **Publish update** creates a numbered release. Download its ZIP to share it. Restart SPT to load the latest valid release for new and existing characters. Each character has its own campaign; there is no global activation step in the Creator.
 
 Missing installed dependencies allow publication/export with a dependency report, but prevent play on that server. Missing artwork, unsupported enabled behavior and malformed structure block publication. Owned model assets are referenced from installed content; campaign packs contain no executable code or Unity bundles.
 
@@ -84,12 +84,12 @@ All private authoring files live beside the server mod under `creator/`, outside
 - `drafts/`: saved drafts and their backups, including archived and trashed drafts.
 - `packs/`: immutable published revisions, definitions, owned PNGs and checksum manifests.
 - `assets/`: uploaded artwork, addressed by content hash.
-- `used/`: gameplay hashes of campaigns with characters.
+- `used/`: historical usage hashes; these no longer lock gameplay editing.
 - `selection.json`: legacy default-pack selection and its last loading error, retained for compatibility. The creator no longer changes this selection.
 
 Preserve these files and SPT’s profiles/profile data together. Do not remove archived packs that a character uses. Pack downloads contain only manifest-listed definition/artwork files; they never include profiles, credentials or unrelated mod files. ZIP import checks paths, duplicate entries, file sizes, identities and checksums. PNG uploads check bounds and chunk integrity.
 
-A legacy default-pack loading failure falls back to the last valid default and shows a loading issue in the library. Draft corruption falls back to its atomic backup when available. Competing editor tabs must reload after a save conflict. Used campaigns permit presentation revisions; gameplay edits require **Duplicate as new campaign**. Duplication remaps owned content and internal references while preserving installed dependencies.
+A rejected published update falls back to the previous valid release and reports a loading issue. Draft corruption falls back to its atomic backup when available. Competing editor tabs must reload after a save conflict. **Edit campaign** preserves campaign identity; **Publish update** makes a new numbered release for existing characters. **Duplicate as new campaign** creates a separate campaign by remapping owned content and internal references while preserving installed dependencies.
 
 Multiple characters can share a campaign, and all compatible published campaigns can be played during the same server session. Quests, gameplay and rewards follow the selected character's campaign. See [character selection and wipe behavior](characters.md).
 
@@ -129,3 +129,15 @@ Story conditions and actions group behavior, targets, comparisons, progression a
 [Documentation home](Home.md) · [Guide navigation](_Sidebar.md)
 
 To delete a conversation, select **Delete** and review the listed contents. Confirming removes its dialogue lines, its entry points and an unused Dialogue-scope phase variable. Quests and journal notes are kept, as are variables still used elsewhere. If another conversation, raid event or quest references the deleted content, the preview links to that record so you can remove or reassign the reference first. Cancel leaves the draft unchanged.
+
+## Test saved campaigns in-game
+
+Save your draft, then open the in-game campaign menu and choose **Test draft**. Select a saved campaign to start or continue its dedicated test character. Campaigns do not need missions, story content, or a map layout to be tested.
+
+Test characters use separate saves per launcher account and draft under `user/seasonal/campaign-tests`. Returning to your character or editor preserves test progress, including across manual restarts. **Reset test character** asks for confirmation and starts fresh with the latest saved draft.
+
+The test menu shows the loaded and latest saved revision. At the menu, choose **Apply saved changes** to refresh the tested campaign and retain compatible progress. Saving in Creator alone does not change a running test or an active raid. Missing dependencies must be installed first; changes to external asset bundles can require a manual restart.
+
+**Edit campaign** resumes a working draft for a published campaign. **Publish update** preserves campaign identity and creates a new release without rewriting earlier exports. After a manual restart, existing characters use the latest valid release. Completed rewards, currency, inventory, and one-time grants remain intact. Changed unfinished objectives reset; unchanged objectives remain, and obsolete mission checkpoints are discarded. Removed quests retain their history so reintroducing them does not repeat previously granted rewards. Campaign update backups are stored under `user/seasonal/content-backups`.
+
+Explicitly linked mission packages remain pinned to their chosen revision until the author updates the link. Test progress is never promoted into regular character progress when publishing.

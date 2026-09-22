@@ -6,6 +6,7 @@ using UnityEngine.UIElements;
 using WTT.Campaigns.Client.Authoring.Views;
 using WTT.Campaigns.Client.Profiles;
 using WTT.Campaigns.Shared.Authoring;
+using ZLinq;
 
 namespace WTT.Campaigns.Client.Authoring;
 
@@ -23,6 +24,12 @@ internal sealed class CampaignTestMode : MonoBehaviour
         _returnFlushed,
         _resetFlushed;
     private static string? _resetTestId;
+    private static string? _operationId;
+    private static string _operationAction = "";
+    private static long _chosenRevision;
+    private static bool _confirmReset;
+    private static Button? _apply;
+    private static ClientSnapshot? _returnSnapshot;
     private static string _status = "";
     private float _nextHeartbeat;
     private static EditorToolkitDocument? _menuDocument;
@@ -52,28 +59,34 @@ internal sealed class CampaignTestMode : MonoBehaviour
         return true;
     }
 
-    internal static async Task Enter(string editorSession, string draft, string layout)
+    internal static async Task Enter(string editorSession, string draft, string layout, long revision = 0)
     {
-        if (Restricted || _busy || Plugin.InRaid || !EditorMode.Ready)
+        if (Restricted || _busy || Plugin.InRaid || (editorSession.Length > 0 && !EditorMode.Ready))
             throw new InvalidOperationException("Return to editor home before starting a campaign test.");
         _busy = true;
         _editorSession = editorSession;
         _draft = draft;
         _layout = layout;
+        _chosenRevision = revision;
+        _confirmReset = false;
+        _returnSnapshot = Plugin.Current;
         try
         {
             await Plugin.FlushPendingOperations();
-            _session = await Call("create");
+            if (_chosenRevision == 0)
+                _chosenRevision = (await Drafts()).AsValueEnumerable().FirstOrDefault(d => d.Id == draft)?.Revision ?? 0;
+            _session = await Call("resume");
             _ended = false;
             _returnFlushed = _resetFlushed = false;
-            _resetTestId = null;
-            EditorMode.Instance.SuspendForCampaignTest();
+            _resetTestId = _operationId = null;
+            if (_editorSession.Length > 0)
+                EditorMode.Instance.SuspendForCampaignTest();
             await LoadCharacter();
-            _status = "CAMPAIGN TEST · Accept the test quest from Prapor, then open Missions.";
+            _status = _session.Message;
         }
         catch
         {
-            _status = "Campaign test connection failed. Use Reset test or Return to editor.";
+            _status = "Campaign test connection failed. Use Reset test character or Return.";
             if (_session != null)
             {
                 try
@@ -82,7 +95,7 @@ internal sealed class CampaignTestMode : MonoBehaviour
                     _ended = true;
                     _snapshot = null;
                     Plugin.SessionId = _session.ReturnProfileId;
-                    await EditorMode.Instance.ResumeAfterCampaignTest(_draft, _layout);
+                    await RestoreReturn();
                     EditorResumed();
                 }
                 catch (Exception recoveryError)
@@ -107,7 +120,7 @@ internal sealed class CampaignTestMode : MonoBehaviour
             || _snapshot.SeasonId != _session.SeasonId
             || _snapshot.ActiveMode != "seasonal"
         )
-            throw new InvalidOperationException("The disposable campaign character did not match the test session.");
+            throw new InvalidOperationException("The campaign test character did not match the test session.");
         await Plugin.Reload(_snapshot);
     }
 
@@ -123,37 +136,68 @@ internal sealed class CampaignTestMode : MonoBehaviour
                         DraftId = _draft,
                         TestId = testId ?? _session?.TestId ?? "",
                         Action = action,
+                        OperationId = _operationId ?? "",
+                        ExpectedDraftRevision = _session?.LatestDraftRevision ?? _chosenRevision,
+                        ExpectedLoadedRevision = _session?.LoadedDraftRevision ?? 0,
                     }
                 )
             )
         );
-        if (response == null || response.Version != 1 || response.Error != null)
+        if (response == null || response.Version != 2 || response.Error != null)
             throw new InvalidOperationException(response?.Error ?? "The campaign test server did not respond.");
-        if (action != "end" && (response.TestId.Length == 0 || response.ProfileId.Length == 0 || response.SeasonId.Length == 0))
+        if (
+            action != "end"
+            && action != "list"
+            && (response.TestId.Length == 0 || response.ProfileId.Length == 0 || response.SeasonId.Length == 0)
+        )
             throw new InvalidOperationException("The campaign test response is incomplete.");
         return response;
     }
 
-    private static async void Reset()
+    internal static async Task<List<CampaignTestDraft>> Drafts() => (await Call("list")).Drafts;
+
+    private static void Reset()
+    {
+        if (!_confirmReset)
+        {
+            _confirmReset = true;
+            _status = "Reset deletes this test character’s progress. Select CONFIRM RESET, or Apply / Return to cancel.";
+            _reset!.text = "CONFIRM RESET";
+            return;
+        }
+        RefreshTest(true);
+    }
+
+    private static async void RefreshTest(bool reset)
     {
         if (!Active || _busy || Plugin.InRaid)
             return;
         _busy = true;
-        _status = "Resetting disposable character…";
+        _confirmReset = false;
+        _reset!.text = "RESET TEST CHARACTER";
+        _status = reset ? "Resetting test character…" : "Applying saved changes…";
         try
         {
+            var action = reset ? "reset" : "apply";
+            if (_operationAction != action)
+            {
+                _operationId = _resetTestId = null;
+                _resetFlushed = false;
+            }
+            _operationAction = action;
+            _operationId ??= Guid.NewGuid().ToString("N");
             _resetTestId ??= _session!.TestId;
             if (!_resetFlushed)
             {
                 await Plugin.FlushPendingOperations();
                 _resetFlushed = true;
             }
-            _session = await Call("reset", _resetTestId);
+            _session = await Call(reset ? "reset" : "apply", _resetTestId);
             _snapshot = null;
             await LoadCharacter();
             _resetFlushed = _returnFlushed = false;
-            _resetTestId = null;
-            _status = "CAMPAIGN TEST · Reset complete. Accept the quest from Prapor again.";
+            _resetTestId = _operationId = null;
+            _status = _session.Message;
         }
         catch (Exception e)
         {
@@ -166,12 +210,21 @@ internal sealed class CampaignTestMode : MonoBehaviour
         }
     }
 
+    private static async Task RestoreReturn()
+    {
+        if (_editorSession.Length > 0)
+            await EditorMode.Instance.ResumeAfterCampaignTest(_draft, _layout);
+        else if (_returnSnapshot != null)
+            await Plugin.Reload(_returnSnapshot);
+    }
+
     private static async void Return()
     {
         if (!Restricted || _busy || Plugin.InRaid)
             return;
         _busy = true;
-        _status = "Returning to editor…";
+        _confirmReset = false;
+        _status = "Saving test progress…";
         try
         {
             if (!_ended)
@@ -186,7 +239,7 @@ internal sealed class CampaignTestMode : MonoBehaviour
                 _snapshot = null;
                 Plugin.SessionId = _session!.ReturnProfileId;
             }
-            await EditorMode.Instance.ResumeAfterCampaignTest(_draft, _layout);
+            await RestoreReturn();
             EditorResumed();
         }
         catch (Exception e)
@@ -213,6 +266,15 @@ internal sealed class CampaignTestMode : MonoBehaviour
             {
                 _menuDocument.SetVisible(Restricted && !Plugin.InRaid && _menu!.gameObject.activeInHierarchy);
                 _label!.text = _status;
+                _apply!.SetEnabled(
+                    Active
+                        && !_busy
+                        && !Plugin.InRaid
+                        && (
+                            _session!.LatestDraftRevision != _session.LoadedDraftRevision
+                            || (_operationId != null && _operationAction == "apply")
+                        )
+                );
                 _reset!.SetEnabled(Active && !_busy && !Plugin.InRaid);
                 _return!.SetEnabled(!_busy && !Plugin.InRaid);
             }
@@ -223,7 +285,13 @@ internal sealed class CampaignTestMode : MonoBehaviour
         _heartbeat = true;
         try
         {
+            var expected = _session;
             var status = await Call("status");
+            if (!ReferenceEquals(_session, expected) || _busy)
+                return;
+            _session = status;
+            if (!_confirmReset && status.Status != "Ended")
+                _status = status.Message;
             if (status.Status == "Ended")
             {
                 _ended = true;
@@ -255,6 +323,9 @@ internal sealed class CampaignTestMode : MonoBehaviour
         _menuDocument.Content.Add(controls);
         _reset = controls.Q<Button>("Reset");
         _return = controls.Q<Button>("Return");
+        _apply = controls.Q<Button>("Apply");
+        _apply.clicked += () => RefreshTest(false);
+        _return.text = _editorSession.Length > 0 ? "RETURN TO EDITOR" : "RETURN TO CHARACTER";
         _reset.clicked += Reset;
         _return.clicked += Return;
         _label = controls.Q<Label>("Status");

@@ -29,7 +29,8 @@ public sealed partial class SeasonService(
     CreateProfileService creator,
     TemplateTable templates,
     SeasonRepository repository,
-    SeasonStartingService starting
+    SeasonStartingService starting,
+    SPTarkov.Server.Core.Utils.JsonUtil json
 )
 {
     private const string StateKey = "wttCampaignsState";
@@ -216,6 +217,76 @@ public sealed partial class SeasonService(
     }
 
     public bool IsEphemeral(string profileId) => _ephemeralLinks.ContainsKey(profileId);
+
+    public void RefreshCatalogue(SeasonDefinition definition) => _catalogues[definition.Id] = definition.Perks;
+
+    public void ReconcileEffectParameters(PmcData pmc, SeasonDefinition definition)
+    {
+        var state = State(pmc);
+        AllergyEffects.UpdateParameters(
+            definition.Perks,
+            state,
+            effect => TemplateFilters.Candidates(templates, effect),
+            RandomNumberGenerator.GetInt32
+        );
+        SetState(pmc, state);
+    }
+
+    public async Task ReconcilePublished()
+    {
+        foreach (var pair in saves.GetProfiles())
+        {
+            var pmc = pair.Value.CharacterData?.PmcData;
+            if (
+                pmc == null
+                || State(pmc) is not { Revision: > 0 } state
+                || !repository.Playable.TryGetValue(state.SeasonId ?? SeasonRepository.LegacyId, out var runtime)
+            )
+                continue;
+            SeasonDefinition? baseline = null;
+            foreach (
+                var pack in repository
+                    .Packs()
+                    .Where(p => p.Manifest.SeasonId == state.SeasonId && p.Manifest.GameplayHash == state.GameplayHash)
+            )
+            {
+                try
+                {
+                    baseline = repository.Pack(pack.Key);
+                    break;
+                }
+                catch (InvalidDataException) { }
+            }
+            if (runtime.Definition.Legacy)
+                continue;
+            var staged = json.Deserialize<SptProfile>(json.Serialize(pair.Value)!)!;
+            if (!CampaignReconciliation.Apply(staged.CharacterData!.PmcData!, runtime.Definition, json, baseline))
+                continue;
+            ReconcileEffectParameters(staged.CharacterData!.PmcData!, runtime.Definition);
+            var originalJson = json.Serialize(pair.Value)!;
+            var originalHash = SeasonRepository.Hash(System.Text.Encoding.UTF8.GetBytes(originalJson));
+            var backup = Path.GetFullPath(Path.Combine("user/seasonal/content-backups", pair.Key + "-" + originalHash + ".json"));
+            if (!File.Exists(backup))
+                SeasonRepository.Atomic(backup, originalJson);
+            if (SeasonRepository.Hash(File.ReadAllBytes(backup)) != originalHash)
+                throw new IOException("Campaign update backup verification failed: " + pair.Key);
+            Hub.HubProfileStore.Replace(saves, pair.Key, pair.Value, staged);
+            try
+            {
+                await saves.SaveProfileAsync(pair.Key);
+            }
+            catch
+            {
+                Hub.HubProfileStore.Replace(saves, pair.Key, staged, pair.Value);
+                try
+                {
+                    await saves.SaveProfileAsync(pair.Key);
+                }
+                catch { }
+                throw;
+            }
+        }
+    }
 
     public bool UnregisterEphemeral(string profileId)
     {
@@ -1004,6 +1075,6 @@ public sealed partial class SeasonService(
     private void RejectEphemeral(string root)
     {
         if (_ephemeralLinks.ContainsKey(root) || _ephemeralLinks.ContainsKey(EffectiveId(root)))
-            throw new InvalidOperationException("Disposable campaign profiles cannot change campaign characters or settings.");
+            throw new InvalidOperationException("Test characters cannot change regular campaign characters or settings.");
     }
 }

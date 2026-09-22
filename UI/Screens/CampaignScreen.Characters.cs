@@ -32,19 +32,25 @@ public sealed partial class CampaignScreen
         SetState(state, ScreenPage.CreationIdentity);
     }
 
-    private void ChooseSeason()
+    private void ChooseSeason() => ChooseContent(_state.Seasons, id => SeasonChosen?.Invoke(id), false);
+
+    public void ShowTestDrafts(SeasonEntry[] drafts, Action<string> selected) => ChooseContent(drafts, selected, true);
+
+    private void ChooseContent(SeasonEntry[] entries, Action<string> selected, bool testing)
     {
         if (_busy || DialogOpen)
         {
             return;
         }
 
-        var choice = _state.Seasons.FirstOrDefault(s => s.Id == _state.SeasonId) ?? _state.Seasons.FirstOrDefault();
-        var window = ConfirmationWindow("SeasonSelection", "Choose a campaign");
+        var choice = entries.FirstOrDefault(s => s.Id == _state.SeasonId) ?? entries.FirstOrDefault();
+        var window = ConfirmationWindow("SeasonSelection", testing ? "Test a saved draft" : "Choose a campaign");
         var description = _ui.Label(
             window,
             "SeasonDescription",
-            "Your new character will have separate equipment, progression and rewards in this campaign.",
+            testing
+                ? "Continue a separate test character. Progress is kept until you reset it; saved edits apply when you choose."
+                : "Your new character will have separate equipment, progression and rewards in this campaign.",
             18,
             936,
             59,
@@ -75,7 +81,7 @@ public sealed partial class CampaignScreen
             }
         }
 
-        foreach (var season in _state.Seasons)
+        foreach (var season in entries)
         {
             var button = _ui.Button(
                 list.content,
@@ -114,7 +120,16 @@ public sealed partial class CampaignScreen
         RefreshSelection();
         if (choice == null)
         {
-            var empty = _ui.Label(list.transform, "NoSeasons", "No playable campaigns are installed on this server.", 18, 872, 100);
+            var empty = _ui.Label(
+                list.transform,
+                "NoSeasons",
+                testing
+                    ? "Save an active campaign draft in Creator to test it here."
+                    : "No playable campaigns are installed on this server.",
+                18,
+                872,
+                100
+            );
             empty.alignment = TextAnchor.MiddleCenter;
             empty.color = new Color32(149, 158, 163, 255);
         }
@@ -124,10 +139,10 @@ public sealed partial class CampaignScreen
             {
                 if (choice != null)
                 {
-                    SeasonChosen?.Invoke(choice.Id);
+                    selected(choice.Id);
                 }
             },
-            "CONTINUE",
+            testing ? "CONTINUE TEST" : "CONTINUE",
             choice != null
         );
         LayoutRebuilder.ForceRebuildLayoutImmediate(list.content);

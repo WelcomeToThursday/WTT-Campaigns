@@ -2,7 +2,8 @@
     <Style src="Editor.uss" />
     <ui:VisualElement class="editor-fill" picking-mode="Ignore">
         <ui:VisualElement class="editor-test-actions">
-            <ui:Button name="Reset" text="RESET TEST" />
+            <ui:Button name="Apply" text="APPLY SAVED CHANGES" />
+            <ui:Button name="Reset" text="RESET TEST CHARACTER" />
             <ui:Button name="Return" text="RETURN TO EDITOR" />
         </ui:VisualElement>
         <ui:Label name="Status" class="editor-test-status" picking-mode="Ignore" enable-rich-text="false" />

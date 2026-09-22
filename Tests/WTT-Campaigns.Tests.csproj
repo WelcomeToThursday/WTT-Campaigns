@@ -65,6 +65,9 @@
     <Compile Include="..\Server\Progression\QuestStartRequirements.cs" Link="Progression\QuestStartRequirements.cs" />
     <Compile Include="..\Server\Progression\QuestBackportCompatibility.cs" Link="Progression\QuestBackportCompatibility.cs" />
     <Compile Include="..\Server\Progression\ReputationMigration.cs" Link="Progression\ReputationMigration.cs" />
+    <Compile Include="..\Server\Profiles\CampaignReconciliation.cs" Link="Profiles\CampaignReconciliation.cs" />
+    <Compile Include="..\Server\Editor\CampaignTestUpdateTransaction.cs" Link="Editor\CampaignTestUpdateTransaction.cs" />
+    <Compile Include="..\Server\Editor\CampaignTestStorage.cs" Link="Editor\CampaignTestStorage.cs" />
     <Compile Include="..\Server\Profiles\ProfileStateSerialization.cs" Link="Profiles\ProfileStateSerialization.cs" />
     <Compile Include="..\Server\Missions\MissionCompletion.cs" Link="Missions\MissionCompletion.cs" />
     <Compile Include="..\Server\Story\StoryStore.cs" Link="Story\StoryStore.cs" />

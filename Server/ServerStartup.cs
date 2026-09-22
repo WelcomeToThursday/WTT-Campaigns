@@ -20,7 +20,7 @@ public sealed class ServerStartup(
 {
     internal static SeasonService Seasons = null!;
 
-    public Task OnLoadAsync(CancellationToken cancellationToken)
+    public async Task OnLoadAsync(CancellationToken cancellationToken)
     {
         Seasons = seasons;
         foreach (
@@ -32,6 +32,7 @@ public sealed class ServerStartup(
             patch.Enable();
         }
         seasons.Initialize();
+        await seasons.ReconcilePublished();
         hub.Initialize(images);
         foreach (
             var perk in repository.OrdinaryPlayable().SelectMany(r => r.Definition.Perks.All).GroupBy(p => p.Id).Select(g => g.First())
@@ -46,6 +47,5 @@ public sealed class ServerStartup(
             images.AddRoute("/wtt-campaigns/icons/" + perk.Id, file);
             perk.ImageUrl = "/wtt-campaigns/icons/" + perk.Id + ".png";
         }
-        return Task.CompletedTask;
     }
 }

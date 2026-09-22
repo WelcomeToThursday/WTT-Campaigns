@@ -8,6 +8,21 @@ namespace WTT.Campaigns.Server.Hub;
 
 internal static class HubProfileStore
 {
+    internal static void Add(SaveServer saves, MongoId id, SptProfile profile)
+    {
+        if (
+            AccessTools.Field(typeof(SaveServer), "profiles")?.GetValue(saves) is not ConcurrentDictionary<MongoId, SptProfile> profiles
+            || !profiles.TryAdd(id, profile)
+        )
+            throw new InvalidOperationException("The test profile is already loaded.");
+    }
+
+    internal static void Remove(SaveServer saves, MongoId id)
+    {
+        if (AccessTools.Field(typeof(SaveServer), "profiles")?.GetValue(saves) is ConcurrentDictionary<MongoId, SptProfile> profiles)
+            profiles.TryRemove(id, out _);
+    }
+
     internal static void Replace(SaveServer saves, MongoId id, SptProfile expected, SptProfile replacement)
     {
         // GetProfiles returns a dictionary copy in SPT 4.1. Use the verified backing store to replace the whole staged profile atomically.

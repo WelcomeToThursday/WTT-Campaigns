@@ -25,6 +25,8 @@ public sealed partial class CampaignScreen : IDisposable
     private readonly Text _balance;
     private readonly Button _primary;
     private readonly Button _reset;
+    private Button? _testDraft;
+    public Action? TestDraftRequested;
     private readonly Dictionary<ScreenPage, Button> _tabs = new Dictionary<ScreenPage, Button>();
     private readonly HashSet<string> _selected = new HashSet<string>();
     private readonly List<(PerkEntry Entry, GameObject Card)> _cards = new List<(PerkEntry, GameObject)>();
@@ -141,6 +143,7 @@ public sealed partial class CampaignScreen : IDisposable
         _subtitle.color = UiElements.Muted;
         if (!embedded)
         {
+            _testDraft = _ui.Button(_panel, "TEST DRAFT", 200, 550, 425, () => TestDraftRequested?.Invoke());
             _ui.Button(_panel, "BACK", 140, 790, 425, RequestClose);
             AddTab(ScreenPage.Characters, "CHARACTERS", -655);
             AddTab(ScreenPage.Personal, "PERSONAL PERKS", -355);
@@ -291,6 +294,7 @@ public sealed partial class CampaignScreen : IDisposable
             : _state.IsScav ? "Campaign PMC perks do not apply to your Scav."
             : _state.ActiveMode == "seasonal" ? "Perks currently applied to this campaign character."
             : "Your normal character has no campaign modifiers.";
+        _testDraft?.gameObject.SetActive(page == ScreenPage.Characters);
         if (_embedded)
         {
             BuildModifiers();

@@ -59,18 +59,20 @@ public sealed partial class SeasonContentService(
 
         // Keep legacy templates available to old profiles even when another season is active.
         Register(repository.Legacy, false);
-        foreach (var pack in repository.Packs())
+        // Historical owned templates remain readable by inventories; only the chosen
+        // revision registers recipes, locales, and gameplay during activation.
+        foreach (var pack in repository.Packs().OrderBy(p => p.Manifest.Revision).ThenBy(p => p.Key))
         {
             try
             {
                 var definition = repository.Pack(pack.Key);
-                if (SeasonValidator.Validate(definition).CanPublish)
-                {
-                    Register(definition, false);
-                }
+                if (!SeasonValidator.Validate(definition).CanPublish)
+                    continue;
+                RegisterHistoricalItems(definition);
             }
-            catch (Exception)
-            { /* Unselected packs do not prevent the creator opening for repair. */
+            catch (Exception e)
+            {
+                repository.StorageWarnings.Add("Pack " + pack.Key + ": " + e.Message);
             }
         }
 
@@ -80,50 +82,52 @@ public sealed partial class SeasonContentService(
     public void CompleteActivation()
     {
         var selected = repository.Selection.Active;
-        var candidate = repository.Selection.Pending ?? selected;
-        try
-        {
-            var definition = repository.Pack(candidate);
-            var validation = Validate(definition);
-            if (candidate != "legacy" && !validation.CanActivate)
-            {
-                throw new InvalidDataException(
-                    string.Join("; ", validation.Issues.Where(i => i.Severity != "warning").Select(i => i.Message).Take(8))
-                );
-            }
-
-            repository.CheckGameplay(definition);
-            Register(definition, true);
-            repository.Activate(candidate);
-        }
-        catch (Exception e)
+        var requested = repository.Selection.Pending ?? selected;
+        var activated = false;
+        IEnumerable<string> Candidates(string key)
         {
             try
             {
-                var previous = repository.Pack(selected);
-                if (selected != "legacy" && !Validate(previous).CanActivate)
-                {
-                    throw new InvalidDataException("Previous pack failed validation.");
-                }
-
-                Register(previous, true);
-                repository.Activate(selected);
+                return repository.RevisionCandidates(key);
             }
-            catch
+            catch (Exception e)
             {
-                Register(repository.Legacy, true);
-                repository.Activate("legacy");
+                repository.StorageWarnings.Add("Campaign " + key + ": " + e.Message);
+                return [];
             }
-
-            repository.ActivationFailed(e.Message);
         }
+        foreach (var candidate in Candidates(requested).Concat(Candidates(selected)).Append("legacy").Distinct())
+        {
+            try
+            {
+                var definition = repository.Pack(candidate);
+                if (definition.MissionPackage != null)
+                    throw new InvalidDataException("A mission package cannot be the default campaign.");
+                var validation = Validate(definition);
+                if (candidate != "legacy" && !validation.CanActivate)
+                    throw new InvalidDataException(
+                        string.Join("; ", validation.Issues.Where(i => i.Severity != "warning").Select(i => i.Message).Take(8))
+                    );
+                Register(definition, true);
+                repository.Activate(candidate);
+                activated = true;
+                break;
+            }
+            catch (Exception e)
+            {
+                repository.StorageWarnings.Add("Campaign " + candidate + " unavailable: " + e.Message);
+            }
+        }
+        if (!activated)
+            throw new InvalidOperationException("No valid default campaign is available.");
 
         repository.Playable[repository.Current.Definition.Id] = repository.Current;
         var candidates = repository
             .Packs()
             .GroupBy(p => p.Manifest.SeasonId)
-            .SelectMany(g => g.OrderByDescending(p => p.Manifest.Revision).Select(p => p.Key))
+            .SelectMany(g => g.OrderByDescending(p => p.Manifest.Revision).ThenBy(p => p.Key).Select(p => p.Key))
             .Prepend("legacy");
+        var registeredMissions = new HashSet<string>();
         foreach (var key in candidates)
         {
             try
@@ -133,7 +137,8 @@ public sealed partial class SeasonContentService(
                 {
                     if (Validate(definition).CanActivate)
                     {
-                        Register(definition, false);
+                        if (registeredMissions.Add(definition.Id))
+                            Register(definition, false);
                         repository.PublishedMissions[definition.Id + ":" + definition.Revision] = new SeasonRuntimeSnapshot(definition);
                     }
                     continue;
@@ -143,9 +148,13 @@ public sealed partial class SeasonContentService(
                     continue;
                 }
 
-                if (key != "legacy" && !Validate(definition).CanActivate)
+                if (key != "legacy")
                 {
-                    continue;
+                    var validation = Validate(definition);
+                    if (!validation.CanActivate)
+                        throw new InvalidDataException(
+                            string.Join("; ", validation.Issues.Where(i => i.Severity != "warning").Take(8).Select(i => i.Message))
+                        );
                 }
 
                 repository.CheckGameplay(definition);
@@ -682,6 +691,20 @@ public sealed partial class SeasonContentService(
         return result;
     }
 
+    private void RegisterHistoricalItems(SeasonDefinition definition)
+    {
+        foreach (var link in definition.MissionLinks)
+            RegisterHistoricalItems(link.Package);
+        var items = new SeasonDefinition
+        {
+            Id = definition.Id,
+            Items = definition.Items,
+            ImportedItems = definition.ImportedItems,
+            Locales = new(),
+        };
+        Register(items, false);
+    }
+
     private void Register(SeasonDefinition definition, bool crates)
     {
         foreach (var link in definition.MissionLinks)
@@ -691,9 +714,8 @@ public sealed partial class SeasonContentService(
         foreach (var pair in definition.ImportedItems)
         {
             var id = new MongoId(pair.Key);
-            if (templates.Items.ContainsKey(id))
+            if (templates.Items.ContainsKey(id) && _owners.GetValueOrDefault(pair.Key) != definition.Id)
             {
-                _owners.TryAdd(pair.Key, definition.Id);
                 continue;
             }
 
@@ -713,11 +735,16 @@ public sealed partial class SeasonContentService(
             staged[id] = json.Deserialize<TemplateItem>(JsonConvert.SerializeObject(item))!;
         }
 
-        var remaining = definition.Items.Where(i => !templates.Items.ContainsKey(new MongoId(i.Id))).ToList();
+        var remaining = definition
+            .Items.Where(i => !templates.Items.ContainsKey(new MongoId(i.Id)) || _owners.GetValueOrDefault(i.Id) == definition.Id)
+            .ToList();
         while (remaining.Count > 0)
         {
             var ready = remaining
-                .Where(i => staged.ContainsKey(new MongoId(i.CloneFrom)) || templates.Items.ContainsKey(new MongoId(i.CloneFrom)))
+                .Where(i =>
+                    staged.ContainsKey(new MongoId(i.CloneFrom))
+                    || (!remaining.Any(r => r.Id == i.CloneFrom) && templates.Items.ContainsKey(new MongoId(i.CloneFrom)))
+                )
                 .ToArray();
             if (ready.Length == 0)
             {

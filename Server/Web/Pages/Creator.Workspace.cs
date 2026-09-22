@@ -172,7 +172,7 @@ public partial class Creator
             "Story rehearsal" =>
                 "Rehearsal uses a copied draft and simulated state. Native outcomes are labeled; unresolved behavior pauses for your explicit result. It never opens player profiles.",
             _ =>
-                "Save, validate and publish an immutable pack. Missing installed dependencies can allow export but prevent play. Restart SPT to load new packs, then choose a campaign when creating a campaign character.",
+                "Save and use Test draft in the in-game campaign menu. Apply saved changes between raids. Publish a new release when ready; restart SPT to load published updates for existing characters. Missing dependencies can allow export but prevent play.",
         };
     }
 }

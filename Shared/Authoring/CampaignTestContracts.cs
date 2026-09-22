@@ -4,10 +4,8 @@ using WTT.Campaigns.Shared.Missions;
 namespace WTT.Campaigns.Shared.Authoring;
 
 /// <summary>
-/// HTTP contract for the full, disposable campaign rehearsal.  This is kept
-/// separate from the quick editor mission contract: the full path creates a
-/// normal native PMC and is addressed by its temporary profile identity while
-/// its control endpoints remain authenticated by the editor owner.
+/// Owner-authenticated controls for persistent draft-test characters. Native
+/// gameplay uses the isolated test profile; controls use the launcher account.
 /// </summary>
 public static class CampaignTestRoutes
 {
@@ -16,6 +14,9 @@ public static class CampaignTestRoutes
     public const string Status = Prefix + "/status";
     public const string Reset = Prefix + "/reset";
     public const string End = Prefix + "/end";
+    public const string List = Prefix + "/list";
+    public const string Apply = Prefix + "/apply";
+    public const string Resume = Prefix + "/resume";
 }
 
 public static class CampaignTestActions
@@ -24,17 +25,21 @@ public static class CampaignTestActions
     public const string Status = "status";
     public const string Reset = "reset";
     public const string End = "end";
+    public const string List = "list";
+    public const string Apply = "apply";
+    public const string Resume = "resume";
 }
 
 /// <summary>
-/// Owner-authenticated control request for a disposable campaign profile.
-/// TestId is empty for create and is always echoed by the server after a
-/// reset, since reset retires the previous profile and starts from a clean
-/// native profile.
+/// Revision-checked control request. Reset retires the prior profile identity;
+/// apply retains the character and atomically replaces its tested snapshot.
 /// </summary>
 public class CampaignTestRequest
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
+    public long ExpectedDraftRevision { get; set; }
+    public long ExpectedLoadedRevision { get; set; }
+    public string OperationId { get; set; } = "";
     public string EditorSessionId { get; set; } = "";
     public string DraftId { get; set; } = "";
     public string TestId { get; set; } = "";
@@ -44,7 +49,10 @@ public class CampaignTestRequest
 /// <summary>Projection returned by create/status/reset/end.</summary>
 public sealed class CampaignTestResponse
 {
-    public int Version { get; set; } = 1;
+    public int Version { get; set; } = 2;
+    public long LoadedDraftRevision { get; set; }
+    public long LatestDraftRevision { get; set; }
+    public List<CampaignTestDraft> Drafts { get; set; } = new();
     public string? Error { get; set; }
     public string EditorSessionId { get; set; } = "";
     public string DraftId { get; set; } = "";
@@ -59,7 +67,7 @@ public sealed class CampaignTestResponse
     public long Revision { get; set; }
     public string Status { get; set; } = "";
     public string Message { get; set; } = "";
-    public bool Disposable { get; set; } = true;
+    public bool Disposable { get; set; }
     public bool SourcePreserved { get; set; } = true;
     public bool QuestAccepted { get; set; }
     public bool MissionCompleted { get; set; }
@@ -69,4 +77,12 @@ public sealed class CampaignTestResponse
     public bool Committed { get; set; }
     public Snapshot? Snapshot { get; set; }
     public MissionResponse? Missions { get; set; }
+}
+
+public sealed class CampaignTestDraft
+{
+    public string Id { get; set; } = "";
+    public string Name { get; set; } = "";
+    public long Revision { get; set; }
+    public bool HasProgress { get; set; }
 }
