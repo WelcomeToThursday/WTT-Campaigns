@@ -10,7 +10,10 @@ import re
 RUNTIME_SOURCES = {
     'EditorMaterialArtwork.cs',
     'EditorWindowLayout.cs',
+    'EditorDockLayout.cs',
     'SceneHandleMath.cs',
+    'SceneViewport.cs',
+    'EditorViewportCoordinates.cs',
     'SceneSelectionGeometry.cs',
     'CampaignBranding.cs',
     'StoryTitleMask.cs',
@@ -88,7 +91,7 @@ if __name__ == '__main__':
     assets = project.parent / 'CJ-SDK/Assets/Mods/WTT-Campaigns.Assets'
     count = sync_sources(project / 'UI', assets / 'Editor/Generated', assets / 'PreviewRuntime')
     (assets / 'RaidEditor/CampaignScenePreview.shader').write_text((project / 'tools/unity/CampaignScenePreview.shader').read_text(encoding='utf-8'), encoding='utf-8')
-    for helper in ['ScenePicking.cs', 'ScenePropSupport.cs', 'SceneBodyState.cs']:
+    for helper in ['ScenePicking.cs', 'ScenePickGeometry.cs', 'ScenePropSupport.cs', 'SceneBodyState.cs']:
         picking = (project / 'Client/Authoring/Scenes' / helper).read_text(encoding='utf-8').replace('namespace WTT.Campaigns.Client.Authoring.Scenes;', 'namespace WTT.Campaigns.Client.Authoring.Scenes\n{') + '\n}\n'
         (assets / 'Editor' / helper).write_text('#nullable enable\n' + picking, encoding='utf-8')
     builder = 'CampaignsEditorToolkitBuilder.cs'

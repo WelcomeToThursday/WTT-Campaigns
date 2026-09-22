@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
 using WTT.Campaigns.UI.Audio;
@@ -143,11 +142,12 @@ public sealed class MissionsScreen : IDisposable
         }
 
         Button(_page, "BACK", 1655, 55, 155, 42, () => CloseRequested?.Invoke(), false);
-        var list = _ui.Scroll(_page, "MissionList", 1420, 780, 250, -35);
+        var list = _ui.Scroll(_page, "MissionList", 1420, 760, 0, -10);
         list.content.GetComponent<VerticalLayoutGroup>()!.spacing = 12;
         if (_missions.Length == 0)
         {
-            var empty = _ui.Label(list.content, "MissionEmpty", "No published missions are available for this character.", 22, 1300, 80);
+            var empty = _ui.Label(list.viewport, "MissionEmpty", "No published missions are available for this character.", 22, 0, 0);
+            UiElements.Stretch(empty.rectTransform, 30, 30, 30, 30);
             empty.alignment = TextAnchor.MiddleCenter;
             empty.color = UiElements.Muted;
             return;
@@ -157,8 +157,8 @@ public sealed class MissionsScreen : IDisposable
             RenderMission(list.content, mission);
         if (_message.Length > 0)
         {
-            var statusHost = Box(_page, "MissionStatus", 300, 940, 1320, 40);
-            var status = _ui.Label(statusHost, "Text", _message, 18, 1320, 40);
+            var statusHost = Box(_page, "MissionStatus", 300, 952, 1320, 60);
+            var status = _ui.Label(statusHost, "Text", _message, 18, 1320, 60);
             status.color = _messageError ? UiElements.Negative : UiElements.Positive;
         }
     }
@@ -180,47 +180,41 @@ public sealed class MissionsScreen : IDisposable
 
     private void RenderMission(Transform parent, MissionEntry mission)
     {
-        const float width = 1370;
-        const float height = 176;
-        var row = Box(parent, "Mission " + mission.Id, 0, 0, width, height);
+        const float height = 208;
+        var row = UiElements.Rect("Mission " + mission.Id, parent, 0, height);
+        // The scroll layout controls row geometry; sizeDelta alone is ignored.
+        var layout = row.gameObject.AddComponent<LayoutElement>();
+        layout.minHeight = layout.preferredHeight = height;
         UiElements.Fill(row, mission.Unlocked ? new Color(.085f, .10f, .09f, .98f) : new Color(.055f, .06f, .058f, .98f));
 
-        var title = _ui.Label(row, "Name", mission.Name, 25, 730, 34, -width / 2 + 26, height / 2 - 30);
+        var title = RowLabel(row, "Name", mission.Name, 25, 26, 400, 18, 34);
         title.alignment = TextAnchor.MiddleLeft;
         title.color = mission.Unlocked ? UiElements.Ink : UiElements.Muted;
-        var location = _ui.Label(
-            row,
-            "Location",
-            mission.Location.Length > 0 ? mission.Location : "Unknown map",
-            16,
-            500,
-            28,
-            -width / 2 + 28,
-            height / 2 - 62
-        );
+        var location = RowLabel(row, "Location", mission.Location.Length > 0 ? mission.Location : "Unknown map", 16, 28, 400, 56, 28);
         location.color = UiElements.Muted;
-        var briefing = _ui.Label(
+        var briefing = RowLabel(
             row,
             "Briefing",
             mission.Briefing.Length > 0 ? mission.Briefing : "No briefing supplied.",
             17,
-            770,
-            50,
-            -width / 2 + 28,
-            height / 2 - 115
+            28,
+            400,
+            88,
+            50
         );
         briefing.color = new Color(.68f, .69f, .64f);
 
         var objectives =
             mission.Objectives.Length == 0 ? "Route: complete all checkpoints, then extract" : string.Join("  ·  ", mission.Objectives);
-        var objectiveText = _ui.Label(row, "Objectives", objectives, 16, 770, 30, -width / 2 + 28, -height / 2 + 28);
+        var objectiveText = RowLabel(row, "Objectives", objectives, 16, 28, 400, 142, 48);
         objectiveText.color = mission.Completed ? UiElements.Positive : UiElements.Muted;
 
         var status =
             mission.Completed ? "COMPLETED"
             : mission.Unlocked ? (mission.Active ? "IN PROGRESS" : mission.Status.ToUpperInvariant())
             : "LOCKED";
-        var statusLabel = _ui.Label(row, "Status", status, 16, 300, 30, width / 2 - 405, height / 2 - 34);
+        var statusLabel = _ui.Label(Box(row, "StatusArea", 0, 18, 340, 30), "Status", status, 16, 340, 30);
+        AlignRight((RectTransform)statusLabel.transform.parent, 24);
         statusLabel.alignment = TextAnchor.MiddleRight;
         statusLabel.color =
             mission.Completed ? UiElements.Positive
@@ -228,30 +222,48 @@ public sealed class MissionsScreen : IDisposable
             : UiElements.Muted;
         if (mission.FailureReason.Length > 0)
         {
-            var failure = _ui.Label(row, "Failure", mission.FailureReason, 14, 300, 36, width / 2 - 405, -height / 2 + 45);
+            var failureHost = Box(row, "FailureArea", 0, 54, 340, 68);
+            AlignRight(failureHost, 24);
+            var failure = _ui.Label(failureHost, "Failure", mission.FailureReason, 14, 340, 68);
             failure.alignment = TextAnchor.MiddleRight;
             failure.color = UiElements.Negative;
         }
 
         if (mission.CanResume)
         {
-            var buttonHost = Box(row, "Resume", width / 2 - 300, -height / 2 + 18, 125, 48);
+            var buttonHost = Box(row, "Resume", 0, 142, 125, 48);
+            AlignRight(buttonHost, 164);
             var button = _ui.Button(buttonHost, "RESUME", 125, 0, 0, () => ResumeRequested?.Invoke(mission.Id), 44);
             button.interactable = !_busy;
         }
         if (mission.CanCancel)
         {
-            var buttonHost = Box(row, "Cancel", width / 2 - 160, -height / 2 + 18, 125, 48);
+            var buttonHost = Box(row, "Cancel", 0, 142, 125, 48);
+            AlignRight(buttonHost, 24);
             var button = _ui.Button(buttonHost, "CANCEL", 125, 0, 0, () => CancelRequested?.Invoke(mission.Id), 44);
             button.interactable = !_busy;
         }
         if (!mission.CanResume && (mission.CanDeploy || mission.CanReplay))
         {
             var caption = mission.Completed ? "REPLAY" : "DEPLOY";
-            var buttonHost = Box(row, "Deploy", width / 2 - 190, -height / 2 + 18, 155, 48);
+            var buttonHost = Box(row, "Deploy", 0, 142, 155, 48);
+            AlignRight(buttonHost, mission.CanCancel ? 164 : 24);
             var button = _ui.Button(buttonHost, caption, 155, 0, 0, () => DeployRequested?.Invoke(mission.Id), 44);
             button.interactable = !_busy;
         }
+    }
+
+    private Text RowLabel(RectTransform row, string name, string value, int size, float left, float right, float top, float height)
+    {
+        var label = _ui.Label(row, name, value, size, 0, 0);
+        UiElements.Stretch(label.rectTransform, left, right, top, row.sizeDelta.y - top - height);
+        return label;
+    }
+
+    private static void AlignRight(RectTransform rect, float margin)
+    {
+        rect.anchorMin = rect.anchorMax = Vector2.one;
+        rect.anchoredPosition = new Vector2(-margin - rect.sizeDelta.x / 2, rect.anchoredPosition.y);
     }
 
     private Button Button(Transform parent, string text, float x, float y, float width, float height, Action action, bool fill = true)
